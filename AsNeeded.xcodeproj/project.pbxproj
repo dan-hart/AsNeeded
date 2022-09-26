@@ -94,8 +94,10 @@
 		527AFA2428E26B3400BD575D /* AsNeeded */ = {
 			isa = PBXGroup;
 			children = (
+				52D0DF0B28E26F3B00962C13 /* Logic */,
+				52D0DF0A28E26F3600962C13 /* Models */,
+				52D0DF0928E26F3100962C13 /* Views */,
 				527AFA2528E26B3400BD575D /* AsNeededApp.swift */,
-				527AFA2728E26B3400BD575D /* ContentView.swift */,
 				527AFA2928E26B3600BD575D /* Assets.xcassets */,
 				527AFA2B28E26B3600BD575D /* Preview Content */,
 			);
@@ -125,6 +127,28 @@
 				527AFA4228E26B3600BD575D /* AsNeededUITestsLaunchTests.swift */,
 			);
 			path = AsNeededUITests;
+			sourceTree = "<group>";
+		};
+		52D0DF0928E26F3100962C13 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				527AFA2728E26B3400BD575D /* ContentView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		52D0DF0A28E26F3600962C13 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		52D0DF0B28E26F3B00962C13 /* Logic */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Logic;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
