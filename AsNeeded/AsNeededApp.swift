@@ -1,0 +1,17 @@
+//
+//  AsNeededApp.swift
+//  AsNeeded
+//
+//  Created by Dan Hart on 9/26/22.
+//
+
+import SwiftUI
+
+@main
+struct AsNeededApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
