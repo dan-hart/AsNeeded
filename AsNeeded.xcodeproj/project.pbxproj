@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */; };
+		5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */; };
 		527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2528E26B3400BD575D /* AsNeededApp.swift */; };
 		527AFA2828E26B3400BD575D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* ContentView.swift */; };
 		527AFA2A28E26B3600BD575D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2928E26B3600BD575D /* Assets.xcassets */; };
@@ -34,6 +36,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeathDataAccessor.swift; sourceTree = "<group>"; };
+		5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataAccessing.swift; sourceTree = "<group>"; };
+		5235DAEE28E29DB100384C53 /* AsNeeded.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AsNeeded.entitlements; sourceTree = "<group>"; };
+		5235DAEF28E29E1A00384C53 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2528E26B3400BD575D /* AsNeededApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededApp.swift; sourceTree = "<group>"; };
 		527AFA2728E26B3400BD575D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -94,6 +100,8 @@
 		527AFA2428E26B3400BD575D /* AsNeeded */ = {
 			isa = PBXGroup;
 			children = (
+				5235DAEF28E29E1A00384C53 /* Info.plist */,
+				5235DAEE28E29DB100384C53 /* AsNeeded.entitlements */,
 				52D0DF0B28E26F3B00962C13 /* Logic */,
 				52D0DF0A28E26F3600962C13 /* Models */,
 				52D0DF0928E26F3100962C13 /* Views */,
@@ -147,6 +155,8 @@
 		52D0DF0B28E26F3B00962C13 /* Logic */ = {
 			isa = PBXGroup;
 			children = (
+				5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */,
+				5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -281,6 +291,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
+				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				527AFA2828E26B3400BD575D /* ContentView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 			);
@@ -438,12 +450,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				DEVELOPMENT_TEAM = WRJ8J85K4Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AsNeeded/Info.plist;
+				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "This app reads your medications to perform insights and inform you of how to take your as needed medication";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads your medications to perform insights and inform you of how to take your as needed medication";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -467,12 +483,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				DEVELOPMENT_TEAM = WRJ8J85K4Q;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AsNeeded/Info.plist;
+				INFOPLIST_KEY_NSHealthClinicalHealthRecordsShareUsageDescription = "This app reads your medications to perform insights and inform you of how to take your as needed medication";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads your medications to perform insights and inform you of how to take your as needed medication";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
