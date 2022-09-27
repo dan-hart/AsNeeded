@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State var isLoading = false
     @State var isHealthDataAvailable = false
     @State var isHealthDataAuthorized = false
     
@@ -17,26 +18,36 @@ struct ContentView: View {
                 if isHealthDataAuthorized {
                     Text("Ready")
                 } else {
-                    Button {
-                        Task { await authorize() }
-                    } label: {
-                        Text("Authorize")
+                    if isLoading {
+                        Text("Loading...")
+                    } else {
+                        Button {
+                            Task { await authorize() }
+                        } label: {
+                            Text("Authorize")
+                        }
                     }
-
                 }
             } else {
                 Text("Health data is not available.")
             }
         }
+        .task {
+            await authorize()
+        }
         .padding()
     }
     
     func authorize() async {
+        isLoading = true
+        
         if HealthDataAccessor.shared.isAvailable {
             isHealthDataAvailable = true
-        } else { return }
+        } else { isHealthDataAvailable = false }
         
         isHealthDataAuthorized = await HealthDataAccessor.shared.requestClinicalMedicationPermission()
+        
+        isLoading = false
     }
 }
 

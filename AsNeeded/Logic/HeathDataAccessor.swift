@@ -28,7 +28,11 @@ class HealthDataAccessor: HealthDataAccessing {
     func requestClinical(types: Set<HKClinicalType>) async -> Bool {
         let success = try? await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
             // Clinical types are read-only.
-            store.requestAuthorization(toShare: nil, read: types) { (success, _) in
+            store.requestAuthorization(toShare: nil, read: types) { (success, error) in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
                 continuation.resume(returning: success)
             }
         }
