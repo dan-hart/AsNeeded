@@ -1,34 +1,33 @@
 //
-//  QuantityView.swift
+//  SettingsView.swift
 //  AsNeeded
 //
 //  Created by Dan Hart on 10/6/22.
 //
 
 import SwiftUI
-import SFSafeSymbols
 
-struct QuantityView: View {
-    @Binding var quantity: Double
+struct SettingsView: View {
+    @Binding var dose: Double
     
     var body: some View {
         VStack {
-            Text("Quantity")
+            Text("Dose")
                 .font(.subheadline)
-            Text("\(quantity.formatted()) mg")
+            Text("\(dose.formatted()) mg")
                 .font(.largeTitle)
             HStack {
                 Button {
-                    quantity -= 0.5
+                    dose -= 0.5
                 } label: {
                     Text("-0.5")
                 }
                 
-                Stepper("Quantity", value: $quantity, in: 0...Constants.maxQuantity)
+                Stepper("Dose", value: $dose, in: 0...Constants.maxQuantity)
                     .labelsHidden()
                 
                 Button {
-                    quantity += 0.5
+                    dose += 0.5
                 } label: {
                     Text("+0.5")
                 }
@@ -38,8 +37,8 @@ struct QuantityView: View {
     }
 }
 
-struct QuantityView_Previews: PreviewProvider {
+struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        QuantityView(quantity: .constant(90.0))
+        SettingsView(dose: .constant(5))
     }
 }

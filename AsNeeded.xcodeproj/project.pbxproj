@@ -26,6 +26,8 @@
 		52929DB028EF2B6200C996E0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAF28EF2B6200C996E0 /* UserData.swift */; };
 		52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */; };
 		52929DB828EF306500C996E0 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DB728EF306500C996E0 /* SwiftDate */; };
+		52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB928EF373A00C996E0 /* Pluralize.swift */; };
+		52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DBC28EF391F00C996E0 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +69,8 @@
 		52929DAD28EF29B700C996E0 /* DefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultKeys.swift; sourceTree = "<group>"; };
 		52929DAF28EF2B6200C996E0 /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
 		52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededDatePickerView.swift; sourceTree = "<group>"; };
+		52929DB928EF373A00C996E0 /* Pluralize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pluralize.swift; sourceTree = "<group>"; };
+		52929DBC28EF391F00C996E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,9 +170,18 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		52929DBB28EF391100C996E0 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				52929DBC28EF391F00C996E0 /* SettingsView.swift */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
 		52D0DF0928E26F3100962C13 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				52929DBB28EF391100C996E0 /* Screens */,
 				52929D9F28EF259500C996E0 /* Components */,
 				527AFA2728E26B3400BD575D /* HealthDataView.swift */,
 				52929D9D28EF24F400C996E0 /* ContentView.swift */,
@@ -192,6 +205,7 @@
 			children = (
 				5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */,
 				5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */,
+				52929DB928EF373A00C996E0 /* Pluralize.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -342,11 +356,13 @@
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
 				52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */,
+				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,
 				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
+				52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

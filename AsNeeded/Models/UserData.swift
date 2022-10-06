@@ -22,15 +22,24 @@ class UserData: ObservableObject {
         }
     }
     
+    @Published var dailyDoseInMG: Double {
+        didSet {
+            Defaults[\.dailyDoseInMG] = dailyDoseInMG
+        }
+    }
+    
+    /// Returns the difference between now and the refill date.
+    /// Add one because we count "Today" as a day, even if it is the end of the day
     var daysRemainingUntilNextRefillDate: Double? {
         let now = Date()
         if nextRefillDate.isInPast { return nil }
         guard let differenceDate = now.difference(in: .day, from: nextRefillDate) else { return nil }
-        return Double(differenceDate.days.day ?? -1)
+        return Double(differenceDate.days.day ?? -1) + 1 // See property documentation
     }
     
     init() {
         quantity = Defaults[\.quantity]
         nextRefillDate = Defaults[\.nextRefillDate]
+        dailyDoseInMG = Defaults[\.dailyDoseInMG]
     }
 }

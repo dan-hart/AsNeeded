@@ -46,6 +46,12 @@ struct AsNeededDatePickerView: View {
                 }
             }
             .labelsHidden()
+            
+            Button {
+                nextRefillDate = .now
+            } label: {
+                Text("Today")
+            }
         }
     }
 }
