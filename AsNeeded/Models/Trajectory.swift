@@ -8,8 +8,8 @@
 import Foundation
 
 enum Trajectory: String, CaseIterable {
-    case ahead
-    case onTrack
-    case behind
-    case danger
+    case ahead = "Ahead"
+    case onTrack = "On Track"
+    case behind = "Behind"
+    case danger = "Danger"
 }

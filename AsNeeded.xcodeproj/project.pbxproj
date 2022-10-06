@@ -21,6 +21,10 @@
 		52929DA328EF262400C996E0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA228EF262300C996E0 /* Trajectory.swift */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 		52929DA928EF291700C996E0 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA828EF291700C996E0 /* Constants.swift */; };
+		52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */; };
+		52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAD28EF29B700C996E0 /* DefaultKeys.swift */; };
+		52929DB028EF2B6200C996E0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAF28EF2B6200C996E0 /* UserData.swift */; };
+		52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +63,9 @@
 		52929DA028EF25A600C996E0 /* QuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuantityView.swift; sourceTree = "<group>"; };
 		52929DA228EF262300C996E0 /* Trajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trajectory.swift; sourceTree = "<group>"; };
 		52929DA828EF291700C996E0 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		52929DAD28EF29B700C996E0 /* DefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultKeys.swift; sourceTree = "<group>"; };
+		52929DAF28EF2B6200C996E0 /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
+		52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededDatePickerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +74,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
+				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,6 +159,7 @@
 			isa = PBXGroup;
 			children = (
 				52929DA028EF25A600C996E0 /* QuantityView.swift */,
+				52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -170,6 +179,8 @@
 			children = (
 				52929DA228EF262300C996E0 /* Trajectory.swift */,
 				52929DA828EF291700C996E0 /* Constants.swift */,
+				52929DAD28EF29B700C996E0 /* DefaultKeys.swift */,
+				52929DAF28EF2B6200C996E0 /* UserData.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -201,6 +212,7 @@
 			name = AsNeeded;
 			packageProductDependencies = (
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
+				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -276,6 +288,7 @@
 			mainGroup = 527AFA1928E26B3400BD575D;
 			packageReferences = (
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -324,8 +337,11 @@
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
+				52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */,
+				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
+				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,
 				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -669,6 +685,14 @@
 				minimumVersion = 4.0.0;
 			};
 		};
+		52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sunshinejr/SwiftyUserDefaults";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -676,6 +700,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
 			productName = SFSafeSymbols;
+		};
+		52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */;
+			productName = SwiftyUserDefaults;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

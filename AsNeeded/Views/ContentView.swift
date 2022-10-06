@@ -6,10 +6,16 @@
 //
 
 import SwiftUI
+import SwiftyUserDefaults
 
 struct ContentView: View {
+    @ObservedObject var userData = UserData()
+    
     var body: some View {
-        Text("Content View")
+        VStack {
+            AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+            QuantityView(quantity: $userData.quantity)
+        }
     }
 }
 
