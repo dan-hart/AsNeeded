@@ -15,6 +15,8 @@ struct ContentView: View {
         NavigationStack {
             VStack {
                 AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+                Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "[Error]") days remaining")
+                    .font(.largeTitle)
                 QuantityView(quantity: $userData.quantity)
             }
             
