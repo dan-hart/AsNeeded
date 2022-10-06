@@ -10,12 +10,16 @@
 		5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */; };
 		5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */; };
 		527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2528E26B3400BD575D /* AsNeededApp.swift */; };
-		527AFA2828E26B3400BD575D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* ContentView.swift */; };
+		527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* HealthDataView.swift */; };
 		527AFA2A28E26B3600BD575D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2928E26B3600BD575D /* Assets.xcassets */; };
 		527AFA2D28E26B3600BD575D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2C28E26B3600BD575D /* Preview Assets.xcassets */; };
 		527AFA3728E26B3600BD575D /* AsNeededTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA3628E26B3600BD575D /* AsNeededTests.swift */; };
 		527AFA4128E26B3600BD575D /* AsNeededUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA4028E26B3600BD575D /* AsNeededUITests.swift */; };
 		527AFA4328E26B3600BD575D /* AsNeededUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA4228E26B3600BD575D /* AsNeededUITestsLaunchTests.swift */; };
+		52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929D9D28EF24F400C996E0 /* ContentView.swift */; };
+		52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA028EF25A600C996E0 /* QuantityView.swift */; };
+		52929DA328EF262400C996E0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA228EF262300C996E0 /* Trajectory.swift */; };
+		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,7 +46,7 @@
 		5235DAEF28E29E1A00384C53 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2528E26B3400BD575D /* AsNeededApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededApp.swift; sourceTree = "<group>"; };
-		527AFA2728E26B3400BD575D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		527AFA2728E26B3400BD575D /* HealthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataView.swift; sourceTree = "<group>"; };
 		527AFA2928E26B3600BD575D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		527AFA2C28E26B3600BD575D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		527AFA3228E26B3600BD575D /* AsNeededTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AsNeededTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -50,6 +54,9 @@
 		527AFA3C28E26B3600BD575D /* AsNeededUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AsNeededUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA4028E26B3600BD575D /* AsNeededUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededUITests.swift; sourceTree = "<group>"; };
 		527AFA4228E26B3600BD575D /* AsNeededUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		52929D9D28EF24F400C996E0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		52929DA028EF25A600C996E0 /* QuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuantityView.swift; sourceTree = "<group>"; };
+		52929DA228EF262300C996E0 /* Trajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trajectory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,10 +145,20 @@
 			path = AsNeededUITests;
 			sourceTree = "<group>";
 		};
+		52929D9F28EF259500C996E0 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				52929DA028EF25A600C996E0 /* QuantityView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		52D0DF0928E26F3100962C13 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				527AFA2728E26B3400BD575D /* ContentView.swift */,
+				52929D9F28EF259500C996E0 /* Components */,
+				527AFA2728E26B3400BD575D /* HealthDataView.swift */,
+				52929D9D28EF24F400C996E0 /* ContentView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -148,6 +166,7 @@
 		52D0DF0A28E26F3600962C13 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				52929DA228EF262300C996E0 /* Trajectory.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -177,6 +196,9 @@
 			dependencies = (
 			);
 			name = AsNeeded;
+			packageProductDependencies = (
+				52929DA528EF270100C996E0 /* SFSafeSymbols */,
+			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
 			productType = "com.apple.product-type.application";
@@ -249,6 +271,9 @@
 				Base,
 			);
 			mainGroup = 527AFA1928E26B3400BD575D;
+			packageReferences = (
+				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -292,8 +317,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
+				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,
+				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
-				527AFA2828E26B3400BD575D /* ContentView.swift in Sources */,
+				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
+				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -627,6 +655,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
+			productName = SFSafeSymbols;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 527AFA1A28E26B3400BD575D /* Project object */;
 }
