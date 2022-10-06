@@ -14,8 +14,6 @@ struct AsNeededDatePickerView: View {
     
     var body: some View {
         VStack {
-            Text("Next Refill Date")
-                .font(.subheadline)
             HStack {
                 Button {
                     nextRefillDate = nextRefillDate.dateByAdding(-30, .day).date

@@ -32,6 +32,7 @@
 		52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC028EF407C00C996E0 /* TrajectoryView.swift */; };
 		52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */; };
 		52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC628EF48D000C996E0 /* AsNeededMGView.swift */; };
+		52929DC928EF506200C996E0 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC828EF506200C996E0 /* PlanView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +80,7 @@
 		52929DC028EF407C00C996E0 /* TrajectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryView.swift; sourceTree = "<group>"; };
 		52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+roundToPlaces.swift"; sourceTree = "<group>"; };
 		52929DC628EF48D000C996E0 /* AsNeededMGView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededMGView.swift; sourceTree = "<group>"; };
+		52929DC828EF506200C996E0 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,6 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				52929DBC28EF391F00C996E0 /* SettingsView.swift */,
+				52929DC828EF506200C996E0 /* PlanView.swift */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -220,8 +223,8 @@
 		52D0DF0A28E26F3600962C13 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				52929DA228EF262300C996E0 /* Trajectory.swift */,
 				52929DA828EF291700C996E0 /* Constants.swift */,
+				52929DA228EF262300C996E0 /* Trajectory.swift */,
 				52929DAD28EF29B700C996E0 /* DefaultKeys.swift */,
 				52929DAF28EF2B6200C996E0 /* UserData.swift */,
 			);
@@ -389,6 +392,7 @@
 				52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */,
 				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
+				52929DC928EF506200C996E0 /* PlanView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,

@@ -10,9 +10,16 @@ import SwiftUI
 import SwiftyUserDefaults
 
 class UserData: ObservableObject {
-    @Published var quantity: Double {
+    @Published var quantityInMG: Double {
         didSet {
-            Defaults[\.quantity] = quantity
+            Defaults[\.quantity] = quantityInMG
+            quantityLastUpdatedDate = .now
+        }
+    }
+    
+    @Published var quantityLastUpdatedDate: Date {
+        didSet {
+            Defaults[\.quantityLastUpdatedDate] = quantityLastUpdatedDate
         }
     }
     
@@ -34,6 +41,12 @@ class UserData: ObservableObject {
         }
     }
     
+    @Published var refillQuantityInMG: Double {
+        didSet {
+            Defaults[\.refillQuantityInMG] = refillQuantityInMG
+        }
+    }
+    
     /// Returns the difference between now and the refill date.
     /// Add one because we count "Today" as a day, even if it is the end of the day
     var daysRemainingUntilNextRefillDate: Double? {
@@ -48,7 +61,7 @@ class UserData: ObservableObject {
     /// How many MGs are available per day until the next refill date
     var dailyAvailableInMG: Double? {
         if let daysRemainingUntilNextRefillDate {
-            return quantity / daysRemainingUntilNextRefillDate
+            return quantityInMG / daysRemainingUntilNextRefillDate
         } else { return nil }
     }
     
@@ -81,9 +94,11 @@ class UserData: ObservableObject {
     }
     
     init() {
-        quantity = Defaults[\.quantity]
+        quantityInMG = Defaults[\.quantity]
+        quantityLastUpdatedDate = Defaults[\.quantityLastUpdatedDate]
         nextRefillDate = Defaults[\.nextRefillDate]
         dailyDoseInMG = Defaults[\.dailyDoseInMG]
         aheadTrajectoryInMG = Defaults[\.aheadTrajectoryInMG]
+        refillQuantityInMG = Defaults[\.refillQuantityInMG]
     }
 }

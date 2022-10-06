@@ -11,6 +11,7 @@ import SFSafeSymbols
 
 struct ContentView: View {
     @State var showSettings = false
+    @State var showPlan = false
     @ObservedObject var userData = UserData()
     
     var body: some View {
@@ -26,9 +27,16 @@ struct ContentView: View {
                         Text(userData.dailyAvailable)
                         Text(userData.dailyTrim)
                     }
+                    .padding()
+                    
+                    Button {
+                        showPlan.toggle()
+                    } label: {
+                        Label("Plan", systemSymbol: .airplaneDeparture)
+                    }
                 }
                 Spacer()
-                QuantityView(quantity: $userData.quantity)
+                QuantityView(userData: userData, quantity: $userData.quantityInMG)
                     .padding(.bottom)
             }
             .toolbar {
@@ -40,8 +48,11 @@ struct ContentView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showPlan) {
+                PlanView(userData)
+            }
             .sheet(isPresented: $showSettings) {
-                SettingsView(dose: $userData.dailyDoseInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
+                SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
             }
             
             .navigationTitle("AsNeeded")
