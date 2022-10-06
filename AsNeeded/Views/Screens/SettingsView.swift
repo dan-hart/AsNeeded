@@ -9,28 +9,22 @@ import SwiftUI
 
 struct SettingsView: View {
     @Binding var dose: Double
+    @Binding var aheadTrajectoryInMG: Double
     
     var body: some View {
         VStack {
+            DisclaimerView()
+
             Text("Dose")
                 .font(.subheadline)
-            Text("\(dose.formatted()) mg")
-                .font(.largeTitle)
+            AsNeededMGView(value: $dose)
+                .padding(.bottom)
+            
+            Text("Ahead Trajectory Threshold")
+                .font(.title)
             HStack {
-                Button {
-                    dose -= 0.5
-                } label: {
-                    Text("-0.5")
-                }
-                
-                Stepper("Dose", value: $dose, in: 0...Constants.maxQuantity)
-                    .labelsHidden()
-                
-                Button {
-                    dose += 0.5
-                } label: {
-                    Text("+0.5")
-                }
+                TrajectoryView(value: .ahead)
+                AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
             }
         }
         .padding()
@@ -39,6 +33,6 @@ struct SettingsView: View {
 
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsView(dose: .constant(5))
+        SettingsView(dose: .constant(5), aheadTrajectoryInMG: .constant(1.0))
     }
 }

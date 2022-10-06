@@ -15,24 +15,7 @@ struct QuantityView: View {
         VStack {
             Text("Quantity")
                 .font(.subheadline)
-            Text("\(quantity.formatted()) mg")
-                .font(.largeTitle)
-            HStack {
-                Button {
-                    quantity -= 0.5
-                } label: {
-                    Text("-0.5")
-                }
-                
-                Stepper("Quantity", value: $quantity, in: 0...Constants.maxQuantity)
-                    .labelsHidden()
-                
-                Button {
-                    quantity += 0.5
-                } label: {
-                    Text("+0.5")
-                }
-            }
+            AsNeededMGView(value: $quantity)
         }
         .padding()
     }

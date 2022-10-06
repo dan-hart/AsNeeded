@@ -16,10 +16,20 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
-                Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? -1))) remaining")
-                    .font(.largeTitle)
+                DisclaimerView()
+                ScrollView {
+                    AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+                    Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? -1))) remaining")
+                        .font(.largeTitle)
+                    TrajectoryView(value: userData.currentStatus)
+                    VStack(alignment: .leading) {
+                        Text(userData.dailyAvailable)
+                        Text(userData.dailyTrim)
+                    }
+                }
+                Spacer()
                 QuantityView(quantity: $userData.quantity)
+                    .padding(.bottom)
             }
             .toolbar {
                 ToolbarItem {
@@ -31,7 +41,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                SettingsView(dose: $userData.dailyDoseInMG)
+                SettingsView(dose: $userData.dailyDoseInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
             }
             
             .navigationTitle("AsNeeded")

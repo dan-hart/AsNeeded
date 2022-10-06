@@ -12,4 +12,5 @@ extension DefaultsKeys {
     var quantity: DefaultsKey<Double> { .init("quantity", defaultValue: 0.0) }
     var nextRefillDate: DefaultsKey<Date> { .init("nextRefillDate", defaultValue: .now) }
     var dailyDoseInMG: DefaultsKey<Double> { .init("dailyDoseInMG", defaultValue: 1) }
+    var aheadTrajectoryInMG: DefaultsKey<Double> { .init("aheadTrajectoryInMG", defaultValue: 1) }
 }

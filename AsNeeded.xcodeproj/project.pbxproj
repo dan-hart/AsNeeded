@@ -28,6 +28,10 @@
 		52929DB828EF306500C996E0 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DB728EF306500C996E0 /* SwiftDate */; };
 		52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB928EF373A00C996E0 /* Pluralize.swift */; };
 		52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DBC28EF391F00C996E0 /* SettingsView.swift */; };
+		52929DBF28EF3AD800C996E0 /* DisclaimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DBE28EF3AD800C996E0 /* DisclaimerView.swift */; };
+		52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC028EF407C00C996E0 /* TrajectoryView.swift */; };
+		52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */; };
+		52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC628EF48D000C996E0 /* AsNeededMGView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +75,10 @@
 		52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededDatePickerView.swift; sourceTree = "<group>"; };
 		52929DB928EF373A00C996E0 /* Pluralize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pluralize.swift; sourceTree = "<group>"; };
 		52929DBC28EF391F00C996E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		52929DBE28EF3AD800C996E0 /* DisclaimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisclaimerView.swift; sourceTree = "<group>"; };
+		52929DC028EF407C00C996E0 /* TrajectoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryView.swift; sourceTree = "<group>"; };
+		52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+roundToPlaces.swift"; sourceTree = "<group>"; };
+		52929DC628EF48D000C996E0 /* AsNeededMGView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededMGView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +132,7 @@
 		527AFA2428E26B3400BD575D /* AsNeeded */ = {
 			isa = PBXGroup;
 			children = (
+				52929DC228EF442C00C996E0 /* Extensions */,
 				5235DAEF28E29E1A00384C53 /* Info.plist */,
 				5235DAEE28E29DB100384C53 /* AsNeeded.entitlements */,
 				52D0DF0B28E26F3B00962C13 /* Logic */,
@@ -166,6 +175,9 @@
 			children = (
 				52929DA028EF25A600C996E0 /* QuantityView.swift */,
 				52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */,
+				52929DBE28EF3AD800C996E0 /* DisclaimerView.swift */,
+				52929DC028EF407C00C996E0 /* TrajectoryView.swift */,
+				52929DC628EF48D000C996E0 /* AsNeededMGView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -176,6 +188,22 @@
 				52929DBC28EF391F00C996E0 /* SettingsView.swift */,
 			);
 			path = Screens;
+			sourceTree = "<group>";
+		};
+		52929DC228EF442C00C996E0 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				52929DC328EF443100C996E0 /* DoubleExtensions */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		52929DC328EF443100C996E0 /* DoubleExtensions */ = {
+			isa = PBXGroup;
+			children = (
+				52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */,
+			);
+			path = DoubleExtensions;
 			sourceTree = "<group>";
 		};
 		52D0DF0928E26F3100962C13 /* Views */ = {
@@ -351,17 +379,21 @@
 			buildActionMask = 2147483647;
 			files = (
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
+				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
 				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
+				52929DBF28EF3AD800C996E0 /* DisclaimerView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
 				52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */,
+				52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */,
 				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,
 				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
+				52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */,
 				52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
