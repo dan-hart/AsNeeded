@@ -17,7 +17,7 @@ struct QuantityView: View {
                 .font(.subheadline)
             Text("\(quantity.formatted())")
                 .font(.largeTitle)
-            Stepper("Quantity", value: $quantity, in: 0...999)
+            Stepper("Quantity", value: $quantity, in: 0...Constants.maxQuantity)
                 .labelsHidden()
         }
         .padding()

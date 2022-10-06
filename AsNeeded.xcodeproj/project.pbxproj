@@ -20,6 +20,7 @@
 		52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA028EF25A600C996E0 /* QuantityView.swift */; };
 		52929DA328EF262400C996E0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA228EF262300C996E0 /* Trajectory.swift */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
+		52929DA928EF291700C996E0 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA828EF291700C996E0 /* Constants.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		52929D9D28EF24F400C996E0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		52929DA028EF25A600C996E0 /* QuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuantityView.swift; sourceTree = "<group>"; };
 		52929DA228EF262300C996E0 /* Trajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trajectory.swift; sourceTree = "<group>"; };
+		52929DA828EF291700C996E0 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,6 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				52929DA228EF262300C996E0 /* Trajectory.swift */,
+				52929DA828EF291700C996E0 /* Constants.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -323,6 +326,7 @@
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
+				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
