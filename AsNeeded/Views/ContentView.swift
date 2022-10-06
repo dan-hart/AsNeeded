@@ -12,9 +12,13 @@ struct ContentView: View {
     @ObservedObject var userData = UserData()
     
     var body: some View {
-        VStack {
-            AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
-            QuantityView(quantity: $userData.quantity)
+        NavigationStack {
+            VStack {
+                AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+                QuantityView(quantity: $userData.quantity)
+            }
+            
+            .navigationTitle("AsNeeded")
         }
     }
 }

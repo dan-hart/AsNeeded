@@ -25,6 +25,7 @@
 		52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAD28EF29B700C996E0 /* DefaultKeys.swift */; };
 		52929DB028EF2B6200C996E0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAF28EF2B6200C996E0 /* UserData.swift */; };
 		52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */; };
+		52929DB828EF306500C996E0 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DB728EF306500C996E0 /* SwiftDate */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +76,7 @@
 			files = (
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
+				52929DB828EF306500C996E0 /* SwiftDate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -213,6 +215,7 @@
 			packageProductDependencies = (
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
+				52929DB728EF306500C996E0 /* SwiftDate */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -289,6 +292,7 @@
 			packageReferences = (
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
+				52929DB628EF306500C996E0 /* XCRemoteSwiftPackageReference "SwiftDate" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -693,6 +697,14 @@
 				minimumVersion = 5.0.0;
 			};
 		};
+		52929DB628EF306500C996E0 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/malcommac/SwiftDate";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 7.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -705,6 +717,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */;
 			productName = SwiftyUserDefaults;
+		};
+		52929DB728EF306500C996E0 /* SwiftDate */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52929DB628EF306500C996E0 /* XCRemoteSwiftPackageReference "SwiftDate" */;
+			productName = SwiftDate;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

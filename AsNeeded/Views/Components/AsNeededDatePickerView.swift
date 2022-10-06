@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import SwiftDate
+import SFSafeSymbols
 
 struct AsNeededDatePickerView: View {
     @Binding var nextRefillDate: Date
@@ -14,8 +16,34 @@ struct AsNeededDatePickerView: View {
         VStack {
             Text("Next Refill Date")
                 .font(.subheadline)
-            DatePicker(selection: $nextRefillDate, in: ...Date.distantFuture, displayedComponents: .date) {
-                Text("Next Refill Date")
+            HStack {
+                Button {
+                    nextRefillDate = nextRefillDate.dateByAdding(-30, .day).date
+                } label: {
+                    Text("-30")
+                }
+                
+                Button {
+                    nextRefillDate = nextRefillDate.dateByAdding(-1, .day).date
+                } label: {
+                    Image(systemSymbol: .minusCircleFill)
+                }
+
+                DatePicker(selection: $nextRefillDate, in: ...Date.distantFuture, displayedComponents: .date) {
+                    Text("Next Refill Date")
+                }
+                
+                Button {
+                    nextRefillDate = nextRefillDate.dateByAdding(1, .day).date
+                } label: {
+                    Image(systemSymbol: .plusCircleFill)
+                }
+                
+                Button {
+                    nextRefillDate = nextRefillDate.dateByAdding(30, .day).date
+                } label: {
+                    Text("+30")
+                }
             }
             .labelsHidden()
         }
