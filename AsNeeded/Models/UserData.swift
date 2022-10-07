@@ -58,11 +58,11 @@ class UserData: ObservableObject {
     
     @Published var daysRemainingUntilNextRefillDate: Double?
     
-    /// Returns the difference between now and the refill date.
-    /// Add one because we count "Today" as a day, even if it is the end of the day
     func calculateDaysRemainingUntilNextRefillDate(from date: Date = .now) -> Double? {
+        let start = DateInRegion(year: date.year, month: date.month, day: date.day)
+        let end = DateInRegion(year: nextRefillDate.year, month: nextRefillDate.month, day: nextRefillDate.day)
         if nextRefillDate.isInPast { return nil }
-        let timePeriod = TimePeriod(start: DateInRegion(year: date.year, month: date.month, day: date.day), end: DateInRegion(year: nextRefillDate.year, month: nextRefillDate.month, day: nextRefillDate.day))
+        let timePeriod = TimePeriod(start: start, end: end)
         return Double(timePeriod.days)
     }
 
