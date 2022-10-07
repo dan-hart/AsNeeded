@@ -8,13 +8,20 @@
 import SwiftUI
 
 struct AsNeededMGView: View {
+    @EnvironmentObject var userData: UserData
+    
     @Binding var value: Double
     var minimumValue: Double = 0
+    
+    @State var showAddQuantity = false
     
     var body: some View {
         VStack {
             Text("\(value.formatted()) mg")
                 .font(.largeTitle)
+                .onTapGesture {
+                    showAddQuantity.toggle()
+                }
             HStack {
                 Button {
                     value -= 0.5
@@ -31,6 +38,10 @@ struct AsNeededMGView: View {
                     Text("+0.5")
                 }
             }
+        }
+        .sheet(isPresented: $showAddQuantity) {
+            AddQuantityView(quantity: $value)
+                .presentationDetents([.fraction(0.4), .fraction(0.50)])
         }
     }
 }

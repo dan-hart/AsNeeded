@@ -33,6 +33,8 @@
 		52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */; };
 		52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC628EF48D000C996E0 /* AsNeededMGView.swift */; };
 		52929DC928EF506200C996E0 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC828EF506200C996E0 /* PlanView.swift */; };
+		52E82A7828F06C1F00178977 /* AddQuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7728F06C1F00178977 /* AddQuantityView.swift */; };
+		52E82A7A28F06FE600178977 /* RefillButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7928F06FE600178977 /* RefillButtonView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +83,8 @@
 		52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+roundToPlaces.swift"; sourceTree = "<group>"; };
 		52929DC628EF48D000C996E0 /* AsNeededMGView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededMGView.swift; sourceTree = "<group>"; };
 		52929DC828EF506200C996E0 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		52E82A7728F06C1F00178977 /* AddQuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddQuantityView.swift; sourceTree = "<group>"; };
+		52E82A7928F06FE600178977 /* RefillButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefillButtonView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,6 +184,7 @@
 				52929DBE28EF3AD800C996E0 /* DisclaimerView.swift */,
 				52929DC028EF407C00C996E0 /* TrajectoryView.swift */,
 				52929DC628EF48D000C996E0 /* AsNeededMGView.swift */,
+				52E82A7928F06FE600178977 /* RefillButtonView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -189,6 +194,7 @@
 			children = (
 				52929DBC28EF391F00C996E0 /* SettingsView.swift */,
 				52929DC828EF506200C996E0 /* PlanView.swift */,
+				52E82A7728F06C1F00178977 /* AddQuantityView.swift */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -381,6 +387,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52E82A7828F06C1F00178977 /* AddQuantityView.swift in Sources */,
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
 				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
 				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,
@@ -398,6 +405,7 @@
 				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,
 				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
 				52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */,
+				52E82A7A28F06FE600178977 /* RefillButtonView.swift in Sources */,
 				52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

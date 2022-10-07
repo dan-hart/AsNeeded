@@ -10,9 +10,10 @@ import SFSafeSymbols
 import SwiftDate
 
 struct QuantityView: View {
-    var userData: UserData
     @Binding var quantity: Double
     let here = Date()
+    
+    @EnvironmentObject var userData: UserData
     
     var body: some View {
         VStack {
@@ -27,6 +28,6 @@ struct QuantityView: View {
 
 struct QuantityView_Previews: PreviewProvider {
     static var previews: some View {
-        QuantityView(userData: UserData(), quantity: .constant(90.0))
+        QuantityView(quantity: .constant(90.0))
     }
 }

@@ -12,7 +12,8 @@ import SFSafeSymbols
 struct ContentView: View {
     @State var showSettings = false
     @State var showPlan = false
-    @ObservedObject var userData = UserData()
+    
+    @EnvironmentObject var userData: UserData
     
     var body: some View {
         NavigationStack {
@@ -36,7 +37,7 @@ struct ContentView: View {
                     }
                 }
                 Spacer()
-                QuantityView(userData: userData, quantity: $userData.quantityInMG)
+                QuantityView(quantity: $userData.quantityInMG)
                     .padding(.bottom)
             }
             .toolbar {
@@ -50,10 +51,11 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showPlan) {
                 PlanView()
-                    .environmentObject(userData)
+                    .presentationDetents([.fraction(0.75), .fraction(1)])
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
+                    .presentationDetents([.fraction(0.75), .fraction(1)])
             }
             .onAppear {
                 // Trigger re-calculation in case the day has changed

@@ -12,6 +12,8 @@ struct SettingsView: View {
     @Binding var refillQuantity: Double
     @Binding var aheadTrajectoryInMG: Double
     
+    @EnvironmentObject var userData: UserData
+    
     var body: some View {
         VStack {
             DisclaimerView()
@@ -36,6 +38,9 @@ struct SettingsView: View {
                 TrajectoryView(value: .ahead)
                 AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
             }
+            
+            RefillButtonView()
+                .padding()
         }
         .padding()
         
