@@ -40,7 +40,7 @@ struct AsNeededMGView: View {
             }
         }
         .sheet(isPresented: $showAddQuantity) {
-            AddQuantityView(quantity: $value)
+            AddOrSubtractQuantityView(quantity: $value)
                 .presentationDetents([.fraction(0.4), .fraction(0.50)])
         }
     }
