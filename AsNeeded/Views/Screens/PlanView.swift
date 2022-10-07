@@ -8,16 +8,14 @@
 import SwiftUI
 
 struct PlanView: View {
-    var userData: UserData
-    @State var plannedDailyDoseInMG: Double
-    
-    init(_ userData: UserData) {
-        self.userData = userData
-        plannedDailyDoseInMG = userData.dailyDoseInMG
-    }
+    @EnvironmentObject var userData: UserData
     
     var remainingQuantityInMG: Double {
-        return userData.quantityInMG - ((userData.daysRemainingUntilNextRefillDate ?? 0) * plannedDailyDoseInMG)
+        return userData.quantityInMG - ((userData.daysRemainingUntilNextRefillDate ?? 0) * userData.plannedDailyDoseInMG)
+    }
+    
+    var remainingQuantityInDays: Double {
+        return remainingQuantityInMG / userData.dailyDoseInMG
     }
     
     var endOfCycleDailyTrimInMG: Double {
@@ -25,7 +23,7 @@ struct PlanView: View {
     }
     
     var explanation: String {
-        return "If you take \(plannedDailyDoseInMG.formatted()) mg per day until \(userData.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? 0))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over."
+        return "If you take \(userData.plannedDailyDoseInMG.formatted()) mg per day until \(userData.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? 0))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over which is a buffer of \(remainingQuantityInDays) \("day".pluralize(count: Int(remainingQuantityInDays)))."
     }
     
     var body: some View {
@@ -41,7 +39,7 @@ struct PlanView: View {
             Spacer()
             Text("Planned Daily Dose")
                 .font(.title)
-            AsNeededMGView(value: $plannedDailyDoseInMG)
+            AsNeededMGView(value: $userData.plannedDailyDoseInMG)
                 .padding(.bottom)
         }
         
@@ -51,6 +49,6 @@ struct PlanView: View {
 
 struct PlanView_Previews: PreviewProvider {
     static var previews: some View {
-        PlanView(UserData())
+        PlanView()
     }
 }

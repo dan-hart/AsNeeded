@@ -26,12 +26,20 @@ class UserData: ObservableObject {
     @Published var nextRefillDate: Date {
         didSet {
             Defaults[\.nextRefillDate] = nextRefillDate
+            
+            daysRemainingUntilNextRefillDate = calculateDaysRemainingUntilNextRefillDate()
         }
     }
     
     @Published var dailyDoseInMG: Double {
         didSet {
             Defaults[\.dailyDoseInMG] = dailyDoseInMG
+        }
+    }
+    
+    @Published var plannedDailyDoseInMG: Double {
+        didSet {
+            Defaults[\.plannedDailyDoseInMG] = plannedDailyDoseInMG
         }
     }
     
@@ -47,15 +55,17 @@ class UserData: ObservableObject {
         }
     }
     
+    @Published var daysRemainingUntilNextRefillDate: Double?
+    
     /// Returns the difference between now and the refill date.
     /// Add one because we count "Today" as a day, even if it is the end of the day
-    var daysRemainingUntilNextRefillDate: Double? {
+    func calculateDaysRemainingUntilNextRefillDate(from date: Date = .now) -> Double? {
         let now = Date()
         if nextRefillDate.isInPast { return nil }
         guard let differenceDate = now.difference(in: .day, from: nextRefillDate) else { return nil }
-        return Double(differenceDate.days.day ?? -1) + 1 // See property documentation
+        return Double(differenceDate.days.day ?? -1) + 1 // See documentation
     }
-    
+
     // MARK: - Calculations
     
     /// How many MGs are available per day until the next refill date
@@ -100,5 +110,8 @@ class UserData: ObservableObject {
         dailyDoseInMG = Defaults[\.dailyDoseInMG]
         aheadTrajectoryInMG = Defaults[\.aheadTrajectoryInMG]
         refillQuantityInMG = Defaults[\.refillQuantityInMG]
+        plannedDailyDoseInMG = Defaults[\.plannedDailyDoseInMG]
+        
+        daysRemainingUntilNextRefillDate = calculateDaysRemainingUntilNextRefillDate()
     }
 }

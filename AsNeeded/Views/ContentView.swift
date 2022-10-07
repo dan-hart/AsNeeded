@@ -49,10 +49,15 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showPlan) {
-                PlanView(userData)
+                PlanView()
+                    .environmentObject(userData)
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
+            }
+            .onAppear {
+                // Trigger re-calculation in case the day has changed
+                userData.daysRemainingUntilNextRefillDate = userData.calculateDaysRemainingUntilNextRefillDate()
             }
             
             .navigationTitle("AsNeeded")
