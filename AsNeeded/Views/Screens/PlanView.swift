@@ -27,23 +27,28 @@ struct PlanView: View {
     }
     
     var body: some View {
-        VStack {
-            Spacer()
-            DisclaimerView()
-            Text("Trajectory")
-                .font(.title)
-            TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))
-            Text("\(endOfCycleDailyTrimInMG.rounded(toPlaces: 2).formatted()) mg daily trim at end of cycle")
-            Text(explanation)
-                .padding()
-            Spacer()
-            Text("Planned Daily Dose")
-                .font(.title)
-            AsNeededMGView(value: $userData.plannedDailyDoseInMG)
-                .padding(.bottom)
+        ScrollView {
+            VStack {
+                HStack {
+                    Text("Plan")
+                        .font(.largeTitle)
+                    Spacer()
+                }.padding()
+                DisclaimerView()
+                Text("Trajectory")
+                    .font(.title)
+                TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))
+                Text("\(endOfCycleDailyTrimInMG.rounded(toPlaces: 2).formatted()) mg daily trim at end of cycle")
+                Text(explanation)
+                    .padding()
+                Spacer()
+                Text("Planned Daily Dose")
+                    .font(.title)
+                AsNeededMGView(value: $userData.plannedDailyDoseInMG)
+                    .padding(.bottom)
+            }
+            .padding()
         }
-        
-        .navigationTitle("Plan")
     }
 }
 

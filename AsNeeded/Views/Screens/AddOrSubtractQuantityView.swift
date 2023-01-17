@@ -9,9 +9,9 @@ import SwiftUI
 import SFSafeSymbols
 
 enum QuantityAdjustmentMode: String, CaseIterable {
+    case set = "Set"
     case add = "Add"
     case subtract = "Subtract"
-    case set = "Set"
     
     var label: Label<Text, Image> {
         switch self {
@@ -42,7 +42,7 @@ struct AddOrSubtractQuantityView: View {
     @Binding var quantity: Double
     
     @State var input: String = ""
-    @State var mode: QuantityAdjustmentMode = .add
+    @State var mode: QuantityAdjustmentMode = .set
     
     @FocusState private var isFocused: Bool
     

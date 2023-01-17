@@ -15,7 +15,6 @@ struct DisclaimerView: View {
                 .font(.title2)
                 .padding([.top, .leading, .trailing])
             Text("This beta app is not designed to replace real medical advice. Do not take any action without first consulting a licensed physician.")
-                .multilineTextAlignment(.leading)
                 .foregroundColor(.white)
                 .font(.footnote)
                 .padding([.bottom, .leading, .trailing])

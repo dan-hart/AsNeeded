@@ -11,8 +11,15 @@ struct HomeView: View {
     @EnvironmentObject var userData: UserData
     
     var body: some View {
-        NavigationStack {
+        ScrollView {
             VStack {
+                HStack {
+                    Text("Home")
+                        .font(.largeTitle)
+                    Spacer()
+                }.padding()
+                Spacer()
+                
                 DisclaimerView()
                 AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
                 Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? -1))) remaining")
@@ -30,8 +37,7 @@ struct HomeView: View {
                 // Trigger re-calculation in case the day has changed
                 userData.daysRemainingUntilNextRefillDate = userData.calculateDaysRemainingUntilNextRefillDate()
             }
-            
-            .navigationTitle("Home")
+            .padding()
         }
     }
 }

@@ -15,36 +15,42 @@ struct SettingsView: View {
     @EnvironmentObject var userData: UserData
     
     var body: some View {
-        VStack {
-            DisclaimerView()
-
-            HStack {
-                VStack {
-                    Text("Dose")
-                        .font(.subheadline)
-                    AsNeededMGView(value: $dose)
+        ScrollView {
+            VStack {
+                HStack {
+                    Text("Settings")
+                        .font(.largeTitle)
+                    Spacer()
+                }.padding()
+                
+                DisclaimerView()
+                
+                HStack {
+                    VStack {
+                        Text("Dose")
+                            .font(.subheadline)
+                        AsNeededMGView(value: $dose)
+                    }
+                    VStack {
+                        Text("Refill Quantity")
+                            .font(.subheadline)
+                        AsNeededMGView(value: $refillQuantity)
+                    }
                 }
-                VStack {
-                    Text("Refill Quantity")
-                        .font(.subheadline)
-                    AsNeededMGView(value: $refillQuantity)
+                .padding(.bottom)
+                
+                Text("Ahead Trajectory Threshold")
+                    .font(.title)
+                HStack {
+                    TrajectoryView(value: .ahead)
+                    AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
                 }
+                
+                RefillButtonView()
+                    .padding()
             }
-            .padding(.bottom)
-            
-            Text("Ahead Trajectory Threshold")
-                .font(.title)
-            HStack {
-                TrajectoryView(value: .ahead)
-                AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
-            }
-            
-            RefillButtonView()
-                .padding()
+            .padding()
         }
-        .padding()
-        
-        .navigationTitle("Settings")
     }
 }
 
