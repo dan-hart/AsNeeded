@@ -8,13 +8,41 @@
 import SwiftUI
 import SFSafeSymbols
 
+enum QuantityAdjustmentMode: String, CaseIterable {
+    case add = "Add"
+    case subtract = "Subtract"
+    case set = "Set"
+    
+    var label: Label<Text, Image> {
+        switch self {
+        case .add:
+            return Label(self.rawValue, systemSymbol: .plusCircleFill)
+        case .subtract:
+            return Label(self.rawValue, systemSymbol: .minusCircleFill)
+        case .set:
+            return Label(self.rawValue, systemSymbol: .plusCircleFill)
+        }
+    }
+    
+    func performAdjustment(fromInput: Double, on: Double) -> Double {
+        switch self {
+        case .add:
+            return on + fromInput
+        case .subtract:
+            return on - fromInput
+        case .set:
+            return fromInput
+        }
+    }
+}
+
 struct AddOrSubtractQuantityView: View {
     @EnvironmentObject var userData: UserData
     
     @Binding var quantity: Double
     
     @State var input: String = ""
-    @State var mode = "Add"
+    @State var mode: QuantityAdjustmentMode = .add
     
     @FocusState private var isFocused: Bool
     
@@ -23,33 +51,26 @@ struct AddOrSubtractQuantityView: View {
     var body: some View {
         VStack {
             Picker("Mode", selection: $mode) {
-                Text("Add").tag("Add")
-                Text("Subtract").tag("Subtract")
+                ForEach(QuantityAdjustmentMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
             }
             .pickerStyle(.segmented)
 
-            Text("\(mode) Quantity")
+            Text("\(mode.rawValue) Quantity")
                 .font(.largeTitle)
-            TextField("quantity in mg to \(mode.lowercased())", text: $input, prompt: Text("quantity in mg to \(mode.lowercased())"))
+            TextField("quantity in mg to \(mode.rawValue.lowercased())", text: $input, prompt: Text("quantity in mg to \(mode.rawValue.lowercased())"))
                 .keyboardType(.numberPad)
                 .focused($isFocused)
                 .multilineTextAlignment(.center)
                 .padding()
             Button {
                 if let inputAsDouble = Double(input) {
-                    if mode == "Add" {
-                        quantity += inputAsDouble
-                    } else {
-                        quantity -= inputAsDouble
-                    }
+                    quantity = mode.performAdjustment(fromInput: inputAsDouble, on: quantity)
                 }
                 presentationMode.wrappedValue.dismiss()
             } label: {
-                if mode == "Add" {
-                    Label("Add", systemSymbol: .plusCircleFill)
-                } else {
-                    Label("Subtract", systemSymbol: .minusCircleFill)
-                }
+                mode.label
             }
             
             RefillButtonView()

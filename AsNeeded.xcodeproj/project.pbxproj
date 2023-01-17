@@ -10,6 +10,7 @@
 		5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */; };
 		5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */; };
 		524658F629774AA200B48056 /* Alerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524658F529774AA200B48056 /* Alerts.swift */; };
+		524658F929774B9700B48056 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524658F829774B9700B48056 /* HomeView.swift */; };
 		527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2528E26B3400BD575D /* AsNeededApp.swift */; };
 		527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* HealthDataView.swift */; };
 		527AFA2A28E26B3600BD575D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2928E26B3600BD575D /* Assets.xcassets */; };
@@ -59,6 +60,7 @@
 		5235DAEE28E29DB100384C53 /* AsNeeded.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AsNeeded.entitlements; sourceTree = "<group>"; };
 		5235DAEF28E29E1A00384C53 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		524658F529774AA200B48056 /* Alerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alerts.swift; sourceTree = "<group>"; };
+		524658F829774B9700B48056 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2528E26B3400BD575D /* AsNeededApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededApp.swift; sourceTree = "<group>"; };
 		527AFA2728E26B3400BD575D /* HealthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataView.swift; sourceTree = "<group>"; };
@@ -113,6 +115,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		524658F729774AD300B48056 /* Alerts */ = {
+			isa = PBXGroup;
+			children = (
+				524658F529774AA200B48056 /* Alerts.swift */,
+			);
+			path = Alerts;
+			sourceTree = "<group>";
+		};
 		527AFA1928E26B3400BD575D = {
 			isa = PBXGroup;
 			children = (
@@ -183,6 +193,7 @@
 				52929DBC28EF391F00C996E0 /* SettingsView.swift */,
 				52929DC828EF506200C996E0 /* PlanView.swift */,
 				52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */,
+				524658F829774B9700B48056 /* HomeView.swift */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -228,10 +239,10 @@
 		52D0DF0B28E26F3B00962C13 /* Logic */ = {
 			isa = PBXGroup;
 			children = (
+				524658F729774AD300B48056 /* Alerts */,
 				5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */,
 				5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */,
 				52929DB928EF373A00C996E0 /* Pluralize.swift */,
-				524658F529774AA200B48056 /* Alerts.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -381,6 +392,7 @@
 				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
 				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
+				524658F929774B9700B48056 /* HomeView.swift in Sources */,
 				52929DBF28EF3AD800C996E0 /* DisclaimerView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,

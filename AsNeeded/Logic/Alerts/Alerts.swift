@@ -9,6 +9,10 @@ import Foundation
 import UserNotifications
 import UIKit
 
+enum AlertsError: Error {
+case notificationsNotAllowed
+}
+
 /// Use this class to coordinate alerts
 class Alerts: ObservableObject {
     /// Use a singleton to provide consistent access
