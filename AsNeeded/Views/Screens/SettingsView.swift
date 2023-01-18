@@ -21,6 +21,7 @@ struct SettingsView: View {
                     Text("Settings")
                         .font(.largeTitle)
                     Spacer()
+                    LogButtonView()
                 }.padding()
                 
                 DisclaimerView()

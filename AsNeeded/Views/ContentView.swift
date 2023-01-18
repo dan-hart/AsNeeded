@@ -24,6 +24,11 @@ struct ContentView: View {
                     Label("Plan", systemSymbol: .arrowUpRight)
                 }
             
+            LogbookView()
+                .tabItem {
+                    Label("Logbook", systemSymbol: .docPlaintext)
+                }
+            
             SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
                 .tabItem {
                     Label("Settings", systemSymbol: .gearshape)

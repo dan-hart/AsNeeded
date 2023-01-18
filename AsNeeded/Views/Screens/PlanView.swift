@@ -33,6 +33,7 @@ struct PlanView: View {
                     Text("Plan")
                         .font(.largeTitle)
                     Spacer()
+                    LogButtonView()
                 }.padding()
                 DisclaimerView()
                 Text("Trajectory")

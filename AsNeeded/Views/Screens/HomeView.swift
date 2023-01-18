@@ -17,6 +17,7 @@ struct HomeView: View {
                     Text("Home")
                         .font(.largeTitle)
                     Spacer()
+                    LogButtonView()
                 }.padding()
                 Spacer()
                 

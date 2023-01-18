@@ -11,6 +11,13 @@
 		5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */; };
 		524658F629774AA200B48056 /* Alerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524658F529774AA200B48056 /* Alerts.swift */; };
 		524658F929774B9700B48056 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524658F829774B9700B48056 /* HomeView.swift */; };
+		524658FC29776E5C00B48056 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 524658FB29776E5C00B48056 /* RealmSwift */; };
+		5246590129776E9D00B48056 /* LogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5246590029776E9D00B48056 /* LogEntry.swift */; };
+		524659032977706300B48056 /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524659022977706300B48056 /* LogView.swift */; };
+		524659052977707000B48056 /* LogButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524659042977707000B48056 /* LogButtonView.swift */; };
+		52465907297776EE00B48056 /* Logbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52465906297776EE00B48056 /* Logbook.swift */; };
+		52465909297778C600B48056 /* LogbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52465908297778C600B48056 /* LogbookView.swift */; };
+		5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5246590A29777AC100B48056 /* LogEntryRowView.swift */; };
 		527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2528E26B3400BD575D /* AsNeededApp.swift */; };
 		527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* HealthDataView.swift */; };
 		527AFA2A28E26B3600BD575D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2928E26B3600BD575D /* Assets.xcassets */; };
@@ -61,6 +68,12 @@
 		5235DAEF28E29E1A00384C53 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		524658F529774AA200B48056 /* Alerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alerts.swift; sourceTree = "<group>"; };
 		524658F829774B9700B48056 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		5246590029776E9D00B48056 /* LogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntry.swift; sourceTree = "<group>"; };
+		524659022977706300B48056 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
+		524659042977707000B48056 /* LogButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogButtonView.swift; sourceTree = "<group>"; };
+		52465906297776EE00B48056 /* Logbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logbook.swift; sourceTree = "<group>"; };
+		52465908297778C600B48056 /* LogbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookView.swift; sourceTree = "<group>"; };
+		5246590A29777AC100B48056 /* LogEntryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntryRowView.swift; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2528E26B3400BD575D /* AsNeededApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededApp.swift; sourceTree = "<group>"; };
 		527AFA2728E26B3400BD575D /* HealthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataView.swift; sourceTree = "<group>"; };
@@ -92,6 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				524658FC29776E5C00B48056 /* RealmSwift in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
 				52929DB828EF306500C996E0 /* SwiftDate in Frameworks */,
@@ -183,6 +197,8 @@
 				52929DC028EF407C00C996E0 /* TrajectoryView.swift */,
 				52929DC628EF48D000C996E0 /* AsNeededMGView.swift */,
 				52E82A7928F06FE600178977 /* RefillButtonView.swift */,
+				524659042977707000B48056 /* LogButtonView.swift */,
+				5246590A29777AC100B48056 /* LogEntryRowView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -194,6 +210,8 @@
 				52929DC828EF506200C996E0 /* PlanView.swift */,
 				52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */,
 				524658F829774B9700B48056 /* HomeView.swift */,
+				524659022977706300B48056 /* LogView.swift */,
+				52465908297778C600B48056 /* LogbookView.swift */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -232,6 +250,8 @@
 				52929DA228EF262300C996E0 /* Trajectory.swift */,
 				52929DAD28EF29B700C996E0 /* DefaultKeys.swift */,
 				52929DAF28EF2B6200C996E0 /* UserData.swift */,
+				5246590029776E9D00B48056 /* LogEntry.swift */,
+				52465906297776EE00B48056 /* Logbook.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -267,6 +287,7 @@
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
 				52929DB728EF306500C996E0 /* SwiftDate */,
+				524658FB29776E5C00B48056 /* RealmSwift */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -344,6 +365,7 @@
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
 				52929DB628EF306500C996E0 /* XCRemoteSwiftPackageReference "SwiftDate" */,
+				524658FA29776E5C00B48056 /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -390,8 +412,10 @@
 				52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */,
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
 				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
+				5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */,
 				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
+				5246590129776E9D00B48056 /* LogEntry.swift in Sources */,
 				524658F929774B9700B48056 /* HomeView.swift in Sources */,
 				52929DBF28EF3AD800C996E0 /* DisclaimerView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
@@ -399,6 +423,9 @@
 				52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */,
 				52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */,
 				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
+				524659032977706300B48056 /* LogView.swift in Sources */,
+				524659052977707000B48056 /* LogButtonView.swift in Sources */,
+				52465907297776EE00B48056 /* Logbook.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				52929DC928EF506200C996E0 /* PlanView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
@@ -408,6 +435,7 @@
 				52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */,
 				52E82A7A28F06FE600178977 /* RefillButtonView.swift in Sources */,
 				524658F629774AA200B48056 /* Alerts.swift in Sources */,
+				52465909297778C600B48056 /* LogbookView.swift in Sources */,
 				52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -741,6 +769,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		524658FA29776E5C00B48056 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.34.0;
+			};
+		};
 		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
@@ -768,6 +804,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		524658FB29776E5C00B48056 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 524658FA29776E5C00B48056 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
 		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
