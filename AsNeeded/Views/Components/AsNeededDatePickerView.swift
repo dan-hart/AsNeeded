@@ -21,6 +21,8 @@ struct AsNeededDatePickerView: View {
                     Text("-30")
                 }
                 
+                Spacer()
+                
                 Button {
                     nextRefillDate = nextRefillDate.dateByAdding(-1, .day).date
                 } label: {
@@ -36,6 +38,8 @@ struct AsNeededDatePickerView: View {
                 } label: {
                     Image(systemSymbol: .plusCircleFill)
                 }
+                
+                Spacer()
                 
                 Button {
                     nextRefillDate = nextRefillDate.dateByAdding(30, .day).date

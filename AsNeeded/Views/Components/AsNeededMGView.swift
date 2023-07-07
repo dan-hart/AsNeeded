@@ -29,8 +29,12 @@ struct AsNeededMGView: View {
                     Text("-0.5")
                 }
                 
+                Spacer()
+                
                 Stepper("", value: $value, in: minimumValue...Constants.maxQuantity)
                     .labelsHidden()
+                
+                Spacer()
                 
                 Button {
                     value += 0.5

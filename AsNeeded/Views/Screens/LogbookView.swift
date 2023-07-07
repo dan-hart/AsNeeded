@@ -24,6 +24,7 @@ struct LogbookView: View {
                     Spacer()
                     LogButtonView()
                 }.padding()
+                QuickLogButton()
                 Spacer()
                 
                 ForEach(logs.sorted(by: sortDescriptors), id: \.self) { log in

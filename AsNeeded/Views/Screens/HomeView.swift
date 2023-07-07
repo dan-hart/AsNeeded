@@ -19,10 +19,11 @@ struct HomeView: View {
                     Spacer()
                     LogButtonView()
                 }.padding()
+                
                 Spacer()
                 
-                DisclaimerView()
                 AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+                    .padding()
                 Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? -1))) remaining")
                     .font(.largeTitle)
                 TrajectoryView(value: userData.currentStatus)
@@ -33,6 +34,8 @@ struct HomeView: View {
                 .padding()
                 QuantityView(quantity: $userData.quantityInMG)
                     .padding(.bottom)
+                
+                QuickLogButton()
             }
             .onAppear {
                 // Trigger re-calculation in case the day has changed

@@ -26,19 +26,13 @@ struct SettingsView: View {
                 
                 DisclaimerView()
                 
-                HStack {
-                    VStack {
-                        Text("Dose")
-                            .font(.subheadline)
-                        AsNeededMGView(value: $dose)
-                    }
-                    VStack {
-                        Text("Refill Quantity")
-                            .font(.subheadline)
-                        AsNeededMGView(value: $refillQuantity)
-                    }
-                }
-                .padding(.bottom)
+                Text("Dose")
+                    .font(.subheadline)
+                AsNeededMGView(value: $dose)
+                
+                Text("Refill Quantity")
+                    .font(.subheadline)
+                AsNeededMGView(value: $refillQuantity)
                 
                 Text("Ahead Trajectory Threshold")
                     .font(.title)

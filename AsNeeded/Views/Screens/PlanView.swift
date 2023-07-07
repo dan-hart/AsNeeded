@@ -35,7 +35,6 @@ struct PlanView: View {
                     Spacer()
                     LogButtonView()
                 }.padding()
-                DisclaimerView()
                 Text("Trajectory")
                     .font(.title)
                 TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))

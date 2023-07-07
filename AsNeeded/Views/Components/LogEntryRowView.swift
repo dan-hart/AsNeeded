@@ -19,6 +19,11 @@ struct LogEntryRowView: View {
                 Spacer()
                 Text("taken \(log.timestamp.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
             }
+            HStack {
+                Spacer()
+                Text(log.timestamp.formatted(.dateTime))
+            }
+            
             Divider()
         }
     }

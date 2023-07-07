@@ -18,14 +18,7 @@ struct LogView: View {
     
     var body: some View {
         VStack {
-            Button {
-                Logbook.quickLog()
-                userData.quantityInMG -= 1.0
-                presentationMode.wrappedValue.dismiss()
-            } label: {
-                Label("Quick Log 1", systemSymbol: .pencilCircleFill)
-            }
-            .padding()
+            QuickLogButton()
             
             Text("Log")
                 .font(.largeTitle)

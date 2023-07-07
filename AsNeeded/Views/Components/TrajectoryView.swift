@@ -27,7 +27,7 @@ struct TrajectoryView: View {
         switch value {
         case .ahead, .onTrack, .danger, .unknown:
             return .white
-        case .behind:
+        case .behind, .slowDown:
             return .black
         }
     }
@@ -38,7 +38,7 @@ struct TrajectoryView: View {
             return .mint
         case .onTrack:
             return .green
-        case .behind:
+        case .behind, .slowDown:
             return .yellow
         case .danger:
             return .red

@@ -11,6 +11,7 @@ import SwiftyUserDefaults
 enum Trajectory: String, CaseIterable {
     case ahead = "Ahead"
     case onTrack = "On Track"
+    case slowDown = "Slow Down"
     case behind = "Behind"
     case danger = "Danger"
     case unknown = "Unknown"
@@ -24,9 +25,11 @@ enum Trajectory: String, CaseIterable {
             return .ahead
         } else if value >= 0 {
             return .onTrack
-        } else if value < 0, value >= -0.5 {
+        } else if value < 0, value >= Constants.behindThreshold {
+            return .slowDown
+        } else if value < 0, value >= Constants.dangerThreshold {
             return .behind
-        } else if value <= -0.5 {
+        } else if value <= Constants.dangerThreshold {
             return .danger
         } else {
             return .unknown
