@@ -7,6 +7,7 @@
 
 import Foundation
 import RealmSwift
+import UIKit
 
 class Logbook {
     static let realm = try? Realm()
@@ -21,6 +22,9 @@ class Logbook {
         log._id = UUID().uuidString
         log.timestamp = at
         log.quantityInMG = quantityInMG
+        
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
 
         try? realm?.write {
             realm?.add(log)

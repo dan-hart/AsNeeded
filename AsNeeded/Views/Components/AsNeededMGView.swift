@@ -43,6 +43,10 @@ struct AsNeededMGView: View {
                 }
             }
         }
+        .onChange(of: value, perform: { _ in
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+        })
         .sheet(isPresented: $showAddQuantity) {
             AddOrSubtractQuantityView(quantity: $value)
                 .presentationDetents([.fraction(0.4), .fraction(0.50)])
