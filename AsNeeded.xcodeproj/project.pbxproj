@@ -41,9 +41,13 @@
 		52929DC528EF443E00C996E0 /* Double+roundToPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */; };
 		52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC628EF48D000C996E0 /* AsNeededMGView.swift */; };
 		52929DC928EF506200C996E0 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC828EF506200C996E0 /* PlanView.swift */; };
+		52A28DCA2A69CE7F008212BC /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 52A28DC92A69CE7F008212BC /* Realm */; };
+		52A28DCC2A69CE7F008212BC /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 52A28DCB2A69CE7F008212BC /* RealmSwift */; };
 		52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */; };
 		52E82A7A28F06FE600178977 /* RefillButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7928F06FE600178977 /* RefillButtonView.swift */; };
 		52E82A7C28F078C600178977 /* UserDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7B28F078C600178977 /* UserDataTests.swift */; };
+		52FE32EB2A69CA3A009CDD53 /* TrendAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FE32EA2A69CA3A009CDD53 /* TrendAnalyzer.swift */; };
+		52FE32ED2A69CBAA009CDD53 /* TrendAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FE32EC2A69CBAA009CDD53 /* TrendAnalyzerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +106,8 @@
 		52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrSubtractQuantityView.swift; sourceTree = "<group>"; };
 		52E82A7928F06FE600178977 /* RefillButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefillButtonView.swift; sourceTree = "<group>"; };
 		52E82A7B28F078C600178977 /* UserDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDataTests.swift; sourceTree = "<group>"; };
+		52FE32EA2A69CA3A009CDD53 /* TrendAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyzer.swift; sourceTree = "<group>"; };
+		52FE32EC2A69CBAA009CDD53 /* TrendAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendAnalyzerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +126,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52A28DCC2A69CE7F008212BC /* RealmSwift in Frameworks */,
+				52A28DCA2A69CE7F008212BC /* Realm in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -147,6 +155,7 @@
 				527AFA2428E26B3400BD575D /* AsNeeded */,
 				527AFA3528E26B3600BD575D /* AsNeededTests */,
 				527AFA2328E26B3400BD575D /* Products */,
+				52A28DC82A69CE7F008212BC /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -188,6 +197,7 @@
 			isa = PBXGroup;
 			children = (
 				52E82A7B28F078C600178977 /* UserDataTests.swift */,
+				52FE32EC2A69CBAA009CDD53 /* TrendAnalyzerTests.swift */,
 			);
 			path = AsNeededTests;
 			sourceTree = "<group>";
@@ -238,6 +248,13 @@
 			path = DoubleExtensions;
 			sourceTree = "<group>";
 		};
+		52A28DC82A69CE7F008212BC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		52D0DF0928E26F3100962C13 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -269,6 +286,7 @@
 				5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */,
 				5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */,
 				52929DB928EF373A00C996E0 /* Pluralize.swift */,
+				52FE32EA2A69CA3A009CDD53 /* TrendAnalyzer.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -313,6 +331,10 @@
 				527AFA3428E26B3600BD575D /* PBXTargetDependency */,
 			);
 			name = AsNeededTests;
+			packageProductDependencies = (
+				52A28DC92A69CE7F008212BC /* Realm */,
+				52A28DCB2A69CE7F008212BC /* RealmSwift */,
+			);
 			productName = AsNeededTests;
 			productReference = 527AFA3228E26B3600BD575D /* AsNeededTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -445,6 +467,7 @@
 				524658F629774AA200B48056 /* Alerts.swift in Sources */,
 				52465909297778C600B48056 /* LogbookView.swift in Sources */,
 				52929DBD28EF391F00C996E0 /* SettingsView.swift in Sources */,
+				52FE32EB2A69CA3A009CDD53 /* TrendAnalyzer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -453,6 +476,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				52E82A7C28F078C600178977 /* UserDataTests.swift in Sources */,
+				52FE32ED2A69CBAA009CDD53 /* TrendAnalyzerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -831,6 +855,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DB628EF306500C996E0 /* XCRemoteSwiftPackageReference "SwiftDate" */;
 			productName = SwiftDate;
+		};
+		52A28DC92A69CE7F008212BC /* Realm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 524658FA29776E5C00B48056 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = Realm;
+		};
+		52A28DCB2A69CE7F008212BC /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 524658FA29776E5C00B48056 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
