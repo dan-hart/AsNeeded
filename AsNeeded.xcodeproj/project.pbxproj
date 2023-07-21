@@ -43,6 +43,7 @@
 		52929DC928EF506200C996E0 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC828EF506200C996E0 /* PlanView.swift */; };
 		52A28DCA2A69CE7F008212BC /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 52A28DC92A69CE7F008212BC /* Realm */; };
 		52A28DCC2A69CE7F008212BC /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 52A28DCB2A69CE7F008212BC /* RealmSwift */; };
+		52A28DCE2A6AA839008212BC /* TrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A28DCD2A6AA839008212BC /* TrendView.swift */; };
 		52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */; };
 		52E82A7A28F06FE600178977 /* RefillButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7928F06FE600178977 /* RefillButtonView.swift */; };
 		52E82A7C28F078C600178977 /* UserDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7B28F078C600178977 /* UserDataTests.swift */; };
@@ -103,6 +104,7 @@
 		52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Double+roundToPlaces.swift"; sourceTree = "<group>"; };
 		52929DC628EF48D000C996E0 /* AsNeededMGView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededMGView.swift; sourceTree = "<group>"; };
 		52929DC828EF506200C996E0 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		52A28DCD2A6AA839008212BC /* TrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendView.swift; sourceTree = "<group>"; };
 		52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrSubtractQuantityView.swift; sourceTree = "<group>"; };
 		52E82A7928F06FE600178977 /* RefillButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefillButtonView.swift; sourceTree = "<group>"; };
 		52E82A7B28F078C600178977 /* UserDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDataTests.swift; sourceTree = "<group>"; };
@@ -214,6 +216,7 @@
 				524659042977707000B48056 /* LogButtonView.swift */,
 				5246590A29777AC100B48056 /* LogEntryRowView.swift */,
 				5269C6CC2A588F6C004523F8 /* QuickLogButton.swift */,
+				52A28DCD2A6AA839008212BC /* TrendView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -439,6 +442,7 @@
 			files = (
 				52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */,
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
+				52A28DCE2A6AA839008212BC /* TrendView.swift in Sources */,
 				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
 				5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */,
 				52929DA328EF262400C996E0 /* Trajectory.swift in Sources */,

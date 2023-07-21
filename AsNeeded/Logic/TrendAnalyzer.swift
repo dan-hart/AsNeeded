@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 /// TrendAnalyzer
 ///
@@ -39,33 +40,55 @@ import Foundation
 ///
 /// This code first creates an array of numbers. The array contains ten numbers, which are all increasing. The code then calls the trend() function to analyze the trend of the numbers. The trend() function returns the up case, because the maximum index of the numbers is less than the minimum index.
 class TrendAnalyzer {
-    public enum Trend {
+    public enum Trend: String, CaseIterable {
         case stable
         case up
         case down
-    }
-    
-    /// This function analyzes the trend of a set of numbers and returns a `Trend` enum value. The `Trend` enum has three cases: `stable`, `up`, and `down`. The `stable` case is returned if the standard deviation of the numbers is 0. The `up` case is returned if the maximum index of the numbers is less than the minimum index. The `down` case is returned if the minimum index of the numbers is less than the maximum index.
-    public static func trend(numbers: [Double]) -> Trend {
-        let mean = numbers.reduce(0, +) / Double(numbers.count)
-        let variance = numbers.map { pow($0 - mean, 2) }.reduce(0, +) / Double(numbers.count - 1)
-        let standardDeviation = sqrt(variance)
         
-        if standardDeviation == 0 {
-            return .stable
-        } else {
-            let maxIndex = numbers.firstIndex(where: { $0 > mean + standardDeviation })
-            let minIndex = numbers.firstIndex(where: { $0 < mean - standardDeviation })
-            
-            if maxIndex == nil && minIndex == nil {
-                return .stable
-            } else if maxIndex == nil {
-                return .up
-            } else if minIndex == nil {
-                return .down
-            } else {
-                return maxIndex! < minIndex! ? .down : .up
+        var color: Color {
+            switch self {
+            case .stable:
+                return .blue
+            case .up:
+                return .red
+            case .down:
+                return .green
+            }
+        }
+        
+        var description: String {
+            switch self {
+            case .stable:
+                return "Stable Trend"
+            case .up:
+                return "Trending Up"
+            case .down:
+                return "Trending Down"
             }
         }
     }
-}
+        
+        /// This function analyzes the trend of a set of numbers and returns a `Trend` enum value. The `Trend` enum has three cases: `stable`, `up`, and `down`. The `stable` case is returned if the standard deviation of the numbers is 0. The `up` case is returned if the maximum index of the numbers is less than the minimum index. The `down` case is returned if the minimum index of the numbers is less than the maximum index.
+        public static func trend(numbers: [Double]) -> Trend {
+            let mean = numbers.reduce(0, +) / Double(numbers.count)
+            let variance = numbers.map { pow($0 - mean, 2) }.reduce(0, +) / Double(numbers.count - 1)
+            let standardDeviation = sqrt(variance)
+            
+            if standardDeviation == 0 {
+                return .stable
+            } else {
+                let maxIndex = numbers.firstIndex(where: { $0 > mean + standardDeviation })
+                let minIndex = numbers.firstIndex(where: { $0 < mean - standardDeviation })
+                
+                if maxIndex == nil && minIndex == nil {
+                    return .stable
+                } else if maxIndex == nil {
+                    return .up
+                } else if minIndex == nil {
+                    return .down
+                } else {
+                    return maxIndex! < minIndex! ? .down : .up
+                }
+            }
+        }
+    }
