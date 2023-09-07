@@ -15,7 +15,10 @@ struct QuickLogButton: View {
             Logbook.quickLog()
             userData.quantityInMG -= 1.0
         } label: {
-            Label("Quick Log 1", systemSymbol: .pencilCircleFill)
+            HStack {
+            Image(systemSymbol: .pencilCircleFill)
+                Text("Quick Log 1")
+            }
         }
         .padding()
     }

@@ -27,27 +27,34 @@ struct PlanView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack {
-                HStack {
-                    Text("Plan")
-                        .font(.largeTitle)
+        NavigationStack {
+            ScrollView {
+                VStack {
+                    Text("Trajectory")
+                        .font(.title)
+                    TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))
+                    Text("\(endOfCycleDailyTrimInMG.rounded(toPlaces: 2).formatted()) mg daily trim at end of cycle")
+                    Text(explanation)
+                        .padding()
                     Spacer()
-                    LogButtonView()
-                }.padding()
-                Text("Trajectory")
-                    .font(.title)
-                TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))
-                Text("\(endOfCycleDailyTrimInMG.rounded(toPlaces: 2).formatted()) mg daily trim at end of cycle")
-                Text(explanation)
-                    .padding()
-                Spacer()
-                Text("Planned Daily Dose")
-                    .font(.title)
-                AsNeededMGView(value: $userData.plannedDailyDoseInMG)
-                    .padding(.bottom)
+                    Text("Planned Daily Dose")
+                        .font(.title)
+                    AsNeededMGView(value: $userData.plannedDailyDoseInMG)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                }
+                .navigationTitle("Plan")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        LogButtonView()
+                    }
+                    
+                    ToolbarItem {
+                        QuickLogButton()
+                    }
+                }
+                .padding()
             }
-            .padding()
         }
     }
 }

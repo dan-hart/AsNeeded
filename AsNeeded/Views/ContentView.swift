@@ -13,31 +13,31 @@ struct ContentView: View {
     @EnvironmentObject var userData: UserData
     
     var body: some View {
-        TabView {
-            HomeView()
-                .tabItem {
-                    Label("Home", systemSymbol: .house)
-                }
-            
-            PlanView()
-                .tabItem {
-                    Label("Plan", systemSymbol: .arrowUpRight)
-                }
-            
-            LogbookView()
-                .tabItem {
-                    Label("Logbook", systemSymbol: .docPlaintext)
-                }
-            
-            ChartView()
-                .tabItem {
-                    Label("Visual", systemSymbol: .chartBar)
-                }
-            
-            SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
-                .tabItem {
-                    Label("Settings", systemSymbol: .gearshape)
-                }
+            TabView {
+                HomeView()
+                    .tabItem {
+                        Label("Home", systemSymbol: .house)
+                    }
+                
+                PlanView()
+                    .tabItem {
+                        Label("Plan", systemSymbol: .arrowUpRight)
+                    }
+                
+                LogbookView()
+                    .tabItem {
+                        Label("Logbook", systemSymbol: .docPlaintext)
+                    }
+                
+                ChartView()
+                    .tabItem {
+                        Label("Visual", systemSymbol: .chartBar)
+                    }
+                
+                SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
+                    .tabItem {
+                        Label("Settings", systemSymbol: .gearshape)
+                    }
         }
     }
 }

@@ -15,36 +15,41 @@ struct SettingsView: View {
     @EnvironmentObject var userData: UserData
     
     var body: some View {
-        ScrollView {
-            VStack {
-                HStack {
-                    Text("Settings")
-                        .font(.largeTitle)
-                    Spacer()
-                    LogButtonView()
-                }.padding()
-                
-                DisclaimerView()
-                
-                Text("Dose")
-                    .font(.subheadline)
-                AsNeededMGView(value: $dose)
-                
-                Text("Refill Quantity")
-                    .font(.subheadline)
-                AsNeededMGView(value: $refillQuantity)
-                
-                Text("Ahead Trajectory Threshold")
-                    .font(.title)
-                HStack {
-                    TrajectoryView(value: .ahead)
-                    AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
+        NavigationStack {
+            ScrollView {
+                VStack {
+                    DisclaimerView()
+                    
+                    Text("Dose")
+                        .font(.subheadline)
+                    AsNeededMGView(value: $dose)
+                    
+                    Text("Refill Quantity")
+                        .font(.subheadline)
+                    AsNeededMGView(value: $refillQuantity)
+                    
+                    Text("Ahead Trajectory Threshold")
+                        .font(.title)
+                    VStack {
+                        TrajectoryView(value: .ahead)
+                        AsNeededMGView(value: $aheadTrajectoryInMG, minimumValue: 1.0)
+                    }
+                    
+                    RefillButtonView()
+                        .padding()
                 }
-                
-                RefillButtonView()
-                    .padding()
+                .navigationTitle("Settings")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        LogButtonView()
+                    }
+                    
+                    ToolbarItem {
+                        QuickLogButton()
+                    }
+                }
+                .padding()
             }
-            .padding()
         }
     }
 }

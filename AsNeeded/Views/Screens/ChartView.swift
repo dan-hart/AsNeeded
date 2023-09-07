@@ -35,45 +35,53 @@ struct ChartView: View {
     @State var yMax = 7
     
     var body: some View {
-        VStack {
-            Text("Visualization")
-                .font(.largeTitle)
-            Spacer()
-            
-            Chart {
-                ForEach(last30DaysLogs, id: \.self) { log in
-                    BarMark(
-                        x: .value("Date", log.timestamp),
-                        y: .value("Total", log.quantityInMG)
-                    )
+        NavigationStack {
+            VStack {
+                Chart {
+                    ForEach(last30DaysLogs, id: \.self) { log in
+                        BarMark(
+                            x: .value("Date", log.timestamp),
+                            y: .value("Total", log.quantityInMG)
+                        )
+                    }
+                }
+                .chartYScale(domain: [0, yMax])
+                .padding()
+                Spacer()
+                Stepper("", value: $yMax, in: 0...15)
+                    .labelsHidden()
+                Spacer()
+                
+                HStack {
+                    Text("30-day Trend")
+                        .font(.title)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    TrendView(trend: TrendAnalyzer.trend(numbers: last30DaysQuantity))
+                }
+                .padding()
+                
+                HStack {
+                    Text("7-day Trend")
+                        .font(.title)
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    TrendView(trend: TrendAnalyzer.trend(numbers: last7DaysQuantity))
+                }
+                .padding()
+                
+                Spacer()
+            }
+            .navigationTitle("Visualization")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    LogButtonView()
+                }
+                
+                ToolbarItem {
+                    QuickLogButton()
                 }
             }
-            .chartYScale(domain: [0, yMax])
-            .padding()
-            Spacer()
-            Stepper("", value: $yMax, in: 0...15)
-                .labelsHidden()
-            Spacer()
-            
-            HStack {
-                Text("30-day Trend")
-                    .font(.title)
-                    .multilineTextAlignment(.leading)
-                Spacer()
-                TrendView(trend: TrendAnalyzer.trend(numbers: last30DaysQuantity))
-            }
-            .padding()
-            
-            HStack {
-                Text("7-day Trend")
-                    .font(.title)
-                    .multilineTextAlignment(.leading)
-                Spacer()
-                TrendView(trend: TrendAnalyzer.trend(numbers: last7DaysQuantity))
-            }
-            .padding()
-            
-            Spacer()
         }
     }
 }

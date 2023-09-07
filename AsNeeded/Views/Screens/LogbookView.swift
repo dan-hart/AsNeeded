@@ -16,22 +16,25 @@ struct LogbookView: View {
     ]
     
     var body: some View {
-        ScrollView {
-            VStack {
-                HStack {
-                    Text("Logbook")
-                        .font(.largeTitle)
-                    Spacer()
-                    LogButtonView()
-                }.padding()
-                QuickLogButton()
-                Spacer()
-                
-                ForEach(logs.sorted(by: sortDescriptors), id: \.self) { log in
-                    LogEntryRowView(log: log)
+        NavigationStack {
+            ScrollView {
+                VStack {
+                    ForEach(logs.sorted(by: sortDescriptors), id: \.self) { log in
+                        LogEntryRowView(log: log)
+                    }
                 }
+                .navigationTitle("Logbook")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        LogButtonView()
+                    }
+                    
+                    ToolbarItem {
+                        QuickLogButton()
+                    }
+                }
+                .padding()
             }
-            .padding()
         }
     }
 }

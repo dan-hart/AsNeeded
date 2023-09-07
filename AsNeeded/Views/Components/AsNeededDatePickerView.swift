@@ -21,8 +21,15 @@ struct AsNeededDatePickerView: View {
                     Text("-30")
                 }
                 
-                Spacer()
-                
+                Image(systemSymbol: .calendar)
+                    .padding(.horizontal)
+                Button {
+                    nextRefillDate = nextRefillDate.dateByAdding(30, .day).date
+                } label: {
+                    Text("+30")
+                }
+            }
+            HStack {
                 Button {
                     nextRefillDate = nextRefillDate.dateByAdding(-1, .day).date
                 } label: {
@@ -37,14 +44,6 @@ struct AsNeededDatePickerView: View {
                     nextRefillDate = nextRefillDate.dateByAdding(1, .day).date
                 } label: {
                     Image(systemSymbol: .plusCircleFill)
-                }
-                
-                Spacer()
-                
-                Button {
-                    nextRefillDate = nextRefillDate.dateByAdding(30, .day).date
-                } label: {
-                    Text("+30")
                 }
             }
             .labelsHidden()
