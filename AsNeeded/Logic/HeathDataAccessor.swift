@@ -8,6 +8,7 @@
 import Foundation
 import HealthKit
 
+/// https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier
 class HealthDataAccessor: HealthDataAccessing {
     static var shared: HealthDataAccessing = HealthDataAccessor()
     let store = HKHealthStore()
@@ -16,7 +17,7 @@ class HealthDataAccessor: HealthDataAccessing {
     var isAvailable: Bool {
         return HKHealthStore.isHealthDataAvailable()
     }
-    
+
     func requestClinicalMedicationPermission() async -> Bool {
         guard let medicationRecords = HKObjectType.clinicalType(forIdentifier: .medicationRecord) else {
             return false

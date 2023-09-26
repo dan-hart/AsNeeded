@@ -43,7 +43,7 @@ struct AsNeededMGView: View {
                 }
             }
         }
-        .onChange(of: value, perform: { _ in
+        .onChange(of: value, { _, _ in
             let impact = UIImpactFeedbackGenerator(style: .light)
             impact.impactOccurred()
         })

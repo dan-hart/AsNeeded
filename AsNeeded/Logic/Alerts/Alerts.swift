@@ -70,7 +70,7 @@ class Alerts: ObservableObject {
     /// Set the Application's Badge
     /// - Parameter count: To this count
     func setBadgeTo(count: Int) {
-        UIApplication.shared.applicationIconBadgeNumber = count
+        UNUserNotificationCenter.current().setBadgeCount(count)
     }
     
     /// Create a notification at the specified date
