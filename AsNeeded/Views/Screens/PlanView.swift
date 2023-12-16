@@ -42,6 +42,13 @@ struct PlanView: View {
                     AsNeededMGView(value: $userData.plannedDailyDoseInMG)
                         .padding(.horizontal)
                         .padding(.bottom)
+                    
+                    NavigationLink {
+                        TripView()
+                            .environmentObject(userData)
+                    } label: {
+                        Text("Trip Planner")
+                    }
                 }
                 .navigationTitle("Plan")
                 .toolbar {
@@ -62,5 +69,6 @@ struct PlanView: View {
 struct PlanView_Previews: PreviewProvider {
     static var previews: some View {
         PlanView()
+            .environmentObject(UserData())
     }
 }

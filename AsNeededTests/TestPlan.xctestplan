@@ -12,7 +12,14 @@
     "testTimeoutsEnabled" : true
   },
   "testTargets" : [
-
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:AsNeeded.xcodeproj",
+        "identifier" : "527AFA3128E26B3600BD575D",
+        "name" : "AsNeededTests"
+      }
+    }
   ],
   "version" : 1
 }

@@ -19,11 +19,6 @@ struct ContentView: View {
                         Label("Home", systemSymbol: .house)
                     }
                 
-                PlanView()
-                    .tabItem {
-                        Label("Plan", systemSymbol: .arrowUpRight)
-                    }
-                
                 LogbookView()
                     .tabItem {
                         Label("Logbook", systemSymbol: .docPlaintext)
@@ -32,6 +27,16 @@ struct ContentView: View {
                 ChartView()
                     .tabItem {
                         Label("Visual", systemSymbol: .chartBar)
+                    }
+                
+                TripView()
+                    .tabItem {
+                        Label("Trip", systemSymbol: .airplane)
+                    }
+                
+                PlanView()
+                    .tabItem {
+                        Label("Plan", systemSymbol: .arrowUpRight)
                     }
                 
                 SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
