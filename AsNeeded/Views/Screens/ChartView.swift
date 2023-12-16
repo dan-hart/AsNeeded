@@ -17,19 +17,29 @@ struct ChartView: View {
     ]
     
     var last30DaysLogs: [LogEntry] {
-        return logs.sorted(by: sortDescriptors).filter { log in
-            return log.timestamp.isInRange(date: Date().dateByAdding(Int(-Constants.daysInCycle), .day).date, and: Date())
+        // get logs from last 30 days grouped by date
+        guard let last30Days = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else { return [] }
+        let last30DaysLogs = logs.filter("timestamp >= %@", last30Days).sorted(by: sortDescriptors)
+        // group by day, if timestamp is within the same day
+        let grouped = last30DaysLogs.map({$0}).groupedByDate()
+        // convert to 1d array with summed values
+        let summedLogs = grouped.mapValues { logs in
+            let total = logs.reduce(0) { $0 + $1.quantityInMG }
+            let entry = LogEntry()
+            entry.timestamp = logs.first!.timestamp
+            entry.quantityInMG += total
+            return entry
         }
+        return summedLogs.values.map({$0})
     }
     
     var last30DaysQuantity: [Double] {
-        last30DaysLogs.map { entry in
-            entry.quantityInMG
-        }
+        groupLogsByDate(logs: last30DaysLogs)
     }
     
     var last7DaysQuantity: [Double] {
-        last30DaysQuantity.suffix(7)
+        let last7 = last30DaysLogs.suffix(7).map({$0})
+        return groupLogsByDate(logs: last7)
     }
     
     @State var yMax = 7
@@ -38,10 +48,10 @@ struct ChartView: View {
         NavigationStack {
             VStack {
                 Chart {
-                    ForEach(last30DaysLogs, id: \.self) { log in
+                    ForEach(last30DaysLogs, id: \.self) { entry in
                         BarMark(
-                            x: .value("Date", log.timestamp),
-                            y: .value("Total", log.quantityInMG)
+                            x: .value("Date", entry.timestamp.date),
+                            y: .value("Total", entry.quantityInMG)
                         )
                     }
                 }
@@ -84,10 +94,21 @@ struct ChartView: View {
             }
         }
     }
+    
+    func groupLogsByDate(logs: [LogEntry]) -> [Double] {
+        let grouped = Dictionary(grouping: logs) { log in
+            return log.timestamp.date
+        }
+        let summedLogs = grouped.mapValues { logs in
+            logs.reduce(0) { $0 + $1.quantityInMG }
+        }
+        return summedLogs.values.sorted()
+    }
 }
 
 struct ChartView_Previews: PreviewProvider {
     static var previews: some View {
         ChartView()
+            .environmentObject(UserData())
     }
 }
