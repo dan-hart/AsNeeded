@@ -42,17 +42,19 @@ struct PlanView: View {
                     AsNeededMGView(value: $userData.plannedDailyDoseInMG)
                         .padding(.horizontal)
                         .padding(.bottom)
-                    
-                    NavigationLink {
-                        TripView()
-                            .environmentObject(userData)
-                    } label: {
-                        Text("Trip Planner")
-                    }
                 }
                 .navigationTitle("Plan")
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
+                    ToolbarItem(placement: .topBarLeading) {
+                        NavigationLink {
+                            TripView()
+                                .environmentObject(userData)
+                        } label: {
+                            Label("Trip", systemSymbol: .airplane)
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .topBarTrailing) {
                         LogButtonView()
                     }
                     
