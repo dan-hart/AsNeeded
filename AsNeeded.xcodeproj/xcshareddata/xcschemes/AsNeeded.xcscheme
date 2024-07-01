@@ -32,6 +32,9 @@
             reference = "container:AsNeededTests/TestPlan.xctestplan"
             default = "YES">
          </TestPlanReference>
+         <TestPlanReference
+            reference = "container:TestPlan.xctestplan">
+         </TestPlanReference>
       </TestPlans>
       <Testables>
          <TestableReference
@@ -42,6 +45,17 @@
                BlueprintIdentifier = "52AFFC222AA7BC4B001A39AF"
                BuildableName = "AsNeededUITests.xctest"
                BlueprintName = "AsNeededUITests"
+               ReferencedContainer = "container:AsNeeded.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "5295ABF52C3362D8003DB6C4"
+               BuildableName = "SwiftTestingAsNeededTests.xctest"
+               BlueprintName = "SwiftTestingAsNeededTests"
                ReferencedContainer = "container:AsNeeded.xcodeproj">
             </BuildableReference>
          </TestableReference>

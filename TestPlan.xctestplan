@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "FBC77A76-7C2F-4ABE-B3CA-612AFEFAD636",
+      "id" : "BA7CE1BD-559F-4E33-97D5-80AA1660EDF8",
       "name" : "Configuration 1",
       "options" : {
 
@@ -16,8 +16,8 @@
       "parallelizable" : true,
       "target" : {
         "containerPath" : "container:AsNeeded.xcodeproj",
-        "identifier" : "527AFA3128E26B3600BD575D",
-        "name" : "AsNeededTests"
+        "identifier" : "5295ABF52C3362D8003DB6C4",
+        "name" : "SwiftTestingAsNeededTests"
       }
     }
   ],
