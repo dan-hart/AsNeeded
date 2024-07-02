@@ -106,9 +106,7 @@ struct ChartView: View {
     }
 }
 
-struct ChartView_Previews: PreviewProvider {
-    static var previews: some View {
-        ChartView()
-            .environmentObject(UserData())
-    }
+#Preview {
+    ChartView()
+        .environmentObject(UserData.preview)
 }

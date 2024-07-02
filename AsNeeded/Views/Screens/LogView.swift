@@ -46,8 +46,7 @@ struct LogView: View {
     }
 }
 
-struct LogView_Previews: PreviewProvider {
-    static var previews: some View {
-        LogView()
-    }
+#Preview {
+    LogView()
+        .environmentObject(UserData.preview)
 }

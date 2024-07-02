@@ -51,8 +51,6 @@ struct HealthDataView: View {
     }
 }
 
-struct HealthDataView_Previews: PreviewProvider {
-    static var previews: some View {
-        HealthDataView()
-    }
+#Preview {
+    HealthDataView(isLoading: false, isHealthDataAvailable: false, isHealthDataAuthorized: false)
 }

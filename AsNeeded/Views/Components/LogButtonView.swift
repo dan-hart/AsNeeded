@@ -21,8 +21,6 @@ struct LogButtonView: View {
     }
 }
 
-struct LogButtonView_Previews: PreviewProvider {
-    static var previews: some View {
-        LogButtonView()
-    }
+#Preview {
+    LogButtonView(isShowingLogView: false)
 }

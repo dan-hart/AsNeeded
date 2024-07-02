@@ -68,9 +68,7 @@ struct PlanView: View {
     }
 }
 
-struct PlanView_Previews: PreviewProvider {
-    static var previews: some View {
-        PlanView()
-            .environmentObject(UserData())
-    }
+#Preview {
+    PlanView()
+        .environmentObject(UserData.preview)
 }

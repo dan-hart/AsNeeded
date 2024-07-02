@@ -20,12 +20,10 @@ struct TrendView: View {
     }
 }
 
-struct TrendView_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack {
-            TrendView(trend: .down)
-            TrendView(trend: .up)
-            TrendView(trend: .stable)
-        }
+#Preview {
+    VStack {
+        TrendView(trend: .down)
+        TrendView(trend: .up)
+        TrendView(trend: .stable)
     }
 }

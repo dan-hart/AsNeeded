@@ -24,8 +24,7 @@ struct QuickLogButton: View {
     }
 }
 
-struct QuickLogButton_Previews: PreviewProvider {
-    static var previews: some View {
-        QuickLogButton()
-    }
+#Preview {
+    QuickLogButton()
+        .environmentObject(UserData.preview)
 }

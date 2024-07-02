@@ -29,8 +29,6 @@ struct LogEntryRowView: View {
     }
 }
 
-struct LogEntryRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        LogEntryRowView(log: LogEntry.preview())
-    }
+#Preview {
+    LogEntryRowView(log: LogEntry.preview(), here: Date())
 }

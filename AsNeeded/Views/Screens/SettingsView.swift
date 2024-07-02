@@ -54,8 +54,7 @@ struct SettingsView: View {
     }
 }
 
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView(dose: .constant(5), refillQuantity: .constant(150), aheadTrajectoryInMG: .constant(1.0))
-    }
+#Preview {
+    SettingsView(dose: .constant(5), refillQuantity: .constant(150), aheadTrajectoryInMG: .constant(1.0))
+        .environmentObject(UserData.preview)
 }

@@ -48,12 +48,10 @@ struct TrajectoryView: View {
     }
 }
 
-struct TrajectoryView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            ForEach(Trajectory.allCases, id: \.self) { t in
-                TrajectoryView(value: t)
-            }
+#Preview {
+    Group {
+        ForEach(Trajectory.allCases, id: \.self) { t in
+            TrajectoryView(value: t)
         }
     }
 }

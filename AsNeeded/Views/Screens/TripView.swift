@@ -120,5 +120,5 @@ struct TripView: View {
 
 #Preview {
     TripView()
-        .environmentObject(UserData())
+        .environmentObject(UserData.preview)
 }

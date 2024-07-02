@@ -83,8 +83,6 @@ struct AddOrSubtractQuantityView: View {
     }
 }
 
-struct AddQuantityView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddOrSubtractQuantityView(quantity: .constant(150))
-    }
+#Preview {
+    AddOrSubtractQuantityView(quantity: .constant(150))
 }

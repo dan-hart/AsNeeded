@@ -22,8 +22,7 @@ struct RefillButtonView: View {
     }
 }
 
-struct RefillButtonView_Previews: PreviewProvider {
-    static var previews: some View {
-        RefillButtonView()
-    }
+#Preview {
+    RefillButtonView()
+        .environmentObject(UserData.preview)
 }

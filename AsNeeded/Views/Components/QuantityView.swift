@@ -26,8 +26,7 @@ struct QuantityView: View {
     }
 }
 
-struct QuantityView_Previews: PreviewProvider {
-    static var previews: some View {
-        QuantityView(quantity: .constant(90.0))
-    }
+#Preview {
+    QuantityView(quantity: .constant(90.0))
+        .environmentObject(UserData.preview)
 }

@@ -39,9 +39,7 @@ struct LogbookView: View {
     }
 }
 
-struct LogbookView_Previews: PreviewProvider {
-    static var previews: some View {
-        LogbookView()
-            .environmentObject(UserData())
-    }
+#Preview {
+    LogbookView()
+        .environmentObject(UserData.preview)
 }

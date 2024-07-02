@@ -57,8 +57,6 @@ struct AsNeededDatePickerView: View {
     }
 }
 
-struct AsNeededDatePickerView_Previews: PreviewProvider {
-    static var previews: some View {
-        AsNeededDatePickerView(nextRefillDate: .constant(.now))
-    }
+#Preview {
+    AsNeededDatePickerView(nextRefillDate: .constant(Date().dateByAdding(30, .day).date))
 }

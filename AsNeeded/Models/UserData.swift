@@ -115,3 +115,17 @@ class UserData: ObservableObject {
         daysRemainingUntilNextRefillDate = calculateDaysRemainingUntilNextRefillDate()
     }
 }
+
+#if DEBUG
+extension UserData {
+    static let preview: UserData = {
+        let userData = UserData()
+        userData.quantityInMG = 150
+        userData.dailyDoseInMG = 5
+        userData.nextRefillDate = Date().addingTimeInterval(60 * 60 * 24 * 30)
+        userData.plannedDailyDoseInMG = 3
+        userData.refillQuantityInMG = 150
+        return userData
+    }()
+}
+#endif

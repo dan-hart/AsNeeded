@@ -54,8 +54,7 @@ struct AsNeededMGView: View {
     }
 }
 
-struct AsNeededMGView_Previews: PreviewProvider {
-    static var previews: some View {
-        AsNeededMGView(value: .constant(0.5))
-    }
+#Preview {
+    AsNeededMGView(value: .constant(0.5))
+        .environmentObject(UserData.preview)
 }
