@@ -14,6 +14,9 @@ struct QuickLogButton: View {
         Button {
             Logbook.quickLog()
             userData.quantityInMG -= 1.0
+            
+            let impact = UIImpactFeedbackGenerator(style: .medium)
+            impact.impactOccurred()
         } label: {
             HStack {
             Image(systemSymbol: .pencilCircleFill)

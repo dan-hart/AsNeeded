@@ -11,6 +11,8 @@ import SwiftyUserDefaults
 import SwiftDate
 
 class UserData: ObservableObject {
+    static let shared: UserData = UserData()
+    
     @Published var quantityInMG: Double {
         didSet {
             Defaults[\.quantity] = quantityInMG

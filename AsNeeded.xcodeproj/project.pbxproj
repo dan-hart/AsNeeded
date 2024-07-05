@@ -20,6 +20,10 @@
 		5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5246590A29777AC100B48056 /* LogEntryRowView.swift */; };
 		5269C6CD2A588F6C004523F8 /* QuickLogButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5269C6CC2A588F6C004523F8 /* QuickLogButton.swift */; };
 		5269C6CF2A589ACD004523F8 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5269C6CE2A589ACD004523F8 /* ChartView.swift */; };
+		52796B272C38593D008B6C3D /* QuickLogOneIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52796B262C38593D008B6C3D /* QuickLogOneIntent.swift */; };
+		52796B292C385C4B008B6C3D /* LogShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52796B282C385C4B008B6C3D /* LogShortcuts.swift */; };
+		52796B2B2C38622C008B6C3D /* GetTodayCount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52796B2A2C38622C008B6C3D /* GetTodayCount.swift */; };
+		52796B2E2C3862F6008B6C3D /* LogEntry+totalMG.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52796B2D2C3862F6008B6C3D /* LogEntry+totalMG.swift */; };
 		527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2528E26B3400BD575D /* AsNeededApp.swift */; };
 		527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 527AFA2728E26B3400BD575D /* HealthDataView.swift */; };
 		527AFA2A28E26B3600BD575D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 527AFA2928E26B3600BD575D /* Assets.xcassets */; };
@@ -91,6 +95,10 @@
 		5246590A29777AC100B48056 /* LogEntryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntryRowView.swift; sourceTree = "<group>"; };
 		5269C6CC2A588F6C004523F8 /* QuickLogButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogButton.swift; sourceTree = "<group>"; };
 		5269C6CE2A589ACD004523F8 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
+		52796B262C38593D008B6C3D /* QuickLogOneIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogOneIntent.swift; sourceTree = "<group>"; };
+		52796B282C385C4B008B6C3D /* LogShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogShortcuts.swift; sourceTree = "<group>"; };
+		52796B2A2C38622C008B6C3D /* GetTodayCount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetTodayCount.swift; sourceTree = "<group>"; };
+		52796B2D2C3862F6008B6C3D /* LogEntry+totalMG.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry+totalMG.swift"; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2528E26B3400BD575D /* AsNeededApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededApp.swift; sourceTree = "<group>"; };
 		527AFA2728E26B3400BD575D /* HealthDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataView.swift; sourceTree = "<group>"; };
@@ -169,6 +177,24 @@
 			path = Alerts;
 			sourceTree = "<group>";
 		};
+		52796B252C385929008B6C3D /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				52796B262C38593D008B6C3D /* QuickLogOneIntent.swift */,
+				52796B282C385C4B008B6C3D /* LogShortcuts.swift */,
+				52796B2A2C38622C008B6C3D /* GetTodayCount.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		52796B2C2C3862E6008B6C3D /* LogEntryExtensions */ = {
+			isa = PBXGroup;
+			children = (
+				52796B2D2C3862F6008B6C3D /* LogEntry+totalMG.swift */,
+			);
+			path = LogEntryExtensions;
+			sourceTree = "<group>";
+		};
 		527AFA1928E26B3400BD575D = {
 			isa = PBXGroup;
 			children = (
@@ -194,6 +220,7 @@
 		527AFA2428E26B3400BD575D /* AsNeeded */ = {
 			isa = PBXGroup;
 			children = (
+				52796B252C385929008B6C3D /* Intents */,
 				52929DC228EF442C00C996E0 /* Extensions */,
 				5235DAEF28E29E1A00384C53 /* Info.plist */,
 				5235DAEE28E29DB100384C53 /* AsNeeded.entitlements */,
@@ -250,6 +277,7 @@
 		52929DC228EF442C00C996E0 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				52796B2C2C3862E6008B6C3D /* LogEntryExtensions */,
 				52929DC328EF443100C996E0 /* DoubleExtensions */,
 			);
 			path = Extensions;
@@ -500,6 +528,7 @@
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
 				5246590129776E9D00B48056 /* LogEntry.swift in Sources */,
 				524658F929774B9700B48056 /* HomeView.swift in Sources */,
+				52796B292C385C4B008B6C3D /* LogShortcuts.swift in Sources */,
 				52929DBF28EF3AD800C996E0 /* DisclaimerView.swift in Sources */,
 				5235DAEB28E296CA00384C53 /* HeathDataAccessor.swift in Sources */,
 				52929DA128EF25A600C996E0 /* QuantityView.swift in Sources */,
@@ -507,9 +536,12 @@
 				52929DC128EF407C00C996E0 /* TrajectoryView.swift in Sources */,
 				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
 				524659032977706300B48056 /* LogView.swift in Sources */,
+				52796B2E2C3862F6008B6C3D /* LogEntry+totalMG.swift in Sources */,
 				524659052977707000B48056 /* LogButtonView.swift in Sources */,
 				52465907297776EE00B48056 /* Logbook.swift in Sources */,
 				52A1A69D2B2E012B00AAE095 /* TripView.swift in Sources */,
+				52796B2B2C38622C008B6C3D /* GetTodayCount.swift in Sources */,
+				52796B272C38593D008B6C3D /* QuickLogOneIntent.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				52929DC928EF506200C996E0 /* PlanView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
