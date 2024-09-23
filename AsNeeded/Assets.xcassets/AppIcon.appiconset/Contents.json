@@ -7,6 +7,30 @@
       "size" : "1024x1024"
     },
     {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "asNeeded DARK logo_v1-1024.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "filename" : "asNeeded DARK logo_v1-1024 1.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
       "filename" : "logo_v1-1024 1.png",
       "idiom" : "universal",
       "platform" : "watchos",
