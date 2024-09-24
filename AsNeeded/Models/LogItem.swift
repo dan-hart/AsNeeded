@@ -7,6 +7,9 @@
 
 import Foundation
 import SwiftData
+#if os(iOS)
+import SwiftDate
+#endif
 
 @Model
 class LogItem: Identifiable, Hashable, Equatable {
@@ -47,7 +50,7 @@ class LogItem: Identifiable, Hashable, Equatable {
     #endif
 }
 
-extension LogItem {
+extension LogItem {    
     static func last30DaysPredicate() -> Predicate<LogItem> {
         let days30Ago = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         

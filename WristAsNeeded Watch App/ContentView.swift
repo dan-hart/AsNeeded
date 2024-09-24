@@ -7,20 +7,23 @@
 
 import SwiftUI
 import SwiftData
+import SwiftDate
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query var logs: [LogItem]
+    @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
+    @Query var users: [User]
     
     var body: some View {
         VStack {
-            Text("Today's Count: \(logs.roundedTotalMG)")
+            Text("Today's Count")
+            Text("\(logs.filter( { $0.timestamp.isToday }).roundedTotalMG) MG")
+                .font(.title)
             Button {
                 let log = LogItem(timestamp: Date(), quantityInMG: 1)
                 modelContext.insert(log)
-                if modelContext.hasChanges {
-                    try? modelContext.save()
-                }
+                users.first?.quantityInMG -= 1
+                try? modelContext.save()
             } label: {
                 Text("Quick Log 1")
             }
@@ -29,6 +32,8 @@ struct ContentView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ContentView()
 }
+#endif
