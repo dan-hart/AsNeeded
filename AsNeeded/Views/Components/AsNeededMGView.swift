@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct AsNeededMGView: View {
-    @EnvironmentObject var userData: UserData
-    
     @Binding var value: Double
     var minimumValue: Double = 0
     
@@ -57,6 +55,5 @@ struct AsNeededMGView: View {
 #if DEBUG
 #Preview {
     AsNeededMGView(value: .constant(0.5))
-        .environmentObject(UserData.preview)
 }
 #endif

@@ -8,15 +8,12 @@
 import SwiftUI
 
 struct QuickLogButton: View {
-    @EnvironmentObject var userData: UserData
-    
     var body: some View {
         Button {
-            Logbook.shared.quickLog()
-            userData.quantityInMG -= 1.0
-            
             let impact = UIImpactFeedbackGenerator(style: .medium)
             impact.impactOccurred()
+            
+            Logbook.shared.quickLog()
         } label: {
             HStack {
             Image(systemSymbol: .pencilCircleFill)
@@ -30,6 +27,5 @@ struct QuickLogButton: View {
 #if DEBUG
 #Preview {
     QuickLogButton()
-        .environmentObject(UserData.preview)
 }
 #endif

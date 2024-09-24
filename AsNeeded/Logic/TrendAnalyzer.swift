@@ -10,24 +10,31 @@ import SwiftUI
 
 /// **TrendAnalyzer**
 ///
-/// This class provides functions to analyze the trend of a set of numbers using weighted linear regression.
-/// It includes outlier handling and moving averages to improve the robustness of the trend detection.
+/// The `TrendAnalyzer` class provides comprehensive tools for analyzing trends in numerical data, particularly consumption patterns. It offers functions for trend analysis, outlier handling, moving averages, consumption forecasting, non-linear trend modeling, and seasonal adjustments.
 ///
-/// ### Enhancements Implemented:
-/// - **Weighted Regression:** Gives more weight to recent data points, under the assumption that they are more indicative of the current trend.
-/// - **Moving Averages:** Applies a simple moving average to smooth out short-term fluctuations and highlight longer-term trends.
-/// - **Outlier Handling:** Utilizes the Interquartile Range (IQR) method to detect and remove outliers from the dataset.
-/// - **Time Series Consideration:** Takes into account the sequential order of data points.
-/// - **Threshold Adjustment:** Introduces a threshold to define the sensitivity of trend detection.
-/// - **Data Validation:** Ensures there are enough data points to perform trend analysis.
+/// ### Key Features:
+/// - **Trend Analysis:** Determines the trend direction using linear regression and exponential smoothing.
+/// - **Consumption Forecasting:** Analyzes historical consumption data against a limited supply, incorporating consumption trends and seasonal patterns.
+/// - **Outlier Handling:** Removes outliers to improve analysis accuracy.
+/// - **Moving Averages:** Smooths data to highlight longer-term trends.
+/// - **Non-Linear Trend Modeling:** Uses exponential smoothing to capture non-linear trends.
+/// - **Seasonal Adjustments:** Incorporates seasonal patterns (e.g., weekly cycles) into projections.
 ///
 /// ### Usage Example:
 /// ```swift
-/// let numbers = [5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0]
-/// let trend = TrendAnalyzer.trend(numbers: numbers)
-/// print(trend.description) // Output: "Trending Down"
+/// let dailyConsumption = [5, 6, 7, 6, 5, 6, 7, 8, 7, 6, 5]
+/// let totalSupply = 150
+/// let periodLength = 30
+///
+/// let status = TrendAnalyzer.consumptionStatus(numbers: dailyConsumption, totalSupply: totalSupply, periodLength: periodLength, seasonLength: 7)
+///
+/// print(status.rawValue) // e.g., "On Track"
+/// print(status.description) // e.g., "You are on track with your consumption."
 /// ```
 class TrendAnalyzer {
+    
+    // MARK: - Enumerations
+    
     /// **Trend Enum**
     ///
     /// Represents the possible trends in the data.
@@ -61,14 +68,38 @@ class TrendAnalyzer {
         }
     }
     
+    /// **Consumption Status Enum**
+    ///
+    /// Represents the consumption status based on historical intake and limited supply.
+    public enum ConsumptionStatus: String, CaseIterable {
+        case ahead = "Ahead"
+        case onTrack = "On Track"
+        case slowDown = "Slow Down"
+        case behind = "Behind"
+        case danger = "Danger"
+        
+        /// Description for each status.
+        var description: String {
+            switch self {
+            case .ahead:
+                return "You are ahead of schedule. You may have surplus supply."
+            case .onTrack:
+                return "You are on track with your consumption."
+            case .slowDown:
+                return "Slow down your consumption to avoid running out of supply."
+            case .behind:
+                return "You are behind schedule. Consider slowing down your consumption."
+            case .danger:
+                return "Danger of running out! Significantly reduce your consumption."
+            }
+        }
+    }
+    
+    // MARK: - Trend Analysis Functions
+    
     /// **Trend Analysis Function**
     ///
     /// Analyzes the trend of a set of numbers and returns a `Trend` enum value.
-    ///
-    /// **Enhancements:**
-    /// - **Moving Averages:** Applies a moving average to smooth the data.
-    /// - **Outlier Handling:** Removes outliers using the Interquartile Range (IQR) method.
-    /// - **Weighted Regression:** Performs weighted linear regression, giving more weight to recent data points.
     ///
     /// **Parameters:**
     /// - `numbers`: An array of `Double` values representing the data.
@@ -92,21 +123,196 @@ class TrendAnalyzer {
             return .stable
         }
         
-        // Perform weighted linear regression to calculate the slope
-        let slope = calculateWeightedSlope(data: cleanedNumbers)
+        // Perform exponential smoothing to calculate the trend
+        let trendSlope = calculateExponentialSmoothingSlope(data: cleanedNumbers)
         
         // Define a small threshold to account for minor fluctuations
         let threshold = 0.01
         
         // Determine the trend based on the slope
-        if slope > threshold {
+        if trendSlope > threshold {
             return .up
-        } else if slope < -threshold {
+        } else if trendSlope < -threshold {
             return .down
         } else {
             return .stable
         }
     }
+    
+    // MARK: - Consumption Forecasting Function
+    
+    /// **Consumption Status Function**
+    ///
+    /// Analyzes historical consumption data against a limited supply to determine consumption status.
+    /// Incorporates the consumption trend and seasonal patterns for a more accurate forecast.
+    ///
+    /// **Parameters:**
+    /// - `numbers`: An array of `Int` values representing daily consumption.
+    /// - `totalSupply`: An `Int` representing the total supply available (e.g., total apples per period).
+    /// - `periodLength`: An `Int` representing the total number of days in the period (e.g., days in a month).
+    /// - `seasonLength`: An `Int` representing the length of the season (e.g., 7 for weekly patterns). Default is `0` (no seasonality).
+    ///
+    /// **Returns:** A `ConsumptionStatus` indicating whether you need to adjust your consumption rate.
+    public static func consumptionStatus(numbers: [Int], totalSupply: Int, periodLength: Int, seasonLength: Int = 0) -> ConsumptionStatus {
+        guard !numbers.isEmpty else {
+            return .onTrack // Default status when no data is available
+        }
+        
+        // Calculate total consumption so far
+        let totalConsumed = numbers.reduce(0, +)
+        
+        // Calculate the number of days passed
+        let daysPassed = numbers.count
+        
+        // Adjust projected consumption based on trend and seasonality
+        let projectedTotalConsumption = projectedConsumption(numbers: numbers.map { Double($0) }, totalSupply: totalSupply, periodLength: periodLength, seasonLength: seasonLength)
+        
+        // Determine the status based on projected consumption and supply
+        let status: ConsumptionStatus
+        
+        // Define thresholds for statuses
+        let surplusThreshold = Double(totalSupply) * 0.9 // 90% or more of supply remains
+        let deficitThreshold = Double(totalSupply) * 1.1 // Consumption projected to exceed supply by 10% or more
+        
+        if projectedTotalConsumption < Double(totalSupply) * 0.75 {
+            status = .behind
+        } else if projectedTotalConsumption < surplusThreshold {
+            status = .ahead
+        } else if projectedTotalConsumption <= Double(totalSupply) {
+            status = .onTrack
+        } else if projectedTotalConsumption <= deficitThreshold {
+            status = .slowDown
+        } else {
+            status = .danger
+        }
+        
+        return status
+    }
+    
+    // MARK: - Non-Linear Trend Modeling and Seasonal Adjustments
+    
+    /// **Projected Consumption Function**
+    ///
+    /// Projects total consumption for the period by incorporating consumption trend and seasonal adjustments.
+    ///
+    /// **Parameters:**
+    /// - `numbers`: An array of `Double` values representing daily consumption.
+    /// - `totalSupply`: Total supply available for the period.
+    /// - `periodLength`: Total number of days in the period.
+    /// - `seasonLength`: Length of the season (e.g., 7 for weekly patterns). Default is `0` (no seasonality).
+    ///
+    /// **Returns:** A `Double` representing the projected total consumption.
+    private static func projectedConsumption(numbers: [Double], totalSupply: Int, periodLength: Int, seasonLength: Int) -> Double {
+        let daysPassed = numbers.count
+        let totalConsumed = numbers.reduce(0, +)
+        
+        // Calculate the consumption trend using exponential smoothing
+        let consumptionTrend = calculateExponentialSmoothingSlope(data: numbers)
+        
+        // Calculate seasonal indices if seasonality is considered
+        var seasonalIndices: [Double] = []
+        if seasonLength > 0 {
+            seasonalIndices = calculateSeasonalIndices(data: numbers, seasonLength: seasonLength)
+        }
+        
+        var projectedConsumption = totalConsumed
+        
+        // Project future consumption
+        for day in daysPassed..<periodLength {
+            var projectedValue = numbers.last ?? 0.0
+            // Adjust for trend
+            projectedValue += consumptionTrend * Double(day - daysPassed + 1)
+            // Adjust for seasonality
+            if seasonLength > 0 && !seasonalIndices.isEmpty {
+                let seasonIndex = day % seasonLength
+                projectedValue *= seasonalIndices[seasonIndex]
+            }
+            projectedConsumption += projectedValue
+        }
+        
+        return projectedConsumption
+    }
+    
+    /// **Calculate Exponential Smoothing Slope Function**
+    ///
+    /// Calculates the trend slope using exponential smoothing to capture non-linear trends.
+    ///
+    /// **Parameters:**
+    /// - `data`: An array of `Double` values representing the data.
+    /// - `alpha`: The smoothing factor between 0 and 1. Default is `0.3`.
+    ///
+    /// **Returns:** A `Double` representing the smoothed trend slope.
+    private static func calculateExponentialSmoothingSlope(data: [Double], alpha: Double = 0.3) -> Double {
+        guard data.count > 1 else { return 0.0 }
+        
+        var smoothedData = [data[0]]
+        
+        // Apply exponential smoothing
+        for i in 1..<data.count {
+            let smoothedValue = alpha * data[i] + (1 - alpha) * smoothedData[i - 1]
+            smoothedData.append(smoothedValue)
+        }
+        
+        // Calculate the slope of the smoothed data
+        let n = Double(smoothedData.count)
+        let xValues = (0..<smoothedData.count).map { Double($0) }
+        let yValues = smoothedData
+        
+        let sumX = xValues.reduce(0, +)
+        let sumY = yValues.reduce(0, +)
+        let sumXY = zip(xValues, yValues).map(*).reduce(0, +)
+        let sumX2 = xValues.map { $0 * $0 }.reduce(0, +)
+        
+        let numerator = n * sumXY - sumX * sumY
+        let denominator = n * sumX2 - sumX * sumX
+        
+        guard denominator != 0 else { return 0.0 }
+        
+        let slope = numerator / denominator
+        return slope
+    }
+    
+    /// **Calculate Seasonal Indices Function**
+    ///
+    /// Calculates seasonal indices for the data to adjust projections based on seasonal patterns.
+    ///
+    /// **Parameters:**
+    /// - `data`: An array of `Double` values representing the data.
+    /// - `seasonLength`: An `Int` representing the length of the season (e.g., 7 for weekly patterns).
+    ///
+    /// **Returns:** An array of `Double` values representing the seasonal indices.
+    private static func calculateSeasonalIndices(data: [Double], seasonLength: Int) -> [Double] {
+        guard data.count >= seasonLength else {
+            return Array(repeating: 1.0, count: seasonLength)
+        }
+        
+        var seasonAverages = [Double]()
+        var seasonalIndices = [Double](repeating: 0.0, count: seasonLength)
+        
+        // Calculate average for each season
+        let seasons = data.count / seasonLength
+        for season in 0..<seasons {
+            let startIndex = season * seasonLength
+            let endIndex = startIndex + seasonLength
+            let seasonData = data[startIndex..<endIndex]
+            let average = seasonData.reduce(0, +) / Double(seasonLength)
+            seasonAverages.append(average)
+        }
+        
+        // Calculate seasonal indices
+        for i in 0..<seasonLength {
+            var indexSum = 0.0
+            for season in 0..<seasons {
+                let dataIndex = season * seasonLength + i
+                indexSum += data[dataIndex] / seasonAverages[season]
+            }
+            seasonalIndices[i] = indexSum / Double(seasons)
+        }
+        
+        return seasonalIndices
+    }
+    
+    // MARK: - Helper Functions
     
     /// **Moving Average Function**
     ///
@@ -129,43 +335,6 @@ class TrendAnalyzer {
             smoothedNumbers.append(average)
         }
         return smoothedNumbers
-    }
-    
-    /// **Calculate Weighted Slope Function**
-    ///
-    /// Calculates the slope of the best-fit line using weighted linear regression.
-    ///
-    /// **Weighted Regression:**
-    /// - Assigns weights to data points, giving more weight to recent data points.
-    /// - Uses the weights in the regression calculations to emphasize recent trends.
-    ///
-    /// **Parameters:**
-    /// - `data`: An array of `Double` values representing the cleaned and smoothed data.
-    ///
-    /// **Returns:** The weighted slope as a `Double`.
-    private static func calculateWeightedSlope(data: [Double]) -> Double {
-        let n = Double(data.count)
-        let xValues = (0..<data.count).map { Double($0) }
-        let yValues = data
-        
-        // Assign weights, giving more weight to recent data points
-        let weights = (1...data.count).map { Double($0) } // Weights increase linearly
-        
-        let sumW = weights.reduce(0, +)
-        let sumWX = zip(weights, xValues).map(*).reduce(0, +)
-        let sumWY = zip(weights, yValues).map(*).reduce(0, +)
-        let sumWXX = zip(weights, xValues.map { $0 * $0 }).map(*).reduce(0, +)
-        let sumWXY = zip(weights, zip(xValues, yValues).map(*)).map(*).reduce(0, +)
-        
-        let numerator = sumW * sumWXY - sumWX * sumWY
-        let denominator = sumW * sumWXX - sumWX * sumWX
-        
-        // Avoid division by zero
-        guard denominator != 0 else {
-            return 0
-        }
-        
-        return numerator / denominator
     }
     
     /// **Remove Outliers Function**

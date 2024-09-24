@@ -37,8 +37,6 @@ enum QuantityAdjustmentMode: String, CaseIterable {
 }
 
 struct AddOrSubtractQuantityView: View {
-    @EnvironmentObject var userData: UserData
-    
     @Binding var quantity: Double
     
     @State var input: String = ""

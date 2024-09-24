@@ -9,21 +9,21 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
-    @EnvironmentObject var userData: UserData
+    @StateObject var logbook = Logbook.shared
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack {
-                    AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
-                    Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? -1))) remaining")
+                    AsNeededDatePickerView(nextRefillDate: $logbook.user.nextRefillDate)
+                    Text("\(logbook.user.daysRemainingUntilNextRefillDate.formatted()) \("day".pluralize(count: Int(logbook.user.daysRemainingUntilNextRefillDate))) remaining")
                         .font(.largeTitle)
-                    TrajectoryView(value: userData.currentStatus)
+                    TrajectoryView(value: logbook.user.currentStatus)
                     VStack(alignment: .leading) {
-                        Text(userData.dailyAvailable)
-                        Text(userData.dailyTrim)
+                        Text(logbook.user.dailyAvailable)
+                        Text(logbook.user.dailyTrim)
                     }
-                    QuantityView(quantity: $userData.quantityInMG)
+                    QuantityView(quantity: $logbook.user.quantityInMG)
                     QuickLogButton()
                 }
                 .navigationTitle("Home")
@@ -36,10 +36,6 @@ struct HomeView: View {
                         QuickLogButton()
                     }
                 }
-                .onAppear {
-                    // Trigger re-calculation in case the day has changed
-                    userData.daysRemainingUntilNextRefillDate = userData.calculateDaysRemainingUntilNextRefillDate()
-                }
                 .padding()
             }
         }
@@ -49,6 +45,5 @@ struct HomeView: View {
 #if DEBUG
 #Preview {
     HomeView()
-        .environmentObject(UserData.preview)
 }
 #endif

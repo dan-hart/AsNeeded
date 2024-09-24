@@ -13,8 +13,6 @@ struct LogbookView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
     
-    @EnvironmentObject var userData: UserData
-    
     var body: some View {
         NavigationStack {
             List {
@@ -37,6 +35,6 @@ struct LogbookView: View {
 #if DEBUG
 #Preview {
     LogbookView()
-        .environmentObject(UserData.preview)
+        .environment(\.modelContext, Logbook.shared.context)
 }
 #endif

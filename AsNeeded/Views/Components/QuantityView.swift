@@ -13,14 +13,14 @@ struct QuantityView: View {
     @Binding var quantity: Double
     let here = Date()
     
-    @EnvironmentObject var userData: UserData
+    @StateObject var logbook: Logbook = Logbook.shared
     
     var body: some View {
         VStack {
             Text("Quantity")
                 .font(.subheadline)
             AsNeededMGView(value: $quantity)
-            Text("updated \(userData.quantityLastUpdatedDate.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
+            Text("updated \(logbook.user.quantityLastUpdated.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
         }
         .padding()
     }
@@ -29,6 +29,5 @@ struct QuantityView: View {
 #if DEBUG
 #Preview {
     QuantityView(quantity: .constant(90.0))
-        .environmentObject(UserData.preview)
 }
 #endif

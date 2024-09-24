@@ -14,7 +14,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) var scenePhase
     
-    @EnvironmentObject var userData: UserData
+    @StateObject var logbook = Logbook.shared
     
     var body: some View {
         TabView {
@@ -38,7 +38,7 @@ struct ContentView: View {
                     Label("Visual", systemSymbol: .chartBar)
                 }
             
-            SettingsView(dose: $userData.dailyDoseInMG, refillQuantity: $userData.refillQuantityInMG, aheadTrajectoryInMG: $userData.aheadTrajectoryInMG)
+            SettingsView(dose: $logbook.user.dailyDoseInMG, refillQuantity: $logbook.user.refillQuantityInMG, aheadTrajectoryInMG: $logbook.user.aheadTrajectoryInMG)
                 .tabItem {
                     Label("Settings", systemSymbol: .gearshape)
                 }
@@ -56,6 +56,5 @@ struct ContentView: View {
 #if DEBUG
 #Preview {
     ContentView()
-        .environmentObject(UserData.preview)
 }
 #endif

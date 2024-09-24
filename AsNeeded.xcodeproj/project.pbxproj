@@ -34,7 +34,6 @@
 		52929DA928EF291700C996E0 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DA828EF291700C996E0 /* Constants.swift */; };
 		52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */; };
 		52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAD28EF29B700C996E0 /* DefaultKeys.swift */; };
-		52929DB028EF2B6200C996E0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DAF28EF2B6200C996E0 /* UserData.swift */; };
 		52929DB228EF2CE100C996E0 /* AsNeededDatePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */; };
 		52929DB828EF306500C996E0 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DB728EF306500C996E0 /* SwiftDate */; };
 		52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DB928EF373A00C996E0 /* Pluralize.swift */; };
@@ -47,6 +46,7 @@
 		5296A1AD2CA252A700A6E3B6 /* LogItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1AC2CA252A200A6E3B6 /* LogItem.swift */; };
 		5296A1AF2CA26B7E00A6E3B6 /* LogItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1AE2CA26B7600A6E3B6 /* LogItemDetailView.swift */; };
 		5296A1BF2CA28DBC00A6E3B6 /* RecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */; };
+		5296A1C42CA28F6700A6E3B6 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1C32CA28F6700A6E3B6 /* User.swift */; };
 		52A1A69D2B2E012B00AAE095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A1A69C2B2E012B00AAE095 /* TripView.swift */; };
 		52A28DCE2A6AA839008212BC /* TrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A28DCD2A6AA839008212BC /* TrendView.swift */; };
 		52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */; };
@@ -83,7 +83,6 @@
 		52929DA228EF262300C996E0 /* Trajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trajectory.swift; sourceTree = "<group>"; };
 		52929DA828EF291700C996E0 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		52929DAD28EF29B700C996E0 /* DefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultKeys.swift; sourceTree = "<group>"; };
-		52929DAF28EF2B6200C996E0 /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
 		52929DB128EF2CE100C996E0 /* AsNeededDatePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededDatePickerView.swift; sourceTree = "<group>"; };
 		52929DB928EF373A00C996E0 /* Pluralize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pluralize.swift; sourceTree = "<group>"; };
 		52929DBC28EF391F00C996E0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -95,6 +94,7 @@
 		5296A1AC2CA252A200A6E3B6 /* LogItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogItem.swift; sourceTree = "<group>"; };
 		5296A1AE2CA26B7600A6E3B6 /* LogItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogItemDetailView.swift; sourceTree = "<group>"; };
 		5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
+		5296A1C32CA28F6700A6E3B6 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		52A1A69C2B2E012B00AAE095 /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
 		52A28DCD2A6AA839008212BC /* TrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendView.swift; sourceTree = "<group>"; };
 		52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrSubtractQuantityView.swift; sourceTree = "<group>"; };
@@ -255,11 +255,11 @@
 		52D0DF0A28E26F3600962C13 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5296A1C32CA28F6700A6E3B6 /* User.swift */,
 				5296A1AC2CA252A200A6E3B6 /* LogItem.swift */,
 				52929DA828EF291700C996E0 /* Constants.swift */,
 				52929DA228EF262300C996E0 /* Trajectory.swift */,
 				52929DAD28EF29B700C996E0 /* DefaultKeys.swift */,
-				52929DAF28EF2B6200C996E0 /* UserData.swift */,
 				5246590029776E9D00B48056 /* DateAndArrayExtensions.swift */,
 				52465906297776EE00B48056 /* Logbook.swift */,
 			);
@@ -269,11 +269,11 @@
 		52D0DF0B28E26F3B00962C13 /* Logic */ = {
 			isa = PBXGroup;
 			children = (
-				5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */,
 				524658F729774AD300B48056 /* Alerts */,
 				5235DAEA28E296CA00384C53 /* HeathDataAccessor.swift */,
 				5235DAEC28E296EC00384C53 /* HealthDataAccessing.swift */,
 				52929DB928EF373A00C996E0 /* Pluralize.swift */,
+				5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */,
 				52FE32EA2A69CA3A009CDD53 /* TrendAnalyzer.swift */,
 			);
 			path = Logic;
@@ -383,12 +383,12 @@
 				52A1A69D2B2E012B00AAE095 /* TripView.swift in Sources */,
 				52796B2B2C38622C008B6C3D /* GetTodayCount.swift in Sources */,
 				52796B272C38593D008B6C3D /* QuickLogOneIntent.swift in Sources */,
+				5296A1C42CA28F6700A6E3B6 /* User.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				52929DC928EF506200C996E0 /* PlanView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
 				527AFA2628E26B3400BD575D /* AsNeededApp.swift in Sources */,
 				5269C6CD2A588F6C004523F8 /* QuickLogButton.swift in Sources */,
-				52929DB028EF2B6200C996E0 /* UserData.swift in Sources */,
 				5269C6CF2A589ACD004523F8 /* ChartView.swift in Sources */,
 				52929DA928EF291700C996E0 /* Constants.swift in Sources */,
 				5296A1AF2CA26B7E00A6E3B6 /* LogItemDetailView.swift in Sources */,

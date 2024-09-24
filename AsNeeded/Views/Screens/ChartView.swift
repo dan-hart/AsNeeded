@@ -98,6 +98,5 @@ struct ChartView: View {
 #if DEBUG
 #Preview {
     ChartView()
-        .environmentObject(UserData.preview)
 }
 #endif

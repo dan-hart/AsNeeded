@@ -9,22 +9,22 @@ import SwiftUI
 import SwiftData
 
 struct PlanView: View {
-    @EnvironmentObject var userData: UserData
+    @StateObject var logbook = Logbook.shared
     
     var remainingQuantityInMG: Double {
-        return userData.quantityInMG - ((userData.daysRemainingUntilNextRefillDate ?? 0) * userData.plannedDailyDoseInMG)
+        return logbook.user.quantityInMG - ((logbook.user.daysRemainingUntilNextRefillDate) * logbook.user.plannedDailyDoseInMG)
     }
     
     var remainingQuantityInDays: Double {
-        return remainingQuantityInMG / userData.dailyDoseInMG
+        return remainingQuantityInMG / logbook.user.dailyDoseInMG
     }
     
     var endOfCycleDailyTrimInMG: Double {
-        return ((userData.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - userData.dailyDoseInMG
+        return ((logbook.user.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - logbook.user.dailyDoseInMG
     }
     
     var explanation: String {
-        return "If you take \(userData.plannedDailyDoseInMG.formatted()) mg per day until \(userData.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "No") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? 0))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over which is a buffer of \(remainingQuantityInDays) \("day".pluralize(count: Int(remainingQuantityInDays)))."
+        return "If you take \(logbook.user.plannedDailyDoseInMG.formatted()) mg per day until \(logbook.user.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\(logbook.user.daysRemainingUntilNextRefillDate.formatted()) \("day".pluralize(count: Int(logbook.user.daysRemainingUntilNextRefillDate))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over which is a buffer of \(remainingQuantityInDays) \("day".pluralize(count: Int(remainingQuantityInDays)))."
     }
     
     var body: some View {
@@ -40,7 +40,7 @@ struct PlanView: View {
                     Spacer()
                     Text("Planned Daily Dose")
                         .font(.title)
-                    AsNeededMGView(value: $userData.plannedDailyDoseInMG)
+                    AsNeededMGView(value: $logbook.user.plannedDailyDoseInMG)
                         .padding(.horizontal)
                         .padding(.bottom)
                 }
@@ -49,7 +49,6 @@ struct PlanView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         NavigationLink {
                             TripView()
-                                .environmentObject(userData)
                         } label: {
                             Label("Trip", systemSymbol: .airplane)
                         }
@@ -64,6 +63,5 @@ struct PlanView: View {
 #if DEBUG
 #Preview {
     PlanView()
-        .environmentObject(UserData.preview)
 }
 #endif

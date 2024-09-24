@@ -13,8 +13,6 @@ struct SettingsView: View {
     @Binding var refillQuantity: Double
     @Binding var aheadTrajectoryInMG: Double
     
-    @EnvironmentObject var userData: UserData
-    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -49,6 +47,5 @@ struct SettingsView: View {
 #if DEBUG
 #Preview {
     SettingsView(dose: .constant(5), refillQuantity: .constant(150), aheadTrajectoryInMG: .constant(1.0))
-        .environmentObject(UserData.preview)
 }
 #endif

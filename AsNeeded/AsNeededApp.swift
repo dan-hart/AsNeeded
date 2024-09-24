@@ -12,18 +12,13 @@ import SwiftDate
 
 @main
 struct AsNeededApp: App {
-    private var userData: UserData
-    
     init() {
-        userData = UserData.shared
-        
         LogShortcuts.updateAppShortcutParameters()
     }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(userData)
                 .onDisappear {
                     Logbook.shared.save()
                 }
