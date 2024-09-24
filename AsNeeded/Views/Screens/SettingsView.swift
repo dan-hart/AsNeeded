@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Binding var dose: Double
@@ -39,22 +40,15 @@ struct SettingsView: View {
                         .padding()
                 }
                 .navigationTitle("Settings")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        LogButtonView()
-                    }
-                    
-                    ToolbarItem {
-                        QuickLogButton()
-                    }
-                }
                 .padding()
             }
         }
     }
 }
 
+#if DEBUG
 #Preview {
     SettingsView(dose: .constant(5), refillQuantity: .constant(150), aheadTrajectoryInMG: .constant(1.0))
         .environmentObject(UserData.preview)
 }
+#endif

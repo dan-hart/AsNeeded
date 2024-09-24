@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PlanView: View {
     @EnvironmentObject var userData: UserData
@@ -53,14 +54,6 @@ struct PlanView: View {
                             Label("Trip", systemSymbol: .airplane)
                         }
                     }
-                    
-                    ToolbarItem(placement: .topBarTrailing) {
-                        LogButtonView()
-                    }
-                    
-                    ToolbarItem {
-                        QuickLogButton()
-                    }
                 }
                 .padding()
             }
@@ -68,7 +61,9 @@ struct PlanView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     PlanView()
         .environmentObject(UserData.preview)
 }
+#endif

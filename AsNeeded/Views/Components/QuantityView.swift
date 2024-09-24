@@ -26,7 +26,9 @@ struct QuantityView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     QuantityView(quantity: .constant(90.0))
         .environmentObject(UserData.preview)
 }
+#endif

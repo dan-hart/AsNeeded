@@ -12,7 +12,7 @@ struct QuickLogButton: View {
     
     var body: some View {
         Button {
-            Logbook.quickLog()
+            Logbook.shared.quickLog()
             userData.quantityInMG -= 1.0
             
             let impact = UIImpactFeedbackGenerator(style: .medium)
@@ -27,7 +27,9 @@ struct QuickLogButton: View {
     }
 }
 
+#if DEBUG
 #Preview {
     QuickLogButton()
         .environmentObject(UserData.preview)
 }
+#endif

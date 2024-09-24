@@ -7,25 +7,23 @@
 
 import SwiftUI
 import Charts
-import RealmSwift
+import SwiftData
 
 struct ChartView: View {
-    @ObservedResults(LogEntry.self) var logs
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
     
-    private let sortDescriptors = [
-        SortDescriptor(keyPath: "timestamp", ascending: false)
-    ]
+    @Query(filter: LogItem.last30DaysPredicate(),
+           sort: \LogItem.timestamp
+       ) var last30DaysLogs: [LogItem]
     
-    var last30DaysLogs: [LogEntry] {
-        // get logs from last 30 days grouped by date
-        guard let last30Days = Calendar.current.date(byAdding: .day, value: -30, to: Date()) else { return [] }
-        let last30DaysLogs = logs.filter("timestamp >= %@", last30Days).sorted(by: sortDescriptors)
+    var last30DaysLogsGrouped: [LogItem] {
         // group by day, if timestamp is within the same day
         let grouped = last30DaysLogs.map({$0}).groupedByDate()
         // convert to 1d array with summed values
         let summedLogs = grouped.mapValues { logs in
             let total = logs.reduce(0) { $0 + $1.quantityInMG }
-            let entry = LogEntry()
+            let entry = LogItem()
             entry.timestamp = logs.first!.timestamp
             entry.quantityInMG += total
             return entry
@@ -42,13 +40,13 @@ struct ChartView: View {
         return groupLogsByDate(logs: last7)
     }
     
-    @State var yMax = 7
+    @State var yMax = 10
     
     var body: some View {
         NavigationStack {
             VStack {
                 Chart {
-                    ForEach(last30DaysLogs, id: \.self) { entry in
+                    ForEach(last30DaysLogsGrouped, id: \.self) { entry in
                         BarMark(
                             x: .value("Date", entry.timestamp.date),
                             y: .value("Total", entry.quantityInMG)
@@ -83,19 +81,10 @@ struct ChartView: View {
                 Spacer()
             }
             .navigationTitle("Visualization")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    LogButtonView()
-                }
-                
-                ToolbarItem {
-                    QuickLogButton()
-                }
-            }
         }
     }
     
-    func groupLogsByDate(logs: [LogEntry]) -> [Double] {
+    func groupLogsByDate(logs: [LogItem]) -> [Double] {
         let grouped = Dictionary(grouping: logs) { log in
             return log.timestamp.date
         }
@@ -106,7 +95,9 @@ struct ChartView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ChartView()
         .environmentObject(UserData.preview)
 }
+#endif

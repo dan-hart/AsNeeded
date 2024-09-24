@@ -7,6 +7,8 @@
 
 import SwiftUI
 import AppIntents
+import SwiftData
+import SwiftDate
 
 @main
 struct AsNeededApp: App {
@@ -22,6 +24,10 @@ struct AsNeededApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(userData)
+                .onDisappear {
+                    Logbook.shared.save()
+                }
         }
+        .modelContainer(Logbook.shared.sharedModelContainer)
     }
 }

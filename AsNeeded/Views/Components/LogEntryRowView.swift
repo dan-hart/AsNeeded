@@ -9,26 +9,22 @@ import SwiftUI
 import SwiftDate
 
 struct LogEntryRowView: View {
-    var log: LogEntry
+    var log: LogItem
     var here = Date()
     
     var body: some View {
         VStack {
             HStack {
-                Text("\(log.roundedQuantityInMG) mg")
+                Text("\(log.roundedQuantityInMG) mg at \(log.timestamp.formatted(date: .omitted, time: .shortened))")
                 Spacer()
-                Text("taken \(log.timestamp.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
+                Text("\(log.timestamp.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
             }
-            HStack {
-                Spacer()
-                Text(log.timestamp.formatted(.dateTime))
-            }
-            
-            Divider()
         }
     }
 }
 
+#if DEBUG
 #Preview {
-    LogEntryRowView(log: LogEntry.preview(), here: Date())
+    LogEntryRowView(log: LogItem.preview(), here: Date())
 }
+#endif

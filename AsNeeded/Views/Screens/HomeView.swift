@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct HomeView: View {
     @EnvironmentObject var userData: UserData
@@ -45,7 +46,9 @@ struct HomeView: View {
     }
 }
 
-#Preview { 
+#if DEBUG
+#Preview {
     HomeView()
         .environmentObject(UserData.preview)
 }
+#endif

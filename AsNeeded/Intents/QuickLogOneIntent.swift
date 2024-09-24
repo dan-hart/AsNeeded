@@ -27,10 +27,10 @@ struct QuickLogOneIntent: AppIntent {
      */
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        Logbook.quickLog()
+        Logbook.shared.quickLog()
         UserData.shared.quantityInMG -= 1
         
-        if let logs = Logbook.getLogs(for: .now) {
+        if let logs = Logbook.shared.getLogs(for: .now) {
             return .result(dialog: "Logged ✅ You've now taken \(Int(logs.totalMG.rounded(.up))) MG today.")
         } else {
             return .result(dialog: "Logged ✅")

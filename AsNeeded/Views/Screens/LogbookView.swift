@@ -6,40 +6,37 @@
 //
 
 import SwiftUI
-import RealmSwift
+import SwiftData
+import SwiftDate
 
 struct LogbookView: View {
-    @ObservedResults(LogEntry.self) var logs
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
     
-    private let sortDescriptors = [
-        SortDescriptor(keyPath: "timestamp", ascending: false)
-    ]
+    @EnvironmentObject var userData: UserData
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack {
-                    ForEach(logs.sorted(by: sortDescriptors), id: \.self) { log in
-                        LogEntryRowView(log: log)
+            List {
+                ForEach(logs.groupedByDate2DArray(), id: \.self) { dayLogs in
+                    Section(header: Text((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)), footer: Text("Total: \(dayLogs.roundedTotalMG) MG")) {
+                        ForEach(dayLogs) { log in
+                            NavigationLink(destination: LogItemDetailView(logItem: log)) {
+                                LogEntryRowView(log: log)
+                            }
+                        }
                     }
                 }
-                .navigationTitle("Logbook")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        LogButtonView()
-                    }
-                    
-                    ToolbarItem {
-                        QuickLogButton()
-                    }
-                }
-                .padding()
             }
+            .navigationTitle("Logbook")
         }
     }
+
 }
 
+#if DEBUG
 #Preview {
     LogbookView()
         .environmentObject(UserData.preview)
 }
+#endif

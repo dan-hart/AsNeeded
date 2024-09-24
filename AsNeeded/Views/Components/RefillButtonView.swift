@@ -22,7 +22,9 @@ struct RefillButtonView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     RefillButtonView()
         .environmentObject(UserData.preview)
 }
+#endif

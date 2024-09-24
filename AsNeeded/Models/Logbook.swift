@@ -6,44 +6,69 @@
 //
 
 import Foundation
-import RealmSwift
 import UIKit
+import SwiftData
 
+@MainActor
 class Logbook {
-    static let realm = try? Realm()
+    static let shared = Logbook()
+    
+    lazy var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            LogItem.self,
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+    
+    var context: ModelContext {
+        sharedModelContainer.mainContext
+    }
     
     /// Log one now
-    static func quickLog() {
+    func quickLog() {
         log(quantityInMG: 1, at: .now)
     }
     
-    static func log(quantityInMG: Double, at: Date) {
-        let log = LogEntry()
-        log._id = UUID().uuidString
-        log.timestamp = at
-        log.quantityInMG = quantityInMG
-
-        try? realm?.write {
-            realm?.add(log)
-        }
+    func log(quantityInMG: Double, at: Date) {
+        let log = LogItem(timestamp: at, quantityInMG: quantityInMG)
+        context.insert(log)
     }
     
-    static func delete(log: LogEntry) {
-        try? realm?.write {
-            realm?.delete(log)
+    func delete(log: LogItem) {
+        UserData.shared.quantityInMG += log.quantityInMG
+        context.delete(log)
+    }
+    
+    func save() {
+        do {
+            if self.context.hasChanges {
+                try self.context.save()
+            }
+        } catch {
+            print("Error saving log: \(error)")
         }
     }
     
     // MARK: - Querying
-    static func getLogs() -> Results<LogEntry>? {
-        realm?.objects(LogEntry.self)
+    func getLogs() -> [LogItem] {
+        do {
+            return try context.fetch(FetchDescriptor<LogItem>())
+        } catch {
+            print("Error fetching logs: \(error)")
+            return []
+        }
     }
     
-    static func getLogs(for date: Date) -> [LogEntry]? {
-        let startOfDay = date.startOfDay()
-        let endOfDay = startOfDay.addingTimeInterval(60 * 60 * 24)
-        
-        guard let results = realm?.objects(LogEntry.self).filter("timestamp >= %@ AND timestamp < %@", startOfDay, endOfDay) else { return nil }
-        return results.map({$0})
+    func getLogs(for date: Date) -> [LogItem]? {
+        let logs = getLogs().filter { item in
+            item.timestamp.startOfDay() == date.startOfDay()
+        }
+        return logs
     }
 }

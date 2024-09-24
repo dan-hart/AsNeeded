@@ -28,7 +28,7 @@ struct GetTodayCountIntent: AppIntent {
      */
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        if let logs = Logbook.getLogs(for: .now) {
+        if let logs = Logbook.shared.getLogs(for: .now) {
             return .result(dialog: "You've taken \(Int(logs.totalMG.rounded(.up))) MG today.")
         } else {
             return .result(dialog: "Error fetching today's logs.")

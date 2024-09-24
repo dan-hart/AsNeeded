@@ -105,20 +105,13 @@ struct TripView: View {
                 .padding()
             }
             .navigationTitle("Trip")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    LogButtonView()
-                }
-                
-                ToolbarItem {
-                    QuickLogButton()
-                }
-            }
         }
     }
 }
 
+#if DEBUG
 #Preview {
     TripView()
         .environmentObject(UserData.preview)
 }
+#endif

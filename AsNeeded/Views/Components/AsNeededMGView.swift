@@ -54,7 +54,9 @@ struct AsNeededMGView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     AsNeededMGView(value: .constant(0.5))
         .environmentObject(UserData.preview)
 }
+#endif

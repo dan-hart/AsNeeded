@@ -6,15 +6,15 @@
 //
 
 import SwiftUI
-import RealmSwift
 
 struct LogView: View {
     @State var input = ""
     @State var timestamp = Date.now
-    @FocusState private var isFocused: Bool
+    @FocusState var isFocused: Bool
     @Environment(\.presentationMode) var presentationMode
     
     @EnvironmentObject var userData: UserData
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
         VStack {
@@ -32,10 +32,10 @@ struct LogView: View {
                 .padding()
             Button {
                 guard let quantityInMG = Double(self.input) else { return }
-                Logbook.log(quantityInMG: quantityInMG, at: self.timestamp)
+                Logbook.shared.log(quantityInMG: quantityInMG, at: self.timestamp)
                 userData.quantityInMG -= quantityInMG
                 
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             } label: {
                 Label("Submit Log", systemSymbol: .pencilCircleFill)
             }
@@ -46,7 +46,9 @@ struct LogView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     LogView()
         .environmentObject(UserData.preview)
 }
+#endif
