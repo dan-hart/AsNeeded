@@ -15,9 +15,9 @@ struct LogEntryRowView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("\(log.roundedQuantityInMG) mg at \(log.timestamp.formatted(date: .omitted, time: .shortened))")
+                Text("\(log.roundedQuantityInMG) mg")
                 Spacer()
-                Text("\(log.timestamp.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
+                Text("\(log.timestamp.formatted(date: .omitted, time: .shortened))")
             }
         }
     }

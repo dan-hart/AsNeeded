@@ -19,7 +19,7 @@ struct LogbookView: View {
         NavigationStack {
             List {
                 ForEach(logs.groupedByDate2DArray(), id: \.self) { dayLogs in
-                    Section(header: Text((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)), footer: Text("Total: \(dayLogs.roundedTotalMG) MG")) {
+                    Section(header: Text("\((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)) - \("Total: \(dayLogs.roundedTotalMG) MG")")) {
                         ForEach(dayLogs) { log in
                             NavigationLink(destination: LogItemDetailView(logItem: log)) {
                                 LogEntryRowView(log: log)
