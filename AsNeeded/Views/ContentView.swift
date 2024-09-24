@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftyUserDefaults
 import SFSafeSymbols
 import SwiftData
 

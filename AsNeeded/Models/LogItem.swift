@@ -11,8 +11,8 @@ import SwiftData
 @Model
 class LogItem: Identifiable, Hashable, Equatable {
     var id: String = UUID().uuidString
-    var timestamp: Date
-    var quantityInMG: Double
+    var timestamp: Date = Date()
+    var quantityInMG: Double = 0
 
     var roundedQuantityInMG: String {
         let result = "\(quantityInMG.rounded(toPlaces: 1))"

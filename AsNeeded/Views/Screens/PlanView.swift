@@ -33,7 +33,7 @@ struct PlanView: View {
                 VStack {
                     Text("Trajectory")
                         .font(.title)
-                    TrajectoryView(value: Trajectory.calculate(forDailyTrimInMG: endOfCycleDailyTrimInMG))
+                    TrajectoryView(value: .ahead) // TODO: Implement
                     Text("\(endOfCycleDailyTrimInMG.rounded(toPlaces: 2).formatted()) mg daily trim at end of cycle")
                     Text(explanation)
                         .padding()

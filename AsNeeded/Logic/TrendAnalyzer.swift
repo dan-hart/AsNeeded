@@ -158,12 +158,6 @@ class TrendAnalyzer {
             return .onTrack // Default status when no data is available
         }
         
-        // Calculate total consumption so far
-        let totalConsumed = numbers.reduce(0, +)
-        
-        // Calculate the number of days passed
-        let daysPassed = numbers.count
-        
         // Adjust projected consumption based on trend and seasonality
         let projectedTotalConsumption = projectedConsumption(numbers: numbers.map { Double($0) }, totalSupply: totalSupply, periodLength: periodLength, seasonLength: seasonLength)
         

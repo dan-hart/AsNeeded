@@ -7,23 +7,25 @@
 
 import Foundation
 import SwiftData
+#if os(iOS)
 import SwiftDate
 import SwiftyUserDefaults
+#endif
 
 @Model
 class User: Identifiable, Hashable, Equatable {
     var id: String = UUID().uuidString
-    var quantityInMG: Double {
+    var quantityInMG: Double = 0 {
         didSet {
             quantityLastUpdated = .now
         }
     }
-    var quantityLastUpdated: Date
-    var nextRefillDate: Date
-    var dailyDoseInMG: Double
-    var aheadTrajectoryInMG: Double
-    var plannedDailyDoseInMG: Double
-    var refillQuantityInMG: Double
+    var quantityLastUpdated: Date = Date()
+    var nextRefillDate: Date = Date()
+    var dailyDoseInMG: Double = 0
+    var aheadTrajectoryInMG: Double = 0
+    var plannedDailyDoseInMG: Double = 0
+    var refillQuantityInMG: Double = 0
     
     init(quantityInMG: Double, quantityLastUpdated: Date, nextRefillDate: Date, dailyDoseInMG: Double, aheadTrajectoryInMG: Double, plannedDailyDoseInMG: Double, refillQuantityInMG: Double) {
         self.quantityInMG = quantityInMG
@@ -46,6 +48,7 @@ class User: Identifiable, Hashable, Equatable {
 //    }
     
     init() {
+        #if os(iOS)
         quantityInMG = Defaults[\.quantity]
         quantityLastUpdated = Defaults[\.quantityLastUpdatedDate]
         nextRefillDate = Defaults[\.nextRefillDate]
@@ -53,14 +56,21 @@ class User: Identifiable, Hashable, Equatable {
         aheadTrajectoryInMG = Defaults[\.aheadTrajectoryInMG]
         refillQuantityInMG = Defaults[\.refillQuantityInMG]
         plannedDailyDoseInMG = Defaults[\.plannedDailyDoseInMG]
+        #endif
     }
     
     /// The number of days remaining until the next refill date.
     /// - Parameter date: The date to calculate from. Defaults to the current date.
     /// - Returns: The number of days remaining until the next refill date.
     func calculateDaysRemainingUntilNextRefillDate(from date: Date = .now) -> Double {
+        #if os(iOS)
         let components = date.differences(in: [.day], from: nextRefillDate)
         return Double(components[.day] ?? 0)
+        #else
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.day], from: date, to: nextRefillDate)
+        return Double(components.day ?? 0)
+        #endif
     }
     
     // MARK: - Calculations
@@ -80,8 +90,8 @@ class User: Identifiable, Hashable, Equatable {
         return dailyAvailableInMG - dailyDoseInMG
     }
     
-    var currentStatus: Trajectory {
-        Trajectory.calculate(forDailyTrimInMG: dailyTrimInMG)
+    var currentStatus: TrendAnalyzer.ConsumptionStatus {
+        return .ahead // TODO: Implement
     }
     
     // MARK: - Formatting
@@ -102,7 +112,11 @@ extension User {
         let user = User()
         user.quantityInMG = 150
         user.dailyDoseInMG = 5
+        #if os(iOS)
         user.nextRefillDate = .now + 7.days
+        #else
+        user.nextRefillDate = Date() + 7 * 24 * 60 * 60
+        #endif
         user.plannedDailyDoseInMG = 3
         user.refillQuantityInMG = 150
         return user

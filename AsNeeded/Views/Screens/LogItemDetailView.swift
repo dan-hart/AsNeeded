@@ -34,9 +34,6 @@ struct LogItemDetailView: View {
                 Label("Delete", systemSymbol: .trash)
                     .foregroundStyle(.red)
             }
-            Text("Reminder: Re-add \(logItem.roundedQuantityInMG) MG to the current quantity if this log is deleted")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
         .padding()
         .navigationTitle("Log Item Details")

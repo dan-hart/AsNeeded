@@ -61,7 +61,7 @@ struct TripView: View {
                     AsNeededMGView(value: $logbook.user.plannedDailyDoseInMG)
                         .padding(.bottom)
                     
-                    Text("This works best if the trip is in the next \(logbook.user.daysRemainingUntilNextRefillDate.formatted() ?? "Unknown") days")
+                    Text("This works best if the trip is in the next \(logbook.user.daysRemainingUntilNextRefillDate.formatted()) days")
                         .font(.subheadline)
                     Stepper("Trip Days (\(tripDays))", value: $tripDays, in: 2...1000)
                     

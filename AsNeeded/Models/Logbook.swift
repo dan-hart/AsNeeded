@@ -34,7 +34,7 @@ class Logbook: ObservableObject {
         if let user = getUser() {
             return user
         } else {
-            fatalError("Could not fetch user")
+            return User()
         }
     }()
     
@@ -91,7 +91,12 @@ class Logbook: ObservableObject {
     
     func getLogs(for date: Date) -> [LogItem]? {
         let logs = getLogs().filter { item in
+            #if os(iOS)
             item.timestamp.startOfDay() == date.startOfDay()
+            #else
+            let calendar = Calendar.current
+            return calendar.startOfDay(for: item.timestamp) == calendar.startOfDay(for: date)
+            #endif
         }
         return logs
     }
