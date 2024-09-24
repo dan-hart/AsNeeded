@@ -9,6 +9,8 @@ import SwiftUI
 import SwiftData
 
 struct LogItemDetailView: View {
+    @EnvironmentObject var userData: UserData
+    
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) var dismiss
     var logItem: LogItem
@@ -26,6 +28,7 @@ struct LogItemDetailView: View {
             
             Button {
                 modelContext.delete(logItem)
+                userData.quantityInMG += logItem.quantityInMG
                 if modelContext.hasChanges {
                     try? modelContext.save()
                 }

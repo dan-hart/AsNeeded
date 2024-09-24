@@ -8,41 +8,43 @@
 import SwiftUI
 
 struct TripView: View {
+    @EnvironmentObject var userData: UserData
+    
     @StateObject var logbook = Logbook.shared
     
     @AppStorage("tripDays") var tripDays: Int = 7
     
     var nonTripDays: Double {
-        Double(logbook.user.daysRemainingUntilNextRefillDate) - Double(tripDays)
+        Double(userData.daysRemainingUntilNextRefillDate ?? 0) - Double(tripDays)
     }
     
     var milligramsNeeded: Double {
         switch strategy {
         case .max:
-            return Double(tripDays) * (logbook.user.plannedDailyDoseInMG * 2)
+            return Double(tripDays) * (userData.plannedDailyDoseInMG * 2)
         case .uShaped:
-            let travelDaysInMG = (logbook.user.plannedDailyDoseInMG * 2) * 2
+            let travelDaysInMG = (userData.plannedDailyDoseInMG * 2) * 2
             let remainingMGNeeded = Double(tripDays - 2) * 1.5
-            return travelDaysInMG + remainingMGNeeded + (Double(tripDays) * logbook.user.plannedDailyDoseInMG)
+            return travelDaysInMG + remainingMGNeeded + (Double(tripDays) * userData.plannedDailyDoseInMG)
         case .min:
-            return Double(tripDays) * logbook.user.plannedDailyDoseInMG
+            return Double(tripDays) * userData.plannedDailyDoseInMG
         }
     }
     
     var remainingQuantityInMG: Double {
-        return logbook.user.quantityInMG - ((logbook.user.daysRemainingUntilNextRefillDate) * logbook.user.plannedDailyDoseInMG)
+        return userData.quantityInMG - ((userData.daysRemainingUntilNextRefillDate ?? 0) * userData.plannedDailyDoseInMG)
     }
     
     var perNonTripDayMG: Double {
-        logbook.user.dailyDoseInMG + ((remainingQuantityInMG - milligramsNeeded) / nonTripDays)
+        userData.dailyDoseInMG + ((remainingQuantityInMG - milligramsNeeded) / nonTripDays)
     }
     
     var remainingQuantityInDays: Double {
-        return remainingQuantityInMG / logbook.user.dailyDoseInMG
+        return remainingQuantityInMG / userData.dailyDoseInMG
     }
     
     var endOfCycleDailyTrimInMG: Double {
-        return ((logbook.user.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - logbook.user.dailyDoseInMG
+        return ((userData.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - userData.dailyDoseInMG
     }
     
     enum TitrationStrategy: String, CaseIterable {
@@ -58,10 +60,10 @@ struct TripView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Planned Non-Trip Daily Dose")
-                    AsNeededMGView(value: $logbook.user.plannedDailyDoseInMG)
+                    AsNeededMGView(value: $userData.plannedDailyDoseInMG)
                         .padding(.bottom)
                     
-                    Text("This works best if the trip is in the next \(logbook.user.daysRemainingUntilNextRefillDate.formatted()) days")
+                    Text("This works best if the trip is in the next \((userData.daysRemainingUntilNextRefillDate ?? 0).formatted()) days")
                         .font(.subheadline)
                     Stepper("Trip Days (\(tripDays))", value: $tripDays, in: 2...1000)
                     
@@ -78,7 +80,7 @@ struct TripView: View {
                     }
                     
                     
-                    if perNonTripDayMG > logbook.user.plannedDailyDoseInMG {
+                    if perNonTripDayMG > userData.plannedDailyDoseInMG {
                         HStack {
                             Image(systemSymbol: .checkmarkCircleFill)
                                 .foregroundStyle(.green)

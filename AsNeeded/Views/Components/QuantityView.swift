@@ -12,15 +12,15 @@ import SwiftDate
 struct QuantityView: View {
     @Binding var quantity: Double
     let here = Date()
-    
-    @StateObject var logbook: Logbook = Logbook.shared
+
+    @StateObject var userData = UserData()
     
     var body: some View {
         VStack {
             Text("Quantity")
                 .font(.subheadline)
             AsNeededMGView(value: $quantity)
-            Text("updated \(logbook.user.quantityLastUpdated.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
+            Text("updated \(userData.quantityLastUpdatedDate.toRelative(since: DateInRegion(year: here.year, month: here.month, day: here.day, hour: here.hour, minute: here.minute, second: here.second, nanosecond: here.nanosecond, region: here.region)))")
         }
         .padding()
     }

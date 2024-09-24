@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LogView: View {
+    @EnvironmentObject var userData: UserData
+    
     @State var input = ""
     @State var timestamp = Date.now
     @FocusState var isFocused: Bool
@@ -18,6 +20,7 @@ struct LogView: View {
     var body: some View {
         VStack {
             QuickLogButton()
+                .environmentObject(userData)
             
             Text("Log")
                 .font(.largeTitle)
@@ -32,7 +35,7 @@ struct LogView: View {
             Button {
                 guard let quantityInMG = Double(self.input) else { return }
                 Logbook.shared.log(quantityInMG: quantityInMG, at: self.timestamp)
-                
+                userData.quantityInMG -= quantityInMG
                 dismiss()
             } label: {
                 Label("Submit Log", systemSymbol: .pencilCircleFill)

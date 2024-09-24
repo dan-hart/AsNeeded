@@ -10,6 +10,8 @@ import Charts
 import SwiftData
 
 struct ChartView: View {
+    @EnvironmentObject var userData: UserData
+    
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
     

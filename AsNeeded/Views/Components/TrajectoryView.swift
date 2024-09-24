@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TrajectoryView: View {
-    var value: TrendAnalyzer.ConsumptionStatus
+    var value: Trajectory
     
     var body: some View {
         Text(value.rawValue)
@@ -23,16 +23,16 @@ struct TrajectoryView: View {
                 .fill(getBackgroundColor(for: value)))
     }
     
-    func getTextColor(for value: TrendAnalyzer.ConsumptionStatus) -> Color {
+    func getTextColor(for value: Trajectory) -> Color {
         switch value {
-        case .ahead, .onTrack, .danger:
+        case .ahead, .onTrack, .danger, .unknown:
             return .white
         case .behind, .slowDown:
             return .black
         }
     }
     
-    func getBackgroundColor(for value: TrendAnalyzer.ConsumptionStatus) -> Color {
+    func getBackgroundColor(for value: Trajectory) -> Color {
         switch value {
         case .ahead:
             return .mint
@@ -42,13 +42,15 @@ struct TrajectoryView: View {
             return .yellow
         case .danger:
             return .red
+        case .unknown:
+            return .gray
         }
     }
 }
 
 #Preview {
     Group {
-        ForEach(TrendAnalyzer.ConsumptionStatus.allCases, id: \.self) { t in
+        ForEach(Trajectory.allCases, id: \.self) { t in
             TrajectoryView(value: t)
         }
     }

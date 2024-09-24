@@ -9,22 +9,22 @@ import SwiftUI
 import SwiftData
 
 struct PlanView: View {
-    @StateObject var logbook = Logbook.shared
+    @EnvironmentObject var userData: UserData
     
     var remainingQuantityInMG: Double {
-        return logbook.user.quantityInMG - ((logbook.user.daysRemainingUntilNextRefillDate) * logbook.user.plannedDailyDoseInMG)
+        return userData.quantityInMG - ((userData.daysRemainingUntilNextRefillDate ?? 0) * userData.plannedDailyDoseInMG)
     }
     
     var remainingQuantityInDays: Double {
-        return remainingQuantityInMG / logbook.user.dailyDoseInMG
+        return remainingQuantityInMG / userData.dailyDoseInMG
     }
     
     var endOfCycleDailyTrimInMG: Double {
-        return ((logbook.user.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - logbook.user.dailyDoseInMG
+        return ((userData.refillQuantityInMG + remainingQuantityInMG) / Constants.daysInCycle) - userData.dailyDoseInMG
     }
     
     var explanation: String {
-        return "If you take \(logbook.user.plannedDailyDoseInMG.formatted()) mg per day until \(logbook.user.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\(logbook.user.daysRemainingUntilNextRefillDate.formatted()) \("day".pluralize(count: Int(logbook.user.daysRemainingUntilNextRefillDate))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over which is a buffer of \(remainingQuantityInDays) \("day".pluralize(count: Int(remainingQuantityInDays)))."
+        return "If you take \(userData.plannedDailyDoseInMG.formatted()) mg per day until \(userData.nextRefillDate.formatted(date: .abbreviated, time: .omitted)) (\((userData.daysRemainingUntilNextRefillDate ?? 0).formatted()) \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? 0))) from now) you will have \(remainingQuantityInMG.formatted()) mg left over which is a buffer of \(remainingQuantityInDays) \("day".pluralize(count: Int(remainingQuantityInDays)))."
     }
     
     var body: some View {
@@ -40,7 +40,7 @@ struct PlanView: View {
                     Spacer()
                     Text("Planned Daily Dose")
                         .font(.title)
-                    AsNeededMGView(value: $logbook.user.plannedDailyDoseInMG)
+                    AsNeededMGView(value: $userData.plannedDailyDoseInMG)
                         .padding(.horizontal)
                         .padding(.bottom)
                 }

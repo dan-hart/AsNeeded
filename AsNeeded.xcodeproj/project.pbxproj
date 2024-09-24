@@ -17,6 +17,15 @@
 		52465909297778C600B48056 /* LogbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52465908297778C600B48056 /* LogbookView.swift */; };
 		5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5246590A29777AC100B48056 /* LogEntryRowView.swift */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5263AE2F2CA2D3B60095D2A0 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 5263AE2E2CA2D3B60095D2A0 /* RealmSwift */; };
+		5263AE302CA2D59F0095D2A0 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 5263AE2E2CA2D3B60095D2A0 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		5263AE332CA2DD640095D2A0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE322CA2DD640095D2A0 /* Trajectory.swift */; };
+		5263AE342CA2DD640095D2A0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE322CA2DD640095D2A0 /* Trajectory.swift */; };
+		5263AE362CA2E1B80095D2A0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE352CA2E1B80095D2A0 /* UserData.swift */; };
+		5263AE372CA2E1B80095D2A0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE352CA2E1B80095D2A0 /* UserData.swift */; };
+		5263AE392CA2E87D0095D2A0 /* ExtensionAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE382CA2E8780095D2A0 /* ExtensionAction.swift */; };
+		5263AE3A2CA2E87D0095D2A0 /* ExtensionAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE382CA2E8780095D2A0 /* ExtensionAction.swift */; };
+		5263AE3C2CA2ED3B0095D2A0 /* WCReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE3B2CA2ED3B0095D2A0 /* WCReceiver.swift */; };
 		5269C6CD2A588F6C004523F8 /* QuickLogButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5269C6CC2A588F6C004523F8 /* QuickLogButton.swift */; };
 		5269C6CF2A589ACD004523F8 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5269C6CE2A589ACD004523F8 /* ChartView.swift */; };
 		527326D32CA2C75300B87497 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 527326D22CA2C75300B87497 /* SwiftDate */; };
@@ -45,13 +54,11 @@
 		5296A1AD2CA252A700A6E3B6 /* LogItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1AC2CA252A200A6E3B6 /* LogItem.swift */; };
 		5296A1AF2CA26B7E00A6E3B6 /* LogItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1AE2CA26B7600A6E3B6 /* LogItemDetailView.swift */; };
 		5296A1BF2CA28DBC00A6E3B6 /* RecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */; };
-		5296A1C42CA28F6700A6E3B6 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1C32CA28F6700A6E3B6 /* User.swift */; };
 		52A1A69D2B2E012B00AAE095 /* TripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A1A69C2B2E012B00AAE095 /* TripView.swift */; };
 		52A28DCE2A6AA839008212BC /* TrendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52A28DCD2A6AA839008212BC /* TrendView.swift */; };
 		52BB7AEE2CA2CABB0083F80C /* Logbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52465906297776EE00B48056 /* Logbook.swift */; };
 		52BB7AEF2CA2CACB0083F80C /* LogItem+totalMG.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52796B2D2C3862F6008B6C3D /* LogItem+totalMG.swift */; };
 		52BB7AF02CA2CAD90083F80C /* LogItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1AC2CA252A200A6E3B6 /* LogItem.swift */; };
-		52BB7AF12CA2CAE50083F80C /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5296A1C32CA28F6700A6E3B6 /* User.swift */; };
 		52BB7AF22CA2CAF70083F80C /* Double+roundToPlaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52929DC428EF443E00C996E0 /* Double+roundToPlaces.swift */; };
 		52BB7AF32CA2CB090083F80C /* TrendAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52FE32EA2A69CA3A009CDD53 /* TrendAnalyzer.swift */; };
 		52BB7AF82CA2CD480083F80C /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52BB7AF72CA2CD480083F80C /* SwiftDate */; };
@@ -71,6 +78,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		5263AE312CA2D59F0095D2A0 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				5263AE302CA2D59F0095D2A0 /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5296A1F02CA2A17B00A6E3B6 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -97,6 +115,10 @@
 		52465908297778C600B48056 /* LogbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookView.swift; sourceTree = "<group>"; };
 		5246590A29777AC100B48056 /* LogEntryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogEntryRowView.swift; sourceTree = "<group>"; };
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5263AE322CA2DD640095D2A0 /* Trajectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trajectory.swift; sourceTree = "<group>"; };
+		5263AE352CA2E1B80095D2A0 /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
+		5263AE382CA2E8780095D2A0 /* ExtensionAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionAction.swift; sourceTree = "<group>"; };
+		5263AE3B2CA2ED3B0095D2A0 /* WCReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCReceiver.swift; sourceTree = "<group>"; };
 		5269C6CC2A588F6C004523F8 /* QuickLogButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogButton.swift; sourceTree = "<group>"; };
 		5269C6CE2A589ACD004523F8 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
 		52796B262C38593D008B6C3D /* QuickLogOneIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogOneIntent.swift; sourceTree = "<group>"; };
@@ -123,7 +145,6 @@
 		5296A1AC2CA252A200A6E3B6 /* LogItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogItem.swift; sourceTree = "<group>"; };
 		5296A1AE2CA26B7600A6E3B6 /* LogItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogItemDetailView.swift; sourceTree = "<group>"; };
 		5296A1BE2CA28DBC00A6E3B6 /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
-		5296A1C32CA28F6700A6E3B6 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		52A1A69C2B2E012B00AAE095 /* TripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripView.swift; sourceTree = "<group>"; };
 		52A28DCD2A6AA839008212BC /* TrendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendView.swift; sourceTree = "<group>"; };
 		52E82A7728F06C1F00178977 /* AddOrSubtractQuantityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrSubtractQuantityView.swift; sourceTree = "<group>"; };
@@ -148,6 +169,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5263AE2F2CA2D3B60095D2A0 /* RealmSwift in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
 				527326D32CA2C75300B87497 /* SwiftDate in Frameworks */,
@@ -298,7 +320,10 @@
 		52D0DF0A28E26F3600962C13 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				5296A1C32CA28F6700A6E3B6 /* User.swift */,
+				5263AE3B2CA2ED3B0095D2A0 /* WCReceiver.swift */,
+				5263AE382CA2E8780095D2A0 /* ExtensionAction.swift */,
+				5263AE352CA2E1B80095D2A0 /* UserData.swift */,
+				5263AE322CA2DD640095D2A0 /* Trajectory.swift */,
 				5296A1AC2CA252A200A6E3B6 /* LogItem.swift */,
 				52929DA828EF291700C996E0 /* Constants.swift */,
 				52929DAD28EF29B700C996E0 /* DefaultKeys.swift */,
@@ -354,6 +379,7 @@
 				527AFA1F28E26B3400BD575D /* Frameworks */,
 				527AFA2028E26B3400BD575D /* Resources */,
 				5296A1F02CA2A17B00A6E3B6 /* Embed Watch Content */,
+				5263AE312CA2D59F0095D2A0 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -365,6 +391,7 @@
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
 				527326D22CA2C75300B87497 /* SwiftDate */,
+				5263AE2E2CA2D3B60095D2A0 /* RealmSwift */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -401,6 +428,7 @@
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
 				527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */,
+				5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -439,8 +467,10 @@
 				52BB7AF22CA2CAF70083F80C /* Double+roundToPlaces.swift in Sources */,
 				52BB7AF32CA2CB090083F80C /* TrendAnalyzer.swift in Sources */,
 				52BB7AF02CA2CAD90083F80C /* LogItem.swift in Sources */,
+				5263AE332CA2DD640095D2A0 /* Trajectory.swift in Sources */,
 				52BB7AEF2CA2CACB0083F80C /* LogItem+totalMG.swift in Sources */,
-				52BB7AF12CA2CAE50083F80C /* User.swift in Sources */,
+				5263AE3A2CA2E87D0095D2A0 /* ExtensionAction.swift in Sources */,
+				5263AE362CA2E1B80095D2A0 /* UserData.swift in Sources */,
 				52BB7AEE2CA2CABB0083F80C /* Logbook.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -452,6 +482,7 @@
 				52E82A7828F06C1F00178977 /* AddOrSubtractQuantityView.swift in Sources */,
 				5235DAED28E296EC00384C53 /* HealthDataAccessing.swift in Sources */,
 				52A28DCE2A6AA839008212BC /* TrendView.swift in Sources */,
+				5263AE3C2CA2ED3B0095D2A0 /* WCReceiver.swift in Sources */,
 				52929DC728EF48D000C996E0 /* AsNeededMGView.swift in Sources */,
 				5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */,
 				52929D9E28EF24F400C996E0 /* ContentView.swift in Sources */,
@@ -467,12 +498,14 @@
 				52929DBA28EF373A00C996E0 /* Pluralize.swift in Sources */,
 				524659032977706300B48056 /* LogView.swift in Sources */,
 				52796B2E2C3862F6008B6C3D /* LogItem+totalMG.swift in Sources */,
+				5263AE372CA2E1B80095D2A0 /* UserData.swift in Sources */,
 				524659052977707000B48056 /* LogButtonView.swift in Sources */,
+				5263AE392CA2E87D0095D2A0 /* ExtensionAction.swift in Sources */,
 				52465907297776EE00B48056 /* Logbook.swift in Sources */,
 				52A1A69D2B2E012B00AAE095 /* TripView.swift in Sources */,
 				52796B2B2C38622C008B6C3D /* GetTodayCount.swift in Sources */,
 				52796B272C38593D008B6C3D /* QuickLogOneIntent.swift in Sources */,
-				5296A1C42CA28F6700A6E3B6 /* User.swift in Sources */,
+				5263AE342CA2DD640095D2A0 /* Trajectory.swift in Sources */,
 				52929DAE28EF29B700C996E0 /* DefaultKeys.swift in Sources */,
 				52929DC928EF506200C996E0 /* PlanView.swift in Sources */,
 				527AFA2828E26B3400BD575D /* HealthDataView.swift in Sources */,
@@ -795,6 +828,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/malcommac/SwiftDate";
@@ -822,6 +863,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5263AE2E2CA2D3B60095D2A0 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
+		};
 		527326D22CA2C75300B87497 /* SwiftDate */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */;

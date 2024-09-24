@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct RefillButtonView: View {
+    @EnvironmentObject var userData: UserData
     @Environment(\.dismiss) var dismiss
-    @StateObject var logbook: Logbook = .shared
     
     var body: some View {
         Button {
-            logbook.user.quantityInMG += logbook.user.refillQuantityInMG
+            userData.quantityInMG += userData.refillQuantityInMG
             dismiss()
         } label: {
             Label("Refill", systemSymbol: .pillsCircleFill)

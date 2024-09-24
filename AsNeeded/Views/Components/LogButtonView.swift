@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LogButtonView: View {
+    @EnvironmentObject var userData: UserData
+    
     @State var isShowingLogView = false
     var body: some View {
         Button {
@@ -17,6 +19,7 @@ struct LogButtonView: View {
         }
         .sheet(isPresented: $isShowingLogView) {
             LogView().presentationDetents([.medium])
+                .environmentObject(userData)
         }
     }
 }

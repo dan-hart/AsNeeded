@@ -14,7 +14,6 @@ struct WristAsNeeded_Watch_AppApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             LogItem.self,
-            User.self,
         ])
         
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

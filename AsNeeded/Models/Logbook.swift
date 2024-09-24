@@ -8,18 +8,18 @@
 import Foundation
 import UIKit
 import SwiftData
+import SwiftUI
 
 @MainActor
 class Logbook: ObservableObject {
     static let shared = Logbook()
-    
+
     init() {
     }
     
     lazy var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             LogItem.self,
-            User.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -27,14 +27,6 @@ class Logbook: ObservableObject {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-    
-    lazy var user: User = {
-        if let user = getUser() {
-            return user
-        } else {
-            return User()
         }
     }()
     
@@ -50,12 +42,10 @@ class Logbook: ObservableObject {
     func log(quantityInMG: Double, at: Date) {
         let log = LogItem(timestamp: at, quantityInMG: quantityInMG)
         context.insert(log)
-        user.quantityInMG -= quantityInMG
         save()
     }
     
     func delete(log: LogItem) {
-        user.quantityInMG += log.quantityInMG
         context.delete(log)
         save()
     }
@@ -71,15 +61,6 @@ class Logbook: ObservableObject {
     }
     
     // MARK: - Querying
-    func getUser() -> User? {
-        do {
-            return try context.fetch(FetchDescriptor<User>()).first
-        } catch {
-            print("Error fetching user: \(error)")
-            return nil
-        }
-    }
-    
     func getLogs() -> [LogItem] {
         do {
             return try context.fetch(FetchDescriptor<LogItem>())

@@ -10,6 +10,8 @@ import SwiftData
 import SwiftDate
 
 struct LogbookView: View {
+    @EnvironmentObject var userData: UserData
+    
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
     
@@ -19,7 +21,7 @@ struct LogbookView: View {
                 ForEach(logs.groupedByDate2DArray(), id: \.self) { dayLogs in
                     Section(header: Text("\((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)) - \("Total: \(dayLogs.roundedTotalMG) MG")")) {
                         ForEach(dayLogs) { log in
-                            NavigationLink(destination: LogItemDetailView(logItem: log)) {
+                            NavigationLink(destination: LogItemDetailView(logItem: log).environmentObject(userData)) {
                                 LogEntryRowView(log: log)
                             }
                         }

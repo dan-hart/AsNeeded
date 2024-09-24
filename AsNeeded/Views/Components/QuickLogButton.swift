@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct QuickLogButton: View {
+    @EnvironmentObject var userData: UserData
+    
     var body: some View {
         Button {
             #if os(iOS)
@@ -16,6 +18,7 @@ struct QuickLogButton: View {
             #endif
             
             Logbook.shared.quickLog()
+            userData.quantityInMG -= 1
         } label: {
             HStack {
                 #if os(iOS)

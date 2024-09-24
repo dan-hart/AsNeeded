@@ -8,32 +8,38 @@
 import SwiftUI
 import SwiftData
 
+#if os(iOS)
 struct HomeView: View {
-    @StateObject var logbook = Logbook.shared
+    @EnvironmentObject var userData: UserData
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack {
-                    AsNeededDatePickerView(nextRefillDate: $logbook.user.nextRefillDate)
-                    Text("\(logbook.user.daysRemainingUntilNextRefillDate.formatted()) \("day".pluralize(count: Int(logbook.user.daysRemainingUntilNextRefillDate))) remaining")
+                    AsNeededDatePickerView(nextRefillDate: $userData.nextRefillDate)
+                    Text("\(userData.daysRemainingUntilNextRefillDate?.formatted() ?? "N/A") \("day".pluralize(count: Int(userData.daysRemainingUntilNextRefillDate ?? 0))) remaining")
                         .font(.largeTitle)
-                    TrajectoryView(value: logbook.user.currentStatus)
+                    #if os(iOS)
+                    TrajectoryView(value: userData.currentStatus)
+                    #endif
                     VStack(alignment: .leading) {
-                        Text(logbook.user.dailyAvailable)
-                        Text(logbook.user.dailyTrim)
+                        Text(userData.dailyAvailable)
+                        Text(userData.dailyTrim)
                     }
-                    QuantityView(quantity: $logbook.user.quantityInMG)
+                    QuantityView(quantity: $userData.quantityInMG)
                     QuickLogButton()
+                        .environmentObject(userData)
                 }
                 .navigationTitle("Home")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         LogButtonView()
+                            .environmentObject(userData)
                     }
                     
                     ToolbarItem {
                         QuickLogButton()
+                            .environmentObject(userData)
                     }
                 }
                 .padding()
@@ -46,4 +52,5 @@ struct HomeView: View {
 #Preview {
     HomeView()
 }
+#endif
 #endif
