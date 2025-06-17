@@ -20,7 +20,7 @@ extension Array where Element: LogItem {
         return Dictionary(grouping: self, by: { $0.timestamp.startOfDay(using: calendar) })
     }
     
-    func groupedByDate2DArray() -> [[Element]] {
+    func groupedByDate2DArray() async -> [[Element]] {
         let calendar = Calendar.current
         var result: [[Element]] = []
         var currentGroup: [Element] = []

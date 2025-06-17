@@ -7,22 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import RealmSwift
-
-// Backup of Realm Data as of 09/24/2024
-class LogEntry: Object {
-    @Persisted(primaryKey: true) var _id: String
-    
-    @Persisted var timestamp: Date
-    @Persisted var quantityInMG: Double
-
-    var roundedQuantityInMG: String {
-        "\(quantityInMG.rounded(toPlaces: 1))"
-    }
-}
-
-extension LogEntry: Identifiable { }
-
 
 struct SettingsView: View {    
     @Binding var dose: Double

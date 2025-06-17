@@ -12,7 +12,7 @@ import SwiftDate
 #endif
 
 @Model
-class LogItem: Identifiable, Hashable, Equatable {
+class LogItem: Identifiable, Hashable, Equatable, @unchecked Sendable {
     var id: String = UUID().uuidString
     var timestamp: Date = Date()
     var quantityInMG: Double = 0

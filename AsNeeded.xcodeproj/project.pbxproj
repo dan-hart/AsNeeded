@@ -17,8 +17,6 @@
 		52465909297778C600B48056 /* LogbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52465908297778C600B48056 /* LogbookView.swift */; };
 		5246590B29777AC100B48056 /* LogEntryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5246590A29777AC100B48056 /* LogEntryRowView.swift */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		5263AE2F2CA2D3B60095D2A0 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 5263AE2E2CA2D3B60095D2A0 /* RealmSwift */; };
-		5263AE302CA2D59F0095D2A0 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 5263AE2E2CA2D3B60095D2A0 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		5263AE332CA2DD640095D2A0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE322CA2DD640095D2A0 /* Trajectory.swift */; };
 		5263AE342CA2DD640095D2A0 /* Trajectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE322CA2DD640095D2A0 /* Trajectory.swift */; };
 		5263AE362CA2E1B80095D2A0 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5263AE352CA2E1B80095D2A0 /* UserData.swift */; };
@@ -84,7 +82,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				5263AE302CA2D59F0095D2A0 /* RealmSwift in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -169,7 +166,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5263AE2F2CA2D3B60095D2A0 /* RealmSwift in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
 				527326D32CA2C75300B87497 /* SwiftDate in Frameworks */,
@@ -391,7 +387,6 @@
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
 				527326D22CA2C75300B87497 /* SwiftDate */,
-				5263AE2E2CA2D3B60095D2A0 /* RealmSwift */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -428,7 +423,6 @@
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
 				527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */,
-				5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -828,14 +822,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/realm/realm-swift";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/malcommac/SwiftDate";
@@ -863,11 +849,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		5263AE2E2CA2D3B60095D2A0 /* RealmSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 5263AE2D2CA2D3B60095D2A0 /* XCRemoteSwiftPackageReference "realm-swift" */;
-			productName = RealmSwift;
-		};
 		527326D22CA2C75300B87497 /* SwiftDate */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */;

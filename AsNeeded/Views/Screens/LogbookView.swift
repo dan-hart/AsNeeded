@@ -14,11 +14,16 @@ struct LogbookView: View {
     
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \LogItem.timestamp, order: .reverse) var logs: [LogItem]
+    @State var date2DArray: [[LogItem]] = [
+        [LogItem()],
+        [LogItem()],
+        [LogItem()],
+    ]
     
     var body: some View {
         NavigationStack {
             List {
-                ForEach(logs.groupedByDate2DArray(), id: \.self) { dayLogs in
+                ForEach(date2DArray, id: \.self) { dayLogs in
                     Section(header: Text("\((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)) - \("Total: \(dayLogs.roundedTotalMG) MG")")) {
                         ForEach(dayLogs) { log in
                             NavigationLink(destination: LogItemDetailView(logItem: log).environmentObject(userData)) {
@@ -30,8 +35,11 @@ struct LogbookView: View {
             }
             .navigationTitle("Logbook")
         }
+        .redacted(reason: date2DArray.count > 3 ? [] : .placeholder)
+        .task {
+            date2DArray = await logs.groupedByDate2DArray()
+        }
     }
-
 }
 
 #if DEBUG
