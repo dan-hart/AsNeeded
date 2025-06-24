@@ -19,15 +19,21 @@ struct LogbookView: View {
         [LogItem()],
         [LogItem()],
     ]
+    @State private var isLoading = false
     
     var body: some View {
         NavigationStack {
             List {
-                ForEach(date2DArray, id: \.self) { dayLogs in
-                    Section(header: Text("\((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)) - \("Total: \(dayLogs.roundedTotalMG) MG")")) {
-                        ForEach(dayLogs) { log in
-                            NavigationLink(destination: LogItemDetailView(logItem: log).environmentObject(userData)) {
-                                LogEntryRowView(log: log)
+                if date2DArray.isEmpty {
+                    Text("No logs found")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(date2DArray, id: \.self) { dayLogs in
+                        Section(header: Text("\((dayLogs.first?.timestamp ?? Date()).formatted(date: .abbreviated, time: .omitted)) - \("Total: \(dayLogs.roundedTotalMG) MG")")) {
+                            ForEach(dayLogs) { log in
+                                NavigationLink(destination: LogItemDetailView(logItem: log).environmentObject(userData)) {
+                                    LogEntryRowView(log: log)
+                                }
                             }
                         }
                     }
@@ -35,8 +41,10 @@ struct LogbookView: View {
             }
             .navigationTitle("Logbook")
         }
-        .redacted(reason: date2DArray.count > 3 ? [] : .placeholder)
+        .redacted(reason: isLoading ? .placeholder : [])
         .task {
+            isLoading = true
+            defer { isLoading = false }
             date2DArray = await logs.groupedByDate2DArray()
         }
     }
