@@ -7,11 +7,12 @@
 
 import Foundation
 import SwiftyUserDefaults
+import SwiftDate
 
 extension DefaultsKeys {
-    var quantity: DefaultsKey<Double> { .init("quantity", defaultValue: 0.0) }
+    var quantity: DefaultsKey<Double> { .init("quantity", defaultValue: 50) }
     var quantityLastUpdatedDate: DefaultsKey<Date> { .init("quantityLastUpdatedDate", defaultValue: .now) }
-    var nextRefillDate: DefaultsKey<Date> { .init("nextRefillDate", defaultValue: .now) }
+    var nextRefillDate: DefaultsKey<Date> { .init("nextRefillDate", defaultValue: Date().dateByAdding(30, .day).date) }
     var dailyDoseInMG: DefaultsKey<Double> { .init("dailyDoseInMG", defaultValue: 1) }
     var plannedDailyDoseInMG: DefaultsKey<Double> { .init("plannedDailyDoseInMG", defaultValue: 1) }
     var refillQuantityInMG: DefaultsKey<Double> { .init("refillQuantityInMG", defaultValue: 50) }
