@@ -5,9 +5,7 @@ import SwiftUI
 
 struct TrendsView: View {
     var body: some View {
-        Text("Trends")
-            .font(.largeTitle)
-            .fontWeight(.semibold)
+        MedicationTrendsView()
             .padding()
     }
 }
