@@ -10,7 +10,24 @@ import SFSafeSymbols
 
 struct ContentView: View {
     var body: some View {
-        Text("Hello, AsNeeded!")
+        TabView {
+            MedicationView()
+                .tabItem {
+                    Label("Medication", systemImage: "pills")
+                }
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: "clock.arrow.circlepath")
+                }
+            TrendsView()
+                .tabItem {
+                    Label("Trends", systemImage: "chart.xyaxis.line")
+                }
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
+        }
     }
 }
 
