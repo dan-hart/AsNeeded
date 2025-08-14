@@ -1,14 +1,29 @@
-// Create a new SwiftUI file for the Medication tab.
-// This is a placeholder for the MedicationView, following best practices for reusable components.
-
 import SwiftUI
 
 struct MedicationView: View {
+    @State private var medications: [MockMedication] = MockMedication.asNeededMedications
+    @State private var selectedMedication: MockMedication?
+    
     var body: some View {
-        Text("Medication")
-            .font(.largeTitle)
-            .fontWeight(.semibold)
-            .padding()
+        NavigationStack {
+            List(medications) { medication in
+                NavigationLink(value: medication) {
+                    VStack(alignment: .leading) {
+                        Text(medication.name)
+                            .font(.headline)
+                        if let dosage = medication.dosage {
+                            Text(dosage)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("AsNeeded")
+            .navigationDestination(for: MockMedication.self) { medication in
+                MedicationDetailView(medication: medication)
+            }
+        }
     }
 }
 

@@ -1,14 +1,16 @@
-// Create a new SwiftUI file for the Settings tab.
-// This is a placeholder for the SettingsView, following best practices for reusable components.
-
 import SwiftUI
 
 struct SettingsView: View {
     var body: some View {
-        Text("Settings")
-            .font(.largeTitle)
-            .fontWeight(.semibold)
-            .padding()
+        VStack(alignment: .leading, spacing: 28) {
+            Text("Settings")
+                .font(.largeTitle)
+                .fontWeight(.semibold)
+                .padding(.bottom, 4)
+            MedicalDisclaimerView()
+            Spacer()
+        }
+        .padding()
     }
 }
 
