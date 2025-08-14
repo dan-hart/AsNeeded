@@ -29,7 +29,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:AsNeeded.xctestplan"
+            reference = "container:AsNeededTests/AsNeeded.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -61,7 +61,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5296A1B42CA28D6B00A6E3B6"
+               BlueprintIdentifier = "52B3784B2E4E77FD008EC5F2"
                BuildableName = "AsNeededTests.xctest"
                BlueprintName = "AsNeededTests"
                ReferencedContainer = "container:AsNeeded.xcodeproj">
