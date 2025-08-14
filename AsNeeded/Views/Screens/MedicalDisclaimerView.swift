@@ -5,10 +5,10 @@ struct MedicalDisclaimerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.yellow)
-                    .font(.title2)
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+                .font(.title2)
+            
                 VStack(alignment: .leading, spacing: 4) {
                     Text("This app is not a replacement for medical advice.")
                         .font(.headline)
@@ -16,7 +16,6 @@ struct MedicalDisclaimerView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-            }
 
             Button {
                 showMoreInfo = true
@@ -25,7 +24,6 @@ struct MedicalDisclaimerView: View {
                     .font(.body)
                     .fontWeight(.medium)
             }
-            .buttonStyle(.borderedProminent)
             .padding(.top, 4)
         }
         .padding()
