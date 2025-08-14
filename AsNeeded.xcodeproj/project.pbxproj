@@ -8,10 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		527326D32CA2C75300B87497 /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 527326D22CA2C75300B87497 /* SwiftDate */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
-		52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */; };
-		52BB7AF82CA2CD480083F80C /* SwiftDate in Frameworks */ = {isa = PBXBuildFile; productRef = 52BB7AF72CA2CD480083F80C /* SwiftDate */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,13 +70,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/DoubleExtensions/Double+roundToPlaces.swift",
-				"Extensions/LogEntryExtensions/LogItem+totalMG.swift",
-				Logic/TrendAnalyzer.swift,
-				Models/ExtensionAction.swift,
-				Models/Logbook.swift,
-				Models/LogItem.swift,
-				Models/Trajectory.swift,
-				Models/UserData.swift,
 			);
 			target = 524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */;
 		};
@@ -96,7 +86,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				52BB7AF82CA2CD480083F80C /* SwiftDate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -105,8 +94,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
-				52929DAC28EF29A500C996E0 /* SwiftyUserDefaults in Frameworks */,
-				527326D32CA2C75300B87497 /* SwiftDate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,7 +163,6 @@
 			);
 			name = "WristAsNeeded Watch App";
 			packageProductDependencies = (
-				52BB7AF72CA2CD480083F80C /* SwiftDate */,
 			);
 			productName = "WristAsNeeded Watch App";
 			productReference = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */;
@@ -203,8 +189,6 @@
 			name = AsNeeded;
 			packageProductDependencies = (
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
-				52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */,
-				527326D22CA2C75300B87497 /* SwiftDate */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -266,8 +250,6 @@
 			mainGroup = 527AFA1928E26B3400BD575D;
 			packageReferences = (
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
-				52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */,
-				527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -367,7 +349,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -405,7 +387,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.2.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -560,11 +542,15 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				_EXPERIMENTAL_SWIFT_EXPLICIT_MODULES = YES;
 			};
@@ -597,11 +583,15 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.0.1;
+				MARKETING_VERSION = 0.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				_EXPERIMENTAL_SWIFT_EXPLICIT_MODULES = YES;
 			};
@@ -700,52 +690,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/malcommac/SwiftDate";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 7.0.0;
-			};
-		};
 		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.0.0;
-			};
-		};
-		52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sunshinejr/SwiftyUserDefaults";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.0;
+				kind = exactVersion;
+				version = 6.2.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		527326D22CA2C75300B87497 /* SwiftDate */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */;
-			productName = SwiftDate;
-		};
 		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
 			productName = SFSafeSymbols;
-		};
-		52929DAB28EF29A500C996E0 /* SwiftyUserDefaults */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 52929DAA28EF29A500C996E0 /* XCRemoteSwiftPackageReference "SwiftyUserDefaults" */;
-			productName = SwiftyUserDefaults;
-		};
-		52BB7AF72CA2CD480083F80C /* SwiftDate */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 527326D12CA2C75300B87497 /* XCRemoteSwiftPackageReference "SwiftDate" */;
-			productName = SwiftDate;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
