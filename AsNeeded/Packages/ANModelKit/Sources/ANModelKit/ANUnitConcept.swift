@@ -31,31 +31,70 @@ public enum ANUnitConcept: String, Codable, CaseIterable, Equatable, Hashable {
     /// A user-facing string for display in UI.
     public var displayName: String {
         switch self {
-        case .milligram: return "Milligrams"
-        case .gram: return "Grams"
-        case .microgram: return "Micrograms"
-        case .unit: return "Units"
-        case .tablet: return "Tablets"
-        case .capsule: return "Capsules"
-        case .chewable: return "Chewables"
-        case .lozenge: return "Lozenges"
-        case .suppository: return "Suppositories"
-        case .milliliter: return "Milliliters"
-        case .liter: return "Liters"
-        case .teaspoon: return "Teaspoons"
-        case .drop: return "Drops"
-        case .sachet: return "Sachets"
-        case .puff: return "Puffs"
-        case .actuation: return "Actuations"
-        case .nebule: return "Nebules"
-        case .vial: return "Vials"
-        case .patch: return "Patches"
-        case .application: return "Applications"
-        case .spray: return "Sprays"
-        case .strip: return "Strips"
-        case .film: return "Films"
-        case .dose: return "Doses"
-        case .ampule: return "Ampules"
+        case .milligram: return "Milligram"
+        case .gram: return "Gram"
+        case .microgram: return "Microgram"
+        case .unit: return "Unit"
+        case .tablet: return "Tablet"
+        case .capsule: return "Capsule"
+        case .chewable: return "Chewable"
+        case .lozenge: return "Lozenge"
+        case .suppository: return "Suppository"
+        case .milliliter: return "Milliliter"
+        case .liter: return "Liter"
+        case .teaspoon: return "Teaspoon"
+        case .drop: return "Drop"
+        case .sachet: return "Sachet"
+        case .puff: return "Puff"
+        case .actuation: return "Actuation"
+        case .nebule: return "Nebule"
+        case .vial: return "Vial"
+        case .patch: return "Patch"
+        case .application: return "Application"
+        case .spray: return "Spray"
+        case .strip: return "Strip"
+        case .film: return "Film"
+        case .dose: return "Dose"
+        case .ampule: return "Ampule"
+        }
+    }
+
+    /// Returns a localizable display name for this unit based on count.
+    ///
+    /// - Parameters:
+    ///   - count: The quantity of units.
+    ///   - locale: The locale for localization; defaults to current locale.
+    /// - Returns: A singular or plural form of the display name, prepared for localization.
+    ///
+    /// This function is designed to be localization-ready. For now, it handles basic English pluralization,
+    /// appending 's' for plurals except for irregular cases.
+    public func displayName(for count: Int, locale: Locale = .current) -> String {
+        switch self {
+        case .milligram: return count == 1 ? "Milligram" : "Milligrams"
+        case .gram: return count == 1 ? "Gram" : "Grams"
+        case .microgram: return count == 1 ? "Microgram" : "Micrograms"
+        case .unit: return count == 1 ? "Unit" : "Units"
+        case .tablet: return count == 1 ? "Tablet" : "Tablets"
+        case .capsule: return count == 1 ? "Capsule" : "Capsules"
+        case .chewable: return count == 1 ? "Chewable" : "Chewables"
+        case .lozenge: return count == 1 ? "Lozenge" : "Lozenges"
+        case .suppository: return count == 1 ? "Suppository" : "Suppositories"
+        case .milliliter: return count == 1 ? "Milliliter" : "Milliliters"
+        case .liter: return count == 1 ? "Liter" : "Liters"
+        case .teaspoon: return count == 1 ? "Teaspoon" : "Teaspoons"
+        case .drop: return count == 1 ? "Drop" : "Drops"
+        case .sachet: return count == 1 ? "Sachet" : "Sachets"
+        case .puff: return count == 1 ? "Puff" : "Puffs"
+        case .actuation: return count == 1 ? "Actuation" : "Actuations"
+        case .nebule: return count == 1 ? "Nebule" : "Nebules"
+        case .vial: return count == 1 ? "Vial" : "Vials"
+        case .patch: return count == 1 ? "Patch" : "Patches"
+        case .application: return count == 1 ? "Application" : "Applications"
+        case .spray: return count == 1 ? "Spray" : "Sprays"
+        case .strip: return count == 1 ? "Strip" : "Strips"
+        case .film: return count == 1 ? "Film" : "Films"
+        case .dose: return count == 1 ? "Dose" : "Doses"
+        case .ampule: return count == 1 ? "Ampule" : "Ampules"
         }
     }
 
@@ -123,4 +162,18 @@ public enum ANUnitConcept: String, Codable, CaseIterable, Equatable, Hashable {
 
     /// All selectable units for use in UI (e.g., Picker).
     public static var selectableUnits: [ANUnitConcept] { allCases }
+
+    /// The most common medication units for use in UI pickers and dose entry screens.
+    public static var commonUnits: [ANUnitConcept] {
+        [
+            .milligram,
+            .milliliter,
+            .unit,
+            .tablet,
+            .capsule,
+            .puff,
+            .drop,
+            .dose
+        ]
+    }
 }

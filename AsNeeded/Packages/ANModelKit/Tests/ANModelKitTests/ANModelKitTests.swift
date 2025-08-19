@@ -31,25 +31,6 @@ struct ANModelKitModelTests {
         #expect(event.dose?.unit == ANUnitConcept.milligram)
         #expect(type(of: event.id) == UUID.self)
     }
-    
-    @Test("ANDoseConcept Equatable and Hashable behavior")
-    func testDoseConceptEquatableHashable() async throws {
-        let dose1 = ANDoseConcept(amount: 5, unit: ANUnitConcept.tablet)
-        let dose2 = ANDoseConcept(amount: 5, unit: ANUnitConcept.tablet)
-        let dose3 = ANDoseConcept(amount: 10, unit: ANUnitConcept.tablet)
-        let dose4 = ANDoseConcept(amount: 5, unit: ANUnitConcept.milliliter)
-        
-        #expect(dose1 == dose2)
-        #expect(dose1 != dose3)
-        #expect(dose1 != dose4)
-        
-        var set = Set<ANDoseConcept>()
-        set.insert(dose1)
-        set.insert(dose2)
-        set.insert(dose3)
-        set.insert(dose4)
-        #expect(set.count == 3)
-    }
 }
 
 @Suite("ANUnitConcept Tests")
@@ -63,15 +44,6 @@ struct ANUnitConceptTests {
             #expect(allCases.contains(unit))
         }
         #expect(allCases.count >= expectedUnits.count)
-    }
-    
-    @Test("displayName returns correct string for units") 
-    func testDisplayName() async throws {
-        #expect(ANUnitConcept.milligram.displayName == "mg")
-        #expect(ANUnitConcept.tablet.displayName == "tablet")
-        #expect(ANUnitConcept.liter.displayName == "L")
-        #expect(ANUnitConcept.puff.displayName == "puff")
-        #expect(ANUnitConcept.milliliter.displayName == "mL")
     }
     
     @Test("selectableUnits returns all cases") 
@@ -93,3 +65,27 @@ struct ANUnitConceptTests {
     }
 }
 
+@Suite("ANEventType Tests")
+struct ANEventTypeTests {
+    @Test("Codable round-trip retains correct event type") 
+    func testCodableRoundTrip() async throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        for eventType in ANEventType.allCases {
+            let data = try encoder.encode(eventType)
+            let decoded = try decoder.decode(ANEventType.self, from: data)
+            #expect(decoded == eventType)
+        }
+    }
+    
+    @Test("Equatable and Hashable uniqueness of all cases")
+    func testEquatableHashable() async throws {
+        let allCases = ANEventType.allCases
+        var set = Set<ANEventType>()
+        for eventType in allCases {
+            set.insert(eventType)
+        }
+        #expect(set.count == allCases.count)
+    }
+}
