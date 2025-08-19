@@ -89,10 +89,31 @@ struct MedicationListView: View {
 // MARK: - Medication Row
 struct MedicationRow: View {
     let medication: ANMedicationConcept
+    
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)
                 .font(.headline)
+            extraInfoView
+        }
+    }
+    
+    @ViewBuilder
+    private var extraInfoView: some View {
+        if let quantity = medication.quantity {
+            Text("\(quantity)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        if let lastRefill = medication.lastRefillDate {
+            Text("Last refill: \(lastRefill.formatted(date: .abbreviated, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        if let nextRefill = medication.nextRefillDate {
+            Text("Next refill: \(nextRefill.formatted(date: .abbreviated, time: .omitted))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -104,3 +125,4 @@ struct MedicationRow: View {
 #Preview("Empty List") {
     MedicationListView()
 }
+

@@ -19,6 +19,14 @@ extension ANMedicationConcept {
     }
 }
 
+extension ANEventConcept {
+    @MainActor
+    static let store = Store<ANEventConcept>(
+        storage: SQLiteStorageEngine.default(appendingPath: "events.sqlite"),
+        cacheIdentifier: \ANEventConcept.id.uuidString
+    )
+}
+
 #if DEBUG
 import SwiftUI
 
@@ -40,3 +48,4 @@ import SwiftUI
     )
 }
 #endif
+

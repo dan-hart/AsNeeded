@@ -10,12 +10,36 @@ struct MedicationDetailView: View {
     var store = Medication.store
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
+    @State private var showLogDose = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text(medication.displayName)
                     .font(.largeTitle.weight(.bold))
+                
+                if let quantity = medication.quantity {
+                    Text("Quantity: \(quantity)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                if let lastRefill = medication.lastRefillDate {
+                    Text("Last Refill: \(lastRefill, format: .dateTime.year().month().day())")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                if let nextRefill = medication.nextRefillDate {
+                    Text("Next Refill: \(nextRefill, format: .dateTime.year().month().day())")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Button("Log Dose") {
+                    showLogDose = true
+                }
+                .buttonStyle(.borderedProminent)
                 Spacer()
             }
             .padding()
@@ -39,6 +63,13 @@ struct MedicationDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $showLogDose) {
+            LogDoseView(medication: medication) { event in
+                Task {
+                    try? await ANEventConcept.store.insert(event)
+                }
+            }
+        }
     }
 }
 
@@ -53,5 +84,15 @@ struct MedicationDetailView: View {
     MedicationDetailView(medication: ANMedicationConcept(
         clinicalName: "Metformin",
         nickname: "Diabetes Med"
+    ))
+}
+
+#Preview("Medication with Refill Info") {
+    MedicationDetailView(medication: ANMedicationConcept(
+        clinicalName: "Lisinopril",
+        nickname: "Blood Pressure",
+        quantity: 30,
+        lastRefillDate: Date(timeIntervalSinceNow: -86400 * 10),
+        nextRefillDate: Date(timeIntervalSinceNow: 86400 * 20)
     ))
 }

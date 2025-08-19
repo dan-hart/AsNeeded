@@ -3,17 +3,17 @@ import ANModelKit
 
 struct MedicationHistoryView: View {
     @State private var selectedMedicationID: UUID?
-    @State private var medications: [ANMedicationConcept] = []
-    @State private var allEvents: [ANEventConcept] = []
+    @State private var store = ANMedicationConcept.store
+    @State private var eventStore = ANEventConcept.store
     
     var selectedMedication: ANMedicationConcept? {
         guard let selectedID = selectedMedicationID else { return nil }
-        return medications.first { $0.id == selectedID }
+        return store.items.first { $0.id == selectedID }
     }
     
     var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
         guard let selectedID = selectedMedicationID else { return [] }
-        let filteredEvents = allEvents.filter { $0.medication?.id == selectedID && $0.eventType == .doseTaken }
+        let filteredEvents = eventStore.items.filter { $0.medication?.id == selectedID && $0.eventType == .doseTaken }
         guard !filteredEvents.isEmpty else { return [] }
         
         let calendar = Calendar.current
@@ -31,17 +31,17 @@ struct MedicationHistoryView: View {
                 Picker("Select Medication", selection: Binding(
                     get: {
                         if selectedMedicationID == nil {
-                            return medications.first?.id
+                            return store.items.first?.id
                         }
                         return selectedMedicationID
                     },
                     set: { newValue in
                         selectedMedicationID = newValue
                     })) {
-                    if medications.isEmpty {
+                    if store.items.isEmpty {
                         Text("No medications available").tag(UUID?.none)
                     } else {
-                        ForEach(medications) { med in
+                        ForEach(store.items) { med in
                             Text(med.displayName).tag(med.id as UUID?)
                         }
                     }
@@ -61,7 +61,11 @@ struct MedicationHistoryView: View {
                             ForEach(groupedHistory, id: \.day) { group in
                                 Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
                                     ForEach(group.entries, id: \.id) { event in
-                                        Text(event.date.formatted(date: .omitted, time: .shortened))
+                                        if let dose = event.dose {
+                                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount) \(dose.unit.displayName)")
+                                        } else {
+                                            Text(event.date.formatted(date: .omitted, time: .shortened))
+                                        }
                                     }
                                 }
                             }
@@ -78,13 +82,9 @@ struct MedicationHistoryView: View {
             }
             .navigationTitle("Medication History")
             .onAppear {
-                medications = Medication.store.items
                 if selectedMedicationID == nil {
-                    selectedMedicationID = medications.first?.id
+                    selectedMedicationID = store.items.first?.id
                 }
-                // TODO: Load allEvents from event store or database here
-                // For example:
-                // allEvents = EventStore.shared.loadEvents()
             }
         }
     }
