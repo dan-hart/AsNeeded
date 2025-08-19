@@ -6,7 +6,7 @@ import Boutique
 import ANModelKit
 
 struct MedicationDetailView: View {
-    let medication: ANMedicationConcept
+    var medication: ANMedicationConcept
     var store = Medication.store
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
@@ -58,7 +58,7 @@ struct MedicationDetailView: View {
                         }
                     } else {
                         if let quantity = medication.quantity {
-                            Text("\(quantity)")
+                            Text("\(quantity.formattedAmount)")
                                 .foregroundStyle(.secondary)
                         } else {
                             Text("—")
@@ -214,8 +214,15 @@ struct MedicationDetailView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showLogDose) {
-            LogDoseView(medication: medication) { event in
+            LogDoseView(medication: medication) { dose, event in
                 Task {
+                    var medicationToUpdate = medication
+                    if let quantity = medication.quantity, dose.amount > 0 {
+                        medicationToUpdate.quantity = quantity - dose.amount
+                    }
+                    try? await store.remove(medication)
+                    try? await store.insert(medicationToUpdate)
+                    // Insert the event
                     try? await ANEventConcept.store.insert(event)
                 }
             }

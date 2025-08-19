@@ -6,7 +6,7 @@ import ANModelKit
 
 struct LogDoseView: View {
     let medication: ANMedicationConcept
-    var onLog: (ANEventConcept) -> Void
+    var onLog: (ANDoseConcept, ANEventConcept) -> Void
     @Environment(\.dismiss) private var dismiss
     
     @State private var amount: Double = 1
@@ -39,7 +39,7 @@ struct LogDoseView: View {
                     Button("Log") {
                         let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
                         let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose)
-                        onLog(event)
+                        onLog(dose, event)
                         dismiss()
                     }
                     .disabled(amount <= 0)
@@ -54,7 +54,7 @@ import SwiftUI
 #Preview {
     LogDoseView(
         medication: ANMedicationConcept(clinicalName: "Ibuprofen", nickname: "Ibuprofen"),
-        onLog: { _ in }
+        onLog: { _, _ in }
     )
 }
 #endif
