@@ -24,6 +24,9 @@ import Foundation
 /// This client provides strongly typed, documented, and testable access to all endpoints defined by the RxNorm API.
 /// Each endpoint is exposed as an async method. All networking is dependency-injected for testability.
 public struct RxNormClient {
+    /// Base URL for all RxNorm REST API endpoints to simplify URL construction and maintenance.
+    private static let baseURL = "https://rxnav.nlm.nih.gov/REST/"
+    
     public let network: RxNormNetworking
     
     /// Creates a new instance of `RxNormClient` with the given networking implementation.
@@ -38,7 +41,7 @@ public struct RxNormClient {
     /// - Throws: `RxNormError` if the network request or parsing fails.
     public func fetchDrugsByName(_ name: String) async throws -> [RxNormDrug] {
         guard let encoded = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://rxnav.nlm.nih.gov/REST/drugs.json?name=\(encoded)") else {
+              let url = URL(string: "\(Self.baseURL)drugs.json?name=\(encoded)") else {
             throw RxNormError.invalidRequest
         }
         let request = URLRequest(url: url)
@@ -52,7 +55,7 @@ public struct RxNormClient {
     /// Fetches the RxCUI (RxNorm Concept Unique Identifier) for a given drug name.
     public func fetchRxcuiByName(_ name: String) async throws -> String? {
         guard let encoded = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let url = URL(string: "https://rxnav.nlm.nih.gov/REST/rxcui.json?name=\(encoded)") else {
+              let url = URL(string: "\(Self.baseURL)rxcui.json?name=\(encoded)") else {
             throw RxNormError.invalidRequest
         }
         let request = URLRequest(url: url)
@@ -65,7 +68,7 @@ public struct RxNormClient {
     
     /// Fetches synonyms for a given RxCUI.
     public func fetchDrugSynonyms(for rxCui: String) async throws -> [String] {
-        guard let url = URL(string: "https://rxnav.nlm.nih.gov/REST/rxcui/\(rxCui)/allProperties.json?prop=names") else {
+        guard let url = URL(string: "\(Self.baseURL)rxcui/\(rxCui)/allProperties.json?prop=names") else {
             throw RxNormError.invalidRequest
         }
         let request = URLRequest(url: url)
@@ -78,7 +81,7 @@ public struct RxNormClient {
     
     /// Fetches all interactions for a given RxCUI.
     public func fetchInteractionsForRxcui(_ rxCui: String) async throws -> [RxNormInteraction] {
-        guard let url = URL(string: "https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui=\(rxCui)") else {
+        guard let url = URL(string: "\(Self.baseURL)interaction/interaction.json?rxcui=\(rxCui)") else {
             throw RxNormError.invalidRequest
         }
         let request = URLRequest(url: url)
@@ -91,7 +94,7 @@ public struct RxNormClient {
     
     /// Fetches properties/details for a given RxCUI.
     public func fetchPropertiesForRxcui(_ rxCui: String) async throws -> [String: String] {
-        guard let url = URL(string: "https://rxnav.nlm.nih.gov/REST/rxcui/\(rxCui)/properties.json") else {
+        guard let url = URL(string: "\(Self.baseURL)rxcui/\(rxCui)/properties.json") else {
             throw RxNormError.invalidRequest
         }
         let request = URLRequest(url: url)
@@ -139,7 +142,7 @@ public struct RxNormClient {
     }
     
     private func decodeInteractions(from data: Data) throws -> [RxNormInteraction] {
-        struct Top: Decodable {
+        struct InteractionResponse: Decodable {
             let interactionTypeGroup: [TypeGroup]?
             struct TypeGroup: Decodable {
                 let interactionType: [InteractionType]?
@@ -160,8 +163,8 @@ public struct RxNormClient {
             }
         }
         do {
-            let top = try JSONDecoder().decode(Top.self, from: data)
-            let pairs = top.interactionTypeGroup?.flatMap { $0.interactionType ?? [] }.flatMap { $0.interactionPair ?? [] } ?? []
+            let interactionResponse = try JSONDecoder().decode(InteractionResponse.self, from: data)
+            let pairs = interactionResponse.interactionTypeGroup?.flatMap { $0.interactionType ?? [] }.flatMap { $0.interactionPair ?? [] } ?? []
             return pairs.map { pair in
                 RxNormInteraction(
                     description: pair.description,
@@ -170,21 +173,5 @@ public struct RxNormClient {
             }
         } catch { throw RxNormError.decodingFailed }
     }
-    
-    // MARK: - Add more endpoint methods here as needed
 }
 
-// Internal endpoint response models
-private struct DrugsResponse: Decodable {
-    let drugGroup: DrugGroup
-    struct DrugGroup: Decodable {
-        let conceptGroup: [ConceptGroup]?
-        struct ConceptGroup: Decodable {
-            let conceptProperties: [ConceptProperty]?
-            struct ConceptProperty: Decodable {
-                let rxcui: String
-                let name: String
-            }
-        }
-    }
-}
