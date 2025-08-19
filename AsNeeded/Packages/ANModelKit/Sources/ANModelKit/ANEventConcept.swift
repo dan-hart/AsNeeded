@@ -1,10 +1,10 @@
 import Foundation
 
-/// Types of events that can be logged for medication or dose.
+/// Types of events that can be logged for medication or dose: dose taken, reconciliation, symptom, or suspected side effect.
 public enum ANEventType: String, Codable, CaseIterable, Equatable, Hashable {
     case doseTaken = "dose_taken"
     case reconcile = "reconcile"
-    // Extend with more event types as needed
+    case suspectedSideEffect = "suspected_side_effect"
 }
 
 /// Represents a logged event (such as a dose taken, or a reconciliation).
@@ -35,3 +35,4 @@ public struct ANEventConcept: Identifiable, Codable, Equatable, Hashable {
         self.date = date
     }
 }
+
