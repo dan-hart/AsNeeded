@@ -101,7 +101,7 @@ struct MedicationRow: View {
     @ViewBuilder
     private var extraInfoView: some View {
         if let quantity = medication.quantity {
-            Text("\(quantity)")
+            Text("\(quantity.formattedAmount)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
