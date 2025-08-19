@@ -63,6 +63,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Packages/ANModelKit,
 				Packages/SwiftRxNorm,
 			);
 			target = 527AFA2128E26B3400BD575D /* AsNeeded */;
