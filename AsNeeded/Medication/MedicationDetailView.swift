@@ -12,6 +12,12 @@ struct MedicationDetailView: View {
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
     
+    // Edit mode state
+    @State private var isEditing = false
+    @State private var editableQuantity: String = ""
+    @State private var editableLastRefill: Date?
+    @State private var editableNextRefill: Date?
+    
     var body: some View {
         Form {
             Section("Medication Details") {
@@ -29,39 +35,113 @@ struct MedicationDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 
-                HStack {
+                HStack(alignment: .center) {
                     Text("Quantity")
                     Spacer()
-                    if let quantity = medication.quantity {
-                        Text("\(quantity)")
-                            .foregroundStyle(.secondary)
+                    if isEditing {
+                        HStack(spacing: 4) {
+                            TextField("Quantity", text: $editableQuantity)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(minWidth: 50)
+                                .accessibilityLabel("Quantity")
+                            if !editableQuantity.isEmpty {
+                                Button(role: .cancel) {
+                                    editableQuantity = ""
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Clear quantity")
+                            }
+                        }
                     } else {
-                        Text("—")
-                            .foregroundStyle(.secondary)
+                        if let quantity = medication.quantity {
+                            Text("\(quantity)")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("—")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
-                HStack {
+                HStack(alignment: .center) {
                     Text("Last Refill")
                     Spacer()
-                    if let lastRefill = medication.lastRefillDate {
-                        Text(lastRefill, format: .dateTime.year().month().day())
-                            .foregroundStyle(.secondary)
+                    if isEditing {
+                        HStack(spacing: 4) {
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: { editableLastRefill ?? Date() },
+                                    set: { editableLastRefill = $0 }
+                                ),
+                                displayedComponents: [.date]
+                            )
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                            .accessibilityLabel("Last refill date")
+                            
+                            if editableLastRefill != nil {
+                                Button(role: .cancel) {
+                                    editableLastRefill = nil
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Clear last refill date")
+                            }
+                        }
                     } else {
-                        Text("—")
-                            .foregroundStyle(.secondary)
+                        if let lastRefill = medication.lastRefillDate {
+                            Text(lastRefill, format: .dateTime.year().month().day())
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("—")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
-                HStack {
+                HStack(alignment: .center) {
                     Text("Next Refill")
                     Spacer()
-                    if let nextRefill = medication.nextRefillDate {
-                        Text(nextRefill, format: .dateTime.year().month().day())
-                            .foregroundStyle(.secondary)
+                    if isEditing {
+                        HStack(spacing: 4) {
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: { editableNextRefill ?? Date() },
+                                    set: { editableNextRefill = $0 }
+                                ),
+                                displayedComponents: [.date]
+                            )
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                            .accessibilityLabel("Next refill date")
+                            
+                            if editableNextRefill != nil {
+                                Button(role: .cancel) {
+                                    editableNextRefill = nil
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                                .accessibilityLabel("Clear next refill date")
+                            }
+                        }
                     } else {
-                        Text("—")
-                            .foregroundStyle(.secondary)
+                        if let nextRefill = medication.nextRefillDate {
+                            Text(nextRefill, format: .dateTime.year().month().day())
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("—")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
@@ -85,6 +165,37 @@ struct MedicationDetailView: View {
         }
         .navigationTitle("Details")
         .toolbar {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                Button(isEditing ? "Save" : "Edit") {
+                    if isEditing {
+                        // Save changes
+                        var updated = medication
+                        // Update quantity
+                        if let quantityInt = Int(editableQuantity.trimmingCharacters(in: .whitespaces)), !editableQuantity.trimmingCharacters(in: .whitespaces).isEmpty {
+                            updated.quantity = Double(quantityInt)
+                        } else {
+                            updated.quantity = nil
+                        }
+                        // Update dates
+                        updated.lastRefillDate = editableLastRefill
+                        updated.nextRefillDate = editableNextRefill
+                        
+                        Task {
+                            try? await store.remove(updated)
+                            try? await store.insert(updated)
+                            isEditing = false
+                            dismiss()
+                        }
+                    } else {
+                        // Enter edit mode
+                        editableQuantity = medication.quantity.map { String($0) } ?? ""
+                        editableLastRefill = medication.lastRefillDate
+                        editableNextRefill = medication.nextRefillDate
+                        isEditing = true
+                    }
+                }
+                .accessibilityIdentifier("EditSaveButton")
+            }
             ToolbarItem(placement: .destructiveAction) {
                 Button(role: .destructive) {
                     showDeleteConfirm = true
@@ -107,6 +218,14 @@ struct MedicationDetailView: View {
                 Task {
                     try? await ANEventConcept.store.insert(event)
                 }
+            }
+        }
+        .onChange(of: isEditing) { newValue in
+            if !newValue {
+                // If editing cancelled (e.g. by dismiss), revert edits
+                editableQuantity = medication.quantity.map { String($0) } ?? ""
+                editableLastRefill = medication.lastRefillDate
+                editableNextRefill = medication.nextRefillDate
             }
         }
     }
@@ -135,3 +254,4 @@ struct MedicationDetailView: View {
         nextRefillDate: Date(timeIntervalSinceNow: 86400 * 20)
     ))
 }
+
