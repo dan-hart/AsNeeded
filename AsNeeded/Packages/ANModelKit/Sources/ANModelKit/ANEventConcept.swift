@@ -8,7 +8,7 @@ public enum ANEventType: String, Codable, CaseIterable, Equatable, Hashable, Sen
 }
 
 /// Represents a logged event (such as a dose taken, or a reconciliation).
-public struct ANEventConcept: Identifiable, Codable, Equatable, Hashable {
+public struct ANEventConcept: Identifiable, Codable, Equatable, Hashable, Sendable {
     /// Unique identifier for this event
     public let id: UUID
     /// The type of event (e.g., dose taken, reconcile)
