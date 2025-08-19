@@ -1,5 +1,6 @@
 import SwiftUI
 import ANModelKit
+import Boutique
 
 struct MedicationHistoryView: View {
     @State private var selectedMedicationID: UUID?
@@ -25,25 +26,52 @@ struct MedicationHistoryView: View {
             .sorted { $0.day > $1.day }
     }
     
+    // MARK: - Private ViewBuilders
+    
+    @ViewBuilder
+    private func emptyHistoryView(for selected: ANMedicationConcept) -> some View {
+        Spacer()
+        Text("No history for \(selected.displayName).")
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+        Spacer()
+    }
+    
+    @ViewBuilder
+    private func historyListView() -> some View {
+        List {
+            ForEach(groupedHistory, id: \.day) { group in
+                Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
+                    ForEach(group.entries, id: \.id) { event in
+                        if let dose = event.dose {
+                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount) \(dose.unit.displayName)")
+                        } else {
+                            Text(event.date.formatted(date: .omitted, time: .shortened))
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+    
+    @ViewBuilder
+    private func selectionPromptView() -> some View {
+        Spacer()
+        Text("Select a medication to see history.")
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+        Spacer()
+    }
+    
+    // MARK: - Body
+    
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading) {
-                Picker("Select Medication", selection: Binding(
-                    get: {
-                        if selectedMedicationID == nil {
-                            return store.items.first?.id
-                        }
-                        return selectedMedicationID
-                    },
-                    set: { newValue in
-                        selectedMedicationID = newValue
-                    })) {
-                    if store.items.isEmpty {
-                        Text("No medications available").tag(UUID?.none)
-                    } else {
-                        ForEach(store.items) { med in
-                            Text(med.displayName).tag(med.id as UUID?)
-                        }
+                Picker("Medication", selection: $selectedMedicationID) {
+                    ForEach(store.items, id: \.id) { medication in
+                        Text(medication.displayName).tag(Optional(medication.id))
                     }
                 }
                 .pickerStyle(.menu)
@@ -51,33 +79,12 @@ struct MedicationHistoryView: View {
                 
                 if let selected = selectedMedication {
                     if groupedHistory.isEmpty {
-                        Spacer()
-                        Text("No history for \(selected.displayName).")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        Spacer()
+                        emptyHistoryView(for: selected)
                     } else {
-                        List {
-                            ForEach(groupedHistory, id: \.day) { group in
-                                Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
-                                    ForEach(group.entries, id: \.id) { event in
-                                        if let dose = event.dose {
-                                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount) \(dose.unit.displayName)")
-                                        } else {
-                                            Text(event.date.formatted(date: .omitted, time: .shortened))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .listStyle(.insetGrouped)
+                        historyListView()
                     }
                 } else {
-                    Spacer()
-                    Text("Select a medication to see history.")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    Spacer()
+                    selectionPromptView()
                 }
             }
             .navigationTitle("Medication History")
