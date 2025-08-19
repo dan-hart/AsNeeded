@@ -13,36 +13,75 @@ struct MedicationDetailView: View {
     @State private var showLogDose = false
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(medication.displayName)
-                    .font(.largeTitle.weight(.bold))
-                
-                if let quantity = medication.quantity {
-                    Text("Quantity: \(quantity)")
-                        .font(.subheadline)
+        Form {
+            Section("Medication Details") {
+                HStack {
+                    Text("Clinical Name")
+                    Spacer()
+                    Text(medication.clinicalName)
                         .foregroundStyle(.secondary)
                 }
                 
-                if let lastRefill = medication.lastRefillDate {
-                    Text("Last Refill: \(lastRefill, format: .dateTime.year().month().day())")
-                        .font(.subheadline)
+                HStack {
+                    Text("Nickname")
+                    Spacer()
+                    Text(medication.nickname ?? "—")
                         .foregroundStyle(.secondary)
                 }
                 
-                if let nextRefill = medication.nextRefillDate {
-                    Text("Next Refill: \(nextRefill, format: .dateTime.year().month().day())")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                HStack {
+                    Text("Quantity")
+                    Spacer()
+                    if let quantity = medication.quantity {
+                        Text("\(quantity)")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("—")
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 
+                HStack {
+                    Text("Last Refill")
+                    Spacer()
+                    if let lastRefill = medication.lastRefillDate {
+                        Text(lastRefill, format: .dateTime.year().month().day())
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("—")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                HStack {
+                    Text("Next Refill")
+                    Spacer()
+                    if let nextRefill = medication.nextRefillDate {
+                        Text(nextRefill, format: .dateTime.year().month().day())
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("—")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                HStack {
+                    Text("ID")
+                    Spacer()
+                    Text(medication.id.uuidString)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary)
+                        .font(.footnote.monospaced())
+                }
+            }
+            
+            Section {
                 Button("Log Dose") {
                     showLogDose = true
                 }
                 .buttonStyle(.borderedProminent)
-                Spacer()
             }
-            .padding()
         }
         .navigationTitle("Details")
         .toolbar {
