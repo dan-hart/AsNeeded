@@ -1,6 +1,6 @@
 import SwiftUI
 import ANModelKit
-import Boutique
+import Foundation
 
 struct MedicationHistoryView: View {
     @State private var selectedMedicationID: UUID?
@@ -44,10 +44,13 @@ struct MedicationHistoryView: View {
                 Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
                     ForEach(group.entries, id: \.id) { event in
                         if let dose = event.dose {
-                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount) \(dose.unit.displayName)")
+                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(dose.unit.displayName)")
                         } else {
                             Text(event.date.formatted(date: .omitted, time: .shortened))
                         }
+                    }
+                    .onDelete { indexSet in
+                        deleteEvents(at: indexSet, in: group.day)
                     }
                 }
             }
@@ -62,6 +65,37 @@ struct MedicationHistoryView: View {
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .center)
         Spacer()
+    }
+    
+    // MARK: - Private Methods
+    
+    @MainActor
+    private func deleteEvents(at offsets: IndexSet, in groupDay: Date) {
+        guard let selectedID = selectedMedicationID else { return }
+        let calendar = Calendar.current
+        let filteredEvents: [ANEventConcept] = eventStore.items.filter { event in
+            event.medication?.id == selectedID &&
+            event.eventType == .doseTaken &&
+            calendar.startOfDay(for: event.date) == groupDay
+        }
+        let eventsToDelete = offsets.map { filteredEvents[$0] }
+        
+        Task {
+            for event in eventsToDelete {
+                try? await eventStore.remove(event)
+                
+                if let dose = event.dose,
+                   let medicationID = event.medication?.id,
+                   let medication = store.items.first(where: { $0.id == medicationID }) {
+                    var updatedMedication = medication
+                    if let quantity = updatedMedication.quantity {
+                        updatedMedication.quantity = (quantity + dose.amount)
+                    }
+                    try? await store.remove(updatedMedication)
+                    try? await store.insert(updatedMedication)
+                }
+            }
+        }
     }
     
     // MARK: - Body
@@ -102,3 +136,4 @@ struct MedicationHistoryView: View {
     MedicationHistoryView()
 }
 #endif
+
