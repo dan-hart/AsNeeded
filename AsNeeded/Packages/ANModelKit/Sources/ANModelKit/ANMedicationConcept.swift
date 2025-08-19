@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents a medication definition with a clinical name and optional user nickname.
-public struct ANMedicationConcept: Identifiable, Codable, Equatable, Hashable {
+public struct ANMedicationConcept: Identifiable, Codable, Equatable, Hashable, Sendable {
     /// Unique identifier for this medication concept (Boutique best practice)
     public let id: UUID
     /// The official/clinical name of the medication
