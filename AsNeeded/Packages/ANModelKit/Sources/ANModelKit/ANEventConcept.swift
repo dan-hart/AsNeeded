@@ -1,7 +1,7 @@
 import Foundation
 
 /// Types of events that can be logged for medication or dose: dose taken, reconciliation, symptom, or suspected side effect.
-public enum ANEventType: String, Codable, CaseIterable, Equatable, Hashable {
+public enum ANEventType: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case doseTaken = "dose_taken"
     case reconcile = "reconcile"
     case suspectedSideEffect = "suspected_side_effect"

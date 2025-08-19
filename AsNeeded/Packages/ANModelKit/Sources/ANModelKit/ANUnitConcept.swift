@@ -1,7 +1,7 @@
 import Foundation
 
 /// Standardized units for medication doses.
-public enum ANUnitConcept: String, Codable, CaseIterable, Equatable, Hashable {
+public enum ANUnitConcept: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case milligram
     case gram
     case microgram

@@ -2,7 +2,7 @@
 import Foundation
 
 /// Represents a dose (amount and unit) for a medication.
-public struct ANDoseConcept: Identifiable, Codable, Equatable, Hashable {
+public struct ANDoseConcept: Identifiable, Codable, Equatable, Hashable, Sendable {
     /// Unique identifier for this dose (Boutique best practice)
     public let id: UUID
     /// The amount for this dose (e.g. 5, or 1)

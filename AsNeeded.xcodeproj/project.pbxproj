@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
+		52C349AA2E552F980040CEB8 /* Boutique in Frameworks */ = {isa = PBXBuildFile; productRef = 52C349A92E552F980040CEB8 /* Boutique */; };
+		52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE375E2E5531B100DD3B1A /* ANModelKit */; };
+		52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE37602E5531B100DD3B1A /* SwiftRxNorm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +98,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52C349AA2E552F980040CEB8 /* Boutique in Frameworks */,
+				52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */,
+				52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -191,6 +197,9 @@
 			name = AsNeeded;
 			packageProductDependencies = (
 				52929DA528EF270100C996E0 /* SFSafeSymbols */,
+				52C349A92E552F980040CEB8 /* Boutique */,
+				52DE375E2E5531B100DD3B1A /* ANModelKit */,
+				52DE37602E5531B100DD3B1A /* SwiftRxNorm */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -252,6 +261,7 @@
 			mainGroup = 527AFA1928E26B3400BD575D;
 			packageReferences = (
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
+				52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -702,6 +712,14 @@
 				version = 6.2.0;
 			};
 		};
+		52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mergesort/Boutique";
+			requirement = {
+				kind = exactVersion;
+				version = 3.0.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -709,6 +727,19 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
 			productName = SFSafeSymbols;
+		};
+		52C349A92E552F980040CEB8 /* Boutique */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */;
+			productName = Boutique;
+		};
+		52DE375E2E5531B100DD3B1A /* ANModelKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ANModelKit;
+		};
+		52DE37602E5531B100DD3B1A /* SwiftRxNorm */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftRxNorm;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

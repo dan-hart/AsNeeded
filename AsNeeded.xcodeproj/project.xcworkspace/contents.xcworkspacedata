@@ -4,4 +4,19 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:Medication.swift">
+   </FileRef>
+   <FileRef
+      location = "group:MedicationListView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:MedicationDetailView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:MedicationEditView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:MedicationFeatureTests.swift">
+   </FileRef>
 </Workspace>
