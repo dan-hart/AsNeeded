@@ -1,1 +1,5 @@
 .DS_Store
+/build
+AsNeeded.xcodeproj/project.xcworkspace/xcuserdata/danhart.xcuserdatad/UserInterfaceState.xcuserstate
+*.xcuserstate
+/AsNeeded.xcodeproj/project.xcworkspace/xcuserdata
