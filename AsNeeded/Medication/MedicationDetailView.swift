@@ -174,7 +174,8 @@ struct MedicationDetailView: View {
                         }
                     } else {
                         if let amt = medication.prescribedDoseAmount, let unit = medication.prescribedUnit {
-                            Text("\(amt.formattedAmount) \(unit.displayName)")
+                            let unitName = unit.displayName(for: amt == 1 ? 1 : 2)
+                            Text("\(amt.formattedAmount) \(unitName)")
                                 .foregroundStyle(.secondary)
                         } else {
                             Text("—")

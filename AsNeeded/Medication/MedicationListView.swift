@@ -28,6 +28,7 @@ struct MedicationListView: View {
                             } label: {
                                 MedicationRow(medication: med)
                             }
+                            .buttonStyle(.plain)
                             .swipeActions {
                                 Button("Edit") {
                                     editMedication = med
