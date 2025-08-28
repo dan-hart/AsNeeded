@@ -23,7 +23,8 @@ struct MedicationHistoryView: View {
                 Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
                     ForEach(group.entries, id: \.id) { event in
                         if let dose = event.dose {
-                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(dose.unit.displayName)")
+                            let unitName = dose.unit.displayName(for: dose.amount == 1 ? 1 : 2)
+                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
                         } else {
                             Text(event.date.formatted(date: .omitted, time: .shortened))
                         }
