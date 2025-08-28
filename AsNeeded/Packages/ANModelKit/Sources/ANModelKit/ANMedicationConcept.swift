@@ -14,14 +14,20 @@ public struct ANMedicationConcept: Identifiable, Codable, Equatable, Hashable, S
     public var lastRefillDate: Date?
     /// The date of the next expected refill
     public var nextRefillDate: Date?
+    /// Prescribed Unit
+    public var prescribedUnit: ANUnitConcept?
+    /// Prescribed Dose Amount
+    public var prescribedDoseAmount: Double?
 
     /// Initialize a new medication concept
-    public init(id: UUID = UUID(), clinicalName: String, nickname: String? = nil, quantity: Double? = nil, lastRefillDate: Date? = nil, nextRefillDate: Date? = nil) {
+    public init(id: UUID = UUID(), clinicalName: String, nickname: String? = nil, quantity: Double? = nil, lastRefillDate: Date? = nil, nextRefillDate: Date? = nil, prescribedUnit: ANUnitConcept? = nil, prescribedDoseAmount: Double? = nil) {
         self.id = id
         self.clinicalName = clinicalName
         self.nickname = nickname
         self.quantity = quantity
         self.lastRefillDate = lastRefillDate
         self.nextRefillDate = nextRefillDate
+        self.prescribedUnit = prescribedUnit
+        self.prescribedDoseAmount = prescribedDoseAmount
     }
 }

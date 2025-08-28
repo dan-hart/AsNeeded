@@ -11,6 +11,8 @@ struct MedicationEditView: View {
     @State private var quantityText: String
     @State private var lastRefillDate: Date?
     @State private var nextRefillDate: Date?
+    @State private var prescribedDoseText: String
+    @State private var prescribedUnit: ANUnitConcept?
     
     let medication: ANMedicationConcept?
     let onSave: (ANMedicationConcept) -> Void
@@ -31,6 +33,8 @@ struct MedicationEditView: View {
         }
         _lastRefillDate = State(initialValue: medication?.lastRefillDate)
         _nextRefillDate = State(initialValue: medication?.nextRefillDate)
+        _prescribedDoseText = State(initialValue: medication?.prescribedDoseAmount.map { String(describing: $0) } ?? "")
+        _prescribedUnit = State(initialValue: medication?.prescribedUnit)
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -46,6 +50,14 @@ struct MedicationEditView: View {
             get: { nextRefillDate ?? .now },
             set: { nextRefillDate = $0 }
         )
+    }
+
+    private var isFormValid: Bool {
+        let nameOK = !clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if doseText.isEmpty && prescribedUnit == nil { return nameOK }
+        guard let amount = Double(doseText), amount > 0 else { return false }
+        return nameOK && prescribedUnit != nil
     }
     
     var body: some View {
@@ -78,6 +90,17 @@ struct MedicationEditView: View {
                     )
                     .datePickerStyle(.compact)
                 }
+
+                Section(header: Text("Prescribed Dose")) {
+                    TextField("Amount", text: $prescribedDoseText)
+                        .keyboardType(.decimalPad)
+                    Picker("Unit", selection: $prescribedUnit) {
+                        Text("None").tag(Optional<ANUnitConcept>.none)
+                        ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+                            Text(unit.displayName).tag(Optional(unit))
+                        }
+                    }
+                }
             }
             .navigationTitle(medication == nil ? "Add Medication" : "Edit Medication")
             .toolbar {
@@ -87,17 +110,22 @@ struct MedicationEditView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let quantity = Double(quantityText.trimmingCharacters(in: .whitespacesAndNewlines))
+                        let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let amount = (Double(doseText).flatMap { $0 > 0 ? $0 : nil })
+                        let unit = (amount != nil) ? prescribedUnit : nil
                         let updated = ANMedicationConcept(
                             id: medication?.id ?? UUID(),
                             clinicalName: clinicalName.trimmingCharacters(in: .whitespacesAndNewlines),
                             nickname: nickname.trimmingCharacters(in: .whitespacesAndNewlines),
                             quantity: quantity,
                             lastRefillDate: lastRefillDate,
-                            nextRefillDate: nextRefillDate
+                            nextRefillDate: nextRefillDate,
+                            prescribedUnit: unit,
+                            prescribedDoseAmount: amount
                         )
                         onSave(updated)
                     }
-                    .disabled(clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(!isFormValid)
                 }
             }
         }
@@ -134,4 +162,3 @@ struct MedicationEditView: View {
         onCancel: {}
     )
 }
-

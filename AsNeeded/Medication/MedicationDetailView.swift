@@ -16,6 +16,16 @@ struct MedicationDetailView: View {
     @State private var editableQuantity: String = ""
     @State private var editableLastRefill: Date?
     @State private var editableNextRefill: Date?
+    @State private var editablePrescribedDoseText: String = ""
+    @State private var editablePrescribedUnit: ANUnitConcept?
+
+    private var isFormValid: Bool {
+        let doseText = editablePrescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !isEditing { return true }
+        if doseText.isEmpty && editablePrescribedUnit == nil { return true }
+        guard let amount = Double(doseText), amount > 0 else { return false }
+        return editablePrescribedUnit != nil
+    }
     
     var body: some View {
         Form {
@@ -144,6 +154,35 @@ struct MedicationDetailView: View {
                     }
                 }
                 
+                HStack(alignment: .center) {
+                    Text("Prescribed Dose")
+                    Spacer()
+                    if isEditing {
+                        HStack(spacing: 6) {
+                            TextField("Amount", text: $editablePrescribedDoseText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(minWidth: 50)
+                                .accessibilityLabel("Prescribed amount")
+                            Picker("Unit", selection: $editablePrescribedUnit) {
+                                Text("None").tag(Optional<ANUnitConcept>.none)
+                                ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+                                    Text(unit.displayName).tag(Optional(unit))
+                                }
+                            }
+                            .labelsHidden()
+                        }
+                    } else {
+                        if let amt = medication.prescribedDoseAmount, let unit = medication.prescribedUnit {
+                            Text("\(amt.formattedAmount) \(unit.displayName)")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("—")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
                 HStack {
                     Text("ID")
                     Spacer()
@@ -178,6 +217,11 @@ struct MedicationDetailView: View {
                         // Update dates
                         updated.lastRefillDate = editableLastRefill
                         updated.nextRefillDate = editableNextRefill
+                        // Update prescribed dose
+                        let doseText = editablePrescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let amount = Double(doseText).flatMap { $0 > 0 ? $0 : nil }
+                        updated.prescribedDoseAmount = amount
+                        updated.prescribedUnit = amount != nil ? editablePrescribedUnit : nil
                         
                         Task { await viewModel.save(updated: updated); isEditing = false; dismiss() }
                     } else {
@@ -185,10 +229,13 @@ struct MedicationDetailView: View {
                         editableQuantity = medication.quantity.map { String($0) } ?? ""
                         editableLastRefill = medication.lastRefillDate
                         editableNextRefill = medication.nextRefillDate
+                        editablePrescribedDoseText = medication.prescribedDoseAmount.map { String($0) } ?? ""
+                        editablePrescribedUnit = medication.prescribedUnit
                         isEditing = true
                     }
                 }
                 .accessibilityIdentifier("EditSaveButton")
+                .disabled(isEditing && !isFormValid)
             }
             ToolbarItem(placement: .destructiveAction) {
                 Button(role: .destructive) {
@@ -222,6 +269,8 @@ struct MedicationDetailView: View {
                 editableQuantity = medication.quantity.map { String($0) } ?? ""
                 editableLastRefill = medication.lastRefillDate
                 editableNextRefill = medication.nextRefillDate
+                editablePrescribedDoseText = medication.prescribedDoseAmount.map { String($0) } ?? ""
+                editablePrescribedUnit = medication.prescribedUnit
             }
         }
     }
