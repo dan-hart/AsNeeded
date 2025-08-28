@@ -2,12 +2,11 @@
 // SwiftUI view for showing details of a medication, including delete option.
 
 import SwiftUI
-import Boutique
 import ANModelKit
 
 struct MedicationDetailView: View {
     var medication: ANMedicationConcept
-    var store = Medication.store
+    @StateObject private var viewModel = MedicationDetailViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
@@ -180,12 +179,7 @@ struct MedicationDetailView: View {
                         updated.lastRefillDate = editableLastRefill
                         updated.nextRefillDate = editableNextRefill
                         
-                        Task {
-                            try? await store.remove(updated)
-                            try? await store.insert(updated)
-                            isEditing = false
-                            dismiss()
-                        }
+                        Task { await viewModel.save(updated: updated); isEditing = false; dismiss() }
                     } else {
                         // Enter edit mode
                         editableQuantity = medication.quantity.map { String($0) } ?? ""
@@ -206,10 +200,7 @@ struct MedicationDetailView: View {
         }
         .alert("Are you sure you want to delete this medication?", isPresented: $showDeleteConfirm) {
             Button("Delete", role: .destructive) {
-                Task {
-                    try? await store.remove(medication)
-                    dismiss()
-                }
+                Task { await viewModel.delete(medication); dismiss() }
             }
             Button("Cancel", role: .cancel) {}
         }
@@ -220,14 +211,12 @@ struct MedicationDetailView: View {
                     if let quantity = medication.quantity, dose.amount > 0 {
                         medicationToUpdate.quantity = quantity - dose.amount
                     }
-                    try? await store.remove(medication)
-                    try? await store.insert(medicationToUpdate)
-                    // Insert the event
-                    try? await ANEventConcept.store.insert(event)
+                    await viewModel.save(updated: medicationToUpdate)
+                    await viewModel.log(event: event)
                 }
             }
         }
-        .onChange(of: isEditing) { newValue in
+        .onChange(of: isEditing) { _, newValue in
             if !newValue {
                 // If editing cancelled (e.g. by dismiss), revert edits
                 editableQuantity = medication.quantity.map { String($0) } ?? ""
@@ -261,4 +250,3 @@ struct MedicationDetailView: View {
         nextRefillDate: Date(timeIntervalSinceNow: 86400 * 20)
     ))
 }
-
