@@ -2,11 +2,10 @@
 // SwiftUI view displaying all medications and navigation to add/edit/detail screens.
 
 import SwiftUI
-import Boutique
 import ANModelKit
 
 struct MedicationListView: View {
-    var store = ANMedicationConcept.store
+    @StateObject private var viewModel = MedicationListViewModel()
     @State private var showAddSheet = false
     @State private var editMedication: ANMedicationConcept?
     @State private var viewMedication: ANMedicationConcept?
@@ -14,7 +13,7 @@ struct MedicationListView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if store.items.isEmpty {
+                if viewModel.items.isEmpty {
                     VStack {
                         Spacer()
                         Text("No medications found.")
@@ -23,7 +22,7 @@ struct MedicationListView: View {
                     }
                 } else {
                     List {
-                        ForEach(store.items) { med in
+                        ForEach(viewModel.items) { med in
                             Button {
                                 viewMedication = med
                             } label: {
@@ -35,9 +34,7 @@ struct MedicationListView: View {
                                 }
                                 .tint(.blue)
                                 Button(role: .destructive) {
-                                    Task {
-                                        try? await store.remove(med)
-                                    }
+                                    Task { await viewModel.delete(med) }
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -58,11 +55,7 @@ struct MedicationListView: View {
                 MedicationEditView(
                     medication: med,
                     onSave: { updated in
-                        Task {
-                            try? await store.remove(updated)
-                            try? await store.insert(updated)
-                            editMedication = nil
-                        }
+                        Task { await viewModel.update(updated); editMedication = nil }
                     },
                     onCancel: { editMedication = nil }
                 )
@@ -71,10 +64,7 @@ struct MedicationListView: View {
                 MedicationEditView(
                     medication: nil,
                     onSave: { newMed in
-                        Task {
-                            try? await store.insert(newMed)
-                            showAddSheet = false
-                        }
+                        Task { await viewModel.add(newMed); showAddSheet = false }
                     },
                     onCancel: { showAddSheet = false }
                 )
@@ -125,4 +115,3 @@ struct MedicationRow: View {
 #Preview("Empty List") {
     MedicationListView()
 }
-

@@ -8,23 +8,17 @@ import ANModelKit
 typealias Medication = ANMedicationConcept
 
 extension ANMedicationConcept {
+    // Centralized access to the shared medications store.
     @MainActor
-    static let store = Store<ANMedicationConcept>(
-        storage: SQLiteStorageEngine.default(appendingPath: "medications.sqlite"),
-        cacheIdentifier: \ANMedicationConcept.id.uuidString
-    )
+    static var store: Store<ANMedicationConcept> { DataStore.shared.medicationsStore }
     
-    var displayName: String {
-        nickname ?? clinicalName
-    }
+    var displayName: String { nickname ?? clinicalName }
 }
 
 extension ANEventConcept {
+    // Centralized access to the shared events store.
     @MainActor
-    static let store = Store<ANEventConcept>(
-        storage: SQLiteStorageEngine.default(appendingPath: "events.sqlite"),
-        cacheIdentifier: \ANEventConcept.id.uuidString
-    )
+    static var store: Store<ANEventConcept> { DataStore.shared.eventsStore }
 }
 
 #if DEBUG
@@ -48,4 +42,3 @@ import SwiftUI
     )
 }
 #endif
-
