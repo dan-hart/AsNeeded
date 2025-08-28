@@ -11,6 +11,16 @@ struct LogDoseView: View {
     
     @State private var amount: Double = 1
     @State private var selectedUnit: ANUnitConcept = .unit
+
+    init(
+        medication: ANMedicationConcept,
+        onLog: @escaping (ANDoseConcept, ANEventConcept) -> Void
+    ) {
+        self.medication = medication
+        self.onLog = onLog
+        _amount = State(initialValue: medication.prescribedDoseAmount ?? 1)
+        _selectedUnit = State(initialValue: medication.prescribedUnit ?? .unit)
+    }
     
     var body: some View {
         NavigationStack {
