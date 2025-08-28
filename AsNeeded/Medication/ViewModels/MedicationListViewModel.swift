@@ -6,23 +6,23 @@ import ANModelKit
 
 @MainActor
 final class MedicationListViewModel: ObservableObject {
-    private let appStore: DataStore
+    private let dataStore: DataStore
 
-    init(appStore: DataStore = .shared) {
-        self.appStore = appStore
+    init(dataStore: DataStore = .shared) {
+        self.dataStore = dataStore
     }
 
-    var items: [ANMedicationConcept] { appStore.medications }
+    var items: [ANMedicationConcept] { dataStore.medications }
 
     func add(_ med: ANMedicationConcept) async {
-        try? await appStore.addMedication(med)
+        try? await dataStore.addMedication(med)
     }
 
     func update(_ med: ANMedicationConcept) async {
-        try? await appStore.updateMedication(med)
+        try? await dataStore.updateMedication(med)
     }
 
     func delete(_ med: ANMedicationConcept) async {
-        try? await appStore.deleteMedication(med)
+        try? await dataStore.deleteMedication(med)
     }
 }

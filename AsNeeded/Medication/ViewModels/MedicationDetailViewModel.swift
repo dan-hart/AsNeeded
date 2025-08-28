@@ -6,21 +6,21 @@ import ANModelKit
 
 @MainActor
 final class MedicationDetailViewModel: ObservableObject {
-    private let appStore: DataStore
+    private let dataStore: DataStore
 
-    init(appStore: DataStore = .shared) {
-        self.appStore = appStore
+    init(dataStore: DataStore = .shared) {
+        self.dataStore = dataStore
     }
 
     func save(updated medication: ANMedicationConcept) async {
-        try? await appStore.updateMedication(medication)
+        try? await dataStore.updateMedication(medication)
     }
 
     func delete(_ medication: ANMedicationConcept) async {
-        try? await appStore.deleteMedication(medication)
+        try? await dataStore.deleteMedication(medication)
     }
 
     func log(event: ANEventConcept) async {
-        try? await appStore.addEvent(event)
+        try? await dataStore.addEvent(event)
     }
 }

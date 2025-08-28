@@ -27,6 +27,12 @@
 - Concurrency: Use async/await for I/O and scheduling; keep domain synchronous where possible for testability.
 - Adding features: Create/extend a use case for behavior, add a service protocol if needed, then compose in a new `...View`.
 
+## Data Store Usage
+- Centralized store: Use `DataStore.shared` for Boutique access (`medicationsStore`, `eventsStore`).
+- No direct Store in views: Interact via view models that depend on `DataStore` (inject in init for testability).
+- Helpers: Prefer `DataStore` ops (`addMedication`, `updateMedication`, `deleteMedication`, `addEvent`) over raw insert/remove.
+- Tests: Inject `DataStore` and, if needed, adapt it to use in‑memory storage; avoid file‑backed stores in tests.
+
 ## Package Boundaries
 - No SwiftUI in packages: Do not add any SwiftUI code or imports to `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`. These packages must remain UI‑free (domain models, use cases, networking only).
 - UI lives in app targets: Place SwiftUI views and UI helpers under `AsNeeded/` (e.g., `Views/`, `Medication/`). Keep packages platform‑agnostic and testable.

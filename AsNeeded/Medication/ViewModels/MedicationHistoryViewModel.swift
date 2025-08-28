@@ -8,15 +8,15 @@ import ANModelKit
 final class MedicationHistoryViewModel: ObservableObject {
     @Published var selectedMedicationID: UUID?
 
-    private let appStore: DataStore
+    private let dataStore: DataStore
 
-    init(appStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
-        self.appStore = appStore
+    init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
+        self.dataStore = dataStore
         self.selectedMedicationID = selectedMedicationID
     }
 
-    var medications: [ANMedicationConcept] { appStore.medications }
-    var events: [ANEventConcept] { appStore.events }
+    var medications: [ANMedicationConcept] { dataStore.medications }
+    var events: [ANEventConcept] { dataStore.events }
 
     var selectedMedication: ANMedicationConcept? {
         guard let id = selectedMedicationID else { return nil }
@@ -44,7 +44,7 @@ final class MedicationHistoryViewModel: ObservableObject {
         }
         let toDelete = offsets.map { filtered[$0] }
         for event in toDelete {
-            try? await appStore.eventsStore.remove(event)
+            try? await dataStore.eventsStore.remove(event)
             if let dose = event.dose,
                let medicationID = event.medication?.id,
                let medication = medications.first(where: { $0.id == medicationID }) {
@@ -52,7 +52,7 @@ final class MedicationHistoryViewModel: ObservableObject {
                 if let quantity = updated.quantity {
                     updated.quantity = quantity + dose.amount
                 }
-                try? await appStore.updateMedication(updated)
+                try? await dataStore.updateMedication(updated)
             }
         }
     }
