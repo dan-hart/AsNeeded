@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
+		52A90B9A2E60F6C10016124C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B992E60F6C10016124C /* README.md */; };
+		52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B982E60F6C10016124C /* LICENSE.txt */; };
 		52C349AA2E552F980040CEB8 /* Boutique in Frameworks */ = {isa = PBXBuildFile; productRef = 52C349A92E552F980040CEB8 /* Boutique */; };
 		52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE375E2E5531B100DD3B1A /* ANModelKit */; };
 		52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE37602E5531B100DD3B1A /* SwiftRxNorm */; };
@@ -58,6 +60,8 @@
 /* Begin PBXFileReference section */
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		52A90B982E60F6C10016124C /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		52A90B992E60F6C10016124C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		52B3784C2E4E77FD008EC5F2 /* AsNeededTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AsNeededTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -131,6 +135,8 @@
 				527AFA2328E26B3400BD575D /* Products */,
 				52A28DC82A69CE7F008212BC /* Frameworks */,
 				524942CB2CA2C999004DB0EC /* Recovered References */,
+				52A90B982E60F6C10016124C /* LICENSE.txt */,
+				52A90B992E60F6C10016124C /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -286,6 +292,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52A90B9A2E60F6C10016124C /* README.md in Resources */,
+				52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
