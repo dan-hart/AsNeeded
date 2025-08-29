@@ -25,4 +25,8 @@ final class MedicationListViewModel: ObservableObject {
     func delete(_ med: ANMedicationConcept) async {
         try? await dataStore.deleteMedication(med)
     }
+
+    func addEvent(_ event: ANEventConcept) async {
+        try? await dataStore.addEvent(event)
+    }
 }
