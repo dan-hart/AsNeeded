@@ -4,15 +4,10 @@
 import SwiftUI
 import Boutique
 import ANModelKit
+// Removed search; no RxNorm import needed here.
 
 struct MedicationEditView: View {
-    @State private var clinicalName: String
-    @State private var nickname: String
-    @State private var quantityText: String
-    @State private var lastRefillDate: Date?
-    @State private var nextRefillDate: Date?
-    @State private var prescribedDoseText: String
-    @State private var prescribedUnit: ANUnitConcept?
+    @StateObject private var viewModel: MedicationEditViewModel
     
     let medication: ANMedicationConcept?
     let onSave: (ANMedicationConcept) -> Void
@@ -24,56 +19,41 @@ struct MedicationEditView: View {
         onCancel: @escaping () -> Void
     ) {
         self.medication = medication
-        _clinicalName = State(initialValue: medication?.clinicalName ?? "")
-        _nickname = State(initialValue: medication?.nickname ?? "")
-        if let quantity = medication?.quantity {
-            _quantityText = State(initialValue: String(describing: quantity))
-        } else {
-            _quantityText = State(initialValue: "")
-        }
-        _lastRefillDate = State(initialValue: medication?.lastRefillDate)
-        _nextRefillDate = State(initialValue: medication?.nextRefillDate)
-        _prescribedDoseText = State(initialValue: medication?.prescribedDoseAmount.map { String(describing: $0) } ?? "")
-        _prescribedUnit = State(initialValue: medication?.prescribedUnit)
+        _viewModel = StateObject(wrappedValue: MedicationEditViewModel(medication: medication))
         self.onSave = onSave
         self.onCancel = onCancel
     }
     
     private var lastRefillDateBinding: Binding<Date> {
         Binding<Date>(
-            get: { lastRefillDate ?? .now },
-            set: { lastRefillDate = $0 }
+            get: { viewModel.lastRefillDate ?? .now },
+            set: { viewModel.lastRefillDate = $0 }
         )
     }
     private var nextRefillDateBinding: Binding<Date> {
         Binding<Date>(
-            get: { nextRefillDate ?? .now },
-            set: { nextRefillDate = $0 }
+            get: { viewModel.nextRefillDate ?? .now },
+            set: { viewModel.nextRefillDate = $0 }
         )
     }
 
-    private var isFormValid: Bool {
-        let nameOK = !clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if doseText.isEmpty && prescribedUnit == nil { return nameOK }
-        guard let amount = Double(doseText), amount > 0 else { return false }
-        return nameOK && prescribedUnit != nil
-    }
+    private var isFormValid: Bool { viewModel.isFormValid }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section(header: Text("Medication Info")) {
-                    TextField("Clinical Name", text: $clinicalName)
+                    TextField("Clinical Name", text: $viewModel.clinicalName)
                         .autocapitalization(.words)
                         .disableAutocorrection(true)
-                    TextField("Nickname", text: $nickname)
+                    TextField("Nickname", text: $viewModel.nickname)
                         .autocapitalization(.words)
                         .disableAutocorrection(true)
                 }
+                // Search suggestions removed
                 
                 Section(header: Text("Refill Info")) {
-                    TextField("Quantity", text: $quantityText)
+                    TextField("Quantity", text: $viewModel.quantityText)
                         .keyboardType(.decimalPad)
                     
                     DatePicker(
@@ -92,9 +72,9 @@ struct MedicationEditView: View {
                 }
 
                 Section(header: Text("Prescribed Dose")) {
-                    TextField("Amount", text: $prescribedDoseText)
+                    TextField("Amount", text: $viewModel.prescribedDoseText)
                         .keyboardType(.decimalPad)
-                    Picker("Unit", selection: $prescribedUnit) {
+                    Picker("Unit", selection: $viewModel.prescribedUnit) {
                         Text("None").tag(Optional<ANUnitConcept>.none)
                         ForEach(ANUnitConcept.allCases, id: \.self) { unit in
                             Text(unit.displayName).tag(Optional(unit))
@@ -109,26 +89,14 @@ struct MedicationEditView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let quantity = Double(quantityText.trimmingCharacters(in: .whitespacesAndNewlines))
-                        let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let amount = (Double(doseText).flatMap { $0 > 0 ? $0 : nil })
-                        let unit = (amount != nil) ? prescribedUnit : nil
-                        let updated = ANMedicationConcept(
-                            id: medication?.id ?? UUID(),
-                            clinicalName: clinicalName.trimmingCharacters(in: .whitespacesAndNewlines),
-                            nickname: nickname.trimmingCharacters(in: .whitespacesAndNewlines),
-                            quantity: quantity,
-                            lastRefillDate: lastRefillDate,
-                            nextRefillDate: nextRefillDate,
-                            prescribedUnit: unit,
-                            prescribedDoseAmount: amount
-                        )
+                        let updated = viewModel.buildMedication()
                         onSave(updated)
                     }
-                    .disabled(!isFormValid)
+                    .disabled(!viewModel.isFormValid)
                 }
             }
         }
+        // No-op: search removed
     }
 }
 

@@ -23,16 +23,27 @@ import Foundation
 ///
 /// This client provides strongly typed, documented, and testable access to all endpoints defined by the RxNorm API.
 /// Each endpoint is exposed as an async method. All networking is dependency-injected for testability.
+@MainActor
 public struct RxNormClient {
     /// Base URL for all RxNorm REST API endpoints to simplify URL construction and maintenance.
     private static let baseURL = "https://rxnav.nlm.nih.gov/REST/"
     
+    @MainActor
     public let network: RxNormNetworking
     
     /// Creates a new instance of `RxNormClient` with the given networking implementation.
     /// - Parameter network: The networking layer to use. Defaults to `URLSession.shared`.
     public init(network: RxNormNetworking = URLSession.shared) {
         self.network = network
+    }
+
+    // MARK: - Suggestions / Approximate Search
+
+    /// Returns fuzzy suggestions for a term using RxNorm's approximateTerm endpoint.
+    @MainActor
+    public func suggestDrugs(_ term: String, max: Int = 25) async throws -> [RxNormDrug] {
+        let results = try await fetchApproximateTerms(term)
+        return Array(results.prefix(max))
     }
     
     /// Fetches drugs matching the provided name from the RxNorm API.
@@ -104,6 +115,22 @@ public struct RxNormClient {
         }
         return try decodeProperties(from: data)
     }
+
+    // MARK: - Private helpers
+    /// Fetches approximate matches for a term from RxNorm.
+    @MainActor
+    private func fetchApproximateTerms(_ term: String) async throws -> [RxNormDrug] {
+        guard let encoded = term.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "\(Self.baseURL)approximateTerm.json?term=\(encoded)&maxEntries=50&option=1") else {
+            throw RxNormError.invalidRequest
+        }
+        let request = URLRequest(url: url)
+        let (data, response) = try await network.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw RxNormError.invalidResponse
+        }
+        return try decodeApproximate(from: data)
+    }
     
     /// Decodes the response for the drug search endpoint.
     private func decodeDrugs(from data: Data) throws -> [RxNormDrug] {
@@ -173,5 +200,25 @@ public struct RxNormClient {
             }
         } catch { throw RxNormError.decodingFailed }
     }
-}
 
+    private func decodeApproximate(from data: Data) throws -> [RxNormDrug] {
+        struct ApproximateResponse: Decodable {
+            let approximateGroup: Group?
+            struct Group: Decodable {
+                let candidate: [Candidate]?
+                struct Candidate: Decodable {
+                    let rxcui: String
+                    let name: String
+                    let score: String?
+                }
+            }
+        }
+        do {
+            let decoded = try JSONDecoder().decode(ApproximateResponse.self, from: data)
+            let candidates = decoded.approximateGroup?.candidate ?? []
+            return candidates.map { RxNormDrug(rxCUI: $0.rxcui, name: $0.name) }
+        } catch {
+            throw RxNormError.decodingFailed
+        }
+    }
+}

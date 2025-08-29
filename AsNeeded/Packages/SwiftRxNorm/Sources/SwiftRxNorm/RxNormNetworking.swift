@@ -1,7 +1,7 @@
 import Foundation
 
 /// Protocol for dependency-injected HTTP networking for testability.
-public protocol RxNormNetworking {
+public protocol RxNormNetworking: Sendable {
     /// Performs a network data task with the given URLRequest.
     /// - Parameter request: The URLRequest to perform.
     /// - Returns: A tuple containing the returned Data and URLResponse.
