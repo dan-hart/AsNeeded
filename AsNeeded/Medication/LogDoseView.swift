@@ -11,6 +11,7 @@ struct LogDoseView: View {
     
     @State private var amount: Double = 1
     @State private var selectedUnit: ANUnitConcept = .unit
+    @State private var selectedDate: Date = .now
 
     init(
         medication: ANMedicationConcept,
@@ -39,6 +40,21 @@ struct LogDoseView: View {
                         }
                     }
                 }
+
+                Section(header: Text("When")) {
+                    DatePicker(
+                        "Date & Time",
+                        selection: $selectedDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                    HStack {
+                        Spacer()
+                        Button("Set to Now") { selectedDate = .now }
+                            .buttonStyle(.bordered)
+                        Spacer().frame(width: 0)
+                    }
+                }
             }
             .navigationTitle("Log Dose")
             .toolbar {
@@ -48,7 +64,7 @@ struct LogDoseView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
                         let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
-                        let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose)
+                        let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: selectedDate)
                         onLog(dose, event)
                         dismiss()
                     }
