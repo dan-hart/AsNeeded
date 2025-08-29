@@ -3,7 +3,7 @@ import Charts
 
 struct MedicationTrendsView: View {
     var body: some View {
-        Text("Medication Trends")
+        Text("Trends")
             
     }
 }
