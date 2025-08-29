@@ -32,16 +32,18 @@ final class MedicationHistoryViewModel: ObservableObject {
             calendar.startOfDay(for: event.date)
         }
         return grouped
-            .map { (day: $0.key, entries: $0.value) }
+            .map { (day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
             .sorted { $0.day > $1.day }
     }
 
     func deleteEvents(at offsets: IndexSet, in groupDay: Date) async {
         guard let id = selectedMedicationID else { return }
         let calendar = Calendar.current
-        let filtered: [ANEventConcept] = events.filter { event in
+        var filtered: [ANEventConcept] = events.filter { event in
             event.medication?.id == id && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
         }
+        // Match UI ordering: most recent first within a day
+        filtered.sort { $0.date > $1.date }
         let toDelete = offsets.map { filtered[$0] }
         for event in toDelete {
             try? await dataStore.eventsStore.remove(event)

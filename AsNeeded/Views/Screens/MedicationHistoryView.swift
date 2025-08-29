@@ -20,7 +20,7 @@ struct MedicationHistoryView: View {
     private func historyListView() -> some View {
         List {
             ForEach(viewModel.groupedHistory, id: \.day) { group in
-                Section(header: Text(group.day.formatted(date: .abbreviated, time: .omitted))) {
+                Section(header: sectionHeader(for: group)) {
                     ForEach(group.entries, id: \.id) { event in
                         if let dose = event.dose {
                             let unitName = dose.unit.displayName(for: dose.amount == 1 ? 1 : 2)
@@ -36,6 +36,34 @@ struct MedicationHistoryView: View {
             }
         }
         .listStyle(.insetGrouped)
+    }
+    
+    // MARK: - Section Header Helpers
+    @ViewBuilder
+    private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
+        HStack {
+            Text(group.day.formatted(date: .abbreviated, time: .omitted))
+            Spacer()
+            if let totalText = dayTotalText(for: group.entries) {
+                Text(totalText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func dayTotalText(for entries: [ANEventConcept]) -> String? {
+        let preferredUnit = viewModel.selectedMedication?.prescribedUnit ?? entries.compactMap { $0.dose?.unit }.first
+        if let unit = preferredUnit {
+            let total = entries.compactMap { ev -> Double? in
+                guard let dose = ev.dose, dose.unit == unit else { return nil }
+                return dose.amount
+            }.reduce(0, +)
+            return total > 0 ? "\(total.formattedAmount) \(unit.abbreviation)" : nil
+        } else {
+            let total = entries.compactMap { $0.dose?.amount }.reduce(0, +)
+            return total > 0 ? "\(total.formattedAmount)" : nil
+        }
     }
     
     @ViewBuilder
