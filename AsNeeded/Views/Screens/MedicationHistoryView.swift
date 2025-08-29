@@ -4,6 +4,7 @@ import Foundation
 
 struct MedicationHistoryView: View {
     @StateObject private var viewModel = MedicationHistoryViewModel()
+    @State private var logMedication: ANMedicationConcept?
     
     // MARK: - Private ViewBuilders
     
@@ -23,10 +24,24 @@ struct MedicationHistoryView: View {
                 Section(header: sectionHeader(for: group)) {
                     ForEach(group.entries, id: \.id) { event in
                         if let dose = event.dose {
-                            let unitName = dose.unit.displayName(for: dose.amount == 1 ? 1 : 2)
-                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
+                            let unitName = dose.unit.abbreviation
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
+                                if let rel = relativeShortIfToday(event.date) {
+                                    Text(rel)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         } else {
-                            Text(event.date.formatted(date: .omitted, time: .shortened))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(event.date.formatted(date: .omitted, time: .shortened))
+                                if let rel = relativeShortIfToday(event.date) {
+                                    Text(rel)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                     }
                     .onDelete { indexSet in
@@ -41,12 +56,19 @@ struct MedicationHistoryView: View {
     // MARK: - Section Header Helpers
     @ViewBuilder
     private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
-        HStack {
-            Text(group.day.formatted(date: .abbreviated, time: .omitted))
-            Spacer()
-            if let totalText = dayTotalText(for: group.entries) {
-                Text(totalText)
-                    .font(.subheadline)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text(group.day.formatted(date: .abbreviated, time: .omitted))
+                Spacer()
+                if let totalText = dayTotalText(for: group.entries) {
+                    Text(totalText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if let rel = dayRelativeLabel(for: group.day) {
+                Text(rel)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
@@ -65,6 +87,24 @@ struct MedicationHistoryView: View {
             return total > 0 ? "\(total.formattedAmount)" : nil
         }
     }
+
+    private func dayRelativeLabel(for date: Date) -> String? {
+        let cal = Calendar.current
+        if cal.isDateInToday(date) { return "Today" }
+        if cal.isDateInYesterday(date) { return "Yesterday" }
+        return nil
+    }
+
+    private func relativeShortIfToday(_ date: Date) -> String? {
+        let cal = Calendar.current
+        guard cal.isDateInToday(date) else { return nil }
+        let diff = Int(Date().timeIntervalSince(date))
+        if diff <= 0 { return "0m ago" }
+        let mins = diff / 60
+        if mins < 60 { return "\(mins)m ago" }
+        let hrs = mins / 60
+        return "\(hrs)h ago"
+    }
     
     @ViewBuilder
     private func selectionPromptView() -> some View {
@@ -82,12 +122,24 @@ struct MedicationHistoryView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading) {
-                Picker("Medication", selection: $viewModel.selectedMedicationID) {
-                    ForEach(viewModel.medications, id: \.id) { medication in
-                        Text(medication.displayName).tag(Optional(medication.id))
+                HStack(alignment: .center) {
+                    Picker("Medication", selection: $viewModel.selectedMedicationID) {
+                        ForEach(viewModel.medications, id: \.id) { medication in
+                            Text(medication.displayName).tag(Optional(medication.id))
+                        }
                     }
+                    .pickerStyle(.menu)
+                    Spacer(minLength: 8)
+                    Button {
+                        if let med = viewModel.selectedMedication { logMedication = med }
+                    } label: {
+                        Label("Log Dose", systemImage: "plus.circle.fill")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(viewModel.selectedMedication == nil)
+                    .accessibilityLabel("Log dose for selected medication")
                 }
-                .pickerStyle(.menu)
                 .padding(.horizontal)
                 
                 if let selected = viewModel.selectedMedication {
@@ -100,11 +152,25 @@ struct MedicationHistoryView: View {
                     selectionPromptView()
                 }
             }
-            .navigationTitle("Medication History")
+            .navigationTitle("History")
             .onAppear {
                 if viewModel.selectedMedicationID == nil {
                     viewModel.selectedMedicationID = viewModel.medications.first?.id
                 }
+            }
+            .sheet(item: $logMedication) { med in
+                LogDoseView(medication: med) { dose, event in
+                    Task {
+                        var updated = med
+                        if let quantity = updated.quantity, dose.amount > 0 {
+                            updated.quantity = quantity - dose.amount
+                        }
+                        try? await DataStore.shared.updateMedication(updated)
+                        try? await DataStore.shared.addEvent(event)
+                        logMedication = nil
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
         }
     }

@@ -184,9 +184,8 @@ struct MedicationDetailView: View {
                     }
                 }
                 
-                HStack {
+                VStack(alignment: .leading) {
                     Text("ID")
-                    Spacer()
                     Text(medication.id.uuidString)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -194,51 +193,13 @@ struct MedicationDetailView: View {
                         .font(.footnote.monospaced())
                 }
             }
-            
-            Section {
-                Button("Log Dose") {
-                    showLogDose = true
-                }
-                .buttonStyle(.borderedProminent)
-            }
         }
         .navigationTitle("Details")
         .toolbar {
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button(isEditing ? "Save" : "Edit") {
-                    if isEditing {
-                        // Save changes
-                        var updated = medication
-                        // Update quantity
-                        if let quantityInt = Int(editableQuantity.trimmingCharacters(in: .whitespaces)), !editableQuantity.trimmingCharacters(in: .whitespaces).isEmpty {
-                            updated.quantity = Double(quantityInt)
-                        } else {
-                            updated.quantity = nil
-                        }
-                        // Update dates
-                        updated.lastRefillDate = editableLastRefill
-                        updated.nextRefillDate = editableNextRefill
-                        // Update prescribed dose
-                        let doseText = editablePrescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let amount = Double(doseText).flatMap { $0 > 0 ? $0 : nil }
-                        updated.prescribedDoseAmount = amount
-                        updated.prescribedUnit = amount != nil ? editablePrescribedUnit : nil
-                        
-                        Task { await viewModel.save(updated: updated); isEditing = false; dismiss() }
-                    } else {
-                        // Enter edit mode
-                        editableQuantity = medication.quantity.map { String($0) } ?? ""
-                        editableLastRefill = medication.lastRefillDate
-                        editableNextRefill = medication.nextRefillDate
-                        editablePrescribedDoseText = medication.prescribedDoseAmount.map { String($0) } ?? ""
-                        editablePrescribedUnit = medication.prescribedUnit
-                        isEditing = true
-                    }
-                }
-                .accessibilityIdentifier("EditSaveButton")
-                .disabled(isEditing && !isFormValid)
+            ToolbarItem(placement: .primaryAction) {
+                Button("Done") { dismiss() }
             }
-            ToolbarItem(placement: .destructiveAction) {
+            ToolbarItem(placement: .topBarLeading) {
                 Button(role: .destructive) {
                     showDeleteConfirm = true
                 } label: {
@@ -262,16 +223,6 @@ struct MedicationDetailView: View {
                     await viewModel.save(updated: medicationToUpdate)
                     await viewModel.log(event: event)
                 }
-            }
-        }
-        .onChange(of: isEditing) { _, newValue in
-            if !newValue {
-                // If editing cancelled (e.g. by dismiss), revert edits
-                editableQuantity = medication.quantity.map { String($0) } ?? ""
-                editableLastRefill = medication.lastRefillDate
-                editableNextRefill = medication.nextRefillDate
-                editablePrescribedDoseText = medication.prescribedDoseAmount.map { String($0) } ?? ""
-                editablePrescribedUnit = medication.prescribedUnit
             }
         }
     }

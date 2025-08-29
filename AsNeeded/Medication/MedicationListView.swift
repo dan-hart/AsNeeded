@@ -77,7 +77,9 @@ struct MedicationListView: View {
                 )
             }
             .sheet(item: $viewMedication) { med in
-                MedicationDetailView(medication: med)
+                NavigationView {
+                    MedicationDetailView(medication: med)
+                }
             }
             .sheet(item: $logMedication) { med in
                 LogDoseView(medication: med) { dose, event in
