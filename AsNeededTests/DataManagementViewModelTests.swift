@@ -45,6 +45,7 @@ struct DataManagementViewModelTests {
     #expect(viewModel.isImporting == false)
     #expect(viewModel.isClearing == false)
     #expect(viewModel.showingClearConfirmation == false)
+    #expect(viewModel.showingExportConfirmation == false)
     #expect(viewModel.showingDocumentPicker == false)
     #expect(viewModel.showingFileSaver == false)
     #expect(viewModel.exportedData == nil)
@@ -74,6 +75,18 @@ struct DataManagementViewModelTests {
   
   // MARK: - Export Tests
   
+  @Test("Request export should show confirmation dialog")
+  func testRequestExport() {
+    let dataStore = createTestDataStore()
+    let viewModel = DataManagementViewModel(dataStore: dataStore)
+    
+    #expect(viewModel.showingExportConfirmation == false)
+    
+    viewModel.requestExport()
+    
+    #expect(viewModel.showingExportConfirmation == true)
+  }
+  
   @Test("Export should set loading state and generate data")
   func testExportData() async throws {
     let dataStore = createTestDataStore()
@@ -86,7 +99,7 @@ struct DataManagementViewModelTests {
     
     // Start export
     let exportTask = Task {
-      await viewModel.exportData()
+      await viewModel.exportData(includeNames: true)
     }
     
     // Should be loading initially (though this might be too fast to catch)
@@ -115,7 +128,7 @@ struct DataManagementViewModelTests {
     
     let viewModel = DataManagementViewModel(dataStore: dataStore)
     
-    await viewModel.exportData()
+    await viewModel.exportData(includeNames: true)
     
     #expect(viewModel.isExporting == false)
     #expect(viewModel.exportedData != nil)
@@ -264,7 +277,7 @@ struct DataManagementViewModelTests {
     let viewModel = DataManagementViewModel(dataStore: dataStore)
     
     // Start multiple operations concurrently
-    async let exportTask: Void = viewModel.exportData()
+    async let exportTask: Void = viewModel.exportData(includeNames: true)
     async let clearTask: Void = viewModel.clearAllData()
     
     // Wait for both to complete
@@ -287,7 +300,7 @@ struct DataManagementViewModelTests {
     // Force an error by trying to export when DataStore might fail
     // This is tricky to test without a mock, but we can at least verify
     // the state management works
-    await viewModel.exportData()
+    await viewModel.exportData(includeNames: true)
     
     // Should always reset loading state, even on error
     #expect(viewModel.isExporting == false)
@@ -307,7 +320,7 @@ struct DataManagementViewModelTests {
     #expect(viewModel.medicationCount == 1)
     
     // 2. Export data
-    await viewModel.exportData()
+    await viewModel.exportData(includeNames: true)
     #expect(viewModel.exportedData != nil)
     
     guard let exportedData = viewModel.exportedData else {

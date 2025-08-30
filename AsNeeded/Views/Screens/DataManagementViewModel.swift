@@ -12,6 +12,7 @@ final class DataManagementViewModel: ObservableObject {
   @Published var isImporting = false
   @Published var isClearing = false
   @Published var showingClearConfirmation = false
+  @Published var showingExportConfirmation = false
   @Published var showingDocumentPicker = false
   @Published var showingFileSaver = false
   @Published var exportedData: Data?
@@ -22,12 +23,16 @@ final class DataManagementViewModel: ObservableObject {
     self.dataStore = dataStore
   }
   
-  func exportData() async {
+  func requestExport() {
+    showingExportConfirmation = true
+  }
+  
+  func exportData(includeNames: Bool) async {
     isExporting = true
     defer { isExporting = false }
     
     do {
-      let data = try await dataStore.exportDataAsJSON()
+      let data = try await dataStore.exportDataAsJSON(redactNames: !includeNames)
       exportedData = data
       showingFileSaver = true
     } catch {

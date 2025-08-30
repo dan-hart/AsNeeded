@@ -34,5 +34,16 @@ public struct ANEventConcept: Identifiable, Codable, Equatable, Hashable, Sendab
         self.dose = dose
         self.date = date
     }
+    
+    /// Create a redacted version with medication names removed
+    public func redacted() -> ANEventConcept {
+        return ANEventConcept(
+            id: id,
+            eventType: eventType,
+            medication: medication?.redacted(),
+            dose: dose,
+            date: date
+        )
+    }
 }
 

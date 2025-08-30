@@ -30,4 +30,18 @@ public struct ANMedicationConcept: Identifiable, Codable, Equatable, Hashable, S
         self.prescribedUnit = prescribedUnit
         self.prescribedDoseAmount = prescribedDoseAmount
     }
+    
+    /// Create a redacted version with clinical names and nicknames removed
+    public func redacted() -> ANMedicationConcept {
+        return ANMedicationConcept(
+            id: id,
+            clinicalName: "[REDACTED]",
+            nickname: nickname != nil ? "[REDACTED]" : nil,
+            quantity: quantity,
+            lastRefillDate: lastRefillDate,
+            nextRefillDate: nextRefillDate,
+            prescribedUnit: prescribedUnit,
+            prescribedDoseAmount: prescribedDoseAmount
+        )
+    }
 }

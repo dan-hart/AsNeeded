@@ -47,6 +47,25 @@ struct DataManagementView: View {
       }
     }
     .confirmationDialog(
+      "Export Data",
+      isPresented: $viewModel.showingExportConfirmation,
+      titleVisibility: .visible
+    ) {
+      Button("Include Medication Names") {
+        Task {
+          await viewModel.exportData(includeNames: true)
+        }
+      }
+      Button("Redact Medication Names") {
+        Task {
+          await viewModel.exportData(includeNames: false)
+        }
+      }
+      Button("Cancel", role: .cancel) { }
+    } message: {
+      Text("Would you like to include clinical names and nicknames in the export, or redact them for privacy?")
+    }
+    .confirmationDialog(
       "Clear All Data",
       isPresented: $viewModel.showingClearConfirmation,
       titleVisibility: .visible
@@ -115,7 +134,7 @@ struct DataManagementView: View {
           systemImage: "square.and.arrow.up",
           isLoading: viewModel.isExporting,
           action: {
-            Task { await viewModel.exportData() }
+            viewModel.requestExport()
           }
         )
         
