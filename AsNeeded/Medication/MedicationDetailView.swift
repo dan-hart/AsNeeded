@@ -10,6 +10,7 @@ struct MedicationDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
+    @State private var showEditSheet = false
     
     // Edit mode state
     @State private var isEditing = false
@@ -67,8 +68,14 @@ struct MedicationDetailView: View {
                         }
                     } else {
                         if let quantity = medication.quantity {
-                            Text("\(quantity.formattedAmount)")
-                                .foregroundStyle(.secondary)
+                            // Show abbreviated unit if available, otherwise just the amount
+                            if let unit = medication.prescribedUnit {
+                                Text("\(quantity.formattedAmount) \(unit.abbreviation)")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("\(quantity.formattedAmount)")
+                                    .foregroundStyle(.secondary)
+                            }
                         } else {
                             Text("—")
                                 .foregroundStyle(.secondary)
@@ -184,14 +191,13 @@ struct MedicationDetailView: View {
                     }
                 }
                 
-                VStack(alignment: .leading) {
-                    Text("ID")
-                    Text(medication.id.uuidString)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .foregroundStyle(.secondary)
-                        .font(.footnote.monospaced())
+            }
+            
+            Section {
+                Button("Edit Medication") {
+                    showEditSheet = true
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .navigationTitle("Details")
@@ -224,6 +230,20 @@ struct MedicationDetailView: View {
                     await viewModel.log(event: event)
                 }
             }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            MedicationEditView(
+                medication: medication,
+                onSave: { updatedMedication in
+                    Task {
+                        await viewModel.save(updated: updatedMedication)
+                    }
+                    showEditSheet = false
+                },
+                onCancel: {
+                    showEditSheet = false
+                }
+            )
         }
     }
 }

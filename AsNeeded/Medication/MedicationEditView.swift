@@ -43,43 +43,111 @@ struct MedicationEditView: View {
         NavigationStack {
             Form {
                 Section(header: Text("Medication Info")) {
-                    TextField("Clinical Name", text: $viewModel.clinicalName)
-                        .autocapitalization(.words)
-                        .disableAutocorrection(true)
-                    TextField("Nickname", text: $viewModel.nickname)
-                        .autocapitalization(.words)
-                        .disableAutocorrection(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Clinical Name")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("Official medication name (e.g., Lisinopril)", text: $viewModel.clinicalName)
+                            .autocapitalization(.words)
+                            .disableAutocorrection(true)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Nickname (Optional)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("Personal name for easy identification", text: $viewModel.nickname)
+                            .autocapitalization(.words)
+                            .disableAutocorrection(true)
+                    }
                 }
                 // Search suggestions removed
                 
                 Section(header: Text("Refill Info")) {
-                    TextField("Quantity", text: $viewModel.quantityText)
-                        .keyboardType(.decimalPad)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Current Quantity")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("How many pills, mL, etc. you have", text: $viewModel.quantityText)
+                            .keyboardType(.decimalPad)
+                    }
                     
-                    DatePicker(
-                        "Last Refill",
-                        selection: lastRefillDateBinding,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
+                    HStack {
+                        Button("-30") {
+                            let currentDate = viewModel.lastRefillDate ?? .now
+                            viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        
+                        DatePicker(
+                            "Last Refill",
+                            selection: lastRefillDateBinding,
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.compact)
+                        
+                        Button("+30") {
+                            let currentDate = viewModel.lastRefillDate ?? .now
+                            viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
                     
-                    DatePicker(
-                        "Next Refill",
-                        selection: nextRefillDateBinding,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.compact)
+                    HStack {
+                        Button("-30") {
+                            let currentDate = viewModel.nextRefillDate ?? .now
+                            viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        
+                        DatePicker(
+                            "Next Refill",
+                            selection: nextRefillDateBinding,
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.compact)
+                        
+                        Button("+30") {
+                            let currentDate = viewModel.nextRefillDate ?? .now
+                            viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
                 }
 
                 Section(header: Text("Prescribed Dose")) {
-                    TextField("Amount", text: $viewModel.prescribedDoseText)
-                        .keyboardType(.decimalPad)
-                    Picker("Unit", selection: $viewModel.prescribedUnit) {
-                        Text("None").tag(Optional<ANUnitConcept>.none)
-                        ForEach(ANUnitConcept.allCases, id: \.self) { unit in
-                            Text(unit.displayName).tag(Optional(unit))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Dose Amount")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("How much per dose (e.g., 5, 10, 0.5)", text: $viewModel.prescribedDoseText)
+                            .keyboardType(.decimalPad)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Dose Unit")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Picker("Unit type (mg, mL, tablets, etc.)", selection: $viewModel.prescribedUnit) {
+                            Text("None").tag(Optional<ANUnitConcept>.none)
+                            ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+                                Text(unit.displayName).tag(Optional(unit))
+                            }
                         }
                     }
+                }
+                
+                Section {
+                    Button("Save") {
+                        let updated = viewModel.buildMedication()
+                        onSave(updated)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .disabled(!viewModel.isFormValid)
                 }
             }
             .navigationTitle(medication == nil ? "Add Medication" : "Edit Medication")
