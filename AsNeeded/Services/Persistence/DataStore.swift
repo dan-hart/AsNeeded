@@ -26,6 +26,19 @@ public final class DataStore {
             cacheIdentifier: \ANEventConcept.id.uuidString
         )
     }
+    
+    // Test initializer using isolated test storage
+    public init(testIdentifier: String) {
+        let testId = UUID().uuidString
+        self.medicationsStore = Store<ANMedicationConcept>(
+            storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId).sqlite"),
+            cacheIdentifier: \ANMedicationConcept.id.uuidString
+        )
+        self.eventsStore = Store<ANEventConcept>(
+            storage: SQLiteStorageEngine.default(appendingPath: "test_events_\(testIdentifier)_\(testId).sqlite"),
+            cacheIdentifier: \ANEventConcept.id.uuidString
+        )
+    }
 
     // MARK: - Medication Operations
     public func addMedication(_ med: ANMedicationConcept) async throws {

@@ -29,7 +29,7 @@ struct RxNormTests {
           }
         }
         """.data(using: .utf8)!
-        let client = RxNormClient(network: MockNetwork(responseData: mockJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: mockJSON))
         let results = try await client.fetchDrugsByName("aspirin")
         #expect(results.count == 2)
         #expect(results[0].name == "Aspirin")
@@ -39,7 +39,7 @@ struct RxNormTests {
     @Test("fetchDrugsByName throws decodingFailed for invalid JSON")
     func testFetchDrugsByNameInvalidJSON() async throws {
         let invalidJSON = Data("{".utf8)
-        let client = RxNormClient(network: MockNetwork(responseData: invalidJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: invalidJSON))
         do {
             _ = try await client.fetchDrugsByName("invalid")
             #expect(false, "Should have thrown")
@@ -53,7 +53,7 @@ struct RxNormTests {
         let mockJSON = """
         {"idGroup":{"rxnormId":["1234"]}}
         """.data(using: .utf8)!
-        let client = RxNormClient(network: MockNetwork(responseData: mockJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: mockJSON))
         let rxcui = try await client.fetchRxcuiByName("aspirin")
         #expect(rxcui == "1234")
     }
@@ -61,7 +61,7 @@ struct RxNormTests {
     @Test("fetchRxcuiByName throws decodingFailed for invalid JSON")
     func testFetchRxcuiByNameInvalidJSON() async throws {
         let invalidJSON = Data("{".utf8)
-        let client = RxNormClient(network: MockNetwork(responseData: invalidJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: invalidJSON))
         do {
             _ = try await client.fetchRxcuiByName("invalid")
             #expect(false, "Should have thrown")
@@ -75,7 +75,7 @@ struct RxNormTests {
         let mockJSON = """
         {"propConceptGroup":{"propConcept":[{"propValue":"Aspirin"},{"propValue":"Acetylsalicylic Acid"}]}}
         """.data(using: .utf8)!
-        let client = RxNormClient(network: MockNetwork(responseData: mockJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: mockJSON))
         let synonyms = try await client.fetchDrugSynonyms(for: "1234")
         #expect(synonyms == ["Aspirin","Acetylsalicylic Acid"])
     }
@@ -83,7 +83,7 @@ struct RxNormTests {
     @Test("fetchDrugSynonyms throws decodingFailed for invalid JSON")
     func testFetchDrugSynonymsInvalidJSON() async throws {
         let invalidJSON = Data("{".utf8)
-        let client = RxNormClient(network: MockNetwork(responseData: invalidJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: invalidJSON))
         do {
             _ = try await client.fetchDrugSynonyms(for: "1234")
             #expect(false)
@@ -97,7 +97,7 @@ struct RxNormTests {
         let mockJSON = """
         {"interactionTypeGroup":[{"interactionType":[{"interactionPair":[{"description":"Major interaction.","interactionConcept":[{"minConceptItem":{"name":"Aspirin","rxcui":"1234"}},{"minConceptItem":{"name":"Warfarin","rxcui":"5678"}}]}]}]}]}
         """.data(using: .utf8)!
-        let client = RxNormClient(network: MockNetwork(responseData: mockJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: mockJSON))
         let interactions = try await client.fetchInteractionsForRxcui("1234")
         #expect(interactions.count == 1)
         #expect(interactions[0].description == "Major interaction.")
@@ -107,7 +107,7 @@ struct RxNormTests {
     @Test("fetchInteractionsForRxcui throws decodingFailed for invalid JSON")
     func testFetchInteractionsForRxcuiInvalidJSON() async throws {
         let invalidJSON = Data("{".utf8)
-        let client = RxNormClient(network: MockNetwork(responseData: invalidJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: invalidJSON))
         do {
             _ = try await client.fetchInteractionsForRxcui("1234")
             #expect(false)
@@ -121,7 +121,7 @@ struct RxNormTests {
         let mockJSON = """
         {"properties":{"RxCUI":"1234","Name":"Aspirin","Synonym":"Acetylsalicylic Acid"}}
         """.data(using: .utf8)!
-        let client = RxNormClient(network: MockNetwork(responseData: mockJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: mockJSON))
         let props = try await client.fetchPropertiesForRxcui("1234")
         #expect(props["RxCUI"] == "1234")
         #expect(props["Name"] == "Aspirin")
@@ -131,7 +131,7 @@ struct RxNormTests {
     @Test("fetchPropertiesForRxcui throws decodingFailed for invalid JSON")
     func testFetchPropertiesForRxcuiInvalidJSON() async throws {
         let invalidJSON = Data("{".utf8)
-        let client = RxNormClient(network: MockNetwork(responseData: invalidJSON))
+        let client = await RxNormClient(network: MockNetwork(responseData: invalidJSON))
         do {
             _ = try await client.fetchPropertiesForRxcui("1234")
             #expect(false)

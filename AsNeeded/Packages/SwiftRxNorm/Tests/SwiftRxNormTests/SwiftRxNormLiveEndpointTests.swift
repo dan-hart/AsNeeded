@@ -11,7 +11,7 @@ struct RxNormLiveTests {
     @Test("fetchDrugsByName hits real API (only runs if enabled)")
     func testFetchDrugsByNameLive() async throws {
         guard Self.enabled else { return /* Skipped: Live endpoint tests are disabled */ }
-        let client = RxNormClient()
+        let client = await RxNormClient()
         let drugs = try await client.fetchDrugsByName("aspirin")
         #expect(!drugs.isEmpty)
         #expect(drugs.contains(where: { $0.name.lowercased().contains("aspirin") }))
@@ -20,7 +20,7 @@ struct RxNormLiveTests {
     @Test("fetchRxcuiByName hits real API (only runs if enabled)")
     func testFetchRxcuiByNameLive() async throws {
         guard Self.enabled else { return /* Skipped: Live endpoint tests are disabled */ }
-        let client = RxNormClient()
+        let client = await RxNormClient()
         let rxcui = try await client.fetchRxcuiByName("aspirin")
         #expect(rxcui != nil)
     }
@@ -28,7 +28,7 @@ struct RxNormLiveTests {
     @Test("fetchDrugSynonyms hits real API (only runs if enabled)")
     func testFetchDrugSynonymsLive() async throws {
         guard Self.enabled else { return /* Skipped: Live endpoint tests are disabled */ }
-        let client = RxNormClient()
+        let client = await RxNormClient()
         let rxcui = try await client.fetchRxcuiByName("aspirin")
         guard let rxcui = rxcui else {
             #expect(false, "RxCUI not found for aspirin")
@@ -41,7 +41,7 @@ struct RxNormLiveTests {
     @Test("fetchInteractionsForRxcui hits real API (only runs if enabled)")
     func testFetchInteractionsForRxcuiLive() async throws {
         guard Self.enabled else { return /* Skipped: Live endpoint tests are disabled */ }
-        let client = RxNormClient()
+        let client = await RxNormClient()
         let rxcui = try await client.fetchRxcuiByName("warfarin")
         guard let rxcui = rxcui else {
             #expect(false, "RxCUI not found for warfarin")
@@ -54,7 +54,7 @@ struct RxNormLiveTests {
     @Test("fetchPropertiesForRxcui hits real API (only runs if enabled)")
     func testFetchPropertiesForRxcuiLive() async throws {
         guard Self.enabled else { return /* Skipped: Live endpoint tests are disabled */ }
-        let client = RxNormClient()
+        let client = await RxNormClient()
         let rxcui = try await client.fetchRxcuiByName("ibuprofen")
         guard let rxcui = rxcui else {
             #expect(false, "RxCUI not found for ibuprofen")

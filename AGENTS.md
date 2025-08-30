@@ -19,6 +19,7 @@
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
 - Protocol‑oriented services; inject dependencies for testability.
 - Naming: Views end with `View` (e.g., `MedicationDetailView`), tests end with `Tests` (e.g., `AsNeededTests`). Filenames match primary type.
+- **No force unwraps**: Avoid force unwraps (`!`) in both app code AND tests. Use safe unwrapping with `guard let`, `if let`, or optional chaining to prevent runtime crashes.
 
 ## Architecture Overview
 - Domain: Pure models and use cases that encode business rules; no UI or persistence code. Keep calculation/validation logic here.
