@@ -63,10 +63,13 @@ public final class DataStore {
     // MARK: - Data Management
     
     /// Export all data as JSON
-    public func exportDataAsJSON() async throws -> Data {
+    public func exportDataAsJSON(redactNames: Bool = false) async throws -> Data {
+        let exportMedications = redactNames ? medications.map { $0.redacted() } : medications
+        let exportEvents = redactNames ? events.map { $0.redacted() } : events
+        
         let exportData = DataExport(
-            medications: medications,
-            events: events,
+            medications: exportMedications,
+            events: exportEvents,
             exportDate: Date(),
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         )

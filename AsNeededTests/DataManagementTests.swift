@@ -364,6 +364,81 @@ struct DataManagementTests {
     #expect(finalJSON != nil, "Final JSON should be valid after multiple cycles")
   }
   
+  // MARK: - Redaction Tests
+  
+  @Test("Export with name redaction should redact all clinical names and nicknames")
+  func testExportWithRedaction() async throws {
+    let dataStore = createTestDataStore()
+    try await dataStore.clearAllData()
+    
+    // Create medication with both clinical name and nickname
+    let medication = ANMedicationConcept(
+      clinicalName: "Sensitive Medication Name",
+      nickname: "Secret Nickname"
+    )
+    
+    let event = ANEventConcept(
+      eventType: .doseTaken,
+      medication: medication,
+      date: Date()
+    )
+    
+    try await dataStore.addMedication(medication)
+    try await dataStore.addEvent(event)
+    
+    // Export with redaction
+    let redactedData = try await dataStore.exportDataAsJSON(redactNames: true)
+    let redactedJSON = try JSONSerialization.jsonObject(with: redactedData) as? [String: Any]
+    
+    // Verify medication names are redacted
+    guard let medications = redactedJSON?["medications"] as? [[String: Any]], 
+          let exportedMed = medications.first else {
+      #expect(false, "No medications found in redacted export")
+      return
+    }
+    
+    #expect(exportedMed["clinicalName"] as? String == "[REDACTED]")
+    #expect(exportedMed["nickname"] as? String == "[REDACTED]")
+    
+    // Verify event medication names are also redacted
+    guard let events = redactedJSON?["events"] as? [[String: Any]],
+          let exportedEvent = events.first,
+          let eventMedication = exportedEvent["medication"] as? [String: Any] else {
+      #expect(false, "No events or medication found in redacted export")
+      return
+    }
+    
+    #expect(eventMedication["clinicalName"] as? String == "[REDACTED]")
+    #expect(eventMedication["nickname"] as? String == "[REDACTED]")
+  }
+  
+  @Test("Export without redaction should preserve all names")
+  func testExportWithoutRedaction() async throws {
+    let dataStore = createTestDataStore()
+    try await dataStore.clearAllData()
+    
+    let medication = ANMedicationConcept(
+      clinicalName: "Real Medication Name",
+      nickname: "Real Nickname"
+    )
+    
+    try await dataStore.addMedication(medication)
+    
+    // Export without redaction (default behavior)
+    let normalData = try await dataStore.exportDataAsJSON()
+    let normalJSON = try JSONSerialization.jsonObject(with: normalData) as? [String: Any]
+    
+    // Verify names are preserved
+    guard let medications = normalJSON?["medications"] as? [[String: Any]],
+          let exportedMed = medications.first else {
+      #expect(false, "No medications found in normal export")
+      return
+    }
+    
+    #expect(exportedMed["clinicalName"] as? String == "Real Medication Name")
+    #expect(exportedMed["nickname"] as? String == "Real Nickname")
+  }
+
   // MARK: - Edge Cases
   
   @Test("Export with special characters should work")

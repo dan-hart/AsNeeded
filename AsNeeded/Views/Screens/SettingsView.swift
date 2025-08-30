@@ -10,9 +10,9 @@ struct SettingsView: View {
             .fontWeight(.semibold)
             .padding(.bottom, 4)
           
-          dataSection
-          
           medicalDisclaimerSection
+          
+          dataSection
           
           Spacer(minLength: 32)
         }
