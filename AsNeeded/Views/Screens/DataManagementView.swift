@@ -8,28 +8,30 @@ struct DataManagementView: View {
   @StateObject private var viewModel = DataManagementViewModel()
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 20) {
-      dataOverviewSection
-      
-      Divider()
-      
-      dataActionsSection
-    }
-    .fileExporter(
-      isPresented: $viewModel.showingFileSaver,
-      document: viewModel.exportedData.map { DataDocument(data: $0) },
-      contentType: .json,
-      defaultFilename: "AsNeeded-Export-\(dateFormatter.string(from: Date()))"
-    ) { result in
-      switch result {
-      case .success:
-        viewModel.alertMessage = "Data exported successfully"
-        viewModel.showingAlert = true
-      case .failure(let error):
-        viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
-        viewModel.showingAlert = true
+      ScrollView {
+          VStack(alignment: .leading, spacing: 20) {
+              dataOverviewSection
+              
+              Divider()
+              
+              dataActionsSection
+          }
       }
-    }
+          .fileExporter(
+            isPresented: $viewModel.showingFileSaver,
+            document: viewModel.exportedData.map { DataDocument(data: $0) },
+            contentType: .json,
+            defaultFilename: "AsNeeded-Export-\(dateFormatter.string(from: Date()))"
+          ) { result in
+              switch result {
+              case .success:
+                  viewModel.alertMessage = "Data exported successfully"
+                  viewModel.showingAlert = true
+              case .failure(let error):
+                  viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
+                  viewModel.showingAlert = true
+              }
+          }
     .fileImporter(
       isPresented: $viewModel.showingDocumentPicker,
       allowedContentTypes: [.json],
