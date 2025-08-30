@@ -10,34 +10,21 @@ struct SettingsView: View {
             .fontWeight(.semibold)
             .padding(.bottom, 4)
           
-          medicalDisclaimerSection
+          VStack(alignment: .leading, spacing: 16) {
+            Text("Important Information")
+              .font(.title2)
+              .fontWeight(.semibold)
+            MedicalDisclaimerView()
+          }
           
-          dataSection
-          
+          SettingsDataSectionView()
+
+          SettingsAboutSectionView()
+
           Spacer(minLength: 32)
         }
         .padding()
       }
-    }
-  }
-  
-  private var dataSection: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text("Data")
-        .font(.title2)
-        .fontWeight(.semibold)
-      
-      DataManagementView()
-    }
-  }
-  
-  private var medicalDisclaimerSection: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text("Important Information")
-        .font(.title2)
-        .fontWeight(.semibold)
-      
-      MedicalDisclaimerView()
     }
   }
 }
