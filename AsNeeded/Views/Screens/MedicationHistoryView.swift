@@ -92,6 +92,12 @@ struct MedicationHistoryView: View {
         let cal = Calendar.current
         if cal.isDateInToday(date) { return "Today" }
         if cal.isDateInYesterday(date) { return "Yesterday" }
+        
+        // Use our centralized relative formatting for other dates
+        let daysDiff = cal.dateComponents([.day], from: date, to: Date()).day ?? 0
+        if daysDiff > 1 && daysDiff <= 7 {
+            return date.relativeFormattedAsPast.capitalized
+        }
         return nil
     }
 

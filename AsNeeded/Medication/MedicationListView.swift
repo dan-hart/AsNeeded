@@ -114,42 +114,89 @@ struct MedicationRow: View {
     let medication: ANMedicationConcept
     var onLogTapped: () -> Void = {}
     
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)
-                    .font(.headline)
-                extraInfoView
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 12) {
+                medicationTitle
+                medicationInfo
+                logButton
+                    .frame(maxWidth: .infinity)
             }
-            Spacer(minLength: 8)
-            Button(action: onLogTapped) {
-                Label("Log Dose", systemImage: "plus.circle.fill")
-                    .labelStyle(.titleAndIcon)
+        } else {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    medicationTitle
+                    medicationInfo
+                }
+                Spacer(minLength: 8)
+                logButton
             }
-            .buttonStyle(.borderedProminent)
-            .accessibilityLabel("Log dose for \(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)")
-            .accessibilityHint("Opens dose logging for this medication")
+        }
+    }
+    
+    private var medicationTitle: some View {
+        Text(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)
+            .font(.headline)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+            .multilineTextAlignment(.leading)
+    }
+    
+    private var medicationInfo: some View {
+        VStack(alignment: .leading, spacing: dynamicTypeSize.isAccessibilitySize ? 6 : 2) {
+            quantityView
+            datesView
         }
     }
     
     @ViewBuilder
-    private var extraInfoView: some View {
+    private var quantityView: some View {
         if let quantity = medication.quantity {
-            Text("\(quantity.formattedAmount)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        if let lastRefill = medication.lastRefillDate {
-            Text("Last refill: \(lastRefill.formatted(date: .abbreviated, time: .omitted))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        if let nextRefill = medication.nextRefillDate {
-            Text("Next refill: \(nextRefill.formatted(date: .abbreviated, time: .omitted))")
+            let quantityText = if let unit = medication.prescribedUnit {
+                "\(quantity.formattedAmount) \(unit.abbreviation)"
+            } else {
+                quantity.formattedAmount
+            }
+            
+            Text(quantityText)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
+    
+    @ViewBuilder
+    private var datesView: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if let lastRefill = medication.lastRefillDate {
+                Text("Last refill \(lastRefill.relativeFormattedAsPast)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let nextRefill = medication.nextRefillDate {
+                let isOverdue = nextRefill < Date()
+                Text("Next refill \(nextRefill.relativeFormattedAsFuture)")
+                    .font(.caption)
+                    .foregroundStyle(isOverdue ? .orange : .secondary)
+            }
+        }
+    }
+    
+    private var logButton: some View {
+        Button(action: onLogTapped) {
+            if dynamicTypeSize.isAccessibilitySize {
+                Label("Log Dose", systemImage: "plus.circle.fill")
+                    .labelStyle(.titleAndIcon)
+            } else {
+                Label("Log Dose", systemImage: "plus.circle.fill")
+                    .labelStyle(.iconOnly)
+            }
+        }
+        .buttonStyle(.borderedProminent)
+        .accessibilityLabel("Log dose for \(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)")
+        .accessibilityHint("Opens dose logging for this medication")
+    }
+    
 }
 
 #Preview {
@@ -158,4 +205,49 @@ struct MedicationRow: View {
 
 #Preview("Empty List") {
     MedicationListView()
+}
+
+#Preview("Medication Row Samples") {
+    List {
+        MedicationRow(medication: ANMedicationConcept(
+            clinicalName: "Lisinopril",
+            nickname: "Blood Pressure",
+            quantity: 28.5,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
+            prescribedUnit: .tablet,
+            prescribedDoseAmount: 10.0
+        ))
+        
+        MedicationRow(medication: ANMedicationConcept(
+            clinicalName: "Metformin",
+            quantity: 90.0,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -1, to: Date()), // Yesterday
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()), // In 1 month
+            prescribedUnit: .tablet
+        ))
+        
+        MedicationRow(medication: ANMedicationConcept(
+            clinicalName: "Very Long Medication Name That Could Wrap",
+            quantity: 250.0,
+            prescribedUnit: .milligram
+        ))
+        
+        MedicationRow(medication: ANMedicationConcept(
+            clinicalName: "Albuterol",
+            nickname: "Rescue Inhaler",
+            quantity: 150.0,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()), // 1 week ago
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()), // Overdue
+            prescribedUnit: .puff
+        ))
+        
+        MedicationRow(medication: ANMedicationConcept(
+            clinicalName: "Vitamin D3",
+            quantity: 75.0,
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 1, to: Date()), // Tomorrow
+            prescribedUnit: .tablet
+        ))
+    }
+    .listStyle(.insetGrouped)
 }
