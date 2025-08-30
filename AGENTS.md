@@ -9,7 +9,7 @@
 
 ## Build, Test, Run
 - Build (CLI): `xcodebuild -project AsNeeded.xcodeproj -scheme AsNeeded -configuration Debug build`.
-- Run (Xcode): Open `AsNeeded.xcodeproj`, select an iOS 18+ simulator, press Run (⌘R).
+- Run (Xcode): Open `AsNeeded.xcodeproj`, select an iOS 18.6+ simulator, press Run (⌘R).
 - Tests (Xcode): Product → Test (⌘U).
 - Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16'`.
 
@@ -54,4 +54,4 @@
 - Local dev: Use a personal team for signing; avoid editing shared project settings unless necessary.
 
 ## Agent-Specific Instructions
-> Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift6 best practices is of utmost importance.
+> Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift 6 best practices is of utmost importance.

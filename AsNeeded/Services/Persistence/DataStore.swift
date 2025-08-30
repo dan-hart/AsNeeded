@@ -46,4 +46,56 @@ public final class DataStore {
     public func addEvent(_ event: ANEventConcept) async throws {
         try await eventsStore.insert(event)
     }
+    
+    // MARK: - Data Management
+    
+    /// Export all data as JSON
+    public func exportDataAsJSON() async throws -> Data {
+        let exportData = DataExport(
+            medications: medications,
+            events: events,
+            exportDate: Date(),
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        )
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+        return try encoder.encode(exportData)
+    }
+    
+    /// Import data from JSON, replacing all existing data
+    public func importDataFromJSON(_ data: Data) async throws {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        let importedData = try decoder.decode(DataExport.self, from: data)
+        
+        // Clear existing data first
+        try await clearAllData()
+        
+        // Import medications
+        for medication in importedData.medications {
+            try await addMedication(medication)
+        }
+        
+        // Import events
+        for event in importedData.events {
+            try await addEvent(event)
+        }
+    }
+    
+    /// Clear all data from both stores
+    public func clearAllData() async throws {
+        try await medicationsStore.removeAll()
+        try await eventsStore.removeAll()
+    }
+}
+
+/// Structure for data export/import
+private struct DataExport: Codable {
+    let medications: [ANMedicationConcept]
+    let events: [ANEventConcept]
+    let exportDate: Date
+    let appVersion: String
 }
