@@ -56,6 +56,14 @@
 - Verify `Info.plist` changes (e.g., `ITSAppUsesNonExemptEncryption`) are intentional.
 - Local dev: Use a personal team for signing; avoid editing shared project settings unless necessary.
 
+## .gitignore Requirements
+- **Build artifacts**: Ensure all build folders (`.build/`, `Build/`, `DerivedData/`) are ignored
+- **Xcode user data**: All user-specific files (`*.xcuserstate`, `xcuserdata/`, `.swiftpm/xcode/`)
+- **macOS system files**: `.DS_Store` files must be ignored and removed from tracking
+- **Swift Package Manager**: Ignore `.swiftpm/configuration/` and generated workspace files
+- **Package dependencies**: Ignore `Packages/` directories and cached builds
+- The main .gitignore should include comprehensive iOS/Swift exclusions for build artifacts, user data, and system files
+
 ## Agent-Specific Instructions
 > Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift 6 best practices is of utmost importance.
 

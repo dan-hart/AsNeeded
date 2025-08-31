@@ -39,161 +39,135 @@ public struct DHLogger: Sendable {
 	}
 	
 	// MARK: - Logging Methods
-	/// Logs a debug message with full OSLog privacy control support.
+	/// Logs a debug message.
 	///
 	/// Debug messages are disabled in release builds for performance reasons.
 	/// Use for detailed tracing information that's only useful during development.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.debug("User login attempt: \(username, privacy: .private)")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func debug(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
-		logger.debug("\(message())")
+		let context = formatContext(file: file, function: function, line: line)
+		logger.debug("\(context) \(message)")
 	}
 	
-	/// Logs an info message with full OSLog privacy control support.
+	/// Logs an info message for general informational events.
 	///
 	/// Info messages are visible in debug builds and can be enabled in release builds.
 	/// Use for general events that might be useful for understanding app behavior.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.info("API request completed: \(endpoint, privacy: .public) in \(duration)ms")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func info(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
-		logger.info("\(message())")
+		let context = formatContext(file: file, function: function, line: line)
+		logger.info("\(context) \(message)")
 	}
 	
-	/// Logs a notice message with full OSLog privacy control support.
+	/// Logs a notice message for significant events that are part of normal operation.
 	///
 	/// Notice is the default log level and these messages are always captured.
 	/// Use for important events that should be logged in production.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.notice("User action: \(action, privacy: .public) by \(userId, privacy: .private(mask: .hash))")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func notice(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
-		logger.notice("\(message())")
+		let context = formatContext(file: file, function: function, line: line)
+		logger.notice("\(context) \(message)")
 	}
 	
-	/// Logs a warning message with full OSLog privacy control support.
+	/// Logs a warning message for potentially problematic situations.
 	///
 	/// Warning messages indicate something unexpected but recoverable happened.
 	/// These are always captured and should be used sparingly.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.warning("Rate limit approaching: \(currentCount)/\(maxCount, privacy: .public)")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func warning(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
-		logger.warning("\(message())")
+		let context = formatContext(file: file, function: function, line: line)
+		logger.warning("\(context) \(message)")
 	}
 	
-	/// Logs an error message with full OSLog privacy control support.
+	/// Logs an error message for error conditions.
 	///
 	/// Error messages indicate that something went wrong but the app can continue.
 	/// These are always captured and persisted.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.error("Failed to save data", error: saveError)
-	/// logger.error("Network error: \(errorCode, privacy: .public) - \(errorMessage, privacy: .private)")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - error: An optional Error to include in the log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func error(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		error: Error? = nil,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
+		let context = formatContext(file: file, function: function, line: line)
 		if let error = error {
-			logger.error("\(message()) - Error: \(String(describing: error), privacy: .public)")
+			logger.error("\(context) \(message) - Error: \(String(describing: error))")
 		} else {
-			logger.error("\(message())")
+			logger.error("\(context) \(message)")
 		}
 	}
 	
-	/// Logs a fault message with full OSLog privacy control support.
+	/// Logs a fault message for critical errors that may cause the app to crash.
 	///
 	/// Fault messages indicate serious problems that require immediate attention.
 	/// These are always captured and persisted with high priority.
 	///
-	/// Example usage:
-	/// ```
-	/// logger.fault("Critical system failure", error: criticalError)
-	/// logger.fault("Memory corruption detected at \(address, privacy: .private(mask: .hash))")
-	/// ```
-	///
 	/// - Parameters:
-	///   - message: The message to log with OSLog string interpolation support
+	///   - message: The message to log
 	///   - error: An optional Error to include in the log
 	///   - file: The file name (automatically provided)
 	///   - function: The function name (automatically provided)
 	///   - line: The line number (automatically provided)
 	public func fault(
-		_ message: @autoclosure () -> OSLogMessage,
+		_ message: String,
 		error: Error? = nil,
 		file: String = #file,
 		function: String = #function,
 		line: Int = #line
 	) {
+		let context = formatContext(file: file, function: function, line: line)
 		if let error = error {
-			logger.fault("\(message()) - Error: \(String(describing: error), privacy: .public)")
+			logger.fault("\(context) \(message) - Error: \(String(describing: error))")
 		} else {
-			logger.fault("\(message())")
+			logger.fault("\(context) \(message)")
 		}
 	}
 	
@@ -270,6 +244,33 @@ public struct DHLogger: Sendable {
 			debug("⏱ \(operation) took \(String(format: "%.3f", timeElapsed))s", file: file, function: function, line: line)
 		}
 		return try await closure()
+	}
+	
+	// MARK: - Privacy Helper Methods
+	/// Redacts sensitive data for logging purposes.
+	/// Use this for medication names, user data, or any sensitive information.
+	///
+	/// - Parameter sensitiveValue: The sensitive value to redact
+	/// - Returns: A redacted string safe for logging
+	public static func redact(_ sensitiveValue: Any) -> String {
+		return "<private>"
+	}
+	
+	/// Creates a hash representation of sensitive data for logging.
+	/// Useful when you need to track the same sensitive value across logs.
+	///
+	/// - Parameter sensitiveValue: The sensitive value to hash
+	/// - Returns: A hashed representation safe for logging
+	public static func hash(_ sensitiveValue: Any) -> String {
+		let stringValue = String(describing: sensitiveValue)
+		let hasher = stringValue.hash
+		return "<hash:\(String(hasher.magnitude, radix: 16))>"
+	}
+	
+	// MARK: - Private Helpers
+	private func formatContext(file: String, function: String, line: Int) -> String {
+		let filename = URL(fileURLWithPath: file).lastPathComponent
+		return "[\(filename):\(line) \(function)]"
 	}
 }
 

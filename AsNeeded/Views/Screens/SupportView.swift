@@ -85,6 +85,12 @@ private struct CoreValuesSection: View {
 					title: "Free & modifiable",
 					description: "All features free, forever"
 				)
+				
+				CoreValueRow(
+					icon: .nosignApp,
+					title: "No advertisements",
+					description: "Never any ads, ever"
+				)
 			}
 		}
 	}
@@ -128,7 +134,7 @@ private struct FreeAndOpenSourceSection: View {
 				.fontWeight(.semibold)
 			
 			VStack(alignment: .leading, spacing: 16) {
-				Text("As Needed will always be free to use with all features available to everyone. The app is open source, meaning you can inspect the code, contribute improvements, or even build your own version.")
+				Text("As Needed will always be free to use with all features available to everyone. No advertisements, no premium tiers, no subscriptions required. The app is open source, meaning you can inspect the code, contribute improvements, or even build your own version.")
 					.font(.body)
 				
 				Button {
@@ -258,7 +264,7 @@ private struct TipButton: View {
 	var body: some View {
 		Button {
 			// TODO: Implement RevenueCat tip purchase
-			print("Tip selected: \(tip.title)")
+			print("Tip selected")
 		} label: {
 			VStack(spacing: 8) {
 				Text(tip.emoji)
@@ -320,7 +326,7 @@ private struct SubscriptionButton: View {
 	var body: some View {
 		Button {
 			// TODO: Implement RevenueCat subscription purchase
-			print("Subscription selected: \(subscription.title)")
+			print("Subscription selected")
 		} label: {
 			HStack(spacing: 12) {
 				Image(systemSymbol: subscription.icon)

@@ -7,10 +7,13 @@ import SFSafeSymbols
 
 struct DataManagementView: View {
   @StateObject private var viewModel = DataManagementViewModel()
+  @State private var showSupportToast = false
+  @State private var showSupportView = false
   
   var body: some View {
-	  ScrollView {
-		  VStack(alignment: .leading, spacing: 20) {
+	  ZStack(alignment: .top) {
+		  ScrollView {
+			  VStack(alignment: .leading, spacing: 20) {
 			  dataOverviewSection
 			  
 			  Divider()
@@ -26,8 +29,16 @@ struct DataManagementView: View {
 		  ) { result in
 			  switch result {
 			  case .success:
-				  viewModel.alertMessage = "Data exported successfully"
-				  viewModel.showingAlert = true
+				  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+					  withAnimation(.easeInOut(duration: 0.3)) {
+						  showSupportToast = true
+					  }
+					  DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+						  withAnimation(.easeInOut(duration: 0.3)) {
+							  showSupportToast = false
+						  }
+					  }
+				  }
 			  case .failure(let error):
 				  viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
 				  viewModel.showingAlert = true
@@ -89,6 +100,29 @@ struct DataManagementView: View {
 		Text(message)
 	  }
 	}
+		  
+		  SupportToastView(
+			  message: "Data exported successfully",
+			  supportMessage: "Support As Needed",
+			  isVisible: showSupportToast,
+			  onDismiss: { 
+				  withAnimation(.easeInOut(duration: 0.3)) {
+					  showSupportToast = false
+				  }
+			  },
+			  onSupportTapped: {
+				  withAnimation(.easeInOut(duration: 0.3)) {
+					  showSupportToast = false
+					  showSupportView = true
+				  }
+			  }
+		  )
+	  }
+	  .sheet(isPresented: $showSupportView) {
+		  NavigationView {
+			  SupportView()
+		  }
+	  }
   }
   
   private var dataOverviewSection: some View {
