@@ -11,12 +11,12 @@ import HealthKitUI
 
 @main
 struct AsNeededApp: App {
-    @StateObject private var watchConnectivityReceiver = WCReceiver()
-    
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(watchConnectivityReceiver)
-        }
-    }
+	@StateObject private var watchConnectivityReceiver = WCReceiver()
+	
+	var body: some Scene {
+		WindowGroup {
+			ContentView()
+				.environmentObject(watchConnectivityReceiver)
+		}
+	}
 }

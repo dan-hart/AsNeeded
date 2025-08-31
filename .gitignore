@@ -1,5 +1,13 @@
+# macOS system files
 .DS_Store
+.DS_Store?
+**/.DS_Store
+._*
+
+# Build artifacts
 /build
+
+# Xcode user data
 AsNeeded.xcodeproj/project.xcworkspace/xcuserdata/danhart.xcuserdatad/UserInterfaceState.xcuserstate
 *.xcuserstate
 /AsNeeded.xcodeproj/project.xcworkspace/xcuserdata

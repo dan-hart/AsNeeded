@@ -10,32 +10,32 @@ import SFSafeSymbols
 import HealthKit
 
 struct ContentView: View {
-    var body: some View {
-        ZStack {
-            TabView {
-                MedicationView()
-                    .tabItem {
-                        Label("Medication", systemImage: "pills")
-                    }
-                HistoryView()
-                    .tabItem {
-                        Label("History", systemImage: "clock.arrow.circlepath")
-                    }
-                TrendsView()
-                    .tabItem {
-                        Label("Trends", systemImage: "chart.xyaxis.line")
-                    }
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-            }
-        }
-    }
+	var body: some View {
+		ZStack {
+			TabView {
+				MedicationView()
+					.tabItem {
+						Label("Medication", systemSymbol: .pills)
+					}
+				HistoryView()
+					.tabItem {
+						Label("History", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
+					}
+				TrendsView()
+					.tabItem {
+						Label("Trends", systemSymbol: .chartXyaxisLine)
+					}
+				SettingsView()
+					.tabItem {
+						Label("Settings", systemSymbol: .gearshape)
+					}
+			}
+		}
+	}
 }
 
 #if DEBUG
 #Preview {
-    ContentView()
+	ContentView()
 }
 #endif

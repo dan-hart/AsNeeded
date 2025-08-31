@@ -4,14 +4,14 @@
 import SwiftUI
 
 struct TrendsView: View {
-    var body: some View {
-        MedicationTrendsView()
-            .padding()
-    }
+	var body: some View {
+		MedicationTrendsView()
+			.padding()
+	}
 }
 
 #if DEBUG
 #Preview {
-    TrendsView()
+	TrendsView()
 }
 #endif

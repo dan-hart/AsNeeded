@@ -14,7 +14,9 @@
 - Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16'`.
 
 ## Coding Style & Naming
-- Indentation: 2 spaces; wrap at ~120 cols.
+- **Indentation**: Use tabs (not spaces) for indentation; wrap at ~120 cols.
+- **Code Organization**: Use MARK comments to organize code sections (e.g., `// MARK: - Properties`, `// MARK: - View Components`, `// MARK: - Private Methods`). No blank lines should appear directly after MARK comments - code should begin immediately on the next line.
+- **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
 - Protocol‑oriented services; inject dependencies for testability.
@@ -56,3 +58,19 @@
 
 ## Agent-Specific Instructions
 > Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift 6 best practices is of utmost importance.
+
+### Critical Build Verification Requirement
+**ALWAYS verify the app builds successfully after making large changes.** This is mandatory and non-negotiable:
+
+1. **After significant code changes**: Run `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 15' build` to verify the build succeeds.
+2. **Before completing tasks**: Ensure the build is working and all new files are properly added to the Xcode project.
+3. **When adding new files**: Verify files are added to the Xcode project and included in the build phase - files on disk are not automatically included.
+4. **When modifying dependencies**: Test that imports resolve correctly and all required initializers/methods are public.
+5. **Build failure response**: If builds fail, immediately investigate and fix compilation errors before proceeding with other work.
+
+**Build testing commands:**
+- Quick build: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 15' build -quiet`
+- Syntax check: `swiftc -parse [file_path]` for individual files
+- Clean build: `xcodebuild -scheme AsNeeded clean build`
+
+**Never leave the project in a broken state.** A working build is the foundation for all development work.
