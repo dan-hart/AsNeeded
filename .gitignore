@@ -8,6 +8,9 @@
 /build
 
 # Xcode user data
-AsNeeded.xcodeproj/project.xcworkspace/xcuserdata/danhart.xcuserdatad/UserInterfaceState.xcuserstate
 *.xcuserstate
-/AsNeeded.xcodeproj/project.xcworkspace/xcuserdata
+**/xcuserdata/
+xcuserdata/
+UserInterfaceState.xcuserstate
+DerivedData/
+**/.swiftpm/xcode/xcuserdata/
