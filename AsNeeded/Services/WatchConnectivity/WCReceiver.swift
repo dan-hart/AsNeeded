@@ -1,0 +1,228 @@
+import WatchConnectivity
+import Foundation
+import Boutique
+import ANModelKit
+
+// Sendable message wrapper
+struct SendableMessage: Sendable {
+    let getMedications: Bool
+    let logDoseData: LogDoseData?
+    let quantityUpdateData: QuantityUpdateData?
+    
+    init(from message: [String: Any]) {
+        self.getMedications = message["getMedications"] != nil
+        
+        if let logDose = message["logDose"] as? [String: Any] {
+            self.logDoseData = LogDoseData(from: logDose)
+        } else {
+            self.logDoseData = nil
+        }
+        
+        if let quantityUpdate = message["updateQuantity"] as? [String: Any] {
+            self.quantityUpdateData = QuantityUpdateData(from: quantityUpdate)
+        } else {
+            self.quantityUpdateData = nil
+        }
+    }
+}
+
+struct LogDoseData: Sendable {
+    let medicationId: String
+    let doseAmount: Double
+    let doseUnit: String
+    let quantityConsumed: Double?
+    
+    init(from dict: [String: Any]) {
+        self.medicationId = dict["medicationId"] as? String ?? ""
+        self.doseAmount = dict["doseAmount"] as? Double ?? 0.0
+        self.doseUnit = dict["doseUnit"] as? String ?? ""
+        self.quantityConsumed = dict["quantityConsumed"] as? Double
+    }
+}
+
+struct QuantityUpdateData: Sendable {
+    let medicationId: String
+    let quantity: Double
+    
+    init(from dict: [String: Any]) {
+        self.medicationId = dict["medicationId"] as? String ?? ""
+        self.quantity = dict["quantity"] as? Double ?? 0.0
+    }
+}
+
+@MainActor
+final class WCReceiver: NSObject, ObservableObject {
+    var session: WCSession
+    
+    @Published var isConnected = false
+    
+    override init() {
+        self.session = WCSession.default
+        super.init()
+        
+        if WCSession.isSupported() {
+            self.session.delegate = self
+            self.session.activate()
+        }
+    }
+    
+    // Handle messages from watch
+    nonisolated private func handleMessage(_ message: [String: Any]) {
+        let sendableMessage = SendableMessage(from: message)
+        Task { @MainActor in
+            await self.processMessage(sendableMessage)
+        }
+    }
+    
+    private func processMessage(_ message: SendableMessage) async {
+        do {
+            if message.getMedications {
+                await sendMedicationsToWatch()
+            } else if let logDoseData = message.logDoseData {
+                try await handleDoseLogging(logDoseData)
+            } else if let quantityUpdateData = message.quantityUpdateData {
+                try await handleQuantityUpdate(quantityUpdateData)
+            }
+        } catch {
+            print("Error handling watch message: \(error)")
+        }
+    }
+    
+    private func sendMedicationsToWatch() async {
+        let medications = DataStore.shared.medications
+        
+        let medicationData = medications.map { medication in
+            [
+                "id": medication.id.uuidString,
+                "displayName": medication.displayName,
+                "quantity": medication.quantity ?? 0.0,
+                "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
+                "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue
+            ]
+        }
+        
+        if session.isReachable {
+            session.sendMessage(["medications": medicationData], replyHandler: nil) { error in
+                print("Error sending medications to watch: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func handleDoseLogging(_ logDoseData: LogDoseData) async throws {
+        guard let medicationId = UUID(uuidString: logDoseData.medicationId),
+              let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit) else {
+            print("Invalid dose logging data from watch")
+            return
+        }
+        
+        // Find the medication
+        guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
+            print("Medication not found for dose logging")
+            return
+        }
+        
+        // Create dose and event
+        let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
+        let event = ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: dose,
+            date: Date()
+        )
+        
+        // Log the event
+        try await DataStore.shared.addEvent(event)
+        
+        // Update medication quantity if provided
+        if let quantityConsumed = logDoseData.quantityConsumed,
+           let currentQuantity = medication.quantity {
+            let updatedMedication = ANMedicationConcept(
+                id: medication.id,
+                clinicalName: medication.clinicalName,
+                nickname: medication.nickname,
+                quantity: max(0, currentQuantity - quantityConsumed),
+                lastRefillDate: medication.lastRefillDate,
+                nextRefillDate: medication.nextRefillDate,
+                prescribedUnit: medication.prescribedUnit,
+                prescribedDoseAmount: medication.prescribedDoseAmount
+            )
+            try await DataStore.shared.updateMedication(updatedMedication)
+        }
+        
+        // Send confirmation back to watch
+        if session.isReachable {
+            session.sendMessage(["doseLogged": true], replyHandler: nil) { error in
+                print("Error sending dose confirmation to watch: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
+        guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
+            print("Invalid quantity update data from watch")
+            return
+        }
+        
+        // Find the medication
+        guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
+            print("Medication not found for quantity update")
+            return
+        }
+        
+        // Update medication quantity
+        let updatedMedication = ANMedicationConcept(
+            id: medication.id,
+            clinicalName: medication.clinicalName,
+            nickname: medication.nickname,
+            quantity: quantityUpdateData.quantity,
+            lastRefillDate: medication.lastRefillDate,
+            nextRefillDate: medication.nextRefillDate,
+            prescribedUnit: medication.prescribedUnit,
+            prescribedDoseAmount: medication.prescribedDoseAmount
+        )
+        
+        try await DataStore.shared.updateMedication(updatedMedication)
+        
+        // Send confirmation back to watch
+        if session.isReachable {
+            session.sendMessage(["quantityUpdated": true], replyHandler: nil) { error in
+                print("Error sending quantity update confirmation to watch: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+
+extension WCReceiver: WCSessionDelegate {
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        Task { @MainActor in
+            if let error = error {
+                self.isConnected = false
+                print("WC Session activation failed: \(error.localizedDescription)")
+            } else {
+                self.isConnected = (activationState == .activated)
+                print("WC Session activated: \(activationState)")
+            }
+        }
+    }
+    
+    nonisolated func sessionDidBecomeInactive(_ session: WCSession) {
+        Task { @MainActor in
+            self.isConnected = false
+        }
+    }
+    
+    nonisolated func sessionDidDeactivate(_ session: WCSession) {
+        Task { @MainActor in
+            self.isConnected = false
+        }
+    }
+    
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+        handleMessage(message)
+    }
+    
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+        handleMessage(message)
+        replyHandler(["received": true])
+    }
+}
