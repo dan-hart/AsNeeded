@@ -3,14 +3,52 @@
 .DS_Store?
 **/.DS_Store
 ._*
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
 
 # Build artifacts
 /build
+.build/
+**/.build/
+Build/
+DerivedData/
+*/DerivedData/
 
 # Xcode user data
 *.xcuserstate
 **/xcuserdata/
 xcuserdata/
 UserInterfaceState.xcuserstate
-DerivedData/
 **/.swiftpm/xcode/xcuserdata/
+
+# Swift Package Manager
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.swiftpm/xcode/xcuserdata/
+/Packages
+*.xcworkspace
+
+# CocoaPods
+Pods/
+*.xcworkspace
+
+# Carthage
+Carthage/Build
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Code coverage files
+*.gcov
+*.gcno
+*.gcda
+*.profdata

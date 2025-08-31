@@ -1,0 +1,52 @@
+import SwiftUI
+import SFSafeSymbols
+
+struct SettingsSupportSectionView: View {
+	var body: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text("Support")
+				.font(.title2)
+				.fontWeight(.semibold)
+
+			NavigationLink {
+				SupportView()
+			} label: {
+				HStack(spacing: 12) {
+					Image(systemSymbol: .heart)
+						.font(.system(size: 18, weight: .medium))
+						.frame(width: 24, height: 24)
+						.foregroundColor(.red)
+
+					VStack(alignment: .leading, spacing: 2) {
+						Text("Support As Needed")
+							.font(.body)
+							.fontWeight(.medium)
+						Text("Tips, donations, and ways to help")
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+
+					Spacer()
+
+					Image(systemSymbol: .chevronRight)
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
+				.padding(16)
+				.background(Color(.systemBackground))
+				.overlay(
+					RoundedRectangle(cornerRadius: 12)
+						.stroke(Color(.systemGray4), lineWidth: 0.5)
+				)
+				.cornerRadius(12)
+			}
+			.buttonStyle(.plain)
+		}
+	}
+}
+
+#if DEBUG
+#Preview { 
+	SettingsSupportSectionView() 
+}
+#endif

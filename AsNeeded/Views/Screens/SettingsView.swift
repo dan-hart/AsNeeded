@@ -16,6 +16,8 @@ struct SettingsView: View {
 		  
 		  SettingsDataSectionView()
 
+		  SettingsSupportSectionView()
+
 		  SettingsAboutSectionView()
 
 		  Spacer(minLength: 32)
