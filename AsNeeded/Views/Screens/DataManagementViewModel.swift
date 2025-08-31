@@ -20,65 +20,65 @@ final class DataManagementViewModel: ObservableObject {
   @Published var showingAlert = false
   
   init(dataStore: DataStore = .shared) {
-    self.dataStore = dataStore
+	self.dataStore = dataStore
   }
   
   func requestExport() {
-    showingExportConfirmation = true
+	showingExportConfirmation = true
   }
   
   func exportData(includeNames: Bool) async {
-    isExporting = true
-    defer { isExporting = false }
-    
-    do {
-      let data = try await dataStore.exportDataAsJSON(redactNames: !includeNames)
-      exportedData = data
-      showingFileSaver = true
-    } catch {
-      alertMessage = "Export failed: \(error.localizedDescription)"
-      showingAlert = true
-    }
+	isExporting = true
+	defer { isExporting = false }
+	
+	do {
+	  let data = try await dataStore.exportDataAsJSON(redactNames: !includeNames)
+	  exportedData = data
+	  showingFileSaver = true
+	} catch {
+	  alertMessage = "Export failed: \(error.localizedDescription)"
+	  showingAlert = true
+	}
   }
   
   func importData(from url: URL) async {
-    isImporting = true
-    defer { isImporting = false }
-    
-    do {
-      let data = try Data(contentsOf: url)
-      try await dataStore.importDataFromJSON(data)
-      alertMessage = "Data imported successfully"
-      showingAlert = true
-    } catch {
-      alertMessage = "Import failed: \(error.localizedDescription)"
-      showingAlert = true
-    }
+	isImporting = true
+	defer { isImporting = false }
+	
+	do {
+	  let data = try Data(contentsOf: url)
+	  try await dataStore.importDataFromJSON(data)
+	  alertMessage = "Data imported successfully"
+	  showingAlert = true
+	} catch {
+	  alertMessage = "Import failed: \(error.localizedDescription)"
+	  showingAlert = true
+	}
   }
   
   func clearAllData() async {
-    isClearing = true
-    defer { isClearing = false }
-    
-    do {
-      try await dataStore.clearAllData()
-      alertMessage = "All data cleared successfully"
-      showingAlert = true
-    } catch {
-      alertMessage = "Clear data failed: \(error.localizedDescription)"
-      showingAlert = true
-    }
+	isClearing = true
+	defer { isClearing = false }
+	
+	do {
+	  try await dataStore.clearAllData()
+	  alertMessage = "All data cleared successfully"
+	  showingAlert = true
+	} catch {
+	  alertMessage = "Clear data failed: \(error.localizedDescription)"
+	  showingAlert = true
+	}
   }
   
   func confirmClearData() {
-    showingClearConfirmation = true
+	showingClearConfirmation = true
   }
   
   var medicationCount: Int {
-    dataStore.medications.count
+	dataStore.medications.count
   }
   
   var eventCount: Int {
-    dataStore.events.count
+	dataStore.events.count
   }
 }
