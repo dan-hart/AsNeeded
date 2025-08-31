@@ -30,7 +30,7 @@ final class WCSender: NSObject, ObservableObject {
 		
 		let messages: [String: Any] = [key: value]
 		session.sendMessage(messages, replyHandler: nil) { (error) in
-			print("Error sending message: \(error.localizedDescription)")
+			print("Error sending message: \(error)")
 		}
 	}
 	
@@ -48,7 +48,7 @@ extension WCSender: WCSessionDelegate {
 		DispatchQueue.main.async {
 			if let error = error {
 				self.isConnected = false
-				print("WC Session activation failed: \(error.localizedDescription)")
+				print("WC Session activation failed: \(error)")
 			} else {
 				self.isConnected = (activationState == .activated && session.isReachable)
 				print("WC Session activated: \(activationState), reachable: \(session.isReachable)")

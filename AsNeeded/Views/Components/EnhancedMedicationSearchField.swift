@@ -475,7 +475,7 @@ struct SuggestionButtonStyle: ButtonStyle {
 				text: .constant(""),
 				placeholder: "Search for medication...",
 				onMedicationSelected: { clinicalName, nickname in
-					print("Selected: \(clinicalName) (\(nickname))")
+                    print("Selected: \(clinicalName) (\(nickname))")
 				}
 			)
 		}

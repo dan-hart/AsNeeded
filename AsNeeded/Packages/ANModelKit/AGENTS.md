@@ -92,6 +92,14 @@
 - **Swift Package Manager**: Primary distribution method
 - **Versioning**: Semantic versioning with stable API design
 
+## .gitignore Requirements for Swift Packages
+- **Build artifacts**: Ignore `.build/` directory (Swift Package Manager build artifacts)
+- **Xcode integration**: Ignore `.swiftpm/xcode/` directory and user data files
+- **System files**: Ignore `.DS_Store` and macOS system files
+- **Dependencies**: Ignore `/Packages` directory if using package dependencies
+- **User data**: Ignore `xcuserdata/`, `*.xcuserstate`, and Xcode user-specific files
+- Standard Swift package .gitignore should include: `.build/`, `.swiftpm/`, `.DS_Store`, `xcuserdata/`, `*.xcuserstate`
+
 ## Integration Patterns
 - **Core Data**: Easy mapping to/from Core Data entities
 - **SwiftUI**: Direct binding support with `Identifiable` conformance

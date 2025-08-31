@@ -37,6 +37,10 @@ struct AboutView: View {
 		Divider()
 
 		developerSection
+
+		Divider()
+
+		supportSection
 	  }
 	  .padding()
 	  .navigationTitle("About")
@@ -81,6 +85,20 @@ struct AboutView: View {
 	  Text("AsNeeded helps you track medications taken on an as-needed basis. It focuses on clear logging, trends, and data portability.")
 		.font(.body)
 		.foregroundStyle(.secondary)
+	  
+	  VStack(alignment: .leading, spacing: 8) {
+		Text("🆓 Always Free & Open Source")
+		  .font(.subheadline)
+		  .fontWeight(.medium)
+		  .foregroundColor(.green)
+		
+		Text("This app will always be completely free with no advertisements, subscriptions, or premium features. The source code is open and available for anyone to inspect, modify, or contribute to.")
+		  .font(.caption)
+		  .foregroundStyle(.secondary)
+	  }
+	  .padding(12)
+	  .background(Color.green.opacity(0.1))
+	  .cornerRadius(8)
 	}
   }
 
@@ -124,6 +142,49 @@ struct AboutView: View {
 				  url: url)
 		}
 	  }
+	}
+  }
+
+  private var supportSection: some View {
+	VStack(alignment: .leading, spacing: 12) {
+	  Text("Support Development")
+		.font(.headline)
+		.fontWeight(.semibold)
+	  
+	  Text("If As Needed helps you manage your medications, consider supporting its continued development and maintenance.")
+		.font(.body)
+		.foregroundStyle(.secondary)
+	  
+	  NavigationLink {
+		SupportView()
+	  } label: {
+		HStack(spacing: 12) {
+		  Image(systemSymbol: .heart)
+			.font(.system(size: 18, weight: .medium))
+			.frame(width: 24, height: 24)
+			.foregroundColor(.red)
+		  VStack(alignment: .leading, spacing: 2) {
+			Text("Support As Needed")
+			  .font(.body)
+			  .fontWeight(.medium)
+			Text("Ways to support this free app")
+			  .font(.caption)
+			  .foregroundColor(.secondary)
+		  }
+		  Spacer()
+		  Image(systemSymbol: .chevronRight)
+			.font(.caption)
+			.foregroundColor(.secondary)
+		}
+		.padding(16)
+		.background(Color(.systemBackground))
+		.overlay(
+		  RoundedRectangle(cornerRadius: 12)
+			.stroke(Color(.systemGray4), lineWidth: 0.5)
+		)
+		.cornerRadius(12)
+	  }
+	  .buttonStyle(.plain)
 	}
   }
 

@@ -9,35 +9,45 @@ struct MedicationTrendsView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack(alignment: .leading, spacing: 16) {
-				// Picker + context
-				HStack(alignment: .center) {
-					Picker("Medication", selection: $viewModel.selectedMedicationID) {
-						ForEach(viewModel.medications, id: \.id) { med in
-							Text(med.displayName).tag(Optional(med.id))
+			ScrollView {
+				VStack(alignment: .leading, spacing: 16) {
+					// Picker + context
+					HStack(alignment: .center) {
+						Picker("Medication", selection: $viewModel.selectedMedicationID) {
+							ForEach(viewModel.medications, id: \.id) { med in
+								Text(med.displayName).tag(Optional(med.id))
+							}
 						}
+						.pickerStyle(.menu)
+						Spacer()
+						Picker("Range", selection: $daysWindow) {
+							Text("14d").tag(14)
+							Text("30d").tag(30)
+						}
+						.pickerStyle(.segmented)
+						.frame(maxWidth: 160)
 					}
-					.pickerStyle(.menu)
-					Spacer()
-					Picker("Range", selection: $daysWindow) {
-						Text("14d").tag(14)
-						Text("30d").tag(30)
-					}
-					.pickerStyle(.segmented)
-					.frame(maxWidth: 160)
-				}
 
-				if let med = viewModel.selectedMedication {
-					metricsView(for: med)
-					usageChart()
-				} else {
-					Text("Select a medication to see trends.")
-						.foregroundStyle(.secondary)
-						.frame(maxWidth: .infinity, alignment: .leading)
+					if let med = viewModel.selectedMedication {
+						metricsView(for: med)
+						usageChart()
+					} else {
+						Text("Select a medication to see trends.")
+							.foregroundStyle(.secondary)
+							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					
+					// Support link at bottom
+					VStack(spacing: 16) {
+						Divider()
+							.padding(.top, 16)
+						
+						SupportSuggestionView()
+					}
+					.padding(.bottom, 16)
 				}
-				Spacer(minLength: 0)
+				.padding()
 			}
-			.padding()
 			.navigationTitle("Trends")
 			.onAppear { if viewModel.selectedMedicationID == nil { viewModel.selectedMedicationID = viewModel.medications.first?.id } }
 		}

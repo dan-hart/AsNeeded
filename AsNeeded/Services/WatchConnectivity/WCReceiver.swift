@@ -94,7 +94,7 @@ final class WCReceiver: NSObject, ObservableObject {
 				try await handleQuantityUpdate(quantityUpdateData)
 			}
 		} catch {
-			print("Error handling watch message: \(error)")
+			print("ERROR: Error handling watch message \(error)")
 		}
 	}
 	
@@ -115,7 +115,7 @@ final class WCReceiver: NSObject, ObservableObject {
 		
 		if session.isReachable {
 			session.sendMessage(["medications": medicationData], replyHandler: nil) { error in
-				print("Error sending medications to watch: \(error.localizedDescription)")
+				print("ERROR: Error sending medications to watch \(error)")
 			}
 		}
 	}
@@ -123,13 +123,13 @@ final class WCReceiver: NSObject, ObservableObject {
 	private func handleDoseLogging(_ logDoseData: LogDoseData) async throws {
 		guard let medicationId = UUID(uuidString: logDoseData.medicationId),
 			  let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit) else {
-			print("Invalid dose logging data from watch")
+			print("WARNING: Invalid dose logging data from watch")
 			return
 		}
 		
 		// Find the medication
 		guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-			print("Medication not found for dose logging")
+			print("WARNING: Medication not found for dose logging")
 			return
 		}
 		
@@ -164,20 +164,22 @@ final class WCReceiver: NSObject, ObservableObject {
 		// Send confirmation back to watch
 		if session.isReachable {
 			session.sendMessage(["doseLogged": true], replyHandler: nil) { error in
-				print("Error sending dose confirmation to watch: \(error.localizedDescription)")
+				print("ERROR: Error sending dose confirmation to watch \(error)")
 			}
 		}
 	}
 	
 	private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
 		guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
-			print("Invalid quantity update data from watch")
+			print("WARNING: Invalid quantity update data from watch")
 			return
 		}
 		
 		// Find the medication
 		guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-			print("Medication not found for quantity update")
+			// Provide a lightweight, non-cryptographic hash for logging context
+			let hashString = String(medicationId.uuidString.hashValue, radix: 16)
+			print("WARNING: Medication not found for quantity update: medicationId=<hash:\(hashString)>")
 			return
 		}
 		
@@ -198,7 +200,7 @@ final class WCReceiver: NSObject, ObservableObject {
 		// Send confirmation back to watch
 		if session.isReachable {
 			session.sendMessage(["quantityUpdated": true], replyHandler: nil) { error in
-				print("Error sending quantity update confirmation to watch: \(error.localizedDescription)")
+				print("ERROR: Error sending quantity update confirmation to watch \(error)")
 			}
 		}
 	}
@@ -211,10 +213,10 @@ extension WCReceiver: WCSessionDelegate {
 		Task { @MainActor in
 			if let error = error {
 				self.isConnected = false
-				print("WC Session activation failed: \(error.localizedDescription)")
+				print("ERROR: WC Session activation failed \(error)")
 			} else {
 				self.isConnected = (activationState == .activated)
-				print("WC Session activated: \(activationState)")
+				print("INFO: WC Session activated: \(activationState)")
 			}
 		}
 	}

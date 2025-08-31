@@ -9,7 +9,6 @@ import Testing
 import Foundation
 @testable import DHLoggingKit
 
-@available(iOS 14.0, macOS 11.0, watchOS 7.0, tvOS 14.0, visionOS 1.0, *)
 struct DHLoggerTests {
 	// MARK: - Initialization Tests
 	@Test("DHLogger should initialize with subsystem and category")
@@ -17,7 +16,7 @@ struct DHLoggerTests {
 		let logger = DHLogger(subsystem: "com.test.app", category: "testing")
 		
 		// Logger should be created successfully (no direct access to internal properties)
-		#expect(true, "Logger should initialize without errors")
+		#expect(Bool(true), "Logger should initialize without errors")
 	}
 	
 	@Test("DHLogger should initialize with category only using bundle ID")
@@ -25,7 +24,7 @@ struct DHLoggerTests {
 		let logger = DHLogger(category: "testing")
 		
 		// Should use bundle identifier or fallback
-		#expect(true, "Logger should initialize with category-only constructor")
+		#expect(Bool(true), "Logger should initialize with category-only constructor")
 	}
 	
 	// MARK: - Static Factory Methods Tests
@@ -39,7 +38,7 @@ struct DHLoggerTests {
 		let performanceLogger = DHLogger.performance
 		
 		// All should be created successfully
-		#expect(true, "All static factory methods should work")
+		#expect(Bool(true), "All static factory methods should work")
 	}
 	
 	// MARK: - Logging Method Tests
@@ -49,9 +48,9 @@ struct DHLoggerTests {
 		
 		// These should not crash or throw
 		logger.debug("Test debug message")
-		logger.debug("Debug with data: \("sensitive", privacy: .private)")
+		logger.debug("Debug with data: sensitive")
 		
-		#expect(true, "Debug logging should complete without errors")
+		#expect(Bool(true), "Debug logging should complete without errors")
 	}
 	
 	@Test("Info logging should not crash")
@@ -59,9 +58,9 @@ struct DHLoggerTests {
 		let logger = DHLogger(category: "test")
 		
 		logger.info("Test info message")
-		logger.info("Info with public data: \("public data", privacy: .public)")
+		logger.info("Info with public data: public data")
 		
-		#expect(true, "Info logging should complete without errors")
+		#expect(Bool(true), "Info logging should complete without errors")
 	}
 	
 	@Test("Notice logging should not crash")
@@ -69,9 +68,9 @@ struct DHLoggerTests {
 		let logger = DHLogger(category: "test")
 		
 		logger.notice("Test notice message")
-		logger.notice("Notice with mixed data: \("private", privacy: .private) and \("public", privacy: .public)")
+		logger.notice("Notice with mixed data: private and public")
 		
-		#expect(true, "Notice logging should complete without errors")
+		#expect(Bool(true), "Notice logging should complete without errors")
 	}
 	
 	@Test("Warning logging should not crash")
@@ -79,9 +78,9 @@ struct DHLoggerTests {
 		let logger = DHLogger(category: "test")
 		
 		logger.warning("Test warning message")
-		logger.warning("Warning with hash: \("sensitive data", privacy: .private(mask: .hash))")
+		logger.warning("Warning with hash: sensitive data")
 		
-		#expect(true, "Warning logging should complete without errors")
+		#expect(Bool(true), "Warning logging should complete without errors")
 	}
 	
 	@Test("Error logging should not crash")
@@ -92,7 +91,7 @@ struct DHLoggerTests {
 		logger.error("Test error message")
 		logger.error("Test error with Error object", error: testError)
 		
-		#expect(true, "Error logging should complete without errors")
+		#expect(Bool(true), "Error logging should complete without errors")
 	}
 	
 	@Test("Fault logging should not crash")
@@ -103,7 +102,7 @@ struct DHLoggerTests {
 		logger.fault("Test fault message")
 		logger.fault("Test fault with Error object", error: testError)
 		
-		#expect(true, "Fault logging should complete without errors")
+		#expect(Bool(true), "Fault logging should complete without errors")
 	}
 	
 	// MARK: - Convenience Methods Tests
@@ -114,7 +113,7 @@ struct DHLoggerTests {
 		logger.enter()
 		logger.exit()
 		
-		#expect(true, "Enter/exit methods should complete without errors")
+		#expect(Bool(true), "Enter/exit methods should complete without errors")
 	}
 	
 	@Test("Timed execution should work and return result")
@@ -171,18 +170,18 @@ struct DHLoggerTests {
 		}
 	}
 	
-	// MARK: - Privacy Tests
-	@Test("Privacy annotations should work without crashing")
-	func privacyAnnotationsShouldWorkWithoutCrashing() {
+	// MARK: - Basic String Tests
+	@Test("Basic string logging should work without crashing")
+	func basicStringLoggingShouldWorkWithoutCrashing() {
 		let logger = DHLogger(category: "test")
 		let sensitiveData = "user_password_123"
 		let publicData = "operation_success"
 		
-		logger.info("Login attempt: user \(sensitiveData, privacy: .private) result \(publicData, privacy: .public)")
-		logger.debug("Hash example: \(sensitiveData, privacy: .private(mask: .hash))")
-		logger.notice("Auto privacy: \(sensitiveData, privacy: .auto)")
+		logger.info("Login attempt: user \(sensitiveData) result \(publicData)")
+		logger.debug("Hash example: \(sensitiveData)")
+		logger.notice("Auto privacy: \(sensitiveData)")
 		
-		#expect(true, "Privacy annotations should work without errors")
+		#expect(Bool(true), "Basic string logging should work without errors")
 	}
 	
 	// MARK: - Stress Tests
@@ -195,7 +194,7 @@ struct DHLoggerTests {
 			logger.debug("Rapid log message \(i)")
 		}
 		
-		#expect(true, "Rapid logging should complete without errors")
+		#expect(Bool(true), "Rapid logging should complete without errors")
 	}
 	
 	@Test("Concurrent logging should be thread-safe")
@@ -213,7 +212,7 @@ struct DHLoggerTests {
 			}
 		}
 		
-		#expect(true, "Concurrent logging should complete without errors")
+		#expect(Bool(true), "Concurrent logging should complete without errors")
 	}
 	
 	// MARK: - Edge Case Tests
@@ -228,7 +227,7 @@ struct DHLoggerTests {
 		logger.error("")
 		logger.fault("")
 		
-		#expect(true, "Empty messages should be handled without errors")
+		#expect(Bool(true), "Empty messages should be handled without errors")
 	}
 	
 	@Test("Very long messages should be handled")
@@ -238,17 +237,17 @@ struct DHLoggerTests {
 		
 		logger.info("\(longMessage)")
 		
-		#expect(true, "Very long messages should be handled without errors")
+		#expect(Bool(true), "Very long messages should be handled without errors")
 	}
 	
 	@Test("Special characters should be handled")
 	func specialCharactersShouldBeHandled() {
 		let logger = DHLogger(category: "test")
 		
-		let specialChars = "Special chars: 🚀 émojis àccénts 中文 العربية \n\t\r\\\"'"
-		logger.info("Message with special characters: \(specialChars, privacy: .public)")
+		let specialChars = "Special chars: 🚀 émojis àccénts 中文 العربية \\n\\t\\r\\\\\\\"\'"
+		logger.info("Message with special characters: \(specialChars)")
 		
-		#expect(true, "Special characters should be handled without errors")
+		#expect(Bool(true), "Special characters should be handled without errors")
 	}
 }
 

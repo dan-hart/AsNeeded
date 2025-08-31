@@ -12,6 +12,8 @@ struct SettingsView: View {
 		  
 		  VStack(alignment: .leading, spacing: 16) {
 			MedicalDisclaimerView()
+			
+			FeedbackButtonsView()
 		  }
 		  
 		  SettingsDataSectionView()
