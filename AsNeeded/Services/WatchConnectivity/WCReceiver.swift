@@ -2,6 +2,7 @@ import WatchConnectivity
 import Foundation
 import Boutique
 import ANModelKit
+import DHLoggingKit
 
 // MARK: - Watch Message Data Types
 
@@ -59,6 +60,7 @@ struct QuantityUpdateData: Sendable {
 @MainActor
 final class WCReceiver: NSObject, ObservableObject {
 	var session: WCSession
+	private let logger = DHLogger.network
 	
 	@Published var isConnected = false
 	
@@ -94,7 +96,7 @@ final class WCReceiver: NSObject, ObservableObject {
 				try await handleQuantityUpdate(quantityUpdateData)
 			}
 		} catch {
-			print("ERROR: Error handling watch message \(error)")
+			logger.error("Error handling watch message", error: error)
 		}
 	}
 	
@@ -114,8 +116,9 @@ final class WCReceiver: NSObject, ObservableObject {
 		}
 		
 		if session.isReachable {
-			session.sendMessage(["medications": medicationData], replyHandler: nil) { error in
-				print("ERROR: Error sending medications to watch \(error)")
+			logger.debug("Sending medications to watch: \(medications.count) medications")
+			session.sendMessage(["medications": medicationData], replyHandler: nil) { [weak self] error in
+				self?.logger.error("Error sending medications to watch", error: error)
 			}
 		}
 	}
@@ -123,13 +126,13 @@ final class WCReceiver: NSObject, ObservableObject {
 	private func handleDoseLogging(_ logDoseData: LogDoseData) async throws {
 		guard let medicationId = UUID(uuidString: logDoseData.medicationId),
 			  let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit) else {
-			print("WARNING: Invalid dose logging data from watch")
+			logger.oslog.warning("Invalid dose logging data from watch: medicationId=\(logDoseData.medicationId, privacy: .private) doseUnit=\(logDoseData.doseUnit, privacy: .public)")
 			return
 		}
 		
 		// Find the medication
 		guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-			print("WARNING: Medication not found for dose logging")
+			logger.oslog.warning("Medication not found for dose logging: medicationId=\(medicationId, privacy: .private)")
 			return
 		}
 		
@@ -163,23 +166,22 @@ final class WCReceiver: NSObject, ObservableObject {
 		
 		// Send confirmation back to watch
 		if session.isReachable {
-			session.sendMessage(["doseLogged": true], replyHandler: nil) { error in
-				print("ERROR: Error sending dose confirmation to watch \(error)")
+			logger.debug("Dose logged successfully, sending confirmation to watch")
+			session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
+				self?.logger.error("Error sending dose confirmation to watch", error: error)
 			}
 		}
 	}
 	
 	private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
 		guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
-			print("WARNING: Invalid quantity update data from watch")
+			logger.oslog.warning("Invalid quantity update data from watch: medicationId=\(quantityUpdateData.medicationId, privacy: .private)")
 			return
 		}
 		
 		// Find the medication
 		guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-			// Provide a lightweight, non-cryptographic hash for logging context
-			let hashString = String(medicationId.uuidString.hashValue, radix: 16)
-			print("WARNING: Medication not found for quantity update: medicationId=<hash:\(hashString)>")
+			logger.oslog.warning("Medication not found for quantity update: medicationId=\(medicationId, privacy: .private)")
 			return
 		}
 		
@@ -199,8 +201,9 @@ final class WCReceiver: NSObject, ObservableObject {
 		
 		// Send confirmation back to watch
 		if session.isReachable {
-			session.sendMessage(["quantityUpdated": true], replyHandler: nil) { error in
-				print("ERROR: Error sending quantity update confirmation to watch \(error)")
+			logger.oslog.debug("Quantity updated successfully: \(quantityUpdateData.quantity, privacy: .public), sending confirmation to watch")
+			session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in
+				self?.logger.error("Error sending quantity update confirmation to watch", error: error)
 			}
 		}
 	}
@@ -213,31 +216,39 @@ extension WCReceiver: WCSessionDelegate {
 		Task { @MainActor in
 			if let error = error {
 				self.isConnected = false
-				print("ERROR: WC Session activation failed \(error)")
+				self.logger.error("WC Session activation failed", error: error)
 			} else {
 				self.isConnected = (activationState == .activated)
-				print("INFO: WC Session activated: \(activationState)")
+				self.logger.oslog.info("WC Session activated: \(String(describing: activationState), privacy: .public)")
 			}
 		}
 	}
 	
 	nonisolated func sessionDidBecomeInactive(_ session: WCSession) {
 		Task { @MainActor in
+			self.logger.info("WC Session became inactive")
 			self.isConnected = false
 		}
 	}
 	
 	nonisolated func sessionDidDeactivate(_ session: WCSession) {
 		Task { @MainActor in
+			self.logger.info("WC Session deactivated")
 			self.isConnected = false
 		}
 	}
 	
 	nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+		Task { @MainActor in
+			self.logger.debug("Received message from watch")
+		}
 		handleMessage(message)
 	}
 	
 	nonisolated func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+		Task { @MainActor in
+			self.logger.debug("Received message from watch with reply handler")
+		}
 		handleMessage(message)
 		replyHandler(["received": true])
 	}

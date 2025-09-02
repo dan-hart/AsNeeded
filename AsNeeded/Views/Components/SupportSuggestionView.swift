@@ -21,10 +21,6 @@ struct SupportSuggestionView: View {
 				}
 				
 				Spacer()
-				
-				Image(systemSymbol: .chevronRight)
-					.font(.caption2)
-					.foregroundColor(.secondary)
 			}
 			.padding(.vertical, 12)
 			.padding(.horizontal, 16)

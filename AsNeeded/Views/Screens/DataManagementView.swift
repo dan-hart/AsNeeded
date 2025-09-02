@@ -4,11 +4,13 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import SFSafeSymbols
+import DHLoggingKit
 
 struct DataManagementView: View {
   @StateObject private var viewModel = DataManagementViewModel()
   @State private var showSupportToast = false
   @State private var showSupportView = false
+  private let logger = DHLogger(category: "DataManagementView")
   
   var body: some View {
 	  ZStack(alignment: .top) {
@@ -22,13 +24,15 @@ struct DataManagementView: View {
 		  }
 	  }
 		  .fileExporter(
-			isPresented: $viewModel.showingFileSaver,
+			isPresented: $viewModel.showingDataExporter,
 			document: viewModel.exportedData.map { DataDocument(data: $0) },
 			contentType: .json,
 			defaultFilename: "AsNeeded-Export-\(dateFormatter.string(from: Date()))"
 		  ) { result in
+			  logger.debug("File exporter result received")
 			  switch result {
-			  case .success:
+			  case .success(let url):
+				  logger.info("Export saved successfully to: \(url.lastPathComponent)")
 				  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
 					  withAnimation(.easeInOut(duration: 0.3)) {
 						  showSupportToast = true
@@ -40,9 +44,12 @@ struct DataManagementView: View {
 					  }
 				  }
 			  case .failure(let error):
+				  logger.error("Export save failed", error: error)
 				  viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
 				  viewModel.showingAlert = true
 			  }
+			  exportDocument = nil
+			  viewModel.exportedData = nil
 		  }
 	.fileImporter(
 	  isPresented: $viewModel.showingDocumentPicker,
@@ -58,6 +65,36 @@ struct DataManagementView: View {
 	  case .failure(let error):
 		viewModel.alertMessage = "Import selection failed: \(error.localizedDescription)"
 		viewModel.showingAlert = true
+	  }
+	}
+	.fileExporter(
+	  isPresented: $viewModel.showingLogFileSaver,
+	  document: viewModel.exportedLogsData.map { LogDocument(data: $0) },
+	  contentType: .plainText,
+	  defaultFilename: "AsNeeded-Logs-\(dateFormatter.string(from: Date()))"
+	) { result in
+	  switch result {
+	  case .success:
+		viewModel.alertMessage = "Logs exported successfully. No medication names are included - only technical information."
+		viewModel.showingAlert = true
+	  case .failure(let error):
+		viewModel.alertMessage = "Log export save failed: \(error.localizedDescription)"
+		viewModel.showingAlert = true
+	  }
+	  viewModel.exportedLogsData = nil
+	}
+	.onChange(of: viewModel.exportedData) { _, newData in
+	  if let data = newData {
+		logger.debug("Export data received, size: \(data.count) bytes")
+		viewModel.showingDataExporter = true
+		logger.debug("Triggering file exporter")
+	  }
+	}
+	.onChange(of: viewModel.exportedLogsData) { _, newLogData in
+	  if let data = newLogData {
+		logger.debug("Export logs data received, size: \(data.count) bytes")
+		viewModel.showingLogFileSaver = true
+		logger.debug("Triggering log file exporter")
 	  }
 	}
 	.confirmationDialog(
@@ -92,6 +129,30 @@ struct DataManagementView: View {
 	  Button("Cancel", role: .cancel) { }
 	} message: {
 	  Text("This will permanently delete all medications and events. This cannot be undone.")
+	}
+	.confirmationDialog(
+	  "Export App Logs",
+	  isPresented: $viewModel.showingLogExportConfirmation,
+	  titleVisibility: .visible
+	) {
+	  Button("Last Hour") {
+		Task {
+		  await viewModel.exportLogs(timeInterval: 3600)
+		}
+	  }
+	  Button("Last 4 Hours") {
+		Task {
+		  await viewModel.exportLogs(timeInterval: 14400)
+		}
+	  }
+	  Button("Last 24 Hours") {
+		Task {
+		  await viewModel.exportLogs(timeInterval: 86400)
+		}
+	  }
+	  Button("Cancel", role: .cancel) { }
+	} message: {
+	  Text("Export technical app logs for troubleshooting. No medication names are stored in logs - only technical information like app events, errors, and system data.")
 	}
 	.alert("Data Management", isPresented: $viewModel.showingAlert) {
 	  Button("OK") { }
@@ -143,11 +204,22 @@ struct DataManagementView: View {
 		
 		Spacer()
 		
-		VStack(alignment: .trailing, spacing: 4) {
+		VStack(alignment: .center, spacing: 4) {
 		  Text("Events")
 			.font(.subheadline)
 			.foregroundColor(.secondary)
 		  Text("\(viewModel.eventCount)")
+			.font(.title2)
+			.fontWeight(.semibold)
+		}
+		
+		Spacer()
+		
+		VStack(alignment: .trailing, spacing: 4) {
+		  Text("Logs (24h)")
+			.font(.subheadline)
+			.foregroundColor(.secondary)
+		  Text("\(viewModel.logCount)")
 			.font(.title2)
 			.fontWeight(.semibold)
 		}
@@ -186,6 +258,16 @@ struct DataManagementView: View {
 		)
 		
 		dataActionButton(
+		  title: "Export App Logs",
+		  subtitle: "Export technical logs (no medication names)",
+		  systemImage: .textDocument,
+		  isLoading: viewModel.isExportingLogs,
+		  action: {
+			viewModel.requestLogExport()
+		  }
+		)
+		
+		dataActionButton(
 		  title: "Clear All Data",
 		  subtitle: "Permanently delete all medications and events",
 		  systemImage: .trash,
@@ -195,6 +277,7 @@ struct DataManagementView: View {
 			viewModel.confirmClearData()
 		  }
 		)
+		
 	  }
 	}
   }
@@ -248,7 +331,7 @@ struct DataManagementView: View {
 	  )
 	  .cornerRadius(12)
 	}
-	.disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing)
+	.disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isExportingLogs)
 	.buttonStyle(.plain)
   }
   
@@ -262,6 +345,30 @@ struct DataManagementView: View {
 // Document wrapper for file export
 private struct DataDocument: FileDocument {
   static let readableContentTypes: [UTType] = [.json]
+  static let writableContentTypes: [UTType] = [.json]
+  
+  let data: Data
+  
+  init(data: Data) {
+	self.data = data
+  }
+  
+  init(configuration: ReadConfiguration) throws {
+	guard let data = configuration.file.regularFileContents else {
+	  throw CocoaError(.fileReadCorruptFile)
+	}
+	self.data = data
+  }
+  
+  func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+	return FileWrapper(regularFileWithContents: data)
+  }
+}
+
+// Document wrapper for log file export
+private struct LogDocument: FileDocument {
+  static let readableContentTypes: [UTType] = [.plainText]
+  static let writableContentTypes: [UTType] = [.plainText]
   
   let data: Data
   

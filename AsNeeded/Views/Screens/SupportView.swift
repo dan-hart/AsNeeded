@@ -1,5 +1,6 @@
 import SwiftUI
 import SFSafeSymbols
+import DHLoggingKit
 
 struct SupportView: View {
 	@Environment(\.openURL) private var openURL
@@ -264,7 +265,7 @@ private struct TipButton: View {
 	var body: some View {
 		Button {
 			// TODO: Implement RevenueCat tip purchase
-			print("Tip selected")
+			DHLogger.ui.debug("Tip selected - purchase flow to be implemented")
 		} label: {
 			VStack(spacing: 8) {
 				Text(tip.emoji)
@@ -326,7 +327,7 @@ private struct SubscriptionButton: View {
 	var body: some View {
 		Button {
 			// TODO: Implement RevenueCat subscription purchase
-			print("Subscription selected")
+			DHLogger.ui.debug("Subscription selected - purchase flow to be implemented")
 		} label: {
 			HStack(spacing: 12) {
 				Image(systemSymbol: subscription.icon)

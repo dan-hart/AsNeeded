@@ -57,11 +57,9 @@ struct MedicationListView: View {
                                     }
                                 }
                                 
-                                if viewModel.items.count == 1 {
-                                    SupportSuggestionView()
-                                        .listRowBackground(Color.clear)
-                                        .listRowSeparator(.hidden)
-                                }
+                                SupportSuggestionView()
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
                             }
                         }
                     }
