@@ -41,11 +41,16 @@ struct MedicationEditView: View {
 	var body: some View {
 		NavigationStack {
 			Form {
-				Section(header: Text("Medication Info")) {
+				Section(header: Text("Medication Info"), footer: Text("Fields marked with * are required")) {
 					VStack(alignment: .leading, spacing: 8) {
-						Text("Clinical Name")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack(spacing: 2) {
+							Text("Clinical Name")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Text("*")
+								.font(.subheadline)
+								.foregroundStyle(.red)
+						}
 						
 						EnhancedMedicationSearchField(
 							text: $viewModel.clinicalName,
@@ -69,73 +74,101 @@ struct MedicationEditView: View {
 				
 				Section(header: Text("Refill Info")) {
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Current Quantity")
+						Text("Current Quantity (Optional)")
 							.font(.subheadline)
 							.foregroundStyle(.secondary)
 						TextField("How many pills, mL, etc. you have", text: $viewModel.quantityText)
 							.keyboardType(.decimalPad)
 					}
 					
-					HStack {
-						Button("-30") {
-							let currentDate = viewModel.lastRefillDate ?? .now
-							viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
-						}
-						.buttonStyle(.bordered)
-						.controlSize(.small)
+					VStack(alignment: .leading, spacing: 4) {
+						Text("Last Refill (Optional)")
+							.font(.subheadline)
+							.foregroundStyle(.secondary)
 						
-						DatePicker(
-							"Last Refill",
-							selection: lastRefillDateBinding,
-							displayedComponents: .date
-						)
-						.datePickerStyle(.compact)
-						
-						Button("+30") {
-							let currentDate = viewModel.lastRefillDate ?? .now
-							viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+						HStack {
+							Button("-30") {
+								let currentDate = viewModel.lastRefillDate ?? .now
+								viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
+							}
+							.buttonStyle(.bordered)
+							.controlSize(.small)
+							
+							DatePicker(
+								"",
+								selection: lastRefillDateBinding,
+								displayedComponents: .date
+							)
+							.datePickerStyle(.compact)
+							.labelsHidden()
+							
+							Button("+30") {
+								let currentDate = viewModel.lastRefillDate ?? .now
+								viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+							}
+							.buttonStyle(.bordered)
+							.controlSize(.small)
 						}
-						.buttonStyle(.bordered)
-						.controlSize(.small)
 					}
 					
-					HStack {
-						Button("-30") {
-							let currentDate = viewModel.nextRefillDate ?? .now
-							viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
-						}
-						.buttonStyle(.bordered)
-						.controlSize(.small)
+					VStack(alignment: .leading, spacing: 4) {
+						Text("Next Refill (Optional)")
+							.font(.subheadline)
+							.foregroundStyle(.secondary)
 						
-						DatePicker(
-							"Next Refill",
-							selection: nextRefillDateBinding,
-							displayedComponents: .date
-						)
-						.datePickerStyle(.compact)
-						
-						Button("+30") {
-							let currentDate = viewModel.nextRefillDate ?? .now
-							viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+						HStack {
+							Button("-30") {
+								let currentDate = viewModel.nextRefillDate ?? .now
+								viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
+							}
+							.buttonStyle(.bordered)
+							.controlSize(.small)
+							
+							DatePicker(
+								"",
+								selection: nextRefillDateBinding,
+								displayedComponents: .date
+							)
+							.datePickerStyle(.compact)
+							.labelsHidden()
+							
+							Button("+30") {
+								let currentDate = viewModel.nextRefillDate ?? .now
+								viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
+							}
+							.buttonStyle(.bordered)
+							.controlSize(.small)
 						}
-						.buttonStyle(.bordered)
-						.controlSize(.small)
 					}
 				}
 
 				Section(header: Text("Prescribed Dose")) {
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Dose Amount")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack(spacing: 2) {
+							Text("Dose Amount")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							if !viewModel.prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.prescribedUnit != nil {
+								Text("*")
+									.font(.subheadline)
+									.foregroundStyle(.red)
+							}
+						}
 						TextField("How much per dose (e.g., 5, 10, 0.5)", text: $viewModel.prescribedDoseText)
 							.keyboardType(.decimalPad)
 					}
 					
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Dose Unit")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack(spacing: 2) {
+							Text("Dose Unit")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							if !viewModel.prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.prescribedUnit != nil {
+								Text("*")
+									.font(.subheadline)
+									.foregroundStyle(.red)
+							}
+						}
 						Picker("Unit type (mg, mL, tablets, etc.)", selection: $viewModel.prescribedUnit) {
 							Text("None").tag(Optional<ANUnitConcept>.none)
 							ForEach(ANUnitConcept.allCases, id: \.self) { unit in

@@ -68,6 +68,7 @@ final class DataManagementViewModel: ObservableObject {
 	  
 	  // Set the exported data which should trigger the file exporter
 	  exportedData = data
+	  showingDataExporter = true
 	  logger.debug("exportedData set - file exporter should be triggered")
 	} catch {
 	  logger.error("Export failed", error: error)
