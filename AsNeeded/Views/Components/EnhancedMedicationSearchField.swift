@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftRxNorm
 import SFSafeSymbols
+import DHLoggingKit
 
 struct EnhancedMedicationSearchField: View {
 	// MARK: - Properties
@@ -475,7 +476,7 @@ struct SuggestionButtonStyle: ButtonStyle {
 				text: .constant(""),
 				placeholder: "Search for medication...",
 				onMedicationSelected: { clinicalName, nickname in
-                    print("Selected: \(clinicalName) (\(nickname))")
+                    DHLogger.ui.oslog.debug("Medication selected: clinical=\\(clinicalName, privacy: .private) nickname=\\(nickname, privacy: .private)")
 				}
 			)
 		}

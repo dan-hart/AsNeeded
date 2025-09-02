@@ -4,10 +4,12 @@
 import Foundation
 import Boutique
 import ANModelKit
+import DHLoggingKit
 
 @MainActor
 public final class DataStore {
 	public static let shared = DataStore()
+	private let logger = DHLogger.data
 
 	// Underlying Boutique stores
 	public let medicationsStore: Store<ANMedicationConcept>
@@ -17,6 +19,7 @@ public final class DataStore {
 	public var events: [ANEventConcept] { eventsStore.items }
 
 	private init() {
+		logger.info("Initializing DataStore with persistent storage")
 		self.medicationsStore = Store<ANMedicationConcept>(
 			storage: SQLiteStorageEngine.default(appendingPath: "medications.sqlite"),
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
@@ -25,6 +28,7 @@ public final class DataStore {
 			storage: SQLiteStorageEngine.default(appendingPath: "events.sqlite"),
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
+		logger.oslog.debug("DataStore initialized: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
 	}
 	
 	// Test initializer using isolated test storage

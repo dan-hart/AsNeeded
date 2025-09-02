@@ -46,4 +46,9 @@ public enum DHLoggingKit {
 	
 	/// Shared logger for general app events
 	public static let shared = DHLogger.general
+	
+	/// Log exporter for collecting and exporting application logs
+	/// - Note: Requires iOS 15.0+, macOS 12.0+, watchOS 8.0+, tvOS 15.0+, visionOS 1.0+
+	@available(iOS 15.0, macOS 12.0, watchOS 8.0, tvOS 15.0, visionOS 1.0, *)
+	public static let exporter = DHLogExporter()
 }

@@ -9,6 +9,7 @@ import Foundation
 import MessageUI
 import OSLog
 import UIKit
+import DHLoggingKit
 
 enum FeedbackType {
     case bug
@@ -51,7 +52,8 @@ enum FeedbackType {
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
             
-            Application logs are attached to help diagnose the issue.
+            Application logs may be attached to help diagnose the issue.
+            No medication names are stored in logs - only technical information.
             """
         case .featureRequest:
             return """
@@ -71,7 +73,8 @@ enum FeedbackType {
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
             
-            Application logs are attached for context.
+            Application logs may be attached for context.
+            No medication names are stored in logs - only technical information.
             """
         case .feedback:
             return """
@@ -94,7 +97,8 @@ enum FeedbackType {
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
             
-            Application logs are attached for context.
+            Application logs may be attached for context.
+            No medication names are stored in logs - only technical information.
             """
         }
     }
@@ -111,9 +115,11 @@ final class FeedbackService: NSObject, ObservableObject {
     @Published var isCollectingLogs = false
     @Published var showingMailComposer = false
     @Published var showingMailUnavailableAlert = false
+    @Published var showingLogConsentDialog = false
     
     private var currentFeedbackType: FeedbackType = .feedback
     private var logsZipData: Data?
+    private var pendingFeedbackAction: (() -> Void)?
     
     override init() {
         super.init()
@@ -145,9 +151,30 @@ final class FeedbackService: NSObject, ObservableObject {
             return
         }
         
-        Task {
-            await collectAndAttachLogs()
+        // Store the action to perform after user consent
+        pendingFeedbackAction = { [weak self] in
+            Task { @MainActor in
+                await self?.collectAndAttachLogs()
+            }
         }
+        
+        // Show consent dialog for log sharing
+        showingLogConsentDialog = true
+    }
+    
+    func proceedWithLogs() {
+        logInfo("User consented to include logs")
+        showingLogConsentDialog = false
+        pendingFeedbackAction?()
+        pendingFeedbackAction = nil
+    }
+    
+    func proceedWithoutLogs() {
+        logInfo("User declined to include logs")
+        showingLogConsentDialog = false
+        logsZipData = nil
+        showingMailComposer = true
+        pendingFeedbackAction = nil
     }
     
     private func collectAndAttachLogs() async {
@@ -155,86 +182,24 @@ final class FeedbackService: NSObject, ObservableObject {
         logInfo("Collecting application logs")
         
         do {
-            let logData = try await collectSystemLogs()
-            let combinedData = try createLogsAttachment(with: logData)
-            
-            logsZipData = combinedData
+            if #available(iOS 15.0, *) {
+                let logData = try await DHLoggingKit.exporter.exportLogs(timeInterval: 3600) // Last hour
+                logsZipData = logData
+            } else {
+                logInfo("Log export not available on this iOS version (requires iOS 15.0+)")
+                logsZipData = "Log export requires iOS 15.0 or later. This device is running iOS \(UIDevice.current.systemVersion).".data(using: .utf8)
+            }
             showingMailComposer = true
-            
             logInfo("Log collection completed successfully")
         } catch {
             logError("Failed to collect logs", error: error)
+            // Still show mail composer even if log collection fails
+            showingMailComposer = true
         }
         
         isCollectingLogs = false
     }
     
-    private func collectSystemLogs() async throws -> Data {
-        let store = try OSLogStore(scope: .currentProcessIdentifier)
-        let position = store.position(timeIntervalSinceLatestBoot: -3600) // Last hour
-        
-        let entries = try store.getEntries(at: position)
-            .compactMap { $0 as? OSLogEntryLog }
-            .filter { entry in
-                // Filter for our app's logs
-                entry.subsystem.contains(Bundle.main.bundleIdentifier ?? "asneeded") ||
-                entry.category.contains("DHLogging") ||
-                entry.category.contains("AsNeeded")
-            }
-        
-        let logContent = entries.map { entry in
-            let timestamp = ISO8601DateFormatter().string(from: entry.date)
-            return "[\(timestamp)] [\(entry.level)] [\(entry.category)] \(entry.composedMessage)"
-        }.joined(separator: "\n")
-        
-        return logContent.data(using: .utf8) ?? Data()
-    }
-    
-    private func createLogsAttachment(with logData: Data) throws -> Data {
-        let systemInfo = generateSystemInfo()
-        let _ = systemInfo.data(using: .utf8) ?? Data()
-        
-        // Create a simple archive format with both files
-        let combinedContent = """
-            ===== SYSTEM INFORMATION =====
-            \(systemInfo)
-            
-            ===== APPLICATION LOGS =====
-            \(String(data: logData, encoding: .utf8) ?? "Failed to decode log data")
-            """
-        
-        return combinedContent.data(using: .utf8) ?? Data()
-    }
-    
-    private func generateSystemInfo() -> String {
-        return """
-        AsNeeded System Information
-        ===========================
-        
-        App Information:
-        • App Version: \(Bundle.main.appVersionLong)
-        • Bundle ID: \(Bundle.main.bundleIdentifier ?? "Unknown")
-        • Build Number: \(Bundle.main.buildNumber ?? "Unknown")
-        
-        Device Information:
-        • Device Model: \(UIDevice.current.model)
-        • System Name: \(UIDevice.current.systemName)
-        • System Version: \(UIDevice.current.systemVersion)
-        • Device Name: \(UIDevice.current.name)
-        
-        Hardware Information:
-        • Screen Scale: \(UIScreen.main.scale)x
-        • Screen Bounds: \(UIScreen.main.bounds)
-        • Available Memory: \(ProcessInfo.processInfo.physicalMemory / 1024 / 1024) MB
-        
-        Locale Information:
-        • Language: \(Locale.current.language.languageCode?.identifier ?? "Unknown")
-        • Region: \(Locale.current.region?.identifier ?? "Unknown")
-        • Time Zone: \(TimeZone.current.identifier)
-        
-        Generated: \(ISO8601DateFormatter().string(from: Date()))
-        """
-    }
     
     func createMailComposer() -> MFMailComposeViewController {
         let composer = MFMailComposeViewController()
@@ -243,11 +208,11 @@ final class FeedbackService: NSObject, ObservableObject {
         composer.setSubject(currentFeedbackType.subject)
         composer.setMessageBody(currentFeedbackType.emailBody, isHTML: false)
         
-        // Attach logs if available
+        // Attach logs if available and user consented
         if let logsData = logsZipData {
             composer.addAttachmentData(logsData,
                                      mimeType: "text/plain",
-                                     fileName: "AsNeeded_Logs.txt")
+                                     fileName: "AsNeeded_Logs_\(currentFeedbackType.subject).txt")
         }
         
         return composer
