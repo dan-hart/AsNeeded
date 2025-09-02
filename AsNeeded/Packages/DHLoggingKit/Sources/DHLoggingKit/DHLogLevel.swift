@@ -11,7 +11,7 @@ import Foundation
 /// Represents the different log levels available in DHLoggingKit.
 /// These correspond to OSLog levels but provide a more convenient API.
 @available(iOS 14.0, macOS 11.0, watchOS 7.0, tvOS 14.0, visionOS 1.0, *)
-public enum DHLogLevel: Int, CaseIterable, Comparable {
+public enum DHLogLevel: Int, CaseIterable, Comparable, Sendable {
 	/// Debug messages - only visible during development
 	case debug = 0
 	

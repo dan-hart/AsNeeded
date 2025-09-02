@@ -2,14 +2,14 @@
 
 ## Project Structure & Modules
 - `Sources/DHLoggingKit/`: Core logging implementation and utilities
-  - `DHLoggingKit.swift`: Main entry point and public API (~43 lines)
-  - `DHLogger.swift`: Core `DHLogger` struct with comprehensive logging methods (~308 lines)
-  - `DHLogLevel.swift`: Log level enumeration and utilities (~90 lines)
-  - `DHPrivacy.swift`: Privacy utilities and convenience extensions (~65 lines)
-- `Tests/DHLoggingKitTests/`: Swift Testing test suite with comprehensive coverage
-  - `DHLoggerTests.swift`: Core functionality tests (~268 lines)
-- `Package.swift`: Swift Package Manager configuration
-- `README.md`: Comprehensive documentation with usage examples
+  - `DHLoggingKit.swift`: Main entry point and public API (~48 lines)
+  - `DHLogger.swift`: Core `DHLogger` struct with comprehensive logging methods and direct OSLog access (~435 lines)
+  - `DHLogLevel.swift`: Log level enumeration and utilities with Sendable conformance (~90 lines)
+  - `DHPrivacy.swift`: Privacy utilities and convenience extensions with improved Swift 6 compatibility (~65 lines)
+- `Tests/DHLoggingKitTests/`: Swift Testing test suite with comprehensive coverage (36 tests)
+  - `DHLoggerTests.swift`: Comprehensive functionality tests including privacy, performance, and integration tests (~490 lines)
+- `Package.swift`: Swift Package Manager configuration with full Apple platform support
+- `README.md`: Updated comprehensive documentation with accurate usage examples
 - `LICENSE`: GNU GPLv3 license
 - `AGENTS.md`: This file - development guidelines
 
@@ -32,43 +32,56 @@
 
 ## Architecture Overview
 - **Logger Architecture**: `DHLogger` as main entry point wrapping Apple's `Logger`
+- **Direct OSLog Access**: `.oslog` property provides full access to underlying OSLog Logger
+- **Dual API Surface**: String-based methods with context + direct OSLog access for privacy
 - **OSLog Integration**: Direct pass-through to Apple's unified logging system
-- **Privacy Support**: Full OSLog privacy control support with string interpolation
+- **Privacy Support**: Full OSLog privacy control support via direct access and helper methods
 - **Factory Methods**: Static convenience methods for common logging categories
 - **Context Preservation**: File, function, and line information automatically captured
 - **Performance**: Zero-overhead wrapper around Apple's optimized logging system
-- **Platform Support**: All Apple platforms with unified API
+- **Platform Support**: All Apple platforms with unified API (iOS 14+, macOS 11+, watchOS 7+, tvOS 14+, visionOS 1+)
 
 ## OSLog Integration Patterns
-- **Direct Pass-Through**: Preserves all OSLog functionality including privacy controls
-- **String Interpolation**: Supports full OSLog message interpolation syntax
+- **Direct Pass-Through**: Preserves all OSLog functionality including privacy controls via `.oslog` access
+- **Dual Approach**: String-based logging with context + direct OSLog access for full features
+- **String Interpolation**: Full OSLog message interpolation syntax via `.oslog` property
 - **Log Levels**: Maps to OSLog levels (debug, info, notice, warning, error, fault)
 - **Subsystem/Category**: Proper organization using Apple's recommended patterns
-- **Privacy First**: Built-in support for `.private`, `.public`, `.auto`, and `.private(mask:)`
+- **Privacy First**: Built-in support for `.private`, `.public`, `.auto`, and `.private(mask:)` via direct access
+- **Privacy Helpers**: `DHLogger.redact()` and `DHLogger.hash()` for string-based logging
 - **Performance**: Respects OSLog's performance optimizations and lazy evaluation
 
 ## API Design Patterns
 - **Factory Methods**: `DHLogger.network`, `DHLogger.ui`, etc. for common use cases
+- **Direct OSLog Access**: `.oslog` property for full OSLog features including privacy
 - **Convenience Methods**: `enter()`, `exit()`, `timed()`, `timedAsync()` for development
+- **Privacy Helpers**: Static `redact()` and `hash()` methods for safe string-based logging
 - **Error Integration**: Optional `Error` parameter for error and fault logging
-- **Autoclosure**: `@autoclosure` parameters for performance optimization
-- **Default Parameters**: File, function, line automatically provided
+- **Autoclosure**: `@autoclosure` parameters for performance optimization where applicable
+- **Default Parameters**: File, function, line automatically provided for context
 - **Sendable Conformance**: Thread-safe design for modern Swift concurrency
 
 ## Testing Guidelines
 - **Framework**: Swift Testing (`import Testing`, `@Test`, `#expect`)
+- **Current Coverage**: 36 comprehensive tests covering all functionality
 - **Coverage Areas**: 
   - Logger initialization and configuration
   - All logging methods (debug, info, notice, warning, error, fault)
-  - Factory method creation
+  - Direct OSLog access functionality and privacy features
+  - Factory method creation and usage
   - Convenience methods (enter/exit, timing)
-  - Privacy annotation support
-  - Concurrency safety
+  - Privacy annotation support via `.oslog` access
+  - Privacy helper methods (`redact()`, `hash()`)
+  - DHLogLevel enum functionality and OSLogType conversion
+  - DHPrivacy utilities and string extensions
+  - Concurrency safety and thread-safe operations
   - Error handling scenarios
+  - Performance benchmarking
+  - Integration tests with all factory methods
   - Edge cases (empty messages, long messages, special characters)
-- **Test Structure**: Mirror source structure, descriptive test names
-- **Assertions**: Use `#expect` for clear test intentions
-- **Performance Tests**: Verify zero-overhead wrapper design
+- **Test Structure**: Mirror source structure, descriptive test names with clear intent
+- **Assertions**: Use `#expect` for clear test intentions and readable failures
+- **Performance Tests**: Verify zero-overhead wrapper design and OSLog performance characteristics
 
 ## OSLog Best Practices Integration
 - **Subsystem Naming**: Uses bundle identifier for proper log organization
@@ -106,24 +119,34 @@
 ### Critical OSLog Integration Requirements
 **ALWAYS ensure proper OSLog usage and Apple platform compliance:**
 
-1. **After API changes**: Test logging output in Console.app to verify proper integration
-2. **Privacy compliance**: Verify privacy annotations work correctly with sensitive data
+1. **Direct OSLog Access**: Test that `.oslog` property provides full OSLog functionality
+2. **Privacy compliance**: Verify privacy annotations work correctly via direct access and helper methods
 3. **Performance**: Ensure zero-overhead wrapper maintains OSLog performance benefits
-4. **Platform consistency**: Test across all supported Apple platforms
+4. **Platform consistency**: Test across all supported Apple platforms (iOS 14+, macOS 11+, watchOS 7+, tvOS 14+, visionOS 1+)
 5. **Development tools**: Verify integration with Xcode debugging and Console.app
+6. **Context preservation**: Ensure file/function/line information is properly captured
+7. **Swift 6 compatibility**: Verify Sendable conformance and concurrency safety
 
 **Testing commands:**
-- Unit tests: `swift test --filter DHLoggingKitTests`
+- Full test suite: `swift test` (runs all 36 tests)
+- Parallel testing: `swift test --parallel`
 - Build verification: `swift build --configuration release`
 - Package validation: `swift package resolve`
 - Platform testing: Test on iOS Simulator, macOS, etc.
 
 ### Logging Framework Design Guidelines
-- **Wrapper Only**: Never replace OSLog functionality, only enhance it
+- **Wrapper Only**: Never replace OSLog functionality, only enhance it with convenience
+- **Direct Access**: Always preserve full OSLog access via `.oslog` property
 - **Apple Compliance**: Follow Apple's logging guidelines and best practices
 - **Developer Experience**: Focus on ease of use while preserving full OSLog power
-- **Performance First**: Maintain OSLog's performance characteristics
-- **Privacy Conscious**: Support and encourage proper privacy annotations
-- **Production Ready**: Suitable for App Store applications
+- **Performance First**: Maintain OSLog's performance characteristics and zero overhead
+- **Privacy Conscious**: Support and encourage proper privacy annotations via direct access
+- **Context Enhancement**: Automatically provide file/function/line context for debugging
+- **Swift 6 Ready**: Full compatibility with modern Swift concurrency and Sendable types
+- **Production Ready**: Suitable for App Store applications with comprehensive testing
 
-**Never add functionality that bypasses Apple's unified logging system or compromises privacy controls.**
+**Key Principles:**
+- Never add functionality that bypasses Apple's unified logging system
+- Never compromise privacy controls - always provide full OSLog privacy features
+- Always maintain backward compatibility with existing OSLog workflows
+- Always provide comprehensive test coverage for all functionality**

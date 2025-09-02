@@ -24,14 +24,20 @@ import Foundation
 /// import DHLoggingKit
 ///
 /// let logger = DHLogger.network
-/// logger.info("Starting network request to \(url, privacy: .public)")
+/// logger.info("Starting network request")
 /// logger.error("Network request failed", error: networkError)
+///
+/// // For privacy-aware logging, use direct OSLog access
+/// logger.oslog.info("Starting network request to \(url, privacy: .public)")
 /// ```
 ///
 /// ## Custom Loggers
 /// ```swift
 /// let customLogger = DHLogger(category: "custom-feature")
-/// customLogger.debug("Debug information: \(data, privacy: .private)")
+/// customLogger.debug("Debug information logged")
+///
+/// // With privacy controls
+/// customLogger.oslog.debug("Debug information: \(data, privacy: .private)")
 /// ```
 @available(iOS 14.0, macOS 11.0, watchOS 7.0, tvOS 14.0, visionOS 1.0, *)
 public enum DHLoggingKit {

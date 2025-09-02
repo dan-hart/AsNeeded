@@ -11,20 +11,20 @@ import Foundation
 /// Convenience extensions and utilities for handling privacy in logging.
 /// These make it easier to work with OSLog's privacy features.
 @available(iOS 14.0, macOS 11.0, watchOS 7.0, tvOS 14.0, visionOS 1.0, *)
-public enum DHPrivacy {
+public enum DHPrivacy: Sendable {
 	/// Common privacy patterns for easy use
 	
 	/// Mark data as always private (redacted in logs)
-	@MainActor public static let `private` = OSLogPrivacy.private
+	public static let `private` = OSLogPrivacy.private
 	
 	/// Mark data as public (visible in logs)
-	@MainActor public static let `public` = OSLogPrivacy.public
+	public static let `public` = OSLogPrivacy.public
 	
 	/// Private data with hash representation
-	@MainActor public static let privateHash = OSLogPrivacy.private(mask: .hash)
+	public static let privateHash = OSLogPrivacy.private(mask: .hash)
 	
 	/// Auto privacy (respects system settings)
-	@MainActor public static let auto = OSLogPrivacy.auto
+	public static let auto = OSLogPrivacy.auto
 }
 
 // MARK: - Convenience Extensions
