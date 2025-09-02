@@ -47,7 +47,8 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.showingClearConfirmation == false)
 	#expect(viewModel.showingExportConfirmation == false)
 	#expect(viewModel.showingDocumentPicker == false)
-	#expect(viewModel.showingFileSaver == false)
+	#expect(viewModel.showingLogFileSaver == false)
+	#expect(viewModel.showingDataExporter == false)
 	#expect(viewModel.exportedData == nil)
 	#expect(viewModel.alertMessage == nil)
 	#expect(viewModel.showingAlert == false)
@@ -110,7 +111,7 @@ struct DataManagementViewModelTests {
 	// After completion
 	#expect(viewModel.isExporting == false)
 	#expect(viewModel.exportedData != nil)
-	#expect(viewModel.showingFileSaver == true)
+	#expect(viewModel.showingDataExporter == true)
 	
 	// Verify exported data is valid JSON
 	guard let exportedData = viewModel.exportedData else {
@@ -132,7 +133,7 @@ struct DataManagementViewModelTests {
 	
 	#expect(viewModel.isExporting == false)
 	#expect(viewModel.exportedData != nil)
-	#expect(viewModel.showingFileSaver == true)
+	#expect(viewModel.showingDataExporter == true)
   }
   
   // MARK: - Import Tests

@@ -48,7 +48,6 @@ struct DataManagementView: View {
 				  viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
 				  viewModel.showingAlert = true
 			  }
-			  exportDocument = nil
 			  viewModel.exportedData = nil
 		  }
 	.fileImporter(
