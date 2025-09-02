@@ -40,12 +40,16 @@ import DHLoggingKit
 let networkLogger = DHLogger.network
 let uiLogger = DHLogger.ui
 
-// Log with full OSLog privacy control support
-networkLogger.info("Starting API request to \(endpoint, privacy: .public)")
-networkLogger.debug("Request headers: \(headers, privacy: .private)")
+// Basic string-based logging with automatic context
+networkLogger.info("Starting API request to endpoint")
+networkLogger.debug("Request processing started")
 
 // Handle errors with automatic context
 networkLogger.error("Network request failed", error: networkError)
+
+// Use direct OSLog access for full privacy control support
+networkLogger.oslog.info("Starting API request to \(endpoint, privacy: .public)")
+networkLogger.oslog.debug("Request headers: \(headers, privacy: .private)")
 
 // Use convenience methods for development
 networkLogger.enter() // Logs function entry
@@ -118,27 +122,34 @@ logger.fault("Database connection lost", error: criticalError)
 
 ## Privacy Controls
 
-DHLoggingKit provides full access to OSLog's privacy system:
+DHLoggingKit provides full access to OSLog's privacy system through direct OSLog access:
 
 ```swift
 let userLogger = DHLogger.auth
 
+// Use direct OSLog access for privacy-aware logging
 // Mark sensitive data as private (redacted in logs)
-userLogger.info("Login attempt for user: \(username, privacy: .private)")
+userLogger.oslog.info("Login attempt for user: \(username, privacy: .private)")
 
 // Public data is visible in logs
-userLogger.info("Login successful from IP: \(clientIP, privacy: .public)")
+userLogger.oslog.info("Login successful from IP: \(clientIP, privacy: .public)")
 
 // Private data with hash (shows <mask.hash> in logs)
-userLogger.debug("Processing token: \(authToken, privacy: .private(mask: .hash))")
+userLogger.oslog.debug("Processing token: \(authToken, privacy: .private(mask: .hash))")
 
 // Auto privacy (respects system settings)
-userLogger.notice("Session created: \(sessionId, privacy: .auto)")
+userLogger.oslog.notice("Session created: \(sessionId, privacy: .auto)")
+
+// For string-based logging, use privacy helper methods
+let safeUsername = DHLogger.redact(username)
+let hashedToken = DHLogger.hash(authToken)
+userLogger.info("Login attempt for user: \(safeUsername)")
+userLogger.debug("Processing token: \(hashedToken)")
 ```
 
 ### Using DHPrivacy Convenience
 
-For easier privacy control, use the `DHPrivacy` utilities:
+For easier privacy control, use the `DHPrivacy` utilities with direct OSLog access:
 
 ```swift
 import DHLoggingKit
@@ -148,10 +159,34 @@ let publicLevel = DHPrivacy.public
 let privateLevel = DHPrivacy.private
 let hashedLevel = DHPrivacy.privateHash
 
-// Or use string extensions
+// Use with direct OSLog access
 let email = "user@example.com"
-logger.info("Email sent to: \(email.private)")
-logger.info("Email domain: \(emailDomain.public)")
+logger.oslog.info("Email sent to: \(email, privacy: privateLevel)")
+logger.oslog.info("Email domain: \(emailDomain, privacy: publicLevel)")
+
+// Or use string extensions for privacy tuples (useful with direct OSLog)
+let (emailString, emailPrivacy) = email.private
+logger.oslog.info("Email: \(emailString, privacy: emailPrivacy)")
+```
+
+## Direct OSLog Access
+
+DHLoggingKit provides direct access to the underlying OSLog Logger for maximum flexibility:
+
+```swift
+let logger = DHLogger.network
+
+// Direct access to OSLog Logger - no automatic context added
+let oslogger = logger.oslog
+
+// Full OSLog features available
+oslogger.info("Simple message")
+oslogger.debug("Debug info: \(data, privacy: .private)")
+oslogger.notice("User \(userId, privacy: .public) performed action \(action, privacy: .private)")
+
+// All OSLog privacy features work exactly as documented by Apple
+oslogger.error("Error processing \(input, privacy: .private(mask: .hash))")
+oslogger.fault("Critical failure in \(component, privacy: .auto)")
 ```
 
 ## Convenience Methods
@@ -313,10 +348,12 @@ logger.debug("Expensive debug info: \(expensiveComputation(), privacy: .private)
 | Feature | DHLoggingKit | OSLog (direct) | Other Frameworks |
 |---------|-------------|----------------|-----------------|
 | Performance | ✅ Zero overhead | ✅ Native | ❌ Overhead |
-| Privacy Controls | ✅ Full support | ✅ Native | ❌ Limited |
+| Privacy Controls | ✅ Full support via .oslog | ✅ Native | ❌ Limited |
 | Console Integration | ✅ Perfect | ✅ Native | ❌ Requires export |
 | Apple Platform Integration | ✅ Native | ✅ Native | ❌ Third-party |
-| Developer Experience | ✅ Enhanced | ❌ Verbose | ✅ Varies |
+| Developer Experience | ✅ Enhanced with context | ❌ Verbose | ✅ Varies |
+| Automatic Context | ✅ File/function/line | ❌ Manual | ❌ Manual |
+| Convenience Methods | ✅ Timing, enter/exit | ❌ None | ✅ Varies |
 | Dependencies | ✅ Zero | ✅ None | ❌ Many |
 
 ## Best Practices
@@ -325,11 +362,15 @@ logger.debug("Expensive debug info: \(expensiveComputation(), privacy: .private)
 ```swift
 // Use appropriate log levels
 logger.info("User action completed")  // For important events
-logger.debug("Internal state: \(state, privacy: .private)")  // For development
+logger.debug("Internal state logged")  // For development
 
-// Use privacy annotations
-logger.notice("Processing order: \(orderId, privacy: .public)")
-logger.debug("User data: \(userData, privacy: .private)")
+// Use privacy annotations with direct OSLog access
+logger.oslog.notice("Processing order: \(orderId, privacy: .public)")
+logger.oslog.debug("User data: \(userData, privacy: .private)")
+
+// Or use privacy helpers for string-based logging
+logger.notice("Processing order: \(orderId)")
+logger.debug("User data: \(DHLogger.redact(userData))")
 
 // Use factory methods for common categories
 let networkLogger = DHLogger.network
@@ -360,8 +401,11 @@ class MyClass {
 // Before
 print("User logged in: \(username)")
 
-// After
-logger.info("User logged in: \(username, privacy: .private)")
+// After (string-based)
+logger.info("User logged in: \(DHLogger.redact(username))")
+
+// After (with privacy)
+logger.oslog.info("User logged in: \(username, privacy: .private)")
 ```
 
 ### From os_log:
@@ -369,8 +413,11 @@ logger.info("User logged in: \(username, privacy: .private)")
 // Before
 os_log("Network request completed", log: OSLog.default, type: .info)
 
-// After
+// After (string-based with context)
 DHLogger.network.info("Network request completed")
+
+// After (direct OSLog access)
+DHLogger.network.oslog.info("Network request completed")
 ```
 
 ### From third-party frameworks:

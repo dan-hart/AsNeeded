@@ -171,6 +171,22 @@ public struct DHLogger: Sendable {
 		}
 	}
 	
+	// MARK: - Direct OSLog Access
+	/// Provides direct access to the underlying OSLog Logger for advanced use cases.
+	///
+	/// Use this when you need full OSLog features including privacy annotations.
+	/// The context information (file, function, line) is not automatically added.
+	///
+	/// Example usage:
+	/// ```swift
+	/// logger.oslog.info("User \(username, privacy: .private) logged in from \(ip, privacy: .public)")
+	/// ```
+	///
+	/// - Returns: The underlying OSLog Logger instance
+	public var oslog: Logger {
+		return logger
+	}
+
 	// MARK: - Convenience Methods
 	/// Logs entry into a function or method (debug level).
 	public func enter(
@@ -248,24 +264,31 @@ public struct DHLogger: Sendable {
 	
 	// MARK: - Privacy Helper Methods
 	/// Redacts sensitive data for logging purposes.
-	/// Use this for medication names, user data, or any sensitive information.
+	/// 
+	/// This method provides a consistent way to redact sensitive information
+	/// when logging with string interpolation instead of OSLog privacy controls.
 	///
 	/// - Parameter sensitiveValue: The sensitive value to redact
 	/// - Returns: A redacted string safe for logging
+	/// - Note: For better privacy control, use OSLog's built-in privacy annotations
 	public static func redact(_ sensitiveValue: Any) -> String {
 		return "<private>"
 	}
 	
 	/// Creates a hash representation of sensitive data for logging.
-	/// Useful when you need to track the same sensitive value across logs.
+	/// 
+	/// This creates a consistent hash that allows tracking the same value 
+	/// across logs without exposing the actual content.
 	///
 	/// - Parameter sensitiveValue: The sensitive value to hash
 	/// - Returns: A hashed representation safe for logging
+	/// - Note: For better privacy control, use OSLog's built-in privacy annotations with mask: .hash
 	public static func hash(_ sensitiveValue: Any) -> String {
 		let stringValue = String(describing: sensitiveValue)
 		let hasher = stringValue.hash
 		return "<hash:\(String(hasher.magnitude, radix: 16))>"
 	}
+	
 	
 	// MARK: - Private Helpers
 	private func formatContext(file: String, function: String, line: Int) -> String {
