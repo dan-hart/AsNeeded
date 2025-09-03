@@ -215,9 +215,16 @@ struct DataManagementView: View {
 		  Text("Logs (24h)")
 			.font(.subheadline)
 			.foregroundColor(.secondary)
-		  Text("\(viewModel.logCount)")
-			.font(.title2)
-			.fontWeight(.semibold)
+		  Group {
+			if viewModel.isLoadingLogCount {
+			  ProgressView()
+				.scaleEffect(0.8)
+			} else {
+			  Text("\(viewModel.logCount)")
+			}
+		  }
+		  .font(.title2)
+		  .fontWeight(.semibold)
 		}
 	  }
 	  .padding(16)

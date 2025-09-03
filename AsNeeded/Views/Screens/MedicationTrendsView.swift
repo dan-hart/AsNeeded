@@ -49,7 +49,12 @@ struct MedicationTrendsView: View {
 				.padding()
 			}
 			.navigationTitle("Trends")
-			.onAppear { if viewModel.selectedMedicationID == nil { viewModel.selectedMedicationID = viewModel.medications.first?.id } }
+			.onAppear { 
+				// If no medication is selected or the selected medication no longer exists
+				if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
+					viewModel.selectedMedicationID = viewModel.medications.first?.id
+				}
+			}
 		}
 	}
 

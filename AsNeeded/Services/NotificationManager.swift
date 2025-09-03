@@ -21,16 +21,16 @@ final class NotificationManager: ObservableObject {
   }
   
   @Published var authorizationStatus: AuthorizationStatus = .notDetermined
-  @Published var hideMedicationNames: Bool = true {
+  @Published var showMedicationNames: Bool = false {
     didSet {
-      UserDefaults.standard.set(hideMedicationNames, forKey: "hideMedicationNames")
+      UserDefaults.standard.set(showMedicationNames, forKey: "showMedicationNames")
     }
   }
   
   private let notificationCenter = UNUserNotificationCenter.current()
   
   private init() {
-    hideMedicationNames = UserDefaults.standard.object(forKey: "hideMedicationNames") as? Bool ?? true
+    showMedicationNames = UserDefaults.standard.object(forKey: "showMedicationNames") as? Bool ?? false
     Task {
       await checkAuthorizationStatus()
       await setupNotificationCategories()
@@ -106,12 +106,12 @@ final class NotificationManager: ObservableObject {
     // Create notification content
     let content = UNMutableNotificationContent()
     
-    if hideMedicationNames {
-      content.title = "Medication Reminder"
-      content.body = "It's time to take your medication"
-    } else {
+    if showMedicationNames {
       content.title = medication.nickname ?? medication.clinicalName
       content.body = "It's time to take \(medication.nickname ?? medication.clinicalName)"
+    } else {
+      content.title = "Medication Reminder"
+      content.body = "It's time to take your medication"
     }
     
     content.sound = .default

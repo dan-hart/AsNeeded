@@ -68,24 +68,24 @@ struct SettingsNotificationSectionView: View {
   @ViewBuilder
   private var privacyToggleRow: some View {
     HStack(spacing: 12) {
-      Image(systemSymbol: .eyeSlash)
+      Image(systemSymbol: .textBubble)
         .font(.system(size: 18, weight: .medium))
         .foregroundColor(.blue)
         .frame(width: 24, height: 24)
       
       VStack(alignment: .leading, spacing: 2) {
-        Text("Hide Medication Names")
+        Text("Show Medication Names")
           .font(.body)
           .fontWeight(.medium)
         
-        Text("Keep medication names private in notifications")
+        Text("Include medication names in reminder notifications")
           .font(.caption)
           .foregroundColor(.secondary)
       }
       
       Spacer()
       
-      Toggle("", isOn: $notificationManager.hideMedicationNames)
+      Toggle("", isOn: $notificationManager.showMedicationNames)
         .labelsHidden()
     }
   }
