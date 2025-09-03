@@ -6,6 +6,17 @@ import UniformTypeIdentifiers
 import SFSafeSymbols
 import DHLoggingKit
 
+struct ShareSheet: UIViewControllerRepresentable {
+  let items: [Any]
+  
+  func makeUIViewController(context: Context) -> UIActivityViewController {
+	let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+	return controller
+  }
+  
+  func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 struct DataManagementView: View {
   @StateObject private var viewModel = DataManagementViewModel()
   @State private var showSupportToast = false
@@ -23,32 +34,31 @@ struct DataManagementView: View {
 			  dataActionsSection
 		  }
 	  }
-		  .fileExporter(
-			isPresented: $viewModel.showingDataExporter,
-			document: viewModel.exportedData.map { DataDocument(data: $0) },
-			contentType: .json,
-			defaultFilename: "AsNeeded-Export-\(dateFormatter.string(from: Date()))"
-		  ) { result in
-			  logger.debug("File exporter result received")
-			  switch result {
-			  case .success(let url):
-				  logger.info("Export saved successfully to: \(url.lastPathComponent)")
-				  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-					  withAnimation(.easeInOut(duration: 0.3)) {
-						  showSupportToast = true
-					  }
-					  DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-						  withAnimation(.easeInOut(duration: 0.3)) {
-							  showSupportToast = false
+		  .sheet(isPresented: $viewModel.showingDataShareSheet) {
+			  if let url = viewModel.exportedDataURL {
+				  ShareSheet(items: [url])
+					  .onDisappear {
+						  logger.info("Data share sheet dismissed")
+						  // Stop accessing security scoped resource and clean up
+						  url.stopAccessingSecurityScopedResource()
+						  DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+							  // Clean up file after a small delay to ensure share completion
+							  try? FileManager.default.removeItem(at: url)
+						  }
+						  viewModel.exportedDataURL = nil
+						  
+						  DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+							  withAnimation(.easeInOut(duration: 0.3)) {
+								  showSupportToast = true
+							  }
+							  DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+								  withAnimation(.easeInOut(duration: 0.3)) {
+									  showSupportToast = false
+								  }
+							  }
 						  }
 					  }
-				  }
-			  case .failure(let error):
-				  logger.error("Export save failed", error: error)
-				  viewModel.alertMessage = "Export save failed: \(error.localizedDescription)"
-				  viewModel.showingAlert = true
 			  }
-			  viewModel.exportedData = nil
 		  }
 	.fileImporter(
 	  isPresented: $viewModel.showingDocumentPicker,
@@ -66,34 +76,21 @@ struct DataManagementView: View {
 		viewModel.showingAlert = true
 	  }
 	}
-	.fileExporter(
-	  isPresented: $viewModel.showingLogFileSaver,
-	  document: viewModel.exportedLogsData.map { LogDocument(data: $0) },
-	  contentType: .plainText,
-	  defaultFilename: "AsNeeded-Logs-\(dateFormatter.string(from: Date()))"
-	) { result in
-	  switch result {
-	  case .success:
-		viewModel.alertMessage = "Logs exported successfully. No medication names are included - only technical information."
-		viewModel.showingAlert = true
-	  case .failure(let error):
-		viewModel.alertMessage = "Log export save failed: \(error.localizedDescription)"
-		viewModel.showingAlert = true
-	  }
-	  viewModel.exportedLogsData = nil
-	}
-	.onChange(of: viewModel.exportedData) { _, newData in
-	  if let data = newData {
-		logger.debug("Export data received, size: \(data.count) bytes")
-		viewModel.showingDataExporter = true
-		logger.debug("Triggering file exporter")
-	  }
-	}
-	.onChange(of: viewModel.exportedLogsData) { _, newLogData in
-	  if let data = newLogData {
-		logger.debug("Export logs data received, size: \(data.count) bytes")
-		viewModel.showingLogFileSaver = true
-		logger.debug("Triggering log file exporter")
+	.sheet(isPresented: $viewModel.showingLogShareSheet) {
+	  if let url = viewModel.exportedLogsURL {
+		ShareSheet(items: [url])
+		  .onDisappear {
+			logger.info("Log share sheet dismissed")
+			// Stop accessing security scoped resource and clean up
+			url.stopAccessingSecurityScopedResource()
+			DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+			  // Clean up file after a small delay to ensure share completion
+			  try? FileManager.default.removeItem(at: url)
+			}
+			viewModel.exportedLogsURL = nil
+			viewModel.alertMessage = "Logs exported successfully. No medication names are included - only technical information."
+			viewModel.showingAlert = true
+		  }
 	  }
 	}
 	.confirmationDialog(

@@ -47,9 +47,10 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.showingClearConfirmation == false)
 	#expect(viewModel.showingExportConfirmation == false)
 	#expect(viewModel.showingDocumentPicker == false)
-	#expect(viewModel.showingLogFileSaver == false)
-	#expect(viewModel.showingDataExporter == false)
-	#expect(viewModel.exportedData == nil)
+	#expect(viewModel.showingLogShareSheet == false)
+	#expect(viewModel.showingDataShareSheet == false)
+	#expect(viewModel.exportedDataURL == nil)
+	#expect(viewModel.exportedLogsURL == nil)
 	#expect(viewModel.alertMessage == nil)
 	#expect(viewModel.showingAlert == false)
   }
@@ -110,14 +111,15 @@ struct DataManagementViewModelTests {
 	
 	// After completion
 	#expect(viewModel.isExporting == false)
-	#expect(viewModel.exportedData != nil)
-	#expect(viewModel.showingDataExporter == true)
+	#expect(viewModel.exportedDataURL != nil)
+	#expect(viewModel.showingDataShareSheet == true)
 	
 	// Verify exported data is valid JSON
-	guard let exportedData = viewModel.exportedData else {
-	  #expect(false, "Export data should not be nil")
+	guard let exportedURL = viewModel.exportedDataURL else {
+	  #expect(false, "Export URL should not be nil")
 	  return
 	}
+	let exportedData = try Data(contentsOf: exportedURL)
 	let json = try JSONSerialization.jsonObject(with: exportedData) as? [String: Any]
 	#expect(json != nil)
   }
@@ -132,8 +134,8 @@ struct DataManagementViewModelTests {
 	await viewModel.exportData(includeNames: true)
 	
 	#expect(viewModel.isExporting == false)
-	#expect(viewModel.exportedData != nil)
-	#expect(viewModel.showingDataExporter == true)
+	#expect(viewModel.exportedDataURL != nil)
+	#expect(viewModel.showingDataShareSheet == true)
   }
   
   // MARK: - Import Tests
@@ -322,12 +324,14 @@ struct DataManagementViewModelTests {
 	
 	// 2. Export data
 	await viewModel.exportData(includeNames: true)
-	#expect(viewModel.exportedData != nil)
+	#expect(viewModel.exportedDataURL != nil)
 	
-	guard let exportedData = viewModel.exportedData else {
-	  #expect(false, "Export data should not be nil")
+	guard let exportedURL = viewModel.exportedDataURL else {
+	  #expect(false, "Export URL should not be nil")
 	  return
 	}
+	
+	let exportedData = try Data(contentsOf: exportedURL)
 	
 	// 3. Clear all data
 	await viewModel.clearAllData()
