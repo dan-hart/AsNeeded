@@ -113,28 +113,67 @@ struct MedicationTrendsView: View {
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
-			Chart(data, id: \.day) { item in
-				LineMark(
-					x: .value("Day", item.day, unit: .day),
-					y: .value("Total", item.total)
-				)
-				.interpolationMethod(.catmullRom)
-				AreaMark(
-					x: .value("Day", item.day, unit: .day),
-					y: .value("Total", item.total)
-				)
-				.foregroundStyle(.linearGradient(colors: [.accentColor.opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
-			}
-			.chartXAxis {
-				AxisMarks(values: .stride(by: .day)) { value in
-					AxisGridLine()
-					AxisValueLabel(format: .dateTime.day().month(.abbreviated), centered: true)
+			VStack(alignment: .leading, spacing: 12) {
+				Text("Daily Usage")
+					.font(.headline)
+					.fontWeight(.semibold)
+				
+				Chart(data, id: \.day) { item in
+					// Area mark for visual appeal
+					AreaMark(
+						x: .value("Day", item.day, unit: .day),
+						y: .value("Total", item.total)
+					)
+					.foregroundStyle(.linearGradient(
+						colors: [Color.accentColor.opacity(0.4), Color.accentColor.opacity(0.1), .clear],
+						startPoint: .top,
+						endPoint: .bottom
+					))
+					
+					// Line mark for clarity
+					LineMark(
+						x: .value("Day", item.day, unit: .day),
+						y: .value("Total", item.total)
+					)
+					.interpolationMethod(.catmullRom)
+					.foregroundStyle(Color.accentColor)
+					.lineStyle(StrokeStyle(lineWidth: 2))
+					
+					// Point marks for data points
+					if item.total > 0 {
+						PointMark(
+							x: .value("Day", item.day, unit: .day),
+							y: .value("Total", item.total)
+						)
+						.foregroundStyle(Color.accentColor)
+						.symbolSize(30)
+					}
 				}
+				.chartXAxis {
+					AxisMarks(values: .stride(by: .day, count: daysWindow <= 7 ? 2 : daysWindow <= 14 ? 3 : 5)) { value in
+						AxisGridLine()
+							.foregroundStyle(.secondary.opacity(0.3))
+						AxisValueLabel(format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : daysWindow <= 14 ? .dateTime.weekday(.abbreviated).day() : .dateTime.day().month(.abbreviated))
+							.foregroundStyle(.secondary)
+					}
+				}
+				.chartYAxis {
+					AxisMarks(position: .leading) { value in
+						AxisGridLine()
+							.foregroundStyle(.secondary.opacity(0.2))
+						AxisValueLabel()
+							.foregroundStyle(.secondary)
+					}
+				}
+				.chartBackground { chartProxy in
+					Rectangle()
+						.fill(.clear)
+				}
+				.frame(height: 280)
+				.padding(.horizontal, 4)
 			}
-			.chartYAxis {
-				AxisMarks(position: .leading)
-			}
-			.frame(height: 240)
+			.padding(16)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
 		}
 	}
 }
