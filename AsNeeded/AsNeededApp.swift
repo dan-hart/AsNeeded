@@ -10,6 +10,10 @@ import HealthKit
 import HealthKitUI
 import DHLoggingKit
 
+#if canImport(AppIntents)
+import AppIntents
+#endif
+
 @main
 struct AsNeededApp: App {
 	@StateObject private var watchConnectivityReceiver = WCReceiver()
