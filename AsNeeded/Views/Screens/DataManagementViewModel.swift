@@ -18,10 +18,10 @@ final class DataManagementViewModel: ObservableObject {
   @Published var showingExportConfirmation = false
   @Published var showingDocumentPicker = false
   @Published var showingLogExportConfirmation = false
-  @Published var showingLogFileSaver = false
-  @Published var showingDataExporter = false
-  @Published var exportedData: Data?
-  @Published var exportedLogsData: Data?
+  @Published var showingDataShareSheet = false
+  @Published var showingLogShareSheet = false
+  @Published var exportedDataURL: URL?
+  @Published var exportedLogsURL: URL?
   @Published var alertMessage: String?
   @Published var showingAlert = false
   @Published var logCount: Int = 0
@@ -66,10 +66,30 @@ final class DataManagementViewModel: ObservableObject {
 	  let data = try await dataStore.exportDataAsJSON(redactNames: !includeNames)
 	  logger.info("Export data generated successfully - size: \(data.count) bytes")
 	  
-	  // Set the exported data which should trigger the file exporter
-	  exportedData = data
-	  showingDataExporter = true
-	  logger.debug("exportedData set - file exporter should be triggered")
+	  // Create a file URL in the documents directory for sharing
+	  let dateFormatter = DateFormatter()
+	  dateFormatter.dateFormat = "yyyy-MM-dd-HHmm"
+	  let filename = "AsNeeded-Export-\(dateFormatter.string(from: Date())).json"
+	  
+	  // Use documents directory for better compatibility
+	  guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+		logger.error("Could not access documents directory")
+		alertMessage = "Export failed: Could not access documents directory"
+		showingAlert = true
+		return
+	  }
+	  let tempURL = documentsPath.appendingPathComponent(filename)
+	  
+	  // Write with proper attributes
+	  try data.write(to: tempURL, options: [.atomic])
+	  logger.debug("Wrote export data to file: \(tempURL.lastPathComponent)")
+	  
+	  // Ensure file is accessible
+	  _ = tempURL.startAccessingSecurityScopedResource()
+	  
+	  exportedDataURL = tempURL
+	  showingDataShareSheet = true
+	  logger.debug("exportedDataURL set - share sheet should be triggered")
 	} catch {
 	  logger.error("Export failed", error: error)
 	  alertMessage = "Export failed: \(error.localizedDescription)"
@@ -134,12 +154,37 @@ final class DataManagementViewModel: ObservableObject {
 	defer { isExportingLogs = false }
 	
 	do {
+	  var logData: Data
 	  if #available(iOS 15.0, *) {
-		let logData = try await DHLoggingKit.exporter.exportLogs(timeInterval: timeInterval)
-		exportedLogsData = logData
+		logData = try await DHLoggingKit.exporter.exportLogs(timeInterval: timeInterval)
 	  } else {
-		exportedLogsData = "Log export requires iOS 15.0 or later. This device is running iOS \(UIDevice.current.systemVersion).".data(using: .utf8)
+		logData = "Log export requires iOS 15.0 or later. This device is running iOS \(UIDevice.current.systemVersion).".data(using: .utf8) ?? Data()
 	  }
+	  
+	  // Create a file URL in the documents directory for sharing
+	  let dateFormatter = DateFormatter()
+	  dateFormatter.dateFormat = "yyyy-MM-dd-HHmm"
+	  let filename = "AsNeeded-Logs-\(dateFormatter.string(from: Date())).txt"
+	  
+	  // Use documents directory for better compatibility
+	  guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+		logger.error("Could not access documents directory")
+		alertMessage = "Log export failed: Could not access documents directory"
+		showingAlert = true
+		return
+	  }
+	  let tempURL = documentsPath.appendingPathComponent(filename)
+	  
+	  // Write with proper attributes
+	  try logData.write(to: tempURL, options: [.atomic])
+	  logger.debug("Wrote log data to file: \(tempURL.lastPathComponent)")
+	  
+	  // Ensure file is accessible
+	  _ = tempURL.startAccessingSecurityScopedResource()
+	  
+	  exportedLogsURL = tempURL
+	  showingLogShareSheet = true
+	  logger.debug("exportedLogsURL set - share sheet should be triggered")
 	} catch {
 	  alertMessage = "Log export failed: \(error.localizedDescription)"
 	  showingAlert = true
