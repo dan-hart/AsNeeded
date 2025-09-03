@@ -1,23 +1,70 @@
 # AsNeeded
 
-Clarity for medications used when symptoms arise.
+Track as-needed medications with privacy and simplicity.
 
-AsNeeded is an iOS app designed to help people track as‑needed medications with clarity and confidence. It focuses on quick logging, safe spacing between doses, and clear insights so you always know what you took, when you took it, and when it’s safe to take more.
+AsNeeded is a privacy-first iOS app designed to help people track as‑needed medications with clarity and confidence. It focuses on quick logging, safe spacing between doses, and clear insights so you always know what you took, when you took it, and when it's safe to take more.
 
-Note on terminology: Some clinicians use the abbreviation “PRN” (from Latin “pro re nata”) to mean “as needed.” In this project and README, we use the plain phrase “as‑needed” to keep things universally understandable.
+## Core Values
+
+AsNeeded is built on three fundamental principles:
+
+- **Privacy First**: Your health data stays private, local, and secure
+- **Always Free**: All features free forever, no ads, no subscriptions required  
+- **Open Source**: Transparent, inspectable, and community-driven
+
+Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro re nata") to mean "as needed." In this project and README, we use the plain phrase "as‑needed" to keep things universally understandable.
 
 ---
 
 ## Features
 
-- Track as‑needed medications with dose, time, and optional notes
-- Enforce safe intervals between doses (configurable per medication)
-- Quick‑add from Home with recent medications
-- Clear “Next dose available” countdown and alerts
-- Searchable history with filters and basic statistics
-- SwiftUI‑first design with Dynamic Type, VoiceOver, and Dark Mode support
-- Local persistence (designed to be storage‑agnostic)
-- Modular architecture with testable business logic
+### 🔒 Privacy & Data Management
+- **Local-only storage**: All data stays on your device
+- **Export & Import**: Full data backup and restore in JSON format
+- **Data transparency**: View technical logs for troubleshooting
+- **No tracking**: No analytics, no data collection, no cloud sync
+
+### 💊 Medication Tracking
+- **Smart medication search**: RxNorm integration for accurate medication lookup
+- **Flexible dosing**: Support for 29 different unit types (tablets, mg, mL, puffs, etc.)
+- **Inventory management**: Track quantity on hand and refill dates
+- **Custom nicknames**: Use familiar names alongside clinical terms
+
+### 📝 Dose Logging
+- **Quick dose entry**: Log medications with customizable amounts and units
+- **Historical logging**: Backdate doses with specific times
+- **Smart defaults**: Remembers your preferred doses and units
+- **Comprehensive tracking**: Full medication event history
+
+### 🔔 Smart Reminders
+- **Privacy-focused notifications**: Optional medication name display
+- **Flexible scheduling**: One-time, daily, weekly, or custom intervals
+- **Quick actions**: "Mark as Taken" and "Skip" directly from notifications
+- **Permission-aware**: Graceful handling when notifications are disabled
+
+### 📊 Insights & Analysis  
+- **Usage trends**: Visual charts showing medication usage over time
+- **Calendar heatmap**: GitHub-style visualization of daily usage patterns
+- **Usage statistics**: Average daily intake and usage metrics
+- **Medication history**: Searchable, filterable event timeline
+
+### 🎙️ Siri Integration
+- **Voice logging**: "I took 2 tablets of ibuprofen in AsNeeded"
+- **Usage queries**: "How much aspirin have I taken today in AsNeeded?"
+- **Medication lists**: "List my medications in AsNeeded"
+- **Smart recognition**: Supports both clinical names and your custom nicknames
+
+### 🎨 User Experience
+- **Clean, modern design**: SwiftUI-first with consistent styling
+- **Onboarding flow**: Welcoming first-time user experience
+- **Support integration**: Easy access to help and support options
+- **Accessibility**: Dynamic Type, VoiceOver, and Dark Mode support
+
+### 📱 Platform Features
+- **iOS & watchOS**: Full iPhone app with Apple Watch companion
+- **Handoff support**: Seamless transition between devices
+- **Local persistence**: Reliable SQLite-based storage
+- **Background processing**: Efficient data management
 
 ---
 
@@ -55,36 +102,55 @@ Note on terminology: Some clinicians use the abbreviation “PRN” (from Latin 
 
 The codebase is organized for clarity and modularity. Each SwiftUI view is in its own file and grouped by feature.
 
-- App/
-  - AsNeededApp.swift — App entry point and scene configuration.
-- Features/
-  - Home/
-    - HomeView.swift — Overview of recent meds, quick‑add actions, next‑dose timers.
-  - Medications/
-    - MedicationsListView.swift — List, search, and manage medications.
-    - MedicationDetailView.swift — Details, dose logging, quantity and refill info.
-    - AddEditMedicationView.swift — Create or edit a medication.
-  - Log/
-    - LogDoseView.swift — Add a dose with amount, unit, and notes.
-    - HistoryView.swift — Dose history with filters and search.
-- Components/
-  - Shared reusable UI (e.g., PrimaryButton.swift, LabeledValueRow.swift, EmptyStateView.swift).
-- Services/
-  - Persistence/ — Storage interfaces and implementations.
-  - Notifications/ — Local notifications for reminders (optional).
-  - Analytics/ — Lightweight analytics hooks (optional).
-- Domain/
-  - Models/ — Core models (Medication, Dose, Event, Unit).
-  - UseCases/ — Testable business logic (e.g., LogDoseUseCase, NextDoseCalculator).
-- Support/
-  - Extensions/ — Small, well‑scoped extensions.
-  - DesignSystem/ — Colors, typography, spacing, and theming.
-- Tests/
-  - Unit tests for domain and services.
-  - UI tests for critical flows (optional).
-- README.md — You are here.
+```
+AsNeeded/
+├── AsNeededApp.swift                     # App entry point and scene configuration
+├── Views/
+│   ├── Screens/                         # Main screen views
+│   │   ├── AboutView.swift             # App information and core values
+│   │   ├── SupportView.swift           # Support options and donation
+│   │   ├── WelcomeView.swift           # First-time user onboarding
+│   │   ├── DataManagementView.swift    # Export/import functionality
+│   │   ├── MedicationHistoryView.swift # Historical dose logging
+│   │   └── MedicationTrendsView.swift  # Usage analytics and charts
+│   ├── ContentView.swift               # Main tab view container
+│   └── Components/                     # Reusable UI components
+│       ├── SupportToastView.swift      # Support prompt overlay
+│       └── EnhancedMedicationSearchField.swift # Smart search input
+├── Medication/                         # Medication management features
+│   ├── MedicationListView.swift        # List and search medications
+│   ├── MedicationDetailView.swift      # Medication details and actions
+│   ├── MedicationEditView.swift        # Add/edit medication form
+│   ├── LogDoseView.swift               # Log dose entry form
+│   ├── ReminderConfigurationView.swift # Notification setup
+│   ├── ReminderListView.swift          # View scheduled reminders
+│   └── ViewModels/                     # View model classes
+├── Services/
+│   ├── Persistence/
+│   │   └── DataStore.swift             # Boutique-based data management
+│   ├── NotificationManager.swift       # Local notification handling
+│   ├── MedicationSearchService.swift   # RxNorm integration
+│   ├── FeedbackService.swift           # User feedback handling
+│   ├── WatchConnectivity/              # Apple Watch integration
+│   └── Intents/                        # Siri Shortcuts integration
+│       ├── LogMedicationIntent.swift   # "Log medication" voice command
+│       ├── ListMedicationsIntent.swift # "List medications" query
+│       ├── GetDailyUsageIntent.swift   # "How much today" query
+│       ├── MedicationEntity.swift      # Siri medication recognition
+│       └── MedicationUnitEntity.swift  # Siri unit recognition
+├── Packages/                           # Local Swift packages
+│   ├── ANModelKit/                     # Core data models and types
+│   ├── DHLoggingKit/                   # Modern OSLog wrapper
+│   └── SwiftRxNorm/                    # RxNorm API client
+└── Tests/                              # Unit and integration tests
+```
 
-Note: File names above reflect intent; the actual repository may use similar names. Each view is self‑contained and reusable. Business logic is separated from rendering.
+### Package Architecture
+
+- **ANModelKit**: Core data models (Medication, Dose, Event, Unit concepts)
+- **DHLoggingKit**: Modern Swift logging with OSLog integration  
+- **SwiftRxNorm**: RxNorm API client for medication search and information
+- **Main App**: SwiftUI interface, business logic, and service integration
 
 ---
 
@@ -177,7 +243,16 @@ Please be respectful and constructive in discussions and code reviews.
 
 ## Privacy
 
-AsNeeded stores your data locally on‑device by default. If a cloud or sync feature is enabled in the future, the README and in‑app disclosures will be updated. The project does not collect personal data.
+AsNeeded is designed with privacy as a core principle:
+
+- **Local-only storage**: All medication data stays on your device
+- **No data collection**: We don't collect, store, or transmit any personal health information
+- **No analytics**: No usage tracking, no crash reporting, no behavioral analytics
+- **No ads**: No advertising networks or data brokers involved
+- **Export control**: You maintain full control over your data exports
+- **Open source**: All code is transparent and inspectable
+
+Your health data belongs to you. AsNeeded will never compromise on this principle.
 
 ---
 
