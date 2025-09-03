@@ -16,6 +16,8 @@ struct SettingsView: View {
 			FeedbackButtonsView()
 		  }
 		  
+		  SettingsNotificationSectionView()
+		  
 		  SettingsDataSectionView()
 
 		  SettingsSupportSectionView()
