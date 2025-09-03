@@ -3,34 +3,76 @@ import Charts
 import ANModelKit
 import SFSafeSymbols
 
+enum VisualizationType: String, CaseIterable {
+	case chart = "chart"
+	case heatmap = "heatmap"
+	
+	var displayName: String {
+		switch self {
+		case .chart: return "Chart"
+		case .heatmap: return "Calendar"
+		}
+	}
+	
+	var systemImage: String {
+		switch self {
+		case .chart: return "chart.xyaxis.line"
+		case .heatmap: return "calendar"
+		}
+	}
+}
+
 struct MedicationTrendsView: View {
 	@StateObject private var viewModel = MedicationTrendsViewModel()
 	@State private var daysWindow: Int = 14
+	@AppStorage("trendsVisualizationType") private var visualizationType: VisualizationType = .chart
 
 	var body: some View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 16) {
 					// Picker + context
-					HStack(alignment: .center) {
-						Picker("Medication", selection: $viewModel.selectedMedicationID) {
-							ForEach(viewModel.medications, id: \.id) { med in
-								Text(med.displayName).tag(Optional(med.id))
+					VStack(spacing: 12) {
+						HStack(alignment: .center) {
+							Picker("Medication", selection: $viewModel.selectedMedicationID) {
+								ForEach(viewModel.medications, id: \.id) { med in
+									Text(med.displayName).tag(Optional(med.id))
+								}
 							}
+							.pickerStyle(.menu)
+							Spacer()
+							Picker("Range", selection: $daysWindow) {
+								Text("14d").tag(14)
+								Text("30d").tag(30)
+							}
+							.pickerStyle(.segmented)
+							.frame(maxWidth: 160)
 						}
-						.pickerStyle(.menu)
-						Spacer()
-						Picker("Range", selection: $daysWindow) {
-							Text("14d").tag(14)
-							Text("30d").tag(30)
+						
+						HStack {
+							Text("View:")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Picker("Visualization", selection: $visualizationType) {
+								ForEach(VisualizationType.allCases, id: \.self) { type in
+									Label(type.displayName, systemImage: type.systemImage)
+										.tag(type)
+								}
+							}
+							.pickerStyle(.segmented)
+							Spacer()
 						}
-						.pickerStyle(.segmented)
-						.frame(maxWidth: 160)
 					}
 
 					if let med = viewModel.selectedMedication {
 						metricsView(for: med)
-						usageChart()
+						
+						switch visualizationType {
+						case .chart:
+							usageChart()
+						case .heatmap:
+							calendarHeatmap()
+						}
 					} else {
 						Text("Select a medication to see trends.")
 							.foregroundStyle(.secondary)
@@ -174,6 +216,127 @@ struct MedicationTrendsView: View {
 			}
 			.padding(16)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+		}
+	}
+	
+	@ViewBuilder
+	private func calendarHeatmap() -> some View {
+		let data = viewModel.calendarHeatmapData(last: daysWindow)
+		if data.isEmpty {
+			Text("No recent dose data.")
+				.foregroundStyle(.secondary)
+				.frame(maxWidth: .infinity, alignment: .leading)
+		} else {
+			VStack(alignment: .leading, spacing: 12) {
+				Text("Usage Calendar")
+					.font(.headline)
+					.fontWeight(.semibold)
+				
+				CalendarHeatmapGrid(data: data, daysWindow: daysWindow)
+			}
+			.padding(16)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+		}
+	}
+}
+
+struct CalendarHeatmapGrid: View {
+	let data: [CalendarDay]
+	let daysWindow: Int
+	private let calendar = Calendar.current
+	
+	// Calculate grid layout
+	private var columns: Int { 7 } // Days of week
+	private var rows: Int { 
+		let weeks = ceil(Double(daysWindow) / 7.0)
+		return Int(weeks)
+	}
+	
+	var body: some View {
+		VStack(alignment: .leading, spacing: 8) {
+			// Weekday headers
+			HStack(spacing: 2) {
+				ForEach(calendar.veryShortWeekdaySymbols, id: \.self) { day in
+					Text(day)
+						.font(.caption2)
+						.foregroundStyle(.secondary)
+						.frame(maxWidth: .infinity)
+						.frame(height: 20)
+				}
+			}
+			
+			// Calendar grid
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+				ForEach(paddedData, id: \.date) { day in
+					RoundedRectangle(cornerRadius: 3)
+						.fill(colorForIntensity(day.intensity))
+						.frame(height: 20)
+						.overlay(
+							RoundedRectangle(cornerRadius: 3)
+								.stroke(.secondary.opacity(0.2), lineWidth: 0.5)
+						)
+						.help(day.total > 0 ? 
+							  "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" : 
+							  "\(calendar.component(.day, from: day.date)): No doses")
+				}
+			}
+			
+			// Legend
+			HStack {
+				Text("Less")
+					.font(.caption)
+					.foregroundStyle(.secondary)
+				
+				HStack(spacing: 2) {
+					ForEach(0..<5) { level in
+						RoundedRectangle(cornerRadius: 2)
+							.fill(colorForIntensity(Double(level) / 4.0))
+							.frame(width: 12, height: 12)
+							.overlay(
+								RoundedRectangle(cornerRadius: 2)
+									.stroke(.secondary.opacity(0.2), lineWidth: 0.5)
+							)
+					}
+				}
+				
+				Text("More")
+					.font(.caption)
+					.foregroundStyle(.secondary)
+				
+				Spacer()
+			}
+		}
+	}
+	
+	// Pad data to fill grid properly
+	private var paddedData: [CalendarDay] {
+		guard let firstDate = data.first?.date else { return data }
+		
+		let firstWeekday = calendar.component(.weekday, from: firstDate)
+		let leadingEmptyDays = (firstWeekday - calendar.firstWeekday + 7) % 7
+		
+		var paddedData = data
+		
+		// Add leading empty days
+		for i in (1...leadingEmptyDays).reversed() {
+			if let emptyDate = calendar.date(byAdding: .day, value: -i, to: firstDate) {
+				paddedData.insert(CalendarDay(date: emptyDate, total: -1, intensity: -1), at: 0)
+			}
+		}
+		
+		return paddedData
+	}
+	
+	private func colorForIntensity(_ intensity: Double) -> Color {
+		if intensity < 0 {
+			// Empty/placeholder days
+			return .clear
+		} else if intensity == 0 {
+			// No usage days
+			return Color.accentColor.opacity(0.1)
+		} else {
+			// Usage days with intensity scaling
+			return Color.accentColor.opacity(0.2 + (intensity * 0.8))
 		}
 	}
 }
