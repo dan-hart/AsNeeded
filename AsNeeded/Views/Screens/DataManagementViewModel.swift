@@ -25,6 +25,7 @@ final class DataManagementViewModel: ObservableObject {
   @Published var alertMessage: String?
   @Published var showingAlert = false
   @Published var logCount: Int = 0
+  @Published var isLoadingLogCount = false
   
   init(dataStore: DataStore = .shared) {
 	self.dataStore = dataStore
@@ -35,6 +36,16 @@ final class DataManagementViewModel: ObservableObject {
   
   func fetchLogCount() async {
 	logger.debug("Fetching log count")
+	await MainActor.run {
+	  self.isLoadingLogCount = true
+	}
+	
+	defer {
+	  Task { @MainActor in
+		self.isLoadingLogCount = false
+	  }
+	}
+	
 	if #available(iOS 15.0, *) {
 	  let count = await DHLoggingKit.exporter.getLogCount(timeInterval: 86400) // Last 24 hours
 	  await MainActor.run {

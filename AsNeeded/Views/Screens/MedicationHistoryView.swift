@@ -169,7 +169,8 @@ struct MedicationHistoryView: View {
                 }
                 .navigationTitle("History")
                 .onAppear {
-                    if viewModel.selectedMedicationID == nil {
+                    // If no medication is selected or the selected medication no longer exists
+                    if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
                         viewModel.selectedMedicationID = viewModel.medications.first?.id
                     }
                 }

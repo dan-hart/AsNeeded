@@ -2,18 +2,30 @@
 // Computes usage trends and metrics for a selected medication.
 
 import Foundation
+import SwiftUI
 import ANModelKit
 
 @MainActor
 final class MedicationTrendsViewModel: ObservableObject {
-	@Published var selectedMedicationID: UUID?
+	@AppStorage("trendsSelectedMedicationID") var selectedMedicationIDString: String = ""
+	
+	var selectedMedicationID: UUID? {
+		get {
+			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
+		}
+		set {
+			selectedMedicationIDString = newValue?.uuidString ?? ""
+		}
+	}
 
 	private let dataStore: DataStore
 	private let calendar = Calendar.current
 
 	init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
 		self.dataStore = dataStore
-		self.selectedMedicationID = selectedMedicationID
+		if let initialID = selectedMedicationID {
+			self.selectedMedicationID = initialID
+		}
 	}
 
 	var medications: [ANMedicationConcept] { dataStore.medications }

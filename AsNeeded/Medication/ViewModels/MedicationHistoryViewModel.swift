@@ -2,17 +2,29 @@
 // View model for presenting and mutating medication dose history.
 
 import Foundation
+import SwiftUI
 import ANModelKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
-	@Published var selectedMedicationID: UUID?
+	@AppStorage("historySelectedMedicationID") var selectedMedicationIDString: String = ""
+	
+	var selectedMedicationID: UUID? {
+		get {
+			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
+		}
+		set {
+			selectedMedicationIDString = newValue?.uuidString ?? ""
+		}
+	}
 
 	private let dataStore: DataStore
 
 	init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
 		self.dataStore = dataStore
-		self.selectedMedicationID = selectedMedicationID
+		if let initialID = selectedMedicationID {
+			self.selectedMedicationID = initialID
+		}
 	}
 
 	var medications: [ANMedicationConcept] { dataStore.medications }
