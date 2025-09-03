@@ -8,10 +8,14 @@ import SFSafeSymbols
 struct MedicationDetailView: View {
 	var medication: ANMedicationConcept
 	@StateObject private var viewModel = MedicationDetailViewModel()
+	@StateObject private var notificationManager = NotificationManager.shared
 	@Environment(\.dismiss) private var dismiss
 	@State private var showDeleteConfirm = false
 	@State private var showLogDose = false
 	@State private var showEditSheet = false
+	@State private var showReminderSheet = false
+	@State private var showReminderList = false
+	@State private var reminderCount = 0
 	
 	// Edit mode state
 	@State private var isEditing = false
@@ -200,6 +204,33 @@ struct MedicationDetailView: View {
 				}
 				.frame(maxWidth: .infinity, alignment: .center)
 			}
+			
+			if notificationManager.authorizationStatus == .authorized {
+				Section("Reminders") {
+					if reminderCount > 0 {
+						HStack {
+							Label("Active Reminders", systemSymbol: .bell)
+							Spacer()
+							Text("\(reminderCount)")
+								.foregroundStyle(.secondary)
+							Image(systemSymbol: .chevronRight)
+								.font(.caption)
+								.foregroundStyle(.secondary)
+						}
+						.contentShape(Rectangle())
+						.onTapGesture {
+							showReminderList = true
+						}
+					}
+					
+					Button {
+						showReminderSheet = true
+					} label: {
+						Label("Set New Reminder", systemSymbol: .bellBadge)
+							.frame(maxWidth: .infinity, alignment: .center)
+					}
+				}
+			}
 		}
 		.navigationTitle("Details")
 		.toolbar {
@@ -245,6 +276,36 @@ struct MedicationDetailView: View {
 					showEditSheet = false
 				}
 			)
+		}
+		.sheet(isPresented: $showReminderSheet) {
+			if notificationManager.authorizationStatus == .authorized {
+				ReminderConfigurationView(medication: medication)
+					.onDisappear {
+						Task {
+							await loadReminderCount()
+						}
+					}
+			}
+		}
+		.sheet(isPresented: $showReminderList) {
+			ReminderListView(medication: medication)
+				.onDisappear {
+					Task {
+						await loadReminderCount()
+					}
+				}
+		}
+		.task {
+			if notificationManager.authorizationStatus == .authorized {
+				await loadReminderCount()
+			}
+		}
+	}
+	
+	private func loadReminderCount() async {
+		let reminders = await notificationManager.getReminderDetails(for: medication)
+		await MainActor.run {
+			reminderCount = reminders.count
 		}
 	}
 }
