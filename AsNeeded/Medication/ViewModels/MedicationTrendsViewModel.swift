@@ -84,5 +84,51 @@ final class MedicationTrendsViewModel: ObservableObject {
 		guard avg > 0 else { return nil }
 		return Int((qty / avg).rounded())
 	}
+	
+	// Calendar heatmap data for the last N days
+	func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
+		guard let unit = preferredUnit else { return [] }
+		
+		let endDate = calendar.startOfDay(for: Date())
+		let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: endDate) ?? endDate
+		
+		// Create all days in the range
+		var allDays: [Date] = []
+		var currentDate = startDate
+		while currentDate <= endDate {
+			allDays.append(currentDate)
+			currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
+		}
+		
+		// Group events by day
+		let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
+		
+		// Calculate max total for intensity scaling
+		let allTotals = grouped.values.map { dayEvents in
+			dayEvents.compactMap { ev -> Double? in
+				guard let dose = ev.dose, dose.unit == unit else { return nil }
+				return dose.amount
+			}.reduce(0, +)
+		}
+		let maxTotal = allTotals.max() ?? 1
+		
+		// Create calendar days with usage data
+		return allDays.map { day in
+			let dayEvents = grouped[day] ?? []
+			let total = dayEvents.compactMap { ev -> Double? in
+				guard let dose = ev.dose, dose.unit == unit else { return nil }
+				return dose.amount
+			}.reduce(0, +)
+			
+			let intensity = maxTotal > 0 ? total / maxTotal : 0
+			return CalendarDay(date: day, total: total, intensity: intensity)
+		}
+	}
+}
+
+struct CalendarDay {
+	let date: Date
+	let total: Double
+	let intensity: Double // 0.0 to 1.0 for color intensity
 }
 

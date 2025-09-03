@@ -10,6 +10,8 @@ import SFSafeSymbols
 import HealthKit
 
 struct ContentView: View {
+	@AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
+	
 	var body: some View {
 		ZStack {
 			TabView {
@@ -30,6 +32,9 @@ struct ContentView: View {
 						Label("Settings", systemSymbol: .gearshape)
 					}
 			}
+		}
+		.fullScreenCover(isPresented: .constant(!hasSeenWelcome)) {
+			WelcomeView()
 		}
 	}
 }
