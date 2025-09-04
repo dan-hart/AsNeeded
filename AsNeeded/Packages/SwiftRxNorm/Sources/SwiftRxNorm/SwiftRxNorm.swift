@@ -7,10 +7,13 @@ import Foundation
 @MainActor
 public struct RxNormClient {
 	/// Base URL for all RxNorm REST API endpoints to simplify URL construction and maintenance.
-	private static let baseURL = "https://rxnav.nlm.nih.gov/REST/"
+	private static let baseURL = RxNormConstants.apiBaseURL
 	
 	@MainActor
 	public let network: RxNormNetworking
+	
+	/// Cache for search results
+	private let cache = RxNormCache()
 	
 	/// Creates a new instance of `RxNormClient` with the given networking implementation.
 	/// - Parameter network: The networking layer to use. Defaults to `URLSession.shared`.
@@ -18,7 +21,155 @@ public struct RxNormClient {
 		self.network = network
 	}
 
-	// MARK: - Suggestions / Approximate Search
+	// MARK: - Enhanced Search and Autocomplete
+	
+	/// Performs an optimized autocomplete search for drug names
+	/// - Parameters:
+	///   - query: The partial drug name to search for
+	///   - options: Search options (defaults to autocomplete-optimized settings)
+	/// - Returns: Autocomplete results with suggestions
+	@MainActor
+	public func autocomplete(_ query: String, options: SearchOptions = .autocomplete) async throws -> AutocompleteResult {
+		let startTime = Date()
+		
+		// Check cache first
+		let cacheKey = RxNormCache.key(for: query, options: options)
+		if let cached = cache.get(cacheKey) {
+			let searchTime = Date().timeIntervalSince(startTime)
+			return AutocompleteResult(
+				suggestions: Array(cached.prefix(options.maxResults)),
+				hasMore: cached.count > options.maxResults,
+				query: query,
+				searchTime: searchTime
+			)
+		}
+		
+		// Perform search
+		let results = try await enhancedSearch(query, options: options)
+		
+		// Cache results
+		cache.set(cacheKey, results: results)
+		
+		let searchTime = Date().timeIntervalSince(startTime)
+		return AutocompleteResult(
+			suggestions: Array(results.prefix(options.maxResults)),
+			hasMore: results.count > options.maxResults,
+			query: query,
+			searchTime: searchTime
+		)
+	}
+	
+	/// Performs an enhanced search with fuzzy matching and scoring
+	/// - Parameters:
+	///   - query: The drug name to search for
+	///   - options: Search options for customizing behavior
+	/// - Returns: Array of search results with relevance scores
+	@MainActor
+	public func enhancedSearch(_ query: String, options: SearchOptions = .comprehensive) async throws -> [RxNormSearchResult] {
+		var allResults: [RxNormSearchResult] = []
+		let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+		
+		// Apply common corrections first
+		let corrections = FuzzyMatcher.applyCommonCorrections(normalizedQuery)
+		var queriesToSearch = [normalizedQuery] + corrections
+		
+		// Search with direct match first (highest priority)
+		if let directResults = try? await fetchDrugsByName(normalizedQuery) {
+			for drug in directResults {
+				let score = FuzzyMatcher.score(normalizedQuery, drug.name)
+				let isExact = drug.name.lowercased() == normalizedQuery.lowercased()
+				allResults.append(RxNormSearchResult(
+					drug: drug,
+					score: isExact ? 1.0 : score,
+					source: .direct,
+					isExactMatch: isExact,
+					matchedTerm: normalizedQuery
+				))
+			}
+		}
+		
+		// Search with approximate matching if enabled
+		if options.includeApproximate {
+			if let approxResults = try? await fetchApproximateTerms(normalizedQuery) {
+				for drug in approxResults {
+					let score = FuzzyMatcher.score(normalizedQuery, drug.name) * 0.9 // Slightly lower score for approximate
+					allResults.append(RxNormSearchResult(
+						drug: drug,
+						score: score,
+						source: .approximate,
+						isExactMatch: false,
+						matchedTerm: normalizedQuery
+					))
+				}
+			}
+		}
+		
+		// Search with spelling corrections if enabled
+		if options.includeSpellingCorrections {
+			if let spellings = try? await getSpellingSuggestions(normalizedQuery) {
+				for spelling in spellings.prefix(3) {
+					if !queriesToSearch.contains(spelling) {
+						queriesToSearch.append(spelling)
+						if let spellResults = try? await fetchDrugsByName(spelling) {
+							for drug in spellResults {
+								let score = FuzzyMatcher.score(normalizedQuery, drug.name) * 0.8 // Lower score for spelling corrections
+								allResults.append(RxNormSearchResult(
+									drug: drug,
+									score: score,
+									source: .spellingSuggestion,
+									isExactMatch: false,
+									matchedTerm: spelling
+								))
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		// Search common corrections
+		for correction in corrections {
+			if let correctionResults = try? await fetchDrugsByName(correction) {
+				for drug in correctionResults {
+					let score = FuzzyMatcher.score(normalizedQuery, drug.name) * 0.85
+					allResults.append(RxNormSearchResult(
+						drug: drug,
+						score: score,
+						source: .spellingSuggestion,
+						isExactMatch: false,
+						matchedTerm: correction
+					))
+				}
+			}
+		}
+		
+		// Remove duplicates based on rxCUI, keeping highest score
+		var seenDrugs: [String: RxNormSearchResult] = [:]
+		for result in allResults {
+			if let existing = seenDrugs[result.drug.rxCUI] {
+				if result.score > existing.score {
+					seenDrugs[result.drug.rxCUI] = result
+				}
+			} else {
+				seenDrugs[result.drug.rxCUI] = result
+			}
+		}
+		
+		var uniqueResults = Array(seenDrugs.values)
+		
+		// Filter by minimum score
+		uniqueResults = uniqueResults.filter { $0.score >= options.minScore }
+		
+		// Sort by relevance if requested
+		if options.sortByRelevance {
+			uniqueResults.sort { $0.score > $1.score }
+		}
+		
+		// Limit results
+		return Array(uniqueResults.prefix(options.maxResults))
+	}
+	
+	// MARK: - Legacy Methods (Kept for backward compatibility)
 
 	/// Returns fuzzy suggestions for a term using RxNorm's approximateTerm endpoint.
 	@MainActor

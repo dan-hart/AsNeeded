@@ -18,14 +18,16 @@ struct EnhancedMedicationSearchField: View {
 	let onMedicationSelected: ((clinicalName: String, nickname: String)) -> Void
 	
 	@StateObject private var searchService = MedicationSearchService.shared
-	@State private var suggestions: [RxNormDrug] = []
+	@State private var suggestions: [RxNormSearchResult] = []
 	@State private var showSuggestions = false
 	@State private var isSearching = false
 	@State private var searchTask: Task<Void, Never>?
 	@State private var isQuickMedicationsExpanded = false
+	@State private var selectedMedication: RxNormDrug?
+	@State private var animateSelection = false
 	@FocusState private var isFocused: Bool
 	
-	private let debounceDelay: TimeInterval = 0.3
+	private let debounceDelay: TimeInterval = 0.2
 	
 	// MARK: - Body
 
@@ -73,9 +75,12 @@ struct EnhancedMedicationSearchField: View {
 					.frame(width: 20, height: 20)
 			} else if !text.isEmpty {
 				Button(action: {
-					text = ""
-					suggestions = []
-					showSuggestions = false
+					withAnimation(.easeInOut(duration: 0.2)) {
+						text = ""
+						suggestions = []
+						showSuggestions = false
+						selectedMedication = nil
+					}
 				}) {
 					Image(systemSymbol: .xmarkCircleFill)
 						.foregroundColor(.gray)
@@ -88,13 +93,18 @@ struct EnhancedMedicationSearchField: View {
 		.padding(.vertical, 12)
 		.background(
 			RoundedRectangle(cornerRadius: 12)
-				.fill(Color(.systemGray6))
+				.fill(animateSelection ? Color.accentColor.opacity(0.1) : Color(.systemGray6))
 				.overlay(
 					RoundedRectangle(cornerRadius: 12)
-						.stroke(isFocused ? Color.accentColor.opacity(0.5) : Color.clear, lineWidth: 2)
+						.stroke(
+							animateSelection ? Color.accentColor : 
+							(isFocused ? Color.accentColor.opacity(0.5) : Color.clear),
+							lineWidth: animateSelection ? 2.5 : 2
+						)
 				)
 		)
 		.animation(.easeInOut(duration: 0.2), value: isFocused)
+		.animation(.spring(response: 0.3, dampingFraction: 0.7), value: animateSelection)
 	}
 	
 	private var suggestionsOverlay: some View {
@@ -153,7 +163,7 @@ struct EnhancedMedicationSearchField: View {
 					icon: .starFill,
 					iconColor: .orange,
 					action: {
-						selectDrug(drug)
+						selectDrug(drug, nickname: drug.name)
 					}
 				)
 			}
@@ -164,8 +174,8 @@ struct EnhancedMedicationSearchField: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 0) {
 				sectionHeader("Search Results")
-				ForEach(suggestions, id: \.rxCUI) { drug in
-					drugResultRow(drug)
+				ForEach(suggestions, id: \.drug.rxCUI) { result in
+					drugResultRow(result)
 				}
 			}
 		}
@@ -252,24 +262,56 @@ struct EnhancedMedicationSearchField: View {
 		.buttonStyle(SuggestionButtonStyle())
 	}
 	
-	private func drugResultRow(_ drug: RxNormDrug) -> some View {
-		Button(action: { selectDrug(drug) }) {
+	private func drugResultRow(_ result: RxNormSearchResult) -> some View {
+		Button(action: { selectDrug(result.drug, nickname: result.drug.name) }) {
 			HStack(spacing: 12) {
-				Image(systemSymbol: .pillsFill)
-					.font(.system(size: 16))
-					.foregroundColor(.accentColor)
-					.frame(width: 24)
-				
-				VStack(alignment: .leading, spacing: 2) {
-					Text(drug.name)
-						.font(.body)
-						.foregroundColor(.primary)
-						.lineLimit(2)
-						.multilineTextAlignment(.leading)
+				// Icon with relevance indicator
+				ZStack {
+					Image(systemSymbol: .pillsFill)
+						.font(.system(size: 16))
+						.foregroundColor(.accentColor)
 					
-					Text("RxCUI: \(drug.rxCUI)")
-						.font(.caption)
-						.foregroundColor(.secondary)
+					if result.score >= 0.95 {
+						Image(systemSymbol: .checkmarkCircleFill)
+							.font(.system(size: 10))
+							.foregroundColor(.green)
+							.offset(x: 8, y: -8)
+					}
+				}
+				.frame(width: 24)
+				
+				VStack(alignment: .leading, spacing: 3) {
+					HStack(spacing: 6) {
+						Text(result.drug.name)
+							.font(.body)
+							.foregroundColor(.primary)
+							.lineLimit(2)
+							.multilineTextAlignment(.leading)
+						
+						if result.isExactMatch {
+							Text("EXACT")
+								.font(.system(size: 9, weight: .bold))
+								.foregroundColor(.white)
+								.padding(.horizontal, 4)
+								.padding(.vertical, 2)
+								.background(Capsule().fill(Color.green))
+						}
+					}
+					
+					HStack(spacing: 8) {
+						Text("RxCUI: \(result.drug.rxCUI)")
+							.font(.caption)
+							.foregroundColor(.secondary)
+						
+						// Relevance score indicator
+						HStack(spacing: 2) {
+							ForEach(0..<5) { i in
+								Circle()
+									.fill(Double(i) < result.score * 5 ? Color.accentColor : Color.gray.opacity(0.3))
+									.frame(width: 4, height: 4)
+							}
+						}
+					}
 				}
 				
 				Spacer()
@@ -277,10 +319,16 @@ struct EnhancedMedicationSearchField: View {
 				Image(systemSymbol: .plusCircleFill)
 					.font(.system(size: 20))
 					.foregroundColor(.accentColor)
+					.rotationEffect(.degrees(selectedMedication?.rxCUI == result.drug.rxCUI ? 45 : 0))
+					.animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedMedication?.rxCUI == result.drug.rxCUI)
 			}
 			.padding(.horizontal, 16)
 			.padding(.vertical, 10)
 			.contentShape(Rectangle())
+			.background(
+				selectedMedication?.rxCUI == result.drug.rxCUI ?
+				Color.accentColor.opacity(0.08) : Color.clear
+			)
 		}
 		.buttonStyle(SuggestionButtonStyle())
 	}
@@ -391,15 +439,30 @@ struct EnhancedMedicationSearchField: View {
 		
 		let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
 		
+		// Reset selection if text changes after selection
+		if selectedMedication != nil && text != selectedMedication?.name {
+			selectedMedication = nil
+			animateSelection = false
+		}
+		
 		if trimmed.isEmpty {
 			suggestions = []
-			showSuggestions = true
+			showSuggestions = isFocused
 			isSearching = false
 			return
 		}
 		
-		// Show instant suggestions from cache
-		suggestions = searchService.getSuggestions(for: trimmed)
+		// Show instant suggestions from cache (convert to RxNormSearchResult)
+		let cachedDrugs = searchService.getSuggestions(for: trimmed)
+		suggestions = cachedDrugs.map { drug in
+			RxNormSearchResult(
+				drug: drug,
+				score: 0.8,
+				source: .direct,
+				isExactMatch: false,
+				matchedTerm: drug.name
+			)
+		}
 		showSuggestions = true
 		
 		// Debounced API search
@@ -417,7 +480,8 @@ struct EnhancedMedicationSearchField: View {
 			isSearching = true
 		}
 		
-		let results = await searchService.searchMedications(query)
+		// Use enhanced search for better results with scoring
+		let results = await searchService.searchMedicationsEnhanced(query)
 		
 		await MainActor.run {
 			self.suggestions = results
@@ -426,11 +490,30 @@ struct EnhancedMedicationSearchField: View {
 		}
 	}
 	
-	private func selectDrug(_ drug: RxNormDrug) {
+	private func selectDrug(_ drug: RxNormDrug, nickname: String) {
+		// Animate selection
+		withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+			selectedMedication = drug
+			animateSelection = true
+		}
+		
+		// Update text
 		text = drug.name
-		showSuggestions = false
-		suggestions = []
-		isFocused = false
+		
+		// Call callback with both clinical name and nickname
+		onMedicationSelected((clinicalName: drug.name, nickname: nickname))
+		
+		// Delay hiding suggestions to show selection animation
+		Task {
+			try? await Task.sleep(for: .milliseconds(300))
+			await MainActor.run {
+				showSuggestions = false
+				suggestions = []
+				isFocused = false
+				animateSelection = false
+			}
+		}
+		
 		searchTask?.cancel()
 	}
 }

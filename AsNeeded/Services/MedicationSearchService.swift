@@ -16,6 +16,8 @@ final class MedicationSearchService: ObservableObject {
 	@Published private(set) var isSearching = false
 	@Published private(set) var recentSearches: [String] = []
 	@Published private(set) var popularMedications: [RxNormDrug] = []
+	@Published private(set) var searchResults: [RxNormSearchResult] = []
+	@Published private(set) var autocompleteResults: AutocompleteResult?
 	
 	private let client = RxNormClient()
 	private var searchCache = NSCache<NSString, CacheEntry>()
@@ -23,12 +25,14 @@ final class MedicationSearchService: ObservableObject {
 	private let userDefaults = UserDefaults.standard
 	
 	private class CacheEntry {
-		let drugs: [RxNormDrug]
+		let results: [RxNormSearchResult]
+		let drugs: [RxNormDrug] // Keep for backward compatibility
 		let timestamp: Date
 		let searchTerm: String
 		
-		init(drugs: [RxNormDrug], searchTerm: String) {
-			self.drugs = drugs
+		init(results: [RxNormSearchResult], searchTerm: String) {
+			self.results = results
+			self.drugs = results.map { $0.drug }
 			self.timestamp = Date()
 			self.searchTerm = searchTerm
 		}
@@ -78,6 +82,12 @@ final class MedicationSearchService: ObservableObject {
 	
 	/// Searches for medications with intelligent caching and fallback strategies
 	func searchMedications(_ query: String) async -> [RxNormDrug] {
+		let results = await searchMedicationsEnhanced(query)
+		return results.map { $0.drug }
+	}
+	
+	/// Enhanced search using new SwiftRxNorm APIs with fuzzy matching and scoring
+	func searchMedicationsEnhanced(_ query: String) async -> [RxNormSearchResult] {
 		let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 		
 		// Return empty for very short queries
@@ -89,7 +99,8 @@ final class MedicationSearchService: ObservableObject {
 		let cacheKey = trimmedQuery.lowercased() as NSString
 		if let cachedEntry = searchCache.object(forKey: cacheKey),
 		   !cachedEntry.isExpired {
-			return cachedEntry.drugs
+			searchResults = cachedEntry.results
+			return cachedEntry.results
 		}
 		
 		// Cancel previous search
@@ -100,38 +111,99 @@ final class MedicationSearchService: ObservableObject {
 		defer { isSearching = false }
 		
 		do {
-			// Use comprehensive search for better results
-			let results = try await client.comprehensiveSearch(trimmedQuery)
+			// Use enhanced search with fuzzy matching for better results
+			let results = try await client.enhancedSearch(trimmedQuery, options: .comprehensive)
 			
 			// Cache results
-			let entry = CacheEntry(drugs: results, searchTerm: trimmedQuery)
-			searchCache.setObject(entry, forKey: cacheKey, cost: MemoryLayout<RxNormDrug>.size * results.count)
+			let entry = CacheEntry(results: results, searchTerm: trimmedQuery)
+			searchCache.setObject(entry, forKey: cacheKey, cost: MemoryLayout<RxNormSearchResult>.size * results.count)
 			
 			// Save to recent searches if we got results
 			if !results.isEmpty {
 				saveRecentSearch(trimmedQuery)
 			}
 			
+			searchResults = results
 			return results
 		} catch {
 			// On error, try to find similar cached results
-			return findSimilarCachedResults(for: trimmedQuery)
+			return findSimilarCachedResultsEnhanced(for: trimmedQuery)
+		}
+	}
+	
+	/// Optimized autocomplete using new SwiftRxNorm API
+	func autocomplete(_ query: String) async -> AutocompleteResult? {
+		let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+		
+		// Return empty for very short queries
+		guard trimmedQuery.count >= 2 else {
+			return nil
+		}
+		
+		// Cancel previous search
+		searchTask?.cancel()
+		
+		// Perform autocomplete
+		isSearching = true
+		defer { isSearching = false }
+		
+		do {
+			// Use optimized autocomplete API
+			let result = try await client.autocomplete(trimmedQuery, options: .autocomplete)
+			autocompleteResults = result
+			
+			// Save to recent searches if we got results
+			if !result.suggestions.isEmpty {
+				saveRecentSearch(trimmedQuery)
+			}
+			
+			return result
+		} catch {
+			// Return nil on error
+			return nil
 		}
 	}
 	
 	/// Finds similar results from cache when API fails
 	private func findSimilarCachedResults(for query: String) -> [RxNormDrug] {
+		let results = findSimilarCachedResultsEnhanced(for: query)
+		return results.map { $0.drug }
+	}
+	
+	/// Enhanced version that returns RxNormSearchResult with scoring
+	private func findSimilarCachedResultsEnhanced(for query: String) -> [RxNormSearchResult] {
 		let normalizedQuery = query.lowercased()
-		var results: [RxNormDrug] = []
+		var results: [RxNormSearchResult] = []
 		
 		// First check popular medications
-		results = popularMedications.filter { drug in
-			drug.name.lowercased().contains(normalizedQuery)
+		let popularMatches = popularMedications.compactMap { drug -> RxNormSearchResult? in
+			let nameLower = drug.name.lowercased()
+			if nameLower.contains(normalizedQuery) {
+				// Calculate a simple relevance score
+				let score: Double
+				if nameLower == normalizedQuery {
+					score = 1.0
+				} else if nameLower.hasPrefix(normalizedQuery) {
+					score = 0.9
+				} else {
+					score = 0.7
+				}
+				return RxNormSearchResult(
+					drug: drug,
+					score: score,
+					source: .direct,
+					isExactMatch: nameLower == normalizedQuery,
+					matchedTerm: drug.name
+				)
+			}
+			return nil
 		}
 		
-		// If we found popular matches, return them
+		results.append(contentsOf: popularMatches)
+		
+		// If we found popular matches, return them sorted by score
 		if !results.isEmpty {
-			return results
+			return results.sorted { $0.score > $1.score }
 		}
 		
 		// Check recent searches for partial matches
@@ -141,14 +213,19 @@ final class MedicationSearchService: ObservableObject {
 				let cacheKey = recentTerm.lowercased() as NSString
 				if let cachedEntry = searchCache.object(forKey: cacheKey),
 				   !cachedEntry.isExpired {
-					results.append(contentsOf: cachedEntry.drugs.filter { drug in
-						drug.name.lowercased().contains(normalizedQuery)
-					})
+					let matches = cachedEntry.results.filter { result in
+						result.drug.name.lowercased().contains(normalizedQuery)
+					}
+					results.append(contentsOf: matches)
 				}
 			}
 		}
 		
-		return Array(Set(results)).sorted { $0.name < $1.name }
+		// Remove duplicates and sort by score
+		let uniqueResults = Dictionary(grouping: results) { $0.drug.rxCUI }
+			.compactMap { $0.value.max(by: { $0.score < $1.score }) }
+		
+		return uniqueResults.sorted { $0.score > $1.score }
 	}
 	
 	/// Returns suggestions based on partial input
