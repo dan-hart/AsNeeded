@@ -2,7 +2,7 @@
 //  WCSender.swift
 //  WristAsNeeded Watch App
 //
-//  Created by AsNeeded Team on 9/24/24.
+//  Created by Dan Hart on 9/24/24.
 //
 
 import WatchConnectivity
