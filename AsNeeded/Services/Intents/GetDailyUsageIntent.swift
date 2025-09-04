@@ -32,12 +32,12 @@ struct GetDailyUsageIntent: AppIntent {
 			logger.info("Searching for medication by name for daily usage: \(name)")
 			guard let foundMedication = findBestMatch(for: name) else {
 				logger.warning("No medication found matching: \(name)")
-				return .result(dialog: "I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first.")
+				return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
 			}
 			targetMedication = foundMedication
 		} else {
 			logger.warning("No medication specified for daily usage query")
-			return .result(dialog: "Please specify which medication you'd like to check usage for.")
+			return .result(dialog: IntentDialog("Please specify which medication you'd like to check usage for."))
 		}
 		
 		// Calculate today's usage
@@ -47,7 +47,7 @@ struct GetDailyUsageIntent: AppIntent {
 		
 		if todayUsage.totalAmount == 0 {
 			logger.info("No usage found today for \(targetMedication.displayName)")
-			return .result(dialog: "You haven't taken any \(medicationDisplayName) today.")
+			return .result(dialog: IntentDialog("You haven't taken any \(medicationDisplayName) today."))
 		}
 		
 		// Format the response based on the unit and amount
@@ -66,7 +66,7 @@ struct GetDailyUsageIntent: AppIntent {
 		}
 		
 		logger.info("Daily usage for \(targetMedication.displayName): \(amount) \(unit.displayName) in \(doseCount) doses")
-		return .result(dialog: responseText)
+		return .result(dialog: IntentDialog(stringLiteral: responseText))
 	}
 	
 	/// Calculate today's total usage for a medication
@@ -80,7 +80,7 @@ struct GetDailyUsageIntent: AppIntent {
 		let todayEvents = DataStore.shared.events.filter { event in
 			guard event.eventType == .doseTaken,
 				  event.medication?.id == medication.id,
-				  let dose = event.dose else {
+				  event.dose != nil else {
 				return false
 			}
 			return event.date >= today && event.date < tomorrow
@@ -116,7 +116,7 @@ struct GetDailyUsageIntent: AppIntent {
 	@MainActor
 	private func findBestMatch(for name: String) -> ANMedicationConcept? {
 		let medications = DataStore.shared.medications
-		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndPunctuations)
+		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 		
 		// Exact match on clinical name or nickname
 		if let exactMatch = medications.first(where: { medication in
@@ -136,9 +136,9 @@ struct GetDailyUsageIntent: AppIntent {
 		
 		// Fuzzy matching for common variations
 		return medications.first { medication in
-			let clinicalWords = medication.clinicalName.lowercased().components(separatedBy: .whitespacesAndPunctuations)
-			let nicknameWords = medication.nickname?.lowercased().components(separatedBy: .whitespacesAndPunctuations) ?? []
-			let searchWords = searchName.components(separatedBy: .whitespacesAndPunctuations)
+			let clinicalWords = medication.clinicalName.lowercased().components(separatedBy: .whitespacesAndNewlines)
+			let nicknameWords = medication.nickname?.lowercased().components(separatedBy: .whitespacesAndNewlines) ?? []
+			let searchWords = searchName.components(separatedBy: .whitespacesAndNewlines)
 			
 			return searchWords.allSatisfy { searchWord in
 				clinicalWords.contains { $0.hasPrefix(searchWord) } ||

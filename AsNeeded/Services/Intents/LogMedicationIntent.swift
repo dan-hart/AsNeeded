@@ -38,12 +38,12 @@ struct LogMedicationIntent: AppIntent {
 			logger.info("Searching for medication by name: \(name)")
 			guard let foundMedication = findBestMatch(for: name) else {
 				logger.warning("No medication found matching: \(name)")
-				return .result(dialog: "I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first.")
+				return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
 			}
 			targetMedication = foundMedication
 		} else {
 			logger.warning("No medication specified")
-			return .result(dialog: "Please specify which medication you'd like to log.")
+			return .result(dialog: IntentDialog("Please specify which medication you'd like to log."))
 		}
 		
 		// Use provided unit or fall back to medication's prescribed unit or default
@@ -79,11 +79,11 @@ struct LogMedicationIntent: AppIntent {
 			let unitText = selectedUnit.displayName
 			let medicationText = targetMedication.nickname?.isEmpty == false ? targetMedication.nickname! : targetMedication.clinicalName
 			
-			return .result(dialog: "Logged \(amountText) \(unitText) of \(medicationText)")
+			return .result(dialog: IntentDialog("Logged \(amountText) \(unitText) of \(medicationText)"))
 			
 		} catch {
 			logger.error("Failed to log medication dose: \(error.localizedDescription)")
-			return .result(dialog: "Sorry, I couldn't log your medication. Please try again or open AsNeeded manually.")
+			return .result(dialog: IntentDialog("Sorry, I couldn't log your medication. Please try again or open AsNeeded manually."))
 		}
 	}
 	
@@ -91,7 +91,7 @@ struct LogMedicationIntent: AppIntent {
 	@MainActor
 	private func findBestMatch(for name: String) -> ANMedicationConcept? {
 		let medications = DataStore.shared.medications
-		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndPunctuations)
+		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 		
 		// Exact match on clinical name or nickname
 		if let exactMatch = medications.first(where: { medication in
@@ -111,9 +111,9 @@ struct LogMedicationIntent: AppIntent {
 		
 		// Fuzzy matching for common variations
 		return medications.first { medication in
-			let clinicalWords = medication.clinicalName.lowercased().components(separatedBy: .whitespacesAndPunctuations)
-			let nicknameWords = medication.nickname?.lowercased().components(separatedBy: .whitespacesAndPunctuations) ?? []
-			let searchWords = searchName.components(separatedBy: .whitespacesAndPunctuations)
+			let clinicalWords = medication.clinicalName.lowercased().components(separatedBy: .whitespacesAndNewlines)
+			let nicknameWords = medication.nickname?.lowercased().components(separatedBy: .whitespacesAndNewlines) ?? []
+			let searchWords = searchName.components(separatedBy: .whitespacesAndNewlines)
 			
 			return searchWords.allSatisfy { searchWord in
 				clinicalWords.contains { $0.hasPrefix(searchWord) } ||
@@ -127,50 +127,41 @@ struct LogMedicationIntent: AppIntent {
 
 @available(iOS 16.0, *)
 struct AsNeededShortcuts: AppShortcutsProvider {
+	@AppShortcutsBuilder
 	static var appShortcuts: [AppShortcut] {
-		[
-			AppShortcut(
-				intent: LogMedicationIntent(),
-				phrases: [
-					"Log medication in \(.applicationName)",
-					"Take medication with \(.applicationName)", 
-					"Record dose in \(.applicationName)",
-					"Log \(\.$medication) in \(.applicationName)",
-					"I took \(\.$medication) in \(.applicationName)",
-					"Record \(\.$amount) \(\.$medication) in \(.applicationName)",
-					"Log my \(\.$medicationName) in \(.applicationName)",
-					"I took \(\.$medicationName) in \(.applicationName)",
-					"Record \(\.$amount) \(\.$medicationName) in \(.applicationName)"
-				],
-				shortTitle: "Log Medication",
-				systemImageName: "pills.fill"
-			),
-			AppShortcut(
-				intent: ListMedicationsIntent(),
-				phrases: [
-					"List my medications in \(.applicationName)",
-					"Show my medications in \(.applicationName)",
-					"What medications do I have in \(.applicationName)",
-					"My medication list in \(.applicationName)"
-				],
-				shortTitle: "List Medications",
-				systemImageName: "list.bullet"
-			),
-			AppShortcut(
-				intent: GetDailyUsageIntent(),
-				phrases: [
-					"How much \(\.$medication) have I taken today in \(.applicationName)",
-					"How much \(\.$medicationName) have I taken today in \(.applicationName)",
-					"What's my daily usage of \(\.$medication) in \(.applicationName)",
-					"What's my daily usage of \(\.$medicationName) in \(.applicationName)",
-					"Check my \(\.$medication) usage today in \(.applicationName)",
-					"Check my \(\.$medicationName) usage today in \(.applicationName)",
-					"How many \(\.$medication) today in \(.applicationName)",
-					"How many \(\.$medicationName) today in \(.applicationName)"
-				],
-				shortTitle: "Check Daily Usage",
-				systemImageName: "chart.bar.fill"
-			)
-		]
+		AppShortcut(
+			intent: LogMedicationIntent(),
+			phrases: [
+				"Log medication in \(.applicationName)",
+				"Take medication with \(.applicationName)", 
+				"Record dose in \(.applicationName)",
+				"Log \(\.$medication) in \(.applicationName)",
+				"I took \(\.$medication) in \(.applicationName)"
+			],
+			shortTitle: "Log Medication",
+			systemImageName: "pills.fill"
+		)
+		AppShortcut(
+			intent: ListMedicationsIntent(),
+			phrases: [
+				"List my medications in \(.applicationName)",
+				"Show my medications in \(.applicationName)",
+				"What medications do I have in \(.applicationName)",
+				"My medication list in \(.applicationName)"
+			],
+			shortTitle: "List Medications",
+			systemImageName: "list.bullet"
+		)
+		AppShortcut(
+			intent: GetDailyUsageIntent(),
+			phrases: [
+				"How much \(\.$medication) have I taken today in \(.applicationName)",
+				"What's my daily usage of \(\.$medication) in \(.applicationName)",
+				"Check my \(\.$medication) usage today in \(.applicationName)",
+				"How many \(\.$medication) today in \(.applicationName)"
+			],
+			shortTitle: "Check Daily Usage",
+			systemImageName: "chart.bar.fill"
+		)
 	}
 }

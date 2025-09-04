@@ -22,7 +22,7 @@ struct ListMedicationsIntent: AppIntent {
 		
 		guard !medications.isEmpty else {
 			logger.info("No medications found")
-			return .result(dialog: "You don't have any medications added to AsNeeded yet. Open the app to add your first medication.")
+			return .result(dialog: IntentDialog("You don't have any medications added to AsNeeded yet. Open the app to add your first medication."))
 		}
 		
 		logger.info("Found \(medications.count) medications")
@@ -32,11 +32,11 @@ struct ListMedicationsIntent: AppIntent {
 		
 		if medications.count == 1 {
 			let medication = sortedMedications[0]
-			return .result(dialog: "You have one medication: \(medication.displayName)")
+			return .result(dialog: IntentDialog("You have one medication: \(medication.displayName)"))
 		} else {
 			let medicationNames = sortedMedications.map { $0.displayName }
 			let medicationList = formatMedicationList(medicationNames)
-			return .result(dialog: "You have \(medications.count) medications: \(medicationList)")
+			return .result(dialog: IntentDialog("You have \(medications.count) medications: \(medicationList)"))
 		}
 	}
 	
