@@ -69,11 +69,11 @@ struct WelcomeView: View {
   
   private var developerSection: some View {
 	VStack(alignment: .leading, spacing: 12) {
-	  Text("Made by the AsNeeded Team")
+	  Text("Built by Contributors")
 		.font(.title2)
 		.fontWeight(.semibold)
 	  
-	  Text("We are developers passionate about privacy-focused healthcare apps. We believe technology should serve people, not exploit them.")
+	  Text("An open source project by developers passionate about privacy-focused healthcare. We believe technology should serve people, not exploit them.")
 		.font(.body)
 		.foregroundStyle(.secondary)
 	}
