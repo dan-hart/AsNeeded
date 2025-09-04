@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  AsNeeded
 //
-//  Created by Dan Hart on 10/6/22.
+//  Created by AsNeeded Team on 10/6/22.
 //
 
 import SwiftUI
