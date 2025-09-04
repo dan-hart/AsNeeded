@@ -73,11 +73,11 @@ struct AboutView: View {
   private var developerAndSupportSection: some View {
 	VStack(alignment: .leading, spacing: 16) {
 	  VStack(alignment: .leading, spacing: 8) {
-		Text("Made by Dan Hart")
+		Text("Made by the AsNeeded Team")
 		  .font(.title2)
 		  .fontWeight(.semibold)
 		
-		Text("An iOS developer passionate about privacy-focused healthcare apps. I believe technology should serve people, not exploit them.")
+		Text("We are developers passionate about privacy-focused healthcare apps. We believe technology should serve people, not exploit them.")
 		  .font(.body)
 		  .foregroundStyle(.secondary)
 		
@@ -87,7 +87,7 @@ struct AboutView: View {
 			  HStack(spacing: 6) {
 				Image(systemSymbol: .atCircle)
 				  .font(.subheadline)
-				Text("Mastodon")
+				Text("Developer on Mastodon")
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
@@ -100,7 +100,7 @@ struct AboutView: View {
 			  HStack(spacing: 6) {
 				Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 				  .font(.subheadline)
-				Text("GitHub")
+				Text("Developer on GitHub")
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
