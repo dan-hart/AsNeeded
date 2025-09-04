@@ -27,7 +27,7 @@ struct EnhancedMedicationSearchField: View {
 	@State private var animateSelection = false
 	@FocusState private var isFocused: Bool
 	
-	private let debounceDelay: TimeInterval = 0.2
+	private let debounceDelay: TimeInterval = 0.5 // Increased to prevent flashing
 	
 	// MARK: - Body
 
@@ -69,6 +69,14 @@ struct EnhancedMedicationSearchField: View {
 					showSuggestions = false
 				}
 			
+			// AI indicator when available
+			if #available(iOS 26.0, *), !text.isEmpty {
+				Image(systemSymbol: .sparkles)
+					.font(.caption)
+					.foregroundStyle(.tint)
+					.symbolEffect(.pulse, options: .repeating, value: isSearching)
+			}
+			
 			if isSearching {
 				ProgressView()
 					.scaleEffect(0.8)
@@ -105,6 +113,7 @@ struct EnhancedMedicationSearchField: View {
 		)
 		.animation(.easeInOut(duration: 0.2), value: isFocused)
 		.animation(.spring(response: 0.3, dampingFraction: 0.7), value: animateSelection)
+		.aiEnhanced(isActive: true, label: "AI Parsing")
 	}
 	
 	private var suggestionsOverlay: some View {
@@ -334,101 +343,75 @@ struct EnhancedMedicationSearchField: View {
 	}
 	
 	private var quickMedicationCapsules: some View {
-		VStack(alignment: .leading, spacing: 8) {
-			Button(action: {
-				withAnimation(.easeInOut(duration: 0.3)) {
-					isQuickMedicationsExpanded.toggle()
-				}
-			}) {
-				HStack {
-					Text("Common As-Needed Medications")
-						.font(.caption)
-						.fontWeight(.semibold)
-						.foregroundColor(.secondary)
-						.textCase(.uppercase)
-					
-					Spacer()
-					
-					Image(systemSymbol: isQuickMedicationsExpanded ? .chevronUp : .chevronDown)
-						.font(.caption)
-						.foregroundColor(.secondary)
-						.rotationEffect(.degrees(isQuickMedicationsExpanded ? 0 : 0))
-				}
-			}
-			.buttonStyle(.plain)
+		VStack(alignment: .leading, spacing: 12) {
+			Text("Common Medications")
+				.font(.caption)
+				.fontWeight(.semibold)
+				.foregroundColor(.secondary)
+				.textCase(.uppercase)
 			
-			if isQuickMedicationsExpanded {
-				LazyVGrid(columns: [
-					GridItem(.flexible(), spacing: 6),
-					GridItem(.flexible(), spacing: 6),
-					GridItem(.flexible(), spacing: 6)
-				], spacing: 8) {
-					ForEach(commonAsNeededMedications, id: \.clinicalName) { medication in
-						medicationCapsule(medication)
-					}
+			// Simplified grid with just the most common medications
+			LazyVGrid(columns: [
+				GridItem(.flexible(), spacing: 8),
+				GridItem(.flexible(), spacing: 8)
+			], spacing: 8) {
+				ForEach(simplifiedCommonMedications, id: \.clinicalName) { medication in
+					simplifiedMedicationButton(medication)
 				}
-				.transition(.asymmetric(
-					insertion: .opacity.combined(with: .move(edge: .top)),
-					removal: .opacity
-				))
 			}
 		}
 	}
 	
-	private func medicationCapsule(_ medication: CommonMedication) -> some View {
+	private func simplifiedMedicationButton(_ medication: CommonMedication) -> some View {
 		Button(action: {
-			text = medication.clinicalName
-			onMedicationSelected((clinicalName: medication.clinicalName, nickname: medication.brandName))
+			// Set the simplified clinical name
+			let simplifiedName = MedicationNameSimplifier.simplifyName(medication.clinicalName)
+			text = simplifiedName
+			
+			// Get brand name or use simplified name as nickname
+			let nickname = MedicationNameSimplifier.getCommonBrandName(for: simplifiedName) ?? medication.brandName
+			
+			onMedicationSelected((clinicalName: simplifiedName, nickname: nickname))
 			showSuggestions = false
 			isFocused = false
 		}) {
-			Text(medication.brandName)
-				.font(.caption)
-				.fontWeight(.semibold)
-				.foregroundColor(.white)
-				.padding(.horizontal, 10)
-				.padding(.vertical, 6)
-				.lineLimit(1)
-				.minimumScaleFactor(0.8)
-				.background(
-					Capsule()
-						.fill(
-							LinearGradient(
-								colors: [.accentColor.opacity(0.9), .accentColor.opacity(0.7)],
-								startPoint: .topLeading,
-								endPoint: .bottomTrailing
-							)
-						)
-						.overlay(
-							Capsule()
-								.stroke(Color.white.opacity(0.2), lineWidth: 1)
-						)
-						.shadow(color: .accentColor.opacity(0.4), radius: 3, x: 0, y: 2)
-				)
+			HStack(spacing: 4) {
+				Image(systemSymbol: .pillsFill)
+					.font(.system(size: 12))
+				
+				Text(medication.brandName)
+					.font(.system(size: 13, weight: .medium))
+					.lineLimit(1)
+			}
+			.foregroundColor(.primary)
+			.frame(maxWidth: .infinity)
+			.padding(.horizontal, 12)
+			.padding(.vertical, 10)
+			.background(
+				RoundedRectangle(cornerRadius: 8)
+					.fill(Color(.systemGray6))
+					.overlay(
+						RoundedRectangle(cornerRadius: 8)
+							.stroke(Color(.systemGray4), lineWidth: 0.5)
+					)
+			)
 		}
-		.buttonStyle(CapsuleButtonStyle())
-		.scaleEffect(text == medication.clinicalName ? 1.05 : 1.0)
-		.animation(.spring(response: 0.3, dampingFraction: 0.6), value: text == medication.clinicalName)
+		.buttonStyle(.plain)
+		.scaleEffect(text == medication.clinicalName ? 0.95 : 1.0)
+		.animation(.easeInOut(duration: 0.1), value: text == medication.clinicalName)
 	}
 	
-	private var commonAsNeededMedications: [CommonMedication] {
+	// Simplified list with just the most common medications
+	private var simplifiedCommonMedications: [CommonMedication] {
 		[
 			CommonMedication(clinicalName: "Acetaminophen", brandName: "Tylenol"),
 			CommonMedication(clinicalName: "Ibuprofen", brandName: "Advil"),
-			CommonMedication(clinicalName: "Ibuprofen", brandName: "Motrin"),
 			CommonMedication(clinicalName: "Aspirin", brandName: "Aspirin"),
 			CommonMedication(clinicalName: "Diphenhydramine", brandName: "Benadryl"),
 			CommonMedication(clinicalName: "Loratadine", brandName: "Claritin"),
 			CommonMedication(clinicalName: "Cetirizine", brandName: "Zyrtec"),
-			CommonMedication(clinicalName: "Pseudoephedrine", brandName: "Sudafed"),
 			CommonMedication(clinicalName: "Calcium Carbonate", brandName: "Tums"),
-			CommonMedication(clinicalName: "Bismuth Subsalicylate", brandName: "Pepto-Bismol"),
-			CommonMedication(clinicalName: "Loperamide", brandName: "Imodium"),
-			CommonMedication(clinicalName: "Aluminum/Magnesium Hydroxide", brandName: "Mylanta"),
-			CommonMedication(clinicalName: "Albuterol", brandName: "ProAir"),
-			CommonMedication(clinicalName: "Acetaminophen/Aspirin/Caffeine", brandName: "Excedrin"),
-			CommonMedication(clinicalName: "Guaifenesin", brandName: "Mucinex"),
-			CommonMedication(clinicalName: "Dextromethorphan", brandName: "Robitussin")
+			CommonMedication(clinicalName: "Loperamide", brandName: "Imodium")
 		]
 	}
 	
@@ -452,18 +435,10 @@ struct EnhancedMedicationSearchField: View {
 			return
 		}
 		
-		// Show instant suggestions from cache (convert to RxNormSearchResult)
-		let cachedDrugs = searchService.getSuggestions(for: trimmed)
-		suggestions = cachedDrugs.map { drug in
-			RxNormSearchResult(
-				drug: drug,
-				score: 0.8,
-				source: .direct,
-				isExactMatch: false,
-				matchedTerm: drug.name
-			)
-		}
+		// Don't show cached suggestions immediately - wait for debounce
+		// This prevents flashing of temporary results
 		showSuggestions = true
+		isSearching = true // Show loading state during debounce
 		
 		// Debounced API search
 		searchTask = Task {
@@ -471,6 +446,26 @@ struct EnhancedMedicationSearchField: View {
 			
 			guard !Task.isCancelled else { return }
 			
+			// Show cached suggestions first if available
+			let cachedDrugs = searchService.getSuggestions(for: trimmed)
+			if !cachedDrugs.isEmpty {
+				await MainActor.run {
+					let simplifiedCached = cachedDrugs.map { drug in
+						let simplified = MedicationNameSimplifier.simplifyName(drug.name)
+						return RxNormSearchResult(
+							drug: RxNormDrug(rxCUI: drug.rxCUI, name: simplified),
+							score: 0.8,
+							source: .direct,
+							isExactMatch: false,
+							matchedTerm: simplified
+						)
+					}
+					suggestions = simplifiedCached
+					isSearching = false
+				}
+			}
+			
+			// Then perform actual search
 			await performSearch(trimmed)
 		}
 	}

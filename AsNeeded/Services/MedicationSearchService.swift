@@ -112,7 +112,21 @@ final class MedicationSearchService: ObservableObject {
 		
 		do {
 			// Use enhanced search with fuzzy matching for better results
-			let results = try await client.enhancedSearch(trimmedQuery, options: .comprehensive)
+			let rawResults = try await client.enhancedSearch(trimmedQuery, options: .comprehensive)
+			
+			// Process, simplify and sort results with intelligent prioritization
+			let sortedResults = await MedicationResultSorter.processAndSort(rawResults, for: trimmedQuery)
+			
+			// Deduplicate while preserving sort order
+			var seen = Set<String>()
+			let results = sortedResults.filter { result in
+				let key = result.drug.rxCUI
+				if seen.contains(key) {
+					return false
+				}
+				seen.insert(key)
+				return true
+			}
 			
 			// Cache results
 			let entry = CacheEntry(results: results, searchTerm: trimmedQuery)
@@ -150,14 +164,29 @@ final class MedicationSearchService: ObservableObject {
 		do {
 			// Use optimized autocomplete API
 			let result = try await client.autocomplete(trimmedQuery, options: .autocomplete)
-			autocompleteResults = result
+			
+			// Sort suggestions with start-of-string priority
+			let sortedSuggestions = MedicationResultSorter.sortResults(
+				result.suggestions,
+				for: trimmedQuery
+			)
+			
+			// Create new result with sorted suggestions
+			let sortedResult = AutocompleteResult(
+				suggestions: sortedSuggestions,
+				hasMore: result.hasMore,
+				query: result.query,
+				searchTime: result.searchTime
+			)
+			
+			autocompleteResults = sortedResult
 			
 			// Save to recent searches if we got results
-			if !result.suggestions.isEmpty {
+			if !sortedResult.suggestions.isEmpty {
 				saveRecentSearch(trimmedQuery)
 			}
 			
-			return result
+			return sortedResult
 		} catch {
 			// Return nil on error
 			return nil

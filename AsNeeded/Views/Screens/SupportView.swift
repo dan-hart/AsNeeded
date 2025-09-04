@@ -45,14 +45,19 @@ struct SupportView: View {
 	}
 	
 	private var supportOptionsSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
-			Text("Ways to Support")
-				.font(.title2)
-				.fontWeight(.semibold)
-			
-			VStack(spacing: 12) {
+		VStack(alignment: .leading, spacing: 20) {
+			// Buy Me a Coffee Section
+			VStack(alignment: .leading, spacing: 16) {
+				Text("Buy Me a Coffee")
+					.font(.title2)
+					.fontWeight(.semibold)
+				
 				buyMeACoffeeButton
+				
+				// Tip Jar under Buy Me a Coffee
 				tipJarGrid
+				
+				// Subscription Options under Tip Jar
 				subscriptionOptions
 			}
 		}
@@ -142,9 +147,10 @@ struct SupportView: View {
 	
 	private var tipJarGrid: some View {
 		VStack(alignment: .leading, spacing: 12) {
-			Text("Tip Jar")
+			Text("One-time Tips")
 				.font(.headline)
 				.fontWeight(.semibold)
+				.padding(.top, 8)
 			
 			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
 				ForEach(tipTiers, id: \.title) { tip in
@@ -156,9 +162,14 @@ struct SupportView: View {
 	
 	private var subscriptionOptions: some View {
 		VStack(alignment: .leading, spacing: 12) {
-			Text("Monthly Support")
+			Text("Monthly Subscriptions")
 				.font(.headline)
 				.fontWeight(.semibold)
+				.padding(.top, 8)
+			
+			Text("Ongoing support via Buy Me a Coffee")
+				.font(.caption)
+				.foregroundColor(.secondary)
 			
 			VStack(spacing: 8) {
 				ForEach(subscriptionTiers, id: \.title) { subscription in
@@ -199,12 +210,13 @@ private struct TipButton: View {
 					.font(.caption)
 					.fontWeight(.medium)
 					.multilineTextAlignment(.center)
+					.lineLimit(1)
 				
 				Text(tip.price)
 					.font(.caption2)
 					.foregroundColor(.secondary)
 			}
-			.frame(maxWidth: .infinity)
+			.frame(maxWidth: .infinity, minHeight: 100)
 			.padding(.vertical, 16)
 			.padding(.horizontal, 8)
 			.background(tip.color.opacity(0.1))
