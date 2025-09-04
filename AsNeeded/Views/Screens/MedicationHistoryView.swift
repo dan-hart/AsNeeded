@@ -8,6 +8,9 @@ struct MedicationHistoryView: View {
     @State private var logMedication: ANMedicationConcept?
     @State private var showSupportToast = false
     @State private var showSupportView = false
+    @State private var currentTime = Date()
+    
+    let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
     // MARK: - Private ViewBuilders
     
@@ -113,7 +116,7 @@ struct MedicationHistoryView: View {
         let cal = Calendar.current
         guard cal.isDateInToday(date) else { return nil }
         let diff = Int(Date().timeIntervalSince(date))
-        if diff <= 0 { return "0m ago" }
+        if diff <= 60 { return "Logged just now" }
         let mins = diff / 60
         if mins < 60 { return "\(mins)m ago" }
         let hrs = mins / 60
@@ -173,6 +176,9 @@ struct MedicationHistoryView: View {
                     if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
                         viewModel.selectedMedicationID = viewModel.medications.first?.id
                     }
+                }
+                .onReceive(timer) { _ in
+                    currentTime = Date()
                 }
                 .sheet(item: $logMedication) { med in
                     LogDoseView(medication: med) { dose, event in
