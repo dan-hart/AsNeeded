@@ -115,35 +115,6 @@ struct GetDailyUsageIntent: AppIntent {
 	/// Find the best matching medication for the given name
 	@MainActor
 	private func findBestMatch(for name: String) -> ANMedicationConcept? {
-		let medications = DataStore.shared.medications
-		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-		
-		// Exact match on clinical name or nickname
-		if let exactMatch = medications.first(where: { medication in
-			medication.clinicalName.lowercased() == searchName ||
-			(medication.nickname?.lowercased() == searchName)
-		}) {
-			return exactMatch
-		}
-		
-		// Partial match - contains the search term
-		if let partialMatch = medications.first(where: { medication in
-			medication.clinicalName.lowercased().contains(searchName) ||
-			(medication.nickname?.lowercased().contains(searchName) == true)
-		}) {
-			return partialMatch
-		}
-		
-		// Fuzzy matching for common variations
-		return medications.first { medication in
-			let clinicalWords = medication.clinicalName.lowercased().components(separatedBy: .whitespacesAndNewlines)
-			let nicknameWords = medication.nickname?.lowercased().components(separatedBy: .whitespacesAndNewlines) ?? []
-			let searchWords = searchName.components(separatedBy: .whitespacesAndNewlines)
-			
-			return searchWords.allSatisfy { searchWord in
-				clinicalWords.contains { $0.hasPrefix(searchWord) } ||
-				nicknameWords.contains { $0.hasPrefix(searchWord) }
-			}
-		}
+		return MedicationSearchUtility.findBestMatch(for: name)
 	}
 }
