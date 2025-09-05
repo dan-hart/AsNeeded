@@ -20,13 +20,45 @@ struct MedicationListView: View {
             ZStack(alignment: .top) {
                 Group {
                     if viewModel.items.isEmpty {
-                        VStack(spacing: 24) {
+                        VStack(spacing: 32) {
                             Spacer()
-                            Text("No medications found.")
-                                .foregroundStyle(.secondary)
                             
-                            SubtleSupportView(message: "Welcome! If As Needed helps you, consider supporting its development")
-                                .padding(.horizontal, 32)
+                            VStack(spacing: 16) {
+                                Image("Logo")
+                                    .resizable()
+                                    .frame(width: 80, height: 80)
+                                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                                
+                                VStack(spacing: 8) {
+                                    Text("Welcome to As Needed")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.primary)
+                                    
+                                    Text("Track your medications and view trends")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal, 24)
+                                }
+                            }
+                            
+                            Button(action: { showAddSheet = true }) {
+                                Label("Add Your First Medication", systemImage: "plus.circle.fill")
+                                    .font(.system(.headline, design: .rounded))
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 16)
+                                    .padding(.horizontal, 32)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.accentColor.gradient)
+                                    )
+                                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(.plain)
+                            .scaleEffect(1.0)
+                            .animation(.easeInOut(duration: 0.1), value: showAddSheet)
                             
                             Spacer()
                         }
