@@ -167,7 +167,7 @@ struct EnhancedMedicationSearchField: View {
 			ForEach(searchService.popularMedications.prefix(5), id: \.rxCUI) { drug in
 				suggestionRow(
 					title: drug.name,
-					subtitle: "RxCUI: \(drug.rxCUI)",
+					subtitle: nil,
 					icon: .starFill,
 					iconColor: .orange,
 					action: {
@@ -304,13 +304,6 @@ struct EnhancedMedicationSearchField: View {
 								.padding(.vertical, 2)
 								.background(Capsule().fill(Color.green))
 						}
-					}
-					
-					HStack(spacing: 8) {
-						Text("RxCUI: \(result.drug.rxCUI)")
-							.font(.caption)
-							.foregroundColor(.secondary)
-						
 					}
 				}
 				
