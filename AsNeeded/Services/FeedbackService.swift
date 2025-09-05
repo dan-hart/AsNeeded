@@ -27,6 +27,7 @@ enum FeedbackType {
         }
     }
     
+    @MainActor
     var emailBody: String {
         switch self {
         case .bug:
@@ -187,7 +188,8 @@ final class FeedbackService: NSObject, ObservableObject {
                 logsZipData = logData
             } else {
                 logInfo("Log export not available on this iOS version (requires iOS 15.0+)")
-                logsZipData = "Log export requires iOS 15.0 or later. This device is running iOS \(UIDevice.current.systemVersion).".data(using: .utf8)
+                let systemVersion = UIDevice.current.systemVersion
+                logsZipData = "Log export requires iOS 15.0 or later. This device is running iOS \(systemVersion).".data(using: .utf8)
             }
             showingMailComposer = true
             logInfo("Log collection completed successfully")
