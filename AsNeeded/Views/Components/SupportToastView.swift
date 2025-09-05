@@ -24,42 +24,96 @@ struct SupportToastView: View {
 	
 	var body: some View {
 		if isVisible {
-			VStack(spacing: 8) {
-				HStack {
+			GeometryReader { geometry in
+				VStack(spacing: 16) {
+					// Success indicator with animation
 					Image(systemSymbol: .checkmarkCircleFill)
-						.foregroundColor(.green)
+						.font(.system(size: 48))
+						.foregroundStyle(
+							LinearGradient(
+								colors: [.green, .green.opacity(0.8)],
+								startPoint: .topLeading,
+								endPoint: .bottomTrailing
+							)
+						)
+						.scaleEffect(isVisible ? 1.0 : 0.5)
+						.animation(.spring(response: 0.4, dampingFraction: 0.6), value: isVisible)
+					
+					// Main message
 					Text(message)
-						.font(.subheadline)
+						.font(.headline)
+						.fontWeight(.semibold)
 						.foregroundColor(.primary)
-					Spacer()
+						.multilineTextAlignment(.center)
+					
+					// Support button with enhanced styling
+					Button(action: onSupportTapped) {
+						HStack(spacing: 6) {
+							Image(systemSymbol: .heartFill)
+								.font(.system(size: 14))
+								.foregroundStyle(
+									LinearGradient(
+										colors: [.red, .pink],
+										startPoint: .top,
+										endPoint: .bottom
+									)
+								)
+							Text(supportMessage)
+								.font(.subheadline)
+								.fontWeight(.medium)
+								.foregroundColor(.accentColor)
+						}
+						.padding(.horizontal, 20)
+						.padding(.vertical, 10)
+						.background(
+							RoundedRectangle(cornerRadius: 10)
+								.fill(Color.accentColor.opacity(0.1))
+						)
+						.overlay(
+							RoundedRectangle(cornerRadius: 10)
+								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
+						)
+					}
+					.buttonStyle(.plain)
+					
+					// Dismiss button with proper tap target
 					Button(action: onDismiss) {
-						Image(systemSymbol: .xmark)
-							.font(.system(size: 12))
-							.foregroundColor(.secondary)
+						Image(systemSymbol: .xmarkCircleFill)
+							.font(.system(size: 24))
+							.foregroundStyle(.secondary)
+							.frame(width: 44, height: 44) // Minimum tap target
+							.contentShape(Rectangle())
 					}
+					.buttonStyle(.plain)
 				}
-				
-				Button(action: onSupportTapped) {
-					HStack(spacing: 4) {
-						Image(systemSymbol: .heart)
-							.font(.system(size: 10))
-							.foregroundColor(.red.opacity(0.7))
-						Text(supportMessage)
-							.font(.caption)
-							.foregroundColor(.accentColor)
-					}
-				}
-				.buttonStyle(.plain)
+				.padding(24)
+				.frame(maxWidth: 320)
+				.background(
+					RoundedRectangle(cornerRadius: 20)
+						.fill(.regularMaterial)
+						.shadow(color: .black.opacity(0.15), radius: 20, y: 10)
+						.overlay(
+							RoundedRectangle(cornerRadius: 20)
+								.strokeBorder(
+									LinearGradient(
+										colors: [.white.opacity(0.5), .clear],
+										startPoint: .topLeading,
+										endPoint: .bottomTrailing
+									),
+									lineWidth: 1
+								)
+						)
+				)
+				.position(
+					x: geometry.size.width / 2,
+					y: geometry.size.height / 2
+				)
+				.scaleEffect(isVisible ? 1.0 : 0.9)
+				.opacity(isVisible ? 1.0 : 0)
+				.animation(.spring(response: 0.3, dampingFraction: 0.8), value: isVisible)
 			}
-			.padding(.horizontal, 16)
-			.padding(.vertical, 12)
-			.background(
-				RoundedRectangle(cornerRadius: 12)
-					.fill(.regularMaterial)
-					.shadow(radius: 8)
-			)
-			.padding(.horizontal)
-			.transition(.move(edge: .top).combined(with: .opacity))
+			.transition(.opacity.combined(with: .scale))
+			.zIndex(999) // Ensure it appears above other content
 		}
 	}
 }
