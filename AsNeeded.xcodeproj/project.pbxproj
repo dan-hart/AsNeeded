@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77C82E6B92C5006A7439 /* ReceiptParser */; };
+		521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CA2E6B92C5006A7439 /* RevenueCat */; };
+		521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CC2E6B92C5006A7439 /* RevenueCatUI */; };
+		521B77CF2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */; };
+		521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 521B77D02E6B92D8006A7439 /* StoreKit.framework */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
 		5256E80A2E6B861D0072C6F0 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8062E6B861D0072C6F0 /* CLAUDE.md */; };
@@ -62,6 +67,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		521B77D02E6B92D8006A7439 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5256E8062E6B861D0072C6F0 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		5256E8072E6B861D0072C6F0 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
@@ -109,9 +115,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */,
+				521B77CF2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation in Frameworks */,
 				52C349AA2E552F980040CEB8 /* Boutique in Frameworks */,
+				521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */,
 				52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */,
+				521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */,
 				52F6AE322E67A9F6005CF0A1 /* DHLoggingKit in Frameworks */,
+				521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */,
 				52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 			);
@@ -164,6 +175,7 @@
 		52A28DC82A69CE7F008212BC /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				521B77D02E6B92D8006A7439 /* StoreKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -218,6 +230,10 @@
 				52DE375E2E5531B100DD3B1A /* ANModelKit */,
 				52DE37602E5531B100DD3B1A /* SwiftRxNorm */,
 				52F6AE312E67A9F6005CF0A1 /* DHLoggingKit */,
+				521B77C82E6B92C5006A7439 /* ReceiptParser */,
+				521B77CA2E6B92C5006A7439 /* RevenueCat */,
+				521B77CC2E6B92C5006A7439 /* RevenueCatUI */,
+				521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -280,6 +296,7 @@
 			packageReferences = (
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */,
+				521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -727,6 +744,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = exactVersion;
+				version = 5.37.0;
+			};
+		};
 		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
@@ -746,6 +771,26 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		521B77C82E6B92C5006A7439 /* ReceiptParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = ReceiptParser;
+		};
+		521B77CA2E6B92C5006A7439 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		521B77CC2E6B92C5006A7439 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
+		521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat_CustomEntitlementComputation;
+		};
 		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
