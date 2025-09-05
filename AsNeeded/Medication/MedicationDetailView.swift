@@ -233,6 +233,7 @@ struct MedicationDetailView: View {
 			}
 		}
 		.navigationTitle("Details")
+		.scrollDismissesKeyboard(.interactively)
 		.toolbar {
 			ToolbarItem(placement: .primaryAction) {
 				Button("Done") { dismiss() }

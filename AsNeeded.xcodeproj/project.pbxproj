@@ -10,7 +10,6 @@
 		521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77C82E6B92C5006A7439 /* ReceiptParser */; };
 		521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CA2E6B92C5006A7439 /* RevenueCat */; };
 		521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CC2E6B92C5006A7439 /* RevenueCatUI */; };
-		521B77CF2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */; };
 		521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 521B77D02E6B92D8006A7439 /* StoreKit.framework */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
@@ -116,7 +115,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */,
-				521B77CF2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation in Frameworks */,
 				52C349AA2E552F980040CEB8 /* Boutique in Frameworks */,
 				521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */,
 				52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */,
@@ -233,7 +231,6 @@
 				521B77C82E6B92C5006A7439 /* ReceiptParser */,
 				521B77CA2E6B92C5006A7439 /* RevenueCat */,
 				521B77CC2E6B92C5006A7439 /* RevenueCatUI */,
-				521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -785,11 +782,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
 			productName = RevenueCatUI;
-		};
-		521B77CE2E6B92C5006A7439 /* RevenueCat_CustomEntitlementComputation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
-			productName = RevenueCat_CustomEntitlementComputation;
 		};
 		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
