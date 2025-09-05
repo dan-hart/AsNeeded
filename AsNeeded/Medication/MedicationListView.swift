@@ -14,105 +14,19 @@ struct MedicationListView: View {
     @State private var pendingDelete: ANMedicationConcept?
     @State private var showSupportToast = false
     @State private var showSupportView = false
+    @State private var editMode: EditMode = .inactive
+    @AppStorage("medicationOrder") private var medicationOrder: [String] = []
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                Group {
-                    if viewModel.items.isEmpty {
-                        VStack(spacing: 32) {
-                            Spacer()
-                            
-                            VStack(spacing: 16) {
-                                Image("Logo")
-                                    .resizable()
-                                    .frame(width: 80, height: 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                                
-                                VStack(spacing: 8) {
-                                    Text("Welcome to As Needed")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.primary)
-                                    
-                                    Text("Track your medications and view trends")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                        .multilineTextAlignment(.center)
-                                        .padding(.horizontal, 24)
-                                }
-                            }
-                            
-                            Button(action: { showAddSheet = true }) {
-                                Label("Add Your First Medication", systemImage: "plus.circle.fill")
-                                    .font(.system(.headline, design: .rounded))
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                                    .padding(.vertical, 16)
-                                    .padding(.horizontal, 32)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .fill(Color.accentColor.gradient)
-                                    )
-                                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
-                            }
-                            .buttonStyle(.plain)
-                            .scaleEffect(1.0)
-                            .animation(.easeInOut(duration: 0.1), value: showAddSheet)
-                            
-                            Spacer()
-                        }
-                    } else {
-                        VStack(spacing: 0) {
-                            List {
-                                ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, med in
-                                    HStack {
-                                        MedicationRow(medication: med) {
-                                            logMedication = med
-                                        }
-                                    }
-                                    .contentShape(Rectangle())
-                                    .onTapGesture { viewMedication = med }
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        Button {
-                                            editMedication = med
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                        }
-                                        .tint(.accentColor)
-                                        
-                                        Button(role: .destructive) {
-                                            pendingDelete = med
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                    }
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                                    .listRowBackground(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(.secondarySystemGroupedBackground))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(Color(.separator).opacity(0.1), lineWidth: 0.5)
-                                            )
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 4)
-                                    )
-                                    .listRowSeparator(.hidden)
-                                }
-                            }
-                            .listStyle(.plain)
-                            .scrollContentBackground(.hidden)
-                            .background(Color(.systemGroupedBackground))
-                            
-                            SupportSuggestionView()
-                                .padding(.bottom, 16)
-                                .background(Color(.systemGroupedBackground))
-                        }
-                    }
-                }
+            mainContent
                 .navigationTitle("Medication")
                 .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        if !viewModel.items.isEmpty {
+                            EditButton()
+                        }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button(action: { showAddSheet = true }) {
                             Label("Add Medication", systemSymbol: .plus)
@@ -159,7 +73,7 @@ struct MedicationListView: View {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     showSupportToast = true
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         showSupportToast = false
                                     }
@@ -168,7 +82,23 @@ struct MedicationListView: View {
                         }
                     }
                     .presentationDetents([.medium, .large])
-                    
+                }
+                .alert("Delete Medication?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
+                    Button("Delete", role: .destructive) {
+                        if let med = pendingDelete {
+                            Task { await viewModel.delete(med); pendingDelete = nil }
+                        }
+                    }
+                    Button("Cancel", role: .cancel) { pendingDelete = nil }
+                } message: {
+                    Text("This action cannot be undone.")
+                }
+                .sheet(isPresented: $showSupportView) {
+                    NavigationView {
+                        SupportView()
+                    }
+                }
+                .overlay(alignment: .center) {
                     SupportToastView(
                         message: "Dose logged successfully",
                         supportMessage: "Support As Needed",
@@ -186,22 +116,160 @@ struct MedicationListView: View {
                         }
                     )
                 }
-                .alert("Delete Medication?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
-                    Button("Delete", role: .destructive) {
-                        if let med = pendingDelete {
-                            Task { await viewModel.delete(med); pendingDelete = nil }
-                        }
-                    }
-                    Button("Cancel", role: .cancel) { pendingDelete = nil }
-                } message: {
-                    Text("This action cannot be undone.")
-                }
-                .sheet(isPresented: $showSupportView) {
-                    NavigationView {
-                        SupportView()
-                    }
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    @ViewBuilder
+    private var mainContent: some View {
+        Group {
+            if viewModel.items.isEmpty {
+                emptyStateView
+            } else {
+                medicationListContent
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var emptyStateView: some View {
+        VStack(spacing: 32) {
+            Spacer()
+            
+            VStack(spacing: 16) {
+                Image("Logo")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                
+                VStack(spacing: 8) {
+                    Text("Welcome to As Needed")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    
+                    Text("Track your medications and view trends")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
             }
+            
+            Button(action: { showAddSheet = true }) {
+                Label("Add Your First Medication", systemImage: "plus.circle.fill")
+                    .font(.system(.headline, design: .rounded))
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.accentColor.gradient)
+                    )
+                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+            .scaleEffect(1.0)
+            .animation(.easeInOut(duration: 0.1), value: showAddSheet)
+            
+            Spacer()
+        }
+    }
+    
+    @ViewBuilder
+    private var medicationListContent: some View {
+        VStack(spacing: 0) {
+            List {
+                ForEach(sortedMedications, id: \.id) { med in
+                    HStack {
+                        MedicationRow(medication: med) {
+                            logMedication = med
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture { viewMedication = med }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button {
+                            editMedication = med
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.accentColor)
+                        
+                        Button(role: .destructive) {
+                            pendingDelete = med
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.secondarySystemGroupedBackground))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(.separator).opacity(0.1), lineWidth: 0.5)
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 4)
+                    )
+                    .listRowSeparator(.hidden)
+                }
+                .onMove(perform: moveMedications)
+                .onDelete(perform: deleteMedications)
+            }
+            .listStyle(.plain)
+            .environment(\.editMode, $editMode)
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemGroupedBackground))
+            
+            SupportSuggestionView()
+                .padding(.bottom, 16)
+                .background(Color(.systemGroupedBackground))
+        }
+    }
+    private var sortedMedications: [ANMedicationConcept] {
+        let items = viewModel.items
+        
+        // If we have no saved order, return items as-is
+        if medicationOrder.isEmpty {
+            return items
+        }
+        
+        // Sort based on saved order
+        var sorted: [ANMedicationConcept] = []
+        
+        // First add items in saved order
+        for id in medicationOrder {
+            if let med = items.first(where: { $0.id.uuidString == id }) {
+                sorted.append(med)
+            }
+        }
+        
+        // Then add any new items not in saved order
+        for item in items {
+            if !medicationOrder.contains(item.id.uuidString) {
+                sorted.append(item)
+            }
+        }
+        
+        return sorted
+    }
+    
+    // MARK: - Private Methods
+    private func moveMedications(from source: IndexSet, to destination: Int) {
+        var items = sortedMedications
+        items.move(fromOffsets: source, toOffset: destination)
+        medicationOrder = items.map { $0.id.uuidString }
+    }
+    
+    private func deleteMedications(at offsets: IndexSet) {
+        for index in offsets {
+            let med = sortedMedications[index]
+            Task { await viewModel.delete(med) }
+            medicationOrder.removeAll { $0 == med.id.uuidString }
         }
     }
 }
