@@ -38,6 +38,10 @@ struct MedicationEditView: View {
 
 	private var isFormValid: Bool { viewModel.isFormValid }
 	
+	private func hideKeyboard() {
+		UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+	}
+	
 	var body: some View {
 		NavigationStack {
 			Form {
@@ -102,12 +106,13 @@ struct MedicationEditView: View {
 						}
 						
 						HStack {
-							Button("-30") {
+							Button("-30d") {
 								let currentDate = viewModel.lastRefillDate ?? .now
 								viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
 							}
 							.buttonStyle(.bordered)
 							.controlSize(.small)
+							.accessibilityLabel("Subtract 30 days from last refill date")
 							
 							DatePicker(
 								"",
@@ -118,12 +123,13 @@ struct MedicationEditView: View {
 							.datePickerStyle(.compact)
 							.labelsHidden()
 							
-							Button("+30") {
+							Button("+30d") {
 								let currentDate = viewModel.lastRefillDate ?? .now
 								viewModel.lastRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
 							}
 							.buttonStyle(.bordered)
 							.controlSize(.small)
+							.accessibilityLabel("Add 30 days to last refill date")
 						}
 						
 						Button("Reset") {
@@ -151,12 +157,13 @@ struct MedicationEditView: View {
 						}
 						
 						HStack {
-							Button("-30") {
+							Button("-30d") {
 								let currentDate = viewModel.nextRefillDate ?? .now
 								viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: currentDate)
 							}
 							.buttonStyle(.bordered)
 							.controlSize(.small)
+							.accessibilityLabel("Subtract 30 days from next refill date")
 							
 							DatePicker(
 								"",
@@ -167,12 +174,13 @@ struct MedicationEditView: View {
 							.datePickerStyle(.compact)
 							.labelsHidden()
 							
-							Button("+30") {
+							Button("+30d") {
 								let currentDate = viewModel.nextRefillDate ?? .now
 								viewModel.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: currentDate)
 							}
 							.buttonStyle(.bordered)
 							.controlSize(.small)
+							.accessibilityLabel("Add 30 days to next refill date")
 						}
 						
 						Button("Reset") {
