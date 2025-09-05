@@ -3,11 +3,13 @@ import Foundation
 @testable import AsNeeded
 @testable import ANModelKit
 
+@MainActor
 struct MedicationListViewModelTests {
     
     
     @Test("View model initializes with empty items")
-    func viewModelEmptyState() {
+    @MainActor
+    func viewModelEmptyState() async {
         let viewModel = MedicationListViewModel()
         
         #expect(viewModel.items.isEmpty)
@@ -102,7 +104,7 @@ struct MedicationListViewModelTests {
     }
     
     @Test("Log button callback is invoked")
-    func logButtonCallback() async {
+    func logButtonCallback() {
         let medication = ANMedicationConcept(clinicalName: "Test Med")
         var wasCalled = false
         
