@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
+		5256E80A2E6B861D0072C6F0 /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8062E6B861D0072C6F0 /* AGENTS.md */; };
+		5256E80B2E6B861D0072C6F0 /* TERMS.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8082E6B861D0072C6F0 /* TERMS.md */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 		52A90B9A2E60F6C10016124C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B992E60F6C10016124C /* README.md */; };
 		52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B982E60F6C10016124C /* LICENSE.txt */; };
@@ -60,6 +63,9 @@
 
 /* Begin PBXFileReference section */
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5256E8062E6B861D0072C6F0 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		5256E8072E6B861D0072C6F0 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
+		5256E8082E6B861D0072C6F0 /* TERMS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TERMS.md; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52A90B982E60F6C10016124C /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		52A90B992E60F6C10016124C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -139,6 +145,9 @@
 				524942CB2CA2C999004DB0EC /* Recovered References */,
 				52A90B982E60F6C10016124C /* LICENSE.txt */,
 				52A90B992E60F6C10016124C /* README.md */,
+				5256E8062E6B861D0072C6F0 /* AGENTS.md */,
+				5256E8072E6B861D0072C6F0 /* PRIVACY.md */,
+				5256E8082E6B861D0072C6F0 /* TERMS.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -295,6 +304,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */,
+				5256E80A2E6B861D0072C6F0 /* AGENTS.md in Resources */,
+				5256E80B2E6B861D0072C6F0 /* TERMS.md in Resources */,
 				52A90B9A2E60F6C10016124C /* README.md in Resources */,
 				52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */,
 			);
