@@ -113,7 +113,6 @@ struct EnhancedMedicationSearchField: View {
 		)
 		.animation(.easeInOut(duration: 0.2), value: isFocused)
 		.animation(.spring(response: 0.3, dampingFraction: 0.7), value: animateSelection)
-		.aiEnhanced(isActive: true, label: "AI Parsing")
 	}
 	
 	private var suggestionsOverlay: some View {
@@ -312,14 +311,6 @@ struct EnhancedMedicationSearchField: View {
 							.font(.caption)
 							.foregroundColor(.secondary)
 						
-						// Relevance score indicator
-						HStack(spacing: 2) {
-							ForEach(0..<5) { i in
-								Circle()
-									.fill(Double(i) < result.score * 5 ? Color.accentColor : Color.gray.opacity(0.3))
-									.frame(width: 4, height: 4)
-							}
-						}
 					}
 				}
 				
