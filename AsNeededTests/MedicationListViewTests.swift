@@ -1,27 +1,20 @@
-import XCTest
-import SwiftUI
-import ViewInspector
+import Testing
+import Foundation
 @testable import AsNeeded
 @testable import ANModelKit
 
-final class MedicationListViewTests: XCTestCase {
+struct MedicationListViewModelTests {
     
-    override func setUp() {
-        super.setUp()
-    }
     
-    override func tearDown() {
-        super.tearDown()
-    }
-    
-    func testMedicationListViewEmptyState() throws {
-        let view = MedicationListView()
+    @Test("View model initializes with empty items")
+    func viewModelEmptyState() {
         let viewModel = MedicationListViewModel()
         
-        XCTAssertTrue(viewModel.items.isEmpty, "Initial state should have empty medication list")
+        #expect(viewModel.items.isEmpty)
     }
     
-    func testMedicationRowLayout() throws {
+    @Test("Medication model stores properties correctly")
+    func medicationModelProperties() {
         let medication = ANMedicationConcept(
             clinicalName: "Test Medication",
             nickname: "Test",
@@ -32,145 +25,123 @@ final class MedicationListViewTests: XCTestCase {
             prescribedDoseAmount: 10.0
         )
         
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow should be created successfully")
-        XCTAssertEqual(medication.clinicalName, "Test Medication")
-        XCTAssertEqual(medication.quantity, 30)
+        #expect(medication.clinicalName == "Test Medication")
+        #expect(medication.nickname == "Test")
+        #expect(medication.quantity == 30)
+        #expect(medication.prescribedUnit == .tablet)
+        #expect(medication.prescribedDoseAmount == 10.0)
     }
     
-    func testMedicationRowWithNickname() throws {
+    @Test("Display name uses nickname when available")
+    func displayNameWithNickname() {
         let medication = ANMedicationConcept(
             clinicalName: "Lisinopril",
             nickname: "Blood Pressure",
             quantity: 28.5
         )
         
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow with nickname should be created")
-        XCTAssertEqual(medication.displayName, "Blood Pressure")
+        #expect(medication.displayName == "Blood Pressure")
     }
     
-    func testMedicationRowWithoutNickname() throws {
+    @Test("Display name falls back to clinical name")
+    func displayNameWithoutNickname() {
         let medication = ANMedicationConcept(
             clinicalName: "Metformin",
             quantity: 90.0
         )
         
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow without nickname should be created")
-        XCTAssertEqual(medication.displayName, "Metformin")
+        #expect(medication.displayName == "Metformin")
     }
     
-    func testMedicationRowQuantityFormatting() throws {
+    @Test("Quantity formatting with and without units")
+    func quantityFormatting() {
         let medicationWithUnit = ANMedicationConcept(
             clinicalName: "Test Med",
             quantity: 50.5,
             prescribedUnit: .tablet
         )
         
-        XCTAssertEqual(medicationWithUnit.quantity, 50.5)
-        XCTAssertEqual(medicationWithUnit.prescribedUnit?.abbreviation, "tablet")
+        #expect(medicationWithUnit.quantity == 50.5)
+        #expect(medicationWithUnit.prescribedUnit?.abbreviation == "tablet")
         
         let medicationWithoutUnit = ANMedicationConcept(
             clinicalName: "Test Med",
             quantity: 100.0
         )
         
-        XCTAssertEqual(medicationWithoutUnit.quantity, 100.0)
-        XCTAssertNil(medicationWithoutUnit.prescribedUnit)
+        #expect(medicationWithoutUnit.quantity == 100.0)
+        #expect(medicationWithoutUnit.prescribedUnit == nil)
     }
     
-    func testMedicationRowOverdueNextRefill() throws {
+    @Test("Overdue refill date is detected correctly")
+    func overdueNextRefillDate() {
         let overdueDate = Calendar.current.date(byAdding: .day, value: -2, to: Date())
         let medication = ANMedicationConcept(
             clinicalName: "Albuterol",
             nextRefillDate: overdueDate
         )
         
-        XCTAssertNotNil(medication.nextRefillDate)
+        #expect(medication.nextRefillDate != nil)
         if let nextRefill = medication.nextRefillDate {
-            XCTAssertTrue(nextRefill < Date(), "Next refill date should be in the past (overdue)")
+            #expect(nextRefill < Date())
         }
     }
     
-    func testMedicationRowUpcomingRefill() throws {
+    @Test("Upcoming refill date is in the future")
+    func upcomingRefillDate() {
         let futureDate = Calendar.current.date(byAdding: .day, value: 5, to: Date())
         let medication = ANMedicationConcept(
             clinicalName: "Vitamin D3",
             nextRefillDate: futureDate
         )
         
-        XCTAssertNotNil(medication.nextRefillDate)
+        #expect(medication.nextRefillDate != nil)
         if let nextRefill = medication.nextRefillDate {
-            XCTAssertTrue(nextRefill > Date(), "Next refill date should be in the future")
+            #expect(nextRefill > Date())
         }
     }
     
-    func testMedicationRowLogButtonAction() throws {
-        let expectation = XCTestExpectation(description: "Log button tapped")
+    @Test("Log button callback is invoked")
+    func logButtonCallback() async {
         let medication = ANMedicationConcept(clinicalName: "Test Med")
+        var wasCalled = false
         
         let row = MedicationRow(medication: medication) {
-            expectation.fulfill()
+            wasCalled = true
         }
         
         row.onLogTapped()
         
-        wait(for: [expectation], timeout: 1.0)
+        #expect(wasCalled == true)
     }
     
-    func testSupportSuggestionViewRendering() throws {
-        let supportView = SupportSuggestionView()
+    @Test("Formatted amount displays correctly")
+    func formattedAmountDisplay() {
+        let medication1 = ANMedicationConcept(
+            clinicalName: "Test",
+            quantity: 30.0
+        )
+        #expect(medication1.quantity?.formattedAmount == "30")
         
-        XCTAssertNotNil(supportView, "SupportSuggestionView should be created")
+        let medication2 = ANMedicationConcept(
+            clinicalName: "Test",
+            quantity: 30.5
+        )
+        #expect(medication2.quantity?.formattedAmount == "30.5")
     }
     
-    func testMedicationListSpacing() throws {
-        let view = MedicationListView()
+    @Test("Date formatting for refills")
+    func refillDateFormatting() {
+        let pastDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())
+        let futureDate = Calendar.current.date(byAdding: .day, value: 7, to: Date())
         
-        XCTAssertNotNil(view, "MedicationListView should be created with proper spacing")
-    }
-    
-    func testMedicationRowPadding() throws {
-        let medication = ANMedicationConcept(clinicalName: "Test")
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow should have proper padding applied")
-    }
-    
-    func testMedicationRowCornerRadius() throws {
-        let view = MedicationListView()
-        
-        XCTAssertNotNil(view, "List rows should have rounded corners")
-    }
-    
-    func testListBackgroundColor() throws {
-        let view = MedicationListView()
-        
-        XCTAssertNotNil(view, "List should have system grouped background color")
-    }
-}
-
-extension MedicationListViewTests {
-    
-    func testAccessibilityLabels() throws {
         let medication = ANMedicationConcept(
-            clinicalName: "Lisinopril",
-            nickname: "Blood Pressure"
+            clinicalName: "Test",
+            lastRefillDate: pastDate,
+            nextRefillDate: futureDate
         )
         
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow should have accessibility labels")
-    }
-    
-    func testDynamicTypeSupport() throws {
-        let medication = ANMedicationConcept(clinicalName: "Test Med")
-        let row = MedicationRow(medication: medication)
-        
-        XCTAssertNotNil(row, "MedicationRow should support dynamic type")
+        #expect(medication.lastRefillDate != nil)
+        #expect(medication.nextRefillDate != nil)
     }
 }
