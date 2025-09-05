@@ -115,7 +115,9 @@ struct MedicationListView: View {
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button(action: { showAddSheet = true }) {
-                            Label("Add Medication", systemImage: "plus")
+                            Label("Add Medication", systemSymbol: .plus)
+                                .foregroundColor(.accentColor)
+                                .fontWeight(.medium)
                         }
                     }
                 }
