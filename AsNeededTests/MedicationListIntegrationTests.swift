@@ -4,10 +4,12 @@ import Combine
 @testable import AsNeeded
 @testable import ANModelKit
 
+@MainActor
 struct MedicationListViewModelOperationsTests {
     
     @Test("View model initializes correctly")
-    func viewModelInitialization() {
+    @MainActor
+    func viewModelInitialization() async {
         let viewModel = MedicationListViewModel()
         #expect(viewModel.items.isEmpty)
     }
@@ -125,7 +127,8 @@ struct MedicationListViewModelOperationsTests {
     }
     
     @Test("View model handles empty state")
-    func emptyStateHandling() {
+    @MainActor  
+    func emptyStateHandling() async {
         let viewModel = MedicationListViewModel()
         #expect(viewModel.items.isEmpty)
     }
@@ -147,6 +150,7 @@ struct MedicationListViewModelOperationsTests {
     }
 }
 
+@MainActor
 struct MedicationEventTests {
     
     @Test("Medication event stores dose information")
@@ -168,6 +172,7 @@ struct MedicationEventTests {
     }
     
     @Test("View model publishes items changes")
+    @MainActor
     func viewModelPublishesChanges() async {
         let viewModel = MedicationListViewModel()
         var cancellables = Set<AnyCancellable>()

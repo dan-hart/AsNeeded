@@ -43,7 +43,7 @@ struct SupportSuggestionView: View {
 				
 				Image(systemSymbol: .chevronRight)
 					.font(.caption)
-					.foregroundColor(.tertiary)
+					.foregroundColor(.secondary.opacity(0.5))
 			}
 			.padding(16)
 			.background(
