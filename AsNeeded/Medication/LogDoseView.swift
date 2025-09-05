@@ -3,6 +3,7 @@
 
 import SwiftUI
 import ANModelKit
+import SFSafeSymbols
 
 struct LogDoseView: View {
 	let medication: ANMedicationConcept
@@ -59,15 +60,22 @@ struct LogDoseView: View {
 			.navigationTitle("Log Dose")
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
-					Button("Cancel") { dismiss() }
+					Button(action: { dismiss() }) {
+						Image(systemSymbol: .xmark)
+					}
 				}
 				ToolbarItem(placement: .confirmationAction) {
-					Button("Log") {
+					Button(action: {
 						let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
 						let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: selectedDate)
 						onLog(dose, event)
 						dismiss()
+					}) {
+						Image(systemSymbol: .checkmark)
+							.bold()
 					}
+					.tint(.accentColor)
+					.buttonStyle(.borderedProminent)
 					.disabled(amount <= 0)
 				}
 			}
