@@ -9,6 +9,8 @@ struct SupportView: View {
 	@State private var showPurchaseAlert = false
 	@State private var alertTitle = ""
 	@State private var alertMessage = ""
+	@State private var showThankYouView = false
+	@State private var purchaseType: ThankYouView.PurchaseType?
 	
 	var body: some View {
 		NavigationView {
@@ -29,6 +31,12 @@ struct SupportView: View {
 				Button("OK", role: .cancel) {}
 			} message: {
 				Text(alertMessage)
+			}
+			.sheet(isPresented: $showThankYouView) {
+				if let purchaseType = purchaseType {
+					ThankYouView(purchaseType: purchaseType)
+						.environmentObject(FeedbackService.shared)
+				}
 			}
 			.disabled(isPurchasing)
 			.overlay {
@@ -149,7 +157,9 @@ struct SupportView: View {
 							 isPurchasing: $isPurchasing,
 							 showPurchaseAlert: $showPurchaseAlert,
 							 alertTitle: $alertTitle,
-							 alertMessage: $alertMessage)
+							 alertMessage: $alertMessage,
+							 showThankYouView: $showThankYouView,
+							 purchaseType: $purchaseType)
 				}
 			}
 		}
@@ -172,7 +182,9 @@ struct SupportView: View {
 									  isPurchasing: $isPurchasing,
 									  showPurchaseAlert: $showPurchaseAlert,
 									  alertTitle: $alertTitle,
-									  alertMessage: $alertMessage)
+									  alertMessage: $alertMessage,
+									  showThankYouView: $showThankYouView,
+									  purchaseType: $purchaseType)
 				}
 			}
 		}
@@ -226,6 +238,8 @@ private struct TipButton: View {
 	@Binding var showPurchaseAlert: Bool
 	@Binding var alertTitle: String
 	@Binding var alertMessage: String
+	@Binding var showThankYouView: Bool
+	@Binding var purchaseType: ThankYouView.PurchaseType?
 	
 	var body: some View {
 		Button {
@@ -236,14 +250,11 @@ private struct TipButton: View {
 				let success = await revenueCatManager.purchaseTip(tip.productId)
 				
 				if success {
-					alertTitle = "Thank You!"
-					alertMessage = "Your support means a lot! Thank you for your \(tip.title) tip."
+					purchaseType = .tip(amount: tip.price)
+					showThankYouView = true
 				} else if let error = revenueCatManager.purchaseError {
 					alertTitle = "Purchase Failed"
 					alertMessage = error
-				}
-				
-				if success || revenueCatManager.purchaseError != nil {
 					showPurchaseAlert = true
 				}
 			}
@@ -285,6 +296,8 @@ private struct SubscriptionButton: View {
 	@Binding var showPurchaseAlert: Bool
 	@Binding var alertTitle: String
 	@Binding var alertMessage: String
+	@Binding var showThankYouView: Bool
+	@Binding var purchaseType: ThankYouView.PurchaseType?
 	
 	var body: some View {
 		Button {
@@ -295,14 +308,11 @@ private struct SubscriptionButton: View {
 				let success = await revenueCatManager.purchaseSubscription(subscription.productId)
 				
 				if success {
-					alertTitle = "Welcome, \(subscription.title)!"
-					alertMessage = "Thank you for becoming a \(subscription.title)! Your monthly support helps keep As Needed free and open source."
+					purchaseType = .subscription(plan: subscription.title)
+					showThankYouView = true
 				} else if let error = revenueCatManager.purchaseError {
 					alertTitle = "Subscription Failed"
 					alertMessage = error
-				}
-				
-				if success || revenueCatManager.purchaseError != nil {
 					showPurchaseAlert = true
 				}
 			}
