@@ -87,7 +87,7 @@ struct ReminderListView: View {
         .font(.title2)
         .fontWeight(.semibold)
       
-      Text("You haven't set any reminders for \(medication.nickname ?? medication.clinicalName) yet.")
+      Text("You haven't set any reminders for \(medication.displayName) yet.")
         .font(.body)
         .foregroundColor(.secondary)
         .multilineTextAlignment(.center)
@@ -111,7 +111,7 @@ struct ReminderListView: View {
   }
   
   private func loadReminders() async {
-    logger.debug("Loading reminders for medication: \(medication.clinicalName)")
+    logger.debug("Loading reminders for medication: \(medication.displayName)")
     isLoading = true
     
     let reminderDetails = await notificationManager.getReminderDetails(for: medication)
@@ -132,7 +132,7 @@ struct ReminderListView: View {
   }
   
   private func clearAllReminders() async {
-    logger.info("Clearing all reminders for medication: \(medication.clinicalName)")
+    logger.info("Clearing all reminders for medication: \(medication.displayName)")
     
     await notificationManager.cancelReminder(for: medication)
     await loadReminders()

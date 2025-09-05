@@ -33,7 +33,7 @@ struct MedicationListView: View {
 								Button("Edit") {
 									editMedication = med
 								}
-								.tint(.blue)
+								.tint(.accentColor)
 								Button(role: .destructive) {
 									store.remove(med)
 								} label: {

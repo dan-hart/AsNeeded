@@ -100,7 +100,7 @@ struct DoseLoggerView: View {
 					}
 					.frame(maxWidth: .infinity)
 					.padding()
-					.background(isLogging ? Color.gray : Color.blue)
+					.background(isLogging ? Color.gray : Color.accentColor)
 					.foregroundColor(.white)
 					.cornerRadius(12)
 					.disabled(isLogging)

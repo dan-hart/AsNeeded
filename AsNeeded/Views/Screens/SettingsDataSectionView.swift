@@ -17,7 +17,7 @@ struct SettingsDataSectionView: View {
 		  Image(systemSymbol: .externaldriveConnectedToLineBelow)
 			.font(.system(size: 18, weight: .medium))
 			.frame(width: 24, height: 24)
-			.foregroundColor(.blue)
+			.foregroundColor(.accentColor)
 
 		  VStack(alignment: .leading, spacing: 2) {
 			Text("Data Management")

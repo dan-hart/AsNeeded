@@ -39,7 +39,7 @@ struct FeedbackButtonsView: View {
                 FeedbackButton(
                     title: "Feature Request",
                     icon: "lightbulb.fill",
-                    color: .blue,
+                    color: .accentColor,
                     isDisabled: isLoading,
                     action: { feedbackService.submitFeedback(type: .featureRequest) }
                 )
