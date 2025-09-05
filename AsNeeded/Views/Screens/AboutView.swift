@@ -28,7 +28,8 @@ struct AboutView: View {
 		
 		technicalInfoSection
 	  }
-	  .padding()
+	  .padding(.horizontal)
+	  .padding(.vertical)
 	  .navigationTitle("About")
 	}
   }

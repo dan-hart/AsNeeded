@@ -88,7 +88,8 @@ struct MedicationTrendsView: View {
 					}
 					.padding(.bottom, 16)
 				}
-				.padding()
+				.padding(.horizontal)
+				.padding(.vertical)
 			}
 			.navigationTitle("Trends")
 			.onAppear { 

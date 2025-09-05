@@ -15,7 +15,8 @@ struct SupportView: View {
 					
 					aboutOpenSourceSection
 				}
-				.padding()
+				.padding(.horizontal)
+				.padding(.vertical)
 			}
 			.navigationTitle("Support")
 			.navigationBarTitleDisplayMode(.large)

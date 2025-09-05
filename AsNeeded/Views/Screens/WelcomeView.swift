@@ -25,7 +25,8 @@ struct WelcomeView: View {
 		
 		continueSection
 	  }
-	  .padding()
+	  .padding(.horizontal)
+	  .padding(.vertical)
 	}
 	.navigationBarHidden(true)
   }
