@@ -11,7 +11,7 @@
 - `Package.swift`: Swift Package Manager configuration with full Apple platform support
 - `README.md`: Updated comprehensive documentation with accurate usage examples
 - `LICENSE`: GNU GPLv3 license
-- `AGENTS.md`: This file - development guidelines
+- `CLAUDE.md`: This file - development guidelines
 
 ## Build, Test, Run
 - **Build (CLI)**: `swift build`

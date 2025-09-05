@@ -46,18 +46,16 @@ struct SupportView: View {
 	
 	private var supportOptionsSection: some View {
 		VStack(alignment: .leading, spacing: 20) {
-			// Buy Me a Coffee Section
+			// Support Section
 			VStack(alignment: .leading, spacing: 16) {
-				Text("Buy Me a Coffee")
+				Text("Support Development")
 					.font(.title2)
 					.fontWeight(.semibold)
 				
-				buyMeACoffeeButton
-				
-				// Tip Jar under Buy Me a Coffee
+				// Tip Jar
 				tipJarGrid
 				
-				// Subscription Options under Tip Jar
+				// Subscription Options
 				subscriptionOptions
 			}
 		}
@@ -110,40 +108,6 @@ struct SupportView: View {
 		}
 	}
 	
-	private var buyMeACoffeeButton: some View {
-		Button {
-			if let url = URL(string: "https://buymeacoffee.com/codedbydan") {
-				openURL(url)
-			}
-		} label: {
-			HStack(spacing: 12) {
-				Image(systemSymbol: .cupAndSaucerFill)
-					.font(.title3)
-					.foregroundColor(.brown)
-				
-				VStack(alignment: .leading, spacing: 2) {
-					Text("Buy Me a Coffee")
-						.font(.headline)
-						.fontWeight(.semibold)
-						.foregroundColor(.primary)
-					
-					Text("Support development with a one-time donation")
-						.font(.subheadline)
-						.foregroundColor(.secondary)
-				}
-				
-				Spacer()
-				
-				Image(systemSymbol: .arrowUpRight)
-					.font(.caption)
-					.foregroundColor(.secondary)
-			}
-			.padding(16)
-			.background(.regularMaterial)
-			.cornerRadius(12)
-		}
-		.buttonStyle(.plain)
-	}
 	
 	private var tipJarGrid: some View {
 		VStack(alignment: .leading, spacing: 12) {
@@ -167,7 +131,7 @@ struct SupportView: View {
 				.fontWeight(.semibold)
 				.padding(.top, 8)
 			
-			Text("Ongoing support via Buy Me a Coffee")
+			Text("Ongoing support for development")
 				.font(.caption)
 				.foregroundColor(.secondary)
 			
