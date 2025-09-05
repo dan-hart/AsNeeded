@@ -5,10 +5,12 @@ import SFSafeSymbols
 
 struct MedicationHistoryView: View {
     @StateObject private var viewModel = MedicationHistoryViewModel()
+    @EnvironmentObject private var navigationManager: NavigationManager
     @State private var logMedication: ANMedicationConcept?
     @State private var showSupportToast = false
     @State private var showSupportView = false
     @State private var currentTime = Date()
+    @State private var scrollTarget: Date?
     
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
@@ -30,38 +32,48 @@ struct MedicationHistoryView: View {
     
     @ViewBuilder
     private func historyListView() -> some View {
-        List {
-            ForEach(viewModel.groupedHistory, id: \.day) { group in
-                Section(header: sectionHeader(for: group)) {
-                    ForEach(group.entries, id: \.id) { event in
-                        if let dose = event.dose {
-                            let unitName = dose.unit.abbreviation
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
-                                if let rel = relativeShortIfToday(event.date) {
-                                    Text(rel)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
+        ScrollViewReader { proxy in
+            List {
+                ForEach(viewModel.groupedHistory, id: \.day) { group in
+                    Section(header: sectionHeader(for: group)) {
+                        ForEach(group.entries, id: \.id) { event in
+                            if let dose = event.dose {
+                                let unitName = dose.unit.abbreviation
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
+                                    if let rel = relativeShortIfToday(event.date) {
+                                        Text(rel)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                            }
-                        } else {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(event.date.formatted(date: .omitted, time: .shortened))
-                                if let rel = relativeShortIfToday(event.date) {
-                                    Text(rel)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
+                            } else {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(event.date.formatted(date: .omitted, time: .shortened))
+                                    if let rel = relativeShortIfToday(event.date) {
+                                        Text(rel)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }
+                        .onDelete { indexSet in
+                            Task { await viewModel.deleteEvents(at: indexSet, in: group.day) }
+                        }
                     }
-                    .onDelete { indexSet in
-                        Task { await viewModel.deleteEvents(at: indexSet, in: group.day) }
+                    .id(group.day)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .onChange(of: scrollTarget) { _, newTarget in
+                if let target = newTarget {
+                    withAnimation {
+                        proxy.scrollTo(target, anchor: .top)
                     }
                 }
             }
         }
-        .listStyle(.insetGrouped)
     }
     
     // MARK: - Section Header Helpers
@@ -172,8 +184,16 @@ struct MedicationHistoryView: View {
                 }
                 .navigationTitle("History")
                 .onAppear {
-                    // If no medication is selected or the selected medication no longer exists
-                    if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
+                    // Handle navigation from trends
+                    if let targetDate = navigationManager.historyTargetDate {
+                        scrollTarget = Calendar.current.startOfDay(for: targetDate)
+                        if let medicationID = navigationManager.historyTargetMedicationID {
+                            viewModel.selectedMedicationID = UUID(uuidString: medicationID)
+                        }
+                        // Clear navigation state after use
+                        navigationManager.clearHistoryNavigation()
+                    } else if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
+                        // If no medication is selected or the selected medication no longer exists
                         viewModel.selectedMedicationID = viewModel.medications.first?.id
                     }
                 }

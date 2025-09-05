@@ -24,6 +24,7 @@ enum VisualizationType: String, CaseIterable {
 
 struct MedicationTrendsView: View {
 	@StateObject private var viewModel = MedicationTrendsViewModel()
+	@EnvironmentObject private var navigationManager: NavigationManager
 	@State private var daysWindow: Int = 14
 	@AppStorage("trendsVisualizationType") private var visualizationType: VisualizationType = .chart
 
@@ -214,6 +215,12 @@ struct MedicationTrendsView: View {
 				}
 				.frame(height: 280)
 				.padding(.horizontal, 4)
+				.onTapGesture {
+					// Navigate to history with the selected medication
+					if let medicationID = viewModel.selectedMedicationID {
+						navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+					}
+				}
 			}
 			.padding(16)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -233,7 +240,16 @@ struct MedicationTrendsView: View {
 					.font(.headline)
 					.fontWeight(.semibold)
 				
-				CalendarHeatmapGrid(data: data, daysWindow: daysWindow)
+				CalendarHeatmapGrid(
+					data: data,
+					daysWindow: daysWindow,
+					onDateTapped: { date in
+						// Navigate to history with selected date and medication
+						if let medicationID = viewModel.selectedMedicationID {
+							navigationManager.navigateToHistory(date: date, medicationID: medicationID.uuidString)
+						}
+					}
+				)
 			}
 			.padding(16)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -244,6 +260,7 @@ struct MedicationTrendsView: View {
 struct CalendarHeatmapGrid: View {
 	let data: [CalendarDay]
 	let daysWindow: Int
+	let onDateTapped: (Date) -> Void
 	private let calendar = Calendar.current
 	
 	// Calculate grid layout
@@ -276,6 +293,12 @@ struct CalendarHeatmapGrid: View {
 							RoundedRectangle(cornerRadius: 3)
 								.stroke(.secondary.opacity(0.2), lineWidth: 0.5)
 						)
+						.onTapGesture {
+							// Only navigate for actual dates, not padding
+							if day.intensity >= 0 {
+								onDateTapped(day.date)
+							}
+						}
 						.help(day.total > 0 ? 
 							  "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" : 
 							  "\(calendar.component(.day, from: day.date)): No doses")
