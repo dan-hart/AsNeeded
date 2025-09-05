@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "logo_v1-1024.png",
+      "filename" : "AsNeeded-iOS-Default-1024x1024@1x.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "asNeeded DARK logo_v1-1024.png",
+      "filename" : "AsNeeded-iOS-Dark-1024x1024@1x.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,13 +25,13 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "asNeeded DARK logo_v1-1024 1.png",
+      "filename" : "AsNeeded-iOS-Dark-1024x1024@1x 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
     },
     {
-      "filename" : "logo_v1-1024 1.png",
+      "filename" : "AsNeeded-watchOS-Default-1088x1088@1x.png",
       "idiom" : "universal",
       "platform" : "watchos",
       "size" : "1024x1024"
