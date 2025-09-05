@@ -6,36 +6,78 @@ struct SupportSuggestionView: View {
 		NavigationLink {
 			SupportView()
 		} label: {
-			HStack(spacing: 12) {
-				Image(systemSymbol: .heart)
-					.font(.system(size: 16, weight: .medium))
-					.foregroundColor(.red)
+			HStack(spacing: 14) {
+				ZStack {
+					Circle()
+						.fill(
+							LinearGradient(
+								colors: [Color.red.opacity(0.1), Color.pink.opacity(0.15)],
+								startPoint: .topLeading,
+								endPoint: .bottomTrailing
+							)
+						)
+						.frame(width: 36, height: 36)
+					
+					Image(systemSymbol: .heart)
+						.font(.system(size: 18, weight: .semibold))
+						.foregroundStyle(
+							LinearGradient(
+								colors: [Color.red, Color.pink],
+								startPoint: .topLeading,
+								endPoint: .bottomTrailing
+							)
+						)
+				}
 				
-				VStack(alignment: .leading, spacing: 2) {
+				VStack(alignment: .leading, spacing: 3) {
 					Text("Enjoying As Needed?")
 						.font(.subheadline)
-						.fontWeight(.medium)
+						.fontWeight(.semibold)
+						.foregroundColor(.primary)
 					Text("Consider supporting continued development")
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
 				
 				Spacer()
+				
+				Image(systemSymbol: .chevronRight)
+					.font(.caption)
+					.foregroundColor(.tertiary)
 			}
-			.padding(.vertical, 12)
-			.padding(.horizontal, 16)
+			.padding(16)
 			.background(
-				RoundedRectangle(cornerRadius: 10)
-					.fill(Color(.secondarySystemBackground))
+				RoundedRectangle(cornerRadius: 16, style: .continuous)
+					.fill(
+						LinearGradient(
+							colors: [
+								Color(.systemBackground),
+								Color(.secondarySystemBackground).opacity(0.5)
+							],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
+					)
+					.shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
 			)
 			.overlay(
-				RoundedRectangle(cornerRadius: 10)
-					.stroke(Color.red.opacity(0.2), lineWidth: 1)
+				RoundedRectangle(cornerRadius: 16, style: .continuous)
+					.stroke(
+						LinearGradient(
+							colors: [
+								Color.red.opacity(0.2),
+								Color.pink.opacity(0.1)
+							],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						),
+						lineWidth: 1
+					)
 			)
 		}
 		.buttonStyle(.plain)
-		.padding(.horizontal)
-		.padding(.top, 8)
+		.padding(.horizontal, 16)
+		.padding(.top, 12)
 	}
 }
 

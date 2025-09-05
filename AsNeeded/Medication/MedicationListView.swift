@@ -33,7 +33,7 @@ struct MedicationListView: View {
                     } else {
                         VStack(spacing: 0) {
                             List {
-                                ForEach(viewModel.items) { med in
+                                ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, med in
                                     HStack {
                                         MedicationRow(medication: med) {
                                             logMedication = med
@@ -55,12 +55,23 @@ struct MedicationListView: View {
                                             Label("Delete", systemImage: "trash")
                                         }
                                     }
-                                }
-                                
-                                SupportSuggestionView()
-                                    .listRowBackground(Color.clear)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                    .listRowBackground(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(.systemBackground))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 4)
+                                    )
                                     .listRowSeparator(.hidden)
+                                }
                             }
+                            .listStyle(.plain)
+                            .scrollContentBackground(.hidden)
+                            .background(Color(.systemGroupedBackground))
+                            
+                            SupportSuggestionView()
+                                .padding(.bottom, 16)
+                                .background(Color(.systemGroupedBackground))
                         }
                     }
                 }
@@ -172,23 +183,29 @@ struct MedicationRow: View {
                 logButton
                     .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
         } else {
             HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     medicationTitle
                     medicationInfo
                 }
-                Spacer(minLength: 8)
+                Spacer(minLength: 12)
                 logButton
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
         }
     }
     
     private var medicationTitle: some View {
         Text(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)
-            .font(.headline)
+            .font(.system(.headline, design: .rounded))
+            .fontWeight(.semibold)
             .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
             .multilineTextAlignment(.leading)
+            .foregroundColor(.primary)
     }
     
     private var medicationInfo: some View {
@@ -236,11 +253,14 @@ struct MedicationRow: View {
                 Label("Log Dose", systemImage: "plus.circle.fill")
                     .labelStyle(.titleAndIcon)
             } else {
-                Label("Log Dose", systemImage: "plus.circle.fill")
-                    .labelStyle(.iconOnly)
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 28))
+                    .symbolRenderingMode(.hierarchical)
             }
         }
         .buttonStyle(.borderedProminent)
+        .controlSize(.regular)
+        .tint(.blue)
         .accessibilityLabel("Log dose for \(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)")
         .accessibilityHint("Opens dose logging for this medication")
     }
