@@ -224,7 +224,7 @@ struct MedicationHistoryView: View {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     showSupportToast = true
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         showSupportToast = false
                                     }
