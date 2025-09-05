@@ -129,7 +129,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		do {
 			DHLogger.ui.info("Starting purchase for: \(productId.rawValue)")
 			
-			let (transaction, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
+			let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
 			
 			if userCancelled {
 				DHLogger.ui.info("User cancelled purchase")
