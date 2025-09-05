@@ -1,32 +1,20 @@
-import XCTest
-import SwiftUI
+import Testing
+import Foundation
 import Combine
 @testable import AsNeeded
 @testable import ANModelKit
 
-final class MedicationListIntegrationTests: XCTestCase {
+struct MedicationListViewModelOperationsTests {
     
-    var viewModel: MedicationListViewModel!
-    var cancellables: Set<AnyCancellable>!
-    
-    override func setUp() {
-        super.setUp()
-        viewModel = MedicationListViewModel()
-        cancellables = []
+    @Test("View model initializes correctly")
+    func viewModelInitialization() {
+        let viewModel = MedicationListViewModel()
+        #expect(viewModel.items.isEmpty)
     }
     
-    override func tearDown() {
-        viewModel = nil
-        cancellables = nil
-        super.tearDown()
-    }
-    
-    func testMedicationListViewModelInitialization() {
-        XCTAssertNotNil(viewModel)
-        XCTAssertTrue(viewModel.items.isEmpty, "Initial items should be empty")
-    }
-    
-    func testAddMedication() async throws {
+    @Test("Adding medication to view model")
+    func addMedication() async {
+        let viewModel = MedicationListViewModel()
         let medication = ANMedicationConcept(
             clinicalName: "Test Medication",
             quantity: 30
@@ -34,11 +22,13 @@ final class MedicationListIntegrationTests: XCTestCase {
         
         await viewModel.add(medication)
         
-        XCTAssertEqual(viewModel.items.count, 1)
-        XCTAssertEqual(viewModel.items.first?.clinicalName, "Test Medication")
+        #expect(viewModel.items.count == 1)
+        #expect(viewModel.items.first?.clinicalName == "Test Medication")
     }
     
-    func testUpdateMedication() async throws {
+    @Test("Updating medication in view model")
+    func updateMedication() async {
+        let viewModel = MedicationListViewModel()
         let medication = ANMedicationConcept(
             clinicalName: "Original Name",
             quantity: 30
@@ -52,26 +42,30 @@ final class MedicationListIntegrationTests: XCTestCase {
         
         await viewModel.update(updatedMedication)
         
-        XCTAssertEqual(viewModel.items.first?.clinicalName, "Updated Name")
-        XCTAssertEqual(viewModel.items.first?.quantity, 50)
+        #expect(viewModel.items.first?.clinicalName == "Updated Name")
+        #expect(viewModel.items.first?.quantity == 50)
     }
     
-    func testDeleteMedication() async throws {
+    @Test("Deleting medication from view model")
+    func deleteMedication() async {
+        let viewModel = MedicationListViewModel()
         let medication1 = ANMedicationConcept(clinicalName: "Med 1")
         let medication2 = ANMedicationConcept(clinicalName: "Med 2")
         
         await viewModel.add(medication1)
         await viewModel.add(medication2)
         
-        XCTAssertEqual(viewModel.items.count, 2)
+        #expect(viewModel.items.count == 2)
         
         await viewModel.delete(medication1)
         
-        XCTAssertEqual(viewModel.items.count, 1)
-        XCTAssertEqual(viewModel.items.first?.clinicalName, "Med 2")
+        #expect(viewModel.items.count == 1)
+        #expect(viewModel.items.first?.clinicalName == "Med 2")
     }
     
-    func testLogDoseReducesQuantity() async throws {
+    @Test("Logging dose reduces medication quantity")
+    func logDoseReducesQuantity() async {
+        let viewModel = MedicationListViewModel()
         let medication = ANMedicationConcept(
             clinicalName: "Test Med",
             quantity: 30,
@@ -95,10 +89,12 @@ final class MedicationListIntegrationTests: XCTestCase {
         await viewModel.update(updatedMedication)
         await viewModel.addEvent(event)
         
-        XCTAssertEqual(viewModel.items.first?.quantity, 28)
+        #expect(viewModel.items.first?.quantity == 28)
     }
     
-    func testSortingByNextRefillDate() async throws {
+    @Test("Medications can be sorted by refill date")
+    func sortingByNextRefillDate() async {
+        let viewModel = MedicationListViewModel()
         let med1 = ANMedicationConcept(
             clinicalName: "Med 1",
             nextRefillDate: Calendar.current.date(byAdding: .day, value: 10, to: Date())
@@ -124,103 +120,70 @@ final class MedicationListIntegrationTests: XCTestCase {
             return date1 < date2
         }
         
-        XCTAssertEqual(sortedMeds.first?.clinicalName, "Med 3", "Overdue medication should be first")
-        XCTAssertEqual(sortedMeds.last?.clinicalName, "Med 1", "Furthest refill date should be last")
+        #expect(sortedMeds.first?.clinicalName == "Med 3")
+        #expect(sortedMeds.last?.clinicalName == "Med 1")
     }
     
-    func testEmptyStateDisplay() {
-        XCTAssertTrue(viewModel.items.isEmpty)
-        
-        let view = MedicationListView()
-        XCTAssertNotNil(view, "Empty state should display properly")
+    @Test("View model handles empty state")
+    func emptyStateHandling() {
+        let viewModel = MedicationListViewModel()
+        #expect(viewModel.items.isEmpty)
     }
     
-    func testSwipeActionsAvailable() async throws {
-        let medication = ANMedicationConcept(clinicalName: "Test Med")
-        await viewModel.add(medication)
+    @Test("Multiple medications can be managed")
+    func multipleItemsManagement() async {
+        let viewModel = MedicationListViewModel()
+        let medications = [
+            ANMedicationConcept(clinicalName: "Med A"),
+            ANMedicationConcept(clinicalName: "Med B"),
+            ANMedicationConcept(clinicalName: "Med C")
+        ]
         
-        XCTAssertEqual(viewModel.items.count, 1)
+        for med in medications {
+            await viewModel.add(med)
+        }
         
-        let view = MedicationListView()
-        XCTAssertNotNil(view, "Swipe actions should be available")
-    }
-    
-    func testNavigationToDetailView() async throws {
-        let medication = ANMedicationConcept(
-            clinicalName: "Test Med",
-            nickname: "Test",
-            quantity: 30,
-            prescribedDoseAmount: 10,
-            prescribedUnit: .tablet
-        )
-        
-        await viewModel.add(medication)
-        
-        let detailView = MedicationDetailView(medication: medication)
-        XCTAssertNotNil(detailView)
-    }
-    
-    func testNavigationToEditView() async throws {
-        let medication = ANMedicationConcept(clinicalName: "Test Med")
-        
-        let editView = MedicationEditView(
-            medication: medication,
-            onSave: { _ in },
-            onCancel: { }
-        )
-        
-        XCTAssertNotNil(editView)
-    }
-    
-    func testLogDoseViewPresentation() async throws {
-        let medication = ANMedicationConcept(
-            clinicalName: "Test Med",
-            prescribedDoseAmount: 10,
-            prescribedUnit: .tablet
-        )
-        
-        let logView = LogDoseView(medication: medication) { _, _ in }
-        XCTAssertNotNil(logView)
-    }
-    
-    func testSupportViewNavigation() {
-        let supportView = SupportView()
-        XCTAssertNotNil(supportView)
+        #expect(viewModel.items.count == 3)
     }
 }
 
-extension MedicationListIntegrationTests {
+struct MedicationEventTests {
     
-    func testUIUpdateAfterDataChange() async throws {
-        let expectation = XCTestExpectation(description: "UI updates after data change")
+    @Test("Medication event stores dose information")
+    func medicationEventProperties() {
+        let medication = ANMedicationConcept(clinicalName: "Test Med")
+        let dose = ANDose(amount: 2, unit: .tablet)
+        let timestamp = Date()
+        
+        let event = ANMedicationEvent(
+            medication: medication,
+            dose: dose,
+            timestamp: timestamp
+        )
+        
+        #expect(event.medication.clinicalName == "Test Med")
+        #expect(event.dose.amount == 2)
+        #expect(event.dose.unit == .tablet)
+        #expect(event.timestamp == timestamp)
+    }
+    
+    @Test("View model publishes items changes")
+    func viewModelPublishesChanges() async {
+        let viewModel = MedicationListViewModel()
+        var cancellables = Set<AnyCancellable>()
+        var receivedUpdate = false
         
         viewModel.$items
             .dropFirst()
-            .sink { items in
-                if !items.isEmpty {
-                    expectation.fulfill()
-                }
+            .sink { _ in
+                receivedUpdate = true
             }
             .store(in: &cancellables)
         
         let medication = ANMedicationConcept(clinicalName: "New Med")
         await viewModel.add(medication)
         
-        await fulfillment(of: [expectation], timeout: 2.0)
-    }
-    
-    func testListRowBackgroundStyle() {
-        let view = MedicationListView()
-        XCTAssertNotNil(view, "List rows should have custom background style")
-    }
-    
-    func testListSeparatorHidden() {
-        let view = MedicationListView()
-        XCTAssertNotNil(view, "List row separators should be hidden")
-    }
-    
-    func testSystemGroupedBackground() {
-        let view = MedicationListView()
-        XCTAssertNotNil(view, "List should use system grouped background")
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        #expect(receivedUpdate == true)
     }
 }

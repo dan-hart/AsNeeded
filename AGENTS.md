@@ -42,9 +42,10 @@
 
 ## Testing Guidelines
 - Framework: Swift Testing (`import Testing`, `@Test`, `#expect`).
-- Scope: Unit tests for domain and services; add UI tests for critical flows when feasible.
+- Scope: Unit tests for domain and services ONLY. No UI tests, snapshot tests, or view testing.
 - Conventions: Mirror source folder structure under `AsNeededTests`. Name tests descriptively, one behavior per test.
-- Coverage: Aim for high coverage of business logic (calculators, use cases) over UI.
+- Coverage: Focus exclusively on business logic, calculators, use cases, view models, and services.
+- **NO UI/Snapshot Testing**: Do not create any UI tests, snapshot tests, or view-specific tests. Test view models and business logic only.
 
 ## Commits & Pull Requests
 - Commits: Imperative, concise subject lines (e.g., "Add ANModelKit", "Refactor history view"). Group related changes.
