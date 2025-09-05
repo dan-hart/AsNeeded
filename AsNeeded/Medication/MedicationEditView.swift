@@ -256,6 +256,13 @@ struct MedicationEditView: View {
 					.disabled(!viewModel.isFormValid)
 				}
 			}
+			.gesture(
+				DragGesture()
+					.onChanged { _ in
+						hideKeyboard()
+					}
+			)
+			.scrollDismissesKeyboard(.interactively)
 		}
 	}
 }

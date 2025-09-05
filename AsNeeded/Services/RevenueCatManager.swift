@@ -4,7 +4,7 @@ import RevenueCat
 import DHLoggingKit
 
 @MainActor
-class RevenueCatManager: ObservableObject {
+class RevenueCatManager: NSObject, ObservableObject  {
 	static let shared = RevenueCatManager()
 	
 	// Product identifiers - these should match your App Store Connect configuration
@@ -33,8 +33,6 @@ class RevenueCatManager: ObservableObject {
 	@Published var customerInfo: CustomerInfo?
 	@Published var isLoadingProducts = false
 	@Published var purchaseError: String?
-	
-	private init() {}
 	
 	func configure() {
 		// Configure RevenueCat with your API key
@@ -231,7 +229,8 @@ extension RevenueCatManager: PurchasesDelegate {
 		// Handle promoted purchases from the App Store
 		Task { @MainActor in
 			DHLogger.ui.info("Ready for promoted product: \(product.productIdentifier)")
-			makeDeferredPurchase { _, _, _, _ in }
 		}
+		// Call makeDeferredPurchase outside of MainActor context to avoid race condition
+		makeDeferredPurchase { _, _, _, _ in }
 	}
 }
