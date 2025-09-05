@@ -46,7 +46,7 @@ struct SupportToastView: View {
 							.foregroundColor(.red.opacity(0.7))
 						Text(supportMessage)
 							.font(.caption)
-							.foregroundColor(.blue)
+							.foregroundColor(.accentColor)
 					}
 				}
 				.buttonStyle(.plain)

@@ -24,8 +24,15 @@ final class MedicationEditViewModel: ObservableObject {
 		self.clinicalName = medication?.clinicalName ?? ""
 		self.nickname = medication?.nickname ?? ""
 		self.quantityText = medication?.quantity.map { String(describing: $0) } ?? ""
-		self.lastRefillDate = medication?.lastRefillDate
-		self.nextRefillDate = medication?.nextRefillDate
+		// Set default dates if not editing existing medication
+		if let medication = medication {
+			self.lastRefillDate = medication.lastRefillDate
+			self.nextRefillDate = medication.nextRefillDate
+		} else {
+			// Default: last refill 30 days ago, next refill 30 days from now
+			self.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: Date())
+			self.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())
+		}
 		self.prescribedDoseText = medication?.prescribedDoseAmount.map { String(describing: $0) } ?? ""
 		self.prescribedUnit = medication?.prescribedUnit
 	}
@@ -33,6 +40,15 @@ final class MedicationEditViewModel: ObservableObject {
 	var isFormValid: Bool {
 		let nameOK = !clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 		let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
+		
+		// Validate date logic: last refill can't be future, next refill can't be past
+		if let lastRefill = lastRefillDate, lastRefill > Date() {
+			return false // Last refill date cannot be in the future
+		}
+		if let nextRefill = nextRefillDate, nextRefill < Calendar.current.startOfDay(for: Date()) {
+			return false // Next refill date cannot be in the past (allowing today)
+		}
+		
 		if doseText.isEmpty && prescribedUnit == nil { return nameOK }
 		guard let amount = Double(doseText), amount > 0 else { return false }
 		return nameOK && prescribedUnit != nil

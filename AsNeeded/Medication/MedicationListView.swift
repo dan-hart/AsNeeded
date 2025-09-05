@@ -47,7 +47,7 @@ struct MedicationListView: View {
                                         } label: {
                                             Label("Edit", systemImage: "pencil")
                                         }
-                                        .tint(.blue)
+                                        .tint(.accentColor)
                                         
                                         Button(role: .destructive) {
                                             pendingDelete = med
@@ -58,7 +58,11 @@ struct MedicationListView: View {
                                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                                     .listRowBackground(
                                         RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(.systemBackground))
+                                            .fill(Color(.secondarySystemGroupedBackground))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color(.separator).opacity(0.1), lineWidth: 0.5)
+                                            )
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 4)
                                     )
@@ -183,7 +187,7 @@ struct MedicationRow: View {
                 logButton
                     .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)
             .padding(.horizontal, 16)
         } else {
             HStack(alignment: .center) {
@@ -194,13 +198,13 @@ struct MedicationRow: View {
                 Spacer(minLength: 12)
                 logButton
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)
             .padding(.horizontal, 16)
         }
     }
     
     private var medicationTitle: some View {
-        Text(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)
+        Text(medication.displayName)
             .font(.system(.headline, design: .rounded))
             .fontWeight(.semibold)
             .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
@@ -224,25 +228,42 @@ struct MedicationRow: View {
                 quantity.formattedAmount
             }
             
-            Text(quantityText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Image(systemName: "pills.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(quantityText)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
     
     @ViewBuilder
     private var datesView: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 3) {
             if let lastRefill = medication.lastRefillDate {
-                Text("Last refill \(lastRefill.relativeFormattedAsPast)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.secondary.opacity(0.6))
+                    Text("Last refill \(lastRefill.relativeFormattedAsPast)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             if let nextRefill = medication.nextRefillDate {
                 let isOverdue = nextRefill < Date()
-                Text("Next refill \(nextRefill.relativeFormattedAsFuture)")
-                    .font(.caption)
-                    .foregroundStyle(isOverdue ? .orange : .secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: isOverdue ? "exclamationmark.circle.fill" : "calendar.circle")
+                        .font(.system(size: 10))
+                        .foregroundStyle(isOverdue ? Color.orange : Color.secondary.opacity(0.6))
+                    Text("Next refill \(nextRefill.relativeFormattedAsFuture)")
+                        .font(.caption)
+                        .fontWeight(isOverdue ? .medium : .regular)
+                        .foregroundStyle(isOverdue ? .orange : .secondary)
+                }
             }
         }
     }
@@ -254,14 +275,15 @@ struct MedicationRow: View {
                     .labelStyle(.titleAndIcon)
             } else {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.system(size: 32))
                     .symbolRenderingMode(.hierarchical)
             }
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
-        .tint(.blue)
-        .accessibilityLabel("Log dose for \(medication.displayName.isEmpty ? medication.clinicalName : medication.displayName)")
+        .tint(.accentColor)
+        .shadow(color: Color.accentColor.opacity(0.2), radius: 3, x: 0, y: 2)
+        .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Opens dose logging for this medication")
     }
     

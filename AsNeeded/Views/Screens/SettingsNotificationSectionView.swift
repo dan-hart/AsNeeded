@@ -70,7 +70,7 @@ struct SettingsNotificationSectionView: View {
     HStack(spacing: 12) {
       Image(systemSymbol: .textBubble)
         .font(.system(size: 18, weight: .medium))
-        .foregroundColor(.blue)
+        .foregroundColor(.accentColor)
         .frame(width: 24, height: 24)
       
       VStack(alignment: .leading, spacing: 2) {

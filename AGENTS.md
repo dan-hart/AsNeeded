@@ -17,6 +17,7 @@
 - **Indentation**: Use tabs (not spaces) for indentation; wrap at ~120 cols.
 - **Code Organization**: Use MARK comments to organize code sections (e.g., `// MARK: - Properties`, `// MARK: - View Components`, `// MARK: - Private Methods`). No blank lines should appear directly after MARK comments - code should begin immediately on the next line.
 - **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
+- **Colors**: ALWAYS use `.accentColor` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content.
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
 - Protocol‑oriented services; inject dependencies for testability.
@@ -78,8 +79,9 @@
 5. **Build failure response**: If builds fail, immediately investigate and fix compilation errors before proceeding with other work.
 
 **Build testing commands:**
-- Quick build: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 15' build -quiet`
+- Quick build: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16' build -quiet`
 - Syntax check: `swiftc -parse [file_path]` for individual files
 - Clean build: `xcodebuild -scheme AsNeeded clean build`
+- **IMPORTANT**: Always check available simulators first with `xcodebuild -showdestinations -scheme AsNeeded` if builds fail. Use an available simulator (e.g., iPhone 16, iPhone 16 Pro) instead of wasting time on unavailable ones.
 
 **Never leave the project in a broken state.** A working build is the foundation for all development work.

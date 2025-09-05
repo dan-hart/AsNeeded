@@ -63,9 +63,14 @@ struct MedicationEditView: View {
 					}
 					
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Nickname (Optional)")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack {
+							Text("Nickname")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Text("(Optional)")
+								.font(.caption)
+								.foregroundStyle(.tertiary)
+						}
 						TextField("Personal name for easy identification", text: $viewModel.nickname)
 							.autocapitalization(.words)
 							.disableAutocorrection(true)
@@ -74,17 +79,27 @@ struct MedicationEditView: View {
 				
 				Section(header: Text("Refill Info")) {
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Current Quantity (Optional)")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack {
+							Text("Current Quantity")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Text("(Optional)")
+								.font(.caption)
+								.foregroundStyle(.tertiary)
+						}
 						TextField("How many pills, mL, etc. you have", text: $viewModel.quantityText)
 							.keyboardType(.decimalPad)
 					}
 					
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Last Refill (Optional)")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack {
+							Text("Last Refill Date")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Text("(Optional)")
+								.font(.caption)
+								.foregroundStyle(.tertiary)
+						}
 						
 						HStack {
 							Button("-30") {
@@ -97,6 +112,7 @@ struct MedicationEditView: View {
 							DatePicker(
 								"",
 								selection: lastRefillDateBinding,
+								in: ...Date(), // Cannot select future dates
 								displayedComponents: .date
 							)
 							.datePickerStyle(.compact)
@@ -109,12 +125,30 @@ struct MedicationEditView: View {
 							.buttonStyle(.bordered)
 							.controlSize(.small)
 						}
+						
+						Button("Reset") {
+							viewModel.lastRefillDate = nil
+						}
+						.buttonStyle(.borderless)
+						.controlSize(.small)
+						.foregroundColor(.red)
+						
+						if let lastRefill = viewModel.lastRefillDate, lastRefill > Date() {
+							Text("Last refill date cannot be in the future")
+								.font(.caption)
+								.foregroundColor(.red)
+						}
 					}
 					
 					VStack(alignment: .leading, spacing: 4) {
-						Text("Next Refill (Optional)")
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+						HStack {
+							Text("Next Refill Date")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+							Text("(Optional)")
+								.font(.caption)
+								.foregroundStyle(.tertiary)
+						}
 						
 						HStack {
 							Button("-30") {
@@ -127,6 +161,7 @@ struct MedicationEditView: View {
 							DatePicker(
 								"",
 								selection: nextRefillDateBinding,
+								in: Date()..., // Cannot select past dates
 								displayedComponents: .date
 							)
 							.datePickerStyle(.compact)
@@ -138,6 +173,19 @@ struct MedicationEditView: View {
 							}
 							.buttonStyle(.bordered)
 							.controlSize(.small)
+						}
+						
+						Button("Reset") {
+							viewModel.nextRefillDate = nil
+						}
+						.buttonStyle(.borderless)
+						.controlSize(.small)
+						.foregroundColor(.red)
+						
+						if let nextRefill = viewModel.nextRefillDate, nextRefill < Calendar.current.startOfDay(for: Date()) {
+							Text("Next refill date cannot be in the past")
+								.font(.caption)
+								.foregroundColor(.red)
 						}
 					}
 				}

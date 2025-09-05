@@ -12,7 +12,15 @@ extension ANMedicationConcept {
 	@MainActor
 	static var store: Store<ANMedicationConcept> { DataStore.shared.medicationsStore }
 	
-	var displayName: String { nickname ?? clinicalName }
+	var displayName: String { 
+		if let nickname = nickname, !nickname.isEmpty {
+			return nickname
+		} else if !clinicalName.isEmpty {
+			return clinicalName
+		} else {
+			return "Unknown"
+		}
+	}
 }
 
 extension ANEventConcept {

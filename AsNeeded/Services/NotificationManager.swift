@@ -107,8 +107,8 @@ final class NotificationManager: ObservableObject {
     let content = UNMutableNotificationContent()
     
     if showMedicationNames {
-      content.title = medication.nickname ?? medication.clinicalName
-      content.body = "It's time to take \(medication.nickname ?? medication.clinicalName)"
+      content.title = medication.displayName
+      content.body = "It's time to take \(medication.displayName)"
     } else {
       content.title = "Medication Reminder"
       content.body = "It's time to take your medication"

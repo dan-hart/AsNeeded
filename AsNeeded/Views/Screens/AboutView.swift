@@ -87,11 +87,11 @@ struct AboutView: View {
 			  HStack(spacing: 6) {
 				Image(systemSymbol: .atCircle)
 				  .font(.subheadline)
-				Text("Contributor on Mastodon")
+				Text("Dan Hart on Mastodon")
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
-			  .foregroundStyle(.blue)
+			  .foregroundStyle(Color.accentColor)
 			}
 		  }
 		  
@@ -100,11 +100,11 @@ struct AboutView: View {
 			  HStack(spacing: 6) {
 				Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 				  .font(.subheadline)
-				Text("Contributor on GitHub")
+				Text("Dan Hart on GitHub")
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
-			  .foregroundStyle(.blue)
+			  .foregroundStyle(Color.accentColor)
 			}
 		  }
 		}
@@ -174,7 +174,7 @@ struct AboutView: View {
 			Spacer()
 			Link("GitHub", destination: url)
 			  .fontWeight(.medium)
-			  .foregroundStyle(.blue)
+			  .foregroundStyle(Color.accentColor)
 		  }
 		}
 	  }

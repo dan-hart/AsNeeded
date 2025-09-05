@@ -305,7 +305,7 @@ struct DataManagementView: View {
 		  }
 		}
 		.frame(width: 24, height: 24)
-		.foregroundColor(isDestructive ? .red : .blue)
+		.foregroundColor(isDestructive ? .red : .accentColor)
 		
 		VStack(alignment: .leading, spacing: 2) {
 		  Text(title)
