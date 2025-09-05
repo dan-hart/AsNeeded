@@ -4,6 +4,11 @@ import DHLoggingKit
 
 struct SupportView: View {
 	@Environment(\.openURL) private var openURL
+	@EnvironmentObject private var revenueCatManager: RevenueCatManager
+	@State private var isPurchasing = false
+	@State private var showPurchaseAlert = false
+	@State private var alertTitle = ""
+	@State private var alertMessage = ""
 	
 	var body: some View {
 		NavigationView {
@@ -20,6 +25,24 @@ struct SupportView: View {
 			}
 			.navigationTitle("Support")
 			.navigationBarTitleDisplayMode(.large)
+			.alert(alertTitle, isPresented: $showPurchaseAlert) {
+				Button("OK", role: .cancel) {}
+			} message: {
+				Text(alertMessage)
+			}
+			.disabled(isPurchasing)
+			.overlay {
+				if isPurchasing {
+					Color.black.opacity(0.3)
+						.ignoresSafeArea()
+						.overlay {
+							ProgressView("Processing...")
+								.padding()
+								.background(.regularMaterial)
+								.cornerRadius(12)
+						}
+				}
+			}
 		}
 	}
 	
@@ -58,6 +81,9 @@ struct SupportView: View {
 				
 				// Subscription Options
 				subscriptionOptions
+				
+				// Restore Purchases button
+				restorePurchasesButton
 			}
 		}
 	}
@@ -119,7 +145,11 @@ struct SupportView: View {
 			
 			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
 				ForEach(tipTiers, id: \.title) { tip in
-					TipButton(tip: tip)
+					TipButton(tip: tip,
+							 isPurchasing: $isPurchasing,
+							 showPurchaseAlert: $showPurchaseAlert,
+							 alertTitle: $alertTitle,
+							 alertMessage: $alertMessage)
 				}
 			}
 		}
@@ -138,34 +168,85 @@ struct SupportView: View {
 			
 			VStack(spacing: 8) {
 				ForEach(subscriptionTiers, id: \.title) { subscription in
-					SubscriptionButton(subscription: subscription)
+					SubscriptionButton(subscription: subscription,
+									  isPurchasing: $isPurchasing,
+									  showPurchaseAlert: $showPurchaseAlert,
+									  alertTitle: $alertTitle,
+									  alertMessage: $alertMessage)
 				}
 			}
 		}
 	}
 	
+	private var restorePurchasesButton: some View {
+		Button {
+			Task {
+				isPurchasing = true
+				defer { isPurchasing = false }
+				
+				let success = await revenueCatManager.restorePurchases()
+				
+				if success {
+					alertTitle = "Restore Complete"
+					alertMessage = "Your purchases have been restored successfully."
+				} else {
+					alertTitle = "Restore Failed"
+					alertMessage = revenueCatManager.purchaseError ?? "Unable to restore purchases. Please try again later."
+				}
+				
+				showPurchaseAlert = true
+			}
+		} label: {
+			Text("Restore Purchases")
+				.font(.caption)
+				.foregroundColor(.accentColor)
+		}
+		.padding(.top, 8)
+	}
+	
 	private let tipTiers = [
-		(title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99"),
-		(title: "Cheers", emoji: "🥂", color: Color.orange, price: "$2.99"),
-		(title: "Standing Ovation", emoji: "👏", color: Color.purple, price: "$4.99")
+		(title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99", productId: RevenueCatManager.ProductIdentifier.tipThanks),
+		(title: "Cheers", emoji: "🥂", color: Color.orange, price: "$2.99", productId: RevenueCatManager.ProductIdentifier.tipCheers),
+		(title: "Standing Ovation", emoji: "👏", color: Color.purple, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.tipStandingOvation)
 	]
 	
 	private let subscriptionTiers = [
-		(title: "Supporter", description: "Basic monthly support", icon: SFSymbol.heart, color: Color.accentColor, price: "$1.99"),
-		(title: "Advocate", description: "Enhanced monthly support", icon: SFSymbol.handRaisedFill, color: Color.green, price: "$4.99"),
-		(title: "Champion", description: "Premium monthly support", icon: SFSymbol.crownFill, color: Color.purple, price: "$9.99")
+		(title: "Supporter", description: "Basic monthly support", icon: SFSymbol.heart, color: Color.accentColor, price: "$1.99", productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
+		(title: "Advocate", description: "Enhanced monthly support", icon: SFSymbol.handRaisedFill, color: Color.green, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
+		(title: "Champion", description: "Premium monthly support", icon: SFSymbol.crownFill, color: Color.purple, price: "$9.99", productId: RevenueCatManager.ProductIdentifier.subscriptionChampion)
 	]
 }
 
 
 // MARK: - Tip Button
 private struct TipButton: View {
-	let tip: (title: String, emoji: String, color: Color, price: String)
+	let tip: (title: String, emoji: String, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
+	@EnvironmentObject private var revenueCatManager: RevenueCatManager
+	@Binding var isPurchasing: Bool
+	@Binding var showPurchaseAlert: Bool
+	@Binding var alertTitle: String
+	@Binding var alertMessage: String
 	
 	var body: some View {
 		Button {
-			// TODO: Implement RevenueCat tip purchase
-			DHLogger.ui.debug("Tip selected - purchase flow to be implemented")
+			Task {
+				isPurchasing = true
+				defer { isPurchasing = false }
+				
+				let success = await revenueCatManager.purchaseTip(tip.productId)
+				
+				if success {
+					alertTitle = "Thank You!"
+					alertMessage = "Your support means a lot! Thank you for your \(tip.title) tip."
+				} else if let error = revenueCatManager.purchaseError {
+					alertTitle = "Purchase Failed"
+					alertMessage = error
+				}
+				
+				if success || revenueCatManager.purchaseError != nil {
+					showPurchaseAlert = true
+				}
+			}
 		} label: {
 			VStack(spacing: 8) {
 				Text(tip.emoji)
@@ -198,12 +279,33 @@ private struct TipButton: View {
 
 // MARK: - Subscription Button
 private struct SubscriptionButton: View {
-	let subscription: (title: String, description: String, icon: SFSymbol, color: Color, price: String)
+	let subscription: (title: String, description: String, icon: SFSymbol, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
+	@EnvironmentObject private var revenueCatManager: RevenueCatManager
+	@Binding var isPurchasing: Bool
+	@Binding var showPurchaseAlert: Bool
+	@Binding var alertTitle: String
+	@Binding var alertMessage: String
 	
 	var body: some View {
 		Button {
-			// TODO: Implement RevenueCat subscription purchase
-			DHLogger.ui.debug("Subscription selected - purchase flow to be implemented")
+			Task {
+				isPurchasing = true
+				defer { isPurchasing = false }
+				
+				let success = await revenueCatManager.purchaseSubscription(subscription.productId)
+				
+				if success {
+					alertTitle = "Welcome, \(subscription.title)!"
+					alertMessage = "Thank you for becoming a \(subscription.title)! Your monthly support helps keep As Needed free and open source."
+				} else if let error = revenueCatManager.purchaseError {
+					alertTitle = "Subscription Failed"
+					alertMessage = error
+				}
+				
+				if success || revenueCatManager.purchaseError != nil {
+					showPurchaseAlert = true
+				}
+			}
 		} label: {
 			HStack(spacing: 12) {
 				Image(systemSymbol: subscription.icon)
