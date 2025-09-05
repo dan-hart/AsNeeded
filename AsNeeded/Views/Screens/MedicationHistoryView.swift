@@ -81,7 +81,7 @@ struct MedicationHistoryView: View {
     private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                Text(group.day.formatted(date: .abbreviated, time: .omitted))
+                Text(formatDateWithDayOfWeek(group.day))
                 Spacer()
                 if let totalText = dayTotalText(for: group.entries) {
                     Text(totalText)
@@ -95,6 +95,15 @@ struct MedicationHistoryView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+    
+    private func formatDateWithDayOfWeek(_ date: Date) -> String {
+        let dayFormatter = DateFormatter()
+        dayFormatter.dateFormat = "EEE" // Mon, Tue, Wed, etc.
+        let dayOfWeek = dayFormatter.string(from: date)
+        
+        let dateString = date.formatted(date: .abbreviated, time: .omitted)
+        return "\(dayOfWeek), \(dateString)"
     }
     
     private func dayTotalText(for entries: [ANEventConcept]) -> String? {
