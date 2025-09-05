@@ -26,7 +26,8 @@ struct SettingsView: View {
 
 		  Spacer(minLength: 32)
 		}
-		.padding()
+		.padding(.horizontal)
+		.padding(.vertical)
 	  }
 	}
   }
