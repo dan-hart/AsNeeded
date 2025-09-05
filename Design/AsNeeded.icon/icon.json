@@ -1,0 +1,48 @@
+{
+  "fill" : {
+    "solid" : "srgb:0.94510,0.84706,0.61176,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "an-top-pill.png",
+          "name" : "an-top-pill",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              6.4765625,
+              157.1171875
+            ]
+          }
+        },
+        {
+          "glass" : true,
+          "image-name" : "AN-Bottom-Pill.png",
+          "name" : "AN-Bottom-Pill",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              -39.2421875,
+              -84.296875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
