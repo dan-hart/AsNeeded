@@ -22,7 +22,7 @@ struct ThankYouView: View {
 			case .tip:
 				return "Thank You for Your Tip!"
 			case .subscription:
-				return "Welcome to AsNeeded Pro!"
+				return "Thank You for Your Continued Support!"
 			}
 		}
 		

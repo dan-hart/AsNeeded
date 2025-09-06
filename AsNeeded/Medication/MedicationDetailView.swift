@@ -2,11 +2,13 @@
 // SwiftUI view for showing details of a medication, including delete option.
 
 import SwiftUI
+import UIKit
 import ANModelKit
 import SFSafeSymbols
 
 struct MedicationDetailView: View {
-	var medication: ANMedicationConcept
+	let medicationId: UUID
+	@State private var medication: ANMedicationConcept
 	@StateObject private var viewModel = MedicationDetailViewModel()
 	@StateObject private var notificationManager = NotificationManager.shared
 	@Environment(\.dismiss) private var dismiss
@@ -16,6 +18,11 @@ struct MedicationDetailView: View {
 	@State private var showReminderSheet = false
 	@State private var showReminderList = false
 	@State private var reminderCount = 0
+	
+	init(medication: ANMedicationConcept) {
+		self.medicationId = medication.id
+		self._medication = State(initialValue: medication)
+	}
 	
 	// Edit mode state
 	@State private var isEditing = false
@@ -205,7 +212,8 @@ struct MedicationDetailView: View {
 				.frame(maxWidth: .infinity, alignment: .center)
 			}
 			
-			if notificationManager.authorizationStatus == .authorized {
+			// Show reminders section based on notification status
+			if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
 				Section("Reminders") {
 					if reminderCount > 0 {
 						HStack {
@@ -228,6 +236,28 @@ struct MedicationDetailView: View {
 					} label: {
 						Label("Set New Reminder", systemSymbol: .bellBadge)
 							.frame(maxWidth: .infinity, alignment: .center)
+					}
+				}
+			} else if notificationManager.authorizationStatus == .denied {
+				Section("Reminders") {
+					VStack(spacing: 12) {
+						HStack {
+							Image(systemSymbol: .bellSlash)
+								.foregroundColor(.orange)
+							Text("Notifications Disabled")
+								.font(.subheadline)
+								.foregroundColor(.secondary)
+						}
+						
+						Button {
+							// Open Settings app to this app's notification settings
+							if let url = URL(string: UIApplication.openSettingsURLString) {
+								UIApplication.shared.open(url)
+							}
+						} label: {
+							Label("Open Settings", systemSymbol: .gearshape)
+								.frame(maxWidth: .infinity, alignment: .center)
+						}
 					}
 				}
 			}
@@ -261,6 +291,8 @@ struct MedicationDetailView: View {
 					}
 					await viewModel.save(updated: medicationToUpdate)
 					await viewModel.log(event: event)
+					// Update the local medication state to reflect changes
+					medication = medicationToUpdate
 				}
 			}
 		}
@@ -270,6 +302,8 @@ struct MedicationDetailView: View {
 				onSave: { updatedMedication in
 					Task {
 						await viewModel.save(updated: updatedMedication)
+						// Update the local medication state to reflect changes
+						medication = updatedMedication
 					}
 					showEditSheet = false
 				},
@@ -279,13 +313,24 @@ struct MedicationDetailView: View {
 			)
 		}
 		.sheet(isPresented: $showReminderSheet) {
-			if notificationManager.authorizationStatus == .authorized {
-				ReminderConfigurationView(medication: medication)
-					.onDisappear {
-						Task {
-							await loadReminderCount()
+			Group {
+				if notificationManager.authorizationStatus == .authorized {
+					ReminderConfigurationView(medication: medication)
+						.onDisappear {
+							Task {
+								await loadReminderCount()
+							}
 						}
-					}
+				} else if notificationManager.authorizationStatus == .notDetermined {
+					NotificationPermissionRequestView(
+						onPermissionGranted: {
+							// Permission granted, view will automatically update
+						},
+						onPermissionDenied: {
+							showReminderSheet = false
+						}
+					)
+				}
 			}
 		}
 		.sheet(isPresented: $showReminderList) {
@@ -297,8 +342,25 @@ struct MedicationDetailView: View {
 				}
 		}
 		.task {
-			if notificationManager.authorizationStatus == .authorized {
+			// Refresh medication data from store
+			await refreshMedication()
+			
+			if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
 				await loadReminderCount()
+			}
+		}
+		.onAppear {
+			// Refresh medication data when view appears (e.g., returning from edit)
+			Task {
+				await refreshMedication()
+			}
+		}
+	}
+	
+	private func refreshMedication() async {
+		if let updatedMedication = DataStore.shared.medications.first(where: { $0.id == medicationId }) {
+			await MainActor.run {
+				medication = updatedMedication
 			}
 		}
 	}

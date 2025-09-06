@@ -6,7 +6,6 @@ import SwiftUI
 struct TrendsView: View {
 	var body: some View {
 		MedicationTrendsView()
-			.padding()
 	}
 }
 
