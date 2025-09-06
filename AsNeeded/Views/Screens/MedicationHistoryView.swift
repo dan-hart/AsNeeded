@@ -198,17 +198,34 @@ struct MedicationHistoryView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                VStack(alignment: .leading) {
-                    HStack(alignment: .center) {
+            ZStack(alignment: .bottomTrailing) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Medication picker and date button
+                    HStack(alignment: .center, spacing: 12) {
                         Picker("Medication", selection: $viewModel.selectedMedicationID) {
                             ForEach(viewModel.medications, id: \.id) { medication in
                                 Text(medication.displayName).tag(Optional(medication.id))
                             }
                         }
                         .pickerStyle(.menu)
+                        
+                        Spacer()
+                        
+                        Button {
+                            showDatePicker = true
+                        } label: {
+                            Label("Jump to Date", systemSymbol: .calendar)
+                                .labelStyle(.titleAndIcon)
+                                .font(.system(size: 18))
+                                .foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : Color.accentColor)
+                        }
+                        .disabled(viewModel.groupedHistory.isEmpty)
+                        .accessibilityLabel("Jump to date")
                     }
                     .padding(.horizontal)
+                    .padding(.vertical, 12)
+                    
+                    Divider()
                     
                     if let selected = viewModel.selectedMedication {
                         if viewModel.groupedHistory.isEmpty {
@@ -220,108 +237,112 @@ struct MedicationHistoryView: View {
                         selectionPromptView()
                     }
                 }
-                .navigationTitle("History")
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            if let med = viewModel.selectedMedication { logMedication = med }
-                        } label: {
-                            Label("Log Dose", systemSymbol: .plusCircleFill)
-                                .labelStyle(.titleAndIcon)
+                
+                // Floating Action Button for Log Dose
+                if viewModel.selectedMedication != nil {
+                    Button {
+                        if let med = viewModel.selectedMedication { 
+                            logMedication = med 
                         }
-                        .disabled(viewModel.selectedMedication == nil)
-                        .accessibilityLabel("Log dose for selected medication")
-                    }
-                    
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            showDatePicker = true
-                        } label: {
-                            Image(systemSymbol: .calendar)
-                        }
-                        .disabled(viewModel.groupedHistory.isEmpty)
-                        .accessibilityLabel("Jump to date")
-                    }
-                }
-                .onAppear {
-                    // Handle navigation from trends or medication detail
-                    if let targetDate = navigationManager.historyTargetDate {
-                        scrollTarget = Calendar.current.startOfDay(for: targetDate)
-                    }
-                    
-                    if let medicationID = navigationManager.historyTargetMedicationID,
-                       let uuid = UUID(uuidString: medicationID) {
-                        // Set the selected medication from navigation
-                        viewModel.selectedMedicationID = uuid
-                        // Clear navigation state after use
-                        navigationManager.clearHistoryNavigation()
-                    } else if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
-                        // If no medication is selected or the selected medication no longer exists
-                        viewModel.selectedMedicationID = viewModel.medications.first?.id
-                    }
-                }
-                .onReceive(timer) { _ in
-                    currentTime = Date()
-                }
-                .sheet(isPresented: $showDatePicker) {
-                    NavigationStack {
-                        VStack(spacing: 20) {
-                            DatePicker(
-                                "Select Date",
-                                selection: $selectedDate,
-                                displayedComponents: [.date]
+                    } label: {
+                        Label("Log Dose", systemSymbol: .plus)
+                            .labelStyle(.titleAndIcon)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
+                            .background(
+                                Capsule()
+                                    .fill(Color.accentColor)
+                                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                             )
-                            .datePickerStyle(.graphical)
-                            .padding(.horizontal)
-                            
-                            Spacer()
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                    .accessibilityLabel("Log dose for selected medication")
+                }
+            }
+            .navigationTitle("History")
+            .onAppear {
+                // Handle navigation from trends or medication detail
+                if let targetDate = navigationManager.historyTargetDate {
+                    scrollTarget = Calendar.current.startOfDay(for: targetDate)
+                }
+                
+                if let medicationID = navigationManager.historyTargetMedicationID,
+                   let uuid = UUID(uuidString: medicationID) {
+                    // Set the selected medication from navigation
+                    viewModel.selectedMedicationID = uuid
+                    // Clear navigation state after use
+                    navigationManager.clearHistoryNavigation()
+                } else if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
+                    // If no medication is selected or the selected medication no longer exists
+                    viewModel.selectedMedicationID = viewModel.medications.first?.id
+                }
+            }
+            .onReceive(timer) { _ in
+                currentTime = Date()
+            }
+            .sheet(isPresented: $showDatePicker) {
+                NavigationStack {
+                    VStack(spacing: 20) {
+                        DatePicker(
+                            "Select Date",
+                            selection: $selectedDate,
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(.graphical)
+                        .padding(.horizontal)
+                        
+                        Spacer()
+                    }
+                    .navigationTitle("Jump to Date")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                showDatePicker = false
+                            }
                         }
-                        .navigationTitle("Jump to Date")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") {
-                                    showDatePicker = false
-                                }
+                        
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Jump") {
+                                scrollTarget = Calendar.current.startOfDay(for: selectedDate)
+                                showDatePicker = false
                             }
-                            
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Jump") {
-                                    scrollTarget = Calendar.current.startOfDay(for: selectedDate)
-                                    showDatePicker = false
-                                }
-                                .fontWeight(.semibold)
-                            }
+                            .fontWeight(.semibold)
                         }
                     }
-                    .presentationDetents([.medium])
                 }
-                .sheet(item: $logMedication) { med in
-                    LogDoseView(medication: med) { dose, event in
-                        Task {
-                            var updated = med
-                            if let quantity = updated.quantity, dose.amount > 0 {
-                                updated.quantity = quantity - dose.amount
+                .presentationDetents([.medium])
+            }
+            .sheet(item: $logMedication) { med in
+                LogDoseView(medication: med) { dose, event in
+                    Task {
+                        var updated = med
+                        if let quantity = updated.quantity, dose.amount > 0 {
+                            updated.quantity = quantity - dose.amount
+                        }
+                        try? await DataStore.shared.updateMedication(updated)
+                        try? await DataStore.shared.addEvent(event)
+                        logMedication = nil
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showSupportToast = true
                             }
-                            try? await DataStore.shared.updateMedication(updated)
-                            try? await DataStore.shared.addEvent(event)
-                            logMedication = nil
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
                                 withAnimation(.easeInOut(duration: 0.3)) {
-                                    showSupportToast = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showSupportToast = false
-                                    }
+                                    showSupportToast = false
                                 }
                             }
                         }
                     }
-                    .presentationDetents([.large])
                 }
-                .sheet(item: $editingEvent) { event in
+                .presentationDetents([.large])
+            }
+            .sheet(item: $editingEvent) { event in
                     NavigationStack {
                         Form {
                             Section(header: Text("Event Details")) {
@@ -399,7 +420,6 @@ struct MedicationHistoryView: View {
             }
         }
     }
-}
 
 #if DEBUG
 #Preview {
