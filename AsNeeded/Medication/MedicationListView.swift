@@ -194,18 +194,20 @@ struct MedicationListView: View {
                             viewMedication = med
                         }
                     }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button {
-                            editMedication = med
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
-                        .tint(.accentColor)
-                        
-                        Button(role: .destructive) {
-                            pendingDelete = med
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                    .swipeActions(edge: .trailing, allowsFullSwipe: editMode == .inactive) {
+                        if editMode == .inactive {
+                            Button {
+                                editMedication = med
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(.accentColor)
+                            
+                            Button(role: .destructive) {
+                                pendingDelete = med
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -289,9 +291,9 @@ struct MedicationRow: View {
     var body: some View {
         HStack(spacing: 0) {
             if editMode?.wrappedValue == .active {
-                Image(systemSymbol: .line3HorizontalCircleFill)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.quaternary)
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
                     .frame(width: 24)
                     .padding(.leading, 12)
                     .padding(.trailing, 8)
@@ -302,12 +304,13 @@ struct MedicationRow: View {
                 VStack(alignment: .leading, spacing: 12) {
                     medicationTitle
                     medicationInfo
-                    logButton
-                        .frame(maxWidth: .infinity)
+                    if editMode?.wrappedValue != .active {
+                        logButton
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
-                .opacity(editMode?.wrappedValue == .active ? 0.6 : 1.0)
             } else {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -315,11 +318,12 @@ struct MedicationRow: View {
                         medicationInfo
                     }
                     Spacer(minLength: 12)
-                    logButton
+                    if editMode?.wrappedValue != .active {
+                        logButton
+                    }
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
-                .opacity(editMode?.wrappedValue == .active ? 0.6 : 1.0)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
@@ -405,8 +409,6 @@ struct MedicationRow: View {
         .controlSize(.regular)
         .tint(.accentColor)
         .shadow(color: Color.accentColor.opacity(0.2), radius: 3, x: 0, y: 2)
-        .disabled(editMode?.wrappedValue == .active)
-        .opacity(editMode?.wrappedValue == .active ? 0.5 : 1.0)
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Opens dose logging for this medication")
     }
