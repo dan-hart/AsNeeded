@@ -280,29 +280,43 @@ struct MedicationRow: View {
     var onLogTapped: () -> Void = {}
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.editMode) private var editMode
     
     var body: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            VStack(alignment: .leading, spacing: 12) {
-                medicationTitle
-                medicationInfo
-                logButton
-                    .frame(maxWidth: .infinity)
+        HStack(spacing: 0) {
+            if editMode?.wrappedValue == .active {
+                Image(systemSymbol: .line3Horizontal)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.tertiary)
+                    .frame(width: 20)
+                    .padding(.leading, 16)
+                    .padding(.trailing, 8)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
-        } else {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 6) {
+            
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 12) {
                     medicationTitle
                     medicationInfo
+                    logButton
+                        .frame(maxWidth: .infinity)
                 }
-                Spacer(minLength: 12)
-                logButton
+                .padding(.vertical, 14)
+                .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
+            } else {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        medicationTitle
+                        medicationInfo
+                    }
+                    Spacer(minLength: 12)
+                    logButton
+                }
+                .padding(.vertical, 14)
+                .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
         }
+        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
     }
     
     private var medicationTitle: some View {
