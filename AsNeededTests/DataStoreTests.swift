@@ -6,8 +6,7 @@ import Foundation
 import ANModelKit
 @testable import AsNeeded
 
-@Suite("DataStore Tests")
-@Tag(.dataStore) @Tag(.persistence) @Tag(.unit)
+@Suite("DataStore Tests", .tags(.dataStore, .persistence, .unit))
 @MainActor
 struct DataStoreTests {
 	private var dataStore: DataStore

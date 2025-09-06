@@ -11,8 +11,7 @@ import Foundation
 @testable import ANModelKit
 
 @MainActor
-@Suite
-@Tag(.compatibility) @Tag(.dataManagement) @Tag(.unit)
+@Suite(.tags(.compatibility, .dataManagement, .unit))
 struct DataCompatibilityTests {
   
   func createTestDataStore() -> DataStore {

@@ -11,8 +11,7 @@ import Foundation
 @testable import ANModelKit
 
 @MainActor
-@Suite
-@Tag(.dataManagement) @Tag(.viewModel) @Tag(.unit)
+@Suite(.tags(.dataManagement, .viewModel, .unit))
 struct DataManagementViewModelTests {
   
   // MARK: - Test Helpers
