@@ -47,53 +47,52 @@ struct SupportToastView: View {
 						.foregroundColor(.primary)
 						.multilineTextAlignment(.center)
 					
-					// Support and Don't Show Again buttons
-					HStack(spacing: 12) {
-						Button(action: onSupportTapped) {
-							HStack(spacing: 6) {
-								Image(systemSymbol: .heartFill)
-									.font(.system(size: 14))
-									.foregroundStyle(
-										LinearGradient(
-											colors: [.red, .pink],
-											startPoint: .top,
-											endPoint: .bottom
-										)
+					// Support button
+					Button(action: onSupportTapped) {
+						HStack(spacing: 6) {
+							Image(systemSymbol: .heartFill)
+								.font(.system(size: 14))
+								.foregroundStyle(
+									LinearGradient(
+										colors: [.red, .pink],
+										startPoint: .top,
+										endPoint: .bottom
 									)
-								Text(supportMessage)
-									.font(.subheadline)
-									.fontWeight(.medium)
-									.foregroundColor(.accentColor)
-							}
-							.padding(.horizontal, 20)
-							.padding(.vertical, 10)
-							.background(
-								RoundedRectangle(cornerRadius: 10)
-									.fill(Color.accentColor.opacity(0.1))
-							)
-							.overlay(
-								RoundedRectangle(cornerRadius: 10)
-									.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
-							)
-						}
-						.buttonStyle(.plain)
-						
-						Button {
-							hideSupportBanners = true
-							onDismiss()
-						} label: {
-							Text("Don't Show Again")
-								.font(.caption)
-								.foregroundColor(.secondary)
-								.padding(.horizontal, 12)
-								.padding(.vertical, 8)
-								.background(
-									RoundedRectangle(cornerRadius: 8)
-										.fill(Color(.tertiarySystemFill))
 								)
+							Text(supportMessage)
+								.font(.subheadline)
+								.fontWeight(.medium)
+								.foregroundColor(.accentColor)
 						}
-						.buttonStyle(.plain)
+						.padding(.horizontal, 20)
+						.padding(.vertical, 10)
+						.background(
+							RoundedRectangle(cornerRadius: 10)
+								.fill(Color.accentColor.opacity(0.1))
+						)
+						.overlay(
+							RoundedRectangle(cornerRadius: 10)
+								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
+						)
 					}
+					.buttonStyle(.plain)
+					
+					// Don't Show Again button
+					Button {
+						hideSupportBanners = true
+						onDismiss()
+					} label: {
+						Text("Don't Show Again")
+							.font(.caption)
+							.foregroundColor(.secondary)
+							.padding(.horizontal, 16)
+							.padding(.vertical, 8)
+							.background(
+								RoundedRectangle(cornerRadius: 8)
+									.fill(Color(.tertiarySystemFill))
+							)
+					}
+					.buttonStyle(.plain)
 					
 					// Dismiss button with proper tap target
 					Button(action: onDismiss) {

@@ -5,13 +5,13 @@ struct SettingsView: View {
 	NavigationView {
 	  ScrollView {
 		VStack(alignment: .leading, spacing: 32) {
+          SettingsSupportSectionView()
+            
 		  SettingsNotificationSectionView()
 		  
 		  SettingsFeedbackSectionView()
 		  
 		  SettingsDataSectionView()
-
-		  SettingsSupportSectionView()
 
 		  SettingsAboutSectionView()
 		  
