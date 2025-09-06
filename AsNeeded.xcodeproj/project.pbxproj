@@ -90,6 +90,7 @@
 		52B378422E4E75C5008EC5F2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AppIcon.icon,
 				"Extensions/DoubleExtensions/Double+roundToPlaces.swift",
 			);
 			target = 524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */;
