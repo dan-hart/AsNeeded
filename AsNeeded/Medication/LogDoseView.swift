@@ -13,6 +13,8 @@ struct LogDoseView: View {
 	@State private var amount: Double = 1
 	@State private var selectedUnit: ANUnitConcept = .unit
 	@State private var selectedDate: Date = .now
+	@State private var note: String = ""
+	@FocusState private var isNoteFocused: Bool
 
 	init(
 		medication: ANMedicationConcept,
@@ -56,8 +58,15 @@ struct LogDoseView: View {
 						Spacer().frame(width: 0)
 					}
 				}
+				
+				Section(header: Text("Note (Optional)")) {
+					TextField("Add a note about this dose", text: $note, axis: .vertical)
+						.lineLimit(3...6)
+						.focused($isNoteFocused)
+				}
 			}
 			.navigationTitle("Log Dose")
+			.scrollDismissesKeyboard(.interactively)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
 					Button(action: { dismiss() }) {
@@ -67,7 +76,14 @@ struct LogDoseView: View {
 				ToolbarItem(placement: .confirmationAction) {
 					Button(action: {
 						let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
-						let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: selectedDate)
+						let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+						let event = ANEventConcept(
+							eventType: .doseTaken,
+							medication: medication,
+							dose: dose,
+							date: selectedDate,
+							note: trimmedNote.isEmpty ? nil : trimmedNote
+						)
 						onLog(dose, event)
 						dismiss()
 					}) {

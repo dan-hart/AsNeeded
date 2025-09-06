@@ -13,6 +13,9 @@ struct MedicationHistoryView: View {
     @State private var scrollTarget: Date?
     @State private var showDatePicker = false
     @State private var selectedDate = Date()
+    @State private var selectedEventNote: String?
+    @State private var editingEvent: ANEventConcept?
+    @State private var editingNoteText: String = ""
     
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
@@ -39,24 +42,58 @@ struct MedicationHistoryView: View {
                 ForEach(viewModel.groupedHistory, id: \.day) { group in
                     Section(header: sectionHeader(for: group)) {
                         ForEach(group.entries, id: \.id) { event in
-                            if let dose = event.dose {
-                                let unitName = dose.unit.abbreviation
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
-                                    if let rel = relativeShortIfToday(event.date) {
-                                        Text(rel)
-                                            .font(.footnote)
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(alignment: .center) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        if let dose = event.dose {
+                                            let unitName = dose.unit.abbreviation
+                                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
+                                        } else {
+                                            Text(event.date.formatted(date: .omitted, time: .shortened))
+                                        }
+                                        if let rel = relativeShortIfToday(event.date) {
+                                            Text(rel)
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                    
+                                    // Show add note button if no note exists
+                                    if event.note == nil || event.note!.isEmpty {
+                                        Button {
+                                            editingEvent = event
+                                            editingNoteText = ""
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Text("Add Note")
+                                                Image(systemSymbol: .squareAndPencil)
+                                                    .font(.caption)
+                                            }
+                                            .font(.subheadline)
                                             .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
                                 }
-                            } else {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(event.date.formatted(date: .omitted, time: .shortened))
-                                    if let rel = relativeShortIfToday(event.date) {
-                                        Text(rel)
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                    }
+                                
+                                // Show note below if it exists
+                                if let note = event.note, !note.isEmpty {
+                                    Text(note)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color(.tertiarySystemGroupedBackground))
+                                        )
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            editingEvent = event
+                                            editingNoteText = event.note ?? ""
+                                        }
                                 }
                             }
                         }
@@ -229,10 +266,6 @@ struct MedicationHistoryView: View {
                 .sheet(isPresented: $showDatePicker) {
                     NavigationStack {
                         VStack(spacing: 20) {
-                            Text("Select a date to jump to")
-                                .font(.headline)
-                                .padding(.top)
-                            
                             DatePicker(
                                 "Select Date",
                                 selection: $selectedDate,
@@ -286,7 +319,60 @@ struct MedicationHistoryView: View {
                             }
                         }
                     }
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.large])
+                }
+                .sheet(item: $editingEvent) { event in
+                    NavigationStack {
+                        Form {
+                            Section(header: Text("Event Details")) {
+                                HStack {
+                                    Text("Date")
+                                    Spacer()
+                                    Text(event.date.formatted(date: .abbreviated, time: .shortened))
+                                        .foregroundStyle(.secondary)
+                                }
+                                if let dose = event.dose {
+                                    HStack {
+                                        Text("Dose")
+                                        Spacer()
+                                        Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            
+                            Section(header: Text("Note")) {
+                                TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
+                                    .lineLimit(4...8)
+                            }
+                        }
+                        .navigationTitle("Edit Note")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    editingEvent = nil
+                                    editingNoteText = ""
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Save") {
+                                    if let event = editingEvent {
+                                        Task {
+                                            let trimmedNote = editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            var updatedEvent = event
+                                            updatedEvent.note = trimmedNote.isEmpty ? nil : trimmedNote
+                                            await viewModel.updateEvent(updatedEvent)
+                                            editingEvent = nil
+                                            editingNoteText = ""
+                                        }
+                                    }
+                                }
+                                .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
                 }
                 
                 SupportToastView(

@@ -86,7 +86,7 @@ struct MedicationListView: View {
                             }
                         }
                     }
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.large])
                 }
                 .alert("Delete Medication?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
                     Button("Delete", role: .destructive) {

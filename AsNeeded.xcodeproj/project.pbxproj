@@ -795,7 +795,7 @@
 			repositoryURL = "https://github.com/dan-hart/ANModelKit";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.1;
+				version = 1.0.2;
 			};
 		};
 		52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */ = {

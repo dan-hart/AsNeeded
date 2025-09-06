@@ -92,6 +92,7 @@ struct MedicationDetailView: View {
 					medication = medicationToUpdate
 				}
 			}
+			.presentationDetents([.large])
 		}
 		.sheet(isPresented: $showEditSheet) {
 			MedicationEditView(
