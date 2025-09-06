@@ -128,7 +128,7 @@ struct DataManagementTests {
 	
 	let exportData = try await dataStore.exportDataAsJSON()
 	guard let jsonString = String(data: exportData, encoding: .utf8) else {
-	  #expect(false, "Failed to convert export data to string")
+	  #expect(Bool(false), "Failed to convert export data to string")
 	  return
 	}
 	
@@ -303,11 +303,11 @@ struct DataManagementTests {
 	#expect(events.count == 1)
 	
 	guard let importedMedication = medications.first else {
-	  #expect(false, "No medications found after import")
+	  #expect(Bool(false), "No medications found after import")
 	  return
 	}
 	guard let importedEvent = events.first else {
-	  #expect(false, "No events found after import")
+	  #expect(Bool(false), "No events found after import")
 	  return
 	}
 	
@@ -357,7 +357,7 @@ struct DataManagementTests {
 	
 	// Final verification - parse the JSON to ensure it's still valid
 	guard let lastData = lastExportedData else {
-	  #expect(false, "No export data available")
+	  #expect(Bool(false), "No export data available")
 	  return
 	}
 	let finalJSON = try JSONSerialization.jsonObject(with: lastData) as? [String: Any]
@@ -393,7 +393,7 @@ struct DataManagementTests {
 	// Verify medication names are redacted
 	guard let medications = redactedJSON?["medications"] as? [[String: Any]], 
 		  let exportedMed = medications.first else {
-	  #expect(false, "No medications found in redacted export")
+	  #expect(Bool(false), "No medications found in redacted export")
 	  return
 	}
 	
@@ -404,7 +404,7 @@ struct DataManagementTests {
 	guard let events = redactedJSON?["events"] as? [[String: Any]],
 		  let exportedEvent = events.first,
 		  let eventMedication = exportedEvent["medication"] as? [String: Any] else {
-	  #expect(false, "No events or medication found in redacted export")
+	  #expect(Bool(false), "No events or medication found in redacted export")
 	  return
 	}
 	
@@ -431,7 +431,7 @@ struct DataManagementTests {
 	// Verify names are preserved
 	guard let medications = normalJSON?["medications"] as? [[String: Any]],
 		  let exportedMed = medications.first else {
-	  #expect(false, "No medications found in normal export")
+	  #expect(Bool(false), "No medications found in normal export")
 	  return
 	}
 	
@@ -463,7 +463,7 @@ struct DataManagementTests {
 	try await dataStore.importDataFromJSON(exportedData)
 	
 	guard let importedMedication = dataStore.medications.first else {
-	  #expect(false, "No medications found after import")
+	  #expect(Bool(false), "No medications found after import")
 	  return
 	}
 	#expect(importedMedication.clinicalName == "Spéciäl Médication with émojis 💊")
@@ -492,7 +492,7 @@ struct DataManagementTests {
 	try await dataStore.importDataFromJSON(exportedData)
 	
 	guard let importedMedication = dataStore.medications.first else {
-	  #expect(false, "No medications found after import")
+	  #expect(Bool(false), "No medications found after import")
 	  return
 	}
 	#expect(importedMedication.clinicalName == "Minimal Medication")
