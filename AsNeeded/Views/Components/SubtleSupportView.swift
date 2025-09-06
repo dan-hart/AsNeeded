@@ -3,29 +3,47 @@ import SFSafeSymbols
 
 struct SubtleSupportView: View {
 	let message: String
+	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
 	
 	init(message: String = "If As Needed is helpful, consider supporting development") {
 		self.message = message
 	}
 	
 	var body: some View {
-		NavigationLink {
-			SupportView()
-		} label: {
+		if !hideSupportBanners {
 			HStack(spacing: 8) {
-				Image(systemSymbol: .heart)
-					.font(.system(size: 12, weight: .medium))
-					.foregroundColor(.red.opacity(0.6))
+				NavigationLink {
+					SupportView()
+				} label: {
+					HStack(spacing: 8) {
+						Image(systemSymbol: .heart)
+							.font(.system(size: 12, weight: .medium))
+							.foregroundColor(.red.opacity(0.6))
+						
+						Text(message)
+							.font(.footnote)
+							.foregroundColor(.secondary)
+						
+						Spacer()
+						
+						Image(systemSymbol: .chevronRight)
+							.font(.system(size: 10))
+							.foregroundColor(.secondary.opacity(0.6))
+					}
+				}
+				.buttonStyle(.plain)
 				
-				Text(message)
-					.font(.footnote)
-					.foregroundColor(.secondary)
+				Divider()
+					.frame(height: 20)
 				
-				Spacer()
-				
-				Image(systemSymbol: .chevronRight)
-					.font(.system(size: 10))
-					.foregroundColor(.secondary.opacity(0.6))
+				Button {
+					hideSupportBanners = true
+				} label: {
+					Text("Hide")
+						.font(.caption2)
+						.foregroundColor(.secondary)
+				}
+				.buttonStyle(.plain)
 			}
 			.padding(.vertical, 8)
 			.padding(.horizontal, 12)
@@ -35,7 +53,6 @@ struct SubtleSupportView: View {
 					.opacity(0.5)
 			)
 		}
-		.buttonStyle(.plain)
 	}
 }
 
