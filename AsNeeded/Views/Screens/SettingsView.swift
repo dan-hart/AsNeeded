@@ -10,13 +10,11 @@ struct SettingsView: View {
 			.fontWeight(.semibold)
 			.padding(.bottom, 4)
 		  
-		  VStack(alignment: .leading, spacing: 16) {
-			MedicalDisclaimerView()
-			
-			FeedbackButtonsView()
-		  }
+		  MedicalDisclaimerView()
 		  
 		  SettingsNotificationSectionView()
+		  
+		  SettingsFeedbackSectionView()
 		  
 		  SettingsDataSectionView()
 
