@@ -7,14 +7,11 @@ import ANModelKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
-	@AppStorage("historySelectedMedicationID") var selectedMedicationIDString: String = ""
+	@AppStorage("historySelectedMedicationID") private var selectedMedicationIDString: String = ""
 	
-	var selectedMedicationID: UUID? {
-		get {
-			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
-		}
-		set {
-			selectedMedicationIDString = newValue?.uuidString ?? ""
+	@Published var selectedMedicationID: UUID? {
+		didSet {
+			selectedMedicationIDString = selectedMedicationID?.uuidString ?? ""
 		}
 	}
 
@@ -22,8 +19,12 @@ final class MedicationHistoryViewModel: ObservableObject {
 
 	init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
 		self.dataStore = dataStore
+		
+		// Initialize from passed ID or from AppStorage
 		if let initialID = selectedMedicationID {
 			self.selectedMedicationID = initialID
+		} else if !selectedMedicationIDString.isEmpty {
+			self.selectedMedicationID = UUID(uuidString: selectedMedicationIDString)
 		}
 	}
 
