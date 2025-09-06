@@ -116,6 +116,20 @@ final class DataManagementViewModel: ObservableObject {
 	  logger.debug("Import process completed")
 	}
 	
+	// Start accessing the security-scoped resource
+	guard url.startAccessingSecurityScopedResource() else {
+	  logger.error("Failed to access security-scoped resource")
+	  alertMessage = "Import failed: Unable to access the selected file. Please try again."
+	  showingAlert = true
+	  return
+	}
+	
+	// Ensure we stop accessing the resource when done
+	defer {
+	  url.stopAccessingSecurityScopedResource()
+	  logger.debug("Stopped accessing security-scoped resource")
+	}
+	
 	do {
 	  let data = try Data(contentsOf: url)
 	  logger.debug("Read data from file, size: \(data.count) bytes")
