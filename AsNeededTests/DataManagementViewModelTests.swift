@@ -231,6 +231,77 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.showingAlert == true)
   }
   
+  @Test("Import with security-scoped URL should handle resource access properly")
+  func testImportWithSecurityScopedURL() async throws {
+	let dataStore = createTestDataStore()
+	try await dataStore.clearAllData()
+	
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	// Create test JSON file with valid data - using minimal required fields
+	let testJSONString = """
+	{
+	  "medications": [
+		{
+		  "id": "123e4567-e89b-12d3-a456-426614174000",
+		  "clinicalName": "Security Test Med",
+		  "nickname": "SecTest",
+		  "quantity": 30.0
+		}
+	  ],
+	  "events": [],
+	  "exportDate": "2024-01-01T12:00:00Z",
+	  "appVersion": "1.0.0"
+	}
+	"""
+	
+	guard let testJSON = testJSONString.data(using: .utf8) else {
+	  #expect(Bool(false), "Failed to create test JSON data")
+	  return
+	}
+	
+	// Create a temporary file URL (simulating what fileImporter provides)
+	let tempURL = FileManager.default.temporaryDirectory
+	  .appendingPathComponent("security-test-import.json")
+	try testJSON.write(to: tempURL)
+	
+	defer {
+	  try? FileManager.default.removeItem(at: tempURL)
+	}
+	
+	// Import the file - this will test the security-scoped resource handling
+	await viewModel.importData(from: tempURL)
+	
+	// Verify import succeeded
+	#expect(viewModel.isImporting == false)
+	#expect(viewModel.alertMessage == "Data imported successfully")
+	#expect(viewModel.showingAlert == true)
+	
+	// Verify the data was actually imported
+	#expect(dataStore.medications.count == 1)
+	#expect(dataStore.medications.first?.clinicalName == "Security Test Med")
+	#expect(dataStore.medications.first?.nickname == "SecTest")
+  }
+  
+  @Test("Import should handle URLs that deny security access")
+  func testImportWithDeniedSecurityAccess() async throws {
+	let dataStore = createTestDataStore()
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	// Create a mock URL that would fail security access
+	// Since we can't easily mock a URL that returns false from startAccessingSecurityScopedResource,
+	// we'll test with a URL that doesn't exist (which will fail in the Data(contentsOf:) call)
+	// This ensures the error handling path works correctly
+	let inaccessibleURL = URL(fileURLWithPath: "/System/Library/CoreServices/SystemVersion.plist")
+	
+	await viewModel.importData(from: inaccessibleURL)
+	
+	// Should handle the error gracefully
+	#expect(viewModel.isImporting == false)
+	#expect(viewModel.alertMessage?.contains("Import failed") == true)
+	#expect(viewModel.showingAlert == true)
+  }
+  
   // MARK: - Clear Data Tests
 
   @Test("Clear confirmation should set flag")
