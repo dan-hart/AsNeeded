@@ -1,6 +1,15 @@
 {
-  "originHash" : "b50fc23db13c920484e653f639af54bd33bebd9725512b1821c8bf70076be717",
+  "originHash" : "4d86a42f4ba14ecf616c9b3d4f673ce15261934720846e47876afe76cb81e56b",
   "pins" : [
+    {
+      "identity" : "anmodelkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dan-hart/ANModelKit",
+      "state" : {
+        "revision" : "09abf989ffab9893eef7dd91f67aa798d6664fbd",
+        "version" : "1.0.1"
+      }
+    },
     {
       "identity" : "bodega",
       "kind" : "remoteSourceControl",
@@ -17,6 +26,24 @@
       "state" : {
         "revision" : "9379e6a0b13bfb01c2ae655b65962d8479b63428",
         "version" : "3.0.1"
+      }
+    },
+    {
+      "identity" : "dhloggingkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dan-hart/DHLoggingKit",
+      "state" : {
+        "revision" : "b75135996d38c93eda5d635949389006fc2e45ed",
+        "version" : "1.0.0"
+      }
+    },
+    {
+      "identity" : "dhutilitykit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dan-hart/DHUtilityKit",
+      "state" : {
+        "revision" : "943f67184e739b1239076b643e455d933467acaa",
+        "version" : "1.0.0"
       }
     },
     {
@@ -62,6 +89,15 @@
       "state" : {
         "revision" : "b626d3002773b1a1304166643e7f118f724b2132",
         "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "swiftrxnorm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/dan-hart/SwiftRxNorm",
+      "state" : {
+        "revision" : "a2cbccbdb82d2bdeb71c41db4e7497b2efaeae34",
+        "version" : "1.0.0"
       }
     }
   ],

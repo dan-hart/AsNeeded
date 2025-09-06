@@ -12,12 +12,16 @@
 		521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CC2E6B92C5006A7439 /* RevenueCatUI */; };
 		521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 521B77D02E6B92D8006A7439 /* StoreKit.framework */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		52538B432E6C8A87009017EE /* DHUtilityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52538B422E6C8A87009017EE /* DHUtilityKit */; };
 		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
 		5256E80A2E6B861D0072C6F0 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8062E6B861D0072C6F0 /* CLAUDE.md */; };
 		5256E80B2E6B861D0072C6F0 /* TERMS.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8082E6B861D0072C6F0 /* TERMS.md */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 		52A90B9A2E60F6C10016124C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B992E60F6C10016124C /* README.md */; };
 		52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B982E60F6C10016124C /* LICENSE.txt */; };
+		52BD23C92E6C87B600985CD3 /* DHLoggingKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52BD23C82E6C87B600985CD3 /* DHLoggingKit */; };
+		52BD23CC2E6C87CF00985CD3 /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52BD23CB2E6C87CF00985CD3 /* ANModelKit */; };
+		52BD23CF2E6C87FC00985CD3 /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52BD23CE2E6C87FC00985CD3 /* SwiftRxNorm */; };
 		52C349AA2E552F980040CEB8 /* Boutique in Frameworks */ = {isa = PBXBuildFile; productRef = 52C349A92E552F980040CEB8 /* Boutique */; };
 		52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE375E2E5531B100DD3B1A /* ANModelKit */; };
 		52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE37602E5531B100DD3B1A /* SwiftRxNorm */; };
@@ -82,8 +86,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Packages/ANModelKit,
-				Packages/SwiftRxNorm,
 			);
 			target = 527AFA2128E26B3400BD575D /* AsNeeded */;
 		};
@@ -119,10 +121,14 @@
 				52C349AA2E552F980040CEB8 /* Boutique in Frameworks */,
 				521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */,
 				52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */,
+				52538B432E6C8A87009017EE /* DHUtilityKit in Frameworks */,
 				521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */,
 				52F6AE322E67A9F6005CF0A1 /* DHLoggingKit in Frameworks */,
 				521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */,
+				52BD23C92E6C87B600985CD3 /* DHLoggingKit in Frameworks */,
+				52BD23CC2E6C87CF00985CD3 /* ANModelKit in Frameworks */,
 				52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */,
+				52BD23CF2E6C87FC00985CD3 /* SwiftRxNorm in Frameworks */,
 				52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -232,6 +238,10 @@
 				521B77C82E6B92C5006A7439 /* ReceiptParser */,
 				521B77CA2E6B92C5006A7439 /* RevenueCat */,
 				521B77CC2E6B92C5006A7439 /* RevenueCatUI */,
+				52BD23C82E6C87B600985CD3 /* DHLoggingKit */,
+				52BD23CB2E6C87CF00985CD3 /* ANModelKit */,
+				52BD23CE2E6C87FC00985CD3 /* SwiftRxNorm */,
+				52538B422E6C8A87009017EE /* DHUtilityKit */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -295,6 +305,10 @@
 				52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
 				52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */,
 				521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */,
+				52BD23C72E6C87B600985CD3 /* XCRemoteSwiftPackageReference "DHLoggingKit" */,
+				52BD23CA2E6C87CF00985CD3 /* XCRemoteSwiftPackageReference "ANModelKit" */,
+				52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */,
+				52538B412E6C8A87009017EE /* XCRemoteSwiftPackageReference "DHUtilityKit" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -752,12 +766,44 @@
 				version = 5.37.0;
 			};
 		};
+		52538B412E6C8A87009017EE /* XCRemoteSwiftPackageReference "DHUtilityKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dan-hart/DHUtilityKit";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
 		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SFSafeSymbols/SFSafeSymbols";
 			requirement = {
 				kind = exactVersion;
 				version = 6.2.0;
+			};
+		};
+		52BD23C72E6C87B600985CD3 /* XCRemoteSwiftPackageReference "DHLoggingKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dan-hart/DHLoggingKit";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
+		52BD23CA2E6C87CF00985CD3 /* XCRemoteSwiftPackageReference "ANModelKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dan-hart/ANModelKit";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.1;
+			};
+		};
+		52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dan-hart/SwiftRxNorm";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
 			};
 		};
 		52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */ = {
@@ -786,10 +832,30 @@
 			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;
 			productName = RevenueCatUI;
 		};
+		52538B422E6C8A87009017EE /* DHUtilityKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52538B412E6C8A87009017EE /* XCRemoteSwiftPackageReference "DHUtilityKit" */;
+			productName = DHUtilityKit;
+		};
 		52929DA528EF270100C996E0 /* SFSafeSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */;
 			productName = SFSafeSymbols;
+		};
+		52BD23C82E6C87B600985CD3 /* DHLoggingKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52BD23C72E6C87B600985CD3 /* XCRemoteSwiftPackageReference "DHLoggingKit" */;
+			productName = DHLoggingKit;
+		};
+		52BD23CB2E6C87CF00985CD3 /* ANModelKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52BD23CA2E6C87CF00985CD3 /* XCRemoteSwiftPackageReference "ANModelKit" */;
+			productName = ANModelKit;
+		};
+		52BD23CE2E6C87FC00985CD3 /* SwiftRxNorm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */;
+			productName = SwiftRxNorm;
 		};
 		52C349A92E552F980040CEB8 /* Boutique */ = {
 			isa = XCSwiftPackageProductDependency;
