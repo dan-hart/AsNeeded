@@ -252,4 +252,24 @@ extension WCReceiver: WCSessionDelegate {
 		handleMessage(message)
 		replyHandler(["received": true])
 	}
+	
+	nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any]) {
+		Task { @MainActor in
+			self.logger.debug("Received user info from watch")
+		}
+		handleMessage(userInfo)
+	}
+	
+	nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+		let isReachable = session.isReachable
+		Task { @MainActor in
+			self.isConnected = isReachable
+			self.logger.oslog.info("Session reachability changed: \(isReachable, privacy: .public)")
+			
+			// If reachable and watch requested medications, send them
+			if isReachable {
+				await self.sendMedicationsToWatch()
+			}
+		}
+	}
 }
