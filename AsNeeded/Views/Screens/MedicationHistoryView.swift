@@ -207,12 +207,15 @@ struct MedicationHistoryView: View {
                     }
                 }
                 .onAppear {
-                    // Handle navigation from trends
+                    // Handle navigation from trends or medication detail
                     if let targetDate = navigationManager.historyTargetDate {
                         scrollTarget = Calendar.current.startOfDay(for: targetDate)
-                        if let medicationID = navigationManager.historyTargetMedicationID {
-                            viewModel.selectedMedicationID = UUID(uuidString: medicationID)
-                        }
+                    }
+                    
+                    if let medicationID = navigationManager.historyTargetMedicationID,
+                       let uuid = UUID(uuidString: medicationID) {
+                        // Set the selected medication from navigation
+                        viewModel.selectedMedicationID = uuid
                         // Clear navigation state after use
                         navigationManager.clearHistoryNavigation()
                     } else if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {

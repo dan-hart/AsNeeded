@@ -11,6 +11,7 @@ struct MedicationDetailView: View {
 	@State private var medication: ANMedicationConcept
 	@StateObject private var viewModel = MedicationDetailViewModel()
 	@StateObject private var notificationManager = NotificationManager.shared
+	@StateObject private var navigationManager = NavigationManager.shared
 	@Environment(\.dismiss) private var dismiss
 	@State private var showDeleteConfirm = false
 	@State private var showLogDose = false
@@ -259,6 +260,18 @@ struct MedicationDetailView: View {
 								.frame(maxWidth: .infinity, alignment: .center)
 						}
 					}
+				}
+			}
+			
+			// View History button at the bottom
+			Section {
+				Button {
+					// Navigate to History tab with this medication selected
+					navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
+					dismiss()
+				} label: {
+					Label("View \(medication.displayName) History", systemSymbol: .clock)
+						.frame(maxWidth: .infinity, alignment: .center)
 				}
 			}
 		}
