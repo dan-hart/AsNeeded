@@ -103,11 +103,23 @@ public final class DataStore {
 	// MARK: - Data Management
 
 	/// Export all data as JSON
-	public func exportDataAsJSON(redactNames: Bool = false) async throws -> Data {
-		logger.info("Starting data export (redacted: \(redactNames))")
+	public func exportDataAsJSON(redactNames: Bool = false, redactNotes: Bool = false) async throws -> Data {
+		logger.info("Starting data export (redactNames: \(redactNames), redactNotes: \(redactNotes))")
 		
-		let exportMedications = redactNames ? medications.map { $0.redacted() } : medications
-		let exportEvents = redactNames ? events.map { $0.redacted() } : events
+		// Redact medication names if requested
+		let exportMedications = redactNames ? medications.map { medication in
+			var redacted = medication
+			redacted.clinicalName = "[REDACTED]"
+			redacted.nickname = medication.nickname != nil ? "[REDACTED]" : nil
+			return redacted
+		} : medications
+		
+		// Redact event notes if requested
+		let exportEvents = redactNotes ? events.map { event in
+			var redacted = event
+			redacted.note = nil  // Remove notes entirely
+			return redacted
+		} : events
 		
 		logger.debug("Exporting \(exportMedications.count) medications and \(exportEvents.count) events")
 		
