@@ -182,7 +182,7 @@ struct AboutView: View {
             .foregroundColor(.pink)
 		  
 		  VStack(alignment: .leading, spacing: 4) {
-			Text("Jesse")
+			Text("My Wife, Jesse")
 			  .font(.headline)
 			  .fontWeight(.semibold)
 			Text("Support & Encouragement")

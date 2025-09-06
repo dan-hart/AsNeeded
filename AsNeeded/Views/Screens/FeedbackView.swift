@@ -30,6 +30,7 @@ struct FeedbackView: View {
 					
 					feedbackTypesSection
 				}
+                .padding()
 			}
 			.redacted(reason: isLoading ? .placeholder : [])
 			.overlay {

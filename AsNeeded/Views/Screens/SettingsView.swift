@@ -10,10 +10,6 @@ struct SettingsView: View {
 			.fontWeight(.semibold)
 			.padding(.bottom, 4)
 		  
-		  MedicalDisclaimerView()
-		  
-		  SettingsNotificationSectionView()
-		  
 		  SettingsFeedbackSectionView()
 		  
 		  SettingsDataSectionView()
@@ -22,7 +18,7 @@ struct SettingsView: View {
 
 		  SettingsAboutSectionView()
 		  
-		  NIHDisclaimerView()
+		  SettingsDisclaimersSectionView()
 
 		  Spacer(minLength: 32)
 		}
