@@ -143,10 +143,7 @@ struct MedicationListView: View {
             Spacer()
             
             VStack(spacing: 16) {
-                Image("Logo")
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                // TODO: Put App Icon Here
                 
                 VStack(spacing: 8) {
                     Text("Welcome to As Needed")
