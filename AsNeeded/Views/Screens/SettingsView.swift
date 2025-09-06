@@ -5,10 +5,7 @@ struct SettingsView: View {
 	NavigationView {
 	  ScrollView {
 		VStack(alignment: .leading, spacing: 32) {
-		  Text("Settings")
-			.font(.largeTitle)
-			.fontWeight(.semibold)
-			.padding(.bottom, 4)
+		  SettingsNotificationSectionView()
 		  
 		  SettingsFeedbackSectionView()
 		  
@@ -25,6 +22,8 @@ struct SettingsView: View {
 		.padding(.horizontal)
 		.padding(.vertical)
 	  }
+	  .navigationTitle("Settings")
+	  .navigationBarTitleDisplayMode(.large)
 	}
   }
 }
