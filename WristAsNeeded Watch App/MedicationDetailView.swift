@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct MedicationDetailView: View {
 	let medication: WatchMedication
@@ -7,11 +8,13 @@ struct MedicationDetailView: View {
 	@State private var showingDoseLogger = false
 	@State private var showingQuantityEditor = false
 	@State private var newQuantity: Double
+	@State private var currentQuantity: Double
 	
 	init(medication: WatchMedication) {
 		self.medication = medication
 		self._doseAmount = State(initialValue: medication.prescribedDoseAmount ?? 1.0)
 		self._newQuantity = State(initialValue: medication.quantity)
+		self._currentQuantity = State(initialValue: medication.quantity)
 	}
 	
 	var body: some View {
@@ -28,7 +31,7 @@ struct MedicationDetailView: View {
 						Text("Quantity:")
 							.font(.caption)
 							.foregroundColor(.secondary)
-						Text("\(medication.quantity, specifier: "%.0f")")
+						Text("\(currentQuantity, specifier: "%.0f")")
 							.font(.caption)
 							.fontWeight(.medium)
 						Spacer()
@@ -99,6 +102,12 @@ struct MedicationDetailView: View {
 		.navigationBarTitleDisplayMode(.inline)
 		.sheet(isPresented: $showingDoseLogger) {
 			DoseLoggerView(medication: medication, doseAmount: $doseAmount)
+				.onDisappear {
+					// Update quantity after logging dose
+					if currentQuantity > 0 {
+						currentQuantity = max(0, currentQuantity - doseAmount)
+					}
+				}
 		}
 		.sheet(isPresented: $showingQuantityEditor) {
 			QuantityEditorView(medication: medication, quantity: $newQuantity)
@@ -118,8 +127,13 @@ struct MedicationDetailView: View {
 		
 		sender.sendMessage(key: "logDose", value: eventData)
 		
-		// Provide haptic feedback
-		WKInterfaceDevice.current().play(.success)
+		// Update local quantity immediately for better UX
+		if currentQuantity > 0 {
+			currentQuantity = max(0, currentQuantity - doseAmount)
+		}
+		
+		// Provide subtle haptic feedback
+		WKInterfaceDevice.current().play(.click)
 	}
 }
 

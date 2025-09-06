@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct DoseLoggerView: View {
 	let medication: WatchMedication
@@ -13,6 +14,7 @@ struct DoseLoggerView: View {
 	init(medication: WatchMedication, doseAmount: Binding<Double>) {
 		self.medication = medication
 		self._doseAmount = doseAmount
+		// Use prescribed unit from medication
 		self._selectedUnit = State(initialValue: medication.prescribedUnit ?? "dose")
 	}
 	
@@ -28,14 +30,23 @@ struct DoseLoggerView: View {
 					
 					// Dose amount selector
 					VStack(alignment: .leading, spacing: 8) {
-						Text("Amount")
-							.font(.caption)
-							.foregroundColor(.secondary)
+						HStack {
+							Text("Amount")
+								.font(.caption)
+								.foregroundColor(.secondary)
+							Spacer()
+							if let prescribedAmount = medication.prescribedDoseAmount {
+								Text("Prescribed: \(prescribedAmount, specifier: "%.1f")")
+									.font(.caption2)
+									.foregroundColor(.secondary)
+							}
+						}
 						
 						HStack {
 							Button("-") {
 								if doseAmount > 0.25 {
 									doseAmount -= 0.25
+									WKInterfaceDevice.current().play(.click)
 								}
 							}
 							.font(.title2)
@@ -54,6 +65,7 @@ struct DoseLoggerView: View {
 							
 							Button("+") {
 								doseAmount += 0.25
+								WKInterfaceDevice.current().play(.click)
 							}
 							.font(.title2)
 							.frame(width: 40, height: 40)
@@ -65,19 +77,33 @@ struct DoseLoggerView: View {
 					.background(Color.gray.opacity(0.2))
 					.cornerRadius(12)
 					
-					// Unit selector
-					VStack(alignment: .leading, spacing: 8) {
-						Text("Unit")
-							.font(.caption)
-							.foregroundColor(.secondary)
-						
-						Picker("Unit", selection: $selectedUnit) {
-							ForEach(availableUnits, id: \.self) { unit in
-								Text(unit).tag(unit)
+					// Unit selector - show only if no prescribed unit
+					Group {
+						if medication.prescribedUnit == nil {
+							VStack(alignment: .leading, spacing: 8) {
+								Text("Unit")
+									.font(.caption)
+									.foregroundColor(.secondary)
+								
+								Picker("Unit", selection: $selectedUnit) {
+									ForEach(availableUnits, id: \.self) { unit in
+										Text(unit).tag(unit)
+									}
+								}
+								.pickerStyle(WheelPickerStyle())
+								.frame(height: 80)
+							}
+						} else {
+							// Show prescribed unit as read-only
+							HStack {
+								Text("Unit")
+									.font(.caption)
+									.foregroundColor(.secondary)
+								Spacer()
+								Text(selectedUnit)
+									.font(.headline)
 							}
 						}
-						.pickerStyle(WheelPickerStyle())
-						.frame(height: 80)
 					}
 					.padding()
 					.background(Color.gray.opacity(0.2))
@@ -131,8 +157,8 @@ struct DoseLoggerView: View {
 		
 		sender.sendMessage(key: "logDose", value: eventData)
 		
-		// Provide haptic feedback
-		WKInterfaceDevice.current().play(.success)
+		// Provide subtle haptic feedback
+		WKInterfaceDevice.current().play(.click)
 		
 		// Dismiss after a short delay to show the loading state
 		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
