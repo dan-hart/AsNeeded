@@ -155,10 +155,10 @@ struct AboutView: View {
 	  
 	  VStack(spacing: 12) {
 		HStack(spacing: 16) {
-		  Image(systemSymbol: .heartFill)
+		  Image(systemSymbol: .starFill)
 			.font(.system(size: 20, weight: .medium))
 			.frame(width: 32, height: 32)
-			.foregroundColor(.pink)
+            .foregroundColor(.yellow)
 		  
 		  VStack(alignment: .leading, spacing: 4) {
 			Text("Christine Wang")
@@ -176,10 +176,10 @@ struct AboutView: View {
 		.cornerRadius(12)
 		
 		HStack(spacing: 16) {
-		  Image(systemSymbol: .starFill)
+		  Image(systemSymbol: .heartFill)
 			.font(.system(size: 20, weight: .medium))
 			.frame(width: 32, height: 32)
-			.foregroundColor(.yellow)
+            .foregroundColor(.pink)
 		  
 		  VStack(alignment: .leading, spacing: 4) {
 			Text("Jesse")
