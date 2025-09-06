@@ -23,8 +23,13 @@ struct MedicationListView: View {
                 .navigationTitle("Medication")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        if !viewModel.items.isEmpty {
-                            EditButton()
+                        if viewModel.items.count > 1 {
+                            Button(editMode == .inactive ? "Reorder" : "Done") {
+                                withAnimation {
+                                    editMode = editMode == .inactive ? .active : .inactive
+                                }
+                            }
+                            .bold()
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -304,10 +309,10 @@ struct MedicationRow: View {
                 VStack(alignment: .leading, spacing: 12) {
                     medicationTitle
                     medicationInfo
-                    if editMode?.wrappedValue != .active {
-                        logButton
-                            .frame(maxWidth: .infinity)
-                    }
+                    logButton
+                        .frame(maxWidth: .infinity)
+                        .opacity(editMode?.wrappedValue == .active ? 0 : 1)
+                        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
@@ -318,9 +323,9 @@ struct MedicationRow: View {
                         medicationInfo
                     }
                     Spacer(minLength: 12)
-                    if editMode?.wrappedValue != .active {
-                        logButton
-                    }
+                    logButton
+                        .opacity(editMode?.wrappedValue == .active ? 0 : 1)
+                        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
