@@ -7,6 +7,7 @@ struct SupportToastView: View {
 	let isVisible: Bool
 	let onDismiss: () -> Void
 	let onSupportTapped: () -> Void
+	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
 	
 	init(
 		message: String,
@@ -23,7 +24,7 @@ struct SupportToastView: View {
 	}
 	
 	var body: some View {
-		if isVisible {
+		if isVisible && !hideSupportBanners {
 			GeometryReader { geometry in
 				VStack(spacing: 16) {
 					// Success indicator with animation
@@ -46,35 +47,53 @@ struct SupportToastView: View {
 						.foregroundColor(.primary)
 						.multilineTextAlignment(.center)
 					
-					// Support button with enhanced styling
-					Button(action: onSupportTapped) {
-						HStack(spacing: 6) {
-							Image(systemSymbol: .heartFill)
-								.font(.system(size: 14))
-								.foregroundStyle(
-									LinearGradient(
-										colors: [.red, .pink],
-										startPoint: .top,
-										endPoint: .bottom
+					// Support and Don't Show Again buttons
+					HStack(spacing: 12) {
+						Button(action: onSupportTapped) {
+							HStack(spacing: 6) {
+								Image(systemSymbol: .heartFill)
+									.font(.system(size: 14))
+									.foregroundStyle(
+										LinearGradient(
+											colors: [.red, .pink],
+											startPoint: .top,
+											endPoint: .bottom
+										)
 									)
-								)
-							Text(supportMessage)
-								.font(.subheadline)
-								.fontWeight(.medium)
-								.foregroundColor(.accentColor)
+								Text(supportMessage)
+									.font(.subheadline)
+									.fontWeight(.medium)
+									.foregroundColor(.accentColor)
+							}
+							.padding(.horizontal, 20)
+							.padding(.vertical, 10)
+							.background(
+								RoundedRectangle(cornerRadius: 10)
+									.fill(Color.accentColor.opacity(0.1))
+							)
+							.overlay(
+								RoundedRectangle(cornerRadius: 10)
+									.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
+							)
 						}
-						.padding(.horizontal, 20)
-						.padding(.vertical, 10)
-						.background(
-							RoundedRectangle(cornerRadius: 10)
-								.fill(Color.accentColor.opacity(0.1))
-						)
-						.overlay(
-							RoundedRectangle(cornerRadius: 10)
-								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
-						)
+						.buttonStyle(.plain)
+						
+						Button {
+							hideSupportBanners = true
+							onDismiss()
+						} label: {
+							Text("Don't Show Again")
+								.font(.caption)
+								.foregroundColor(.secondary)
+								.padding(.horizontal, 12)
+								.padding(.vertical, 8)
+								.background(
+									RoundedRectangle(cornerRadius: 8)
+										.fill(Color(.tertiarySystemFill))
+								)
+						}
+						.buttonStyle(.plain)
 					}
-					.buttonStyle(.plain)
 					
 					// Dismiss button with proper tap target
 					Button(action: onDismiss) {

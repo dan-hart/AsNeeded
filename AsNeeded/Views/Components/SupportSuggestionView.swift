@@ -2,12 +2,16 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SupportSuggestionView: View {
+	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	
 	var body: some View {
-		NavigationLink {
-			SupportView()
-		} label: {
-			HStack(spacing: 14) {
-				ZStack {
+		if !hideSupportBanners {
+			VStack(spacing: 8) {
+				NavigationLink {
+					SupportView()
+				} label: {
+					HStack(spacing: 14) {
+					ZStack {
 					Circle()
 						.fill(
 							LinearGradient(
@@ -74,10 +78,27 @@ struct SupportSuggestionView: View {
 						lineWidth: 1
 					)
 			)
+				}
+				.buttonStyle(.plain)
+				
+				Button {
+					hideSupportBanners = true
+				} label: {
+					Text("Don't Show Again")
+						.font(.caption)
+						.foregroundColor(.secondary)
+						.frame(maxWidth: .infinity)
+						.padding(.vertical, 8)
+						.background(
+							RoundedRectangle(cornerRadius: 8)
+								.fill(Color(.tertiarySystemFill))
+						)
+				}
+				.buttonStyle(.plain)
+			}
+			.padding(.horizontal, 16)
+			.padding(.top, 12)
 		}
-		.buttonStyle(.plain)
-		.padding(.horizontal, 16)
-		.padding(.top, 12)
 	}
 }
 
