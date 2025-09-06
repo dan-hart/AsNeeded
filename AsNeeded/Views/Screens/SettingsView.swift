@@ -23,6 +23,8 @@ struct SettingsView: View {
 		  SettingsSupportSectionView()
 
 		  SettingsAboutSectionView()
+		  
+		  NIHDisclaimerView()
 
 		  Spacer(minLength: 32)
 		}
