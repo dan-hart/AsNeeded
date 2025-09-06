@@ -212,7 +212,7 @@ struct MedicationListView: View {
                             }
                         }
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: editMode == .active ? 20 : 16, bottom: 6, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(.secondarySystemGroupedBackground))
@@ -220,7 +220,7 @@ struct MedicationListView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color(.separator).opacity(0.1), lineWidth: 0.5)
                             )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                     )
                     .listRowSeparator(.hidden)
