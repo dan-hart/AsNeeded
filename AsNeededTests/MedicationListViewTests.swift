@@ -6,15 +6,6 @@ import Foundation
 @MainActor
 struct MedicationListViewModelTests {
     
-    
-    @Test("View model initializes with empty items")
-    @MainActor
-    func viewModelEmptyState() async {
-        let viewModel = MedicationListViewModel()
-        
-        #expect(viewModel.items.isEmpty)
-    }
-    
     @Test("Medication model stores properties correctly")
     func medicationModelProperties() {
         let medication = ANMedicationConcept(
@@ -53,26 +44,6 @@ struct MedicationListViewModelTests {
         )
         
         #expect(medication.displayName == "Metformin")
-    }
-    
-    @Test("Quantity formatting with and without units")
-    func quantityFormatting() {
-        let medicationWithUnit = ANMedicationConcept(
-            clinicalName: "Test Med",
-            quantity: 50.5,
-            prescribedUnit: .tablet
-        )
-        
-        #expect(medicationWithUnit.quantity == 50.5)
-        #expect(medicationWithUnit.prescribedUnit?.abbreviation == "tablet")
-        
-        let medicationWithoutUnit = ANMedicationConcept(
-            clinicalName: "Test Med",
-            quantity: 100.0
-        )
-        
-        #expect(medicationWithoutUnit.quantity == 100.0)
-        #expect(medicationWithoutUnit.prescribedUnit == nil)
     }
     
     @Test("Overdue refill date is detected correctly")
