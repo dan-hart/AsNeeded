@@ -71,4 +71,12 @@ final class MedicationHistoryViewModel: ObservableObject {
 			}
 		}
 	}
+	
+	func updateEvent(_ event: ANEventConcept) async {
+		// Find and update the event in the store
+		if let index = dataStore.events.firstIndex(where: { $0.id == event.id }) {
+			try? await dataStore.eventsStore.remove(dataStore.events[index])
+			try? await dataStore.eventsStore.insert(event)
+		}
+	}
 }

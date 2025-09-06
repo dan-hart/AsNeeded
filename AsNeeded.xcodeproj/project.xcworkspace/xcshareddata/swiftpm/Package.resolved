@@ -1,13 +1,13 @@
 {
-  "originHash" : "4d86a42f4ba14ecf616c9b3d4f673ce15261934720846e47876afe76cb81e56b",
+  "originHash" : "b595df28f0a18a8e54209e45d206a672870b638285663536482f39c1d2587f2d",
   "pins" : [
     {
       "identity" : "anmodelkit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dan-hart/ANModelKit",
       "state" : {
-        "revision" : "09abf989ffab9893eef7dd91f67aa798d6664fbd",
-        "version" : "1.0.1"
+        "revision" : "e957a7765253825ffb5acc188f34d6b28e590fc6",
+        "version" : "1.0.2"
       }
     },
     {
