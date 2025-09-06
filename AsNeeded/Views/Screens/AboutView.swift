@@ -26,6 +26,8 @@ struct AboutView: View {
 		
 		developerAndSupportSection
 		
+		specialThanksSection
+		
 		technicalInfoSection
 	  }
 	  .padding(.horizontal)
@@ -142,6 +144,58 @@ struct AboutView: View {
 		.cornerRadius(12)
 	  }
 	  .buttonStyle(.plain)
+	}
+  }
+  
+  private var specialThanksSection: some View {
+	VStack(alignment: .leading, spacing: 16) {
+	  Text("Special Thanks")
+		.font(.title2)
+		.fontWeight(.semibold)
+	  
+	  VStack(spacing: 12) {
+		HStack(spacing: 16) {
+		  Image(systemSymbol: .heartFill)
+			.font(.system(size: 20, weight: .medium))
+			.frame(width: 32, height: 32)
+			.foregroundColor(.pink)
+		  
+		  VStack(alignment: .leading, spacing: 4) {
+			Text("Christine Wang")
+			  .font(.headline)
+			  .fontWeight(.semibold)
+			Text("Design & Testing")
+			  .font(.subheadline)
+			  .foregroundColor(.secondary)
+		  }
+		  
+		  Spacer()
+		}
+		.padding(16)
+		.background(.regularMaterial)
+		.cornerRadius(12)
+		
+		HStack(spacing: 16) {
+		  Image(systemSymbol: .starFill)
+			.font(.system(size: 20, weight: .medium))
+			.frame(width: 32, height: 32)
+			.foregroundColor(.yellow)
+		  
+		  VStack(alignment: .leading, spacing: 4) {
+			Text("Jesse")
+			  .font(.headline)
+			  .fontWeight(.semibold)
+			Text("Support & Encouragement")
+			  .font(.subheadline)
+			  .foregroundColor(.secondary)
+		  }
+		  
+		  Spacer()
+		}
+		.padding(16)
+		.background(.regularMaterial)
+		.cornerRadius(12)
+	  }
 	}
   }
   
