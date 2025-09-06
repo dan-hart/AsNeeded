@@ -189,7 +189,8 @@ struct MedicationHistoryView: View {
                         Button {
                             if let med = viewModel.selectedMedication { logMedication = med }
                         } label: {
-                            Image(systemSymbol: .plusCircleFill)
+                            Label("Log Dose", systemSymbol: .plusCircleFill)
+                                .labelStyle(.titleAndIcon)
                         }
                         .disabled(viewModel.selectedMedication == nil)
                         .accessibilityLabel("Log dose for selected medication")
