@@ -6,7 +6,7 @@ import Foundation
 @testable import AsNeeded
 import ANModelKit
 
-@Suite("AnalyticsService Tests")
+@Suite("AnalyticsService Tests", .tags(.analytics, .service, .unit))
 struct AnalyticsServiceTests {
 	
 	// MARK: - Test Helper

@@ -6,7 +6,7 @@ import Foundation
 @testable import AsNeeded
 import ANModelKit
 
-@Suite("DateUtility Tests")
+@Suite("DateUtility Tests", .tags(.date, .utility, .unit))
 struct DateUtilityTests {
 	
 	// MARK: - Helper Properties

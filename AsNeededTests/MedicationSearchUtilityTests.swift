@@ -6,7 +6,7 @@ import Foundation
 @testable import AsNeeded
 import ANModelKit
 
-@Suite("MedicationSearchUtility Tests")
+@Suite("MedicationSearchUtility Tests", .tags(.search, .medication, .utility, .unit))
 struct MedicationSearchUtilityTests {
 	
 	// MARK: - Test Data

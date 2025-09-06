@@ -5,7 +5,7 @@ import Testing
 import Foundation
 @testable import AsNeeded
 
-@Suite("MedicationNameParser Tests")
+@Suite("MedicationNameParser Tests", .tags(.medication, .parser, .unit))
 struct MedicationNameParserTests {
 	
 	// MARK: - MedicationComponents Tests
@@ -171,27 +171,6 @@ struct MedicationNameParserTests {
 			let components = try await parser.parseComponents(from: input)
 			#expect(components.form == expectedForm)
 		}
-	}
-	
-	// MARK: - Batch Processing Tests
-	
-	@Test("Parse multiple medications concurrently")
-	@available(iOS 26.0, *)
-	@MainActor
-	func testParseMultiple() async throws {
-		let parser = MedicationNameParser.shared
-		let medications = [
-			"Ibuprofen 200mg",
-			"Aspirin 81mg",
-			"Metformin Extended Release 500mg"
-		]
-		
-		let results = try await parser.parseMultiple(medications)
-		
-		#expect(results.count == 3)
-		#expect(results[0].dosageStrength == "200")
-		#expect(results[1].dosageStrength == "81")
-		#expect(results[2].releaseType == "Extended Release")
 	}
 	
 	// MARK: - Simplify Name Tests

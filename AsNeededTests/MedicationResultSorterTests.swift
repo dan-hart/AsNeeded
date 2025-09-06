@@ -9,6 +9,8 @@ import Testing
 import SwiftRxNorm
 @testable import AsNeeded
 
+@Suite
+@Tag(.search) @Tag(.medication) @Tag(.unit)
 struct MedicationResultSorterTests {
 	// MARK: - Search Result Sorting Tests
 	

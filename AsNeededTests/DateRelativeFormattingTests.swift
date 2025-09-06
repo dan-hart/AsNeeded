@@ -10,6 +10,8 @@ import Foundation
 @testable import AsNeeded
 
 @MainActor
+@Suite
+@Tag(.date) @Tag(.formatter) @Tag(.unit)
 struct DateRelativeFormattingTests {
 	
 	private let calendar = Calendar.current

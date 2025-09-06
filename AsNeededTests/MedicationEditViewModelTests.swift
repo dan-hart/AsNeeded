@@ -6,7 +6,7 @@ import Foundation
 @testable import AsNeeded
 import ANModelKit
 
-@Suite("MedicationEditViewModel Tests")
+@Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
 	
 	// MARK: - Initialization Tests

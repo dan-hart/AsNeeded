@@ -1,16 +1,20 @@
 // UtilityTests.swift
 // Tests for utility classes
 
-import XCTest
+import Testing
+import Foundation
 import ANModelKit
 @testable import AsNeeded
 
+@Suite("Utility Tests")
+@Tag(.utility) @Tag(.unit)
 @MainActor
-final class UtilityTests: XCTestCase {
+struct UtilityTests {
 	
 	// MARK: - MedicationSearchUtility Tests
 	
-	func testFindBestMatchExact() {
+	@Test("Find best match with exact name")
+	func findBestMatchExact() {
 		// Given
 		let medications = [
 			createMedication(name: "Aspirin"),
@@ -22,11 +26,12 @@ final class UtilityTests: XCTestCase {
 		let result = MedicationSearchUtility.findBestMatch(for: "Aspirin", in: medications)
 		
 		// Then
-		XCTAssertNotNil(result)
-		XCTAssertEqual(result?.clinicalName, "Aspirin")
+		#expect(result != nil)
+		#expect(result?.clinicalName == "Aspirin")
 	}
 	
-	func testFindBestMatchByNickname() {
+	@Test("Find best match by nickname")
+	func findBestMatchByNickname() {
 		// Given
 		let medications = [
 			createMedication(name: "Acetaminophen", nickname: "Tylenol")
@@ -36,11 +41,12 @@ final class UtilityTests: XCTestCase {
 		let result = MedicationSearchUtility.findBestMatch(for: "tylenol", in: medications)
 		
 		// Then
-		XCTAssertNotNil(result)
-		XCTAssertEqual(result?.clinicalName, "Acetaminophen")
+		#expect(result != nil)
+		#expect(result?.clinicalName == "Acetaminophen")
 	}
 	
-	func testFindBestMatchPartial() {
+	@Test("Find best match with partial name")
+	func findBestMatchPartial() {
 		// Given
 		let medications = [
 			createMedication(name: "Ibuprofen 200mg"),
@@ -51,11 +57,12 @@ final class UtilityTests: XCTestCase {
 		let result = MedicationSearchUtility.findBestMatch(for: "ibuprofen", in: medications)
 		
 		// Then
-		XCTAssertNotNil(result)
-		XCTAssertEqual(result?.clinicalName, "Ibuprofen 200mg")
+		#expect(result != nil)
+		#expect(result?.clinicalName == "Ibuprofen 200mg")
 	}
 	
-	func testFindBestMatchFuzzy() {
+	@Test("Find best match with fuzzy search")
+	func findBestMatchFuzzy() {
 		// Given
 		let medications = [
 			createMedication(name: "Metformin Hydrochloride")
@@ -65,26 +72,28 @@ final class UtilityTests: XCTestCase {
 		let result = MedicationSearchUtility.findBestMatch(for: "metf hydro", in: medications)
 		
 		// Then
-		XCTAssertNotNil(result)
-		XCTAssertEqual(result?.clinicalName, "Metformin Hydrochloride")
+		#expect(result != nil)
+		#expect(result?.clinicalName == "Metformin Hydrochloride")
 	}
 	
-	func testIsValidMedicationName() {
+	@Test("Validate medication name")
+	func isValidMedicationName() {
 		// Valid names
-		XCTAssertTrue(MedicationSearchUtility.isValidMedicationName("Aspirin"))
-		XCTAssertTrue(MedicationSearchUtility.isValidMedicationName("Ibuprofen 200mg"))
-		XCTAssertTrue(MedicationSearchUtility.isValidMedicationName("Vitamin-D3"))
+		#expect(MedicationSearchUtility.isValidMedicationName("Aspirin") == true)
+		#expect(MedicationSearchUtility.isValidMedicationName("Ibuprofen 200mg") == true)
+		#expect(MedicationSearchUtility.isValidMedicationName("Vitamin-D3") == true)
 		
 		// Invalid names
-		XCTAssertFalse(MedicationSearchUtility.isValidMedicationName(""))
-		XCTAssertFalse(MedicationSearchUtility.isValidMedicationName("A")) // Too short
-		XCTAssertFalse(MedicationSearchUtility.isValidMedicationName("Med@123")) // Invalid character
-		XCTAssertFalse(MedicationSearchUtility.isValidMedicationName("12345")) // No letters
+		#expect(MedicationSearchUtility.isValidMedicationName("") == false)
+		#expect(MedicationSearchUtility.isValidMedicationName("A") == false) // Too short
+		#expect(MedicationSearchUtility.isValidMedicationName("Med@123") == false) // Invalid character
+		#expect(MedicationSearchUtility.isValidMedicationName("12345") == false) // No letters
 	}
 	
 	// MARK: - DateUtility Tests
 	
-	func testDayRange() {
+	@Test("Get day range for date")
+	func dayRange() {
 		// Given
 		let testDate = Date()
 		
@@ -92,12 +101,13 @@ final class UtilityTests: XCTestCase {
 		let (start, end) = DateUtility.dayRange(for: testDate)
 		
 		// Then
-		XCTAssertTrue(start <= testDate)
-		XCTAssertTrue(testDate < end)
-		XCTAssertEqual(Calendar.current.dateComponents([.day], from: start, to: end).day, 1)
+		#expect(start <= testDate)
+		#expect(testDate < end)
+		#expect(Calendar.current.dateComponents([.day], from: start, to: end).day == 1)
 	}
 	
-	func testFilterEventsForToday() {
+	@Test("Filter events for today")
+	func filterEventsForToday() {
 		// Given
 		let todayEvent = ANEventConcept(eventType: .doseTaken, medication: nil, dose: nil, date: Date())
 		let yesterdayEvent = ANEventConcept(eventType: .doseTaken, medication: nil, dose: nil, date: Date().addingTimeInterval(-86400))
@@ -107,23 +117,25 @@ final class UtilityTests: XCTestCase {
 		let filtered = DateUtility.filterEventsForToday(events)
 		
 		// Then
-		XCTAssertEqual(filtered.count, 1)
-		XCTAssertEqual(filtered.first?.id, todayEvent.id)
+		#expect(filtered.count == 1)
+		#expect(filtered.first?.id == todayEvent.id)
 	}
 	
-	func testIsValidMedicationDate() {
+	@Test("Validate medication date")
+	func isValidMedicationDate() {
 		// Valid dates
-		XCTAssertTrue(DateUtility.isValidMedicationDate(Date()))
-		XCTAssertTrue(DateUtility.isValidMedicationDate(Date().addingTimeInterval(-86400 * 30))) // 30 days ago
+		#expect(DateUtility.isValidMedicationDate(Date()) == true)
+		#expect(DateUtility.isValidMedicationDate(Date().addingTimeInterval(-86400 * 30)) == true) // 30 days ago
 		
 		// Invalid dates
-		XCTAssertFalse(DateUtility.isValidMedicationDate(Date().addingTimeInterval(-86400 * 400))) // Over a year ago
-		XCTAssertFalse(DateUtility.isValidMedicationDate(Date().addingTimeInterval(86400 * 30))) // Far future
+		#expect(DateUtility.isValidMedicationDate(Date().addingTimeInterval(-86400 * 400)) == false) // Over a year ago
+		#expect(DateUtility.isValidMedicationDate(Date().addingTimeInterval(86400 * 30)) == false) // Far future
 	}
 	
 	// MARK: - ValidationUtility Tests
 	
-	func testValidateMedicationSuccess() {
+	@Test("Validate medication success")
+	func validateMedicationSuccess() {
 		// Given
 		let medication = createMedication(name: "Valid Medication", nickname: "Valid")
 		
@@ -131,11 +143,12 @@ final class UtilityTests: XCTestCase {
 		let result = ValidationUtility.validateMedication(medication)
 		
 		// Then
-		XCTAssertTrue(result.isValid)
-		XCTAssertTrue(result.errors.isEmpty)
+		#expect(result.isValid == true)
+		#expect(result.errors.isEmpty == true)
 	}
 	
-	func testValidateMedicationEmptyName() {
+	@Test("Validate medication with empty name")
+	func validateMedicationEmptyName() {
 		// Given
 		let medication = createMedication(name: "", nickname: nil)
 		
@@ -143,14 +156,15 @@ final class UtilityTests: XCTestCase {
 		let result = ValidationUtility.validateMedication(medication)
 		
 		// Then
-		XCTAssertFalse(result.isValid)
-		XCTAssertTrue(result.errors.contains { error in
+		#expect(result.isValid == false)
+		#expect(result.errors.contains { error in
 			if case .emptyField = error { return true }
 			return false
-		})
+		} == true)
 	}
 	
-	func testValidateMedicationInvalidDose() {
+	@Test("Validate medication with invalid dose")
+	func validateMedicationInvalidDose() {
 		// Given
 		var medication = createMedication(name: "Test")
 		medication.prescribedDoseAmount = -5.0
@@ -159,14 +173,15 @@ final class UtilityTests: XCTestCase {
 		let result = ValidationUtility.validateMedication(medication)
 		
 		// Then
-		XCTAssertFalse(result.isValid)
-		XCTAssertTrue(result.errors.contains { error in
+		#expect(result.isValid == false)
+		#expect(result.errors.contains { error in
 			if case .invalidValue = error { return true }
 			return false
-		})
+		} == true)
 	}
 	
-	func testValidateEventSuccess() {
+	@Test("Validate event success")
+	func validateEventSuccess() {
 		// Given
 		let medication = createMedication(name: "Test Med")
 		let event = ANEventConcept(
@@ -180,10 +195,11 @@ final class UtilityTests: XCTestCase {
 		let result = ValidationUtility.validateEvent(event)
 		
 		// Then
-		XCTAssertTrue(result.isValid)
+		#expect(result.isValid == true)
 	}
 	
-	func testValidateEventMissingMedication() {
+	@Test("Validate event missing medication")
+	func validateEventMissingMedication() {
 		// Given
 		let event = ANEventConcept(
 			eventType: .doseTaken,
@@ -196,14 +212,15 @@ final class UtilityTests: XCTestCase {
 		let result = ValidationUtility.validateEvent(event)
 		
 		// Then
-		XCTAssertFalse(result.isValid)
-		XCTAssertTrue(result.errors.contains { error in
+		#expect(result.isValid == false)
+		#expect(result.errors.contains { error in
 			if case .missingRequiredField = error { return true }
 			return false
-		})
+		} == true)
 	}
 	
-	func testFindDuplicateMedications() {
+	@Test("Find duplicate medications")
+	func findDuplicateMedications() {
 		// Given
 		let med1 = createMedication(name: "Aspirin", nickname: nil)
 		let med2 = createMedication(name: "aspirin", nickname: nil) // Same name, different case
@@ -214,8 +231,8 @@ final class UtilityTests: XCTestCase {
 		let duplicates = ValidationUtility.findDuplicateMedications(in: medications)
 		
 		// Then
-		XCTAssertEqual(duplicates.count, 1)
-		XCTAssertEqual(duplicates.first?.count, 2)
+		#expect(duplicates.count == 1)
+		#expect(duplicates.first?.count == 2)
 	}
 	
 	// MARK: - Helper Methods

@@ -8,6 +8,8 @@
 import Testing
 @testable import AsNeeded
 
+@Suite
+@Tag(.medication) @Tag(.parser) @Tag(.unit)
 struct MedicationNameSimplifierTests {
 	// MARK: - Name Simplification Tests
 	
