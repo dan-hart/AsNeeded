@@ -11,6 +11,8 @@ struct MedicationHistoryView: View {
     @State private var showSupportView = false
     @State private var currentTime = Date()
     @State private var scrollTarget: Date?
+    @State private var showDatePicker = false
+    @State private var selectedDate = Date()
     
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
@@ -168,16 +170,6 @@ struct MedicationHistoryView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        Spacer(minLength: 8)
-                        Button {
-                            if let med = viewModel.selectedMedication { logMedication = med }
-                        } label: {
-                            Label("Log Dose", systemImage: "plus.circle.fill")
-                                .labelStyle(.titleAndIcon)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(viewModel.selectedMedication == nil)
-                        .accessibilityLabel("Log dose for selected medication")
                     }
                     .padding(.horizontal)
                     
@@ -192,6 +184,27 @@ struct MedicationHistoryView: View {
                     }
                 }
                 .navigationTitle("History")
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            if let med = viewModel.selectedMedication { logMedication = med }
+                        } label: {
+                            Image(systemSymbol: .plusCircleFill)
+                        }
+                        .disabled(viewModel.selectedMedication == nil)
+                        .accessibilityLabel("Log dose for selected medication")
+                    }
+                    
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button {
+                            showDatePicker = true
+                        } label: {
+                            Image(systemSymbol: .calendar)
+                        }
+                        .disabled(viewModel.groupedHistory.isEmpty)
+                        .accessibilityLabel("Jump to date")
+                    }
+                }
                 .onAppear {
                     // Handle navigation from trends
                     if let targetDate = navigationManager.historyTargetDate {
@@ -208,6 +221,43 @@ struct MedicationHistoryView: View {
                 }
                 .onReceive(timer) { _ in
                     currentTime = Date()
+                }
+                .sheet(isPresented: $showDatePicker) {
+                    NavigationStack {
+                        VStack(spacing: 20) {
+                            Text("Select a date to jump to")
+                                .font(.headline)
+                                .padding(.top)
+                            
+                            DatePicker(
+                                "Select Date",
+                                selection: $selectedDate,
+                                displayedComponents: [.date]
+                            )
+                            .datePickerStyle(.graphical)
+                            .padding(.horizontal)
+                            
+                            Spacer()
+                        }
+                        .navigationTitle("Jump to Date")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    showDatePicker = false
+                                }
+                            }
+                            
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Jump") {
+                                    scrollTarget = Calendar.current.startOfDay(for: selectedDate)
+                                    showDatePicker = false
+                                }
+                                .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
                 }
                 .sheet(item: $logMedication) { med in
                     LogDoseView(medication: med) { dose, event in
