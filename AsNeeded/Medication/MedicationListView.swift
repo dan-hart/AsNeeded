@@ -189,7 +189,11 @@ struct MedicationListView: View {
                         }
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture { viewMedication = med }
+                    .onTapGesture { 
+                        if editMode == .inactive {
+                            viewMedication = med
+                        }
+                    }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button {
                             editMedication = med
@@ -285,11 +289,11 @@ struct MedicationRow: View {
     var body: some View {
         HStack(spacing: 0) {
             if editMode?.wrappedValue == .active {
-                Image(systemSymbol: .line3Horizontal)
-                    .font(.system(size: 16))
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 20)
-                    .padding(.leading, 16)
+                Image(systemSymbol: .line3HorizontalCircleFill)
+                    .font(.system(size: 20))
+                    .foregroundStyle(.quaternary)
+                    .frame(width: 24)
+                    .padding(.leading, 12)
                     .padding(.trailing, 8)
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
@@ -303,6 +307,7 @@ struct MedicationRow: View {
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
+                .opacity(editMode?.wrappedValue == .active ? 0.6 : 1.0)
             } else {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -314,6 +319,7 @@ struct MedicationRow: View {
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
+                .opacity(editMode?.wrappedValue == .active ? 0.6 : 1.0)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
@@ -399,6 +405,8 @@ struct MedicationRow: View {
         .controlSize(.regular)
         .tint(.accentColor)
         .shadow(color: Color.accentColor.opacity(0.2), radius: 3, x: 0, y: 2)
+        .disabled(editMode?.wrappedValue == .active)
+        .opacity(editMode?.wrappedValue == .active ? 0.5 : 1.0)
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Opens dose logging for this medication")
     }
