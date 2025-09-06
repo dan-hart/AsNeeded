@@ -64,8 +64,8 @@ final class DataManagementViewModel: ObservableObject {
 	showingExportConfirmation = true
   }
   
-  func exportData(includeNames: Bool) async {
-	logger.info("Starting data export - includeNames: \(includeNames)")
+  func exportData(redactMedicationNames: Bool, redactNotes: Bool) async {
+	logger.info("Starting data export - redactMedicationNames: \(redactMedicationNames), redactNotes: \(redactNotes)")
 	isExporting = true
 	defer { 
 	  isExporting = false
@@ -73,8 +73,8 @@ final class DataManagementViewModel: ObservableObject {
 	}
 	
 	do {
-	  logger.debug("Calling dataStore.exportDataAsJSON with redactNames: \(!includeNames)")
-	  let data = try await dataStore.exportDataAsJSON(redactNames: !includeNames)
+	  logger.debug("Calling dataStore.exportDataAsJSON with redactNames: \(redactMedicationNames), redactNotes: \(redactNotes)")
+	  let data = try await dataStore.exportDataAsJSON(redactNames: redactMedicationNames, redactNotes: redactNotes)
 	  logger.info("Export data generated successfully - size: \(data.count) bytes")
 	  
 	  // Create a file URL in the documents directory for sharing

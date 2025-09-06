@@ -21,6 +21,8 @@ struct DataManagementView: View {
     @StateObject private var viewModel = DataManagementViewModel()
     @State private var showSupportToast = false
     @State private var showSupportView = false
+    @State private var redactMedicationNames = false
+    @State private var redactNotes = false
     private let logger = DHLogger(category: "DataManagementView")
     
     var body: some View {
@@ -93,24 +95,62 @@ struct DataManagementView: View {
                         }
                 }
             }
-            .confirmationDialog(
-                "Export Data",
-                isPresented: $viewModel.showingExportConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Include Medication Names") {
-                    Task {
-                        await viewModel.exportData(includeNames: true)
+            .sheet(isPresented: $viewModel.showingExportConfirmation) {
+                NavigationStack {
+                    Form {
+                        Section {
+                            Text("Choose what information to include in the export")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Section("Privacy Options") {
+                            Toggle(isOn: $redactMedicationNames) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Redact Medication Names")
+                                    Text("Replace medication names with [REDACTED]")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            Toggle(isOn: $redactNotes) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Redact Notes")
+                                    Text("Remove all notes from events")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Export Options")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                viewModel.showingExportConfirmation = false
+                                redactMedicationNames = false
+                                redactNotes = false
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Export") {
+                                Task {
+                                    await viewModel.exportData(
+                                        redactMedicationNames: redactMedicationNames,
+                                        redactNotes: redactNotes
+                                    )
+                                    viewModel.showingExportConfirmation = false
+                                    redactMedicationNames = false
+                                    redactNotes = false
+                                }
+                            }
+                            .fontWeight(.semibold)
+                        }
                     }
                 }
-                Button("Redact Medication Names") {
-                    Task {
-                        await viewModel.exportData(includeNames: false)
-                    }
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Would you like to include clinical names and nicknames in the export, or redact them for privacy?")
+                .presentationDetents([.medium])
             }
             .confirmationDialog(
                 "Clear All Data",
