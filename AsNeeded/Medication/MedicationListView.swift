@@ -24,7 +24,7 @@ struct MedicationListView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         if viewModel.items.count > 1 {
-                            Button(editMode == .inactive ? "Reorder" : "Done") {
+                            Button(editMode == .inactive ? "Edit" : "Done") {
                                 withAnimation {
                                     editMode = editMode == .inactive ? .active : .inactive
                                 }
@@ -215,7 +215,7 @@ struct MedicationListView: View {
                             }
                         }
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowInsets(EdgeInsets(top: 6, leading: editMode == .active ? 20 : 16, bottom: 6, trailing: 16))
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(.secondarySystemGroupedBackground))
@@ -295,16 +295,6 @@ struct MedicationRow: View {
     
     var body: some View {
         HStack(spacing: 0) {
-            if editMode?.wrappedValue == .active {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24)
-                    .padding(.leading, 12)
-                    .padding(.trailing, 8)
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-            
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 12) {
                     medicationTitle
@@ -315,7 +305,7 @@ struct MedicationRow: View {
                         .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
                 }
                 .padding(.vertical, 14)
-                .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
+                .padding(.horizontal, 16)
             } else {
                 HStack(alignment: .center) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -328,7 +318,7 @@ struct MedicationRow: View {
                         .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
                 }
                 .padding(.vertical, 14)
-                .padding(.horizontal, editMode?.wrappedValue == .active ? 8 : 16)
+                .padding(.horizontal, 16)
             }
         }
         .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
