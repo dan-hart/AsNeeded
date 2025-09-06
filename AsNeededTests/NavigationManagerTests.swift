@@ -3,7 +3,7 @@ import Foundation
 import Combine
 @testable import AsNeeded
 
-@Suite("NavigationManager Tests")
+@Suite("NavigationManager Tests", .tags(.navigation, .unit))
 struct NavigationManagerTests {
 	
 	@MainActor

@@ -6,7 +6,7 @@ import Foundation
 @testable import AsNeeded
 import ANModelKit
 
-@Suite("ValidationUtility Tests")
+@Suite("ValidationUtility Tests", .tags(.validation, .utility, .unit))
 struct ValidationUtilityTests {
 	
 	// MARK: - Name Validation Tests

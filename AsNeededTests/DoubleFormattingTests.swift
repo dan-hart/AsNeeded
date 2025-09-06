@@ -8,6 +8,8 @@
 import Testing
 @testable import AsNeeded
 
+@Suite
+@Tag(.formatter) @Tag(.utility) @Tag(.unit)
 struct DoubleFormattingTests {
 	
 	@Test("Whole numbers should not show decimals")

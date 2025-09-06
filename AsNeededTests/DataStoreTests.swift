@@ -1,32 +1,28 @@
 // DataStoreTests.swift
 // Comprehensive tests for DataStore operations
 
-import XCTest
+import Testing
+import Foundation
 import ANModelKit
 @testable import AsNeeded
 
+@Suite("DataStore Tests")
+@Tag(.dataStore) @Tag(.persistence) @Tag(.unit)
 @MainActor
-final class DataStoreTests: XCTestCase {
-	private var dataStore: DataStore!
+struct DataStoreTests {
+	private var dataStore: DataStore
 	
-	override func setUp() async throws {
-		try await super.setUp()
+	init() async throws {
 		// Create test instance with isolated storage
 		dataStore = DataStore(testIdentifier: "DataStoreTests")
 		// Clear any existing test data
 		try await dataStore.clearAllData()
 	}
 	
-	override func tearDown() async throws {
-		// Clean up test data
-		try await dataStore.clearAllData()
-		dataStore = nil
-		try await super.tearDown()
-	}
-	
 	// MARK: - Medication Tests
 	
-	func testAddMedication() async throws {
+	@Test("Add medication to data store")
+	func addMedication() async throws {
 		// Given
 		let medication = createTestMedication(name: "Test Med")
 		
@@ -34,12 +30,13 @@ final class DataStoreTests: XCTestCase {
 		try await dataStore.addMedication(medication)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 1)
-		XCTAssertEqual(dataStore.medications.first?.id, medication.id)
-		XCTAssertEqual(dataStore.medications.first?.clinicalName, "Test Med")
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.medications.first?.id == medication.id)
+		#expect(dataStore.medications.first?.clinicalName == "Test Med")
 	}
 	
-	func testUpdateMedication() async throws {
+	@Test("Update existing medication")
+	func updateMedication() async throws {
 		// Given
 		let medication = createTestMedication(name: "Original Name")
 		try await dataStore.addMedication(medication)
@@ -51,25 +48,27 @@ final class DataStoreTests: XCTestCase {
 		try await dataStore.updateMedication(updated)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 1)
-		XCTAssertEqual(dataStore.medications.first?.clinicalName, "Updated Name")
-		XCTAssertEqual(dataStore.medications.first?.nickname, "Updated Nickname")
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.medications.first?.clinicalName == "Updated Name")
+		#expect(dataStore.medications.first?.nickname == "Updated Nickname")
 	}
 	
-	func testDeleteMedication() async throws {
+	@Test("Delete medication from data store")
+	func deleteMedication() async throws {
 		// Given
 		let medication = createTestMedication(name: "To Delete")
 		try await dataStore.addMedication(medication)
-		XCTAssertEqual(dataStore.medications.count, 1)
+		#expect(dataStore.medications.count == 1)
 		
 		// When
 		try await dataStore.deleteMedication(medication)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 0)
+		#expect(dataStore.medications.count == 0)
 	}
 	
-	func testDeleteMedicationWithAssociatedEvents() async throws {
+	@Test("Delete medication with associated events removes all related data")
+	func deleteMedicationWithAssociatedEvents() async throws {
 		// Given
 		let medication = createTestMedication(name: "Med with Events")
 		try await dataStore.addMedication(medication)
@@ -79,19 +78,20 @@ final class DataStoreTests: XCTestCase {
 		try await dataStore.addEvent(event1)
 		try await dataStore.addEvent(event2)
 		
-		XCTAssertEqual(dataStore.events.count, 2)
+		#expect(dataStore.events.count == 2)
 		
 		// When
 		try await dataStore.deleteMedication(medication)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 0)
-		XCTAssertEqual(dataStore.events.count, 0, "Associated events should be deleted")
+		#expect(dataStore.medications.count == 0)
+		#expect(dataStore.events.count == 0, "Associated events should be deleted")
 	}
 	
 	// MARK: - Event Tests
 	
-	func testAddEvent() async throws {
+	@Test("Add event to data store")
+	func addEvent() async throws {
 		// Given
 		let medication = createTestMedication(name: "Test Med")
 		try await dataStore.addMedication(medication)
@@ -101,14 +101,15 @@ final class DataStoreTests: XCTestCase {
 		try await dataStore.addEvent(event)
 		
 		// Then
-		XCTAssertEqual(dataStore.events.count, 1)
-		XCTAssertEqual(dataStore.events.first?.id, event.id)
-		XCTAssertEqual(dataStore.events.first?.medication?.id, medication.id)
+		#expect(dataStore.events.count == 1)
+		#expect(dataStore.events.first?.id == event.id)
+		#expect(dataStore.events.first?.medication?.id == medication.id)
 	}
 	
 	// MARK: - Export/Import Tests
 	
-	func testExportDataAsJSON() async throws {
+	@Test("Export data as JSON with correct structure")
+	func exportDataAsJSON() async throws {
 		// Given
 		let med1 = createTestMedication(name: "Med 1")
 		let med2 = createTestMedication(name: "Med 2")
@@ -122,19 +123,20 @@ final class DataStoreTests: XCTestCase {
 		let exportData = try await dataStore.exportDataAsJSON()
 		
 		// Then
-		XCTAssertNotNil(exportData)
-		XCTAssertGreaterThan(exportData.count, 0)
+		#expect(exportData != nil)
+		#expect(exportData.count > 0)
 		
 		// Verify JSON structure
 		let json = try JSONSerialization.jsonObject(with: exportData) as? [String: Any]
-		XCTAssertNotNil(json)
-		XCTAssertNotNil(json?["medications"])
-		XCTAssertNotNil(json?["events"])
-		XCTAssertNotNil(json?["exportDate"])
-		XCTAssertNotNil(json?["appVersion"])
+		#expect(json != nil)
+		#expect(json?["medications"] != nil)
+		#expect(json?["events"] != nil)
+		#expect(json?["exportDate"] != nil)
+		#expect(json?["appVersion"] != nil)
 	}
 	
-	func testExportDataWithRedaction() async throws {
+	@Test("Export data with name redaction enabled")
+	func exportDataWithRedaction() async throws {
 		// Given
 		let medication = createTestMedication(name: "Sensitive Med", nickname: "Secret")
 		try await dataStore.addMedication(medication)
@@ -145,12 +147,13 @@ final class DataStoreTests: XCTestCase {
 		// Then
 		let json = try JSONSerialization.jsonObject(with: exportData) as? [String: Any]
 		let medications = json?["medications"] as? [[String: Any]]
-		XCTAssertNotNil(medications)
-		XCTAssertEqual(medications?.first?["clinicalName"] as? String, "[REDACTED]")
-		XCTAssertEqual(medications?.first?["nickname"] as? String, "[REDACTED]")
+		#expect(medications != nil)
+		#expect(medications?.first?["clinicalName"] as? String == "[REDACTED]")
+		#expect(medications?.first?["nickname"] as? String == "[REDACTED]")
 	}
 	
-	func testImportDataFromJSON() async throws {
+	@Test("Import data from JSON restores medications and events")
+	func importDataFromJSON() async throws {
 		// Given - Create and export data
 		let originalMed = createTestMedication(name: "Import Test")
 		try await dataStore.addMedication(originalMed)
@@ -161,19 +164,20 @@ final class DataStoreTests: XCTestCase {
 		
 		// Clear data
 		try await dataStore.clearAllData()
-		XCTAssertEqual(dataStore.medications.count, 0)
-		XCTAssertEqual(dataStore.events.count, 0)
+		#expect(dataStore.medications.count == 0)
+		#expect(dataStore.events.count == 0)
 		
 		// When - Import the data back
 		try await dataStore.importDataFromJSON(exportData)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 1)
-		XCTAssertEqual(dataStore.events.count, 1)
-		XCTAssertEqual(dataStore.medications.first?.clinicalName, "Import Test")
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.events.count == 1)
+		#expect(dataStore.medications.first?.clinicalName == "Import Test")
 	}
 	
-	func testImportWithMerge() async throws {
+	@Test("Import with merge combines existing and new data")
+	func importWithMerge() async throws {
 		// Given - Existing data
 		let existingMed = createTestMedication(name: "Existing")
 		try await dataStore.addMedication(existingMed)
@@ -188,34 +192,36 @@ final class DataStoreTests: XCTestCase {
 		try await dataStore.importDataFromJSON(exportData, mergeExisting: true)
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 2)
-		XCTAssertTrue(dataStore.medications.contains { $0.clinicalName == "Existing" })
-		XCTAssertTrue(dataStore.medications.contains { $0.clinicalName == "New Med" })
+		#expect(dataStore.medications.count == 2)
+		#expect(dataStore.medications.contains { $0.clinicalName == "Existing" })
+		#expect(dataStore.medications.contains { $0.clinicalName == "New Med" })
 	}
 	
 	// MARK: - Clear Data Tests
 	
-	func testClearAllData() async throws {
+	@Test("Clear all data removes medications and events")
+	func clearAllData() async throws {
 		// Given
 		let medication = createTestMedication(name: "To Clear")
 		try await dataStore.addMedication(medication)
 		let event = createTestEvent(medication: medication)
 		try await dataStore.addEvent(event)
 		
-		XCTAssertEqual(dataStore.medications.count, 1)
-		XCTAssertEqual(dataStore.events.count, 1)
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.events.count == 1)
 		
 		// When
 		try await dataStore.clearAllData()
 		
 		// Then
-		XCTAssertEqual(dataStore.medications.count, 0)
-		XCTAssertEqual(dataStore.events.count, 0)
+		#expect(dataStore.medications.count == 0)
+		#expect(dataStore.events.count == 0)
 	}
 	
 	// MARK: - Performance Tests
 	
-	func testBulkOperationsPerformance() async throws {
+	@Test("Bulk operations complete within performance threshold")
+	func bulkOperationsPerformance() async throws {
 		// Measure bulk insert performance
 		let medications = (0..<100).map { i in
 			createTestMedication(name: "Med \(i)")
@@ -229,8 +235,8 @@ final class DataStoreTests: XCTestCase {
 		
 		let elapsed = Date().timeIntervalSince(startTime)
 		
-		XCTAssertEqual(dataStore.medications.count, 100)
-		XCTAssertLessThan(elapsed, 5.0, "Bulk insert should complete within 5 seconds")
+		#expect(dataStore.medications.count == 100)
+		#expect(elapsed < 5.0, "Bulk insert should complete within 5 seconds")
 	}
 	
 	// MARK: - Helper Methods
