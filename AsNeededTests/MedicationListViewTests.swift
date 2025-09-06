@@ -4,8 +4,7 @@ import Foundation
 @testable import ANModelKit
 
 @MainActor
-@Suite
-@Tag(.medication) @Tag(.list) @Tag(.ui) @Tag(.unit)
+@Suite(.tags(.medication, .list, .ui, .unit))
 struct MedicationListViewModelTests {
     
     @Test("Medication model stores properties correctly")

@@ -11,8 +11,7 @@ import SwiftRxNorm
 @testable import AsNeeded
 
 @MainActor
-@Suite
-@Tag(.search) @Tag(.medication) @Tag(.service) @Tag(.unit)
+@Suite(.tags(.search, .medication, .service, .unit))
 struct MedicationSearchServiceTests {
 	// MARK: - Initialization Tests
 	@Test("MedicationSearchService should initialize as singleton")

@@ -8,8 +8,7 @@
 import Testing
 @testable import AsNeeded
 
-@Suite
-@Tag(.smoke) @Tag(.unit)
+@Suite(.tags(.smoke, .unit))
 struct AsNeededTests {
 	@Test("quick test example")
 	func quickTestExample() {

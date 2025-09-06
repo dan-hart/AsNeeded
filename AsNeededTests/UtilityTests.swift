@@ -6,8 +6,7 @@ import Foundation
 import ANModelKit
 @testable import AsNeeded
 
-@Suite("Utility Tests")
-@Tag(.utility) @Tag(.unit)
+@Suite("Utility Tests", .tags(.utility, .unit))
 @MainActor
 struct UtilityTests {
 	

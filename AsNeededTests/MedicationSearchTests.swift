@@ -9,8 +9,7 @@ import Testing
 import SwiftUI
 @testable import AsNeeded
 
-@Suite
-@Tag(.search) @Tag(.medication) @Tag(.unit)
+@Suite(.tags(.search, .medication, .unit))
 struct MedicationSearchTests {
 	// MARK: - Common Medication Data Tests
 	@Test("Common medications should contain expected entries")

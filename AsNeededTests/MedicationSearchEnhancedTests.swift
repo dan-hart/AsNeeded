@@ -11,8 +11,7 @@ import SwiftRxNorm
 @testable import AsNeeded
 
 @MainActor
-@Suite
-@Tag(.search) @Tag(.medication) @Tag(.unit)
+@Suite(.tags(.search, .medication, .unit))
 struct MedicationSearchEnhancedTests {
 	// MARK: - Common Typo Tests
 	@Test("Should find Aspirin with common typos")

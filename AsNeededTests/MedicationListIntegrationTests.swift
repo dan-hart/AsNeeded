@@ -5,8 +5,7 @@ import Combine
 @testable import ANModelKit
 
 @MainActor
-@Suite
-@Tag(.medication) @Tag(.list) @Tag(.integration)
+@Suite(.tags(.medication, .list, .integration))
 struct MedicationEventTests {
     
     @Test("Medication event stores dose information")
