@@ -28,7 +28,7 @@ struct DateRelativeFormattingTests {
 	@Test("Yesterday should return 'yesterday'")
 	func testYesterday() {
 		guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now) else {
-			#expect(false, "Failed to create yesterday date")
+			#expect(Bool(false), "Failed to create yesterday date")
 			return
 		}
 		#expect(yesterday.relativeFormattedAsPast == "yesterday")
@@ -37,7 +37,7 @@ struct DateRelativeFormattingTests {
 	@Test("Tomorrow should return 'tomorrow'")
 	func testTomorrow() {
 		guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else {
-			#expect(false, "Failed to create tomorrow date")
+			#expect(Bool(false), "Failed to create tomorrow date")
 			return
 		}
 		#expect(tomorrow.relativeFormattedAsFuture == "tomorrow")
@@ -55,7 +55,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsPast == testCase.expected)
@@ -72,7 +72,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsFuture == testCase.expected)
@@ -94,7 +94,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsPast == testCase.expected)
@@ -112,7 +112,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsFuture == testCase.expected)
@@ -134,7 +134,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsPast == testCase.expected)
@@ -151,7 +151,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsFuture == testCase.expected)
@@ -170,7 +170,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsPast == testCase.expected)
@@ -186,7 +186,7 @@ struct DateRelativeFormattingTests {
 		
 		for testCase in testCases {
 			guard let date = calendar.date(byAdding: .day, value: testCase.days, to: now) else {
-				#expect(false, "Failed to create date for \(testCase.days) days")
+				#expect(Bool(false), "Failed to create date for \(testCase.days) days")
 				continue
 			}
 			#expect(date.relativeFormattedAsFuture == testCase.expected)
@@ -208,7 +208,7 @@ struct DateRelativeFormattingTests {
 		
 		for (date, expected) in singularTests {
 			guard let testDate = date else {
-				#expect(false, "Failed to create test date")
+				#expect(Bool(false), "Failed to create test date")
 				continue
 			}
 			let isPast = testDate < now
@@ -222,7 +222,7 @@ struct DateRelativeFormattingTests {
 	func testConvenienceMethods() {
 		guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
 			  let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else {
-			#expect(false, "Failed to create test dates")
+			#expect(Bool(false), "Failed to create test dates")
 			return
 		}
 		

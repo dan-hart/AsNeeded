@@ -114,7 +114,7 @@ struct MedicationSearchServiceTests {
 		_ = service.getSuggestions(for: "test1") // Repeat to test cache
 		
 		// If we reach this point without crashing, the test passes
-		#expect(true, "Should handle cache operations safely")
+		#expect(Bool(true), "Should handle cache operations safely")
 	}
 	
 	// MARK: - Search Method Tests
@@ -164,7 +164,7 @@ struct MedicationSearchServiceTests {
 		// This should not crash
 		_ = service.getSuggestions(for: longTerm)
 		
-		#expect(true, "Should handle large search terms without crashing")
+		#expect(Bool(true), "Should handle large search terms without crashing")
 	}
 	
 	@Test("Service should handle special characters in search terms")
@@ -188,6 +188,6 @@ struct MedicationSearchServiceTests {
 			_ = service.getSuggestions(for: term)
 		}
 		
-		#expect(true, "Should handle special characters in search terms safely")
+		#expect(Bool(true), "Should handle special characters in search terms safely")
 	}
 }

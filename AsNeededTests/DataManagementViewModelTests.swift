@@ -116,7 +116,7 @@ struct DataManagementViewModelTests {
 	
 	// Verify exported data is valid JSON
 	guard let exportedURL = viewModel.exportedDataURL else {
-	  #expect(false, "Export URL should not be nil")
+	  #expect(Bool(false), "Export URL should not be nil")
 	  return
 	}
 	let exportedData = try Data(contentsOf: exportedURL)
@@ -163,7 +163,7 @@ struct DataManagementViewModelTests {
 	"""
 	
 	guard let testJSON = testJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
@@ -196,7 +196,7 @@ struct DataManagementViewModelTests {
 	
 	// Create invalid JSON file
 	guard let invalidJSON = "{ invalid json }".data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
@@ -327,7 +327,7 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.exportedDataURL != nil)
 	
 	guard let exportedURL = viewModel.exportedDataURL else {
-	  #expect(false, "Export URL should not be nil")
+	  #expect(Bool(false), "Export URL should not be nil")
 	  return
 	}
 	

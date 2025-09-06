@@ -47,7 +47,7 @@ struct DataCompatibilityTests {
 	"""
 	
 	guard let olderVersionJSON = olderVersionJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
@@ -89,7 +89,7 @@ struct DataCompatibilityTests {
 	"""
 	
 	guard let minimalJSON = minimalJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
@@ -103,7 +103,7 @@ struct DataCompatibilityTests {
 	#expect(medication?.prescribedUnit == nil)
 	
 	guard let event = dataStore.events.first else {
-	  #expect(false, "No events found after import")
+	  #expect(Bool(false), "No events found after import")
 	  return
 	}
 	#expect(event.eventType == .doseTaken)
@@ -139,17 +139,17 @@ struct DataCompatibilityTests {
 	
 	let exportData = try await dataStore.exportDataAsJSON()
 	guard let json = try JSONSerialization.jsonObject(with: exportData) as? [String: Any] else {
-	  #expect(false, "Failed to parse exported JSON")
+	  #expect(Bool(false), "Failed to parse exported JSON")
 	  return
 	}
 	
 	// Verify all medication fields are present
 	guard let medications = json["medications"] as? [[String: Any]], !medications.isEmpty else {
-	  #expect(false, "No medications found in exported JSON")
+	  #expect(Bool(false), "No medications found in exported JSON")
 	  return
 	}
 	guard let medication = medications.first else {
-	  #expect(false, "No medication data found")
+	  #expect(Bool(false), "No medication data found")
 	  return
 	}
 	
@@ -164,11 +164,11 @@ struct DataCompatibilityTests {
 	
 	// Verify all event fields are present
 	guard let events = json["events"] as? [[String: Any]], !events.isEmpty else {
-	  #expect(false, "No events found in exported JSON")
+	  #expect(Bool(false), "No events found in exported JSON")
 	  return
 	}
 	guard let event = events.first else {
-	  #expect(false, "No event data found")
+	  #expect(Bool(false), "No event data found")
 	  return
 	}
 	
@@ -218,7 +218,7 @@ struct DataCompatibilityTests {
 	"""
 	
 	guard let futureJSON = futureJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
@@ -229,7 +229,7 @@ struct DataCompatibilityTests {
 	#expect(dataStore.events.count == 1)
 	
 	guard let medication = dataStore.medications.first else {
-	  #expect(false, "No medications found after import")
+	  #expect(Bool(false), "No medications found after import")
 	  return
 	}
 	#expect(medication.clinicalName == "Future Med")
@@ -268,21 +268,21 @@ struct DataCompatibilityTests {
 	"""
 	
 	guard let dateVariationsJSON = dateVariationsJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	
 	try await dataStore.importDataFromJSON(dateVariationsJSON)
 	
 	guard let medication = dataStore.medications.first else {
-	  #expect(false, "No medications found after import")
+	  #expect(Bool(false), "No medications found after import")
 	  return
 	}
 	#expect(medication.lastRefillDate != nil)
 	#expect(medication.nextRefillDate != nil)
 	
 	guard let event = dataStore.events.first else {
-	  #expect(false, "No events found after import")
+	  #expect(Bool(false), "No events found after import")
 	  return
 	}
 	#expect(event.date.timeIntervalSince1970 > 0)
@@ -332,7 +332,7 @@ struct DataCompatibilityTests {
 	
 	// Spot check some data
 	guard let firstMed = dataStore.medications.first(where: { $0.clinicalName == "Medication 1" }) else {
-	  #expect(false, "Could not find Medication 1 after import")
+	  #expect(Bool(false), "Could not find Medication 1 after import")
 	  return
 	}
 	#expect(firstMed.nickname == "Med1")
@@ -369,7 +369,7 @@ struct DataCompatibilityTests {
 	
 	for originalMed in internationalMeds {
 	  guard let imported = dataStore.medications.first(where: { $0.clinicalName == originalMed.clinicalName }) else {
-		#expect(false, "Should find medication with name: \(originalMed.clinicalName)")
+		#expect(Bool(false), "Should find medication with name: \(originalMed.clinicalName)")
 		continue
 	  }
 	  #expect(imported.nickname == originalMed.nickname)
@@ -388,11 +388,11 @@ struct DataCompatibilityTests {
 	let export2 = try await dataStore.exportDataAsJSON()
 	
 	guard let json1 = try JSONSerialization.jsonObject(with: export1) as? [String: Any] else {
-	  #expect(false, "Failed to parse first export JSON")
+	  #expect(Bool(false), "Failed to parse first export JSON")
 	  return
 	}
 	guard let json2 = try JSONSerialization.jsonObject(with: export2) as? [String: Any] else {
-	  #expect(false, "Failed to parse second export JSON")
+	  #expect(Bool(false), "Failed to parse second export JSON")
 	  return
 	}
 	
@@ -435,7 +435,7 @@ struct DataCompatibilityTests {
 	"""
 	
 	guard let malformedJSON = malformedJSONString.data(using: .utf8) else {
-	  #expect(false, "Failed to create test JSON data")
+	  #expect(Bool(false), "Failed to create test JSON data")
 	  return
 	}
 	

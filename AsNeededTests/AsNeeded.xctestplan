@@ -14,23 +14,9 @@
   "testTargets" : [
     {
       "target" : {
-        "containerPath" : "container:AsNeeded\/Packages\/ANModelKit",
-        "identifier" : "ANModelKitTests",
-        "name" : "ANModelKitTests"
-      }
-    },
-    {
-      "target" : {
         "containerPath" : "container:AsNeeded.xcodeproj",
         "identifier" : "52B3784B2E4E77FD008EC5F2",
         "name" : "AsNeededTests"
-      }
-    },
-    {
-      "target" : {
-        "containerPath" : "container:AsNeeded\/Packages\/SwiftRxNorm",
-        "identifier" : "SwiftRxNormTests",
-        "name" : "SwiftRxNormTests"
       }
     }
   ],

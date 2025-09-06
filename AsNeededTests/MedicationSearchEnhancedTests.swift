@@ -217,7 +217,7 @@ struct MedicationSearchEnhancedTests {
 			// Cached results should be very fast (under 100ms)
 			// Note: This is a soft assertion as timing can vary
 			if elapsed < 0.1 {
-				#expect(true, "Cached search was fast for \(med)")
+				#expect(Bool(true), "Cached search was fast for \(med)")
 			}
 		}
 	}
@@ -263,7 +263,7 @@ struct MedicationSearchEnhancedTests {
 				}
 			} else {
 				// No results is acceptable - API might not return results for short queries
-				#expect(true, "Autocomplete returned nil for '\(query)' - acceptable behavior")
+				#expect(Bool(true), "Autocomplete returned nil for '\(query)' - acceptable behavior")
 			}
 		}
 	}
