@@ -1,18 +1,38 @@
 # AsNeeded
 
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2018.0%2B-blue.svg)](https://developer.apple.com/ios/)
+[![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
+
 Track as-needed medications with privacy and simplicity.
 
-AsNeeded is a privacy-first iOS app designed to help people track as‑needed medications with clarity and confidence. It focuses on quick logging, safe spacing between doses, and clear insights so you always know what you took, when you took it, and when it's safe to take more.
+AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with clarity and confidence. It focuses on quick logging, safe spacing between doses, and clear insights so you always know what you took, when you took it, and when it's safe to take more.
+
+## Table of Contents
+- [Core Values](#core-values)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Development](#development)
+- [Project Structure](#project-structure)
+- [Architecture](#architecture)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Privacy](#privacy)
+- [License](#license)
+- [Contact](#contact)
 
 ## Core Values
 
 AsNeeded is built on three fundamental principles:
 
 - **Privacy First**: Your health data stays private, local, and secure
-- **Always Free**: All features free forever, no ads, no subscriptions required  
+- **Always Free**: All features free forever, no ads, no subscriptions required
 - **Open Source**: Transparent, inspectable, and community-driven
 
-Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro re nata") to mean "as needed." In this project and README, we use the plain phrase "as‑needed" to keep things universally understandable.
+Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro re nata") to mean "as needed." In this project and README, we use the plain phrase "as-needed" to keep things universally understandable.
 
 ---
 
@@ -42,7 +62,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 - **Quick actions**: "Mark as Taken" and "Skip" directly from notifications
 - **Permission-aware**: Graceful handling when notifications are disabled
 
-### 📊 Insights & Analysis  
+### 📊 Insights & Analysis
 - **Usage trends**: Visual charts showing medication usage over time
 - **Calendar heatmap**: GitHub-style visualization of daily usage patterns
 - **Usage statistics**: Average daily intake and usage metrics
@@ -70,31 +90,72 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 ## Requirements
 
+- macOS 14.0+ (Sonoma or later)
 - Xcode 16 or newer
-- iOS 18.0 or newer
+- iOS 18.0 or newer device or simulator
 - Swift 6
 
 ---
 
 ## Getting Started
 
-1. Clone the repository
-   - Using SSH:
-`git clone git@github.com:dan-hart/AsNeeded.git`
-    - Using HTTPS:
-`git clone https://github.com/dan-hart/AsNeeded.git`
-2. Open the project
-   - Double‑click `AsNeeded.xcodeproj` (or `AsNeeded.xcworkspace` if present).
-   - Select the `AsNeeded` app target.
+### Prerequisites
+- macOS 14.0+ (Sonoma or later)
+- Xcode 16+
+- iOS 18.0+ device or simulator
+- Swift 6
 
-3. Build and run
-   - Choose an iOS 18+ simulator (e.g., iPhone).
-   - Press Run (⌘R).
+### Installation
 
-4. First launch
-   - Add your first medication from the Home or Medications screen.
-   - (Optional) Configure its minimum interval and typical dose.
-   - Log your first dose to see the “Next dose available” timer in action.
+1. **Clone the repository**
+   ```bash
+   # Using SSH (recommended)
+   git clone git@github.com:dan-hart/AsNeeded.git
+
+   # Using HTTPS
+   git clone https://github.com/dan-hart/AsNeeded.git
+   ```
+
+2. **Open the project**
+   ```bash
+   cd AsNeeded
+   open AsNeeded.xcodeproj
+   ```
+
+3. **Configure signing (for device testing)**
+   - Select the AsNeeded target
+   - Go to Signing & Capabilities
+   - Select your development team
+
+4. **Build and run**
+   - Select target device/simulator (iOS 18+)
+   - Press ⌘R or click the Run button
+
+5. **First launch**
+   - Add your first medication from the Home or Medications screen
+   - Configure its minimum interval and typical dose (optional)
+   - Log your first dose to see the "Next dose available" timer in action
+
+---
+
+## Development
+
+### Building from Command Line
+```bash
+# Build for simulator
+xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16' build
+
+# Run tests
+xcodebuild test -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
+### Code Style
+- Tabs for indentation (configured in .editorconfig)
+- Line length: ~120 characters
+- Use `// MARK: -` comments for organization
+- Follow Swift API Design Guidelines
+- SF Symbols: Always use SFSafeSymbols (e.g., `Image(systemSymbol: .pills)`)
+- Colors: Use `.accentColor` for interactive elements
 
 ---
 
@@ -104,51 +165,26 @@ The codebase is organized for clarity and modularity. Each SwiftUI view is in it
 
 ```
 AsNeeded/
-├── AsNeededApp.swift                     # App entry point and scene configuration
-├── Views/
-│   ├── Screens/                         # Main screen views
-│   │   ├── AboutView.swift             # App information and core values
-│   │   ├── SupportView.swift           # Support options and donation
-│   │   ├── WelcomeView.swift           # First-time user onboarding
-│   │   ├── DataManagementView.swift    # Export/import functionality
-│   │   ├── MedicationHistoryView.swift # Historical dose logging
-│   │   └── MedicationTrendsView.swift  # Usage analytics and charts
-│   ├── ContentView.swift               # Main tab view container
-│   └── Components/                     # Reusable UI components
-│       ├── SupportToastView.swift      # Support prompt overlay
-│       └── EnhancedMedicationSearchField.swift # Smart search input
-├── Medication/                         # Medication management features
-│   ├── MedicationListView.swift        # List and search medications
-│   ├── MedicationDetailView.swift      # Medication details and actions
-│   ├── MedicationEditView.swift        # Add/edit medication form
-│   ├── LogDoseView.swift               # Log dose entry form
-│   ├── ReminderConfigurationView.swift # Notification setup
-│   ├── ReminderListView.swift          # View scheduled reminders
-│   └── ViewModels/                     # View model classes
-├── Services/
-│   ├── Persistence/
-│   │   └── DataStore.swift             # Boutique-based data management
-│   ├── NotificationManager.swift       # Local notification handling
-│   ├── MedicationSearchService.swift   # RxNorm integration
-│   ├── FeedbackService.swift           # User feedback handling
-│   ├── WatchConnectivity/              # Apple Watch integration
-│   └── Intents/                        # Siri Shortcuts integration
-│       ├── LogMedicationIntent.swift   # "Log medication" voice command
-│       ├── ListMedicationsIntent.swift # "List medications" query
-│       ├── GetDailyUsageIntent.swift   # "How much today" query
-│       ├── MedicationEntity.swift      # Siri medication recognition
-│       └── MedicationUnitEntity.swift  # Siri unit recognition
-├── Packages/                           # Local Swift packages
-│   ├── ANModelKit/                     # Core data models and types
-│   ├── DHLoggingKit/                   # Modern OSLog wrapper
-│   └── SwiftRxNorm/                    # RxNorm API client
-└── Tests/                              # Unit and integration tests
+├── AsNeededApp.swift           # App entry point
+├── Views/                      # UI Components
+│   ├── Screens/               # Main app screens
+│   └── Components/            # Reusable UI elements
+├── Medication/                 # Medication features
+├── Services/                   # Business logic & APIs
+│   ├── Persistence/           # Data management
+│   ├── NotificationManager    # Reminders
+│   └── Intents/              # Siri integration
+├── Packages/                   # Local Swift packages
+│   ├── ANModelKit/            # Core models
+│   ├── DHLoggingKit/          # Logging utilities
+│   └── SwiftRxNorm/           # Medication search
+└── Tests/                      # Test suite
 ```
 
 ### Package Architecture
 
 - **ANModelKit**: Core data models (Medication, Dose, Event, Unit concepts)
-- **DHLoggingKit**: Modern Swift logging with OSLog integration  
+- **DHLoggingKit**: Modern Swift logging with OSLog integration
 - **SwiftRxNorm**: RxNorm API client for medication search and information
 - **Main App**: SwiftUI interface, business logic, and service integration
 
@@ -190,9 +226,9 @@ This structure keeps UI responsive, logic reusable, and features easy to evolve.
   - The type of event (dose taken, reconcile, suspected side effect).
 
 You can see these in action in:
-- Features/Log/LogDoseView.swift
-- Features/Medications/MedicationDetailView.swift
-- Tests/ANModelKitTests.swift
+- `Medication/LogDoseView.swift`
+- `Medication/MedicationDetailView.swift`
+- `AsNeededTests/ANModelKitTests.swift`
 
 ---
 
@@ -217,27 +253,103 @@ A small design system ensures consistency:
 
 ---
 
-## Running Tests
+## Testing
 
-- In Xcode: Product > Test (⌘U)
-- The suite `ANModelKitTests.swift` demonstrates:
-  - Model initialization for medication, dose, and events
-  - Codable round‑trips for units and event types
-  - CaseIterable, Equatable, and Hashable behavior
+### Running Tests
+```bash
+# Run all tests
+xcodebuild test -scheme AsNeeded -testPlan AsNeededTests
+
+# Run with specific simulator
+xcodebuild test -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16'
+
+# Generate coverage report
+xcodebuild test -scheme AsNeeded -enableCodeCoverage YES
+```
+
+### In Xcode
+- Run all tests: Product → Test (⌘U)
+- Run specific test: Click the diamond next to test method
+- View coverage: Editor → Show Code Coverage
+
+### Test Coverage Goals
+- Domain models: 95%+ coverage
+- Services: 80%+ coverage
+- View models: 70%+ coverage
+
+### Writing Tests
+Tests use Swift Testing framework (`@Test`, `#expect`). Example:
+```swift
+@Test func medicationInitialization() {
+    let medication = ANMedicationConcept(name: "Ibuprofen")
+    #expect(medication.name == "Ibuprofen")
+}
+```
+
+See `AsNeededTests/` for more examples.
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Build fails with "No such module"**
+- Clean build folder: ⌘⇧K
+- Reset package caches: File → Packages → Reset Package Caches
+- Delete DerivedData: `rm -rf ~/Library/Developer/Xcode/DerivedData`
+
+**Simulator not available**
+- Check available simulators: `xcrun simctl list devices`
+- Download iOS 18+ runtime: Xcode → Settings → Platforms
+- Try: `xcodebuild -showdestinations -scheme AsNeeded`
+
+**Notifications not working**
+- Ensure notification permissions are granted in Settings
+- Check notification settings in the app's Reminders section
+- Verify `NotificationManager` is properly initialized
+
+**Tests failing**
+- Ensure all packages are resolved: `swift package resolve`
+- Check test plan configuration in Xcode
+- Run tests individually to isolate failures
 
 ---
 
 ## Contributing
 
-Contributions are welcome!
+We welcome contributions! Here's how to get started:
 
-- Open an issue to discuss ideas or bugs.
-- Fork the repo and create a feature branch.
-- Follow the existing code style and architectural patterns.
-- Include tests for new logic.
-- Submit a PR with a clear description and screenshots if UI changes.
+### Reporting Issues
+- Search existing issues first
+- Include iOS version, device model, and steps to reproduce
+- Attach screenshots for UI issues
+- Use issue templates when available
 
-Please be respectful and constructive in discussions and code reviews.
+### Submitting Pull Requests
+1. Fork and create a feature branch (`feature/your-feature`)
+2. Follow existing code patterns and style:
+   - Use tabs for indentation
+   - Add `// MARK: -` comments for organization
+   - Use SFSafeSymbols for icons
+   - Use `.accentColor` for interactive elements
+3. Add tests for new functionality
+4. Update documentation as needed
+5. Submit PR against `develop` branch
+
+### Code Review Process
+- All PRs require one approval
+- CI must pass (tests, build verification)
+- Maintainers may request changes
+- Be patient and respectful
+
+### Development Guidelines
+- No force unwraps (`!`) in code or tests
+- Keep packages UI-free (ANModelKit, SwiftRxNorm)
+- Test business logic, not UI
+- Follow Swift API Design Guidelines
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
