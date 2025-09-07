@@ -280,7 +280,7 @@ struct MedicationListView: View {
     
     private func deleteMedications(at offsets: IndexSet) {
         for index in offsets {
-            let med = sortedMedications[index]
+            guard let med = sortedMedications[doesExistAt: index] else { continue }
             Task { await viewModel.delete(med) }
             medicationOrder.removeAll { $0 == med.id.uuidString }
         }

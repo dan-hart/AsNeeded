@@ -54,7 +54,12 @@ public final class AnalyticsService {
 		let today = DateUtility.startOfToday
 		let lastActiveDate = userDefaults.object(forKey: Keys.dailyActiveUse) as? Date
 		
-		if lastActiveDate == nil || !Calendar.current.isDate(lastActiveDate!, inSameDayAs: today) {
+		if let lastActiveDate = lastActiveDate {
+			if !Calendar.current.isDate(lastActiveDate, inSameDayAs: today) {
+				userDefaults.set(today, forKey: Keys.dailyActiveUse)
+				logger.info("Daily active use recorded for \(today)")
+			}
+		} else {
 			userDefaults.set(today, forKey: Keys.dailyActiveUse)
 			logger.info("Daily active use recorded for \(today)")
 		}
