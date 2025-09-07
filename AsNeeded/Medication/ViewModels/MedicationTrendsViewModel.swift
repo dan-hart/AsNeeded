@@ -50,8 +50,17 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	var events: [ANEventConcept] {
 		guard let id = selectedMedicationID else { return [] }
+		// Filter events ensuring medication IDs match exactly
 		return dataStore.events
-			.filter { $0.medication?.id == id && $0.eventType == .doseTaken }
+			.filter { event in
+				// Only include events that have a medication with matching ID and are dose taken events
+				guard let eventMedication = event.medication,
+					  eventMedication.id == id,
+					  event.eventType == .doseTaken else {
+					return false
+				}
+				return true
+			}
 			.sorted { $0.date < $1.date }
 	}
 
