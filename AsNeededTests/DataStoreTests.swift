@@ -87,6 +87,79 @@ struct DataStoreTests {
 		#expect(dataStore.events.count == 0, "Associated events should be deleted")
 	}
 	
+	@Test("Delete medication clears AppStorage selections")
+	func deleteMedicationClearsAppStorageSelections() async throws {
+		// Given
+		let medication = createTestMedication(name: "Selected Med")
+		try await dataStore.addMedication(medication)
+		
+		// Set the medication as selected in various AppStorage keys
+		let medicationIDString = medication.id.uuidString
+		UserDefaults.standard.set(medicationIDString, forKey: "historySelectedMedicationID")
+		UserDefaults.standard.set(medicationIDString, forKey: "trendsSelectedMedicationID")
+		UserDefaults.standard.set([medicationIDString, "other-id"], forKey: "medicationOrder")
+		
+		// Verify they were set
+		#expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == medicationIDString)
+		#expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == medicationIDString)
+		#expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) == true)
+		
+		// When
+		try await dataStore.deleteMedication(medication)
+		
+		// Then
+		#expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == nil,
+			"History selection should be cleared")
+		#expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == nil,
+			"Trends selection should be cleared")
+		#expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) != true,
+			"Medication should be removed from order array")
+		#expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains("other-id") == true,
+			"Other IDs should remain in order array")
+	}
+	
+	@Test("Delete medication clears navigation target")
+	func deleteMedicationClearsNavigationTarget() async throws {
+		// Given
+		let medication = createTestMedication(name: "Nav Target Med")
+		try await dataStore.addMedication(medication)
+		
+		// Set as navigation target
+		NavigationManager.shared.historyTargetMedicationID = medication.id.uuidString
+		
+		// Verify it was set
+		#expect(NavigationManager.shared.historyTargetMedicationID == medication.id.uuidString)
+		
+		// When
+		try await dataStore.deleteMedication(medication)
+		
+		// Then
+		#expect(NavigationManager.shared.historyTargetMedicationID == nil,
+			"Navigation target should be cleared when medication is deleted")
+	}
+	
+	@Test("Delete medication does not affect other medications in AppStorage")
+	func deleteMedicationDoesNotAffectOtherMedications() async throws {
+		// Given
+		let medication1 = createTestMedication(name: "Med 1")
+		let medication2 = createTestMedication(name: "Med 2")
+		try await dataStore.addMedication(medication1)
+		try await dataStore.addMedication(medication2)
+		
+		// Set medication2 as selected, delete medication1
+		UserDefaults.standard.set(medication2.id.uuidString, forKey: "historySelectedMedicationID")
+		UserDefaults.standard.set(medication2.id.uuidString, forKey: "trendsSelectedMedicationID")
+		
+		// When - Delete medication1 (not selected)
+		try await dataStore.deleteMedication(medication1)
+		
+		// Then - medication2 selections should remain
+		#expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == medication2.id.uuidString,
+			"Other medication selections should not be affected")
+		#expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == medication2.id.uuidString,
+			"Other medication selections should not be affected")
+	}
+	
 	// MARK: - Event Tests
 	
 	@Test("Add event to data store")
