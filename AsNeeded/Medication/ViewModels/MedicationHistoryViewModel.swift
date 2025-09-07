@@ -57,7 +57,9 @@ final class MedicationHistoryViewModel: ObservableObject {
 		}
 		// Match UI ordering: most recent first within a day
 		filtered.sort { $0.date > $1.date }
-		let toDelete = offsets.map { filtered[$0] }
+		let toDelete = offsets.compactMap { index in
+			filtered[doesExistAt: index]
+		}
 		for event in toDelete {
 			try? await dataStore.eventsStore.remove(event)
 			if let dose = event.dose,
@@ -74,8 +76,9 @@ final class MedicationHistoryViewModel: ObservableObject {
 	
 	func updateEvent(_ event: ANEventConcept) async {
 		// Find and update the event in the store
-		if let index = dataStore.events.firstIndex(where: { $0.id == event.id }) {
-			try? await dataStore.eventsStore.remove(dataStore.events[index])
+		if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
+		   let existingEvent = dataStore.events[doesExistAt: index] {
+			try? await dataStore.eventsStore.remove(existingEvent)
 			try? await dataStore.eventsStore.insert(event)
 		}
 	}

@@ -31,7 +31,9 @@ struct ListMedicationsIntent: AppIntent {
 		let sortedMedications = medications.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
 		
 		if medications.count == 1 {
-			let medication = sortedMedications[0]
+			guard let medication = sortedMedications.first else {
+				return .result(dialog: IntentDialog("Unable to retrieve medication information."))
+			}
 			return .result(dialog: IntentDialog("You have one medication: \(medication.displayName)"))
 		} else {
 			let medicationNames = sortedMedications.map { $0.displayName }
@@ -46,10 +48,15 @@ struct ListMedicationsIntent: AppIntent {
 		}
 		
 		if names.count == 2 {
-			return "\(names[0]) and \(names[1])"
+			guard let first = names[doesExistAt: 0], let second = names[doesExistAt: 1] else {
+				return names.joined(separator: ", ")
+			}
+			return "\(first) and \(second)"
 		} else {
 			let allButLast = names.dropLast().joined(separator: ", ")
-			let last = names.last!
+			guard let last = names.last else {
+				return allButLast
+			}
 			return "\(allButLast), and \(last)"
 		}
 	}

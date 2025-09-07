@@ -41,59 +41,63 @@ struct MedicationListView: View {
 				.padding()
 			} else if sender.medications.count == 1 {
 				// Single medication - show simplified view with quick actions
-				let medication = sender.medications[0]
-				VStack(spacing: 16) {
-					NavigationLink(destination: MedicationDetailView(medication: medication)) {
-						VStack(spacing: 8) {
-							Text(medication.displayName)
-								.font(.title3)
-								.fontWeight(.semibold)
-								.multilineTextAlignment(.center)
-							
-							HStack {
-								Text("Qty: \(medication.quantity, specifier: "%.0f")")
-									.font(.caption)
-									.foregroundColor(.secondary)
+				if let medication = sender.medications.first {
+					VStack(spacing: 16) {
+						NavigationLink(destination: MedicationDetailView(medication: medication)) {
+							VStack(spacing: 8) {
+								Text(medication.displayName)
+									.font(.title3)
+									.fontWeight(.semibold)
+									.multilineTextAlignment(.center)
 								
-								if let prescribedDoseAmount = medication.prescribedDoseAmount,
-								   let prescribedUnit = medication.prescribedUnit {
-									Text("| \(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
+								HStack {
+									Text("Qty: \(medication.quantity, specifier: "%.0f")")
 										.font(.caption)
 										.foregroundColor(.secondary)
+									
+									if let prescribedDoseAmount = medication.prescribedDoseAmount,
+									   let prescribedUnit = medication.prescribedUnit {
+										Text("| \(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
+											.font(.caption)
+											.foregroundColor(.secondary)
+									}
 								}
 							}
+							.padding()
+							.background(Color.gray.opacity(0.2))
+							.cornerRadius(12)
 						}
-						.padding()
-						.background(Color.gray.opacity(0.2))
-						.cornerRadius(12)
-					}
-					
-					// Quick log button for single medication
-					Button(action: {
-						logQuickDoseForMedication(medication)
-					}) {
-						HStack {
-							Image(systemName: "plus.circle.fill")
-							Text("Quick Log")
-							if let amount = medication.prescribedDoseAmount,
-							   let unit = medication.prescribedUnit {
-								Text("(\(amount, specifier: "%.1f") \(unit))")
-									.font(.caption)
+						
+						// Quick log button for single medication
+						Button(action: {
+							logQuickDoseForMedication(medication)
+						}) {
+							HStack {
+								Image(systemName: "plus.circle.fill")
+								Text("Quick Log")
+								if let amount = medication.prescribedDoseAmount,
+								   let unit = medication.prescribedUnit {
+									Text("(\(amount, specifier: "%.1f") \(unit))")
+										.font(.caption)
+								}
 							}
+							.frame(maxWidth: .infinity)
+							.padding()
+							.background(Color.green)
+							.foregroundColor(.white)
+							.cornerRadius(12)
 						}
-						.frame(maxWidth: .infinity)
-						.padding()
-						.background(Color.green)
-						.foregroundColor(.white)
-						.cornerRadius(12)
+						.buttonStyle(.plain)
+						
+						Spacer()
 					}
-					.buttonStyle(.plain)
-					
-					Spacer()
-				}
-				.padding()
-				.refreshable {
-					await loadMedications()
+					.padding()
+					.refreshable {
+						await loadMedications()
+					}
+				} else {
+					Text("Unable to load medication")
+						.foregroundColor(.secondary)
 				}
 			} else {
 				// Multiple medications - show list with quick log buttons
