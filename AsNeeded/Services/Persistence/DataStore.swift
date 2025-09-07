@@ -272,6 +272,28 @@ public final class DataStore {
 		do {
 			try await medicationsStore.removeAll()
 			try await eventsStore.removeAll()
+			
+			// Clear all medication-related AppStorage values to prevent crashes
+			// when the app tries to access non-existent medications
+			await MainActor.run {
+				// Clear history tab selection
+				UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
+				
+				// Clear trends tab selection
+				UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
+				
+				// Clear medication order
+				UserDefaults.standard.removeObject(forKey: "medicationOrder")
+				
+				// Clear navigation targets
+				NavigationManager.shared.clearHistoryNavigation()
+				
+				// Synchronize to ensure changes are persisted
+				UserDefaults.standard.synchronize()
+				
+				logger.info("Cleared AppStorage values for medications")
+			}
+			
 			logger.info("Successfully cleared all data")
 		} catch {
 			logger.error("Failed to clear data: \(error.localizedDescription)")
