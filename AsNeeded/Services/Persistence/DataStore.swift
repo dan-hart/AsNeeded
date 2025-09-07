@@ -81,6 +81,35 @@ public final class DataStore {
 			}
 			
 			try await medicationsStore.remove(med)
+			
+			// Clear the deleted medication ID from AppStorage selections to prevent crashes
+			let deletedIDString = med.id.uuidString
+			
+			// Clear from history view selection
+			if UserDefaults.standard.string(forKey: "historySelectedMedicationID") == deletedIDString {
+				UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
+				logger.info("Cleared deleted medication from history selection")
+			}
+			
+			// Clear from trends view selection
+			if UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == deletedIDString {
+				UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
+				logger.info("Cleared deleted medication from trends selection")
+			}
+			
+			// Clear from medication order array
+			if var order = UserDefaults.standard.array(forKey: "medicationOrder") as? [String] {
+				order.removeAll { $0 == deletedIDString }
+				UserDefaults.standard.set(order, forKey: "medicationOrder")
+				logger.info("Removed deleted medication from order array")
+			}
+			
+			// Clear from navigation manager if it matches
+			if NavigationManager.shared.historyTargetMedicationID == deletedIDString {
+				NavigationManager.shared.historyTargetMedicationID = nil
+				logger.info("Cleared deleted medication from navigation target")
+			}
+			
 			logger.info("Successfully deleted medication: \(med.displayName) and \(associatedEvents.count) associated events")
 		} catch {
 			logger.error("Failed to delete medication \(med.displayName): \(error.localizedDescription)")

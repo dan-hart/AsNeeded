@@ -26,6 +26,20 @@ final class MedicationHistoryViewModel: ObservableObject {
 		} else if !selectedMedicationIDString.isEmpty {
 			self.selectedMedicationID = UUID(uuidString: selectedMedicationIDString)
 		}
+		
+		// Validate that the selected medication still exists
+		validateSelectedMedication()
+	}
+	
+	/// Validates that the selected medication still exists in the store
+	/// If not, clears the selection to prevent crashes
+	func validateSelectedMedication() {
+		if let id = selectedMedicationID,
+		   !medications.contains(where: { $0.id == id }) {
+			// Selected medication no longer exists, clear it
+			selectedMedicationID = nil
+			selectedMedicationIDString = ""
+		}
 	}
 
 	var medications: [ANMedicationConcept] { dataStore.medications }
