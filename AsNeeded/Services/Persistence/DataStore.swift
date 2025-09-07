@@ -114,12 +114,22 @@ public final class DataStore {
 			return redacted
 		} : medications
 		
-		// Redact event notes if requested
-		let exportEvents = redactNotes ? events.map { event in
-			var redacted = event
-			redacted.note = nil  // Remove notes entirely
-			return redacted
-		} : events
+		// Handle event redaction - redact medication names and/or notes as requested
+		let exportEvents = events.map { event in
+			var modifiedEvent = event
+			
+			// Redact medication names if requested (uses built-in redacted() for medication)
+			if redactNames {
+				modifiedEvent = event.redacted()
+			}
+			
+			// Additionally redact notes if requested
+			if redactNotes {
+				modifiedEvent.note = nil
+			}
+			
+			return modifiedEvent
+		}
 		
 		logger.debug("Exporting \(exportMedications.count) medications and \(exportEvents.count) events")
 		
