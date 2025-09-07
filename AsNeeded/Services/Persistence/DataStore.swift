@@ -227,14 +227,34 @@ public final class DataStore {
 			}
 		}
 		
-		// Import events
+		// Import events with medication reference validation
 		var eventImportCount = 0
-		for event in importedData.events {
+		for var event in importedData.events {
 			do {
 				if mergeExisting && events.contains(where: { $0.id == event.id }) {
 					logger.debug("Skipping duplicate event: \(event.id)")
 					continue
 				}
+				
+				// Validate and fix medication reference
+				if let eventMedication = event.medication {
+					// Check if the medication ID exists in our imported medications
+					if let correctMedication = importedData.medications.first(where: { 
+						// Match by clinical name and nickname as fallback if ID doesn't match
+						$0.id == eventMedication.id || 
+						($0.clinicalName == eventMedication.clinicalName && 
+						 $0.nickname == eventMedication.nickname)
+					}) {
+						// Update the event's medication reference to use the correct medication
+						event.medication = correctMedication
+						logger.debug("Validated medication reference for event \(event.id)")
+					} else {
+						// Medication not found, skip this event
+						logger.warning("Skipping event \(event.id): medication \(eventMedication.displayName) not found")
+						continue
+					}
+				}
+				
 				try await eventsStore.insert(event)
 				eventImportCount += 1
 			} catch {
