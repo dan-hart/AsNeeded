@@ -12,6 +12,7 @@ import HealthKit
 struct ContentView: View {
 	@AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
 	@StateObject private var navigationManager = NavigationManager.shared
+	private let hapticsManager = HapticsManager.shared
 	
 	var body: some View {
 		ZStack {
@@ -36,6 +37,9 @@ struct ContentView: View {
 						Label("Settings", systemSymbol: .gearshape)
 					}
 					.tag(3)
+			}
+			.onChange(of: navigationManager.selectedTab) { _, _ in
+				hapticsManager.selectionChanged()
 			}
 			.environmentObject(navigationManager)
 		}

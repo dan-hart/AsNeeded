@@ -29,6 +29,7 @@ struct MedicationEditView: View {
 	@State private var animateHero = false
 	@FocusState private var focusedField: Field?
 	@Environment(\.colorScheme) private var colorScheme
+	private let hapticsManager = HapticsManager.shared
 	
 	enum Field: Hashable {
 		case clinicalName
@@ -480,6 +481,7 @@ struct MedicationEditView: View {
 								} else {
 									viewModel.nextRefillDate = nil
 								}
+								hapticsManager.lightImpact()
 							}
 						} label: {
 							Image(systemSymbol: .xmarkCircleFill)
@@ -522,6 +524,7 @@ struct MedicationEditView: View {
 				hideKeyboard()
 			}
 			let updated = viewModel.buildMedication()
+			hapticsManager.medicationAdded()
 			onSave(updated)
 		} label: {
 			HStack(spacing: 12) {
@@ -669,6 +672,7 @@ struct MedicationEditView: View {
 								viewModel.nextRefillDate = nil
 							}
 							showingDatePicker = false
+							hapticsManager.mediumImpact()
 						}
 					} label: {
 						HStack(spacing: 8) {

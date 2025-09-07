@@ -9,6 +9,8 @@ struct SettingsView: View {
             
 		  SettingsNotificationSectionView()
 		  
+		  SettingsHapticsSectionView()
+		  
 		  SettingsFeedbackSectionView()
 		  
 		  SettingsDataSectionView()

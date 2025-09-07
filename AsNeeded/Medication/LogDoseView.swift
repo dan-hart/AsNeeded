@@ -18,6 +18,7 @@ struct LogDoseView: View {
 	@FocusState private var isNoteFocused: Bool
 	@State private var showingDatePicker = false
 	@State private var animateHeader = false
+	private let hapticsManager = HapticsManager.shared
 
 	init(
 		medication: ANMedicationConcept,
@@ -93,7 +94,10 @@ struct LogDoseView: View {
 				HStack(spacing: 16) {
 					Button(action: { 
 						withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-							if amount > 0.5 { amount -= 0.5 }
+							if amount > 0.5 { 
+								amount -= 0.5
+								hapticsManager.lightImpact()
+							}
 						}
 					}) {
 						Image(systemSymbol: .minusCircleFill)
@@ -123,7 +127,10 @@ struct LogDoseView: View {
 					
 					Button(action: { 
 						withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-							if amount < 100 { amount += 0.5 }
+							if amount < 100 { 
+								amount += 0.5
+								hapticsManager.lightImpact()
+							}
 						}
 					}) {
 						Image(systemSymbol: .plusCircleFill)
@@ -141,6 +148,7 @@ struct LogDoseView: View {
 							Button(action: { 
 								withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 									selectedUnit = unit
+									hapticsManager.selectionChanged()
 								}
 							}) {
 								Text(unit.displayName)
@@ -180,6 +188,7 @@ struct LogDoseView: View {
 				Button(action: { 
 					withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 						showingDatePicker.toggle()
+						hapticsManager.selectionChanged()
 					}
 				}) {
 					HStack {
@@ -233,6 +242,7 @@ struct LogDoseView: View {
 							withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 								selectedDate = date
 								showingDatePicker = false
+								hapticsManager.selectionChanged()
 							}
 						}) {
 							Text(label)
@@ -310,6 +320,7 @@ struct LogDoseView: View {
 					note: trimmedNote.isEmpty ? nil : trimmedNote
 				)
 				onLog(dose, event)
+				hapticsManager.doseLogged()
 				dismiss()
 			}
 		}) {

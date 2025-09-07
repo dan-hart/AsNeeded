@@ -8,6 +8,7 @@ import SFSafeSymbols
 struct MedicationListView: View {
     @StateObject private var viewModel = MedicationListViewModel()
     @State private var showAddSheet = false
+    private let hapticsManager = HapticsManager.shared
     @State private var editMedication: ANMedicationConcept?
     @State private var viewMedication: ANMedicationConcept?
     @State private var logMedication: ANMedicationConcept?
@@ -27,13 +28,17 @@ struct MedicationListView: View {
                             Button(editMode == .inactive ? "Edit" : "Done") {
                                 withAnimation {
                                     editMode = editMode == .inactive ? .active : .inactive
+                                    hapticsManager.selectionChanged()
                                 }
                             }
                             .bold()
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        Button(action: { showAddSheet = true }) {
+                        Button(action: { 
+                            hapticsManager.mediumImpact()
+                            showAddSheet = true 
+                        }) {
                             Label("Add Medication", systemSymbol: .plus)
                                 .foregroundColor(.accentColor)
                                 .fontWeight(.medium)
@@ -91,6 +96,7 @@ struct MedicationListView: View {
                 .alert("Delete Medication?", isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } })) {
                     Button("Delete", role: .destructive) {
                         if let med = pendingDelete {
+                            hapticsManager.itemDeleted()
                             Task { await viewModel.delete(med); pendingDelete = nil }
                         }
                     }
@@ -164,7 +170,10 @@ struct MedicationListView: View {
                 }
             }
             
-            Button(action: { showAddSheet = true }) {
+            Button(action: { 
+                hapticsManager.mediumImpact()
+                showAddSheet = true 
+            }) {
                 Label("Add Your First Medication", systemImage: "plus.circle.fill")
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
@@ -204,6 +213,7 @@ struct MedicationListView: View {
                     .swipeActions(edge: .trailing, allowsFullSwipe: editMode == .inactive) {
                         if editMode == .inactive {
                             Button {
+                                hapticsManager.lightImpact()
                                 editMedication = med
                             } label: {
                                 Label("Edit", systemImage: "pencil")
@@ -211,6 +221,7 @@ struct MedicationListView: View {
                             .tint(.accentColor)
                             
                             Button(role: .destructive) {
+                                hapticsManager.mediumImpact()
                                 pendingDelete = med
                             } label: {
                                 Label("Delete", systemImage: "trash")
@@ -287,6 +298,7 @@ struct MedicationRow: View {
     @Environment(\.editMode) private var editMode
     @Environment(\.colorScheme) private var colorScheme
     @State private var isPressed = false
+    private let hapticsManager = HapticsManager.shared
     
     var body: some View {
         HStack(spacing: 0) {
@@ -471,6 +483,7 @@ struct MedicationRow: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 isPressed = true
             }
+            hapticsManager.mediumImpact()
             onLogTapped()
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
