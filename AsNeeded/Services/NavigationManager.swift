@@ -6,7 +6,11 @@ import Combine
 final class NavigationManager: ObservableObject {
 	static let shared = NavigationManager()
 	
-	@Published var selectedTab: Int = 0
+	@AppStorage("selectedTab") var selectedTab: Int = 0 {
+		didSet {
+			objectWillChange.send()
+		}
+	}
 	@Published var historyTargetDate: Date?
 	@Published var historyTargetMedicationID: String?
 	
