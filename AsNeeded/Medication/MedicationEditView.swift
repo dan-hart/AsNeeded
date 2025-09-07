@@ -392,25 +392,33 @@ struct MedicationEditView: View {
 						.focused($focusedField, equals: .quantity)
 				}
 				
-				// Date Cards
-				HStack(spacing: 12) {
-					// Last Refill Date Card
-					dateCard(
-						title: "Last Refill",
-						icon: .clockArrowTriangleheadCounterclockwiseRotate90,
-						date: viewModel.lastRefillDate,
-						dateType: .lastRefill,
-						color: .blue
-					)
+				// Date Cards Section
+				VStack(alignment: .leading, spacing: 8) {
+					Text("Refill Tracking")
+						.font(.caption)
+						.fontWeight(.medium)
+						.foregroundStyle(.secondary)
+						.padding(.leading, 4)
 					
-					// Next Refill Date Card
-					dateCard(
-						title: "Next Refill",
-						icon: .calendarBadgePlus,
-						date: viewModel.nextRefillDate,
-						dateType: .nextRefill,
-						color: .green
-					)
+					VStack(spacing: 12) {
+						// Last Refill Date Card
+						dateCard(
+							title: "Last Refill",
+							icon: .clockArrowTriangleheadCounterclockwiseRotate90,
+							date: viewModel.lastRefillDate,
+							dateType: .lastRefill,
+							color: .blue
+						)
+						
+						// Next Refill Date Card
+						dateCard(
+							title: "Next Refill",
+							icon: .calendarBadgePlus,
+							date: viewModel.nextRefillDate,
+							dateType: .nextRefill,
+							color: .green
+						)
+					}
 				}
 			}
 		}
@@ -420,45 +428,90 @@ struct MedicationEditView: View {
 	// MARK: - Date Card Component
 	@ViewBuilder
 	private func dateCard(title: String, icon: SFSymbol, date: Date?, dateType: DatePickerType, color: Color) -> some View {
-		Button {
-			datePickerType = dateType
-			showingDatePicker = true
-		} label: {
-			VStack(alignment: .leading, spacing: 8) {
-				HStack(spacing: 6) {
-					Image(systemSymbol: icon)
-						.font(.caption)
-						.foregroundStyle(color)
+		VStack(spacing: 0) {
+			// Main card button
+			Button {
+				datePickerType = dateType
+				showingDatePicker = true
+			} label: {
+				HStack(spacing: 12) {
+					// Icon with colored background
+					ZStack {
+						Circle()
+							.fill(color.opacity(0.15))
+							.frame(width: 36, height: 36)
+						
+						Image(systemSymbol: icon)
+							.font(.system(size: 16, weight: .semibold))
+							.foregroundStyle(color)
+					}
 					
-					Text(title)
-						.font(.caption)
-						.fontWeight(.medium)
-						.foregroundStyle(.secondary)
+					// Date info
+					VStack(alignment: .leading, spacing: 4) {
+						Text(title)
+							.font(.caption)
+							.fontWeight(.medium)
+							.foregroundStyle(.secondary)
+						
+						if let date = date {
+							Text(date.formatted(date: .abbreviated, time: .omitted))
+								.font(.subheadline)
+								.fontWeight(.semibold)
+								.foregroundStyle(.primary)
+						} else {
+							HStack(spacing: 4) {
+								Image(systemSymbol: .plusCircle)
+									.font(.caption2)
+								Text("Add Date")
+									.font(.subheadline)
+							}
+							.foregroundStyle(color)
+						}
+					}
+					
+					Spacer()
+					
+					// Remove button (only show if date is set)
+					if date != nil {
+						Button {
+							withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+								if dateType == .lastRefill {
+									viewModel.lastRefillDate = nil
+								} else {
+									viewModel.nextRefillDate = nil
+								}
+							}
+						} label: {
+							Image(systemSymbol: .xmarkCircleFill)
+								.font(.system(size: 20))
+								.foregroundStyle(.tertiary)
+								.symbolRenderingMode(.hierarchical)
+						}
+						.buttonStyle(.plain)
+						.transition(.scale.combined(with: .opacity))
+					}
 				}
-				
-				if let date = date {
-					Text(date.formatted(date: .abbreviated, time: .omitted))
-						.font(.subheadline)
-						.fontWeight(.semibold)
-						.foregroundStyle(.primary)
-				} else {
-					Text("Not Set")
-						.font(.subheadline)
-						.foregroundStyle(.tertiary)
-				}
+				.padding(14)
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.background(
+					RoundedRectangle(cornerRadius: 16, style: .continuous)
+						.fill(date != nil ? 
+							Color(.tertiarySystemGroupedBackground) : 
+							color.opacity(0.05)
+						)
+						.overlay(
+							RoundedRectangle(cornerRadius: 16, style: .continuous)
+								.strokeBorder(
+									date != nil ? 
+										color.opacity(0.15) : 
+										color.opacity(0.3),
+									lineWidth: date != nil ? 1 : 1.5
+								)
+						)
+				)
 			}
-			.frame(maxWidth: .infinity, alignment: .leading)
-			.padding(12)
-			.background(
-				RoundedRectangle(cornerRadius: 12)
-					.fill(Color(.tertiarySystemGroupedBackground))
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.strokeBorder(color.opacity(0.2), lineWidth: 1)
-					)
-			)
+			.buttonStyle(.plain)
 		}
-		.buttonStyle(.plain)
 	}
 	
 	// MARK: - Save Button
@@ -526,15 +579,36 @@ struct MedicationEditView: View {
 			VStack(spacing: 20) {
 				// Date picker header
 				VStack(spacing: 8) {
-					Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
-						.font(.largeTitle)
-						.foregroundStyle(Color.accentColor)
+					ZStack {
+						Circle()
+							.fill(
+								LinearGradient(
+									colors: [
+										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.2),
+										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.05)
+									],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
+								)
+							)
+							.frame(width: 64, height: 64)
+						
+						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
+							.font(.system(size: 32, weight: .medium))
+							.foregroundStyle(datePickerType == .lastRefill ? Color.blue : Color.green)
+					}
 					
 					Text(datePickerType == .lastRefill ? "Last Refill Date" : "Next Refill Date")
-						.font(.headline)
-						.fontWeight(.semibold)
+						.font(.title3)
+						.fontWeight(.bold)
+					
+					if let currentDate = (datePickerType == .lastRefill ? viewModel.lastRefillDate : viewModel.nextRefillDate) {
+						Text(currentDate.formatted(date: .complete, time: .omitted))
+							.font(.subheadline)
+							.foregroundStyle(.secondary)
+					}
 				}
-				.padding(.top, 20)
+				.padding(.top, 10)
 				
 				if datePickerType == .lastRefill {
 					DatePicker("", selection: currentDateBinding, in: ...Date(), displayedComponents: .date)
@@ -547,43 +621,100 @@ struct MedicationEditView: View {
 				}
 				
 				// Quick select buttons
-				HStack(spacing: 12) {
-					Button("-30d") { adjustDate(by: -30) }
+				VStack(spacing: 12) {
+					Text("Quick Adjust")
+						.font(.caption)
+						.fontWeight(.medium)
+						.foregroundStyle(.secondary)
+					
+					HStack(spacing: 10) {
+						Button { adjustDate(by: -30) } label: {
+							Text("-30d")
+								.font(.footnote)
+								.fontWeight(.medium)
+						}
 						.buttonStyle(QuickDateButton())
-					Button("-7d") { adjustDate(by: -7) }
+						
+						Button { adjustDate(by: -7) } label: {
+							Text("-7d")
+								.font(.footnote)
+								.fontWeight(.medium)
+						}
 						.buttonStyle(QuickDateButton())
-					Button("+7d") { adjustDate(by: 7) }
+						
+						Button { adjustDate(by: 7) } label: {
+							Text("+7d")
+								.font(.footnote)
+								.fontWeight(.medium)
+						}
 						.buttonStyle(QuickDateButton())
-					Button("+30d") { adjustDate(by: 30) }
+						
+						Button { adjustDate(by: 30) } label: {
+							Text("+30d")
+								.font(.footnote)
+								.fontWeight(.medium)
+						}
 						.buttonStyle(QuickDateButton())
+					}
 				}
 				.padding(.horizontal)
 				
-				// Clear button
-				Button("Clear Date") {
-					if datePickerType == .lastRefill {
-						viewModel.lastRefillDate = nil
-					} else {
-						viewModel.nextRefillDate = nil
+				// Remove date button (more prominent)
+				if (datePickerType == .lastRefill ? viewModel.lastRefillDate : viewModel.nextRefillDate) != nil {
+					Button {
+						withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+							if datePickerType == .lastRefill {
+								viewModel.lastRefillDate = nil
+							} else {
+								viewModel.nextRefillDate = nil
+							}
+							showingDatePicker = false
+						}
+					} label: {
+						HStack(spacing: 8) {
+							Image(systemSymbol: .trashCircle)
+								.font(.system(size: 18))
+							Text("Remove Date")
+								.font(.subheadline)
+								.fontWeight(.medium)
+						}
+						.foregroundStyle(.red)
+						.padding(.horizontal, 20)
+						.padding(.vertical, 12)
+						.background(
+							RoundedRectangle(cornerRadius: 12, style: .continuous)
+								.fill(Color.red.opacity(0.1))
+								.overlay(
+									RoundedRectangle(cornerRadius: 12, style: .continuous)
+										.strokeBorder(Color.red.opacity(0.2), lineWidth: 1)
+								)
+						)
 					}
-					showingDatePicker = false
+					.buttonStyle(.plain)
 				}
-				.foregroundStyle(.red)
 				
 				Spacer()
 			}
 			.navigationTitle("")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button("Cancel") {
+						showingDatePicker = false
+					}
+					.foregroundStyle(.secondary)
+				}
+				
 				ToolbarItem(placement: .confirmationAction) {
 					Button("Done") {
 						showingDatePicker = false
 					}
-					.fontWeight(.semibold)
+					.fontWeight(.bold)
+					.foregroundStyle(Color.accentColor)
 				}
 			}
 		}
-		.presentationDetents([.medium])
+		.presentationDetents([.medium, .large])
 		.presentationDragIndicator(.visible)
 	}
 	
