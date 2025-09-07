@@ -102,7 +102,7 @@ struct DataManagementViewModelTests {
 	
 	// Start export
 	let exportTask = Task {
-	  await viewModel.exportData(includeNames: true)
+	  await viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	}
 	
 	// Should be loading initially (though this might be too fast to catch)
@@ -132,7 +132,7 @@ struct DataManagementViewModelTests {
 	
 	let viewModel = DataManagementViewModel(dataStore: dataStore)
 	
-	await viewModel.exportData(includeNames: true)
+	await viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	
 	#expect(viewModel.isExporting == false)
 	#expect(viewModel.exportedDataURL != nil)
@@ -352,7 +352,7 @@ struct DataManagementViewModelTests {
 	let viewModel = DataManagementViewModel(dataStore: dataStore)
 	
 	// Start multiple operations concurrently
-	async let exportTask: Void = viewModel.exportData(includeNames: true)
+	async let exportTask: Void = viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	async let clearTask: Void = viewModel.clearAllData()
 	
 	// Wait for both to complete
@@ -375,7 +375,7 @@ struct DataManagementViewModelTests {
 	// Force an error by trying to export when DataStore might fail
 	// This is tricky to test without a mock, but we can at least verify
 	// the state management works
-	await viewModel.exportData(includeNames: true)
+	await viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	
 	// Should always reset loading state, even on error
 	#expect(viewModel.isExporting == false)
@@ -395,7 +395,7 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.medicationCount == 1)
 	
 	// 2. Export data
-	await viewModel.exportData(includeNames: true)
+	await viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	#expect(viewModel.exportedDataURL != nil)
 	
 	guard let exportedURL = viewModel.exportedDataURL else {
