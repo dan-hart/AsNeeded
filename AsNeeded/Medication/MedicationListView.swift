@@ -217,17 +217,8 @@ struct MedicationListView: View {
                             }
                         }
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 8, bottom: 6, trailing: 8))
-                    .listRowBackground(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.secondarySystemGroupedBackground))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color(.separator).opacity(0.1), lineWidth: 0.5)
-                            )
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
                 .onMove(perform: moveMedications)
@@ -294,122 +285,303 @@ struct MedicationRow: View {
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.editMode) private var editMode
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isPressed = false
     
     var body: some View {
         HStack(spacing: 0) {
             if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 12) {
-                    medicationTitle
-                    medicationInfo
-                    logButton
+                // Accessibility Layout
+                VStack(alignment: .leading, spacing: 16) {
+                    medicationHeader
+                    medicationDetails
+                    enhancedLogButton
                         .frame(maxWidth: .infinity)
                         .opacity(editMode?.wrappedValue == .active ? 0 : 1)
-                        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
                 }
-                .padding(.vertical, 14)
-                .padding(.horizontal, 16)
+                .padding(20)
             } else {
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        medicationTitle
-                        medicationInfo
+                // Standard Layout
+                HStack(alignment: .center, spacing: 16) {
+                    // Left Side: Icon and Info
+                    HStack(spacing: 14) {
+                        medicationIcon
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            medicationHeader
+                            medicationDetails
+                        }
                     }
-                    Spacer(minLength: 12)
-                    logButton
+                    
+                    Spacer(minLength: 8)
+                    
+                    // Right Side: Enhanced Log Button
+                    enhancedLogButton
                         .opacity(editMode?.wrappedValue == .active ? 0 : 1)
-                        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
+                        .scaleEffect(editMode?.wrappedValue == .active ? 0.8 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
                 }
-                .padding(.vertical, 14)
-                .padding(.horizontal, 16)
+                .padding(20)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: editMode?.wrappedValue)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(colorScheme == .dark ? 
+                    Color(uiColor: .secondarySystemGroupedBackground) : 
+                    Color.white
+                )
+                .shadow(
+                    color: Color.black.opacity(colorScheme == .dark ? 0.15 : 0.06),
+                    radius: 8,
+                    x: 0,
+                    y: 3
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(colorScheme == .dark ? 0.1 : 0.5),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.5
+                )
+        )
+        .padding(.horizontal, 4)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
     }
     
-    private var medicationTitle: some View {
-        Text(medication.displayName)
-            .font(.system(.headline, design: .rounded))
-            .fontWeight(.semibold)
-            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
-            .multilineTextAlignment(.leading)
-            .foregroundColor(.primary)
-    }
-    
-    private var medicationInfo: some View {
-        VStack(alignment: .leading, spacing: dynamicTypeSize.isAccessibilitySize ? 6 : 2) {
-            quantityView
-            datesView
-        }
-    }
-    
-    @ViewBuilder
-    private var quantityView: some View {
-        if let quantity = medication.quantity {
-            let quantityText = if let unit = medication.prescribedUnit {
-                "\(quantity.formattedAmount) \(unit.abbreviation)"
-            } else {
-                quantity.formattedAmount
-            }
+    // MARK: - View Components
+    private var medicationIcon: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.accentColor.opacity(0.15),
+                            Color.accentColor.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 44, height: 44)
             
-            HStack(spacing: 4) {
-                Image(systemName: "pills.fill")
+            Image(systemSymbol: iconForMedication)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
+        }
+    }
+    
+    private var iconForMedication: SFSymbol {
+        // Choose icon based on medication type or unit
+        if let unit = medication.prescribedUnit {
+            switch unit {
+            case .puff:
+                return .wind
+            case .drop:
+                return .drop
+            case .spray:
+                return .humidity
+            default:
+                return .pills
+            }
+        }
+        return .pills
+    }
+    
+    private var medicationHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(medication.displayName)
+                .font(.system(.headline, design: .rounded))
+                .fontWeight(.bold)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                .foregroundStyle(.primary)
+            
+            if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
+                Text(medication.clinicalName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(quantityText)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
         }
     }
     
-    @ViewBuilder
-    private var datesView: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            if let lastRefill = medication.lastRefillDate {
-                HStack(spacing: 4) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 10))
-                        .foregroundStyle(Color.secondary.opacity(0.6))
-                    Text("Last refill \(lastRefill.relativeFormattedAsPast)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+    private var medicationDetails: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Quantity Badge
+            if let quantity = medication.quantity {
+                HStack(spacing: 6) {
+                    Image(systemSymbol: .squareStack3dUp)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(quantityColor(for: quantity))
+                    
+                    Text(quantityText(for: quantity))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(quantityColor(for: quantity))
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule()
+                        .fill(quantityColor(for: quantity).opacity(0.12))
+                )
             }
-            if let nextRefill = medication.nextRefillDate {
-                let isOverdue = nextRefill < Date()
-                HStack(spacing: 4) {
-                    Image(systemName: isOverdue ? "exclamationmark.circle.fill" : "calendar.circle")
-                        .font(.system(size: 10))
-                        .foregroundStyle(isOverdue ? Color.orange : Color.secondary.opacity(0.6))
-                    Text("Next refill \(nextRefill.relativeFormattedAsFuture)")
-                        .font(.caption)
-                        .fontWeight(isOverdue ? .medium : .regular)
-                        .foregroundStyle(isOverdue ? .orange : .secondary)
+            
+            // Refill Information
+            HStack(spacing: 12) {
+                if let lastRefill = medication.lastRefillDate {
+                    HStack(spacing: 4) {
+                        Image(systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(Color.green.opacity(0.8))
+                        Text(lastRefill.relativeFormattedAsPast)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                if let nextRefill = medication.nextRefillDate {
+                    let isOverdue = nextRefill < Date()
+                    let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: nextRefill).day ?? 0
+                    
+                    HStack(spacing: 4) {
+                        Image(systemSymbol: isOverdue ? .exclamationmarkTriangleFill : .calendarBadgeClock)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(refillColor(isOverdue: isOverdue, daysUntil: daysUntil))
+                        
+                        Text(nextRefill.relativeFormattedAsFuture)
+                            .font(.caption2)
+                            .fontWeight(isOverdue ? .semibold : .medium)
+                            .foregroundStyle(refillColor(isOverdue: isOverdue, daysUntil: daysUntil))
+                    }
                 }
             }
         }
     }
     
-    private var logButton: some View {
-        Button(action: onLogTapped) {
+    private var enhancedLogButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isPressed = true
+            }
+            onLogTapped()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isPressed = false
+            }
+        }) {
             if dynamicTypeSize.isAccessibilitySize {
-                Label("Log Dose", systemImage: "plus.circle.fill")
-                    .labelStyle(.titleAndIcon)
+                // Full width button for accessibility
+                HStack(spacing: 10) {
+                    Image(systemSymbol: .plusCircleFill)
+                        .font(.title3)
+                    Text("Log Dose")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.accentColor, Color.accentColor.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
             } else {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 32))
-                    .symbolRenderingMode(.hierarchical)
+                // Compact button with icon and text
+                VStack(spacing: 4) {
+                    Image(systemSymbol: .plusCircleFill)
+                        .font(.system(size: 24, weight: .semibold))
+                        .symbolRenderingMode(.hierarchical)
+                    
+                    Text("Log")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .textCase(.uppercase)
+                }
+                .foregroundStyle(.white)
+                .frame(width: 66, height: 66)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.accentColor,
+                                    Color.accentColor.opacity(0.9)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(
+                            color: Color.accentColor.opacity(0.4),
+                            radius: isPressed ? 2 : 8,
+                            x: 0,
+                            y: isPressed ? 1 : 4
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.3),
+                                    Color.white.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .scaleEffect(isPressed ? 0.95 : 1.0)
             }
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.regular)
-        .tint(.accentColor)
-        .shadow(color: Color.accentColor.opacity(0.2), radius: 3, x: 0, y: 2)
+        .buttonStyle(.plain)
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Opens dose logging for this medication")
     }
     
+    // MARK: - Helper Methods
+    private func quantityColor(for quantity: Double) -> Color {
+        if quantity < 10 {
+            return .red
+        } else if quantity < 30 {
+            return .orange
+        } else {
+            return .green
+        }
+    }
+    
+    private func quantityText(for quantity: Double) -> String {
+        let quantityStr = quantity.formattedAmount
+        if let unit = medication.prescribedUnit {
+            return "\(quantityStr) \(unit.abbreviation) left"
+        } else {
+            return "\(quantityStr) left"
+        }
+    }
+    
+    private func refillColor(isOverdue: Bool, daysUntil: Int) -> Color {
+        if isOverdue {
+            return .red
+        } else if daysUntil <= 7 {
+            return .orange
+        } else {
+            return .secondary
+        }
+    }
 }
     
     #Preview {
