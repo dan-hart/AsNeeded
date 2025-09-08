@@ -342,9 +342,11 @@ struct CalendarHeatmapGrid: View {
 		var paddedData = data
 		
 		// Add leading empty days
-		for i in (1...leadingEmptyDays).reversed() {
-			if let emptyDate = calendar.date(byAdding: .day, value: -i, to: firstDate) {
-				paddedData.insert(CalendarDay(date: emptyDate, total: -1, intensity: -1), at: 0)
+		if leadingEmptyDays > 0 {
+			for i in (1...leadingEmptyDays).reversed() {
+				if let emptyDate = calendar.date(byAdding: .day, value: -i, to: firstDate) {
+					paddedData.insert(CalendarDay(date: emptyDate, total: -1, intensity: -1), at: 0)
+				}
 			}
 		}
 		
