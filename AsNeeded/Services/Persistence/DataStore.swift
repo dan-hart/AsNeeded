@@ -110,6 +110,9 @@ public final class DataStore {
 				logger.info("Cleared deleted medication from navigation target")
 			}
 			
+			// Synchronize UserDefaults to ensure changes are persisted
+			UserDefaults.standard.synchronize()
+			
 			logger.info("Successfully deleted medication: \(med.displayName) and \(associatedEvents.count) associated events")
 		} catch {
 			logger.error("Failed to delete medication \(med.displayName): \(error.localizedDescription)")
