@@ -445,36 +445,6 @@ struct MedicationRow: View {
                         .fill(quantityColor(for: quantity).opacity(0.12))
                 )
             }
-            
-            // Refill Information
-            HStack(spacing: 12) {
-                if let lastRefill = medication.lastRefillDate {
-                    HStack(spacing: 4) {
-                        Image(systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(Color.green.opacity(0.8))
-                        Text(lastRefill.relativeFormattedAsPast)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                if let nextRefill = medication.nextRefillDate {
-                    let isOverdue = nextRefill < Date()
-                    let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: nextRefill).day ?? 0
-                    
-                    HStack(spacing: 4) {
-                        Image(systemSymbol: isOverdue ? .exclamationmarkTriangleFill : .calendarBadgeClock)
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(refillColor(isOverdue: isOverdue, daysUntil: daysUntil))
-                        
-                        Text(nextRefill.relativeFormattedAsFuture)
-                            .font(.caption2)
-                            .fontWeight(isOverdue ? .semibold : .medium)
-                            .foregroundStyle(refillColor(isOverdue: isOverdue, daysUntil: daysUntil))
-                    }
-                }
-            }
         }
     }
     
