@@ -315,7 +315,7 @@ struct MedicationHistoryView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
             .sheet(item: $logMedication) { med in
                 LogDoseView(medication: med) { dose, event in

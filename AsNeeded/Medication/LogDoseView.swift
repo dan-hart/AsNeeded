@@ -18,6 +18,7 @@ struct LogDoseView: View {
 	@FocusState private var isNoteFocused: Bool
 	@State private var showingDatePicker = false
 	@State private var animateHeader = false
+	@State private var selectedQuickOption: String? = "Now"
 	private let hapticsManager = HapticsManager.shared
 
 	init(
@@ -225,6 +226,9 @@ struct LogDoseView: View {
 					)
 					.datePickerStyle(.wheel)
 					.labelsHidden()
+					.onChange(of: selectedDate) { _, _ in
+						selectedQuickOption = nil
+					}
 					.transition(.asymmetric(
 						insertion: .push(from: .top).combined(with: .opacity),
 						removal: .push(from: .bottom).combined(with: .opacity)
@@ -241,6 +245,7 @@ struct LogDoseView: View {
 						Button(action: {
 							withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 								selectedDate = date
+								selectedQuickOption = label
 								showingDatePicker = false
 								hapticsManager.selectionChanged()
 							}
@@ -252,9 +257,9 @@ struct LogDoseView: View {
 								.padding(.vertical, 8)
 								.background(
 									Capsule()
-										.fill(selectedDate.timeIntervalSince(date) < 60 ? Color.accentColor : Color.secondary.opacity(0.1))
+										.fill(selectedQuickOption == label ? Color.accentColor : Color.secondary.opacity(0.1))
 								)
-								.foregroundStyle(selectedDate.timeIntervalSince(date) < 60 ? .white : .primary)
+								.foregroundStyle(selectedQuickOption == label ? .white : .primary)
 						}
 					}
 				}

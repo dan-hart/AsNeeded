@@ -26,7 +26,6 @@ struct MedicationEditView: View {
 	@StateObject private var viewModel: MedicationEditViewModel
 	@State private var showingDatePicker = false
 	@State private var datePickerType: DatePickerType = .lastRefill
-	@State private var animateHero = false
 	@FocusState private var focusedField: Field?
 	@Environment(\.colorScheme) private var colorScheme
 	private let hapticsManager = HapticsManager.shared
@@ -84,9 +83,7 @@ struct MedicationEditView: View {
 					)
 					.frame(width: 120, height: 120)
 					.blur(radius: 20)
-					.scaleEffect(animateHero ? 1.1 : 0.9)
-					.animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateHero)
-				
+
 				// Glass circle
 				Circle()
 					.fill(.ultraThinMaterial)
@@ -116,8 +113,6 @@ struct MedicationEditView: View {
 							endPoint: .bottom
 						)
 					)
-					.scaleEffect(animateHero ? 1.05 : 0.95)
-					.animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateHero)
 			}
 			
 			Text(medication == nil ? "Add New Medication" : "Edit Medication")
@@ -137,9 +132,6 @@ struct MedicationEditView: View {
 				.multilineTextAlignment(.center)
 		}
 		.padding(.vertical, 30)
-		.onAppear {
-			animateHero = true
-		}
 	}
 	
 	// MARK: - Glass Card Component
