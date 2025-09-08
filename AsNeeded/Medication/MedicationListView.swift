@@ -306,11 +306,11 @@ struct MedicationRow: View {
                 // Accessibility Layout
                 VStack(alignment: .leading, spacing: 16) {
                     medicationHeader
-                    medicationDetails
-                    enhancedLogButton
-                        .frame(maxWidth: .infinity)
-                        .opacity(editMode?.wrappedValue == .active ? 0 : 1)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
+                    if editMode?.wrappedValue != .active {
+                        medicationDetails
+                        enhancedLogButton
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .padding(20)
             } else {
@@ -318,21 +318,24 @@ struct MedicationRow: View {
                 HStack(alignment: .center, spacing: 16) {
                     // Left Side: Icon and Info
                     HStack(spacing: 14) {
-                        medicationIcon
+                        if editMode?.wrappedValue != .active {
+                            medicationIcon
+                        }
                         
                         VStack(alignment: .leading, spacing: 8) {
                             medicationHeader
-                            medicationDetails
+                            if editMode?.wrappedValue != .active {
+                                medicationDetails
+                            }
                         }
                     }
                     
                     Spacer(minLength: 8)
                     
                     // Right Side: Enhanced Log Button
-                    enhancedLogButton
-                        .opacity(editMode?.wrappedValue == .active ? 0 : 1)
-                        .scaleEffect(editMode?.wrappedValue == .active ? 0.8 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
+                    if editMode?.wrappedValue != .active {
+                        enhancedLogButton
+                    }
                 }
                 .padding(20)
             }
