@@ -11,6 +11,7 @@ import HealthKit
 
 struct ContentView: View {
 	@AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
+	@AppStorage("shouldShowWelcomeOnNextLaunch") private var shouldShowWelcomeOnNextLaunch: Bool = false
 	@StateObject private var navigationManager = NavigationManager.shared
 	private let hapticsManager = HapticsManager.shared
 	
@@ -45,6 +46,15 @@ struct ContentView: View {
 		}
 		.fullScreenCover(isPresented: .constant(!hasSeenWelcome)) {
 			WelcomeView()
+		}
+		.onAppear {
+			// Check if we should reset and show welcome on this launch
+			if shouldShowWelcomeOnNextLaunch {
+				// Reset the flag first
+				shouldShowWelcomeOnNextLaunch = false
+				// Then reset hasSeenWelcome to show the welcome screen
+				hasSeenWelcome = false
+			}
 		}
 	}
 }

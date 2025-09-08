@@ -333,7 +333,7 @@ struct DataManagementViewModelTests {
 	
 	// Verify success
 	#expect(viewModel.isClearing == false)
-	#expect(viewModel.alertMessage == "All data cleared successfully")
+	#expect(viewModel.alertMessage == "All data cleared and settings restored to defaults")
 	#expect(viewModel.showingAlert == true)
 	
 	// Verify data was cleared
