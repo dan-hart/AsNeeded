@@ -269,24 +269,24 @@ public final class DataStore {
 		logger.info("Import completed: \(medicationImportCount) medications, \(eventImportCount) events imported")
 	}
 	
-	/// Clear all data from both stores
+	/// Clear all data from both stores and reset all user preferences
 	public func clearAllData() async throws {
-		logger.warning("Clearing all data from stores")
+		logger.warning("Clearing all data and resetting user preferences")
 		do {
 			try await medicationsStore.removeAll()
 			try await eventsStore.removeAll()
 			
-			// Clear all medication-related AppStorage values to prevent crashes
-			// when the app tries to access non-existent medications
+			// Reset ALL UserDefaults/AppStorage values to their defaults
 			await MainActor.run {
-				// Clear history tab selection
-				UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
+				// Remove keys that should have no value
+				for key in UserDefaultsKeys.keysToRemove {
+					UserDefaults.standard.removeObject(forKey: key)
+				}
 				
-				// Clear trends tab selection
-				UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
-				
-				// Clear medication order
-				UserDefaults.standard.removeObject(forKey: "medicationOrder")
+				// Set keys to their default values
+				for (key, value) in UserDefaultsKeys.defaultValues {
+					UserDefaults.standard.set(value, forKey: key)
+				}
 				
 				// Clear navigation targets
 				NavigationManager.shared.clearHistoryNavigation()
@@ -294,10 +294,10 @@ public final class DataStore {
 				// Synchronize to ensure changes are persisted
 				UserDefaults.standard.synchronize()
 				
-				logger.info("Cleared AppStorage values for medications")
+				logger.info("Reset all user preferences and cleared data")
 			}
 			
-			logger.info("Successfully cleared all data")
+			logger.info("Successfully cleared all data and reset preferences")
 		} catch {
 			logger.error("Failed to clear data: \(error.localizedDescription)")
 			throw error

@@ -145,21 +145,21 @@ final class DataManagementViewModel: ObservableObject {
   }
   
   func clearAllData() async {
-	logger.warning("Starting clear all data operation")
+	logger.warning("Starting reset and clear all data operation")
 	isClearing = true
 	defer { 
 	  isClearing = false
-	  logger.debug("Clear data process completed")
+	  logger.debug("Reset and clear data process completed")
 	}
 	
 	do {
 	  try await dataStore.clearAllData()
-	  logger.info("All data cleared successfully")
-	  alertMessage = "All data cleared successfully"
+	  logger.info("All data cleared and settings reset successfully")
+	  alertMessage = "All data cleared and settings restored to defaults"
 	  showingAlert = true
 	} catch {
-	  logger.error("Clear data failed", error: error)
-	  alertMessage = "Clear data failed: \(error.localizedDescription)"
+	  logger.error("Reset and clear data failed", error: error)
+	  alertMessage = "Reset failed: \(error.localizedDescription)"
 	  showingAlert = true
 	}
   }

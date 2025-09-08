@@ -153,18 +153,18 @@ struct DataManagementView: View {
                 .presentationDetents([.medium])
             }
             .confirmationDialog(
-                "Clear All Data",
+                "Reset & Clear All Data",
                 isPresented: $viewModel.showingClearConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Clear All Data", role: .destructive) {
+                Button("Reset & Clear All Data", role: .destructive) {
                     Task {
                         await viewModel.clearAllData()
                     }
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("This will permanently delete all medications and events. This cannot be undone.")
+                Text("This will permanently delete all medications and events, and restore all app settings to their original defaults. This cannot be undone.")
             }
             .confirmationDialog(
                 "Export App Logs",
@@ -311,8 +311,8 @@ struct DataManagementView: View {
                 )
                 
                 dataActionButton(
-                    title: "Clear All Data",
-                    subtitle: "Permanently delete all medications and events",
+                    title: "Reset & Clear All Data",
+                    subtitle: "Delete all data and restore app settings to defaults",
                     systemImage: .trash,
                     isLoading: viewModel.isClearing,
                     isDestructive: true,
