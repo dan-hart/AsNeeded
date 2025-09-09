@@ -72,37 +72,11 @@ struct NIHDisclaimerDetailView: View {
 						Label("Drug information and relationships", systemSymbol: .linkCircle)
 							.font(.body)
 					}
-					.foregroundColor(.secondary)
 					
 					Text("The RxNorm data is updated monthly by NLM and provides standardized names for clinical drugs and links its names to many of the drug vocabularies commonly used in pharmacy management and drug interaction software.")
 						.font(.caption)
 						.foregroundStyle(.secondary)
 						.multilineTextAlignment(.leading)
-				}
-				
-				// Data Usage
-				VStack(alignment: .leading, spacing: 16) {
-					Text("Data Usage & Privacy")
-						.font(.title2)
-						.fontWeight(.bold)
-					
-					Text("The medication data retrieved from NLM/RxNorm:")
-						.font(.body)
-					
-					VStack(alignment: .leading, spacing: 8) {
-						Label("Is publicly available information", systemSymbol: .globeAmericas)
-							.font(.body)
-						
-						Label("Is used solely for medication tracking", systemSymbol: .shield)
-							.font(.body)
-						
-						Label("Is stored locally on your device", systemSymbol: .lockCircle)
-							.font(.body)
-						
-						Label("Is not shared with third parties", systemSymbol: .handRaisedCircle)
-							.font(.body)
-					}
-					.foregroundColor(.secondary)
 				}
 			}
 			.padding()

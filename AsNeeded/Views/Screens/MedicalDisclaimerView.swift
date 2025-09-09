@@ -44,17 +44,54 @@ struct MoreDisclaimerInfoView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(alignment: .leading, spacing: 16) {
-					Text("Medical Disclaimer")
-						.font(.largeTitle)
-						.fontWeight(.bold)
-					Text("This application does not provide medical advice, diagnosis, or treatment. All content, including text, graphics, and information, is for informational purposes only. Always seek the advice of your physician or another qualified health provider with any questions you may have regarding a medical condition, medication, or treatment. Never disregard professional medical advice or delay seeking it because of something you have read or recorded in this app. If you think you may have a medical emergency, call your doctor or emergency services immediately.")
-						.font(.body)
-						.multilineTextAlignment(.leading)
+				VStack(alignment: .leading, spacing: 24) {
+					HStack {
+						Image(systemSymbol: .exclamationmarkTriangleFill)
+							.foregroundStyle(.orange)
+							.font(.largeTitle)
+							.symbolRenderingMode(.hierarchical)
+						
+						Text("Medical Disclaimer")
+							.font(.largeTitle)
+							.fontWeight(.bold)
+							.foregroundStyle(.primary)
+					}
+					
+					VStack(alignment: .leading, spacing: 20) {
+						Text("This application does not provide medical advice, diagnosis, or treatment. All content, including text, graphics, and information, is for informational purposes only.")
+							.font(.body)
+							.foregroundStyle(.primary)
+							.fixedSize(horizontal: false, vertical: true)
+						
+						Text("Always seek the advice of your physician or another qualified health provider with any questions you may have regarding a medical condition, medication, or treatment. Never disregard professional medical advice or delay seeking it because of something you have read or recorded in this app.")
+							.font(.body)
+							.foregroundStyle(.primary)
+							.fixedSize(horizontal: false, vertical: true)
+						
+						VStack(alignment: .leading, spacing: 8) {
+							Image(systemSymbol: .exclamationmarkTriangleFill)
+								.foregroundStyle(.red)
+								.font(.title2)
+								.symbolRenderingMode(.hierarchical)
+							
+							Text("If you think you may have a medical emergency, call your doctor or emergency services immediately.")
+								.font(.body)
+								.fontWeight(.semibold)
+								.foregroundStyle(.red)
+								.fixedSize(horizontal: false, vertical: true)
+						}
+						.padding(16)
+						.background(
+							RoundedRectangle(cornerRadius: 12, style: .continuous)
+								.fill(.red.opacity(0.08))
+								.stroke(.red.opacity(0.2), lineWidth: 1)
+						)
+					}
 				}
-				.padding()
+				.padding(20)
 			}
-			.navigationTitle("More Info")
+			.navigationTitle("Medical Disclaimer")
+			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
 					Button("Done") { dismiss() }
