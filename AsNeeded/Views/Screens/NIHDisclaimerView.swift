@@ -102,3 +102,9 @@ struct NIHFullDisclaimerView: View {
 	NIHDisclaimerView()
 }
 #endif
+
+#if DEBUG
+#Preview {
+    NIHFullDisclaimerView()
+}
+#endif

@@ -76,14 +76,6 @@ struct AboutView: View {
   private var developerAndSupportSection: some View {
 	VStack(alignment: .leading, spacing: 16) {
 	  VStack(alignment: .leading, spacing: 8) {
-		Text("Built by Contributors")
-		  .font(.title2)
-		  .fontWeight(.semibold)
-		
-		Text("An open source project by developers passionate about privacy-focused healthcare. We believe technology should serve people, not exploit them.")
-		  .font(.body)
-		  .foregroundStyle(.secondary)
-		
 		HStack(spacing: 16) {
 		  if let url = mastodonURL {
 			Link(destination: url) {

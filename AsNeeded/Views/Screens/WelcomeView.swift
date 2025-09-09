@@ -4,6 +4,7 @@ import SFSafeSymbols
 struct WelcomeView: View {
   @AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
   @Environment(\.dismiss) private var dismiss
+  @State private var showMedicalDisclaimer = false
   
   private var appName: String {
 	Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -20,8 +21,6 @@ struct WelcomeView: View {
 		welcomeSection
 		
 		coreValuesSection
-		
-		developerSection
 		
 		continueSection
 	  }
@@ -68,20 +67,10 @@ struct WelcomeView: View {
 	}
   }
   
-  private var developerSection: some View {
-	VStack(alignment: .leading, spacing: 12) {
-	  Text("Built by Contributors")
-		.font(.title2)
-		.fontWeight(.semibold)
-	  
-	  Text("An open source project by developers passionate about privacy-focused healthcare. We believe technology should serve people, not exploit them.")
-		.font(.body)
-		.foregroundStyle(.secondary)
-	}
-  }
-  
   private var continueSection: some View {
 	VStack(spacing: 16) {
+	  medicalDisclaimer
+	  
 	  Button {
 		hasSeenWelcome = true
 		dismiss()
@@ -106,6 +95,17 @@ struct WelcomeView: View {
 		.frame(maxWidth: .infinity)
 	}
 	.padding(.top, 8)
+  }
+  
+  private var medicalDisclaimer: some View {
+      VStack {
+          Text("Medical Disclaimer")
+            .font(.title2)
+            .fontWeight(.semibold)
+            .frame(maxWidth: .infinity)
+          
+          MedicalDisclaimerView()
+      }
   }
 
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
