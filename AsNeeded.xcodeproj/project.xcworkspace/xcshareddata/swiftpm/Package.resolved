@@ -1,4 +1,5 @@
 {
+  "originHash" : "b595df28f0a18a8e54209e45d206a672870b638285663536482f39c1d2587f2d",
   "pins" : [
     {
       "identity" : "anmodelkit",
@@ -7,6 +8,24 @@
       "state" : {
         "revision" : "e957a7765253825ffb5acc188f34d6b28e590fc6",
         "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "bodega",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mergesort/Bodega.git",
+      "state" : {
+        "revision" : "bfd8871e9c2590d31b200e54c75428a71483afdf",
+        "version" : "2.1.3"
+      }
+    },
+    {
+      "identity" : "boutique",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mergesort/Boutique",
+      "state" : {
+        "revision" : "9379e6a0b13bfb01c2ae655b65962d8479b63428",
+        "version" : "3.0.1"
       }
     },
     {
@@ -46,21 +65,30 @@
       }
     },
     {
-      "identity" : "swift-docc-plugin",
+      "identity" : "sqlite.swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-docc-plugin",
+      "location" : "https://github.com/stephencelis/SQLite.swift.git",
       "state" : {
-        "revision" : "3e4f133a77e644a5812911a0513aeb7288b07d06",
-        "version" : "1.4.5"
+        "revision" : "392dd6058624d9f6c5b4c769d165ddd8c7293394",
+        "version" : "0.15.4"
       }
     },
     {
-      "identity" : "swift-docc-symbolkit",
+      "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-docc-symbolkit",
+      "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "b45d1f2ed151d057b54504d653e0da5552844e34",
-        "version" : "1.0.0"
+        "revision" : "8c0c0a8b49e080e54e5e328cc552821ff07cd341",
+        "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "swift-toolchain-sqlite",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-toolchain-sqlite",
+      "state" : {
+        "revision" : "b626d3002773b1a1304166643e7f118f724b2132",
+        "version" : "1.0.4"
       }
     },
     {
@@ -73,5 +101,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
