@@ -44,13 +44,16 @@ struct MedicationResultSorter {
 	static func sortAutocompleteResults(_ results: [String], for query: String) -> [String] {
 		let normalizedQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 		
+		// Deduplicate results first, preserving original case
+		let uniqueResults = Array(Set(results))
+		
 		// Separate into priority groups
 		var exactMatches: [String] = []
 		var startsWithMatches: [String] = []
 		var wordBoundaryMatches: [String] = []
 		var containsMatches: [String] = []
 		
-		for result in results {
+		for result in uniqueResults {
 			let normalizedResult = result.lowercased()
 			
 			if normalizedResult == normalizedQuery {

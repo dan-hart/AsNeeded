@@ -165,13 +165,19 @@ final class MedicationSearchService: ObservableObject {
 			// Use optimized autocomplete API
 			let result = try await client.autocomplete(trimmedQuery, options: .autocomplete)
 			
-			// Sort suggestions with start-of-string priority
-			let sortedSuggestions = MedicationResultSorter.sortResults(
-				result.suggestions,
-				for: trimmedQuery
-			)
+			// Extract drug names from suggestions for deduplication and sorting
+			let drugNames = result.suggestions.map { $0.drug.name }
 			
-			// Create new result with sorted suggestions
+			// Deduplicate and sort suggestions with start-of-string priority
+			let uniqueNames = Array(Set(drugNames))
+			let sortedNames = MedicationResultSorter.sortAutocompleteResults(uniqueNames, for: trimmedQuery)
+			
+			// Convert back to RxNormSearchResult format, preserving original metadata
+			let sortedSuggestions = sortedNames.compactMap { name in
+				result.suggestions.first { $0.drug.name == name }
+			}
+			
+			// Create new result with deduplicated and sorted suggestions
 			let sortedResult = AutocompleteResult(
 				suggestions: sortedSuggestions,
 				hasMore: result.hasMore,
