@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import RevenueCat
 import DHLoggingKit
+import DHUtilityKit
 
 @MainActor
 class RevenueCatManager: NSObject, ObservableObject  {
@@ -12,7 +13,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		// Tips (one-time purchases)
 		case tipThanks = "com.codedbydan.asneeded.tip.thanks"
 		case tipCheers = "com.codedbydan.asneeded.tip.cheers"
-		case tipStandingOvation = "com.codedbydan.asneeded.tip.standingovation"
+		case tipOvation = "com.codedbydan.asneeded.tip.ovation"
 		
 		// Subscriptions (monthly)
 		case subscriptionSupporter = "com.codedbydan.asneeded.subscription.supporter"
@@ -21,7 +22,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		
 		var isTip: Bool {
 			switch self {
-			case .tipThanks, .tipCheers, .tipStandingOvation:
+			case .tipThanks, .tipCheers, .tipOvation:
 				return true
 			default:
 				return false
