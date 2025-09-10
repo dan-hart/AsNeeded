@@ -219,7 +219,7 @@ struct SupportView: View {
 	private let tipTiers = [
 		(title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99", productId: RevenueCatManager.ProductIdentifier.tipThanks),
 		(title: "Cheers", emoji: "🥂", color: Color.orange, price: "$2.99", productId: RevenueCatManager.ProductIdentifier.tipCheers),
-		(title: "Ovation", emoji: "👏", color: Color.purple, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.tipStandingOvation)
+		(title: "Ovation", emoji: "👏", color: Color.purple, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.tipOvation)
 	]
 	
 	private let subscriptionTiers = [
