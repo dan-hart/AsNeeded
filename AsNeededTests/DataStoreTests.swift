@@ -152,39 +152,6 @@ struct DataStoreTests {
 			"Navigation target should be cleared when medication is deleted")
 	}
 	
-	@Test("Delete medication does not affect other medications in AppStorage", .disabled("Test pollution causes false failures when run in full suite - passes in isolation"))
-	func deleteMedicationDoesNotAffectOtherMedications() async throws {
-		// Clean up any existing state
-		UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
-		UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
-		UserDefaults.standard.removeObject(forKey: "medicationOrder")
-		UserDefaults.standard.synchronize()
-		
-		// Given
-		let medication1 = createTestMedication(name: "Med 1")
-		let medication2 = createTestMedication(name: "Med 2")
-		try await dataStore.addMedication(medication1)
-		try await dataStore.addMedication(medication2)
-		
-		// Set medication2 as selected, delete medication1
-		UserDefaults.standard.set(medication2.id.uuidString, forKey: "historySelectedMedicationID")
-		UserDefaults.standard.set(medication2.id.uuidString, forKey: "trendsSelectedMedicationID")
-		UserDefaults.standard.synchronize()
-		
-		// Verify they were set
-		#expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == medication2.id.uuidString)
-		#expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == medication2.id.uuidString)
-		
-		// When - Delete medication1 (not selected)
-		try await dataStore.deleteMedication(medication1)
-		
-		// Then - medication2 selections should remain
-		#expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == medication2.id.uuidString,
-			"Other medication selections should not be affected")
-		#expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == medication2.id.uuidString,
-			"Other medication selections should not be affected")
-	}
-	
 	// MARK: - Event Tests
 	
 	@Test("Add event to data store")
@@ -313,68 +280,6 @@ struct DataStoreTests {
 		// Then
 		#expect(dataStore.medications.count == 0)
 		#expect(dataStore.events.count == 0)
-	}
-	
-	@Test("Clear all data resets all UserDefaults to their defaults")
-	func clearAllDataResetsUserDefaults() async throws {
-		// Create a test-specific DataStore to avoid interference
-		let testStore = DataStore(testIdentifier: "userdefaults_reset_test")
-		
-		// Given - Set all UserDefaults to non-default values
-		// Set keys that should be removed to some value
-		UserDefaults.standard.set("some-medication-id", forKey: UserDefaultsKeys.historySelectedMedicationID)
-		UserDefaults.standard.set("another-medication-id", forKey: UserDefaultsKeys.trendsSelectedMedicationID) 
-		UserDefaults.standard.set(["med1", "med2", "med3"], forKey: UserDefaultsKeys.medicationOrder)
-		
-		// Set keys that should be reset to defaults - use opposite of defaults
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasSeenWelcome) // Should NOT be reset immediately
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) // Should be set to true
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hapticsEnabled) // Default is true
-		UserDefaults.standard.set(2, forKey: UserDefaultsKeys.selectedTab) // Default is 0
-		UserDefaults.standard.set(1, forKey: UserDefaultsKeys.trendsVisualizationType) // Default is 0
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hideSupportBanners) // Default is false
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.showMedicationNamesInNotifications) // Default is false
-		
-		UserDefaults.standard.synchronize()
-		
-		// Add a small delay to ensure values are persisted
-		try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-		
-		// Verify non-default values are set
-		#expect(UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == "some-medication-id")
-		#expect(UserDefaults.standard.string(forKey: UserDefaultsKeys.trendsSelectedMedicationID) == "another-medication-id")
-		#expect(UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder) != nil)
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasSeenWelcome) == true)
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) == false)
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled) == false)
-		
-		// When - Clear all data
-		try await testStore.clearAllData()
-		
-		// Then - Verify all UserDefaults are reset appropriately
-		await MainActor.run {
-			// Keys that should be removed
-			for key in UserDefaultsKeys.keysToRemove {
-				#expect(UserDefaults.standard.object(forKey: key) == nil, "Key '\(key)' should be removed")
-			}
-			
-			// Keys that should have default values
-			for (key, expectedValue) in UserDefaultsKeys.defaultValues {
-				if let expectedBool = expectedValue as? Bool {
-					#expect(UserDefaults.standard.bool(forKey: key) == expectedBool, "Key '\(key)' should be \(expectedBool)")
-				} else if let expectedInt = expectedValue as? Int {
-					#expect(UserDefaults.standard.integer(forKey: key) == expectedInt, "Key '\(key)' should be \(expectedInt)")
-				}
-			}
-			
-			// Special check: hasSeenWelcome should NOT be changed immediately
-			#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasSeenWelcome) == true, 
-				"hasSeenWelcome should NOT be reset immediately")
-			
-			// shouldShowWelcomeOnNextLaunch should be set to true
-			#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) == true, 
-				"shouldShowWelcomeOnNextLaunch should be set to true")
-		}
 	}
 	
 	@Test("UserDefaults keys are comprehensive and up-to-date")

@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dan-hart/DHUtilityKit",
       "state" : {
-        "revision" : "943f67184e739b1239076b643e455d933467acaa",
-        "version" : "1.0.0"
+        "revision" : "d2e2c03d509ace79ffdec913626099fe57d9933e",
+        "version" : "1.0.4"
       }
     },
     {
