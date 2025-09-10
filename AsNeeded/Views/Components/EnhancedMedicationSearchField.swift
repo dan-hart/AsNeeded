@@ -69,13 +69,6 @@ struct EnhancedMedicationSearchField: View {
 					showSuggestions = false
 				}
 			
-			// AI indicator when available
-			if #available(iOS 26.0, *), !text.isEmpty {
-				Image(systemSymbol: .sparkles)
-					.font(.caption)
-					.foregroundStyle(.tint)
-					.symbolEffect(.pulse, options: .repeating, value: isSearching)
-			}
 			
 			if isSearching {
 				ProgressView()
@@ -434,16 +427,32 @@ struct EnhancedMedicationSearchField: View {
 			let cachedDrugs = searchService.getSuggestions(for: trimmed)
 			if !cachedDrugs.isEmpty {
 				await MainActor.run {
-					let simplifiedCached = cachedDrugs.map { drug in
-						let simplified = MedicationNameSimplifier.simplifyName(drug.name)
-						return RxNormSearchResult(
-							drug: RxNormDrug(rxCUI: drug.rxCUI, name: simplified),
+					// Convert to RxNormSearchResult first
+					let cachedResults = cachedDrugs.map { drug in
+						RxNormSearchResult(
+							drug: drug,
 							score: 0.8,
 							source: .direct,
 							isExactMatch: false,
-							matchedTerm: simplified
+							matchedTerm: drug.name
 						)
 					}
+					
+					// Process through name simplifier for proper deduplication
+					let processedResults = MedicationNameSimplifier.processSearchResults(cachedResults)
+					let deduplicatedResults = MedicationNameSimplifier.deduplicateResults(processedResults)
+					
+					// Convert back to RxNormSearchResult format with simplified names
+					let simplifiedCached = deduplicatedResults.map { result in
+						RxNormSearchResult(
+							drug: RxNormDrug(rxCUI: result.original.drug.rxCUI, name: result.clinicalName),
+							score: result.original.score,
+							source: result.original.source,
+							isExactMatch: result.original.isExactMatch,
+							matchedTerm: result.clinicalName
+						)
+					}
+					
 					suggestions = simplifiedCached
 					isSearching = false
 				}
@@ -463,7 +472,26 @@ struct EnhancedMedicationSearchField: View {
 		let results = await searchService.searchMedicationsEnhanced(query)
 		
 		await MainActor.run {
-			self.suggestions = results
+			// Merge with existing cached suggestions and deduplicate
+			var allSuggestions = self.suggestions
+			allSuggestions.append(contentsOf: results)
+			
+			// Process all suggestions through name simplifier for proper deduplication
+			let processedResults = MedicationNameSimplifier.processSearchResults(allSuggestions)
+			let deduplicatedResults = MedicationNameSimplifier.deduplicateResults(processedResults)
+			
+			// Convert back to RxNormSearchResult format with simplified names
+			let finalSuggestions = deduplicatedResults.map { result in
+				RxNormSearchResult(
+					drug: RxNormDrug(rxCUI: result.original.drug.rxCUI, name: result.clinicalName),
+					score: result.original.score,
+					source: result.original.source,
+					isExactMatch: result.original.isExactMatch,
+					matchedTerm: result.clinicalName
+				)
+			}
+			
+			self.suggestions = finalSuggestions
 			self.isSearching = false
 			self.showSuggestions = true
 		}

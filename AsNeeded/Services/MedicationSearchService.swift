@@ -285,8 +285,24 @@ final class MedicationSearchService: ObservableObject {
 			}
 		}
 		
-		// Remove duplicates and limit
-		return Array(Set(suggestions)).sorted { $0.name < $1.name }.prefix(10).map { $0 }
+		// Convert to search results and process through name simplifier for proper deduplication
+		let searchResults = suggestions.map { drug in
+			RxNormSearchResult(
+				drug: drug,
+				score: 0.8,
+				source: .direct,
+				isExactMatch: false,
+				matchedTerm: drug.name
+			)
+		}
+		
+		let processedResults = MedicationNameSimplifier.processSearchResults(searchResults)
+		let deduplicatedResults = MedicationNameSimplifier.deduplicateResults(processedResults)
+		
+		// Convert back to RxNormDrug with simplified names and limit to 10
+		return deduplicatedResults.prefix(10).map { result in
+			RxNormDrug(rxCUI: result.original.drug.rxCUI, name: result.clinicalName)
+		}
 	}
 	
 	/// Clears all cached data

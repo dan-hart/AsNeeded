@@ -191,4 +191,68 @@ struct MedicationSearchServiceTests {
 		
 		#expect(Bool(true), "Should handle special characters in search terms safely")
 	}
+	
+	// MARK: - Deduplication Integration Tests
+	
+	@Test("getSuggestions should return simplified medication names")
+	func getSuggestionsShouldReturnSimplifiedMedicationNames() {
+		let service = MedicationSearchService.shared
+		
+		// Test that popular medications are simplified
+		let suggestions = service.getSuggestions(for: "ibuprofen")
+		
+		// Should contain simplified "Ibuprofen" (not "Ibuprofen 200mg" or similar)
+		let ibuprofenResults = suggestions.filter { $0.name.lowercased().contains("ibuprofen") }
+		for result in ibuprofenResults {
+			// Should not contain dosage information
+			#expect(!result.name.contains("mg"))
+			#expect(!result.name.contains("tablet"))
+			#expect(!result.name.contains("capsule"))
+		}
+	}
+	
+	@Test("getSuggestions should not return duplicate simplified names")
+	func getSuggestionsShouldNotReturnDuplicateSimplifiedNames() {
+		let service = MedicationSearchService.shared
+		
+		// Get all suggestions for empty search (returns popular medications)
+		let suggestions = service.getSuggestions(for: "")
+		
+		// Check that there are no duplicate medication names
+		let medicationNames = suggestions.map { $0.name }
+		let uniqueNames = Array(Set(medicationNames))
+		
+		#expect(uniqueNames.count == medicationNames.count, "Should not have duplicate medication names in suggestions")
+		
+		// Specifically check for common duplicates that might occur
+		let nameCounts = medicationNames.reduce(into: [String: Int]()) { counts, name in
+			counts[name, default: 0] += 1
+		}
+		
+		for (name, count) in nameCounts {
+			#expect(count == 1, "Medication '\(name)' appears \(count) times, should only appear once")
+		}
+	}
+	
+	@Test("getSuggestions should maintain consistent behavior across multiple calls")
+	func getSuggestionsShouldMaintainConsistentBehaviorAcrossMultipleCalls() {
+		let service = MedicationSearchService.shared
+		
+		// Make multiple calls to getSuggestions
+		let firstCall = service.getSuggestions(for: "ibuprofen")
+		let secondCall = service.getSuggestions(for: "ibuprofen")
+		let thirdCall = service.getSuggestions(for: "ibuprofen")
+		
+		// Results should be consistent
+		#expect(firstCall.count == secondCall.count)
+		#expect(secondCall.count == thirdCall.count)
+		
+		// Names should be identical across calls
+		let firstNames = Set(firstCall.map { $0.name })
+		let secondNames = Set(secondCall.map { $0.name })
+		let thirdNames = Set(thirdCall.map { $0.name })
+		
+		#expect(firstNames == secondNames)
+		#expect(secondNames == thirdNames)
+	}
 }
