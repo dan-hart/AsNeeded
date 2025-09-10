@@ -40,11 +40,13 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		// You'll need to add your RevenueCat API key here
 		// Get it from https://app.revenuecat.com
 		
-		// For now, we'll use a placeholder - you'll need to replace this
-		let apiKey = ProcessInfo.processInfo.environment["REVENUECAT_API_KEY"] ?? "YOUR_REVENUECAT_API_KEY"
+        guard let rcPublicKey = try? SecretManager.shared.getSecret(.revenueCatAPIKey) else {
+            DHLogger.data.error("RevenueCat API key not found in secrets manager")
+            return
+        }
 		
 		Purchases.logLevel = .debug
-		Purchases.configure(withAPIKey: apiKey)
+		Purchases.configure(withAPIKey: rcPublicKey)
 		
 		// Enable debug logs in debug builds
 		#if DEBUG
