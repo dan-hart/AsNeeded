@@ -153,6 +153,34 @@ struct DataManagementView: View {
                 .presentationDetents([.medium])
             }
             .confirmationDialog(
+                "Clear All Data",
+                isPresented: $viewModel.showingClearUserDataConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Clear All Data", role: .destructive) {
+                    Task {
+                        await viewModel.clearUserData()
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will permanently delete all medications and events. This cannot be undone.")
+            }
+            .confirmationDialog(
+                "Reset App Settings",
+                isPresented: $viewModel.showingResetSettingsConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reset Settings", role: .destructive) {
+                    Task {
+                        await viewModel.resetAppSettings()
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will restore all app settings to their original defaults. This cannot be undone.")
+            }
+            .confirmationDialog(
                 "Reset & Clear All Data",
                 isPresented: $viewModel.showingClearConfirmation,
                 titleVisibility: .visible
@@ -311,13 +339,24 @@ struct DataManagementView: View {
                 )
                 
                 dataActionButton(
-                    title: "Reset & Clear All Data",
-                    subtitle: "Delete all data and restore app settings to defaults",
+                    title: "Clear All Data",
+                    subtitle: "Delete all medications and events",
                     systemImage: .trash,
-                    isLoading: viewModel.isClearing,
+                    isLoading: viewModel.isClearingUserData,
                     isDestructive: true,
                     action: {
-                        viewModel.confirmClearData()
+                        viewModel.confirmClearUserData()
+                    }
+                )
+                
+                dataActionButton(
+                    title: "Reset App Settings",
+                    subtitle: "Restore all app settings to defaults",
+                    systemImage: .arrowCounterclockwise,
+                    isLoading: viewModel.isResettingSettings,
+                    isDestructive: true,
+                    action: {
+                        viewModel.confirmResetSettings()
                     }
                 )
                 
@@ -374,7 +413,7 @@ struct DataManagementView: View {
             )
             .cornerRadius(12)
         }
-        .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isExportingLogs)
+        .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs)
         .buttonStyle(.plain)
     }
     

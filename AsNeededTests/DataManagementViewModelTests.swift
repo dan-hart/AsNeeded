@@ -45,7 +45,11 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.isExporting == false)
 	#expect(viewModel.isImporting == false)
 	#expect(viewModel.isClearing == false)
+	#expect(viewModel.isClearingUserData == false)
+	#expect(viewModel.isResettingSettings == false)
 	#expect(viewModel.showingClearConfirmation == false)
+	#expect(viewModel.showingClearUserDataConfirmation == false)
+	#expect(viewModel.showingResetSettingsConfirmation == false)
 	#expect(viewModel.showingExportConfirmation == false)
 	#expect(viewModel.showingDocumentPicker == false)
 	#expect(viewModel.showingLogShareSheet == false)
@@ -314,6 +318,67 @@ struct DataManagementViewModelTests {
 	#expect(viewModel.showingClearConfirmation == true)
   }
   
+  @Test("Clear user data confirmation should set flag")
+  func testConfirmClearUserData() {
+	let dataStore = createTestDataStore()
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	viewModel.confirmClearUserData()
+	
+	#expect(viewModel.showingClearUserDataConfirmation == true)
+  }
+  
+  @Test("Reset settings confirmation should set flag")
+  func testConfirmResetSettings() {
+	let dataStore = createTestDataStore()
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	viewModel.confirmResetSettings()
+	
+	#expect(viewModel.showingResetSettingsConfirmation == true)
+  }
+  
+  @Test("Clear user data should remove only user data")
+  func testClearUserData() async throws {
+	let dataStore = createTestDataStore()
+	try await dataStore.clearAllData()
+	
+	// Add test data
+	try await dataStore.addMedication(createTestMedication())
+	try await dataStore.addEvent(createTestEvent())
+	
+	#expect(dataStore.medications.count == 1)
+	#expect(dataStore.events.count == 1)
+	
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	// Clear user data only
+	await viewModel.clearUserData()
+	
+	// Verify success
+	#expect(viewModel.isClearingUserData == false)
+	#expect(viewModel.alertMessage == "All user data (medications and events) cleared successfully")
+	#expect(viewModel.showingAlert == true)
+	
+	// Verify data was cleared
+	#expect(dataStore.medications.count == 0)
+	#expect(dataStore.events.count == 0)
+  }
+  
+  @Test("Reset app settings should reset settings only")
+  func testResetAppSettings() async {
+	let dataStore = createTestDataStore()
+	let viewModel = DataManagementViewModel(dataStore: dataStore)
+	
+	// Reset settings
+	await viewModel.resetAppSettings()
+	
+	// Verify success
+	#expect(viewModel.isResettingSettings == false)
+	#expect(viewModel.alertMessage == "App settings restored to defaults successfully")
+	#expect(viewModel.showingAlert == true)
+  }
+  
   @Test("Clear all data should remove everything")
   func testClearAllData() async throws {
 	let dataStore = createTestDataStore()
@@ -354,13 +419,17 @@ struct DataManagementViewModelTests {
 	// Start multiple operations concurrently
 	async let exportTask: Void = viewModel.exportData(redactMedicationNames: false, redactNotes: false)
 	async let clearTask: Void = viewModel.clearAllData()
+	async let clearUserDataTask: Void = viewModel.clearUserData()
+	async let resetSettingsTask: Void = viewModel.resetAppSettings()
 	
-	// Wait for both to complete
-	let _ = await (exportTask, clearTask)
+	// Wait for all to complete
+	let _ = await (exportTask, clearTask, clearUserDataTask, resetSettingsTask)
 	
 	// All should be false at the end
 	#expect(viewModel.isExporting == false)
 	#expect(viewModel.isClearing == false)
+	#expect(viewModel.isClearingUserData == false)
+	#expect(viewModel.isResettingSettings == false)
 	#expect(viewModel.isImporting == false)
   }
   

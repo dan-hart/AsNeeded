@@ -269,34 +269,49 @@ public final class DataStore {
 		logger.info("Import completed: \(medicationImportCount) medications, \(eventImportCount) events imported")
 	}
 	
+	/// Clear only user data (medications and events)
+	public func clearUserData() async throws {
+		logger.warning("Clearing user data (medications and events)")
+		do {
+			try await medicationsStore.removeAll()
+			try await eventsStore.removeAll()
+			logger.info("Successfully cleared all user data")
+		} catch {
+			logger.error("Failed to clear user data: \(error.localizedDescription)")
+			throw error
+		}
+	}
+	
+	/// Reset only app settings and user preferences to defaults
+	public func resetAppSettings() async {
+		logger.warning("Resetting app settings to defaults")
+		await MainActor.run {
+			// Remove keys that should have no value
+			for key in UserDefaultsKeys.keysToRemove {
+				UserDefaults.standard.removeObject(forKey: key)
+			}
+			
+			// Set keys to their default values
+			for (key, value) in UserDefaultsKeys.defaultValues {
+				UserDefaults.standard.set(value, forKey: key)
+			}
+			
+			// Clear navigation targets
+			NavigationManager.shared.clearHistoryNavigation()
+			
+			// Synchronize to ensure changes are persisted
+			UserDefaults.standard.synchronize()
+			
+			logger.info("Successfully reset all app settings to defaults")
+		}
+	}
+	
 	/// Clear all data from both stores and reset all user preferences
 	public func clearAllData() async throws {
 		logger.warning("Clearing all data and resetting user preferences")
 		do {
-			try await medicationsStore.removeAll()
-			try await eventsStore.removeAll()
-			
-			// Reset ALL UserDefaults/AppStorage values to their defaults
-			await MainActor.run {
-				// Remove keys that should have no value
-				for key in UserDefaultsKeys.keysToRemove {
-					UserDefaults.standard.removeObject(forKey: key)
-				}
-				
-				// Set keys to their default values
-				for (key, value) in UserDefaultsKeys.defaultValues {
-					UserDefaults.standard.set(value, forKey: key)
-				}
-				
-				// Clear navigation targets
-				NavigationManager.shared.clearHistoryNavigation()
-				
-				// Synchronize to ensure changes are persisted
-				UserDefaults.standard.synchronize()
-				
-				logger.info("Reset all user preferences and cleared data")
-			}
-			
+			try await clearUserData()
+			await resetAppSettings()
 			logger.info("Successfully cleared all data and reset preferences")
 		} catch {
 			logger.error("Failed to clear data: \(error.localizedDescription)")

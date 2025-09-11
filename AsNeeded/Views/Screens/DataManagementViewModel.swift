@@ -13,8 +13,12 @@ final class DataManagementViewModel: ObservableObject {
   @Published var isExporting = false
   @Published var isImporting = false
   @Published var isClearing = false
+  @Published var isClearingUserData = false
+  @Published var isResettingSettings = false
   @Published var isExportingLogs = false
   @Published var showingClearConfirmation = false
+  @Published var showingClearUserDataConfirmation = false
+  @Published var showingResetSettingsConfirmation = false
   @Published var showingExportConfirmation = false
   @Published var showingDocumentPicker = false
   @Published var showingLogExportConfirmation = false
@@ -144,6 +148,40 @@ final class DataManagementViewModel: ObservableObject {
 	}
   }
   
+  func clearUserData() async {
+	logger.warning("Starting clear user data operation")
+	isClearingUserData = true
+	defer { 
+	  isClearingUserData = false
+	  logger.debug("Clear user data process completed")
+	}
+	
+	do {
+	  try await dataStore.clearUserData()
+	  logger.info("User data cleared successfully")
+	  alertMessage = "All user data (medications and events) cleared successfully"
+	  showingAlert = true
+	} catch {
+	  logger.error("Clear user data failed", error: error)
+	  alertMessage = "Clear data failed: \(error.localizedDescription)"
+	  showingAlert = true
+	}
+  }
+  
+  func resetAppSettings() async {
+	logger.warning("Starting reset app settings operation")
+	isResettingSettings = true
+	defer { 
+	  isResettingSettings = false
+	  logger.debug("Reset app settings process completed")
+	}
+	
+	await dataStore.resetAppSettings()
+	logger.info("App settings reset successfully")
+	alertMessage = "App settings restored to defaults successfully"
+	showingAlert = true
+  }
+  
   func clearAllData() async {
 	logger.warning("Starting reset and clear all data operation")
 	isClearing = true
@@ -162,6 +200,16 @@ final class DataManagementViewModel: ObservableObject {
 	  alertMessage = "Reset failed: \(error.localizedDescription)"
 	  showingAlert = true
 	}
+  }
+  
+  func confirmClearUserData() {
+	logger.info("Clear user data confirmation requested")
+	showingClearUserDataConfirmation = true
+  }
+  
+  func confirmResetSettings() {
+	logger.info("Reset settings confirmation requested")
+	showingResetSettingsConfirmation = true
   }
   
   func confirmClearData() {
