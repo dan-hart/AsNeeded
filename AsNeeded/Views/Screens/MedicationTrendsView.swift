@@ -94,10 +94,8 @@ struct MedicationTrendsView: View {
 			}
 			.navigationTitle("Trends")
 			.onAppear { 
-				// If no medication is selected or the selected medication no longer exists
-				if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
-					viewModel.selectedMedicationID = viewModel.medications.first?.id
-				}
+				// Ensure we have a valid medication selected
+				viewModel.ensureValidSelection()
 			}
 		}
 	}
