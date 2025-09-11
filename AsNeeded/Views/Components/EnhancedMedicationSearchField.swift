@@ -55,10 +55,11 @@ struct EnhancedMedicationSearchField: View {
 		HStack(spacing: 12) {
 			Image(systemSymbol: .pillsFill)
 				.foregroundColor(.accentColor)
-				.font(.system(size: 18))
+				.font(.title3)
 			
 			TextField(placeholder, text: $text)
 				.textFieldStyle(.plain)
+				.font(.body.weight(.medium))
 				.autocapitalization(.words)
 				.disableAutocorrection(true)
 				.focused($isFocused)
@@ -85,22 +86,26 @@ struct EnhancedMedicationSearchField: View {
 				}) {
 					Image(systemSymbol: .xmarkCircleFill)
 						.foregroundColor(.gray)
-						.font(.system(size: 18))
+						.font(.title3)
 				}
 				.buttonStyle(.plain)
 			}
 		}
 		.padding(.horizontal, 16)
-		.padding(.vertical, 12)
+		.padding(.vertical, 14)
 		.background(
 			RoundedRectangle(cornerRadius: 12)
-				.fill(animateSelection ? Color.accentColor.opacity(0.1) : Color(.systemGray6))
+				.fill(
+					animateSelection ? 
+						Color.accentColor.opacity(0.08) : 
+						(isFocused ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground))
+				)
 				.overlay(
 					RoundedRectangle(cornerRadius: 12)
-						.stroke(
+						.strokeBorder(
 							animateSelection ? Color.accentColor : 
-							(isFocused ? Color.accentColor.opacity(0.5) : Color.clear),
-							lineWidth: animateSelection ? 2.5 : 2
+							(isFocused ? Color.accentColor.opacity(0.4) : Color(.separator).opacity(0.2)),
+							lineWidth: animateSelection ? 2 : (isFocused ? 1.5 : 1)
 						)
 				)
 		)
@@ -222,6 +227,7 @@ struct EnhancedMedicationSearchField: View {
 			.padding(.vertical, 8)
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.background(Color(.systemGray6))
+			.accessibilityAddTraits(.isHeader)
 	}
 	
 	private func suggestionRow(
@@ -269,17 +275,19 @@ struct EnhancedMedicationSearchField: View {
 				// Icon with relevance indicator
 				ZStack {
 					Image(systemSymbol: .pillsFill)
-						.font(.system(size: 16))
+						.font(.body)
 						.foregroundColor(.accentColor)
 					
 					if result.score >= 0.95 {
 						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.system(size: 10))
+							.font(.caption2)
 							.foregroundColor(.green)
 							.offset(x: 8, y: -8)
+							.accessibilityHidden(true) // Conveyed in accessibility label
 					}
 				}
 				.frame(width: 24)
+				.accessibilityHidden(true) // Decorative
 				
 				VStack(alignment: .leading, spacing: 3) {
 					HStack(spacing: 6) {
@@ -291,11 +299,12 @@ struct EnhancedMedicationSearchField: View {
 						
 						if result.isExactMatch {
 							Text("EXACT")
-								.font(.system(size: 9, weight: .bold))
+								.font(.caption2.weight(.bold))
 								.foregroundColor(.white)
 								.padding(.horizontal, 4)
 								.padding(.vertical, 2)
 								.background(Capsule().fill(Color.green))
+								.accessibilityHidden(true) // Conveyed in accessibility label
 						}
 					}
 				}
@@ -303,10 +312,11 @@ struct EnhancedMedicationSearchField: View {
 				Spacer()
 				
 				Image(systemSymbol: .plusCircleFill)
-					.font(.system(size: 20))
+					.font(.title3)
 					.foregroundColor(.accentColor)
 					.rotationEffect(.degrees(selectedMedication?.rxCUI == result.drug.rxCUI ? 45 : 0))
 					.animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedMedication?.rxCUI == result.drug.rxCUI)
+					.accessibilityHidden(true) // Decorative
 			}
 			.padding(.horizontal, 16)
 			.padding(.vertical, 10)
@@ -317,6 +327,9 @@ struct EnhancedMedicationSearchField: View {
 			)
 		}
 		.buttonStyle(SuggestionButtonStyle())
+		.accessibilityLabel(result.drug.name + (result.isExactMatch ? ", exact match" : "") + (result.score >= 0.95 ? ", high confidence" : ""))
+		.accessibilityHint("Double tap to select this medication")
+		.accessibilityAddTraits(.isButton)
 	}
 	
 	private var quickMedicationCapsules: some View {

@@ -93,13 +93,11 @@ struct LogDoseView: View {
 			VStack(spacing: 20) {
 				// Amount Stepper with Visual Feedback
 				HStack(spacing: 16) {
-					Button(action: { 
-						withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-							if amount > 0.5 { 
-								amount -= 0.5
-								hapticsManager.lightImpact()
-							}
-						}
+					Button(action: {
+                            if amount > 0.5 {
+                                amount -= 0.5
+                                hapticsManager.lightImpact()
+                            }
 					}) {
 						Image(systemSymbol: .minusCircleFill)
 							.font(.title2)
@@ -126,13 +124,11 @@ struct LogDoseView: View {
 							.fill(Color.accentColor.opacity(0.1))
 					)
 					
-					Button(action: { 
-						withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-							if amount < 100 { 
+					Button(action: {
+							if amount < 100 {
 								amount += 0.5
 								hapticsManager.lightImpact()
 							}
-						}
 					}) {
 						Image(systemSymbol: .plusCircleFill)
 							.font(.title2)
