@@ -12770,6 +12770,9 @@
         }
       }
     },
+    "Clear All Data" : {
+
+    },
     "Clinical Name" : {
       "localizations" : {
         "ar" : {
@@ -54791,6 +54794,12 @@
         }
       }
     },
+    "Reset App Settings" : {
+
+    },
+    "Reset Settings" : {
+
+    },
     "Restore Purchases" : {
       "localizations" : {
         "ar" : {
@@ -66403,6 +66412,12 @@
           }
         }
       }
+    },
+    "This will permanently delete all medications and events. This cannot be undone." : {
+
+    },
+    "This will restore all app settings to their original defaults. This cannot be undone." : {
+
     },
     "Tips, donations, and ways to help" : {
       "localizations" : {
