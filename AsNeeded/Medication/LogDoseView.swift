@@ -31,6 +31,24 @@ struct LogDoseView: View {
 		_selectedUnit = State(initialValue: medication.prescribedUnit ?? .unit)
 	}
 	
+	// MARK: - Private Methods
+	private func performLogDose() {
+		withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+			let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
+			let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+			let event = ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: dose,
+				date: selectedDate,
+				note: trimmedNote.isEmpty ? nil : trimmedNote
+			)
+			onLog(dose, event)
+			hapticsManager.doseLogged()
+			dismiss()
+		}
+	}
+	
 	// MARK: - View Components
 	private var headerCard: some View {
 		VStack(spacing: 12) {
@@ -309,22 +327,7 @@ struct LogDoseView: View {
 	}
 	
 	private var logButton: some View {
-		Button(action: {
-			withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-				let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
-				let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
-				let event = ANEventConcept(
-					eventType: .doseTaken,
-					medication: medication,
-					dose: dose,
-					date: selectedDate,
-					note: trimmedNote.isEmpty ? nil : trimmedNote
-				)
-				onLog(dose, event)
-				hapticsManager.doseLogged()
-				dismiss()
-			}
-		}) {
+		Button(action: performLogDose) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
@@ -396,6 +399,19 @@ struct LogDoseView: View {
 							.symbolRenderingMode(.hierarchical)
 							.foregroundStyle(.secondary)
 					}
+				}
+				
+				ToolbarItem(placement: .confirmationAction) {
+					Button(action: performLogDose) {
+						Image(systemSymbol: .checkmarkCircleFill)
+							.font(.title3)
+							.symbolRenderingMode(.hierarchical)
+							.foregroundColor(.accentColor)
+					}
+					.disabled(amount <= 0)
+					.opacity(amount <= 0 ? 0.6 : 1.0)
+					.accessibilityLabel("Log dose")
+					.accessibilityHint("Logs the dose with current settings")
 				}
 			}
 		}
