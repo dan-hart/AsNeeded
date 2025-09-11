@@ -418,6 +418,10 @@ struct MedicationHistoryView: View {
                     SupportView()
                 }
             }
+            .onAppear {
+                // Ensure we have a valid medication selected
+                viewModel.ensureValidSelection()
+            }
         }
     }
 
