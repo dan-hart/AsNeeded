@@ -18,6 +18,10 @@ struct SettingsView: View {
 		  SettingsAboutSectionView()
 		  
 		  SettingsDisclaimersSectionView()
+		  
+#if DEBUG
+		  SettingsDebugSectionView()
+#endif
 
 		  Spacer(minLength: 32)
 		}
