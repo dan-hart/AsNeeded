@@ -63,6 +63,15 @@ struct MedicationEditView: View {
 		UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 	}
 	
+	private func performSave() {
+		withAnimation(.spring(response: 0.3)) {
+			hideKeyboard()
+		}
+		let updated = viewModel.buildMedication()
+		hapticsManager.medicationAdded()
+		onSave(updated)
+	}
+	
 	// MARK: - Hero Section
 	@ViewBuilder
 	private var heroSection: some View {
@@ -182,34 +191,100 @@ struct MedicationEditView: View {
 						.fontWeight(.semibold)
 				}
 				
-				// Clinical Name Field
-				VStack(alignment: .leading, spacing: 8) {
-					Label {
-						HStack(spacing: 4) {
-							Text("Clinical Name")
-								.font(.subheadline)
-								.fontWeight(.medium)
-							Text("*")
-								.foregroundStyle(.red)
+				// Clinical Name Field - Primary Input
+				VStack(alignment: .leading, spacing: 12) {
+					// Enhanced header with better visual hierarchy
+					HStack(spacing: 8) {
+						ZStack {
+							Circle()
+								.fill(Color.accentColor.opacity(0.15))
+								.frame(width: 28, height: 28)
+							
+							Image(systemSymbol: .pill)
+								.font(.subheadline.weight(.semibold))
+								.foregroundColor(.accentColor)
+								.accessibilityHidden(true) // Decorative icon
 						}
-					} icon: {
-						Image(systemSymbol: .pill)
-							.font(.caption)
-							.foregroundStyle(.secondary)
+						
+						VStack(alignment: .leading, spacing: 2) {
+							HStack(spacing: 4) {
+								Text("Clinical Name")
+									.font(.subheadline)
+									.fontWeight(.semibold)
+								Text("*")
+									.foregroundStyle(.red)
+									.font(.subheadline)
+									.fontWeight(.bold)
+									.accessibilityLabel("required")
+							}
+							.accessibilityElement(children: .combine)
+							
+							Text("Start typing to search medications")
+								.font(.caption)
+								.foregroundStyle(.secondary)
+								.accessibilityHidden(true) // Redundant with field hint
+						}
+						
+						Spacer()
+						
+						// Priority indicator
+						if viewModel.clinicalName.isEmpty {
+							Text("REQUIRED")
+								.font(.caption2.weight(.bold))
+								.foregroundStyle(.white)
+								.padding(.horizontal, 8)
+								.padding(.vertical, 3)
+								.background(
+									Capsule()
+										.fill(Color.accentColor)
+								)
+								.accessibilityLabel("Required field indicator")
+								.accessibilityHidden(true) // Hide from VoiceOver since it's already conveyed in the hint
+						}
 					}
 					
-					EnhancedMedicationSearchField(
-						text: $viewModel.clinicalName,
-						placeholder: "Search for medication...",
-						onMedicationSelected: { clinicalName, nickname in
-							viewModel.clinicalName = clinicalName
-							viewModel.nickname = nickname
-							withAnimation(.spring(response: 0.3)) {
-								focusedField = nil
+					// Enhanced search field container
+					VStack(spacing: 0) {
+						EnhancedMedicationSearchField(
+							text: $viewModel.clinicalName,
+							placeholder: "Type medication name (e.g., Ibuprofen, Tylenol)",
+							onMedicationSelected: { clinicalName, nickname in
+								viewModel.clinicalName = clinicalName
+								viewModel.nickname = nickname
+								withAnimation(.spring(response: 0.3)) {
+									focusedField = nil
+								}
 							}
-						}
+						)
+						.focused($focusedField, equals: .clinicalName)
+						.accessibilityLabel("Clinical Name")
+						.accessibilityHint("Required field. Type to search for medications.")
+						.accessibilityValue(viewModel.clinicalName.isEmpty ? "Empty" : viewModel.clinicalName)
+					}
+					.padding(16)
+					.background(
+						RoundedRectangle(cornerRadius: 16)
+							.fill(.ultraThinMaterial)
+							.overlay(
+								RoundedRectangle(cornerRadius: 16)
+									.strokeBorder(
+										focusedField == .clinicalName ? 
+											Color.accentColor.opacity(0.6) : 
+											Color(.separator).opacity(0.3),
+										lineWidth: focusedField == .clinicalName ? 2 : 1
+									)
+							)
+							.shadow(
+								color: focusedField == .clinicalName ? 
+									Color.accentColor.opacity(0.2) : 
+									Color.black.opacity(0.05),
+								radius: focusedField == .clinicalName ? 8 : 4,
+								x: 0,
+								y: focusedField == .clinicalName ? 4 : 2
+							)
 					)
-					.focused($focusedField, equals: .clinicalName)
+					.scaleEffect(focusedField == .clinicalName ? 1.02 : 1.0)
+					.animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedField)
 				}
 				
 				// Nickname Field
@@ -512,12 +587,7 @@ struct MedicationEditView: View {
 	@ViewBuilder
 	private var saveButton: some View {
 		Button {
-			withAnimation(.spring(response: 0.3)) {
-				hideKeyboard()
-			}
-			let updated = viewModel.buildMedication()
-			hapticsManager.medicationAdded()
-			onSave(updated)
+			performSave()
 		} label: {
 			HStack(spacing: 12) {
 				Image(systemSymbol: .checkmarkCircleFill)
@@ -772,6 +842,19 @@ struct MedicationEditView: View {
 										.fill(.ultraThinMaterial)
 								)
 						}
+					}
+					
+					ToolbarItem(placement: .confirmationAction) {
+						Button {
+							performSave()
+						} label: {
+							Text("Save")
+								.font(.body.weight(.semibold))
+						}
+						.disabled(!isFormValid)
+						.foregroundColor(isFormValid ? .accentColor : .secondary)
+						.accessibilityLabel("Save medication")
+						.accessibilityHint(isFormValid ? "Saves the medication details" : "Complete required fields to save")
 					}
 				}
 				.scrollDismissesKeyboard(.interactively)
