@@ -6,12 +6,11 @@
 
 Track as-needed medications with privacy and simplicity.
 
-AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with clarity and confidence. It focuses on quick logging, safe spacing between doses, and clear insights so you always know what you took, when you took it, and when it's safe to take more.
+AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with clarity and confidence. It focuses on quick logging and clear insights so you always know what you took, when you took it, and when it's safe to take more.
 
 ## Table of Contents
 - [Core Values](#core-values)
 - [Features](#features)
-- [Requirements](#requirements)
 - [Getting Started](#getting-started)
 - [Development](#development)
 - [Project Structure](#project-structure)
@@ -19,10 +18,8 @@ AsNeeded is a privacy-first iOS app designed to help people track as-needed medi
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-- [Roadmap](#roadmap)
 - [Privacy](#privacy)
 - [License](#license)
-- [Contact](#contact)
 
 ## Core Values
 
@@ -38,70 +35,22 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 ## Features
 
-### 🔒 Privacy & Data Management
-- **Local-only storage**: All data stays on your device
-- **Export & Import**: Full data backup and restore in JSON format
-- **Data transparency**: View technical logs for troubleshooting
-- **No tracking**: No analytics, no data collection, no cloud sync
+### Key Features
 
-### 💊 Medication Tracking
-- **Smart medication search**: RxNorm integration for accurate medication lookup
-- **Flexible dosing**: Support for 29 different unit types (tablets, mg, mL, puffs, etc.)
-- **Inventory management**: Track quantity on hand and refill dates
-- **Custom nicknames**: Use familiar names alongside clinical terms
-
-### 📝 Dose Logging
-- **Quick dose entry**: Log medications with customizable amounts and units
-- **Historical logging**: Backdate doses with specific times
-- **Smart defaults**: Remembers your preferred doses and units
-- **Comprehensive tracking**: Full medication event history
-
-### 🔔 Smart Reminders
-- **Privacy-focused notifications**: Optional medication name display
-- **Flexible scheduling**: One-time, daily, weekly, or custom intervals
-- **Quick actions**: "Mark as Taken" and "Skip" directly from notifications
-- **Permission-aware**: Graceful handling when notifications are disabled
-
-### 📊 Insights & Analysis
-- **Usage trends**: Visual charts showing medication usage over time
-- **Calendar heatmap**: GitHub-style visualization of daily usage patterns
-- **Usage statistics**: Average daily intake and usage metrics
-- **Medication history**: Searchable, filterable event timeline
-
-### 🎙️ Siri Integration
-- **Voice logging**: "I took 2 tablets of ibuprofen in AsNeeded"
-- **Usage queries**: "How much aspirin have I taken today in AsNeeded?"
-- **Medication lists**: "List my medications in AsNeeded"
-- **Smart recognition**: Supports both clinical names and your custom nicknames
-
-### 🎨 User Experience
-- **Clean, modern design**: SwiftUI-first with consistent styling
-- **Onboarding flow**: Welcoming first-time user experience
-- **Support integration**: Easy access to help and support options
-- **Accessibility**: Dynamic Type, VoiceOver, and Dark Mode support
-
-### 📱 Platform Features
-- **iOS & watchOS**: Full iPhone app with Apple Watch companion
-- **Handoff support**: Seamless transition between devices
-- **Local persistence**: Reliable SQLite-based storage
-- **Background processing**: Efficient data management
-
----
-
-## Requirements
-
-- macOS 14.0+ (Sonoma or later)
-- Xcode 16 or newer
-- iOS 18.0 or newer device or simulator
-- Swift 6
+- **Privacy-first**: Local storage, no tracking, full data export/import
+- **Smart medication search**: RxNorm integration with 29+ unit types
+- **Quick logging**: Voice commands via Siri, customizable doses, historical entries
+- **Smart reminders**: Flexible scheduling with privacy-focused notifications
+- **Usage insights**: Visual charts, calendar heatmap, searchable history
+- **Cross-platform**: iOS & watchOS with Handoff support
+- **Accessibility**: Dynamic Type, VoiceOver, Dark Mode
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-- macOS 14.0+ (Sonoma or later)
-- Xcode 16+
+### Requirements
+- macOS 14.0+ with Xcode 16+
 - iOS 18.0+ device or simulator
 - Swift 6
 
@@ -192,179 +141,69 @@ AsNeeded/
 
 ## Architecture
 
-AsNeeded follows a lightweight, testable architecture built with Swift 6 and SwiftUI:
+Lightweight, testable architecture with Swift 6 and SwiftUI:
 
-- Domain‑driven core
-  - Pure Swift models and use cases define app behavior.
-  - No UI or persistence code in domain types.
-- Services via protocols
-  - Persistence and Notifications are abstracted behind protocols.
-  - Concrete implementations can be swapped (e.g., in‑memory for tests, SwiftData/Core Data for production).
-- SwiftUI composition
-  - Views are declarative, small, and focused.
-  - State flows from feature view models or domain use cases into views.
-- Concurrency
-  - Swift Concurrency (async/await) for async work (I/O, notifications).
-- Testability
-  - Business logic covered with unit tests via the Swift Testing framework.
-
-This structure keeps UI responsive, logic reusable, and features easy to evolve.
+- **Domain-driven**: Pure Swift models with no UI dependencies
+- **Protocol-based services**: Swappable persistence and notification implementations
+- **SwiftUI composition**: Small, focused views with unidirectional data flow
+- **Swift Concurrency**: async/await for I/O and background tasks
+- **Unit tested**: Business logic covered with Swift Testing framework
 
 ---
 
-## Key Domain Types (from ANModelKit)
+## Core Models (ANModelKit)
 
-- ANMedicationConcept
-  - A medication the user tracks (clinical name, optional nickname, quantity on hand, refill dates).
-- ANDoseConcept
-  - A dose with amount and unit (e.g., 400 milligram, 2 puffs).
-- ANUnitConcept
-  - Standardized units (milligram, tablet, puff, milliliter, etc.), with display names and abbreviations.
-- ANEventConcept
-  - A logged event (e.g., dose taken, reconciliation) associated with a medication and optional dose.
-- ANEventType
-  - The type of event (dose taken, reconcile, suspected side effect).
+- **ANMedicationConcept**: Tracked medications with clinical names, nicknames, inventory
+- **ANDoseConcept**: Dose amounts with standardized units
+- **ANEventConcept**: Logged events (doses taken, reconciliation, side effects)
 
-You can see these in action in:
-- `Medication/LogDoseView.swift`
-- `Medication/MedicationDetailView.swift`
-- `AsNeededTests/ANModelKitTests.swift`
+See implementations in `Medication/` views and `AsNeededTests/ANModelKitTests.swift`
 
 ---
 
-## Accessibility and Localization
+## Design & Accessibility
 
-- Dynamic Type: All text scales gracefully.
-- VoiceOver: Controls have descriptive labels and hints.
-- Contrast & Color: Colors meet contrast guidelines; supports Light/Dark Mode.
-- Localization‑ready: Strings are centralized and prepared for localization.
-
-Contributions to improve accessibility and localization are welcome.
-
----
-
-## Design System
-
-A small design system ensures consistency:
-- Semantic color roles (background, primary, warning)
-- Typography styles (title, headline, body, footnote)
-- Spacing and corner radius tokens
-- Reusable components (buttons, rows, empty states, badges)
+- **Accessibility**: Dynamic Type, VoiceOver, high contrast, Light/Dark Mode
+- **Design system**: Semantic colors, typography, spacing tokens, reusable components
+- **Localization-ready**: Centralized strings
 
 ---
 
 ## Testing
 
-### Running Tests
+Swift Testing framework (`@Test`, `#expect`) with focus on business logic:
+
 ```bash
-# Run all tests
-xcodebuild test -scheme AsNeeded -testPlan AsNeededTests
-
-# Run with specific simulator
+# Run tests
 xcodebuild test -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16'
-
-# Generate coverage report
-xcodebuild test -scheme AsNeeded -enableCodeCoverage YES
 ```
 
-### In Xcode
-- Run all tests: Product → Test (⌘U)
-- Run specific test: Click the diamond next to test method
-- View coverage: Editor → Show Code Coverage
-
-### Test Coverage Goals
-- Domain models: 95%+ coverage
-- Services: 80%+ coverage
-- View models: 70%+ coverage
-
-### Writing Tests
-Tests use Swift Testing framework (`@Test`, `#expect`). Example:
-```swift
-@Test func medicationInitialization() {
-    let medication = ANMedicationConcept(name: "Ibuprofen")
-    #expect(medication.name == "Ibuprofen")
-}
-```
-
-See `AsNeededTests/` for more examples.
+In Xcode: Product → Test (⌘U). See `AsNeededTests/` for examples.
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
-
-**Build fails with "No such module"**
-- Clean build folder: ⌘⇧K
-- Reset package caches: File → Packages → Reset Package Caches
-- Delete DerivedData: `rm -rf ~/Library/Developer/Xcode/DerivedData`
-
-**Simulator not available**
-- Check available simulators: `xcrun simctl list devices`
-- Download iOS 18+ runtime: Xcode → Settings → Platforms
-- Try: `xcodebuild -showdestinations -scheme AsNeeded`
-
-**Notifications not working**
-- Ensure notification permissions are granted in Settings
-- Check notification settings in the app's Reminders section
-- Verify `NotificationManager` is properly initialized
-
-**Tests failing**
-- Ensure all packages are resolved: `swift package resolve`
-- Check test plan configuration in Xcode
-- Run tests individually to isolate failures
+**Build issues**: Clean (⌘⇧K), reset packages, delete DerivedData  
+**Simulator**: Check `xcrun simctl list devices`, download iOS 18+ runtime  
+**Notifications**: Verify permissions in Settings and app Reminders  
+**Tests**: Run `swift package resolve`, check test plan configuration
 
 ---
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
+**Issues**: Search existing, include iOS version and repro steps  
+**Pull Requests**: Fork, create feature branch, follow code style (tabs, MARK comments, SFSafeSymbols, `.accentColor`), add tests, submit to `develop`  
+**Guidelines**: No force unwraps, UI-free packages, test business logic
 
-### Reporting Issues
-- Search existing issues first
-- Include iOS version, device model, and steps to reproduce
-- Attach screenshots for UI issues
-- Use issue templates when available
-
-### Submitting Pull Requests
-1. Fork and create a feature branch (`feature/your-feature`)
-2. Follow existing code patterns and style:
-   - Use tabs for indentation
-   - Add `// MARK: -` comments for organization
-   - Use SFSafeSymbols for icons
-   - Use `.accentColor` for interactive elements
-3. Add tests for new functionality
-4. Update documentation as needed
-5. Submit PR against `develop` branch
-
-### Code Review Process
-- All PRs require one approval
-- CI must pass (tests, build verification)
-- Maintainers may request changes
-- Be patient and respectful
-
-### Development Guidelines
-- No force unwraps (`!`) in code or tests
-- Keep packages UI-free (ANModelKit, SwiftRxNorm)
-- Test business logic, not UI
-- Follow Swift API Design Guidelines
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
 ## Privacy
 
-AsNeeded is designed with privacy as a core principle:
-
-- **Local-only storage**: All medication data stays on your device
-- **No data collection**: We don't collect, store, or transmit any personal health information
-- **No analytics**: No usage tracking, no crash reporting, no behavioral analytics
-- **No ads**: No advertising networks or data brokers involved
-- **Export control**: You maintain full control over your data exports
-- **Open source**: All code is transparent and inspectable
-
-Your health data belongs to you. AsNeeded will never compromise on this principle.
+Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. Your health data belongs to you.
 
 ---
 
