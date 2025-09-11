@@ -197,9 +197,10 @@ struct MedicationHistoryView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
-                VStack(alignment: .leading, spacing: 0) {
+        ZStack {
+            NavigationStack {
+                ZStack(alignment: .bottomTrailing) {
+                    VStack(alignment: .leading, spacing: 0) {
                     // Medication picker and date button
                     HStack(alignment: .center, spacing: 12) {
                         Picker("Medication", selection: $viewModel.selectedMedicationID) {
@@ -395,35 +396,37 @@ struct MedicationHistoryView: View {
                     }
                     .presentationDetents([.medium])
                 }
-                
-                SupportToastView(
-                    message: "Dose logged successfully",
-                    supportMessage: "Support As Needed",
-                    isVisible: showSupportToast,
-                    onDismiss: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showSupportToast = false
-                        }
-                    },
-                    onSupportTapped: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showSupportToast = false
-                            showSupportView = true
-                        }
-                    }
-                )
-            }
-            .sheet(isPresented: $showSupportView) {
-                NavigationView {
-                    SupportView()
-                }
             }
             .onAppear {
                 // Ensure we have a valid medication selected
                 viewModel.ensureValidSelection()
             }
+            
+            // Support toast positioned outside NavigationStack to avoid layout interference
+            SupportToastView(
+                message: "Dose logged successfully",
+                supportMessage: "Support As Needed",
+                isVisible: showSupportToast,
+                onDismiss: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showSupportToast = false
+                    }
+                },
+                onSupportTapped: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showSupportToast = false
+                        showSupportView = true
+                    }
+                }
+            )
+        }
+        .sheet(isPresented: $showSupportView) {
+            NavigationView {
+                SupportView()
+            }
         }
     }
+}
 
 #if DEBUG
 #Preview {
