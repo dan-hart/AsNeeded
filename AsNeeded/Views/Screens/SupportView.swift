@@ -178,12 +178,12 @@ struct SupportView: View {
 	
 	private var subscriptionOptions: some View {
 		VStack(alignment: .leading, spacing: 12) {
-			Text("Monthly Subscriptions")
+			Text("Monthly Auto-Renewable Subscriptions")
 				.font(.headline)
 				.fontWeight(.semibold)
 				.padding(.top, 8)
 			
-			Text("Ongoing support for development")
+			Text("Ongoing monthly support for development • Cancel anytime in Settings")
 				.font(.caption)
 				.foregroundColor(.secondary)
 			
@@ -198,6 +198,9 @@ struct SupportView: View {
 									  purchaseType: $purchaseType)
 				}
 			}
+			
+			// Required legal information for subscriptions
+			subscriptionLegalInfo
 		}
 	}
 	
@@ -264,6 +267,16 @@ struct SupportView: View {
 			}
 		}
 		.padding(.top, 4)
+	}
+	
+	private var subscriptionLegalInfo: some View {
+		VStack(alignment: .leading, spacing: 6) {
+			Text("Subscription automatically renews monthly unless canceled. Manage in Settings > Apple ID > Subscriptions.")
+				.font(.caption2)
+				.foregroundColor(.secondary)
+				.padding(.top, 8)
+		}
+		.padding(.horizontal, 4)
 	}
 	
 	private let tipTiers = [

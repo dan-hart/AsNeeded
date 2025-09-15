@@ -57,8 +57,10 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		// Listen for customer info updates
 		Purchases.shared.delegate = self
 		
-		// Load initial data
+		// Load initial data with additional delay for App Store review reliability
 		Task {
+			// Add small delay to ensure RevenueCat is fully initialized
+			try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 			await fetchProducts()
 			await fetchCustomerInfo()
 		}
@@ -75,19 +77,44 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		let productIdentifiers = ProductIdentifier.allCases.map { $0.rawValue }
 		DHLogger.data.info("Fetching products: \(productIdentifiers)")
 		
-		// Fetch products directly from StoreKit via RevenueCat
-		let products = await Purchases.shared.products(productIdentifiers)
-		self.availableProducts = products
+		// Retry logic for reliability
+		var retryCount = 0
+		let maxRetries = 3
 		
-		DHLogger.data.info("Successfully fetched \(products.count) products")
-		for product in products {
-			DHLogger.data.info("Product: \(product.productIdentifier) - \(product.localizedTitle) - \(product.localizedPriceString)")
-		}
-		
-		if products.count != productIdentifiers.count {
-			let foundIds = products.map { $0.productIdentifier }
-			let missingIds = productIdentifiers.filter { !foundIds.contains($0) }
-			DHLogger.data.warning("Missing products: \(missingIds)")
+		while retryCount < maxRetries {
+			// Fetch products directly from StoreKit via RevenueCat
+			let products = await Purchases.shared.products(productIdentifiers)
+			
+			DHLogger.data.info("Attempt \(retryCount + 1): Fetched \(products.count) products")
+			
+			if products.count == productIdentifiers.count || retryCount == maxRetries - 1 {
+				// Success or final attempt
+				self.availableProducts = products
+				
+				for product in products {
+					DHLogger.data.info("Product: \(product.productIdentifier) - \(product.localizedTitle) - \(product.localizedPriceString)")
+				}
+				
+				if products.count != productIdentifiers.count {
+					let foundIds = products.map { $0.productIdentifier }
+					let missingIds = productIdentifiers.filter { !foundIds.contains($0) }
+					DHLogger.data.warning("Missing products: \(missingIds)")
+					
+					// Set error message for missing products
+					if products.isEmpty {
+						self.purchaseError = "Products temporarily unavailable. Please try again later."
+					}
+				} else {
+					// Clear any previous errors
+					self.purchaseError = nil
+				}
+				break
+			} else {
+				// Retry after delay
+				retryCount += 1
+				DHLogger.data.warning("Only \(products.count) of \(productIdentifiers.count) products loaded, retrying...")
+				try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second delay
+			}
 		}
 	}
 	
