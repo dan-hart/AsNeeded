@@ -14,7 +14,51 @@
 
   ],
   "products" : [
-
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : true,
+      "internalID" : "6752357164",
+      "localizations" : [
+        {
+          "description" : "Thank you for your tip!",
+          "displayName" : "Tip: Cheers!",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.codedbydan.asneeded.tip.cheers",
+      "referenceName" : "Tip: Cheers!",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "6752353945",
+      "localizations" : [
+        {
+          "description" : "Thank you for your tip!",
+          "displayName" : "Tip: Ovation!",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.codedbydan.asneeded.tip.ovation",
+      "referenceName" : "Tip: Ovation!",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : true,
+      "internalID" : "6752571257",
+      "localizations" : [
+        {
+          "description" : "Thank you for your tip!",
+          "displayName" : "Tip: Thanks!",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.codedbydan.asneeded.tip.thanks",
+      "referenceName" : "Tip: Thanks!",
+      "type" : "NonConsumable"
+    }
   ],
   "settings" : {
     "_applicationInternalID" : "6714469235",
@@ -24,7 +68,7 @@
     "_developerTeamID" : "WRJ8J85K4Q",
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 779635290.63302898,
+    "_lastSynchronizedDate" : 779639430.89785504,
     "_locale" : "en_US",
     "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "USA",
@@ -34,7 +78,99 @@
     "_timeRate" : 0
   },
   "subscriptionGroups" : [
+    {
+      "id" : "21778120",
+      "localizations" : [
 
+      ],
+      "name" : "AsNeeded Continuing Support",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6752353948",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Thank you for your support",
+              "displayName" : "Advocate",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.codedbydan.asneeded.subscription.advocate",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Advocate",
+          "subscriptionGroupID" : "21778120",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6752357168",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Thank you for your support",
+              "displayName" : "Champion",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.codedbydan.asneeded.subscription.champion",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Champion",
+          "subscriptionGroupID" : "21778120",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6752357069",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Thank you for your support",
+              "displayName" : "Supporter",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.codedbydan.asneeded.subscription.supporter",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Supporter",
+          "subscriptionGroupID" : "21778120",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
   ],
   "version" : {
     "major" : 4,
