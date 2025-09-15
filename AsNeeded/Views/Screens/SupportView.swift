@@ -92,6 +92,11 @@ struct SupportView: View {
 				
 				// Restore Purchases button
 				restorePurchasesButton
+				
+				// Debug: Reload products button (only in debug builds)
+				#if DEBUG
+				reloadProductsButton
+				#endif
 			}
 		}
 	}
@@ -215,6 +220,28 @@ struct SupportView: View {
 		}
 		.padding(.top, 8)
 	}
+	
+	#if DEBUG
+	private var reloadProductsButton: some View {
+		Button {
+			Task {
+				isPurchasing = true
+				defer { isPurchasing = false }
+				
+				await revenueCatManager.reloadProducts()
+				
+				alertTitle = "Debug"
+				alertMessage = "Products reloaded. Found \(revenueCatManager.availableProducts.count) products. Check console for details."
+				showPurchaseAlert = true
+			}
+		} label: {
+			Text("🔄 Reload Products (Debug)")
+				.font(.caption)
+				.foregroundColor(.orange)
+		}
+		.padding(.top, 4)
+	}
+	#endif
 	
 	private let tipTiers = [
 		(title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99", productId: RevenueCatManager.ProductIdentifier.tipThanks),

@@ -32,6 +32,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 	
 	@Published var offerings: Offerings?
 	@Published var customerInfo: CustomerInfo?
+	@Published var availableProducts: [StoreProduct] = []
 	@Published var isLoadingProducts = false
 	@Published var purchaseError: String?
 	
@@ -58,7 +59,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 		
 		// Load initial data
 		Task {
-			await fetchOfferings()
+			await fetchProducts()
 			await fetchCustomerInfo()
 		}
 		
@@ -66,17 +67,39 @@ class RevenueCatManager: NSObject, ObservableObject  {
 	}
 	
 	@MainActor
-	func fetchOfferings() async {
+	func fetchProducts() async {
 		isLoadingProducts = true
 		defer { isLoadingProducts = false }
 		
+		// Get all product identifiers
+		let productIdentifiers = ProductIdentifier.allCases.map { $0.rawValue }
+		DHLogger.data.info("Fetching products: \(productIdentifiers)")
+		
+		// Fetch products directly from StoreKit via RevenueCat
+		let products = await Purchases.shared.products(productIdentifiers)
+		self.availableProducts = products
+		
+		DHLogger.data.info("Successfully fetched \(products.count) products")
+		for product in products {
+			DHLogger.data.info("Product: \(product.productIdentifier) - \(product.localizedTitle) - \(product.localizedPriceString)")
+		}
+		
+		if products.count != productIdentifiers.count {
+			let foundIds = products.map { $0.productIdentifier }
+			let missingIds = productIdentifiers.filter { !foundIds.contains($0) }
+			DHLogger.data.warning("Missing products: \(missingIds)")
+		}
+	}
+	
+	@MainActor
+	func fetchOfferings() async {
+		// Keep this for backwards compatibility, but we'll primarily use direct products
 		do {
 			let offerings = try await Purchases.shared.offerings()
 			self.offerings = offerings
 			DHLogger.data.debug("Fetched RevenueCat offerings: \(offerings.current?.identifier ?? "none")")
 		} catch {
 			DHLogger.data.error("Failed to fetch offerings", error: error)
-			self.purchaseError = "Failed to load products. Please try again later."
 		}
 	}
 	
@@ -115,24 +138,25 @@ class RevenueCatManager: NSObject, ObservableObject  {
 	private func purchase(_ productId: ProductIdentifier) async -> Bool {
 		purchaseError = nil
 		
-		// Find the package/product
-		guard let offerings = offerings else {
-			purchaseError = "Products not loaded. Please try again."
-			return false
+		// First, ensure products are loaded
+		if availableProducts.isEmpty {
+			DHLogger.data.info("Products not loaded, fetching now...")
+			await fetchProducts()
 		}
 		
-		// Try to find the product in the current offering
-		guard let currentOffering = offerings.current,
-			  let package = currentOffering.availablePackages.first(where: { $0.storeProduct.productIdentifier == productId.rawValue }) else {
-			purchaseError = "Product not available. Please try again later."
+		// Find the product directly
+		guard let product = availableProducts.first(where: { $0.productIdentifier == productId.rawValue }) else {
 			DHLogger.data.error("Product not found: \(productId.rawValue)")
+			DHLogger.data.error("Available products: \(availableProducts.map { $0.productIdentifier })")
+			purchaseError = "Product not available. Please check your App Store Connect configuration."
 			return false
 		}
 		
 		do {
 			DHLogger.ui.info("Starting purchase for: \(productId.rawValue)")
 			
-			let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
+			// Purchase directly using the StoreProduct
+			let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(product: product)
 			
 			if userCancelled {
 				DHLogger.ui.info("User cancelled purchase")
@@ -197,6 +221,12 @@ class RevenueCatManager: NSObject, ObservableObject  {
 			purchaseError = "Failed to restore purchases. Please try again."
 			return false
 		}
+	}
+	
+	@MainActor
+	func reloadProducts() async {
+		DHLogger.data.info("Manually reloading products...")
+		await fetchProducts()
 	}
 	
 	// Check if user has active subscription
