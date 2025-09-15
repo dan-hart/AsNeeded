@@ -1,6 +1,7 @@
 import SwiftUI
 import SFSafeSymbols
 import DHLoggingKit
+import SafariServices
 
 struct SupportView: View {
 	@Environment(\.openURL) private var openURL
@@ -11,6 +12,8 @@ struct SupportView: View {
 	@State private var alertMessage = ""
 	@State private var showThankYouView = false
 	@State private var purchaseType: ThankYouView.PurchaseType?
+	@State private var showingWebView = false
+	@State private var webURL: URL?
 	
 	var body: some View {
 		NavigationView {
@@ -36,6 +39,11 @@ struct SupportView: View {
 				if let purchaseType = purchaseType {
 					ThankYouView(purchaseType: purchaseType)
 						.environmentObject(FeedbackService.shared)
+				}
+			}
+			.sheet(isPresented: $showingWebView) {
+				if let url = webURL {
+					SafariView(url: url)
 				}
 			}
 			.disabled(isPurchasing)
@@ -93,10 +101,8 @@ struct SupportView: View {
 				// Restore Purchases button
 				restorePurchasesButton
 				
-				// Debug: Reload products button (only in debug builds)
-				#if DEBUG
-				reloadProductsButton
-				#endif
+				// Legal links for subscriptions
+				legalLinksSection
 			}
 		}
 	}
@@ -214,34 +220,51 @@ struct SupportView: View {
 				showPurchaseAlert = true
 			}
 		} label: {
-			Text("Restore Purchases")
-				.font(.caption)
-				.foregroundColor(.accentColor)
+			HStack {
+				Image(systemSymbol: .arrowClockwise)
+					.font(.callout)
+				Text("Restore Purchases")
+					.font(.callout)
+					.fontWeight(.medium)
+			}
+			.foregroundColor(.white)
+			.padding(.horizontal, 20)
+			.padding(.vertical, 12)
+			.background(
+				RoundedRectangle(cornerRadius: 10)
+                    .fill(.accent)
+			)
 		}
-		.padding(.top, 8)
+		.buttonStyle(.plain)
+		.padding(.top, 16)
 	}
 	
-	#if DEBUG
-	private var reloadProductsButton: some View {
-		Button {
-			Task {
-				isPurchasing = true
-				defer { isPurchasing = false }
-				
-				await revenueCatManager.reloadProducts()
-				
-				alertTitle = "Debug"
-				alertMessage = "Products reloaded. Found \(revenueCatManager.availableProducts.count) products. Check console for details."
-				showPurchaseAlert = true
+	private var legalLinksSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+			Button {
+				if let url = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/TERMS.md") {
+					webURL = url
+					showingWebView = true
+				}
+			} label: {
+				Text("Terms of Use (EULA)")
+					.font(.caption)
+					.foregroundColor(.accentColor)
 			}
-		} label: {
-			Text("🔄 Reload Products (Debug)")
-				.font(.caption)
-				.foregroundColor(.orange)
+			
+			Button {
+				if let url = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/PRIVACY.md") {
+					webURL = url
+					showingWebView = true
+				}
+			} label: {
+				Text("Privacy Policy")
+					.font(.caption)
+					.foregroundColor(.accentColor)
+			}
 		}
 		.padding(.top, 4)
 	}
-	#endif
 	
 	private let tipTiers = [
 		(title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99", productId: RevenueCatManager.ProductIdentifier.tipThanks),
@@ -375,6 +398,21 @@ private struct SubscriptionButton: View {
 			.cornerRadius(12)
 		}
 		.buttonStyle(.plain)
+	}
+}
+
+// MARK: - SafariView
+struct SafariView: UIViewControllerRepresentable {
+	let url: URL
+	
+	func makeUIViewController(context: Context) -> SFSafariViewController {
+		let safariViewController = SFSafariViewController(url: url)
+		safariViewController.preferredControlTintColor = UIColor.tintColor
+		return safariViewController
+	}
+	
+	func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+		// No updates needed
 	}
 }
 
