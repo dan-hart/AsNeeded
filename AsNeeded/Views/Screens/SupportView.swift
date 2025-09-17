@@ -245,7 +245,7 @@ struct SupportView: View {
 	private var legalLinksSection: some View {
         VStack(alignment: .leading, spacing: 8) {
 			Button {
-				if let url = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/TERMS.md") {
+				if let url = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
 					webURL = url
 					showingWebView = true
 				}
