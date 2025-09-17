@@ -16,7 +16,6 @@
 		52538B432E6C8A87009017EE /* DHUtilityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52538B422E6C8A87009017EE /* DHUtilityKit */; };
 		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
 		5256E80A2E6B861D0072C6F0 /* CLAUDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8062E6B861D0072C6F0 /* CLAUDE.md */; };
-		5256E80B2E6B861D0072C6F0 /* TERMS.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8082E6B861D0072C6F0 /* TERMS.md */; };
 		5258A0232E784BB2004AE4C5 /* StoreKitTestCertificate.cer in Resources */ = {isa = PBXBuildFile; fileRef = 5258A0222E784BB2004AE4C5 /* StoreKitTestCertificate.cer */; };
 		52929DA628EF270100C996E0 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 		52A90B9A2E60F6C10016124C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 52A90B992E60F6C10016124C /* README.md */; };
@@ -77,7 +76,6 @@
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		5256E8062E6B861D0072C6F0 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		5256E8072E6B861D0072C6F0 /* PRIVACY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY.md; sourceTree = "<group>"; };
-		5256E8082E6B861D0072C6F0 /* TERMS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TERMS.md; sourceTree = "<group>"; };
 		5258A0222E784BB2004AE4C5 /* StoreKitTestCertificate.cer */ = {isa = PBXFileReference; lastKnownFileType = file; path = StoreKitTestCertificate.cer; sourceTree = "<group>"; };
 		527AFA2228E26B3400BD575D /* AsNeeded.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AsNeeded.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52A90B982E60F6C10016124C /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
@@ -170,7 +168,6 @@
 				52A90B992E60F6C10016124C /* README.md */,
 				5256E8062E6B861D0072C6F0 /* CLAUDE.md */,
 				5256E8072E6B861D0072C6F0 /* PRIVACY.md */,
-				5256E8082E6B861D0072C6F0 /* TERMS.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -343,7 +340,6 @@
 				523262712E7849E500047C67 /* ANStoreKitConfig.storekit in Resources */,
 				5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */,
 				5256E80A2E6B861D0072C6F0 /* CLAUDE.md in Resources */,
-				5256E80B2E6B861D0072C6F0 /* TERMS.md in Resources */,
 				52A90B9A2E60F6C10016124C /* README.md in Resources */,
 				52A90B9B2E60F6C10016124C /* LICENSE.txt in Resources */,
 				5258A0232E784BB2004AE4C5 /* StoreKitTestCertificate.cer in Resources */,
@@ -405,7 +401,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -444,7 +440,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -603,7 +599,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -644,7 +640,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 152;
+				CURRENT_PROJECT_VERSION = 153;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
