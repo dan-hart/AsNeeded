@@ -12,12 +12,17 @@ struct NIHDisclaimerView: View {
 					.font(.title2)
 				
 				VStack(alignment: .leading, spacing: 8) {
-					Text("Data Attribution")
+					Text("Medical Data Source")
 						.font(.headline)
-					
-					Text("This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health.")
+
+					Text("Medication information provided by:")
 						.font(.subheadline)
 						.foregroundStyle(.secondary)
+
+					Text("U.S. National Library of Medicine (NLM)\nNational Institutes of Health")
+						.font(.subheadline)
+						.fontWeight(.medium)
+						.foregroundStyle(.primary)
 					
 					Button {
 						showFullDisclaimer = true
@@ -50,12 +55,42 @@ struct NIHFullDisclaimerView: View {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 24) {
 					VStack(alignment: .leading, spacing: 16) {
-						Text("NIH/NLM Data Attribution")
+						Text("Medical Information Sources")
 							.font(.title2)
 							.fontWeight(.bold)
-						
-						Text("This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.")
+
+						Text("All medication information in this app is sourced from:")
 							.font(.body)
+							.multilineTextAlignment(.leading)
+
+						VStack(alignment: .leading, spacing: 8) {
+							Text("• U.S. National Library of Medicine (NLM)")
+								.font(.body)
+								.fontWeight(.medium)
+							Text("• National Institutes of Health")
+								.font(.body)
+								.fontWeight(.medium)
+							Text("• Department of Health and Human Services")
+								.font(.body)
+								.fontWeight(.medium)
+						}
+
+						Button(action: {
+							if let url = URL(string: "https://www.nlm.nih.gov/") {
+								UIApplication.shared.open(url)
+							}
+						}) {
+							Text("Official Source: https://www.nlm.nih.gov/")
+								.font(.caption)
+								.foregroundStyle(.blue)
+								.underline()
+						}
+						.buttonStyle(.plain)
+
+						Text("NLM is not responsible for the product and does not endorse or recommend this or any other product.")
+							.font(.body)
+							.fontWeight(.medium)
+							.foregroundStyle(.secondary)
 							.multilineTextAlignment(.leading)
 					}
 					
@@ -70,18 +105,48 @@ struct NIHFullDisclaimerView: View {
 					}
 					
 					VStack(alignment: .leading, spacing: 16) {
-						Text("About RxNorm")
+						Text("About RxNorm Database")
 							.font(.title2)
 							.fontWeight(.bold)
-						
-						Text("RxNorm is a normalized naming system for generic and branded drugs produced by the National Library of Medicine. This app uses the RxNorm API to provide medication search and information features.")
+
+						Text("This app uses the RxNorm database and API, a comprehensive medication terminology system:")
 							.font(.body)
 							.multilineTextAlignment(.leading)
-						
-						Text("The RxNorm data is updated monthly by NLM and provides standardized names for clinical drugs and links its names to many of the drug vocabularies commonly used in pharmacy management and drug interaction software.")
-							.font(.body)
-							.foregroundStyle(.secondary)
-							.multilineTextAlignment(.leading)
+
+						VStack(alignment: .leading, spacing: 8) {
+							Text("• Developed and maintained by NLM")
+								.font(.body)
+							Text("• Contains standardized medication names")
+								.font(.body)
+							Text("• Updated monthly with latest drug information")
+								.font(.body)
+							Text("• Used by healthcare systems worldwide")
+								.font(.body)
+						}
+
+						Button(action: {
+							if let url = URL(string: "https://lhncbc.nlm.nih.gov/RxNav/") {
+								UIApplication.shared.open(url)
+							}
+						}) {
+							Text("RxNorm API Documentation: https://lhncbc.nlm.nih.gov/RxNav/")
+								.font(.caption)
+								.foregroundStyle(.blue)
+								.underline()
+						}
+						.buttonStyle(.plain)
+
+						Button(action: {
+							if let url = URL(string: "https://www.nlm.nih.gov/research/umls/rxnorm/") {
+								UIApplication.shared.open(url)
+							}
+						}) {
+							Text("Data Source: https://www.nlm.nih.gov/research/umls/rxnorm/")
+								.font(.caption)
+								.foregroundStyle(.blue)
+								.underline()
+						}
+						.buttonStyle(.plain)
 					}
 				}
 				.padding()

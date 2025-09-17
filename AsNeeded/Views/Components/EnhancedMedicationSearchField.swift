@@ -125,6 +125,11 @@ struct EnhancedMedicationSearchField: View {
 			} else if !text.isEmpty && suggestions.isEmpty {
 				noResultsView
 			}
+
+			// Citation footer for medical data
+			if !suggestions.isEmpty || !text.isEmpty {
+				medicationDataCitation
+			}
 		}
 		.frame(maxHeight: 400)
 		.background(
@@ -213,6 +218,31 @@ struct EnhancedMedicationSearchField: View {
 		.frame(maxWidth: .infinity)
 		.padding(.vertical, 24)
 		.padding(.horizontal, 16)
+	}
+
+	private var medicationDataCitation: some View {
+		VStack(spacing: 4) {
+			Divider()
+			HStack(spacing: 4) {
+				Text("Data provided by")
+					.font(.caption2)
+					.foregroundColor(.secondary)
+				Button(action: {
+					if let url = URL(string: "https://www.nlm.nih.gov/research/umls/rxnorm/") {
+						UIApplication.shared.open(url)
+					}
+				}) {
+					Text("NIH/NLM RxNorm")
+						.font(.caption2)
+						.fontWeight(.medium)
+						.foregroundColor(.accentColor)
+						.underline()
+				}
+				.buttonStyle(.plain)
+			}
+			.padding(.vertical, 8)
+			.padding(.horizontal, 12)
+		}
 	}
 	
 	// MARK: - Helper Views
