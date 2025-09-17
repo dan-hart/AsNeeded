@@ -38,10 +38,15 @@ struct NIHDisclaimerDetailView: View {
 							UIApplication.shared.open(url)
 						}
 					}) {
-						Text("Primary Source: https://www.nlm.nih.gov/")
-							.font(.caption)
-							.foregroundStyle(.blue)
-							.underline()
+						HStack(spacing: 4) {
+							Text("Visit NIH Official Website")
+								.font(.caption)
+								.foregroundStyle(.accent)
+								.underline()
+							Image(systemSymbol: .arrowUpRightSquare)
+								.font(.system(size: 10))
+								.foregroundStyle(.accent)
+						}
 					}
 					.buttonStyle(.plain)
 
@@ -107,10 +112,15 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							Text("RxNorm Homepage: https://www.nlm.nih.gov/research/umls/rxnorm/")
-								.font(.caption)
-								.foregroundStyle(.blue)
-								.underline()
+							HStack(spacing: 4) {
+								Text("RxNorm Database Homepage")
+									.font(.caption)
+									.foregroundStyle(.accent)
+									.underline()
+								Image(systemSymbol: .arrowUpRightSquare)
+									.font(.system(size: 10))
+									.foregroundStyle(.accent)
+							}
 						}
 						.buttonStyle(.plain)
 
@@ -119,10 +129,15 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							Text("RxNorm API: https://lhncbc.nlm.nih.gov/RxNav/")
-								.font(.caption)
-								.foregroundStyle(.blue)
-								.underline()
+							HStack(spacing: 4) {
+								Text("RxNorm API Documentation")
+									.font(.caption)
+									.foregroundStyle(.accent)
+									.underline()
+								Image(systemSymbol: .arrowUpRightSquare)
+									.font(.system(size: 10))
+									.foregroundStyle(.accent)
+							}
 						}
 						.buttonStyle(.plain)
 					}
