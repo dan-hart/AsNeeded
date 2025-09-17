@@ -55,10 +55,10 @@ struct SettingsDisclaimersSectionView: View {
 							.foregroundColor(.accentColor)
 						
 						VStack(alignment: .leading, spacing: 2) {
-							Text("Data Attribution")
+							Text("Medical Data Sources")
 								.font(.body)
 								.fontWeight(.medium)
-							Text("NIH/NLM data sources and attribution")
+							Text("NIH/NLM RxNorm database citations")
 								.font(.caption)
 								.foregroundColor(.secondary)
 						}
