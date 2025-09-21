@@ -127,20 +127,51 @@ struct SupportView: View {
 						Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 							.font(.title3)
 							.foregroundColor(.primary)
-						
+
 						VStack(alignment: .leading, spacing: 2) {
 							Text("Contribute on GitHub")
 								.font(.headline)
 								.fontWeight(.semibold)
 								.foregroundColor(.primary)
-							
+
 							Text("View source code, report issues, or contribute")
 								.font(.subheadline)
 								.foregroundColor(.secondary)
 						}
-						
+
 						Spacer()
-						
+
+						Image(systemSymbol: .arrowUpRight)
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+					.padding(16)
+					.background(.regularMaterial)
+					.cornerRadius(12)
+				}
+				.buttonStyle(.plain)
+
+				Button {
+					ReviewService.shared.requestReview()
+				} label: {
+					HStack(spacing: 12) {
+						Image(systemSymbol: .star)
+							.font(.title3)
+							.foregroundColor(.accent)
+
+						VStack(alignment: .leading, spacing: 2) {
+							Text("Rate & Review on App Store")
+								.font(.headline)
+								.fontWeight(.semibold)
+								.foregroundColor(.primary)
+
+							Text("Share your experience and help others discover the app")
+								.font(.subheadline)
+								.foregroundColor(.secondary)
+						}
+
+						Spacer()
+
 						Image(systemSymbol: .arrowUpRight)
 							.font(.caption)
 							.foregroundColor(.secondary)

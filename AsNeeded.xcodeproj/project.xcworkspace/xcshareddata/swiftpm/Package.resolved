@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "originHash" : "b595df28f0a18a8e54209e45d206a672870b638285663536482f39c1d2587f2d",
   "pins" : [
     {
@@ -53,6 +54,25 @@
       "state" : {
         "revision" : "7abf1505551da3d8c33d4306a80c1e1cc450e47e",
         "version" : "5.37.0"
+=======
+  "pins" : [
+    {
+      "identity" : "realm-core",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/realm/realm-core.git",
+      "state" : {
+        "revision" : "b77443ca7fa25407869ca537bf3ae912b1427bff",
+        "version" : "12.13.0"
+      }
+    },
+    {
+      "identity" : "realm-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/realm/realm-swift",
+      "state" : {
+        "revision" : "d63923f1c912b564f2c16e04ddc280cdb71dbbdd",
+        "version" : "10.34.0"
+>>>>>>> Stashed changes
       }
     },
     {
@@ -60,6 +80,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SFSafeSymbols/SFSafeSymbols",
       "state" : {
+<<<<<<< Updated upstream
         "revision" : "3dd282d3269b061853a3b3bcd23a509d2aa166ce",
         "version" : "6.2.0"
       }
@@ -102,4 +123,30 @@
     }
   ],
   "version" : 3
+=======
+        "revision" : "50bc33264e6c0972f905b61af656201cf6091de8",
+        "version" : "4.0.0"
+      }
+    },
+    {
+      "identity" : "swiftdate",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/malcommac/SwiftDate",
+      "state" : {
+        "revision" : "5d943224c3bb173e6ecf27295611615eba90c80e",
+        "version" : "7.0.0"
+      }
+    },
+    {
+      "identity" : "swiftyuserdefaults",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sunshinejr/SwiftyUserDefaults",
+      "state" : {
+        "revision" : "f66bcd04088582c8fbb5cb8554d577e303bae396",
+        "version" : "5.3.0"
+      }
+    }
+  ],
+  "version" : 2
+>>>>>>> Stashed changes
 }

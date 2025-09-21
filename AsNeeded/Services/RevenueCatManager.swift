@@ -196,7 +196,7 @@ class RevenueCatManager: NSObject, ObservableObject  {
 			
 			// Show success feedback
 			await showSuccessFeedback(for: productId)
-			
+
 			return true
 		} catch let error as ErrorCode {
 			handlePurchaseError(error)
