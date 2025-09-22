@@ -1,3 +1,3 @@
 #!/bin/bash
 cd BACKLOG
-backlog browser
+backlog browser &
