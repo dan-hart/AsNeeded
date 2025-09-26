@@ -53,7 +53,11 @@ struct MedicationListView: View {
                     MedicationEditView(
                         medication: med,
                         onSave: { updated in
-                            Task { await viewModel.update(updated); editMedication = nil }
+                            Task {
+                                if await viewModel.update(updated) {
+                                    editMedication = nil
+                                }
+                            }
                         },
                         onCancel: { editMedication = nil }
                     )
@@ -62,7 +66,11 @@ struct MedicationListView: View {
                     MedicationEditView(
                         medication: nil,
                         onSave: { newMed in
-                            Task { await viewModel.add(newMed); showAddSheet = false }
+                            Task {
+                                if await viewModel.add(newMed) {
+                                    showAddSheet = false
+                                }
+                            }
                         },
                         onCancel: { showAddSheet = false }
                     )
@@ -75,19 +83,31 @@ struct MedicationListView: View {
                 .sheet(item: $logMedication) { med in
                     LogDoseView(medication: med) { dose, event in
                         Task {
+                            // Batch operations for better performance
                             var updated = med
                             if let quantity = updated.quantity, dose.amount > 0 {
                                 updated.quantity = quantity - dose.amount
                             }
-                            await viewModel.update(updated)
-                            await viewModel.addEvent(event)
-                            logMedication = nil
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    showSupportToast = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+
+                            // Perform operations concurrently where possible
+                            async let updateResult = viewModel.update(updated)
+                            async let eventResult = viewModel.addEvent(event)
+
+                            // Wait for both operations to complete
+                            let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
+
+                            // Only proceed if operations succeeded
+                            if updateSuccess && eventSuccess {
+                                logMedication = nil
+
+                                // Show success toast with optimized timing
+                                Task { @MainActor in
+                                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        showSupportToast = true
+                                    }
+
+                                    try? await Task.sleep(nanoseconds: 6_000_000_000) // 6 seconds
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         showSupportToast = false
                                     }
@@ -101,7 +121,11 @@ struct MedicationListView: View {
                     Button("Delete", role: .destructive) {
                         if let med = pendingDelete {
                             hapticsManager.itemDeleted()
-                            Task { await viewModel.delete(med); pendingDelete = nil }
+                            Task {
+                                if await viewModel.delete(med) {
+                                    pendingDelete = nil
+                                }
+                            }
                         }
                     }
                     Button("Cancel", role: .cancel) { pendingDelete = nil }
@@ -257,29 +281,34 @@ struct MedicationListView: View {
     }
     private var sortedMedications: [ANMedicationConcept] {
         let items = viewModel.items
-        
+
         // If we have no saved order, return items as-is
         if medicationOrder.isEmpty {
             return items
         }
-        
-        // Sort based on saved order
+
+        // Create efficient lookup structures - O(n) setup
+        let itemsById = Dictionary(uniqueKeysWithValues: items.map { ($0.id.uuidString, $0) })
+        let orderSet = Set(medicationOrder)
+
+        // Build sorted array more efficiently
         var sorted: [ANMedicationConcept] = []
-        
-        // First add items in saved order
+        sorted.reserveCapacity(items.count)
+
+        // First add items in saved order - O(n) lookup
         for id in medicationOrder {
-            if let med = items.first(where: { $0.id.uuidString == id }) {
+            if let med = itemsById[id] {
                 sorted.append(med)
             }
         }
-        
-        // Then add any new items not in saved order
+
+        // Then add any new items not in saved order - O(n) lookup
         for item in items {
-            if !medicationOrder.contains(item.id.uuidString) {
+            if !orderSet.contains(item.id.uuidString) {
                 sorted.append(item)
             }
         }
-        
+
         return sorted
     }
     
@@ -293,7 +322,7 @@ struct MedicationListView: View {
     private func deleteMedications(at offsets: IndexSet) {
         for index in offsets {
             guard let med = sortedMedications[doesExistAt: index] else { continue }
-            Task { await viewModel.delete(med) }
+            Task { _ = await viewModel.delete(med) }
             medicationOrder.removeAll { $0 == med.id.uuidString }
         }
     }

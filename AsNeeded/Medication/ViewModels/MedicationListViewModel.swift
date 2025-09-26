@@ -14,19 +14,44 @@ final class MedicationListViewModel: ObservableObject {
 
 	var items: [ANMedicationConcept] { dataStore.medications }
 
-	func add(_ med: ANMedicationConcept) async {
-		try? await dataStore.addMedication(med)
+	func add(_ med: ANMedicationConcept) async -> Bool {
+		do {
+			try await dataStore.addMedication(med)
+			return true
+		} catch {
+			// Log error but don't crash app
+			print("Failed to add medication: \(error)")
+			return false
+		}
 	}
 
-	func update(_ med: ANMedicationConcept) async {
-		try? await dataStore.updateMedication(med)
+	func update(_ med: ANMedicationConcept) async -> Bool {
+		do {
+			try await dataStore.updateMedication(med)
+			return true
+		} catch {
+			print("Failed to update medication: \(error)")
+			return false
+		}
 	}
 
-	func delete(_ med: ANMedicationConcept) async {
-		try? await dataStore.deleteMedication(med)
+	func delete(_ med: ANMedicationConcept) async -> Bool {
+		do {
+			try await dataStore.deleteMedication(med)
+			return true
+		} catch {
+			print("Failed to delete medication: \(error)")
+			return false
+		}
 	}
 
-	func addEvent(_ event: ANEventConcept) async {
-		try? await dataStore.addEvent(event)
+	func addEvent(_ event: ANEventConcept) async -> Bool {
+		do {
+			try await dataStore.addEvent(event)
+			return true
+		} catch {
+			print("Failed to add event: \(error)")
+			return false
+		}
 	}
 }
