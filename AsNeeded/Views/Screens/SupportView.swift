@@ -16,48 +16,46 @@ struct SupportView: View {
 	@State private var webURL: URL?
 	
 	var body: some View {
-		NavigationView {
-			ScrollView {
-				VStack(alignment: .leading, spacing: 24) {
-					headerSection
-					
-					supportOptionsSection
-					
-					aboutOpenSourceSection
-				}
-				.padding(.horizontal)
-				.padding(.vertical)
+		ScrollView {
+			VStack(alignment: .leading, spacing: 24) {
+				headerSection
+
+				supportOptionsSection
+
+				aboutOpenSourceSection
 			}
-			.navigationTitle("Support")
-			.navigationBarTitleDisplayMode(.large)
-			.alert(alertTitle, isPresented: $showPurchaseAlert) {
-				Button("OK", role: .cancel) {}
-			} message: {
-				Text(alertMessage)
+			.padding(.horizontal)
+			.padding(.vertical)
+		}
+		.navigationTitle("Support")
+		.navigationBarTitleDisplayMode(.large)
+		.alert(alertTitle, isPresented: $showPurchaseAlert) {
+			Button("OK", role: .cancel) {}
+		} message: {
+			Text(alertMessage)
+		}
+		.sheet(isPresented: $showThankYouView) {
+			if let purchaseType = purchaseType {
+				ThankYouView(purchaseType: purchaseType)
+					.environmentObject(FeedbackService.shared)
 			}
-			.sheet(isPresented: $showThankYouView) {
-				if let purchaseType = purchaseType {
-					ThankYouView(purchaseType: purchaseType)
-						.environmentObject(FeedbackService.shared)
-				}
+		}
+		.sheet(isPresented: $showingWebView) {
+			if let url = webURL {
+				SafariView(url: url)
 			}
-			.sheet(isPresented: $showingWebView) {
-				if let url = webURL {
-					SafariView(url: url)
-				}
-			}
-			.disabled(isPurchasing)
-			.overlay {
-				if isPurchasing {
-					Color.black.opacity(0.3)
-						.ignoresSafeArea()
-						.overlay {
-							ProgressView("Processing...")
-								.padding()
-								.background(.regularMaterial)
-								.cornerRadius(12)
-						}
-				}
+		}
+		.disabled(isPurchasing)
+		.overlay {
+			if isPurchasing {
+				Color.black.opacity(0.3)
+					.ignoresSafeArea()
+					.overlay {
+						ProgressView("Processing...")
+							.padding()
+							.background(.regularMaterial)
+							.cornerRadius(12)
+					}
 			}
 		}
 	}
