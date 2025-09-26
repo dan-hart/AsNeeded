@@ -41,6 +41,7 @@ extension Tag {
 	@Tag static var service: Self
 	@Tag static var networking: Self
 	@Tag static var rxNorm: Self
+	@Tag static var intent: Self
 	
 	// MARK: - Priority Tags
 	@Tag static var critical: Self

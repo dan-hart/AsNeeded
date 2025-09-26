@@ -42,7 +42,7 @@ struct ListMedicationsIntent: AppIntent {
 		}
 	}
 	
-	private func formatMedicationList(_ names: [String]) -> String {
+	func formatMedicationList(_ names: [String]) -> String {
 		guard names.count > 1 else {
 			return names.first ?? ""
 		}
