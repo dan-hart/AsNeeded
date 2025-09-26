@@ -114,7 +114,7 @@ struct MedicationEditView: View {
 				
 				// Icon
 				Image(systemSymbol: medication == nil ? .pillsFill : .pills)
-					.font(.system(size: 50, weight: .medium))
+					.font(.largeTitle.weight(.medium))
 					.foregroundStyle(
 						LinearGradient(
 							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
@@ -475,7 +475,7 @@ struct MedicationEditView: View {
 							icon: .clockArrowTriangleheadCounterclockwiseRotate90,
 							date: viewModel.lastRefillDate,
 							dateType: .lastRefill,
-							color: .blue
+							color: .accent
 						)
 						
 						// Next Refill Date Card
@@ -510,7 +510,7 @@ struct MedicationEditView: View {
 							.frame(width: 36, height: 36)
 						
 						Image(systemSymbol: icon)
-							.font(.system(size: 16, weight: .semibold))
+							.font(.body.weight(.semibold))
 							.foregroundStyle(color)
 					}
 					
@@ -552,7 +552,7 @@ struct MedicationEditView: View {
 							}
 						} label: {
 							Image(systemSymbol: .xmarkCircleFill)
-								.font(.system(size: 20))
+								.font(.title3)
 								.foregroundStyle(.tertiary)
 								.symbolRenderingMode(.hierarchical)
 						}
@@ -659,7 +659,7 @@ struct MedicationEditView: View {
 							.frame(width: 64, height: 64)
 						
 						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
-							.font(.system(size: 32, weight: .medium))
+							.font(.largeTitle.weight(.medium))
 							.foregroundStyle(datePickerType == .lastRefill ? Color.blue : Color.green)
 					}
 					
@@ -739,7 +739,7 @@ struct MedicationEditView: View {
 					} label: {
 						HStack(spacing: 8) {
 							Image(systemSymbol: .trashCircle)
-								.font(.system(size: 18))
+								.font(.body)
 							Text("Remove Date")
 								.font(.subheadline)
 								.fontWeight(.medium)

@@ -42,8 +42,8 @@ struct GetDailyUsageIntent: AppIntent {
 		
 		// Calculate today's usage
 		let todayUsage = calculateTodayUsage(for: targetMedication)
-		let medicationDisplayName = targetMedication.nickname?.isEmpty == false ? 
-			targetMedication.nickname! : targetMedication.clinicalName
+		let medicationDisplayName = (targetMedication.nickname?.isEmpty == false) ?
+			(targetMedication.nickname ?? targetMedication.clinicalName) : targetMedication.clinicalName
 		
 		if todayUsage.totalAmount == 0 {
 			logger.info("No usage found today for \(targetMedication.displayName)")

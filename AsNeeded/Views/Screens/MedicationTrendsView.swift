@@ -14,10 +14,10 @@ enum VisualizationType: String, CaseIterable {
 		}
 	}
 	
-	var systemImage: String {
+	var systemSymbol: SFSymbol {
 		switch self {
-		case .chart: return "chart.xyaxis.line"
-		case .heatmap: return "calendar"
+		case .chart: return .chartXyaxisLine
+		case .heatmap: return .calendar
 		}
 	}
 }
@@ -56,7 +56,7 @@ struct MedicationTrendsView: View {
 								.foregroundStyle(.secondary)
 							Picker("Visualization", selection: $visualizationType) {
 								ForEach(VisualizationType.allCases, id: \.self) { type in
-									Label(type.displayName, systemImage: type.systemImage)
+									Label(type.displayName, systemSymbol: type.systemSymbol)
 										.tag(type)
 								}
 							}
