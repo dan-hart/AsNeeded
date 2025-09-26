@@ -5,6 +5,7 @@ import DHLoggingKit
 struct ThankYouView: View {
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.openURL) private var openURL
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@EnvironmentObject private var feedbackService: FeedbackService
 	
 	let purchaseType: PurchaseType
@@ -46,12 +47,12 @@ struct ThankYouView: View {
 					// MARK: - Impact Message
 					impactSection
 						.opacity(messageOpacity)
-						.animation(.easeInOut(duration: 0.8).delay(0.5), value: messageOpacity)
-					
+						.animation(reduceMotion ? .none : .easeInOut(duration: 0.8).delay(0.5), value: messageOpacity)
+
 					// MARK: - Ways to Contribute
 					contributeSection
 						.opacity(buttonsOpacity)
-						.animation(.easeInOut(duration: 0.8).delay(1.0), value: buttonsOpacity)
+						.animation(reduceMotion ? .none : .easeInOut(duration: 0.8).delay(1.0), value: buttonsOpacity)
 					
 					// MARK: - Personal Note
 					personalNoteSection
@@ -76,13 +77,21 @@ struct ThankYouView: View {
 			}
 		}
 		.onAppear {
-			withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+			if reduceMotion {
+				// Immediately show content without animations
 				heartScale = 1.0
-			}
-			withAnimation {
-				showConfetti = true
+				showConfetti = false
 				messageOpacity = 1.0
 				buttonsOpacity = 1.0
+			} else {
+				withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+					heartScale = 1.0
+				}
+				withAnimation {
+					showConfetti = true
+					messageOpacity = 1.0
+					buttonsOpacity = 1.0
+				}
 			}
 			DHLogger.ui.info("ThankYouView appeared for \(String(describing: purchaseType))")
 		}
@@ -478,8 +487,8 @@ struct ConfettiModifier: ViewModifier {
 	private func createConfetti(in size: CGSize) {
 		confettiPieces = (0..<30).map { _ in
 			ConfettiPiece(
-				symbol: [.heartFill, .starFill, .sparkle, .circlebadgeFill].randomElement()!,
-				color: [.pink, .purple, .blue, .orange, .yellow].randomElement()!,
+				symbol: [.heartFill, .starFill, .sparkle, .circlebadgeFill].randomElement() ?? .starFill,
+				color: [.pink, .purple, .blue, .orange, .yellow].randomElement() ?? .pink,
 				size: CGFloat.random(in: 12...24),
 				position: CGPoint(
 					x: CGFloat.random(in: 0...size.width),

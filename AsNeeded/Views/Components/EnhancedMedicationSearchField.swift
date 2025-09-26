@@ -206,7 +206,7 @@ struct EnhancedMedicationSearchField: View {
 	private var noResultsView: some View {
 		VStack(spacing: 12) {
 			Image(systemSymbol: .magnifyingglass)
-				.font(.system(size: 32))
+				.font(.largeTitle)
 				.foregroundColor(.secondary)
 			Text("No medications found")
 				.font(.headline)
@@ -270,7 +270,7 @@ struct EnhancedMedicationSearchField: View {
 		Button(action: action) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: icon)
-					.font(.system(size: 16))
+					.font(.body)
 					.foregroundColor(iconColor)
 					.frame(width: 24)
 				
@@ -289,7 +289,7 @@ struct EnhancedMedicationSearchField: View {
 				Spacer()
 				
 				Image(systemSymbol: .chevronRight)
-					.font(.system(size: 12, weight: .semibold))
+					.font(.caption.weight(.semibold))
                     .foregroundStyle(Color.secondary)
 			}
 			.padding(.horizontal, 16)
@@ -397,10 +397,10 @@ struct EnhancedMedicationSearchField: View {
 		}) {
 			HStack(spacing: 4) {
 				Image(systemSymbol: .pillsFill)
-					.font(.system(size: 12))
-				
+					.font(.caption)
+
 				Text(medication.brandName)
-					.font(.system(size: 13, weight: .medium))
+					.font(.caption.weight(.medium))
 					.lineLimit(1)
 			}
 			.foregroundColor(.primary)
