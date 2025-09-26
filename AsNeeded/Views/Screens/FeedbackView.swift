@@ -25,10 +25,16 @@ struct FeedbackView: View {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 20) {
 					feedbackOverviewSection
-					
+
 					Divider()
-					
+
 					feedbackTypesSection
+
+					if ReviewService.shared.canShowReviewButtons {
+						Divider()
+
+						rateAndReviewSection
+					}
 				}
                 .padding()
 			}
@@ -128,7 +134,27 @@ struct FeedbackView: View {
 			}
 		}
 	}
-	
+
+	private var rateAndReviewSection: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text("Love As Needed?")
+				.font(.headline)
+				.fontWeight(.semibold)
+
+			feedbackTypeButton(
+				title: "Rate & Review on App Store",
+				subtitle: "Share your experience and help others discover the app",
+				systemImage: .star,
+				color: .accent,
+				action: {
+					Task {
+						await AppReviewManager.shared.requestReviewWithAlert()
+					}
+				}
+			)
+		}
+	}
+
 	private func feedbackTypeButton(
 		title: String,
 		subtitle: String,

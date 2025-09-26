@@ -91,16 +91,21 @@ struct SupportView: View {
 				Text("Support Development")
 					.font(.title2)
 					.fontWeight(.semibold)
-				
+
 				// Tip Jar
 				tipJarGrid
-				
+
+				// Rate & Review CTA (between tips and subscriptions)
+				if ReviewService.shared.canShowReviewButtons {
+					rateAndReviewButton
+				}
+
 				// Subscription Options
 				subscriptionOptions
-				
+
 				// Restore Purchases button
 				restorePurchasesButton
-				
+
 				// Legal links for subscriptions
 				legalLinksSection
 			}
@@ -117,7 +122,7 @@ struct SupportView: View {
 				Text("As Needed will always be free with all features available. No ads, no premium tiers, no subscriptions required. The app is open source - you can inspect the code or contribute improvements.")
 					.font(.body)
 					.foregroundStyle(.secondary)
-				
+
 				Button {
 					if let url = URL(string: "https://github.com/dan-hart/AsNeeded") {
 						openURL(url)
@@ -150,42 +155,44 @@ struct SupportView: View {
 					.cornerRadius(12)
 				}
 				.buttonStyle(.plain)
-
-				Button {
-					ReviewService.shared.requestReview()
-				} label: {
-					HStack(spacing: 12) {
-						Image(systemSymbol: .star)
-							.font(.title3)
-							.foregroundColor(.accent)
-
-						VStack(alignment: .leading, spacing: 2) {
-							Text("Rate & Review on App Store")
-								.font(.headline)
-								.fontWeight(.semibold)
-								.foregroundColor(.primary)
-
-							Text("Share your experience and help others discover the app")
-								.font(.subheadline)
-								.foregroundColor(.secondary)
-						}
-
-						Spacer()
-
-						Image(systemSymbol: .arrowUpRight)
-							.font(.caption)
-							.foregroundColor(.secondary)
-					}
-					.padding(16)
-					.background(.regularMaterial)
-					.cornerRadius(12)
-				}
-				.buttonStyle(.plain)
 			}
 		}
 	}
-	
-	
+
+	private var rateAndReviewButton: some View {
+		Button {
+			ReviewService.shared.openAppStoreReviewPage()
+		} label: {
+			HStack(spacing: 12) {
+				Image(systemSymbol: .star)
+					.font(.title3)
+					.foregroundColor(.accent)
+
+				VStack(alignment: .leading, spacing: 2) {
+					Text("Rate & Review on App Store")
+						.font(.headline)
+						.fontWeight(.semibold)
+						.foregroundColor(.primary)
+
+					Text("Share your experience and help others discover the app")
+						.font(.subheadline)
+						.foregroundColor(.secondary)
+				}
+
+				Spacer()
+
+				Image(systemSymbol: .arrowUpRight)
+					.font(.caption)
+					.foregroundColor(.secondary)
+			}
+			.padding(16)
+			.background(.regularMaterial)
+			.cornerRadius(12)
+		}
+		.buttonStyle(.plain)
+		.padding(.top, 8)
+	}
+
 	private var tipJarGrid: some View {
 		VStack(alignment: .leading, spacing: 12) {
 			Text("One-time Tips")
