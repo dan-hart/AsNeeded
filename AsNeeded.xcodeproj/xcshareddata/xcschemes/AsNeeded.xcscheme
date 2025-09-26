@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-<<<<<<< Updated upstream
    LastUpgradeVersion = "2600"
    version = "1.7">
-=======
-   LastUpgradeVersion = "1400"
-   version = "1.3">
->>>>>>> Stashed changes
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
@@ -31,7 +26,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-<<<<<<< Updated upstream
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
@@ -39,44 +33,13 @@
             default = "YES">
          </TestPlanReference>
       </TestPlans>
-=======
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      language = "en"
-      region = "US">
->>>>>>> Stashed changes
       <Testables>
          <TestableReference
             skipped = "NO"
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-<<<<<<< Updated upstream
-               BlueprintIdentifier = "52AFFC222AA7BC4B001A39AF"
-               BuildableName = "AsNeededUITests.xctest"
-               BlueprintName = "AsNeededUITests"
-               ReferencedContainer = "container:AsNeeded.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5295ABF52C3362D8003DB6C4"
-               BuildableName = "SwiftTestingAsNeededTests.xctest"
-               BlueprintName = "SwiftTestingAsNeededTests"
-               ReferencedContainer = "container:AsNeeded.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "52B3784B2E4E77FD008EC5F2"
-=======
-               BlueprintIdentifier = "527AFA3128E26B3600BD575D"
->>>>>>> Stashed changes
                BuildableName = "AsNeededTests.xctest"
                BlueprintName = "AsNeededTests"
                ReferencedContainer = "container:AsNeeded.xcodeproj">
@@ -88,11 +51,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-<<<<<<< Updated upstream
-=======
-      language = "en"
-      region = "US"
->>>>>>> Stashed changes
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
