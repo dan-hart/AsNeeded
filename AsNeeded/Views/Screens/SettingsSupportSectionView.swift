@@ -3,6 +3,7 @@ import SFSafeSymbols
 
 struct SettingsSupportSectionView: View {
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@StateObject private var appReviewManager = AppReviewManager.shared
 	
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
@@ -50,7 +51,7 @@ struct SettingsSupportSectionView: View {
 					.font(.system(size: 18, weight: .medium))
 					.frame(width: 24, height: 24)
 					.foregroundColor(.secondary)
-				
+
 				VStack(alignment: .leading, spacing: 2) {
 					Text("Hide Support Banners")
 						.font(.body)
@@ -60,6 +61,32 @@ struct SettingsSupportSectionView: View {
 				}
 				Spacer()
 				Toggle("", isOn: $hideSupportBanners)
+					.labelsHidden()
+			}
+			.padding(16)
+			.background(Color(.systemBackground))
+			.overlay(
+				RoundedRectangle(cornerRadius: 12)
+					.stroke(Color(.systemGray4), lineWidth: 0.5)
+			)
+			.cornerRadius(12)
+
+			// App Review Preferences toggle
+			HStack(spacing: 12) {
+				Image(systemSymbol: .starSlash)
+					.font(.system(size: 18, weight: .medium))
+					.frame(width: 24, height: 24)
+					.foregroundColor(.secondary)
+
+				VStack(alignment: .leading, spacing: 2) {
+					Text("Disable Review Requests")
+						.font(.body)
+					Text("Opt out of automatic app review prompts")
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
+				Spacer()
+				Toggle("", isOn: $appReviewManager.hasOptedOutOfReviews)
 					.labelsHidden()
 			}
 			.padding(16)

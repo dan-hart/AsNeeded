@@ -126,6 +126,11 @@ public final class DataStore {
 		do {
 			try await eventsStore.insert(event)
 			logger.info("Successfully added event: \(event.id)")
+
+			// Track medication event for review eligibility
+			await MainActor.run {
+				AppReviewManager.shared.recordMedicationEvent()
+			}
 		} catch {
 			logger.error("Failed to add event: \(error.localizedDescription)")
 			throw error

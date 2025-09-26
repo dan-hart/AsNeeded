@@ -32,6 +32,9 @@ struct AsNeededApp: App {
 				.environmentObject(revenueCatManager)
 				.onAppear {
 					logger.info("AsNeeded app launched successfully")
+					Task { @MainActor in
+						AppReviewManager.shared.recordAppLaunch()
+					}
 				}
 		}
 	}
