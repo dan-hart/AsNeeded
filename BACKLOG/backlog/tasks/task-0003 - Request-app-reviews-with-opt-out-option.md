@@ -1,10 +1,10 @@
 ---
 id: task-0003
 title: Request app reviews with opt-out option
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-09-22 12:33'
-updated_date: '2025-09-26 22:35'
+updated_date: '2025-09-26 22:36'
 labels: []
 dependencies: []
 ---
