@@ -17,10 +17,8 @@ final class AppReviewManager: ObservableObject {
 	}
 
 	// MARK: - Constants
-	private let minimumLaunchCount = 10
-	private let minimumEventsCount = 5
-	private let minimumDaysBetweenRequests = 90
-	private let minimumConsecutiveDays = 7
+	private let minimumLaunchCount = 3
+	private let minimumEventsCount = 2
 
 	private init() {}
 
@@ -112,12 +110,6 @@ final class AppReviewManager: ObservableObject {
 		// Check if reviews are allowed (both app-level and system-level)
 		guard canMakeReviewRequest() else { return }
 
-		// Check if enough time has passed since last request
-		if let lastRequestDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.lastReviewRequestDate) as? Date {
-			let daysSinceLastRequest = Calendar.current.dateComponents([.day], from: lastRequestDate, to: Date()).day ?? 0
-			guard daysSinceLastRequest >= minimumDaysBetweenRequests else { return }
-		}
-
 		// Check engagement criteria
 		guard isEngagementCriteriaMet() else { return }
 
@@ -128,11 +120,9 @@ final class AppReviewManager: ObservableObject {
 	private func isEngagementCriteriaMet() -> Bool {
 		let launchCount = UserDefaults.standard.integer(forKey: UserDefaultsKeys.appLaunchCount)
 		let eventsCount = UserDefaults.standard.integer(forKey: UserDefaultsKeys.medicationEventsCount)
-		let consecutiveDays = UserDefaults.standard.integer(forKey: UserDefaultsKeys.consecutiveDaysOfUse)
 
 		return launchCount >= minimumLaunchCount &&
-			   eventsCount >= minimumEventsCount &&
-			   consecutiveDays >= minimumConsecutiveDays
+			   eventsCount >= minimumEventsCount
 	}
 
 	private func showPreReviewAlert() async {
