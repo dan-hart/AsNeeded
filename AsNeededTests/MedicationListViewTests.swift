@@ -80,10 +80,10 @@ struct MedicationListViewModelTests {
         let medication = ANMedicationConcept(clinicalName: "Test Med")
         var wasCalled = false
         
-        let row = MedicationRow(medication: medication) {
+        let row = MedicationRowComponent(medication: medication) {
             wasCalled = true
         }
-        
+
         row.onLogTapped()
         
         #expect(wasCalled == true)

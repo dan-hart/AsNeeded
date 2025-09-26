@@ -32,17 +32,21 @@ struct MedicationListView: View {
                                 }
                             }
                             .bold()
+                            .accessibilityLabel(editMode == .inactive ? "Edit medication list" : "Done editing")
+                            .accessibilityHint(editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
-                        Button(action: { 
+                        Button(action: {
                             hapticsManager.mediumImpact()
-                            showAddSheet = true 
+                            showAddSheet = true
                         }) {
                             Label("Add Medication", systemSymbol: .plus)
                                 .foregroundColor(.accentColor)
                                 .fontWeight(.medium)
                         }
+                        .accessibilityLabel("Add new medication")
+                        .accessibilityHint("Opens form to add a new medication to your list")
                     }
                 }
                 .sheet(item: $editMedication) { med in
@@ -170,11 +174,11 @@ struct MedicationListView: View {
                 }
             }
             
-            Button(action: { 
+            Button(action: {
                 hapticsManager.mediumImpact()
-                showAddSheet = true 
+                showAddSheet = true
             }) {
-                Label("Add Your First Medication", systemImage: "plus.circle.fill")
+                Label("Add Your First Medication", systemSymbol: .plusCircleFill)
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -189,6 +193,8 @@ struct MedicationListView: View {
             .buttonStyle(.plain)
             .scaleEffect(1.0)
             .animation(.easeInOut(duration: 0.1), value: showAddSheet)
+            .accessibilityLabel("Add your first medication")
+            .accessibilityHint("Get started by adding your first medication to track")
             
             Spacer()
         }
@@ -216,16 +222,20 @@ struct MedicationListView: View {
                                 hapticsManager.lightImpact()
                                 editMedication = med
                             } label: {
-                                Label("Edit", systemImage: "pencil")
+                                Label("Edit", systemSymbol: .pencil)
                             }
                             .tint(.accentColor)
-                            
+                            .accessibilityLabel("Edit \(med.displayName)")
+                            .accessibilityHint("Opens edit form for this medication")
+
                             Button(role: .destructive) {
                                 hapticsManager.mediumImpact()
                                 pendingDelete = med
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Label("Delete", systemSymbol: .trash)
                             }
+                            .accessibilityLabel("Delete \(med.displayName)")
+                            .accessibilityHint("Removes this medication permanently")
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
