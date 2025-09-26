@@ -1,0 +1,216 @@
+import SwiftUI
+import SFSafeSymbols
+
+/// A comprehensive medication information input section with enhanced search capabilities
+///
+/// Features:
+/// - Required clinical name field with real-time medication search
+/// - Optional nickname field for personalization
+/// - Enhanced visual feedback for focused fields
+/// - Comprehensive accessibility support
+/// - Integrated glass card styling
+///
+/// **Appearance:**
+/// - Section header with medication icon and title
+/// - Clinical name field with search integration and focus animations
+/// - Required field indicators and validation feedback
+/// - Nickname field with optional label styling
+/// - Consistent glass card background
+///
+/// **Use Cases:**
+/// - Medication creation and editing forms
+/// - Patient medication management interfaces
+/// - Prescription data entry screens
+/// - Medical record input sections
+/// - Healthcare app medication forms
+/// - Any form requiring medication identification with search
+struct MedicationInfoSectionComponent<Field: Hashable>: View {
+	@Binding var clinicalName: String
+	@Binding var nickname: String
+	@FocusState.Binding var focusedField: Field?
+
+	let clinicalNameField: Field
+	let nicknameField: Field
+	let onMedicationSelected: (String, String) -> Void
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 20) {
+			// Section header with icon
+			HStack(spacing: 12) {
+				Image(systemSymbol: .textBookClosedFill)
+					.font(.title2)
+					.foregroundStyle(
+						LinearGradient(
+							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
+					)
+
+				Text("Medication Information")
+					.font(.headline)
+					.fontWeight(.semibold)
+					.accessibilityAddTraits(.isHeader)
+			}
+
+			// Clinical Name Field - Primary Input
+			VStack(alignment: .leading, spacing: 12) {
+				// Enhanced header with better visual hierarchy
+				HStack(spacing: 8) {
+					ZStack {
+						Circle()
+							.fill(Color.accentColor.opacity(0.15))
+							.frame(width: 28, height: 28)
+
+						Image(systemSymbol: .pill)
+							.font(.subheadline.weight(.semibold))
+							.foregroundColor(.accentColor)
+							.accessibilityHidden(true) // Decorative icon
+					}
+
+					VStack(alignment: .leading, spacing: 2) {
+						HStack(spacing: 4) {
+							Text("Clinical Name")
+								.font(.subheadline)
+								.fontWeight(.semibold)
+							Text("*")
+								.foregroundStyle(.red)
+								.font(.subheadline)
+								.fontWeight(.bold)
+								.accessibilityLabel("required")
+						}
+						.accessibilityElement(children: .combine)
+
+						Text("Start typing to search medications")
+							.font(.caption)
+							.foregroundStyle(.secondary)
+							.accessibilityHidden(true) // Redundant with field hint
+					}
+
+					Spacer()
+
+					// Priority indicator
+					if clinicalName.isEmpty {
+						Text("REQUIRED")
+							.font(.caption2.weight(.bold))
+							.foregroundStyle(.white)
+							.padding(.horizontal, 8)
+							.padding(.vertical, 3)
+							.background(
+								Capsule()
+									.fill(Color.accentColor)
+							)
+							.accessibilityLabel("Required field indicator")
+							.accessibilityHidden(true) // Hide from VoiceOver since it's already conveyed in the hint
+					}
+				}
+
+				// Enhanced search field container
+				VStack(spacing: 0) {
+					EnhancedMedicationSearchField(
+						text: $clinicalName,
+						placeholder: "Type medication name (e.g., Ibuprofen, Tylenol)",
+						onMedicationSelected: { clinicalName, nickname in
+							onMedicationSelected(clinicalName, nickname)
+						}
+					)
+					.focused($focusedField, equals: clinicalNameField)
+					.accessibilityLabel("Clinical Name")
+					.accessibilityHint("Required field. Type to search for medications.")
+					.accessibilityValue(clinicalName.isEmpty ? "Empty" : clinicalName)
+				}
+				.padding(16)
+				.background(
+					RoundedRectangle(cornerRadius: 16)
+						.fill(.ultraThinMaterial)
+						.overlay(
+							RoundedRectangle(cornerRadius: 16)
+								.strokeBorder(
+									focusedField == clinicalNameField ?
+										Color.accentColor.opacity(0.6) :
+										Color(.separator).opacity(0.3),
+									lineWidth: focusedField == clinicalNameField ? 2 : 1
+								)
+						)
+						.shadow(
+							color: focusedField == clinicalNameField ?
+								Color.accentColor.opacity(0.2) :
+								Color.black.opacity(0.05),
+							radius: focusedField == clinicalNameField ? 8 : 4,
+							x: 0,
+							y: focusedField == clinicalNameField ? 4 : 2
+						)
+				)
+				.scaleEffect(focusedField == clinicalNameField ? 1.02 : 1.0)
+				.animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedField)
+			}
+
+			// Nickname Field
+			VStack(alignment: .leading, spacing: 8) {
+				Label {
+					HStack(spacing: 4) {
+						Text("Nickname")
+							.font(.subheadline)
+							.fontWeight(.medium)
+						Text("Optional")
+							.font(.caption)
+							.foregroundStyle(.tertiary)
+							.padding(.horizontal, 8)
+							.padding(.vertical, 2)
+							.background(
+								Capsule()
+									.fill(Color(.tertiarySystemFill))
+							)
+					}
+				} icon: {
+					Image(systemSymbol: .tagFill)
+						.font(.caption)
+						.foregroundStyle(.secondary)
+				}
+
+				TextField("Personal name for easy identification", text: $nickname)
+					.textFieldStyle(.roundedBorder)
+					.autocapitalization(.words)
+					.disableAutocorrection(true)
+					.focused($focusedField, equals: nicknameField)
+					.accessibilityLabel("Nickname")
+					.accessibilityHint("Optional personal name for easy identification")
+			}
+		}
+		.glassCard()
+		.padding(.horizontal)
+	}
+}
+
+#if DEBUG
+// Preview with mock Field enum
+private enum MedicationInfoMockField: Hashable {
+	case clinicalName
+	case nickname
+}
+
+#Preview {
+	struct PreviewWrapper: View {
+		@State private var clinicalName = ""
+		@State private var nickname = ""
+		@FocusState private var focusedField: MedicationInfoMockField?
+
+		var body: some View {
+			MedicationInfoSectionComponent(
+				clinicalName: $clinicalName,
+				nickname: $nickname,
+				focusedField: $focusedField,
+				clinicalNameField: .clinicalName,
+				nicknameField: .nickname,
+				onMedicationSelected: { clinicalName, nickname in
+					self.clinicalName = clinicalName
+					self.nickname = nickname
+				}
+			)
+			.padding()
+		}
+	}
+
+	return PreviewWrapper()
+}
+#endif

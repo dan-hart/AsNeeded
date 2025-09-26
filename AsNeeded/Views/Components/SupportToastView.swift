@@ -29,7 +29,7 @@ struct SupportToastView: View {
 				VStack(spacing: 16) {
 					// Success indicator with animation
 					Image(systemSymbol: .checkmarkCircleFill)
-						.font(.system(size: 48))
+						.font(.largeTitle.weight(.medium))
 						.foregroundStyle(
 							LinearGradient(
 								colors: [.green, .green.opacity(0.8)],
@@ -51,7 +51,7 @@ struct SupportToastView: View {
 					Button(action: onSupportTapped) {
 						HStack(spacing: 6) {
 							Image(systemSymbol: .heartFill)
-								.font(.system(size: 14))
+								.font(.caption)
 								.foregroundStyle(
 									LinearGradient(
 										colors: [.red, .pink],
@@ -97,7 +97,7 @@ struct SupportToastView: View {
 					// Dismiss button with proper tap target
 					Button(action: onDismiss) {
 						Image(systemSymbol: .xmarkCircleFill)
-							.font(.system(size: 24))
+							.font(.title2)
 							.foregroundStyle(.secondary)
 							.frame(width: 44, height: 44) // Minimum tap target
 							.contentShape(Rectangle())

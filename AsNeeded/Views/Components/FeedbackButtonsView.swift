@@ -4,6 +4,7 @@ import MessageUI
 struct FeedbackButtonsView: View {
     @StateObject private var feedbackService = FeedbackService.shared
     @State private var showingMailComposer = false
+    @State private var currentFeedbackType: FeedbackType = .feedback
     
     private var isLoading: Bool {
         feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
@@ -33,15 +34,21 @@ struct FeedbackButtonsView: View {
                     icon: "exclamationmark.triangle.fill",
                     color: .red,
                     isDisabled: isLoading,
-                    action: { feedbackService.submitFeedback(type: .bug) }
+                    action: {
+                        currentFeedbackType = .bug
+                        feedbackService.submitFeedback(type: .bug)
+                    }
                 )
-                
+
                 FeedbackButton(
                     title: "Feature Request",
                     icon: "lightbulb.fill",
                     color: .accentColor,
                     isDisabled: isLoading,
-                    action: { feedbackService.submitFeedback(type: .featureRequest) }
+                    action: {
+                        currentFeedbackType = .featureRequest
+                        feedbackService.submitFeedback(type: .featureRequest)
+                    }
                 )
                 
                 FeedbackButton(
@@ -49,7 +56,10 @@ struct FeedbackButtonsView: View {
                     icon: "heart.fill",
                     color: .green,
                     isDisabled: isLoading,
-                    action: { feedbackService.submitFeedback(type: .feedback) }
+                    action: {
+                        currentFeedbackType = .feedback
+                        feedbackService.submitFeedback(type: .feedback)
+                    }
                 )
             }
             .redacted(reason: isLoading ? .placeholder : [])
@@ -80,10 +90,9 @@ struct FeedbackButtonsView: View {
         .sheet(isPresented: $feedbackService.showingMailComposer) {
             MailComposeView(feedbackService: feedbackService)
         }
-        .alert("Mail Not Available", isPresented: $feedbackService.showingMailUnavailableAlert) {
-            Button("OK") { }
-        } message: {
-            Text("Please configure Mail app or contact us directly at asneeded@codedbydan.com")
+        .sheet(isPresented: $feedbackService.showingFeedbackAlternatives) {
+            AlternativeFeedbackView(feedbackType: currentFeedbackType)
+                .environmentObject(feedbackService)
         }
         .confirmationDialog(
             "Include App Logs?",
