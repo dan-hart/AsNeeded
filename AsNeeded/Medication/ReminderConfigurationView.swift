@@ -119,7 +119,7 @@ struct ReminderConfigurationView: View {
 	private var headerSection: some View {
 		VStack(spacing: 8) {
 			Image(systemSymbol: .bellBadgeFill)
-				.font(.system(size: 40))
+				.font(.system(.largeTitle, design: .default, weight: .medium))
 				.foregroundStyle(
 					LinearGradient(
 						colors: [.accentColor, .accentColor.opacity(0.7)],

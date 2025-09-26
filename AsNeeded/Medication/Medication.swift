@@ -33,10 +33,13 @@ extension ANEventConcept {
 import SwiftUI
 
 #Preview("Medication Row Preview - without dose/info fields") {
-	MedicationRow(medication: ANMedicationConcept(
+	MedicationRowComponent(medication: ANMedicationConcept(
 		clinicalName: "Ibuprofen",
 		nickname: "Ibuprofen"
-	))
+	)) {
+		print("Log dose tapped")
+	}
+	.padding()
 }
 
 #Preview("Medication Edit Preview - without dose/info fields") {

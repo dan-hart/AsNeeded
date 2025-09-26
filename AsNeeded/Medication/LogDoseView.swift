@@ -66,7 +66,7 @@ struct LogDoseView: View {
 					.shadow(color: Color.accentColor.opacity(0.3), radius: 12, x: 0, y: 6)
 				
 				Image(systemSymbol: .pills)
-					.font(.system(size: 36, weight: .semibold))
+					.font(.system(.largeTitle, design: .default, weight: .semibold))
 					.foregroundStyle(.white)
 					.symbolEffect(.pulse, options: .repeating.speed(0.5), value: animateHeader)
 			}
@@ -126,7 +126,7 @@ struct LogDoseView: View {
 					
 					VStack(spacing: 4) {
 						Text("\(amount, specifier: "%.1f")")
-							.font(.system(size: 42, weight: .semibold, design: .rounded))
+							.font(.system(.title, design: .rounded, weight: .semibold))
 							.contentTransition(.numericText())
 						
 						Text(selectedUnit.displayName)

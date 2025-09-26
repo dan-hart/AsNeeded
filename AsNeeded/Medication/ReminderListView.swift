@@ -80,7 +80,7 @@ struct ReminderListView: View {
   private var emptyStateView: some View {
     VStack(spacing: 16) {
       Image(systemSymbol: .bellSlash)
-        .font(.system(size: 48))
+        .font(.system(.largeTitle, design: .default, weight: .medium))
         .foregroundColor(.secondary)
       
       Text("No Active Reminders")
