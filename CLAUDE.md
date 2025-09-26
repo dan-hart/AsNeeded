@@ -50,6 +50,17 @@
 - **Color and Contrast**: Use semantic colors (`.accent`, `.primary`, `.secondary`) that adapt to user preferences. Avoid relying solely on color to convey information.
 - **Touch Targets**: Ensure interactive elements are at least 44x44 points for optimal usability.
 
+## Component Reusability Guidelines
+- **Check Before Creating**: Always search for existing components before creating new ones. Look in `AsNeeded/Views/Components/` and examine similar features for reusable patterns.
+- **Documentation Requirements**: All reusable components MUST include comprehensive `///` documentation comments at the top, including:
+  - Brief description of what the component looks like
+  - Key features and capabilities
+  - Visual appearance details
+  - Multiple use cases where the component could be applied
+  - Example: See `HeroSectionComponent`, `GlassCardModifier`, `DateCardComponent` for reference
+- **Design Consistency**: Reusable components should follow the app's design system (glass cards, accent colors, semantic fonts, accessibility support).
+- **Preview Support**: All components should include SwiftUI previews demonstrating different states and configurations.
+
 ## Testing Guidelines
 - Framework: Swift Testing (`import Testing`, `@Test`, `#expect`).
 - Scope: Unit tests for domain and services ONLY. No UI tests, snapshot tests, or view testing.

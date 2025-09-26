@@ -166,7 +166,7 @@ struct AppPreferencesView: View {
 		VStack(alignment: .leading, spacing: 12) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: .bellSlash)
-					.font(.system(size: 18, weight: .medium))
+					.font(.callout.weight(.medium))
 					.frame(width: 24, height: 24)
 					.foregroundColor(.secondary)
 
@@ -200,7 +200,7 @@ struct AppPreferencesView: View {
 			Button(action: { showingResetConfirmation = true }) {
 				HStack(spacing: 12) {
 					Image(systemSymbol: .arrowCounterclockwise)
-						.font(.system(size: 18, weight: .medium))
+						.font(.callout.weight(.medium))
 						.frame(width: 24, height: 24)
 						.foregroundColor(.red)
 
@@ -264,7 +264,7 @@ private struct PreferenceRow: View {
 		VStack(alignment: .leading, spacing: 16) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: icon)
-					.font(.system(size: 18, weight: .medium))
+					.font(.callout.weight(.medium))
 					.frame(width: 24, height: 24)
 					.foregroundColor(.accentColor)
 
