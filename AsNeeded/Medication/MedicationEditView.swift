@@ -475,7 +475,7 @@ struct MedicationEditView: View {
 							icon: .clockArrowTriangleheadCounterclockwiseRotate90,
 							date: viewModel.lastRefillDate,
 							dateType: .lastRefill,
-							color: .blue
+							color: .accent
 						)
 						
 						// Next Refill Date Card
@@ -649,8 +649,8 @@ struct MedicationEditView: View {
 							.fill(
 								LinearGradient(
 									colors: [
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.2),
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.05)
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.2),
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.05)
 									],
 									startPoint: .topLeading,
 									endPoint: .bottomTrailing
@@ -660,7 +660,7 @@ struct MedicationEditView: View {
 						
 						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
 							.font(.system(size: 32, weight: .medium))
-							.foregroundStyle(datePickerType == .lastRefill ? Color.blue : Color.green)
+							.foregroundStyle(datePickerType == .lastRefill ? Color.accent : Color.green)
 					}
 					
 					Text(datePickerType == .lastRefill ? "Last Refill Date" : "Next Refill Date")
