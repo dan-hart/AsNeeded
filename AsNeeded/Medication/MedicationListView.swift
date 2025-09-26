@@ -174,7 +174,7 @@ struct MedicationListView: View {
                 hapticsManager.mediumImpact()
                 showAddSheet = true 
             }) {
-                Label("Add Your First Medication", systemImage: "plus.circle.fill")
+                Label("Add Your First Medication", systemSymbol: .plusCircleFill)
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -216,7 +216,7 @@ struct MedicationListView: View {
                                 hapticsManager.lightImpact()
                                 editMedication = med
                             } label: {
-                                Label("Edit", systemImage: "pencil")
+                                Label("Edit", systemSymbol: .pencil)
                             }
                             .tint(.accentColor)
                             
@@ -224,7 +224,7 @@ struct MedicationListView: View {
                                 hapticsManager.mediumImpact()
                                 pendingDelete = med
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Label("Delete", systemSymbol: .trash)
                             }
                         }
                     }

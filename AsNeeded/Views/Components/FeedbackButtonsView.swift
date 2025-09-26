@@ -1,5 +1,6 @@
 import SwiftUI
 import MessageUI
+import SFSafeSymbols
 
 struct FeedbackButtonsView: View {
     @StateObject private var feedbackService = FeedbackService.shared
@@ -30,23 +31,23 @@ struct FeedbackButtonsView: View {
             VStack(spacing: 8) {
                 FeedbackButton(
                     title: "Report a Bug",
-                    icon: "exclamationmark.triangle.fill",
+                    icon: .exclamationmarkTriangleFill,
                     color: .red,
                     isDisabled: isLoading,
                     action: { feedbackService.submitFeedback(type: .bug) }
                 )
-                
+
                 FeedbackButton(
                     title: "Feature Request",
-                    icon: "lightbulb.fill",
+                    icon: .lightbulbFill,
                     color: .accentColor,
                     isDisabled: isLoading,
                     action: { feedbackService.submitFeedback(type: .featureRequest) }
                 )
-                
+
                 FeedbackButton(
                     title: "Give Feedback",
-                    icon: "heart.fill",
+                    icon: .heartFill,
                     color: .green,
                     isDisabled: isLoading,
                     action: { feedbackService.submitFeedback(type: .feedback) }
@@ -105,12 +106,12 @@ struct FeedbackButtonsView: View {
 
 struct FeedbackButton: View {
     let title: String
-    let icon: String
+    let icon: SFSymbol
     let color: Color
     let isDisabled: Bool
     let action: () -> Void
-    
-    init(title: String, icon: String, color: Color, isDisabled: Bool = false, action: @escaping () -> Void) {
+
+    init(title: String, icon: SFSymbol, color: Color, isDisabled: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
         self.color = color
@@ -121,13 +122,13 @@ struct FeedbackButton: View {
     var body: some View {
         Button(action: isDisabled ? {} : action) {
             HStack {
-                Image(systemName: icon)
+                Image(systemSymbol: icon)
                     .foregroundColor(isDisabled ? .secondary : color)
                 Text(title)
                     .fontWeight(.medium)
                     .foregroundColor(isDisabled ? .secondary : .primary)
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemSymbol: .chevronRight)
                     .foregroundColor(.secondary)
                     .font(.caption)
                     .opacity(isDisabled ? 0.5 : 1.0)
