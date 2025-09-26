@@ -25,9 +25,12 @@ final class AppReviewManager: ObservableObject {
 	private init() {}
 
 	// MARK: - User Preferences
-	@Published var hasOptedOutOfReviews: Bool {
+	var hasOptedOutOfReviews: Bool {
 		get { UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasUserOptedOutOfReviews) }
-		set { UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.hasUserOptedOutOfReviews) }
+		set {
+			objectWillChange.send()
+			UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.hasUserOptedOutOfReviews)
+		}
 	}
 
 	// MARK: - Engagement Tracking
