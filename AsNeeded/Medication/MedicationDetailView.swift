@@ -270,9 +270,16 @@ struct MedicationDetailView: View {
 			
 			VStack(spacing: 12) {
 				if let quantity = medication.quantity {
+					let supplyValue: String = {
+						if let unit = medication.prescribedUnit {
+							return "\(quantity.formattedAmount) \(unit.abbreviation)"
+						} else {
+							return quantity.formattedAmount
+						}
+					}()
 					detailRow(
 						label: "Current Supply",
-						value: medication.prescribedUnit != nil ? "\(quantity.formattedAmount) \(medication.prescribedUnit!.abbreviation)" : quantity.formattedAmount
+						value: supplyValue
 					)
 				}
 				

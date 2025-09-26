@@ -60,7 +60,7 @@ struct MedicationHistoryView: View {
                                     Spacer()
                                     
                                     // Show add note button if no note exists
-                                    if event.note == nil || event.note!.isEmpty {
+                                    if event.note?.isEmpty != false {
                                         Button {
                                             editingEvent = event
                                             editingNoteText = ""
