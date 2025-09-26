@@ -19,6 +19,7 @@
 - **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
 - **Colors**: ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
 - **Typography**: NEVER use hardcoded font sizes (e.g., `.font(.system(size: 16))`). Always use semantic font styles (e.g., `.font(.body)`, `.font(.headline)`, `.font(.caption)`) to support Dynamic Type accessibility. Use font weights with semantic sizes (e.g., `.font(.body.weight(.medium))`).
+- **Component Reusability**: ALWAYS search for existing reusable components in `AsNeeded/Views/Components/` before creating new UI elements. If a similar pattern exists, use or extend the existing component. When creating new views, prioritize making them reusable by extracting common UI patterns into standalone components. Examples: `SettingsRowComponent`, `SupportToastView`, `FeedbackButtonsView`. Create components for any UI pattern used in 2+ places.
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
 - Protocol‑oriented services; inject dependencies for testability.
@@ -41,6 +42,13 @@
 ## Package Boundaries
 - No SwiftUI in packages: Do not add any SwiftUI code or imports to `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`. These packages must remain UI‑free (domain models, use cases, networking only).
 - UI lives in app targets: Place SwiftUI views and UI helpers under `AsNeeded/` (e.g., `Views/`, `Medication/`). Keep packages platform‑agnostic and testable.
+
+## Accessibility Guidelines
+- **VoiceOver Support**: Add `.accessibilityLabel()` to all interactive elements and images. Use `.accessibilityHint()` for complex interactions. Hide decorative elements with `.accessibilityHidden(true)`.
+- **Dynamic Type**: Always use semantic font styles (`.body`, `.headline`, `.caption`) instead of hardcoded sizes. Test with large accessibility font sizes.
+- **Motion Sensitivity**: Import `@Environment(\.accessibilityReduceMotion)` and provide static alternatives when `reduceMotion` is true. Disable animations for users who prefer reduced motion.
+- **Color and Contrast**: Use semantic colors (`.accent`, `.primary`, `.secondary`) that adapt to user preferences. Avoid relying solely on color to convey information.
+- **Touch Targets**: Ensure interactive elements are at least 44x44 points for optimal usability.
 
 ## Testing Guidelines
 - Framework: Swift Testing (`import Testing`, `@Test`, `#expect`).

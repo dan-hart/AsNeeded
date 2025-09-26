@@ -117,6 +117,7 @@ final class FeedbackService: NSObject, ObservableObject {
     @Published var showingMailComposer = false
     @Published var showingMailUnavailableAlert = false
     @Published var showingLogConsentDialog = false
+    @Published var showingFeedbackAlternatives = false
     
     private var currentFeedbackType: FeedbackType = .feedback
     private var logsZipData: Data?
@@ -147,8 +148,8 @@ final class FeedbackService: NSObject, ObservableObject {
         currentFeedbackType = type
         
         guard MFMailComposeViewController.canSendMail() else {
-            logWarning("Mail not available on device")
-            showingMailUnavailableAlert = true
+            logWarning("Mail not available on device - showing alternatives")
+            showingFeedbackAlternatives = true
             return
         }
         
@@ -243,6 +244,50 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
         // Clean up
         logsZipData = nil
         controller.dismiss(animated: true)
+    }
+
+    // MARK: - Alternative Feedback Methods
+
+    /// Creates a pre-filled feedback email content for sharing via other apps
+    func createFeedbackText(type: FeedbackType) -> String {
+        let subject = "\(type.subject) AsNeeded App Feedback"
+        let body = type.emailBody
+        let deviceInfo = """
+
+        Device Information:
+        • App Version: \(Bundle.main.appVersionLong)
+        • iOS Version: \(UIDevice.current.systemVersion)
+        • Device Model: \(UIDevice.current.model)
+        """
+
+        return """
+        To: \(supportEmail)
+        Subject: \(subject)
+
+        \(body)\(deviceInfo)
+        """
+    }
+
+    /// Copies feedback content to clipboard for easy pasting
+    func copyFeedbackToClipboard(type: FeedbackType) {
+        let feedbackText = createFeedbackText(type: type)
+        UIPasteboard.general.string = feedbackText
+        logInfo("Feedback copied to clipboard: \(type.subject)")
+    }
+
+    /// Creates a mailto URL for opening in any available email app
+    func createMailtoURL(type: FeedbackType) -> URL? {
+        let subject = "\(type.subject) AsNeeded App Feedback".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let body = type.emailBody.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "mailto:\(supportEmail)?subject=\(subject)&body=\(body)"
+        return URL(string: urlString)
+    }
+
+    /// Creates a ShareLink-compatible ShareData object
+    func createShareData(type: FeedbackType) -> (subject: String, text: String) {
+        let subject = "\(type.subject) AsNeeded App Feedback"
+        let text = createFeedbackText(type: type)
+        return (subject: subject, text: text)
     }
 }
 
