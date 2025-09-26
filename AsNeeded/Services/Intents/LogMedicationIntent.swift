@@ -77,7 +77,7 @@ struct LogMedicationIntent: AppIntent {
 			// Format response message
 			let amountText = doseAmount == 1.0 ? "1" : String(format: "%.1f", doseAmount)
 			let unitText = selectedUnit.displayName
-			let medicationText = targetMedication.nickname?.isEmpty == false ? targetMedication.nickname! : targetMedication.clinicalName
+			let medicationText = targetMedication.nickname?.isEmpty == false ? (targetMedication.nickname ?? targetMedication.clinicalName) : targetMedication.clinicalName
 			
 			return .result(dialog: IntentDialog("Logged \(amountText) \(unitText) of \(medicationText)"))
 			

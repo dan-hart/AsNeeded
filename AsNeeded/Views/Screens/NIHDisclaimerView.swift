@@ -8,7 +8,7 @@ struct NIHDisclaimerView: View {
 		VStack(alignment: .leading, spacing: 12) {
 			HStack(alignment: .top, spacing: 12) {
 				Image(systemSymbol: .infoCircleFill)
-					.foregroundStyle(.blue.opacity(0.8))
+					.foregroundStyle(.accent.opacity(0.8))
 					.font(.title2)
 				
 				VStack(alignment: .leading, spacing: 8) {
@@ -37,7 +37,7 @@ struct NIHDisclaimerView: View {
 			.padding()
 			.background(
 				RoundedRectangle(cornerRadius: 12, style: .continuous)
-					.fill(Color.blue.opacity(0.08))
+					.fill(Color.accent.opacity(0.08))
 			)
 		}
 		.accessibilityElement(children: .combine)
@@ -86,7 +86,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(size: 10))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}
@@ -140,7 +140,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(size: 10))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}
@@ -157,7 +157,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(size: 10))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}

@@ -35,7 +35,7 @@ struct ConnectionStatusView: View {
 		VStack(spacing: 16) {
 			if sender.isConnected {
 				Image(systemName: "checkmark.circle.fill")
-					.font(.system(size: 40))
+					.font(.largeTitle)
 					.foregroundStyle(.green)
 				Text("Connected")
 					.font(.headline)
@@ -45,7 +45,7 @@ struct ConnectionStatusView: View {
 					.multilineTextAlignment(.center)
 			} else {
 				Image(systemName: "xmark.circle.fill")
-					.font(.system(size: 40))
+					.font(.largeTitle)
 					.foregroundStyle(.red)
 				Text("Disconnected")
 					.font(.headline)

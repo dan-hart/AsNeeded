@@ -9,7 +9,7 @@ struct NIHDisclaimerDetailView: View {
 				VStack(alignment: .leading, spacing: 16) {
 					HStack(spacing: 12) {
 						Image(systemSymbol: .buildingColumnsFill)
-							.foregroundStyle(.blue)
+							.foregroundStyle(.accent)
 							.font(.title)
 
 						Text("Medical Data Sources")

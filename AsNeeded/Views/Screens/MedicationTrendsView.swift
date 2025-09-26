@@ -14,10 +14,10 @@ enum VisualizationType: String, CaseIterable {
 		}
 	}
 	
-	var systemImage: String {
+	var systemSymbol: SFSymbol {
 		switch self {
-		case .chart: return "chart.xyaxis.line"
-		case .heatmap: return "calendar"
+		case .chart: return .chartXyaxisLine
+		case .heatmap: return .calendar
 		}
 	}
 }
