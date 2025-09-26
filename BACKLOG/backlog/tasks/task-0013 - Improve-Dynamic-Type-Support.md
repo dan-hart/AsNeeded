@@ -1,9 +1,10 @@
 ---
 id: task-0013
 title: Improve Dynamic Type Support
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-09-22 12:34'
+updated_date: '2025-09-26 22:36'
 labels: []
 dependencies: []
 ---
