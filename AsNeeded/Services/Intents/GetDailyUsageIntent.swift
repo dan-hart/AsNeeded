@@ -74,7 +74,7 @@ struct GetDailyUsageIntent: AppIntent {
 	
 	/// Calculate today's total usage for a medication
 	@MainActor
-	private func calculateTodayUsage(for medication: ANMedicationConcept) -> (totalAmount: Double, unit: ANUnitConcept, doseCount: Int) {
+	func calculateTodayUsage(for medication: ANMedicationConcept) -> (totalAmount: Double, unit: ANUnitConcept, doseCount: Int) {
 		let calendar = Calendar.current
 		let today = calendar.startOfDay(for: Date())
 		let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
