@@ -165,7 +165,7 @@ struct MedicationDetailView: View {
 					.frame(width: 100, height: 100)
 				
 				Image(systemSymbol: .pills)
-					.font(.system(size: 50))
+					.font(.largeTitle)
 					.foregroundStyle(Color.accentColor)
 			}
 			

@@ -131,8 +131,8 @@ struct MoreDisclaimerInfoView: View {
 						.padding(16)
 						.background(
 							RoundedRectangle(cornerRadius: 12, style: .continuous)
-								.fill(Color.blue.opacity(0.05))
-								.stroke(Color.blue.opacity(0.2), lineWidth: 1)
+								.fill(Color.accent.opacity(0.05))
+								.stroke(Color.accent.opacity(0.2), lineWidth: 1)
 						)
 					}
 				}

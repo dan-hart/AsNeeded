@@ -174,7 +174,7 @@ struct MedicationListView: View {
                 hapticsManager.mediumImpact()
                 showAddSheet = true 
             }) {
-                Label("Add Your First Medication", systemImage: "plus.circle.fill")
+                Label("Add Your First Medication", systemSymbol: .plusCircleFill)
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -216,7 +216,7 @@ struct MedicationListView: View {
                                 hapticsManager.lightImpact()
                                 editMedication = med
                             } label: {
-                                Label("Edit", systemImage: "pencil")
+                                Label("Edit", systemSymbol: .pencil)
                             }
                             .tint(.accentColor)
                             
@@ -224,7 +224,7 @@ struct MedicationListView: View {
                                 hapticsManager.mediumImpact()
                                 pendingDelete = med
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Label("Delete", systemSymbol: .trash)
                             }
                         }
                     }
@@ -388,7 +388,7 @@ struct MedicationRow: View {
                 .frame(width: 44, height: 44)
             
             Image(systemSymbol: iconForMedication)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(Color.accentColor)
                 .symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
         }
@@ -434,11 +434,11 @@ struct MedicationRow: View {
             if let quantity = medication.quantity {
                 HStack(spacing: 6) {
                     Image(systemSymbol: .squareStack3dUp)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(quantityColor(for: quantity))
                     
                     Text(quantityText(for: quantity))
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.caption.weight(.semibold).design(.rounded))
                         .foregroundStyle(quantityColor(for: quantity))
                 }
                 .padding(.horizontal, 10)
@@ -489,11 +489,11 @@ struct MedicationRow: View {
                 // Compact button with icon and text
                 VStack(spacing: 4) {
                     Image(systemSymbol: .plusCircleFill)
-                        .font(.system(size: 24, weight: .semibold))
+                        .font(.title2.weight(.semibold))
                         .symbolRenderingMode(.hierarchical)
                     
                     Text("Log")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.caption.weight(.bold).design(.rounded))
                         .textCase(.uppercase)
                 }
                 .foregroundStyle(.white)

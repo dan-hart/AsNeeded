@@ -114,7 +114,7 @@ struct MedicationEditView: View {
 				
 				// Icon
 				Image(systemSymbol: medication == nil ? .pillsFill : .pills)
-					.font(.system(size: 50, weight: .medium))
+					.font(.largeTitle.weight(.medium))
 					.foregroundStyle(
 						LinearGradient(
 							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
@@ -475,7 +475,7 @@ struct MedicationEditView: View {
 							icon: .clockArrowTriangleheadCounterclockwiseRotate90,
 							date: viewModel.lastRefillDate,
 							dateType: .lastRefill,
-							color: .blue
+							color: .accent
 						)
 						
 						// Next Refill Date Card
@@ -649,8 +649,8 @@ struct MedicationEditView: View {
 							.fill(
 								LinearGradient(
 									colors: [
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.2),
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.05)
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.2),
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.05)
 									],
 									startPoint: .topLeading,
 									endPoint: .bottomTrailing
@@ -659,8 +659,8 @@ struct MedicationEditView: View {
 							.frame(width: 64, height: 64)
 						
 						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
-							.font(.system(size: 32, weight: .medium))
-							.foregroundStyle(datePickerType == .lastRefill ? Color.blue : Color.green)
+							.font(.title.weight(.medium))
+							.foregroundStyle(datePickerType == .lastRefill ? Color.accent : Color.green)
 					}
 					
 					Text(datePickerType == .lastRefill ? "Last Refill Date" : "Next Refill Date")
