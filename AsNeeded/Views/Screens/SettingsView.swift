@@ -6,17 +6,15 @@ struct SettingsView: View {
 	  ScrollView {
 		VStack(alignment: .leading, spacing: 32) {
           SettingsSupportSectionView()
-            
-		  SettingsNotificationSectionView()
-		  
-		  SettingsHapticsSectionView()
-		  
+
 		  SettingsFeedbackSectionView()
 		  
 		  SettingsDataSectionView()
 
 		  SettingsAboutSectionView()
-		  
+
+		  SettingsPreferencesSectionView()
+
 		  SettingsDisclaimersSectionView()
 		  
 #if DEBUG

@@ -1,27 +1,27 @@
 import SwiftUI
 import SFSafeSymbols
 
-struct SettingsSupportSectionView: View {
+struct SettingsPreferencesSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			Text("Support")
+			Text("Preferences")
 				.font(.title2)
 				.fontWeight(.semibold)
 
 			NavigationLink {
-				SupportView()
+				AppPreferencesView()
 			} label: {
 				HStack(spacing: 12) {
-					Image(systemSymbol: .heart)
+					Image(systemSymbol: .gearshape)
 						.font(.system(size: 18, weight: .medium))
 						.frame(width: 24, height: 24)
-						.foregroundColor(.red)
+						.foregroundColor(.accentColor)
 
 					VStack(alignment: .leading, spacing: 2) {
-						Text("Support As Needed")
+						Text("App Preferences")
 							.font(.body)
 							.fontWeight(.medium)
-						Text("Tips, donations, and ways to help")
+						Text("Notifications, haptics, and app behavior")
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
@@ -45,8 +45,7 @@ struct SettingsSupportSectionView: View {
 	}
 }
 
-#if DEBUG
-#Preview { 
-	SettingsSupportSectionView() 
+#Preview {
+	SettingsPreferencesSectionView()
+		.padding()
 }
-#endif
