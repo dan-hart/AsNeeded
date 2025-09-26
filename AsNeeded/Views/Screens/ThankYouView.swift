@@ -114,7 +114,7 @@ struct ThankYouView: View {
 					.blur(radius: 20)
 				
 				Image(systemSymbol: .heartFill)
-					.font(.system(size: 60))
+					.font(.system(.largeTitle, design: .default, weight: .semibold))
 					.foregroundStyle(
 						LinearGradient(
 							colors: [.pink, .red],

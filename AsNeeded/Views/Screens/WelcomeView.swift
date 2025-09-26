@@ -111,7 +111,7 @@ struct WelcomeView: View {
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
 	HStack(spacing: 16) {
 	  Image(systemSymbol: icon)
-		.font(.system(size: 20, weight: .medium))
+		.font(.system(.title3, design: .default, weight: .medium))
 		.frame(width: 32, height: 32)
 		.foregroundColor(.accentColor)
 	  

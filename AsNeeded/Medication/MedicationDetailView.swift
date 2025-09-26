@@ -33,7 +33,14 @@ struct MedicationDetailView: View {
 				heroSection
 				
 				// MARK: - Quick Actions
-				quickActionsSection
+				QuickActionsComponent(
+					onEditTapped: { showEditSheet = true },
+					onHistoryTapped: {
+						navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
+						dismiss()
+					},
+					onDeleteTapped: { showDeleteConfirm = true }
+				)
 				
 				// MARK: - Details Cards
 				VStack(spacing: 16) {
@@ -165,7 +172,7 @@ struct MedicationDetailView: View {
 					.frame(width: 100, height: 100)
 				
 				Image(systemSymbol: .pills)
-					.font(.system(size: 50))
+					.font(.system(.largeTitle, design: .default, weight: .medium))
 					.foregroundStyle(Color.accentColor)
 			}
 			
@@ -188,53 +195,6 @@ struct MedicationDetailView: View {
 		.frame(maxWidth: .infinity)
 	}
 	
-	private var quickActionsSection: some View {
-		HStack(spacing: 12) {
-			// Edit button
-			Button {
-				showEditSheet = true
-			} label: {
-				Label("Edit", systemSymbol: .pencil)
-					.font(.subheadline)
-					.fontWeight(.medium)
-					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
-					.background(Color(.secondarySystemGroupedBackground))
-					.foregroundStyle(Color.accentColor)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
-			}
-			
-			// History button
-			Button {
-				navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
-				dismiss()
-			} label: {
-				Label("History", systemSymbol: .clock)
-					.font(.subheadline)
-					.fontWeight(.medium)
-					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
-					.background(Color(.secondarySystemGroupedBackground))
-					.foregroundStyle(Color.accentColor)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
-			}
-			
-			// Delete button
-			Button {
-				showDeleteConfirm = true
-			} label: {
-				Label("Delete", systemSymbol: .trash)
-					.font(.subheadline)
-					.fontWeight(.medium)
-					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
-					.background(Color(.secondarySystemGroupedBackground))
-					.foregroundStyle(.red)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
-			}
-		}
-		.padding(.horizontal)
-	}
 	
 	private var medicationInfoCard: some View {
 		VStack(alignment: .leading, spacing: 16) {
