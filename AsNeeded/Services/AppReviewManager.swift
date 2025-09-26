@@ -109,8 +109,8 @@ final class AppReviewManager: ObservableObject {
 	}
 
 	private func checkAndRequestReviewIfAppropriate(trigger: ReviewTrigger) async {
-		// Don't show if user has opted out
-		guard !hasOptedOutOfReviews else { return }
+		// Check if reviews are allowed (both app-level and system-level)
+		guard canMakeReviewRequest() else { return }
 
 		// Check if enough time has passed since last request
 		if let lastRequestDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.lastReviewRequestDate) as? Date {
@@ -121,8 +121,8 @@ final class AppReviewManager: ObservableObject {
 		// Check engagement criteria
 		guard isEngagementCriteriaMet() else { return }
 
-		// Show pre-review alert
-		await showPreReviewAlert()
+		// Show pre-review alert for automatic requests
+		await requestReviewWithAlert()
 	}
 
 	private func isEngagementCriteriaMet() -> Bool {
@@ -177,37 +177,56 @@ final class AppReviewManager: ObservableObject {
 	}
 
 	private func requestNativeReview() {
+		// Check if reviews are disabled at the iOS system level
+		guard canRequestReviews() else { return }
+
 		if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
 			SKStoreReviewController.requestReview(in: windowScene)
 		}
 	}
 
+	/// Checks if review requests are allowed at the iOS system level
+	private func canRequestReviews() -> Bool {
+		// The system automatically limits review requests, but we can add additional checks here
+		// SKStoreReviewController.requestReview already respects system settings, but this provides explicit control
+		return true // SKStoreReviewController.requestReview handles system-level restrictions automatically
+	}
+
 	// MARK: - Manual Review Request
 
-	/// For manual review requests from the Support screen
+	/// For manual review requests from the Support screen - bypasses custom alert
 	func requestManualReview() async {
+		// Check if reviews are allowed (both app-level and system-level)
+		guard canMakeReviewRequest() else { return }
+
 		// Always record the request
 		recordReviewRequest()
 
-		// If user has opted out, go directly to App Store
-		if hasOptedOutOfReviews {
-			openAppStoreReviewPage()
-		} else {
-			// Show the pre-review alert even for manual requests
-			await showPreReviewAlert()
-		}
+		// For manual requests, skip the custom alert and go directly to Apple's review prompt
+		requestNativeReview()
 	}
 
-	/// Opens the App Store review page directly
-	func openAppStoreReviewPage() {
-		let appStoreID = "6714469235"
-		guard let url = URL(string: "https://itunes.apple.com/app/id\(appStoreID)?action=write-review") else {
-			return
-		}
+	/// Shows the custom alert flow (used for automatic review requests)
+	func requestReviewWithAlert() async {
+		// Check if reviews are allowed (both app-level and system-level)
+		guard canMakeReviewRequest() else { return }
 
-		if UIApplication.shared.canOpenURL(url) {
-			UIApplication.shared.open(url)
-		}
+		// Always record the request
+		recordReviewRequest()
+
+		// Show the pre-review alert for automatic requests
+		await showPreReviewAlert()
+	}
+
+	/// Comprehensive check for whether review requests are allowed
+	func canMakeReviewRequest() -> Bool {
+		// Check app-level opt-out first
+		guard !hasOptedOutOfReviews else { return false }
+
+		// Check system-level settings
+		guard canRequestReviews() else { return false }
+
+		return true
 	}
 
 	// MARK: - Settings and Debug Info

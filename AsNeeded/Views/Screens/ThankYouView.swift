@@ -301,6 +301,48 @@ struct ThankYouView: View {
 					)
 				}
 				.buttonStyle(.plain)
+
+				// Rate & Review
+				if ReviewService.shared.canShowReviewButtons {
+					Button(action: openAppStoreReview) {
+						HStack {
+							Image(systemSymbol: .star)
+								.font(.title2)
+								.foregroundColor(.white)
+								.frame(width: 40, height: 40)
+								.background(
+									LinearGradient(
+										colors: [.orange, .yellow],
+										startPoint: .topLeading,
+										endPoint: .bottomTrailing
+									)
+								)
+								.cornerRadius(10)
+
+							VStack(alignment: .leading, spacing: 2) {
+								Text("Rate & Review")
+									.font(.callout)
+									.fontWeight(.semibold)
+									.foregroundColor(.primary)
+								Text("Share your experience on the App Store")
+									.font(.caption)
+									.foregroundColor(.secondary)
+							}
+
+							Spacer()
+
+							Image(systemSymbol: .arrowUpRight)
+								.font(.caption)
+								.foregroundColor(.secondary)
+						}
+						.padding()
+						.background(
+							RoundedRectangle(cornerRadius: 12)
+								.fill(.quaternary.opacity(0.2))
+						)
+					}
+					.buttonStyle(.plain)
+				}
 			}
 		}
 	}
@@ -371,6 +413,11 @@ struct ThankYouView: View {
 	private func sendFeedback() {
 		feedbackService.submitFeedback(type: .feedback)
 		DHLogger.ui.info("Initiated feedback email")
+	}
+
+	private func openAppStoreReview() {
+		ReviewService.shared.openAppStoreReviewPage()
+		DHLogger.ui.info("Opened App Store review page")
 	}
 }
 
