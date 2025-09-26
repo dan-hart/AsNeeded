@@ -1,7 +1,7 @@
 ---
 id: task-0006
 title: Simplify feedback submission without Mail app dependency
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-09-22 12:33'
 updated_date: '2025-09-26 22:37'
