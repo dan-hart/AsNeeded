@@ -7,6 +7,7 @@ struct AppPreferencesView: View {
 	@StateObject private var appReviewManager = AppReviewManager.shared
 	@AppStorage("showMedicationNamesInNotifications") private var showMedicationNames: Bool = false
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@State private var showingResetConfirmation = false
 
 	var body: some View {
 		ScrollView {
@@ -23,6 +24,9 @@ struct AppPreferencesView: View {
 				// MARK: - Privacy
 				privacySection
 
+				// MARK: - Reset
+				resetSection
+
 				Spacer(minLength: 32)
 			}
 			.padding(.horizontal)
@@ -33,6 +37,18 @@ struct AppPreferencesView: View {
 		.onAppear {
 			// Sync the initial value from NotificationManager
 			showMedicationNames = notificationManager.showMedicationNames
+		}
+		.confirmationDialog(
+			"Reset to Defaults",
+			isPresented: $showingResetConfirmation,
+			titleVisibility: .visible
+		) {
+			Button("Reset All Preferences", role: .destructive) {
+				resetAllPreferences()
+			}
+			Button("Cancel", role: .cancel) { }
+		} message: {
+			Text("This will restore all app preferences to their original defaults. This cannot be undone.")
 		}
 	}
 
@@ -168,6 +184,70 @@ struct AppPreferencesView: View {
 			.background(Color(.systemGray6))
 			.cornerRadius(12)
 		}
+	}
+
+	private var resetSection: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Label("Reset", systemSymbol: .arrowCounterclockwise)
+				.font(.title2)
+				.fontWeight(.semibold)
+				.foregroundColor(.red)
+
+			Text("Reset all preferences on this screen to their original default values.")
+				.font(.subheadline)
+				.foregroundColor(.secondary)
+
+			Button(action: { showingResetConfirmation = true }) {
+				HStack(spacing: 12) {
+					Image(systemSymbol: .arrowCounterclockwise)
+						.font(.system(size: 18, weight: .medium))
+						.frame(width: 24, height: 24)
+						.foregroundColor(.red)
+
+					VStack(alignment: .leading, spacing: 2) {
+						Text("Reset to Defaults")
+							.font(.body)
+							.fontWeight(.medium)
+							.foregroundColor(.red)
+
+						Text("Restore all preferences to original settings")
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+
+					Spacer()
+
+					Image(systemSymbol: .chevronRight)
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
+				.padding(16)
+				.background(Color(.systemBackground))
+				.overlay(
+					RoundedRectangle(cornerRadius: 12)
+						.stroke(Color(.systemGray4), lineWidth: 0.5)
+				)
+				.cornerRadius(12)
+			}
+			.buttonStyle(.plain)
+		}
+	}
+
+	// MARK: - Actions
+	private func resetAllPreferences() {
+		// Reset notification preferences
+		showMedicationNames = false
+		notificationManager.showMedicationNames = false
+
+		// Reset haptic preferences
+		hapticsManager.hapticsEnabled = true
+
+		// Reset privacy preferences
+		hideSupportBanners = false
+		appReviewManager.hasOptedOutOfReviews = false
+
+		// Reset AppReviewManager internal tracking
+		appReviewManager.resetReviewPreferences()
 	}
 }
 

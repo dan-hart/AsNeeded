@@ -167,18 +167,18 @@ struct DataManagementView: View {
                 Text("This will permanently delete all medications and events. This cannot be undone.")
             }
             .confirmationDialog(
-                "Reset App Settings",
+                "Reset App Preferences",
                 isPresented: $viewModel.showingResetSettingsConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Reset Settings", role: .destructive) {
+                Button("Reset Preferences", role: .destructive) {
                     Task {
                         await viewModel.resetAppSettings()
                     }
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("This will restore all app settings to their original defaults. This cannot be undone.")
+                Text("This will restore all app preferences to their original defaults. This cannot be undone.")
             }
             .confirmationDialog(
                 "Reset & Clear All Data",
@@ -350,8 +350,8 @@ struct DataManagementView: View {
                 )
                 
                 dataActionButton(
-                    title: "Reset App Settings",
-                    subtitle: "Restore all app settings to defaults",
+                    title: "Reset App Preferences",
+                    subtitle: "Restore all app preferences to defaults",
                     systemImage: .arrowCounterclockwise,
                     isLoading: viewModel.isResettingSettings,
                     isDestructive: true,
