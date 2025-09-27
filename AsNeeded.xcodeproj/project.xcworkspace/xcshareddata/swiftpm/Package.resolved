@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/dan-hart/ANModelKit",
       "state" : {
-        "revision" : "e957a7765253825ffb5acc188f34d6b28e590fc6",
-        "version" : "1.0.2"
+        "revision" : "a9844c27011221e411519b2c93e1174b8140cb60",
+        "version" : "1.0.3"
       }
     },
     {
