@@ -217,7 +217,7 @@ struct MedicationHistoryView: View {
                         } label: {
                             Label("Jump to Date", systemSymbol: .calendar)
                                 .labelStyle(.titleAndIcon)
-                                .font(.system(size: 18))
+                                .font(.system(.callout, design: .default))
                                 .foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : Color.accentColor)
                         }
                         .disabled(viewModel.groupedHistory.isEmpty)

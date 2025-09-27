@@ -15,7 +15,7 @@ struct NotificationPermissionRequestView: View {
 				
 				// Icon
 				Image(systemSymbol: .bellBadgeFill)
-					.font(.system(size: 60))
+					.font(.system(.largeTitle, design: .default, weight: .medium))
 					.foregroundColor(.accentColor)
 					.padding(.bottom, 8)
 				

@@ -17,7 +17,7 @@ struct SettingsDebugSectionView: View {
 			} label: {
 				HStack(spacing: 12) {
 					Image(systemSymbol: .heartFill)
-						.font(.system(size: 18, weight: .medium))
+						.font(.system(.callout, design: .default, weight: .medium))
 						.frame(width: 24, height: 24)
 						.foregroundColor(.accentColor)
 
@@ -55,7 +55,7 @@ struct SettingsDebugSectionView: View {
 			} label: {
 				HStack(spacing: 12) {
 					Image(systemSymbol: .handWave)
-						.font(.system(size: 18, weight: .medium))
+						.font(.system(.callout, design: .default, weight: .medium))
 						.frame(width: 24, height: 24)
 						.foregroundColor(.accentColor)
 

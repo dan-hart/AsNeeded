@@ -469,7 +469,7 @@ struct ConfettiModifier: ViewModifier {
 						ForEach(confettiPieces) { piece in
 							Image(systemSymbol: piece.symbol)
 								.foregroundColor(piece.color)
-								.font(.system(size: piece.size))
+								.font(.system(.callout))
 								.position(piece.position)
 								.opacity(piece.opacity)
 								.rotationEffect(.degrees(piece.rotation))
