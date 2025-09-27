@@ -45,6 +45,13 @@ struct MedicationHistoryView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .center) {
                                     VStack(alignment: .leading, spacing: 2) {
+                                        // Show medication name when viewing all medications
+                                        if viewModel.isShowingAllMedications, let medication = event.medication {
+                                            Text(medication.displayName)
+                                                .font(.headline)
+                                                .foregroundStyle(.primary)
+                                        }
+
                                         if let dose = event.dose {
                                             let unitName = dose.unit.abbreviation
                                             Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
@@ -146,6 +153,9 @@ struct MedicationHistoryView: View {
     }
     
     private func dayTotalText(for entries: [ANEventConcept]) -> String? {
+        // Don't show totals when showing all medications
+        guard !viewModel.isShowingAllMedications else { return nil }
+
         let preferredUnit = viewModel.selectedMedication?.prescribedUnit ?? entries.compactMap { $0.dose?.unit }.first
         if let unit = preferredUnit {
             let total = entries.compactMap { ev -> Double? in
@@ -204,8 +214,9 @@ struct MedicationHistoryView: View {
                     // Medication picker and date button
                     HStack(alignment: .center, spacing: 12) {
                         Picker("Medication", selection: $viewModel.selectedMedicationID) {
+                            Text("All", comment: "Option to view all medications in history").tag(Optional("all"))
                             ForEach(viewModel.medications, id: \.id) { medication in
-                                Text(medication.displayName).tag(Optional(medication.id))
+                                Text(medication.displayName).tag(Optional(medication.id.uuidString))
                             }
                         }
                         .pickerStyle(.menu)
@@ -228,7 +239,22 @@ struct MedicationHistoryView: View {
                     
                     Divider()
                     
-                    if let selected = viewModel.selectedMedication {
+                    if viewModel.isShowingAllMedications {
+                        if viewModel.groupedHistory.isEmpty {
+                            Spacer()
+                            VStack(spacing: 24) {
+                                Text("No dose history found.")
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+
+                                SubtleSupportView(message: "If As Needed helps you manage medications, consider supporting its development")
+                                    .padding(.horizontal, 32)
+                            }
+                            Spacer()
+                        } else {
+                            historyListView()
+                        }
+                    } else if let selected = viewModel.selectedMedication {
                         if viewModel.groupedHistory.isEmpty {
                             emptyHistoryView(for: selected)
                         } else {
@@ -240,7 +266,7 @@ struct MedicationHistoryView: View {
                 }
                 
                 // Floating Action Button for Log Dose
-                if viewModel.selectedMedication != nil {
+                if viewModel.selectedMedication != nil && !viewModel.isShowingAllMedications {
                     Button {
                         if let med = viewModel.selectedMedication { 
                             logMedication = med 
@@ -274,12 +300,12 @@ struct MedicationHistoryView: View {
                 if let medicationID = navigationManager.historyTargetMedicationID,
                    let uuid = UUID(uuidString: medicationID) {
                     // Set the selected medication from navigation
-                    viewModel.selectedMedicationID = uuid
+                    viewModel.selectedMedicationID = uuid.uuidString
                     // Clear navigation state after use
                     navigationManager.clearHistoryNavigation()
-                } else if viewModel.selectedMedicationID == nil || viewModel.selectedMedication == nil {
-                    // If no medication is selected or the selected medication no longer exists
-                    viewModel.selectedMedicationID = viewModel.medications.first?.id
+                } else {
+                    // Ensure we have a valid selection (will default to "all" if needed)
+                    viewModel.ensureValidSelection()
                 }
             }
             .onReceive(timer) { _ in

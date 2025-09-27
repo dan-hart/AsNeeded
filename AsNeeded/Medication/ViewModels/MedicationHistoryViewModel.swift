@@ -8,10 +8,10 @@ import ANModelKit
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
 	@AppStorage("historySelectedMedicationID") private var selectedMedicationIDString: String = ""
-	
-	@Published var selectedMedicationID: UUID? {
+
+	@Published var selectedMedicationID: String? {
 		didSet {
-			selectedMedicationIDString = selectedMedicationID?.uuidString ?? ""
+			selectedMedicationIDString = selectedMedicationID ?? ""
 		}
 	}
 	
@@ -20,14 +20,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 
 	private let dataStore: DataStore
 
-	init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
+	init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil) {
 		self.dataStore = dataStore
-		
+
 		// Initialize from passed ID or from AppStorage
 		if let initialID = selectedMedicationID {
 			self.selectedMedicationID = initialID
 		} else if !selectedMedicationIDString.isEmpty {
-			self.selectedMedicationID = UUID(uuidString: selectedMedicationIDString)
+			self.selectedMedicationID = selectedMedicationIDString
 		}
 		
 		// Load initial data and observe changes
@@ -69,14 +69,17 @@ final class MedicationHistoryViewModel: ObservableObject {
 	func ensureValidSelection() {
 		// If no medications are loaded yet, wait
 		guard !medications.isEmpty else { return }
-		
+
 		// If we have a selection and it's valid, keep it
-		if let id = selectedMedicationID, medications.contains(where: { $0.id == id }) {
-			return
+		if let selection = selectedMedicationID {
+			// Check if it's "all" or a valid medication UUID
+			if selection == "all" || medications.contains(where: { $0.id.uuidString == selection }) {
+				return
+			}
 		}
-		
-		// Otherwise, select the first medication
-		selectedMedicationID = medications.first?.id
+
+		// Otherwise, set "all" as the default
+		selectedMedicationID = "all"
 	}
 	
 	/// Legacy method for compatibility
@@ -85,14 +88,29 @@ final class MedicationHistoryViewModel: ObservableObject {
 	}
 
 
+	var isShowingAllMedications: Bool {
+		selectedMedicationID == "all"
+	}
+
 	var selectedMedication: ANMedicationConcept? {
-		guard let id = selectedMedicationID else { return nil }
-		return medications.first { $0.id == id }
+		guard let selection = selectedMedicationID, selection != "all",
+			  let uuid = UUID(uuidString: selection) else { return nil }
+		return medications.first { $0.id == uuid }
 	}
 
 	var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
-		guard let id = selectedMedicationID else { return [] }
-		let filteredEvents = events.filter { $0.medication?.id == id && $0.eventType == .doseTaken }
+		let filteredEvents: [ANEventConcept]
+
+		if isShowingAllMedications {
+			// Show all dose events for all medications
+			filteredEvents = events.filter { $0.eventType == .doseTaken }
+		} else {
+			// Show events for selected medication only
+			guard let selection = selectedMedicationID,
+				  let uuid = UUID(uuidString: selection) else { return [] }
+			filteredEvents = events.filter { $0.medication?.id == uuid && $0.eventType == .doseTaken }
+		}
+
 		guard !filteredEvents.isEmpty else { return [] }
 		let calendar = Calendar.current
 		let grouped = Dictionary(grouping: filteredEvents) { event in
@@ -104,10 +122,21 @@ final class MedicationHistoryViewModel: ObservableObject {
 	}
 
 	func deleteEvents(at offsets: IndexSet, in groupDay: Date) async {
-		guard let id = selectedMedicationID else { return }
 		let calendar = Calendar.current
-		var filtered: [ANEventConcept] = events.filter { event in
-			event.medication?.id == id && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
+		var filtered: [ANEventConcept]
+
+		if isShowingAllMedications {
+			// Filter all dose events for the specific day
+			filtered = events.filter { event in
+				event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
+			}
+		} else {
+			// Filter events for selected medication only
+			guard let selection = selectedMedicationID,
+				  let uuid = UUID(uuidString: selection) else { return }
+			filtered = events.filter { event in
+				event.medication?.id == uuid && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
+			}
 		}
 		// Match UI ordering: most recent first within a day
 		filtered.sort { $0.date > $1.date }
