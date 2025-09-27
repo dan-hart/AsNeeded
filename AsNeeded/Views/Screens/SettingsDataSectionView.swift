@@ -10,17 +10,39 @@ struct SettingsDataSectionView: View {
 
 	  NavigationLink {
 		DataManagementView()
-			  .padding()
 		  .navigationTitle("Data Management")
+		  .navigationBarTitleDisplayMode(.large)
 	  } label: {
-		SettingsRowComponent(
-			icon: .externaldriveConnectedToLineBelow,
-			title: "Data Management",
-			subtitle: "Export, import, and clear your data"
-		) {
-			// Navigation handled by NavigationLink
+		HStack(spacing: 12) {
+		  Image(systemSymbol: .externaldriveConnectedToLineBelow)
+			.font(.system(.callout, design: .default, weight: .medium))
+			.frame(width: 24, height: 24)
+			.foregroundColor(.accentColor)
+
+		  VStack(alignment: .leading, spacing: 2) {
+			Text("Data Management")
+			  .font(.body)
+			  .fontWeight(.medium)
+			Text("Export, import, and clear your data")
+			  .font(.caption)
+			  .foregroundColor(.secondary)
+		  }
+
+		  Spacer()
+
+		  Image(systemSymbol: .chevronRight)
+			.font(.caption)
+			.foregroundColor(.secondary)
 		}
+		.padding(16)
+		.background(Color(.systemBackground))
+		.overlay(
+		  RoundedRectangle(cornerRadius: 12)
+			.stroke(Color(.systemGray4), lineWidth: 0.5)
+		)
+		.cornerRadius(12)
 	  }
+	  .buttonStyle(.plain)
 	}
   }
 }

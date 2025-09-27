@@ -24,17 +24,18 @@ struct DataManagementView: View {
     @State private var redactMedicationNames = false
     @State private var redactNotes = false
     private let logger = DHLogger(category: "DataManagementView")
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     dataOverviewSection
-                    
+
                     Divider()
-                    
+
                     dataActionsSection
                 }
+                .padding()
             }
             .sheet(isPresented: $viewModel.showingDataShareSheet) {
                 if let url = viewModel.exportedDataURL {
