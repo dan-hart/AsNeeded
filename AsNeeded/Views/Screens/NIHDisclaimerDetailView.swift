@@ -44,7 +44,7 @@ struct NIHDisclaimerDetailView: View {
 								.foregroundStyle(.accent)
 								.underline()
 							Image(systemSymbol: .arrowUpRightSquare)
-								.font(.system(size: 10))
+								.font(.system(.caption2))
 								.foregroundStyle(.accent)
 						}
 					}
@@ -118,7 +118,7 @@ struct NIHDisclaimerDetailView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(size: 10))
+									.font(.system(.caption2))
 									.foregroundStyle(.accent)
 							}
 						}
@@ -135,7 +135,7 @@ struct NIHDisclaimerDetailView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(size: 10))
+									.font(.system(.caption2))
 									.foregroundStyle(.accent)
 							}
 						}

@@ -158,7 +158,7 @@ struct MoreDisclaimerInfoView: View {
 		}) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: .linkCircle)
-					.font(.system(size: 16))
+					.font(.system(.subheadline))
 					.foregroundColor(.accentColor)
 					.frame(width: 24)
 
@@ -178,7 +178,7 @@ struct MoreDisclaimerInfoView: View {
 				Spacer()
 
 				Image(systemSymbol: .arrowUpRightSquare)
-					.font(.system(size: 14))
+					.font(.system(.caption))
 					.foregroundColor(.secondary)
 			}
 			.padding(.vertical, 4)

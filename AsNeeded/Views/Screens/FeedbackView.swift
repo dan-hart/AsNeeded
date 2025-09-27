@@ -165,7 +165,7 @@ struct FeedbackView: View {
 		Button(action: isLoading ? {} : action) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: systemImage)
-					.font(.system(size: 18, weight: .medium))
+					.font(.system(.callout, design: .default, weight: .medium))
 					.frame(width: 24, height: 24)
 					.foregroundColor(isLoading ? .secondary : color)
 				

@@ -23,7 +23,7 @@ struct SupportSuggestionView: View {
 						.frame(width: 36, height: 36)
 					
 					Image(systemSymbol: .heart)
-						.font(.system(size: 18, weight: .semibold))
+						.font(.system(.callout, design: .default, weight: .semibold))
 						.foregroundStyle(
 							LinearGradient(
 								colors: [Color.red, Color.pink],

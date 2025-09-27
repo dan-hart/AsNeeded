@@ -148,7 +148,7 @@ struct AboutView: View {
 	  VStack(spacing: 12) {
 		HStack(spacing: 16) {
 		  Image(systemSymbol: .starFill)
-			.font(.system(size: 20, weight: .medium))
+			.font(.system(.title3, design: .default, weight: .medium))
 			.frame(width: 32, height: 32)
             .foregroundColor(.yellow)
 		  
@@ -169,7 +169,7 @@ struct AboutView: View {
 		
 		HStack(spacing: 16) {
 		  Image(systemSymbol: .heartFill)
-			.font(.system(size: 20, weight: .medium))
+			.font(.system(.title3, design: .default, weight: .medium))
 			.frame(width: 32, height: 32)
             .foregroundColor(.pink)
 		  
@@ -234,7 +234,7 @@ struct AboutView: View {
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
 	HStack(spacing: 16) {
 	  Image(systemSymbol: icon)
-		.font(.system(size: 20, weight: .medium))
+		.font(.system(.title3, design: .default, weight: .medium))
 		.frame(width: 32, height: 32)
 		.foregroundColor(.accentColor)
 	  
