@@ -331,7 +331,7 @@ struct LogDoseView: View {
 			HStack(spacing: 12) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
-				
+
 				Text("Log Dose")
 					.font(.headline)
 			}
@@ -363,34 +363,42 @@ struct LogDoseView: View {
 		}
 		.disabled(amount <= 0)
 		.opacity(amount <= 0 ? 0.6 : 1.0)
-		.padding(.horizontal)
-		.padding(.bottom, 8)
 	}
 	
 	var body: some View {
 		NavigationStack {
-			ScrollView {
-				VStack(spacing: 24) {
-					headerCard
-						.padding(.top, 8)
-					
-					doseSection
-					
-					dateTimeSection
-					
-					noteSection
-					
-					logButton
-						.padding(.top, 8)
+			VStack(spacing: 0) {
+				ScrollView {
+					VStack(spacing: 24) {
+						headerCard
+							.padding(.top, 8)
+
+						doseSection
+
+						dateTimeSection
+
+						noteSection
+					}
+					.padding(.bottom, 20)
 				}
-				.padding(.bottom, 20)
+				.background(
+					Color(uiColor: .systemGroupedBackground)
+						.ignoresSafeArea()
+				)
+				.scrollDismissesKeyboard(.interactively)
+
+				// Sticky button container
+				VStack(spacing: 0) {
+					Divider()
+						.background(.separator.opacity(0.5))
+
+					logButton
+						.padding(.horizontal, 16)
+						.padding(.vertical, 16)
+				}
+				.background(.regularMaterial)
 			}
-			.background(
-				Color(uiColor: .systemGroupedBackground)
-					.ignoresSafeArea()
-			)
 			.navigationBarTitleDisplayMode(.inline)
-			.scrollDismissesKeyboard(.interactively)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
 					Button(action: { dismiss() }) {
