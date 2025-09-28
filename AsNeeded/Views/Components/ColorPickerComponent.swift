@@ -20,7 +20,6 @@
 /// - Any interface requiring professional color choice
 import SwiftUI
 import SFSafeSymbols
-import DHFlatUIColors
 import DHLoggingKit
 
 struct ColorPickerComponent: View {
@@ -28,7 +27,6 @@ struct ColorPickerComponent: View {
 	let onColorSelected: (String?) -> Void
 	let onSave: (() -> Void)?
 
-	private let palette: DHFlatUIColors.Palette = .flatUiV1
 	private let hapticsManager = HapticsManager.shared
 	private let logger = DHLogger.ui
 
@@ -132,15 +130,15 @@ struct ColorPickerComponent: View {
 	}
 
 	private var colorGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 5), spacing: 16) {
-			ForEach(palette.colors, id: \.hex) { colorInfo in
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
+			ForEach(MedicationColors.colors, id: \.hex) { colorInfo in
 				colorSwatch(colorInfo)
 			}
 		}
 		.padding(.bottom, 8)
 	}
 
-	private func colorSwatch(_ colorInfo: ColorInfo) -> some View {
+	private func colorSwatch(_ colorInfo: MedicationColors.ColorInfo) -> some View {
 		Button {
 			hapticsManager.lightImpact()
 			selectedColorHex = colorInfo.hex
@@ -149,22 +147,18 @@ struct ColorPickerComponent: View {
 			ZStack {
 				Circle()
 					.fill(colorInfo.color)
-					.frame(width: 50, height: 50)
+					.frame(width: 70, height: 70)
 					.shadow(
 						color: Color.black.opacity(0.15),
-						radius: 3,
+						radius: 5,
 						x: 0,
-						y: 2
+						y: 3
 					)
 
 				// Checkmark for selected color
 				if selectedColorHex == colorInfo.hex {
-					Circle()
-						.fill(Color.black.opacity(0.2))
-						.frame(width: 50, height: 50)
-
 					Image(systemSymbol: .checkmark)
-						.font(.body.weight(.bold))
+						.font(.title2.weight(.bold))
 						.foregroundStyle(colorInfo.color.contrastingForegroundColor())
 				}
 			}
