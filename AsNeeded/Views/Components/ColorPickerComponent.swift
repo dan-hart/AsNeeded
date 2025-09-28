@@ -19,6 +19,7 @@
 /// - Any interface requiring simple color choice from preset options
 import SwiftUI
 import SFSafeSymbols
+import DHFlatUIColors
 
 struct ColorPickerComponent: View {
 	@Binding var selectedColorHex: String?
@@ -26,20 +27,20 @@ struct ColorPickerComponent: View {
 
 	private let hapticsManager = HapticsManager.shared
 
-	// Preset color palette - carefully chosen for accessibility and visual appeal
+	// DHFlatUIColors Russian palette - selected colors for medication customization
 	private let presetColors: [(name: String, hex: String)] = [
-		("Blue", "#007AFF"),
-		("Green", "#28CD41"),
-		("Orange", "#FF9500"),
-		("Red", "#FF3B30"),
-		("Purple", "#AF52DE"),
-		("Pink", "#FF2D92"),
-		("Teal", "#30B0C7"),
-		("Indigo", "#5856D6"),
-		("Brown", "#A2845E"),
-		("Yellow", "#FFCC00"),
-		("Mint", "#00C7BE"),
-		("Cyan", "#32ADE6")
+		("Soft Blue", "#778BEB"),
+		("Cornflower", "#546DE5"),
+		("Blue Curacao", "#3DC1D3"),
+		("Squeaky", "#63CDDA"),
+		("Deep Rose", "#C44569"),
+		("Old Geranium", "#CF6A87"),
+		("Tigerlily", "#E15F41"),
+		("Porcelain Rose", "#E66767"),
+		("Purple Mountain", "#786FA6"),
+		("Purple Corallite", "#574B90"),
+		("Summertime", "#F5CD79"),
+		("Creamy Peach", "#F3A683")
 	]
 
 	var body: some View {
