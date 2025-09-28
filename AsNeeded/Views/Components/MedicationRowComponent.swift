@@ -29,11 +29,14 @@ import SFSafeSymbols
 struct MedicationRowComponent: View {
 	let medication: ANMedicationConcept
 	var onLogTapped: () -> Void = {}
+	var onColorChanged: ((String?) -> Void)? = nil
 
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.editMode) private var editMode
 	@Environment(\.colorScheme) private var colorScheme
 	@State private var isPressed = false
+	@State private var showingColorPicker = false
+	@State private var tempSelectedColor: String?
 	private let hapticsManager = HapticsManager.shared
 
 	var body: some View {
@@ -112,25 +115,36 @@ struct MedicationRowComponent: View {
 
 	// MARK: - View Components
 	private var medicationIcon: some View {
-		ZStack {
-			Circle()
-				.fill(
-					LinearGradient(
-						colors: [
-							medication.displayColor.opacity(0.15),
-							medication.displayColor.opacity(0.08)
-						],
-						startPoint: .topLeading,
-						endPoint: .bottomTrailing
+		Button {
+			hapticsManager.lightImpact()
+			tempSelectedColor = medication.displayColorHex
+			showingColorPicker = true
+		} label: {
+			ZStack {
+				Circle()
+					.fill(
+						LinearGradient(
+							colors: [
+								medication.displayColor.opacity(0.15),
+								medication.displayColor.opacity(0.08)
+							],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
 					)
-				)
-				.frame(width: 44, height: 44)
+					.frame(width: 44, height: 44)
 
-			Image(systemSymbol: iconForMedication)
-				.font(.title3.weight(.semibold))
-				.foregroundStyle(medication.displayColor)
-				.symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
-				.accessibilityHidden(true)
+				Image(systemSymbol: iconForMedication)
+					.font(.title3.weight(.semibold))
+					.foregroundStyle(medication.displayColor)
+					.symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
+			}
+		}
+		.buttonStyle(.plain)
+		.accessibilityLabel("Change medication color")
+		.accessibilityHint("Tap to change the color for \(medication.displayName)")
+		.sheet(isPresented: $showingColorPicker) {
+			compactColorPickerSheet
 		}
 	}
 
@@ -304,6 +318,75 @@ struct MedicationRowComponent: View {
 		} else {
 			return "\(quantityStr) left"
 		}
+	}
+
+	// MARK: - Compact Color Picker Sheet
+	private var compactColorPickerSheet: some View {
+		NavigationStack {
+			VStack(spacing: 20) {
+				// Header with medication info
+				VStack(spacing: 8) {
+					HStack(spacing: 12) {
+						ZStack {
+							Circle()
+								.fill(
+									LinearGradient(
+										colors: [
+											medication.displayColor.opacity(0.15),
+											medication.displayColor.opacity(0.08)
+										],
+										startPoint: .topLeading,
+										endPoint: .bottomTrailing
+									)
+								)
+								.frame(width: 32, height: 32)
+
+							Image(systemSymbol: iconForMedication)
+								.font(.title3.weight(.semibold))
+								.foregroundStyle(medication.displayColor)
+						}
+
+						VStack(alignment: .leading, spacing: 2) {
+							Text(medication.displayName)
+								.font(.headline)
+								.fontWeight(.semibold)
+
+							Text("Choose Color")
+								.font(.subheadline)
+								.foregroundStyle(.secondary)
+						}
+
+						Spacer()
+					}
+				}
+
+				// Compact color picker
+				ColorPickerComponent(selectedColorHex: $tempSelectedColor) { newColor in
+					tempSelectedColor = newColor
+				}
+			}
+			.padding()
+			.navigationTitle("Medication Color")
+			.navigationBarTitleDisplayMode(.inline)
+			.toolbar {
+				ToolbarItem(placement: .navigationBarLeading) {
+					Button("Cancel") {
+						showingColorPicker = false
+						tempSelectedColor = medication.displayColorHex
+					}
+				}
+
+				ToolbarItem(placement: .navigationBarTrailing) {
+					Button("Save") {
+						onColorChanged?(tempSelectedColor)
+						showingColorPicker = false
+					}
+					.fontWeight(.semibold)
+				}
+			}
+		}
+		.presentationDetents([.medium, .large])
+		.presentationDragIndicator(.visible)
 	}
 }
 

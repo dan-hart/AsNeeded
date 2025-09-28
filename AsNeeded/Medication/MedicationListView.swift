@@ -230,9 +230,19 @@ struct MedicationListView: View {
             List {
                 ForEach(sortedMedications, id: \.id) { med in
                     HStack {
-                        MedicationRowComponent(medication: med) {
-                            logMedication = med
-                        }
+                        MedicationRowComponent(
+                            medication: med,
+                            onLogTapped: {
+                                logMedication = med
+                            },
+                            onColorChanged: { newColorHex in
+                                Task {
+                                    var updatedMed = med
+                                    updatedMed.displayColorHex = newColorHex
+                                    let _ = await viewModel.update(updatedMed)
+                                }
+                            }
+                        )
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { 
