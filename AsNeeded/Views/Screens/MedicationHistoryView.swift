@@ -16,6 +16,8 @@ struct MedicationHistoryView: View {
     @State private var selectedEventNote: String?
     @State private var editingEvent: ANEventConcept?
     @State private var editingNoteText: String = ""
+    @State private var editingEntryEvent: ANEventConcept?
+    @State private var editingEntryDate: Date = Date()
     
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
@@ -116,7 +118,7 @@ struct MedicationHistoryView: View {
                                         .buttonStyle(.plain)
                                     }
                                 }
-                                
+
                                 // Show note below if it exists
                                 if let note = event.note, !note.isEmpty {
                                     Text(note)
@@ -135,6 +137,11 @@ struct MedicationHistoryView: View {
                                             editingNoteText = event.note ?? ""
                                         }
                                 }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                editingEntryEvent = event
+                                editingEntryDate = event.date
                             }
                         }
                         .onDelete { indexSet in
@@ -481,6 +488,78 @@ struct MedicationHistoryView: View {
                     }
                 }
             )
+        }
+        .sheet(item: $editingEntryEvent) { event in
+            NavigationStack {
+                Form {
+                    Section(header: Text("Dose Entry Details")) {
+                        HStack {
+                            Text("Medication")
+                            Spacer()
+                            if let eventMedicationID = event.medication?.id {
+                                let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
+                                let medication = currentMedication ?? event.medication!
+                                Text(medication.displayName)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if let dose = event.dose {
+                            HStack {
+                                Text("Dose")
+                                Spacer()
+                                Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        DatePicker(
+                            "Time",
+                            selection: $editingEntryDate,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                    }
+
+                    Section {
+                        Button(role: .destructive) {
+                            if let event = editingEntryEvent {
+                                Task {
+                                    await viewModel.deleteEvent(event)
+                                    editingEntryEvent = nil
+                                }
+                            }
+                        } label: {
+                            Label("Delete Entry", systemSymbol: .trash)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                .navigationTitle("Edit Entry")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            editingEntryEvent = nil
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            if let event = editingEntryEvent {
+                                Task {
+                                    // Update the event with new date/time
+                                    var updatedEvent = event
+                                    updatedEvent.date = editingEntryDate
+                                    await viewModel.updateEvent(updatedEvent)
+                                    editingEntryEvent = nil
+                                }
+                            }
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                    }
+                }
+            }
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $showSupportView) {
             NavigationView {

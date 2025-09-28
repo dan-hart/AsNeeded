@@ -165,4 +165,18 @@ final class MedicationHistoryViewModel: ObservableObject {
 			try? await dataStore.eventsStore.insert(event)
 		}
 	}
+
+	func deleteEvent(_ event: ANEventConcept) async {
+		// Delete the event and restore medication quantity if needed
+		try? await dataStore.eventsStore.remove(event)
+		if let dose = event.dose,
+		   let medicationID = event.medication?.id,
+		   let medication = medications.first(where: { $0.id == medicationID }) {
+			var updated = medication
+			if let quantity = updated.quantity {
+				updated.quantity = quantity + dose.amount
+			}
+			try? await dataStore.updateMedication(updated)
+		}
+	}
 }
