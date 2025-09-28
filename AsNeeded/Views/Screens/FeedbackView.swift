@@ -5,6 +5,7 @@ import SFSafeSymbols
 struct FeedbackView: View {
 	@StateObject private var feedbackService = FeedbackService.shared
 	@State private var showingMailComposer = false
+	@State private var currentFeedbackType: FeedbackType = .feedback
 	
 	private var isLoading: Bool {
 		feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
@@ -67,10 +68,9 @@ struct FeedbackView: View {
 		.sheet(isPresented: $feedbackService.showingMailComposer) {
 			MailComposeView(feedbackService: feedbackService)
 		}
-		.alert("Mail Not Available", isPresented: $feedbackService.showingMailUnavailableAlert) {
-			Button("OK") { }
-		} message: {
-			Text("Please configure Mail app or contact us directly at asneeded@codedbydan.com")
+		.sheet(isPresented: $feedbackService.showingFeedbackAlternatives) {
+			AlternativeFeedbackView(feedbackType: currentFeedbackType)
+				.environmentObject(feedbackService)
 		}
 		.confirmationDialog(
 			"Include App Logs?",
@@ -113,7 +113,10 @@ struct FeedbackView: View {
 					subtitle: "Something isn't working correctly",
 					systemImage: .exclamationmarkTriangle,
 					color: .red,
-					action: { feedbackService.submitFeedback(type: .bug) }
+					action: {
+						currentFeedbackType = .bug
+						feedbackService.submitFeedback(type: .bug)
+					}
 				)
 				
 				feedbackTypeButton(
@@ -121,7 +124,10 @@ struct FeedbackView: View {
 					subtitle: "Suggest new functionality or improvements",
 					systemImage: .lightbulb,
 					color: .orange,
-					action: { feedbackService.submitFeedback(type: .featureRequest) }
+					action: {
+						currentFeedbackType = .featureRequest
+						feedbackService.submitFeedback(type: .featureRequest)
+					}
 				)
 				
 				feedbackTypeButton(
@@ -129,7 +135,10 @@ struct FeedbackView: View {
 					subtitle: "Share your thoughts and experiences",
 					systemImage: .heart,
 					color: .green,
-					action: { feedbackService.submitFeedback(type: .feedback) }
+					action: {
+						currentFeedbackType = .feedback
+						feedbackService.submitFeedback(type: .feedback)
+					}
 				)
 			}
 		}
