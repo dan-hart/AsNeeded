@@ -8,6 +8,7 @@ struct AlternativeFeedbackView: View {
 
 	let feedbackType: FeedbackType
 	@State private var showingCopiedConfirmation = false
+	@State private var copiedMessage = "Copied to clipboard!"
 
 	var body: some View {
 		NavigationStack {
@@ -17,7 +18,7 @@ struct AlternativeFeedbackView: View {
 
 				// MARK: - Feedback Options
 				VStack(spacing: 16) {
-					Text("Choose how to send feedback:")
+					Text("Choose how to send feedback:", comment: "Instruction text for selecting feedback sending method")
 						.font(.headline)
 						.multilineTextAlignment(.center)
 
@@ -53,11 +54,11 @@ struct AlternativeFeedbackView: View {
 				.foregroundStyle(.accent)
 
 			VStack(spacing: 8) {
-				Text("Mail Not Available")
+				Text("Mail App Not Configured", comment: "Title shown when Mail app is not configured for sending feedback")
 					.font(.title2)
 					.fontWeight(.semibold)
 
-				Text("Choose an alternative way to send your feedback")
+				Text("As Needed uses Apple's Mail app to send feedback. Choose an alternative method below or configure Mail in Settings.", comment: "Explanation message when Mail app is not configured")
 					.font(.body)
 					.foregroundStyle(.secondary)
 					.multilineTextAlignment(.center)
@@ -67,14 +68,14 @@ struct AlternativeFeedbackView: View {
 
 	private var feedbackOptionsSection: some View {
 		VStack(spacing: 12) {
-			// Copy to Clipboard
+			// Copy Support Email
 			feedbackOptionButton(
-				icon: .documentOnClipboard,
-				title: "Copy to Clipboard",
-				subtitle: "Copy feedback text to paste in any app",
-				iconColor: .blue
+				icon: .at,
+				title: String(localized: "Copy Support Email", comment: "Button title to copy support email address to clipboard"),
+				subtitle: String(localized: "Copy asneeded@codedbydan.com to send email manually", comment: "Button subtitle explaining what copying support email does"),
+				iconColor: .accent
 			) {
-				copyToClipboard()
+				copyEmailAddress()
 			}
 
 			// Open in Any Email App
@@ -87,14 +88,14 @@ struct AlternativeFeedbackView: View {
 				openEmailApp()
 			}
 
-			// Share via Any App
+			// Submit GitHub Issue
 			feedbackOptionButton(
-				icon: .squareAndArrowUp,
-				title: "Share via App",
-				subtitle: "Share feedback through Messages, Slack, or any app",
+				icon: .exclamationmarkBubble,
+				title: String(localized: "Submit GitHub Issue", comment: "Button title to submit feedback as GitHub issue"),
+				subtitle: String(localized: "Report issues directly on GitHub for faster response", comment: "Button subtitle explaining GitHub issue benefits"),
 				iconColor: .orange
 			) {
-				shareViaApp()
+				submitGitHubIssue()
 			}
 		}
 	}
@@ -150,7 +151,7 @@ struct AlternativeFeedbackView: View {
 					.font(.title3)
 					.foregroundStyle(.green)
 
-				Text("Copied to clipboard!")
+				Text(copiedMessage)
 					.font(.body)
 					.fontWeight(.medium)
 			}
@@ -172,8 +173,9 @@ struct AlternativeFeedbackView: View {
 
 	// MARK: - Actions
 
-	private func copyToClipboard() {
-		feedbackService.copyFeedbackToClipboard(type: feedbackType)
+	private func copyEmailAddress() {
+		feedbackService.copyEmailToClipboard()
+		copiedMessage = String(localized: "Support email copied!", comment: "Confirmation message when support email address is copied to clipboard")
 
 		withAnimation {
 			showingCopiedConfirmation = true
@@ -187,22 +189,11 @@ struct AlternativeFeedbackView: View {
 		}
 	}
 
-	private func shareViaApp() {
-		let shareData = feedbackService.createShareData(type: feedbackType)
-
-		let activityViewController = UIActivityViewController(
-			activityItems: [shareData.text],
-			applicationActivities: nil
-		)
-
-		activityViewController.setValue(shareData.subject, forKey: "subject")
-
-		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-		   let window = windowScene.windows.first {
-			window.rootViewController?.present(activityViewController, animated: true)
+	private func submitGitHubIssue() {
+		if let url = URL(string: "https://github.com/dan-hart/AsNeeded/issues/new") {
+			openURL(url)
+			dismiss()
 		}
-
-		dismiss()
 	}
 }
 
