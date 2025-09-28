@@ -86,7 +86,7 @@ struct MedicationHistoryView: View {
                                                     .font(.caption)
                                             }
                                             .font(.subheadline)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
                                         }
                                         .buttonStyle(.plain)
                                     }
@@ -237,7 +237,7 @@ struct MedicationHistoryView: View {
                             Label("Jump to Date", systemSymbol: .calendar)
                                 .labelStyle(.titleAndIcon)
                                 .font(.system(.callout, design: .default))
-                                .foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : Color.accentColor)
+                                .foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
                         }
                         .disabled(viewModel.groupedHistory.isEmpty)
                         .accessibilityLabel("Jump to date")
@@ -276,8 +276,8 @@ struct MedicationHistoryView: View {
                 // Floating Action Button for Log Dose
                 if viewModel.selectedMedication != nil && !viewModel.isShowingAllMedications {
                     Button {
-                        if let med = viewModel.selectedMedication { 
-                            logMedication = med 
+                        if let med = viewModel.selectedMedication {
+                            logMedication = med
                         }
                     } label: {
                         Label("Log Dose", systemSymbol: .plus)
@@ -289,7 +289,7 @@ struct MedicationHistoryView: View {
                             .padding(.vertical, 16)
                             .background(
                                 Capsule()
-                                    .fill(Color.accentColor)
+                                    .fill(viewModel.selectedMedication?.displayColor ?? .accent)
                                     .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                             )
                     }
@@ -347,6 +347,7 @@ struct MedicationHistoryView: View {
                                 showDatePicker = false
                             }
                             .fontWeight(.semibold)
+                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                         }
                     }
                 }
@@ -425,6 +426,7 @@ struct MedicationHistoryView: View {
                                     }
                                 }
                                 .fontWeight(.semibold)
+                                .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                             }
                         }
                     }
