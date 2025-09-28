@@ -70,9 +70,9 @@ struct MedicationTrendsView: View {
 						
 						switch visualizationType {
 						case .chart:
-							usageChart()
+							usageChart(for: med)
 						case .heatmap:
-							calendarHeatmap()
+							calendarHeatmap(for: med)
 						}
 					} else {
 						Text("Select a medication to see trends.")
@@ -148,7 +148,7 @@ struct MedicationTrendsView: View {
 	}
 
 	@ViewBuilder
-	private func usageChart() -> some View {
+	private func usageChart(for med: ANMedicationConcept) -> some View {
 		let data = viewModel.dailyTotals(last: daysWindow)
 		if data.isEmpty {
 			Text("No recent dose data.")
@@ -167,27 +167,27 @@ struct MedicationTrendsView: View {
 						y: .value("Total", item.total)
 					)
 					.foregroundStyle(.linearGradient(
-						colors: [Color.accentColor.opacity(0.4), Color.accentColor.opacity(0.1), .clear],
+						colors: [med.displayColor.opacity(0.4), med.displayColor.opacity(0.1), .clear],
 						startPoint: .top,
 						endPoint: .bottom
 					))
-					
+
 					// Line mark for clarity
 					LineMark(
 						x: .value("Day", item.day, unit: .day),
 						y: .value("Total", item.total)
 					)
 					.interpolationMethod(.catmullRom)
-					.foregroundStyle(Color.accentColor)
+					.foregroundStyle(med.displayColor)
 					.lineStyle(StrokeStyle(lineWidth: 2))
-					
+
 					// Point marks for data points
 					if item.total > 0 {
 						PointMark(
 							x: .value("Day", item.day, unit: .day),
 							y: .value("Total", item.total)
 						)
-						.foregroundStyle(Color.accentColor)
+						.foregroundStyle(med.displayColor)
 						.symbolSize(30)
 					}
 				}
@@ -226,7 +226,7 @@ struct MedicationTrendsView: View {
 	}
 	
 	@ViewBuilder
-	private func calendarHeatmap() -> some View {
+	private func calendarHeatmap(for med: ANMedicationConcept) -> some View {
 		let data = viewModel.calendarHeatmapData(last: daysWindow)
 		if data.isEmpty {
 			Text("No recent dose data.")
@@ -241,6 +241,7 @@ struct MedicationTrendsView: View {
 				CalendarHeatmapGrid(
 					data: data,
 					daysWindow: daysWindow,
+					medicationColor: med.displayColor,
 					onDateTapped: { date in
 						// Navigate to history with selected date and medication
 						if let medicationID = viewModel.selectedMedicationID {
@@ -258,6 +259,7 @@ struct MedicationTrendsView: View {
 struct CalendarHeatmapGrid: View {
 	let data: [CalendarDay]
 	let daysWindow: Int
+	let medicationColor: Color
 	let onDateTapped: (Date) -> Void
 	private let calendar = Calendar.current
 	
@@ -357,10 +359,10 @@ struct CalendarHeatmapGrid: View {
 			return .clear
 		} else if intensity == 0 {
 			// No usage days
-			return Color.accentColor.opacity(0.1)
+			return medicationColor.opacity(0.1)
 		} else {
 			// Usage days with intensity scaling
-			return Color.accentColor.opacity(0.2 + (intensity * 0.8))
+			return medicationColor.opacity(0.2 + (intensity * 0.8))
 		}
 	}
 }

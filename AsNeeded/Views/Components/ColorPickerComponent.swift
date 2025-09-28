@@ -1,14 +1,17 @@
-/// A reusable color picker component for selecting medication colors
+/// A reusable color picker component for selecting medication colors from all DHFlatUIColors palettes
 ///
 /// Features:
-/// - Grid layout with preset color options
+/// - All 14 DHFlatUIColors palettes available (Flat UI v1, American, Russian, etc.)
+/// - Segmented control for palette selection
+/// - Grid layout with palette-specific colors
 /// - Shows current selection with checkmark
 /// - Includes "Default" option that uses app accent color
 /// - Haptic feedback on selection
 /// - Accessible design with proper labels
 ///
 /// **Appearance:**
-/// - 6 colors per row in a grid layout
+/// - Palette selector at top with scrollable segments
+/// - 5 colors per row in grid layout for each palette
 /// - Circular color swatches with shadow
 /// - Checkmark overlay for selected color
 /// - "Reset to Default" option prominently displayed
@@ -16,7 +19,7 @@
 /// **Use Cases:**
 /// - Medication color customization in edit forms
 /// - User preference color selection
-/// - Any interface requiring simple color choice from preset options
+/// - Any interface requiring comprehensive color choice from professional palettes
 import SwiftUI
 import SFSafeSymbols
 import DHFlatUIColors
@@ -25,34 +28,11 @@ struct ColorPickerComponent: View {
 	@Binding var selectedColorHex: String?
 	let onColorSelected: (String?) -> Void
 
+	@State private var selectedPalette: DHFlatUIColors.Palette = .russian
 	private let hapticsManager = HapticsManager.shared
 
-	// DHFlatUIColors Russian palette - all 20 colors for medication customization
-	private let presetColors: [(name: String, hex: String)] = [
-		("Creamy Peach", "#F3A683"),
-		("Rosy Highlight", "#F7D794"),
-		("Soft Blue", "#778BEB"),
-		("Brewed Mustard", "#E77F67"),
-		("Old Geranium", "#CF6A87"),
-		("Sawtooth Aak", "#F19066"),
-		("Summertime", "#F5CD79"),
-		("Cornflower", "#546DE5"),
-		("Tigerlily", "#E15F41"),
-		("Deep Rose", "#C44569"),
-		("Purple Mountain", "#786FA6"),
-		("Rogue Pink", "#F8A5C2"),
-		("Squeaky", "#63CDDA"),
-		("Apple Valley", "#EA8685"),
-		("Pencil Lead", "#596275"),
-		("Purple Corallite", "#574B90"),
-		("Flamingo Pink", "#F78FB3"),
-		("Blue Curacao", "#3DC1D3"),
-		("Porcelain Rose", "#E66767"),
-		("Biscay", "#303952")
-	]
-
 	var body: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: 20) {
 			// Section header
 			HStack(spacing: 12) {
 				Image(systemSymbol: .paintbrushPointedFill)
@@ -73,7 +53,10 @@ struct ColorPickerComponent: View {
 			// Default/Reset option
 			defaultColorOption
 
-			// Color grid
+			// Palette selector
+			paletteSelector
+
+			// Color grid for selected palette
 			colorGrid
 		}
 		.accessibilityElement(children: .contain)
@@ -133,23 +116,64 @@ struct ColorPickerComponent: View {
 		.accessibilityHint("Uses the app's accent color for this medication")
 	}
 
-	private var colorGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 5), spacing: 16) {
-			ForEach(presetColors, id: \.hex) { colorOption in
-				colorSwatch(colorOption)
+	private var paletteSelector: some View {
+		VStack(alignment: .leading, spacing: 12) {
+			Text("Color Palette")
+				.font(.subheadline)
+				.fontWeight(.medium)
+				.foregroundStyle(.secondary)
+
+			ScrollView(.horizontal, showsIndicators: false) {
+				HStack(spacing: 8) {
+					ForEach(DHFlatUIColors.Palette.allCases, id: \.self) { palette in
+						paletteTab(palette)
+					}
+				}
+				.padding(.horizontal, 2)
 			}
 		}
 	}
 
-	private func colorSwatch(_ colorOption: (name: String, hex: String)) -> some View {
+	private func paletteTab(_ palette: DHFlatUIColors.Palette) -> some View {
 		Button {
 			hapticsManager.lightImpact()
-			selectedColorHex = colorOption.hex
-			onColorSelected(colorOption.hex)
+			withAnimation(.spring(response: 0.3)) {
+				selectedPalette = palette
+			}
+		} label: {
+			Text(palette.name)
+				.font(.caption)
+				.fontWeight(.medium)
+				.padding(.horizontal, 12)
+				.padding(.vertical, 8)
+				.background(
+					Capsule()
+						.fill(selectedPalette == palette ? Color.accent : Color(.tertiarySystemFill))
+				)
+				.foregroundStyle(selectedPalette == palette ? .white : .primary)
+		}
+		.buttonStyle(.plain)
+		.accessibilityLabel("\(palette.name) palette")
+		.accessibilityHint("Select \(palette.name) color palette")
+	}
+
+	private var colorGrid: some View {
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 5), spacing: 12) {
+			ForEach(selectedPalette.colors, id: \.hex) { colorInfo in
+				colorSwatch(colorInfo)
+			}
+		}
+	}
+
+	private func colorSwatch(_ colorInfo: ColorInfo) -> some View {
+		Button {
+			hapticsManager.lightImpact()
+			selectedColorHex = colorInfo.hex
+			onColorSelected(colorInfo.hex)
 		} label: {
 			ZStack {
 				Circle()
-					.fill(Color(hex: colorOption.hex) ?? .gray)
+					.fill(colorInfo.color)
 					.frame(width: 44, height: 44)
 					.shadow(
 						color: Color.black.opacity(0.15),
@@ -159,7 +183,7 @@ struct ColorPickerComponent: View {
 					)
 
 				// Checkmark for selected color
-				if selectedColorHex == colorOption.hex {
+				if selectedColorHex == colorInfo.hex {
 					Circle()
 						.fill(Color.black.opacity(0.2))
 						.frame(width: 44, height: 44)
@@ -171,16 +195,16 @@ struct ColorPickerComponent: View {
 			}
 		}
 		.buttonStyle(.plain)
-		.accessibilityLabel("\(colorOption.name) color")
-		.accessibilityHint("Select \(colorOption.name.lowercased()) as medication color")
-		.scaleEffect(selectedColorHex == colorOption.hex ? 1.1 : 1.0)
+		.accessibilityLabel("\(colorInfo.name) color")
+		.accessibilityHint("Select \(colorInfo.name) as medication color")
+		.scaleEffect(selectedColorHex == colorInfo.hex ? 1.1 : 1.0)
 		.animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedColorHex)
 	}
 }
 
 #if DEBUG
-#Preview("Color Picker Preview") {
-	@Previewable @State var selectedColor: String? = "#007AFF"
+#Preview("Color Picker with All Palettes") {
+	@Previewable @State var selectedColor: String? = "#F3A683"
 
 	return VStack {
 		ColorPickerComponent(selectedColorHex: $selectedColor) { newColor in
