@@ -45,7 +45,11 @@ struct MedicationHistoryView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
-                                    if viewModel.isShowingAllMedications, let rowMedication = event.medication {
+                                    if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
+                                        // Look up current medication from viewModel to ensure we have the latest data
+                                        let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
+                                        let rowMedication = currentMedication ?? event.medication!
+
                                         let medicationColor: Color = {
                                             // First try the medication's custom color
                                             if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
@@ -73,7 +77,9 @@ struct MedicationHistoryView: View {
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         // Show medication name when viewing all medications
-                                        if viewModel.isShowingAllMedications, let rowMedication = event.medication {
+                                        if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
+                                            let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
+                                            let rowMedication = currentMedication ?? event.medication!
                                             Text(rowMedication.displayName)
                                                 .font(.headline)
                                                 .foregroundStyle(.primary)
