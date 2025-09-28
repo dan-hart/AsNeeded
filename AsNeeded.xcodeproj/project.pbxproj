@@ -12,6 +12,7 @@
 		521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CC2E6B92C5006A7439 /* RevenueCatUI */; };
 		521B77D12E6B92D8006A7439 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 521B77D02E6B92D8006A7439 /* StoreKit.framework */; };
 		523262712E7849E500047C67 /* ANStoreKitConfig.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 523262702E7849E500047C67 /* ANStoreKitConfig.storekit */; };
+		52457B402E88CBC10058E6F5 /* DHFlatUIColors in Frameworks */ = {isa = PBXBuildFile; productRef = DHFLATUI00000000000000002 /* DHFlatUIColors */; };
 		524942E72CA2C9E5004DB0EC /* WristAsNeeded Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		52538B432E6C8A87009017EE /* DHUtilityKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52538B422E6C8A87009017EE /* DHUtilityKit */; };
 		5256E8092E6B861D0072C6F0 /* PRIVACY.md in Resources */ = {isa = PBXBuildFile; fileRef = 5256E8072E6B861D0072C6F0 /* PRIVACY.md */; };
@@ -120,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52457B402E88CBC10058E6F5 /* DHFlatUIColors in Frameworks */,
 				521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */,
 				52C349AA2E552F980040CEB8 /* Boutique in Frameworks */,
 				521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */,
