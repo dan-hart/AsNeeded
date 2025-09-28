@@ -231,7 +231,7 @@ struct MedicationRowComponent: View {
 						.font(.headline)
 						.fontWeight(.semibold)
 				}
-				.foregroundStyle(.white)
+				.foregroundStyle(medication.displayColor.contrastingForegroundColor())
 				.frame(maxWidth: .infinity)
 				.padding(.vertical, 14)
 				.background(
@@ -257,7 +257,7 @@ struct MedicationRowComponent: View {
 						.fontDesign(.rounded)
 						.textCase(.uppercase)
 				}
-				.foregroundStyle(.white)
+				.foregroundStyle(medication.displayColor.contrastingForegroundColor())
 				.frame(width: 66, height: 66)
 				.background(
 					RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -283,8 +283,8 @@ struct MedicationRowComponent: View {
 						.strokeBorder(
 							LinearGradient(
 								colors: [
-									Color.white.opacity(0.3),
-									Color.white.opacity(0.1)
+									medication.displayColor.contrastingForegroundColor().opacity(0.3),
+									medication.displayColor.contrastingForegroundColor().opacity(0.1)
 								],
 								startPoint: .topLeading,
 								endPoint: .bottomTrailing
@@ -361,9 +361,16 @@ struct MedicationRowComponent: View {
 				}
 
 				// Compact color picker
-				ColorPickerComponent(selectedColorHex: $tempSelectedColor) { newColor in
-					tempSelectedColor = newColor
-				}
+				ColorPickerComponent(
+					selectedColorHex: $tempSelectedColor,
+					onColorSelected: { newColor in
+						tempSelectedColor = newColor
+					},
+					onSave: {
+						onColorChanged?(tempSelectedColor)
+						showingColorPicker = false
+					}
+				)
 			}
 			.padding()
 			.navigationTitle("Medication Color")
@@ -385,8 +392,6 @@ struct MedicationRowComponent: View {
 				}
 			}
 		}
-		.presentationDetents([.medium, .large])
-		.presentationDragIndicator(.visible)
 	}
 }
 

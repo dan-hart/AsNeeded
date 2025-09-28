@@ -2,6 +2,11 @@ import Foundation
 import StoreKit
 import SwiftUI
 
+// Import AppStore for iOS 18+ compatibility
+#if canImport(AppStore)
+import AppStore
+#endif
+
 @MainActor
 final class AppReviewManager: ObservableObject {
 	static let shared = AppReviewManager()
@@ -158,7 +163,7 @@ final class AppReviewManager: ObservableObject {
 		// Present the alert on the main thread
 		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
 		   let window = windowScene.windows.first {
-			await window.rootViewController?.present(alert, animated: true)
+			window.rootViewController?.present(alert, animated: true)
 		}
 	}
 
@@ -171,7 +176,17 @@ final class AppReviewManager: ObservableObject {
 		guard canRequestReviews() else { return }
 
 		if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-			SKStoreReviewController.requestReview(in: windowScene)
+			if #available(iOS 18.0, *) {
+				// Use new AppStore API for iOS 18+
+				#if canImport(AppStore)
+				AppStore.requestReview(in: windowScene)
+				#else
+				SKStoreReviewController.requestReview(in: windowScene)
+				#endif
+			} else {
+				// Use legacy API for iOS 17 and below
+				SKStoreReviewController.requestReview(in: windowScene)
+			}
 		}
 	}
 

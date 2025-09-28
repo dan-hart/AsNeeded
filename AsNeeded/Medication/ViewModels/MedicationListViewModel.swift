@@ -3,10 +3,12 @@
 
 import Foundation
 import ANModelKit
+import DHLoggingKit
 
 @MainActor
 final class MedicationListViewModel: ObservableObject {
 	private let dataStore: DataStore
+	private let logger = DHLogger.ui
 
 	init(dataStore: DataStore = .shared) {
 		self.dataStore = dataStore
