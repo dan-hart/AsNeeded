@@ -534,6 +534,7 @@ struct MedicationHistoryView: View {
                         } label: {
                             Label("Delete Entry", systemSymbol: .trash)
                                 .frame(maxWidth: .infinity)
+                                .foregroundStyle(.red)
                         }
                     }
                 }
