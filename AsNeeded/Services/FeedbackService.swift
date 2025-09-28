@@ -115,7 +115,6 @@ final class FeedbackService: NSObject, ObservableObject {
     
     @Published var isCollectingLogs = false
     @Published var showingMailComposer = false
-    @Published var showingMailUnavailableAlert = false
     @Published var showingLogConsentDialog = false
     @Published var showingFeedbackAlternatives = false
     
@@ -273,6 +272,12 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
         let feedbackText = createFeedbackText(type: type)
         UIPasteboard.general.string = feedbackText
         logInfo("Feedback copied to clipboard: \(type.subject)")
+    }
+
+    /// Copies just the support email address to clipboard
+    func copyEmailToClipboard() {
+        UIPasteboard.general.string = supportEmail
+        logInfo("Support email copied to clipboard")
     }
 
     /// Creates a mailto URL for opening in any available email app
