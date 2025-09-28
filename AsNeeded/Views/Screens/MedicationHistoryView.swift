@@ -114,8 +114,11 @@ struct MedicationHistoryView: View {
                                             }
                                             .font(.subheadline)
                                             .foregroundStyle(viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 12)
                                         }
                                         .buttonStyle(.plain)
+                                        .contentShape(Rectangle())
                                     }
                                 }
 
