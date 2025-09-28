@@ -17,7 +17,7 @@ struct NavigationManagerTests {
 	@MainActor
 	func testSingletonAccess() {
 		let manager = NavigationManager.shared
-		#expect(manager != nil)
+		#expect(manager.selectedTab >= 0, "Initial selected tab should be valid")
 	}
 	
 	@Test("Initial state can be reset to defaults")

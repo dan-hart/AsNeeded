@@ -207,8 +207,19 @@ struct MedicationEditView: View {
 		.glassCard()
 		.padding(.horizontal)
 	}
-	
-	
+
+	// MARK: - Color Section
+	@ViewBuilder
+	private var colorSection: some View {
+		ColorPickerComponent(selectedColorHex: $viewModel.displayColorHex) { newColorHex in
+			withAnimation(.spring(response: 0.3)) {
+				viewModel.displayColorHex = newColorHex
+			}
+		}
+		.glassCard()
+		.padding(.horizontal)
+	}
+
 	// MARK: - Save Button
 	@ViewBuilder
 	private var saveButton: some View {
@@ -432,6 +443,7 @@ struct MedicationEditView: View {
 				medicationInfoSection
 				prescribedDoseSection
 				refillInfoSection
+				colorSection
 				saveButton
 				Color.clear.frame(height: 20)
 			}

@@ -2,6 +2,7 @@
 // View model for MedicationEditView: handles RxNorm suggestions, validation, and model building.
 
 import Foundation
+import SwiftUI
 import ANModelKit
 // Removed RxNorm search; VM now only handles form + validation.
 
@@ -15,6 +16,7 @@ final class MedicationEditViewModel: ObservableObject {
 	@Published var nextRefillDate: Date?
 	@Published var prescribedDoseText: String
 	@Published var prescribedUnit: ANUnitConcept?
+	@Published var displayColorHex: String?
 
 	// Editing existing or adding new
 	private let existingID: UUID?
@@ -35,6 +37,7 @@ final class MedicationEditViewModel: ObservableObject {
 		}
 		self.prescribedDoseText = medication?.prescribedDoseAmount.map { String(describing: $0) } ?? ""
 		self.prescribedUnit = medication?.prescribedUnit
+		self.displayColorHex = medication?.displayColorHex
 	}
 
 	var isFormValid: Bool {
@@ -64,6 +67,7 @@ final class MedicationEditViewModel: ObservableObject {
 			clinicalName: clinicalName.trimmingCharacters(in: .whitespacesAndNewlines),
 			nickname: nickname.trimmingCharacters(in: .whitespacesAndNewlines),
 			quantity: quantity,
+			displayColorHex: displayColorHex,
 			lastRefillDate: lastRefillDate,
 			nextRefillDate: nextRefillDate,
 			prescribedUnit: unit,

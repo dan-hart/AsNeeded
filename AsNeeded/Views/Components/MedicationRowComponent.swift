@@ -117,8 +117,8 @@ struct MedicationRowComponent: View {
 				.fill(
 					LinearGradient(
 						colors: [
-							Color.accentColor.opacity(0.15),
-							Color.accentColor.opacity(0.08)
+							medication.displayColor.opacity(0.15),
+							medication.displayColor.opacity(0.08)
 						],
 						startPoint: .topLeading,
 						endPoint: .bottomTrailing
@@ -128,7 +128,7 @@ struct MedicationRowComponent: View {
 
 			Image(systemSymbol: iconForMedication)
 				.font(.title3.weight(.semibold))
-				.foregroundStyle(Color.accentColor)
+				.foregroundStyle(medication.displayColor)
 				.symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
 				.accessibilityHidden(true)
 		}
@@ -224,7 +224,7 @@ struct MedicationRowComponent: View {
 					RoundedRectangle(cornerRadius: 12, style: .continuous)
 						.fill(
 							LinearGradient(
-								colors: [Color.accentColor, Color.accentColor.opacity(0.85)],
+								colors: [medication.displayColor, medication.displayColor.opacity(0.85)],
 								startPoint: .topLeading,
 								endPoint: .bottomTrailing
 							)
@@ -250,15 +250,15 @@ struct MedicationRowComponent: View {
 						.fill(
 							LinearGradient(
 								colors: [
-									Color.accentColor,
-									Color.accentColor.opacity(0.9)
+									medication.displayColor,
+									medication.displayColor.opacity(0.9)
 								],
 								startPoint: .topLeading,
 								endPoint: .bottomTrailing
 							)
 						)
 						.shadow(
-							color: Color.accentColor.opacity(0.4),
+							color: medication.displayColor.opacity(0.4),
 							radius: isPressed ? 2 : 8,
 							x: 0,
 							y: isPressed ? 1 : 4
