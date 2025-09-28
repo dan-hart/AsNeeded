@@ -44,6 +44,18 @@ struct MedicationHistoryView: View {
                         ForEach(group.entries, id: \.id) { event in
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .center) {
+                                    // Medication color indicator on the left side
+                                    if viewModel.isShowingAllMedications, let medication = event.medication {
+                                        Circle()
+                                            .fill(medication.displayColor)
+                                            .frame(width: 16, height: 16)
+                                            .shadow(color: medication.displayColor.opacity(0.4), radius: 3, x: 0, y: 1)
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(.white.opacity(0.3), lineWidth: 0.5)
+                                            )
+                                    }
+
                                     VStack(alignment: .leading, spacing: 2) {
                                         // Show medication name when viewing all medications
                                         if viewModel.isShowingAllMedications, let medication = event.medication {
@@ -81,18 +93,6 @@ struct MedicationHistoryView: View {
                                             .foregroundStyle(viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
                                         }
                                         .buttonStyle(.plain)
-                                    }
-
-                                    // Medication color indicator on the right for better visibility
-                                    if viewModel.isShowingAllMedications, let medication = event.medication {
-                                        Circle()
-                                            .fill(medication.displayColor)
-                                            .frame(width: 16, height: 16)
-                                            .shadow(color: medication.displayColor.opacity(0.4), radius: 3, x: 0, y: 1)
-                                            .overlay(
-                                                Circle()
-                                                    .stroke(.white.opacity(0.3), lineWidth: 0.5)
-                                            )
                                     }
                                 }
                                 
