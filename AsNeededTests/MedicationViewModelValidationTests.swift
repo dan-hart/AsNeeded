@@ -34,7 +34,7 @@ struct MedicationViewModelValidationTests {
 		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
 		
 		// Then - Valid selection should be kept
-		#expect(viewModel.selectedMedicationID == medication.id,
+		#expect(viewModel.selectedMedicationID == medication.id.uuidString,
 			"Valid medication ID should be preserved")
 		#expect(viewModel.selectedMedication?.clinicalName == "Valid Med",
 			"Should be able to retrieve the selected medication")
@@ -53,7 +53,7 @@ struct MedicationViewModelValidationTests {
 		
 		// When - Initialize the view model
 		let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
-		
+
 		// Then - Valid selection should be kept
 		#expect(viewModel.selectedMedicationID == medication.id,
 			"Valid medication ID should be preserved")

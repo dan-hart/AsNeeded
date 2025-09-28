@@ -801,8 +801,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/dan-hart/ANModelKit";
 			requirement = {
-				kind = exactVersion;
-				version = 1.0.3;
+				branch = main;
+				kind = branch;
 			};
 		};
 		52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */ = {

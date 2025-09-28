@@ -57,13 +57,13 @@ struct LogDoseView: View {
 				Circle()
 					.fill(
 						LinearGradient(
-							colors: [Color.accentColor.opacity(0.8), Color.accentColor],
+							colors: [medication.displayColor.opacity(0.8), medication.displayColor],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						)
 					)
 					.frame(width: 80, height: 80)
-					.shadow(color: Color.accentColor.opacity(0.3), radius: 12, x: 0, y: 6)
+					.shadow(color: medication.displayColor.opacity(0.3), radius: 12, x: 0, y: 6)
 				
 				Image(systemSymbol: .pills)
 					.font(.system(.largeTitle, design: .default, weight: .semibold))
@@ -342,12 +342,12 @@ struct LogDoseView: View {
 				RoundedRectangle(cornerRadius: 16, style: .continuous)
 					.fill(
 						LinearGradient(
-							colors: [Color.accentColor, Color.accentColor.opacity(0.9)],
+							colors: [medication.displayColor, medication.displayColor.opacity(0.9)],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						)
 					)
-					.shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+					.shadow(color: medication.displayColor.opacity(0.3), radius: 8, x: 0, y: 4)
 			)
 			.overlay(
 				RoundedRectangle(cornerRadius: 16, style: .continuous)
