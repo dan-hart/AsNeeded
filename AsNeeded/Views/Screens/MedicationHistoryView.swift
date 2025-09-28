@@ -45,11 +45,26 @@ struct MedicationHistoryView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
-                                    if viewModel.isShowingAllMedications, let medication = event.medication {
+                                    if viewModel.isShowingAllMedications, let rowMedication = event.medication {
+                                        let medicationColor: Color = {
+                                            // First try the medication's custom color
+                                            if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
+                                                return Color(hex: hexColor) ?? .accent
+                                            }
+                                            // Fallback to different colors based on medication name for testing
+                                            let name = rowMedication.displayName.lowercased()
+                                            if name.contains("aspirin") || name.contains("acetaminophen") { return .red }
+                                            if name.contains("ibuprofen") || name.contains("advil") { return .blue }
+                                            if name.contains("tylenol") { return .purple }
+                                            if name.contains("vitamin") { return .orange }
+                                            if name.contains("med") { return .green }
+                                            return Color(hue: Double(abs(rowMedication.displayName.hashValue)) / Double(Int.max), saturation: 0.7, brightness: 0.8)
+                                        }()
+
                                         Circle()
-                                            .fill(medication.displayColor)
+                                            .fill(medicationColor)
                                             .frame(width: 16, height: 16)
-                                            .shadow(color: medication.displayColor.opacity(0.4), radius: 3, x: 0, y: 1)
+                                            .shadow(color: medicationColor.opacity(0.4), radius: 3, x: 0, y: 1)
                                             .overlay(
                                                 Circle()
                                                     .stroke(.white.opacity(0.3), lineWidth: 0.5)
@@ -58,8 +73,8 @@ struct MedicationHistoryView: View {
 
                                     VStack(alignment: .leading, spacing: 2) {
                                         // Show medication name when viewing all medications
-                                        if viewModel.isShowingAllMedications, let medication = event.medication {
-                                            Text(medication.displayName)
+                                        if viewModel.isShowingAllMedications, let rowMedication = event.medication {
+                                            Text(rowMedication.displayName)
                                                 .font(.headline)
                                                 .foregroundStyle(.primary)
                                         }
