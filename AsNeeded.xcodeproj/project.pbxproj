@@ -246,6 +246,7 @@
 				52BD23CB2E6C87CF00985CD3 /* ANModelKit */,
 				52BD23CE2E6C87FC00985CD3 /* SwiftRxNorm */,
 				52538B422E6C8A87009017EE /* DHUtilityKit */,
+				DHFLATUI00000000000000002 /* DHFlatUIColors */,
 			);
 			productName = AsNeeded;
 			productReference = 527AFA2228E26B3400BD575D /* AsNeeded.app */;
@@ -313,6 +314,7 @@
 				52BD23CA2E6C87CF00985CD3 /* XCRemoteSwiftPackageReference "ANModelKit" */,
 				52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */,
 				52538B412E6C8A87009017EE /* XCRemoteSwiftPackageReference "DHUtilityKit" */,
+				DHFLATUI00000000000000001 /* XCRemoteSwiftPackageReference "DHFlatUIColors" */,
 			);
 			productRefGroup = 527AFA2328E26B3400BD575D /* Products */;
 			projectDirPath = "";
@@ -821,6 +823,14 @@
 				version = 3.0.1;
 			};
 		};
+		DHFLATUI00000000000000001 /* XCRemoteSwiftPackageReference "DHFlatUIColors" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dan-hart/DHFlatUIColors";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -880,6 +890,11 @@
 		52F6AE312E67A9F6005CF0A1 /* DHLoggingKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DHLoggingKit;
+		};
+		DHFLATUI00000000000000002 /* DHFlatUIColors */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DHFLATUI00000000000000001 /* XCRemoteSwiftPackageReference "DHFlatUIColors" */;
+			productName = DHFlatUIColors;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
