@@ -134,7 +134,7 @@ struct MedicationTrendsView: View {
 		VStack(alignment: .leading, spacing: 4) {
 			HStack(spacing: 6) {
 				Image(systemSymbol: systemImage)
-					.foregroundStyle(.accent)
+					.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
 				Text(title)
 					.font(.caption)
 					.foregroundStyle(.secondary)
