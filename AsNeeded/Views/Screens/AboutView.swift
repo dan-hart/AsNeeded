@@ -16,6 +16,7 @@ struct AboutView: View {
   private var githubURL: URL? { URL(string: "https://github.com/dan-hart/AsNeeded") }
   private var githubProfileURL: URL? { URL(string: "https://github.com/dan-hart") }
   private var mastodonURL: URL? { URL(string: "https://mas.to/@codedbydan") }
+  private var christineWangURL: URL? { URL(string: "https://christinewang.design/") }
 
   var body: some View {
 	ScrollView {
@@ -146,26 +147,57 @@ struct AboutView: View {
 		.fontWeight(.semibold)
 	  
 	  VStack(spacing: 12) {
-		HStack(spacing: 16) {
-		  Image(systemSymbol: .starFill)
-			.font(.system(.title3, design: .default, weight: .medium))
-			.frame(width: 32, height: 32)
-            .foregroundColor(.yellow)
-		  
-		  VStack(alignment: .leading, spacing: 4) {
-			Text("Christine Wang")
-			  .font(.headline)
-			  .fontWeight(.semibold)
-			Text("Design & Testing")
-			  .font(.subheadline)
-			  .foregroundColor(.secondary)
+		if let url = christineWangURL {
+		  Link(destination: url) {
+			HStack(spacing: 16) {
+			  Image(systemSymbol: .starFill)
+				.font(.system(.title3, design: .default, weight: .medium))
+				.frame(width: 32, height: 32)
+				.foregroundColor(.yellow)
+
+			  VStack(alignment: .leading, spacing: 4) {
+				Text("Christine Wang")
+				  .font(.headline)
+				  .fontWeight(.semibold)
+				  .foregroundColor(.primary)
+				Text("Design & Testing")
+				  .font(.subheadline)
+				  .foregroundColor(.secondary)
+			  }
+
+			  Spacer()
+
+			  Image(systemSymbol: .arrowUpRightSquare)
+				.font(.caption)
+				.foregroundColor(.secondary)
+			}
+			.padding(16)
+			.background(.regularMaterial)
+			.cornerRadius(12)
 		  }
-		  
-		  Spacer()
+		  .buttonStyle(.plain)
+		} else {
+		  HStack(spacing: 16) {
+			Image(systemSymbol: .starFill)
+			  .font(.system(.title3, design: .default, weight: .medium))
+			  .frame(width: 32, height: 32)
+			  .foregroundColor(.yellow)
+
+			VStack(alignment: .leading, spacing: 4) {
+			  Text("Christine Wang")
+				.font(.headline)
+				.fontWeight(.semibold)
+			  Text("Design & Testing")
+				.font(.subheadline)
+				.foregroundColor(.secondary)
+			}
+
+			Spacer()
+		  }
+		  .padding(16)
+		  .background(.regularMaterial)
+		  .cornerRadius(12)
 		}
-		.padding(16)
-		.background(.regularMaterial)
-		.cornerRadius(12)
 		
 		HStack(spacing: 16) {
 		  Image(systemSymbol: .heartFill)
