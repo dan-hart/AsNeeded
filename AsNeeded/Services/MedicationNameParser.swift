@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftRxNorm
+import DHLoggingKit
 // Foundation Models will be available in iOS 26 final release
 // For now, we'll use NaturalLanguage framework as a bridge
 import NaturalLanguage
@@ -175,7 +176,7 @@ struct MedicationNameSimplifierEnhanced {
 				return try await MedicationNameParser.shared.simplifyName(name)
 			} catch {
 				// Fall back to regex if AI parsing fails
-				print("AI parsing failed, using regex: \(error.localizedDescription)")
+				DHLogger.data.error("AI parsing failed, using regex: \(error.localizedDescription)")
 			}
 		}
 		
@@ -191,7 +192,7 @@ struct MedicationNameSimplifierEnhanced {
 				return try await MedicationNameParser.shared.extractBrandName(from: name)
 			} catch {
 				// Fall back to regex if AI extraction fails
-				print("AI brand extraction failed, using regex: \(error.localizedDescription)")
+				DHLogger.data.error("AI brand extraction failed, using regex: \(error.localizedDescription)")
 			}
 		}
 		

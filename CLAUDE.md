@@ -49,6 +49,7 @@
 - **Motion Sensitivity**: Import `@Environment(\.accessibilityReduceMotion)` and provide static alternatives when `reduceMotion` is true. Disable animations for users who prefer reduced motion.
 - **Color and Contrast**: Use semantic colors (`.accent`, `.primary`, `.secondary`) that adapt to user preferences. Avoid relying solely on color to convey information.
 - **Touch Targets**: Ensure interactive elements are at least 44x44 points for optimal usability.
+- **Color Contrast**: ALWAYS use the `Color+Contrast` extension for custom colored backgrounds. Use `.contrastingForegroundColor()` for text on custom backgrounds, and `.contrastingSecondaryColor()` for secondary text. Never hardcode `.white` or `.black` text on colored backgrounds. The extension automatically meets WCAG AA standards (4.5:1 contrast ratio for normal text, 3:1 for large text).
 
 ## Component Reusability Guidelines
 - **Check Before Creating**: Always search for existing components before creating new ones. Look in `AsNeeded/Views/Components/` and examine similar features for reusable patterns.

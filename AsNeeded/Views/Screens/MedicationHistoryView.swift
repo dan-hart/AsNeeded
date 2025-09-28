@@ -57,14 +57,8 @@ struct MedicationHistoryView: View {
                                             if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
                                                 return Color(hex: hexColor) ?? .accent
                                             }
-                                            // Fallback to different colors based on medication name for testing
-                                            let name = rowMedication.displayName.lowercased()
-                                            if name.contains("aspirin") || name.contains("acetaminophen") { return .red }
-                                            if name.contains("ibuprofen") || name.contains("advil") { return .blue }
-                                            if name.contains("tylenol") { return .purple }
-                                            if name.contains("vitamin") { return .orange }
-                                            if name.contains("med") { return .green }
-                                            return Color(hue: Double(abs(rowMedication.displayName.hashValue)) / Double(Int.max), saturation: 0.7, brightness: 0.8)
+                                            // Use app accent color as default
+                                            return .accent
                                         }()
 
                                         Circle()
@@ -387,7 +381,7 @@ struct MedicationHistoryView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium, .large])
+                .dynamicDetent()
             }
             .sheet(item: $logMedication) { med in
                 LogDoseView(medication: med) { dose, event in
@@ -412,7 +406,6 @@ struct MedicationHistoryView: View {
                         }
                     }
                 }
-                .presentationDetents([.large])
             }
             .sheet(item: $editingEvent) { event in
                     NavigationStack {
@@ -466,7 +459,7 @@ struct MedicationHistoryView: View {
                             }
                         }
                     }
-                    .presentationDetents([.medium])
+                    .dynamicDetent()
                 }
             }
             .onAppear {
@@ -563,7 +556,7 @@ struct MedicationHistoryView: View {
                     }
                 }
             }
-            .presentationDetents([.medium])
+            .dynamicDetent()
         }
         .sheet(isPresented: $showSupportView) {
             NavigationView {

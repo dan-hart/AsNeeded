@@ -99,7 +99,7 @@ struct MedicationDetailView: View {
 					medication = medicationToUpdate
 				}
 			}
-			.presentationDetents([.large])
+			.dynamicDetent()
 		}
 		.sheet(isPresented: $showEditSheet) {
 			MedicationEditView(
@@ -168,12 +168,12 @@ struct MedicationDetailView: View {
 			// Large medication icon
 			ZStack {
 				Circle()
-					.fill(Color.accentColor.opacity(0.1))
+					.fill(medication.displayColor.opacity(0.1))
 					.frame(width: 100, height: 100)
-				
+
 				Image(systemSymbol: .pills)
 					.font(.system(.largeTitle, design: .default, weight: .medium))
-					.foregroundStyle(Color.accentColor)
+					.foregroundStyle(medication.displayColor)
 			}
 			
 			// Medication names
@@ -342,8 +342,8 @@ struct MedicationDetailView: View {
 						}
 						.frame(maxWidth: .infinity)
 						.padding(.vertical, 10)
-						.background(Color.accentColor.opacity(0.1))
-						.foregroundStyle(Color.accentColor)
+						.background(medication.displayColor.opacity(0.1))
+						.foregroundStyle(medication.displayColor)
 						.clipShape(RoundedRectangle(cornerRadius: 8))
 					}
 					.buttonStyle(.plain)
@@ -389,7 +389,7 @@ struct MedicationDetailView: View {
 					.font(.headline)
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, 16)
-					.background(Color.accentColor)
+					.background(medication.displayColor)
 					.foregroundStyle(.white)
 					.clipShape(RoundedRectangle(cornerRadius: 12))
 			}

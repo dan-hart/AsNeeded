@@ -211,11 +211,15 @@ struct MedicationEditView: View {
 	// MARK: - Color Section
 	@ViewBuilder
 	private var colorSection: some View {
-		ColorPickerComponent(selectedColorHex: $viewModel.displayColorHex) { newColorHex in
-			withAnimation(.spring(response: 0.3)) {
-				viewModel.displayColorHex = newColorHex
-			}
-		}
+		ColorPickerComponent(
+			selectedColorHex: $viewModel.displayColorHex,
+			onColorSelected: { newColorHex in
+				withAnimation(.spring(response: 0.3)) {
+					viewModel.displayColorHex = newColorHex
+				}
+			},
+			onSave: nil // No save button needed in edit form
+		)
 		.glassCard()
 		.padding(.horizontal)
 	}
@@ -226,20 +230,22 @@ struct MedicationEditView: View {
 		Button {
 			performSave()
 		} label: {
+			let backgroundColor = isFormValid ? Color.accentColor : Color.gray
+
 			HStack(spacing: 12) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
-				
+
 				Text("Save Medication")
 					.font(.headline)
 					.fontWeight(.semibold)
 			}
-			.foregroundStyle(.white)
+			.foregroundStyle(backgroundColor.contrastingForegroundColor())
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, 18)
 			.background(
 				LinearGradient(
-					colors: isFormValid ? 
+					colors: isFormValid ?
 						[Color.accentColor, Color.accentColor.opacity(0.8)] :
 						[Color.gray, Color.gray.opacity(0.8)],
 					startPoint: .leading,
@@ -417,8 +423,7 @@ struct MedicationEditView: View {
 				}
 			}
 		}
-		.presentationDetents([.medium, .large])
-		.presentationDragIndicator(.visible)
+		.dynamicDetent()
 	}
 	
 	private func adjustDate(by days: Int) {

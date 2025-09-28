@@ -151,7 +151,7 @@ struct DataManagementView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium])
+                .dynamicDetent()
             }
             .confirmationDialog(
                 "Clear All Data",
