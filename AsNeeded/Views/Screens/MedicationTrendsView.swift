@@ -41,12 +41,14 @@ struct MedicationTrendsView: View {
 								}
 							}
 							.pickerStyle(.menu)
+							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							Spacer()
 							Picker("Range", selection: $daysWindow) {
 								Text("14d").tag(14)
 								Text("30d").tag(30)
 							}
 							.pickerStyle(.segmented)
+							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							.frame(maxWidth: 160)
 						}
 						
@@ -61,6 +63,7 @@ struct MedicationTrendsView: View {
 								}
 							}
 							.pickerStyle(.segmented)
+							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							Spacer()
 						}
 					}
