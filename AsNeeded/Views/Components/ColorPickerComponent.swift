@@ -27,20 +27,28 @@ struct ColorPickerComponent: View {
 
 	private let hapticsManager = HapticsManager.shared
 
-	// DHFlatUIColors Russian palette - selected colors for medication customization
+	// DHFlatUIColors Russian palette - all 20 colors for medication customization
 	private let presetColors: [(name: String, hex: String)] = [
+		("Creamy Peach", "#F3A683"),
+		("Rosy Highlight", "#F7D794"),
 		("Soft Blue", "#778BEB"),
-		("Cornflower", "#546DE5"),
-		("Blue Curacao", "#3DC1D3"),
-		("Squeaky", "#63CDDA"),
-		("Deep Rose", "#C44569"),
+		("Brewed Mustard", "#E77F67"),
 		("Old Geranium", "#CF6A87"),
-		("Tigerlily", "#E15F41"),
-		("Porcelain Rose", "#E66767"),
-		("Purple Mountain", "#786FA6"),
-		("Purple Corallite", "#574B90"),
+		("Sawtooth Aak", "#F19066"),
 		("Summertime", "#F5CD79"),
-		("Creamy Peach", "#F3A683")
+		("Cornflower", "#546DE5"),
+		("Tigerlily", "#E15F41"),
+		("Deep Rose", "#C44569"),
+		("Purple Mountain", "#786FA6"),
+		("Rogue Pink", "#F8A5C2"),
+		("Squeaky", "#63CDDA"),
+		("Apple Valley", "#EA8685"),
+		("Pencil Lead", "#596275"),
+		("Purple Corallite", "#574B90"),
+		("Flamingo Pink", "#F78FB3"),
+		("Blue Curacao", "#3DC1D3"),
+		("Porcelain Rose", "#E66767"),
+		("Biscay", "#303952")
 	]
 
 	var body: some View {
@@ -126,7 +134,7 @@ struct ColorPickerComponent: View {
 	}
 
 	private var colorGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 6), spacing: 16) {
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 5), spacing: 16) {
 			ForEach(presetColors, id: \.hex) { colorOption in
 				colorSwatch(colorOption)
 			}
