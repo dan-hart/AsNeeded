@@ -44,6 +44,14 @@ struct MedicationHistoryView: View {
                         ForEach(group.entries, id: \.id) { event in
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .center) {
+                                    // Medication color indicator
+                                    if viewModel.isShowingAllMedications, let medication = event.medication {
+                                        Circle()
+                                            .fill(medication.displayColor)
+                                            .frame(width: 12, height: 12)
+                                            .shadow(color: medication.displayColor.opacity(0.3), radius: 2, x: 0, y: 1)
+                                    }
+
                                     VStack(alignment: .leading, spacing: 2) {
                                         // Show medication name when viewing all medications
                                         if viewModel.isShowingAllMedications, let medication = event.medication {
