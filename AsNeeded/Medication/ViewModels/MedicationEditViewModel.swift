@@ -26,14 +26,13 @@ final class MedicationEditViewModel: ObservableObject {
 		self.clinicalName = medication?.clinicalName ?? ""
 		self.nickname = medication?.nickname ?? ""
 		self.quantityText = medication?.quantity.map { String(describing: $0) } ?? ""
-		// Set default dates if not editing existing medication
+		// Set dates from existing medication or nil for new medication
 		if let medication = medication {
 			self.lastRefillDate = medication.lastRefillDate
 			self.nextRefillDate = medication.nextRefillDate
 		} else {
-			// Default: last refill 30 days ago, next refill 30 days from now
-			self.lastRefillDate = Calendar.current.date(byAdding: .day, value: -30, to: Date())
-			self.nextRefillDate = Calendar.current.date(byAdding: .day, value: 30, to: Date())
+			self.lastRefillDate = nil
+			self.nextRefillDate = nil
 		}
 		self.prescribedDoseText = medication?.prescribedDoseAmount.map { String(describing: $0) } ?? ""
 		self.prescribedUnit = medication?.prescribedUnit

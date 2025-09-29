@@ -21,17 +21,8 @@ struct MedicationEditViewModelTests {
 		#expect(viewModel.quantityText == "")
 		#expect(viewModel.prescribedDoseText == "")
 		#expect(viewModel.prescribedUnit == nil)
-		
-		// Should have default dates
-		if let lastRefill = viewModel.lastRefillDate {
-			let daysDiff = Calendar.current.dateComponents([.day], from: lastRefill, to: Date()).day ?? 0
-			#expect(daysDiff >= 29 && daysDiff <= 31) // Approximately 30 days ago
-		}
-		
-		if let nextRefill = viewModel.nextRefillDate {
-			let daysDiff = Calendar.current.dateComponents([.day], from: Date(), to: nextRefill).day ?? 0
-			#expect(daysDiff >= 29 && daysDiff <= 31) // Approximately 30 days from now
-		}
+		#expect(viewModel.lastRefillDate == nil)
+		#expect(viewModel.nextRefillDate == nil)
 	}
 	
 	@Test("Initialize with existing medication populates fields")
