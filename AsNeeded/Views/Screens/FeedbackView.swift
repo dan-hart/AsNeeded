@@ -6,6 +6,7 @@ struct FeedbackView: View {
 	@StateObject private var feedbackService = FeedbackService.shared
 	@State private var showingMailComposer = false
 	@State private var currentFeedbackType: FeedbackType = .feedback
+	@Environment(\.colorScheme) private var colorScheme
 	
 	private var isLoading: Bool {
 		feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
@@ -48,12 +49,14 @@ struct FeedbackView: View {
 							VStack(spacing: 12) {
 								ProgressView()
 									.scaleEffect(1.2)
-									.progressViewStyle(CircularProgressViewStyle(tint: .white))
-								
+									.progressViewStyle(CircularProgressViewStyle(
+										tint: Color(.systemGray6).contrastingForegroundColor(for: colorScheme)
+									))
+
 								Text(loadingMessage)
 									.font(.subheadline)
 									.fontWeight(.medium)
-									.foregroundColor(.white)
+									.foregroundStyle(Color(.systemGray6).contrastingForegroundColor(for: colorScheme))
 									.multilineTextAlignment(.center)
 							}
 							.padding()
@@ -72,20 +75,15 @@ struct FeedbackView: View {
 			AlternativeFeedbackView(feedbackType: currentFeedbackType)
 				.environmentObject(feedbackService)
 		}
-		.confirmationDialog(
-			"Include App Logs?",
-			isPresented: $feedbackService.showingLogConsentDialog,
-			titleVisibility: .visible
-		) {
-			Button("Include Logs") {
-				feedbackService.proceedWithLogs()
-			}
-			Button("Send Without Logs") {
-				feedbackService.proceedWithoutLogs()
-			}
-			Button("Cancel", role: .cancel) { }
-		} message: {
-			Text("Would you like to include technical logs to help diagnose issues? No medication names are stored in logs - only technical information like app events, errors, and system information.")
+		.sheet(isPresented: $feedbackService.showingLogConsentDialog) {
+			LogConsentSheetView(
+				onIncludeLogs: {
+					feedbackService.proceedWithLogs()
+				},
+				onSendWithoutLogs: {
+					feedbackService.proceedWithoutLogs()
+				}
+			)
 		}
 	}
 	

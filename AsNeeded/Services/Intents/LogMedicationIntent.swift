@@ -33,7 +33,7 @@ struct LogMedicationIntent: AppIntent {
 		
 		if let providedMedication = medication {
 			targetMedication = providedMedication.medication
-			logger.info("Using entity medication: \(targetMedication.displayName)")
+			logger.info("Using entity medication: \(targetMedication.id.uuidString)")
 		} else if let name = medicationName, !name.isEmpty {
 			logger.info("Searching for medication by name: \(name)")
 			guard let foundMedication = findBestMatch(for: name) else {
@@ -71,8 +71,8 @@ struct LogMedicationIntent: AppIntent {
 			
 			// Log the dose
 			try await DataStore.shared.addEvent(event)
-			
-			logger.info("Successfully logged dose: \(doseAmount) \(selectedUnit.displayName) of \(targetMedication.displayName)")
+
+			logger.info("Successfully logged dose: \(doseAmount) \(selectedUnit.displayName) of medication \(targetMedication.id.uuidString)")
 			
 			// Format response message
 			let amountText = doseAmount == 1.0 ? "1" : String(format: "%.1f", doseAmount)
