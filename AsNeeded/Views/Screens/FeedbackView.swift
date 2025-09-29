@@ -9,7 +9,7 @@ struct FeedbackView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	
 	private var isLoading: Bool {
-		feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
+		feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog || feedbackService.isPreparingFeedback
 	}
 	
 	private var loadingMessage: String {
@@ -17,6 +17,8 @@ struct FeedbackView: View {
 			return "Awaiting user consent..."
 		} else if feedbackService.isCollectingLogs {
 			return "Preparing mail with logs..."
+		} else if feedbackService.isPreparingFeedback {
+			return "Preparing feedback..."
 		} else {
 			return "Loading..."
 		}

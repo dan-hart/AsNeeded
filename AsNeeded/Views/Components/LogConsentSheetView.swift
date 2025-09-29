@@ -27,6 +27,7 @@ import SFSafeSymbols
 struct LogConsentSheetView: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dismiss) private var dismiss
+	@State private var isProcessing = false
 
 	let onIncludeLogs: () -> Void
 	let onSendWithoutLogs: () -> Void
@@ -231,6 +232,7 @@ struct LogConsentSheetView: View {
 		VStack(spacing: 16) {
 			// Include Logs button (primary action)
 			Button {
+				isProcessing = true
 				onIncludeLogs()
 				dismiss()
 			} label: {
@@ -257,18 +259,26 @@ struct LogConsentSheetView: View {
 				.shadow(color: Color.green.opacity(0.3), radius: 10, y: 5)
 			}
 			.buttonStyle(.plain)
+			.disabled(isProcessing)
+			.opacity(isProcessing ? 0.6 : 1.0)
 			.accessibilityLabel("Include Logs")
 			.accessibilityHint("Attach technical logs to your feedback to help diagnose issues")
 
 			// Send Without Logs button (secondary action)
 			Button {
+				isProcessing = true
 				onSendWithoutLogs()
 				dismiss()
 			} label: {
 				HStack(spacing: 12) {
-					Image(systemSymbol: .paperplaneFill)
-						.font(.title3)
-						.accessibilityHidden(true)
+					if isProcessing {
+						ProgressView()
+							.scaleEffect(0.8)
+					} else {
+						Image(systemSymbol: .paperplaneFill)
+							.font(.title3)
+							.accessibilityHidden(true)
+					}
 
 					Text("Send Without Logs")
 						.font(.headline)
@@ -287,6 +297,8 @@ struct LogConsentSheetView: View {
 				)
 			}
 			.buttonStyle(.plain)
+			.disabled(isProcessing)
+			.opacity(isProcessing ? 0.6 : 1.0)
 			.accessibilityLabel("Send Without Logs")
 			.accessibilityHint("Send feedback without attaching technical logs")
 
@@ -300,6 +312,8 @@ struct LogConsentSheetView: View {
 					.foregroundStyle(.secondary)
 			}
 			.buttonStyle(.plain)
+			.disabled(isProcessing)
+			.opacity(isProcessing ? 0.6 : 1.0)
 			.padding(.top, 4)
 			.accessibilityLabel("Cancel")
 			.accessibilityHint("Close this dialog without sending feedback")

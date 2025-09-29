@@ -114,6 +114,7 @@ final class FeedbackService: NSObject, ObservableObject {
     private let supportEmail = "asneeded@codedbydan.com"
     
     @Published var isCollectingLogs = false
+    @Published var isPreparingFeedback = false
     @Published var showingMailComposer = false
     @Published var showingLogConsentDialog = false
     @Published var showingFeedbackAlternatives = false
@@ -174,8 +175,15 @@ final class FeedbackService: NSObject, ObservableObject {
     func proceedWithoutLogs() {
         logInfo("User declined to include logs")
         showingLogConsentDialog = false
+        isPreparingFeedback = true
         logsZipData = nil
-        showingMailComposer = true
+
+        // Small delay to ensure smooth transition
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+            showingMailComposer = true
+            isPreparingFeedback = false
+        }
         pendingFeedbackAction = nil
     }
     
