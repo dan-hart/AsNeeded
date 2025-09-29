@@ -166,6 +166,7 @@ final class FeedbackService: NSObject, ObservableObject {
     func proceedWithLogs() {
         logInfo("User consented to include logs")
         showingLogConsentDialog = false
+        isCollectingLogs = true // Start loading immediately
         pendingFeedbackAction?()
         pendingFeedbackAction = nil
     }
@@ -179,7 +180,7 @@ final class FeedbackService: NSObject, ObservableObject {
     }
     
     private func collectAndAttachLogs() async {
-        isCollectingLogs = true
+        isCollectingLogs = true // Ensure loading state (also set in proceedWithLogs for immediate feedback)
         logInfo("Collecting application logs")
         
         do {

@@ -46,31 +46,31 @@ public final class DataStore {
 
 	// MARK: - Medication Operations
 	public func addMedication(_ med: ANMedicationConcept) async throws {
-		logger.info("Adding medication: \(med.displayName)")
+		logger.logMedicationOperation("Adding", id: med.id)
 		do {
 			try await medicationsStore.insert(med)
-			logger.info("Successfully added medication: \(med.displayName)")
+			logger.logMedicationOperation("Successfully added", id: med.id)
 		} catch {
-			logger.error("Failed to add medication \(med.displayName): \(error.localizedDescription)")
+			logger.error("Failed to add medication \(med.id.uuidString): \(error.localizedDescription)")
 			throw error
 		}
 	}
 
 	public func updateMedication(_ med: ANMedicationConcept) async throws {
-		logger.info("Updating medication: \(med.displayName)")
+		logger.logMedicationOperation("Updating", id: med.id)
 		do {
 			// Boutique has no explicit update; remove + insert to replace by id.
 			try await medicationsStore.remove(med)
 			try await medicationsStore.insert(med)
-			logger.info("Successfully updated medication: \(med.displayName)")
+			logger.logMedicationOperation("Successfully updated", id: med.id)
 		} catch {
-			logger.error("Failed to update medication \(med.displayName): \(error.localizedDescription)")
+			logger.error("Failed to update medication \(med.id.uuidString): \(error.localizedDescription)")
 			throw error
 		}
 	}
 
 	public func deleteMedication(_ med: ANMedicationConcept) async throws {
-		logger.info("Deleting medication: \(med.displayName)")
+		logger.logMedicationOperation("Deleting", id: med.id)
 		do {
 			// Also delete associated events
 			let associatedEvents = events.filter { $0.medication?.id == med.id }
@@ -112,17 +112,17 @@ public final class DataStore {
 			
 			// Synchronize UserDefaults to ensure changes are persisted
 			UserDefaults.standard.synchronize()
-			
-			logger.info("Successfully deleted medication: \(med.displayName) and \(associatedEvents.count) associated events")
+
+			logger.logMedicationOperation("Successfully deleted", id: med.id, details: "\(associatedEvents.count) associated events")
 		} catch {
-			logger.error("Failed to delete medication \(med.displayName): \(error.localizedDescription)")
+			logger.error("Failed to delete medication \(med.id.uuidString): \(error.localizedDescription)")
 			throw error
 		}
 	}
 
 	// MARK: - Events
 	public func addEvent(_ event: ANEventConcept) async throws {
-		logger.info("Adding event: \(event.eventType) for medication: \(event.medication?.displayName ?? "unknown")")
+		logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
 		do {
 			try await eventsStore.insert(event)
 			logger.info("Successfully added event: \(event.id)")
@@ -224,13 +224,13 @@ public final class DataStore {
 		for medication in importedData.medications {
 			do {
 				if mergeExisting && medications.contains(where: { $0.id == medication.id }) {
-					logger.debug("Skipping duplicate medication: \(medication.displayName)")
+					logger.debug("Skipping duplicate medication: \(medication.id.uuidString)")
 					continue
 				}
 				try await medicationsStore.insert(medication)
 				medicationImportCount += 1
 			} catch {
-				logger.error("Failed to import medication \(medication.displayName): \(error.localizedDescription)")
+				logger.error("Failed to import medication \(medication.id.uuidString): \(error.localizedDescription)")
 				// Continue with other medications
 			}
 		}
@@ -258,7 +258,7 @@ public final class DataStore {
 						logger.debug("Validated medication reference for event \(event.id)")
 					} else {
 						// Medication not found, skip this event
-						logger.warning("Skipping event \(event.id): medication \(eventMedication.displayName) not found")
+						logger.warning("Skipping event \(event.id): medication \(eventMedication.id.uuidString) not found")
 						continue
 					}
 				}
