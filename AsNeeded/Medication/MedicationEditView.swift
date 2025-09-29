@@ -423,7 +423,7 @@ struct MedicationEditView: View {
 				}
 			}
 		}
-		.dynamicDetent()
+		.presentationDetents([.large])
 	}
 	
 	private func adjustDate(by days: Int) {
