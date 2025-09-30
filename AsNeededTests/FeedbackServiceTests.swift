@@ -27,12 +27,12 @@ struct FeedbackServiceTests {
 
 		// Feature request specific content
 		#expect(featureBody.contains("Feature Request"))
-		#expect(featureBody.contains("What feature would you like to see?"))
-		#expect(featureBody.contains("How would this help you?"))
+		#expect(featureBody.contains("Please describe the feature you would like to see:"))
+		#expect(featureBody.contains("Use case:"))
 
 		// General feedback specific content
 		#expect(feedbackBody.contains("General Feedback"))
-		#expect(feedbackBody.contains("What do you like about AsNeeded?"))
+		#expect(feedbackBody.contains("What do you like most about the app?"))
 		#expect(feedbackBody.contains("What could be improved?"))
 
 		// All should contain device information
