@@ -39,6 +39,10 @@ struct MedicationRowComponent: View {
 	@State private var tempSelectedColor: String?
 	private let hapticsManager = HapticsManager.shared
 
+	@ScaledMetric private var rowPadding: CGFloat = 20
+	@ScaledMetric private var iconContentSpacing: CGFloat = 14
+	@ScaledMetric private var logButtonSize: CGFloat = 66
+
 	var body: some View {
 		HStack(spacing: 0) {
 			if dynamicTypeSize.isAccessibilitySize {
@@ -51,12 +55,12 @@ struct MedicationRowComponent: View {
 							.frame(maxWidth: .infinity)
 					}
 				}
-				.padding(20)
+				.padding(rowPadding)
 			} else {
 				// Standard Layout
 				HStack(alignment: .center, spacing: 16) {
 					// Left Side: Icon and Info
-					HStack(spacing: 14) {
+					HStack(spacing: iconContentSpacing) {
 						if editMode?.wrappedValue != .active {
 							medicationIcon
 						}
@@ -76,7 +80,7 @@ struct MedicationRowComponent: View {
 						enhancedLogButton
 					}
 				}
-				.padding(20)
+				.padding(rowPadding)
 			}
 		}
 		.background(
@@ -258,7 +262,7 @@ struct MedicationRowComponent: View {
 						.textCase(.uppercase)
 				}
 				.foregroundStyle(medication.displayColor.contrastingForegroundColor())
-				.frame(width: 66, height: 66)
+				.frame(width: logButtonSize, height: logButtonSize)
 				.background(
 					RoundedRectangle(cornerRadius: 14, style: .continuous)
 						.fill(
