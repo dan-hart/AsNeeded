@@ -75,8 +75,13 @@ struct ColorContrastTests {
 		let lightGray = Color(red: 0.8, green: 0.8, blue: 0.8)
 		#expect(!lightGray.meetsWCAGContrast(with: white))
 
-		// But might meet for large text
-		#expect(lightGray.meetsWCAGContrast(with: white, isLargeText: true))
+		// Light gray on white also doesn't meet AA for large text (ratio ~1.6:1, needs 3:1)
+		// This is correct behavior - very light gray on white is not accessible
+		#expect(!lightGray.meetsWCAGContrast(with: white, isLargeText: true))
+
+		// Medium gray should meet AA for large text
+		let mediumGray = Color(red: 0.5, green: 0.5, blue: 0.5)
+		#expect(mediumGray.meetsWCAGContrast(with: white, isLargeText: true))
 	}
 
 	@Test("Hex color contrast")
