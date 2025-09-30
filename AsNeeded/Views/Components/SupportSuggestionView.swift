@@ -3,14 +3,23 @@ import SFSafeSymbols
 
 struct SupportSuggestionView: View {
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
-	
+	@ScaledMetric private var containerSpacing: CGFloat = 8
+	@ScaledMetric private var contentSpacing: CGFloat = 14
+	@ScaledMetric private var iconSize: CGFloat = 36
+	@ScaledMetric private var labelSpacing: CGFloat = 3
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 16
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 8
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 8
+	@ScaledMetric private var borderWidth: CGFloat = 1
+
 	var body: some View {
 		if !hideSupportBanners {
-			VStack(spacing: 8) {
+			VStack(spacing: containerSpacing) {
 				NavigationLink {
 					SupportView()
 				} label: {
-					HStack(spacing: 14) {
+					HStack(spacing: contentSpacing) {
 					ZStack {
 					Circle()
 						.fill(
@@ -20,7 +29,7 @@ struct SupportSuggestionView: View {
 								endPoint: .bottomTrailing
 							)
 						)
-						.frame(width: 36, height: 36)
+						.frame(width: iconSize, height: iconSize)
 					
 					Image(systemSymbol: .heart)
 						.font(.system(.callout, design: .default, weight: .semibold))
@@ -33,7 +42,7 @@ struct SupportSuggestionView: View {
 						)
 				}
 				
-				VStack(alignment: .leading, spacing: 3) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text("Enjoying As Needed?")
 						.font(.subheadline)
 						.fontWeight(.semibold)
@@ -42,16 +51,16 @@ struct SupportSuggestionView: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
-				
+
 				Spacer()
-				
+
 				Image(systemSymbol: .chevronRight)
 					.font(.caption)
 					.foregroundColor(.secondary.opacity(0.5))
 			}
-			.padding(16)
+			.padding(cardPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 16, style: .continuous)
+				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 					.fill(
 						LinearGradient(
 							colors: [
@@ -65,7 +74,7 @@ struct SupportSuggestionView: View {
 					.shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
 			)
 			.overlay(
-				RoundedRectangle(cornerRadius: 16, style: .continuous)
+				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 					.stroke(
 						LinearGradient(
 							colors: [
@@ -75,12 +84,12 @@ struct SupportSuggestionView: View {
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						),
-						lineWidth: 1
+						lineWidth: borderWidth
 					)
 			)
 				}
 				.buttonStyle(.plain)
-				
+
 				Button {
 					hideSupportBanners = true
 				} label: {
@@ -88,16 +97,16 @@ struct SupportSuggestionView: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 						.frame(maxWidth: .infinity)
-						.padding(.vertical, 8)
+						.padding(.vertical, buttonVerticalPadding)
 						.background(
-							RoundedRectangle(cornerRadius: 8)
+							RoundedRectangle(cornerRadius: buttonCornerRadius)
 								.fill(Color(.tertiarySystemFill))
 						)
 				}
 				.buttonStyle(.plain)
 			}
-			.padding(.horizontal, 16)
-			.padding(.top, 12)
+			.padding(.horizontal, cardPadding)
+			.padding(.top, containerSpacing)
 		}
 	}
 }

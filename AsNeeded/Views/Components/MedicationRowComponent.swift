@@ -42,6 +42,7 @@ struct MedicationRowComponent: View {
 	@ScaledMetric private var rowPadding: CGFloat = 20
 	@ScaledMetric private var iconContentSpacing: CGFloat = 14
 	@ScaledMetric private var logButtonSize: CGFloat = 66
+	@ScaledMetric private var medicationIconSize: CGFloat = 56
 
 	var body: some View {
 		HStack(spacing: 0) {
@@ -136,7 +137,7 @@ struct MedicationRowComponent: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: 44, height: 44)
+					.frame(width: medicationIconSize, height: medicationIconSize)
 
 				Image(systemSymbol: iconForMedication)
 					.font(.title3.weight(.semibold))

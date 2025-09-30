@@ -17,6 +17,24 @@ struct MedicationListView: View {
     @State private var showSupportView = false
     @State private var editMode: EditMode = .inactive
     @AppStorage("medicationOrder") private var medicationOrder: [String] = []
+
+    @ScaledMetric private var emptyStateSpacing: CGFloat = 32
+    @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
+    @ScaledMetric private var emptyStateSubSpacing: CGFloat = 8
+    @ScaledMetric private var iconSize: CGFloat = 80
+    @ScaledMetric private var iconCornerRadius: CGFloat = 18
+    @ScaledMetric private var shadowRadius: CGFloat = 8
+    @ScaledMetric private var shadowY: CGFloat = 4
+    @ScaledMetric private var emptyHorizontalPadding: CGFloat = 24
+    @ScaledMetric private var buttonVerticalPadding: CGFloat = 16
+    @ScaledMetric private var buttonHorizontalPadding: CGFloat = 32
+    @ScaledMetric private var buttonCornerRadius: CGFloat = 16
+    @ScaledMetric private var buttonShadowRadius: CGFloat = 8
+    @ScaledMetric private var listRowTopPadding: CGFloat = 8
+    @ScaledMetric private var listRowLeadingPadding: CGFloat = 12
+    @ScaledMetric private var listRowBottomPadding: CGFloat = 8
+    @ScaledMetric private var listRowTrailingPadding: CGFloat = 12
+    @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
     
     var body: some View {
         NavigationStack {
@@ -172,31 +190,31 @@ struct MedicationListView: View {
     
     @ViewBuilder
     private var emptyStateView: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: emptyStateSpacing) {
             Spacer()
-            
-            VStack(spacing: 16) {
+
+            VStack(spacing: emptyStateInnerSpacing) {
                 Image("AppIconDisplay")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-                
-                VStack(spacing: 8) {
+                    .frame(width: iconSize, height: iconSize)
+                    .clipShape(RoundedRectangle(cornerRadius: iconCornerRadius, style: .continuous))
+                    .shadow(color: .black.opacity(0.1), radius: shadowRadius, x: 0, y: shadowY)
+
+                VStack(spacing: emptyStateSubSpacing) {
                     Text("Welcome to As Needed")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
-                    
+
                     Text("Track your medications and view trends")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, emptyHorizontalPadding)
                 }
             }
-            
+
             Button(action: {
                 hapticsManager.mediumImpact()
                 showAddSheet = true
@@ -205,20 +223,20 @@ struct MedicationListView: View {
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 32)
+                    .padding(.vertical, buttonVerticalPadding)
+                    .padding(.horizontal, buttonHorizontalPadding)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: buttonCornerRadius)
                             .fill(Color.accentColor.gradient)
                     )
-                    .shadow(color: Color.accentColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: Color.accentColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             }
             .buttonStyle(.plain)
             .scaleEffect(1.0)
             .animation(.easeInOut(duration: 0.1), value: showAddSheet)
             .accessibilityLabel("Add your first medication")
             .accessibilityHint("Get started by adding your first medication to track")
-            
+
             Spacer()
         }
     }
@@ -271,7 +289,7 @@ struct MedicationListView: View {
                             .accessibilityHint("Removes this medication permanently")
                         }
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: listRowLeadingPadding, bottom: listRowBottomPadding, trailing: listRowTrailingPadding))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }
@@ -282,9 +300,9 @@ struct MedicationListView: View {
             .environment(\.editMode, $editMode)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
-            
+
             SupportSuggestionView()
-                .padding(.bottom, 16)
+                .padding(.bottom, supportViewBottomPadding)
                 .background(Color(.systemGroupedBackground))
         }
     }

@@ -10,14 +10,29 @@ struct AlternativeFeedbackView: View {
 	@State private var showingCopiedConfirmation = false
 	@State private var copiedMessage = "Copied to clipboard!"
 
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var headerIconSpacing: CGFloat = 16
+	@ScaledMetric private var headerTextSpacing: CGFloat = 8
+	@ScaledMetric private var optionsSpacing: CGFloat = 16
+	@ScaledMetric private var buttonSpacing: CGFloat = 12
+	@ScaledMetric private var buttonIconSpacing: CGFloat = 16
+	@ScaledMetric private var buttonIconSize: CGFloat = 32
+	@ScaledMetric private var buttonTextSpacing: CGFloat = 4
+	@ScaledMetric private var buttonPadding: CGFloat = 16
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 12
+	@ScaledMetric private var buttonBorderWidth: CGFloat = 0.5
+	@ScaledMetric private var confirmationIconSpacing: CGFloat = 12
+	@ScaledMetric private var confirmationPadding: CGFloat = 16
+	@ScaledMetric private var confirmationCornerRadius: CGFloat = 12
+
 	var body: some View {
 		NavigationStack {
-			VStack(spacing: 24) {
+			VStack(spacing: mainSpacing) {
 				// MARK: - Header
 				headerSection
 
 				// MARK: - Feedback Options
-				VStack(spacing: 16) {
+				VStack(spacing: optionsSpacing) {
 					Text("Choose how to send feedback:", comment: "Instruction text for selecting feedback sending method")
 						.font(.headline)
 						.multilineTextAlignment(.center)
@@ -48,12 +63,12 @@ struct AlternativeFeedbackView: View {
 	// MARK: - View Components
 
 	private var headerSection: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: headerIconSpacing) {
 			Image(systemSymbol: .envelopeBadge)
 				.font(.largeTitle)
 				.foregroundStyle(.accent)
 
-			VStack(spacing: 8) {
+			VStack(spacing: headerTextSpacing) {
 				Text("Mail App Not Configured", comment: "Title shown when Mail app is not configured for sending feedback")
 					.font(.title2)
 					.fontWeight(.semibold)
@@ -67,7 +82,7 @@ struct AlternativeFeedbackView: View {
 	}
 
 	private var feedbackOptionsSection: some View {
-		VStack(spacing: 12) {
+		VStack(spacing: buttonSpacing) {
 			// Copy Support Email
 			feedbackOptionButton(
 				icon: .at,
@@ -108,13 +123,13 @@ struct AlternativeFeedbackView: View {
 		action: @escaping () -> Void
 	) -> some View {
 		Button(action: action) {
-			HStack(spacing: 16) {
+			HStack(spacing: buttonIconSpacing) {
 				Image(systemSymbol: icon)
 					.font(.title2)
 					.foregroundStyle(iconColor)
-					.frame(width: 32, height: 32)
+					.frame(width: buttonIconSize, height: buttonIconSize)
 
-				VStack(alignment: .leading, spacing: 4) {
+				VStack(alignment: .leading, spacing: buttonTextSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -131,13 +146,13 @@ struct AlternativeFeedbackView: View {
 					.font(.caption)
 					.foregroundStyle(.tertiary)
 			}
-			.padding(16)
+			.padding(buttonPadding)
 			.background(Color(.systemBackground))
 			.overlay(
-				RoundedRectangle(cornerRadius: 12)
-					.stroke(Color(.systemGray4), lineWidth: 0.5)
+				RoundedRectangle(cornerRadius: buttonCornerRadius)
+					.stroke(Color(.systemGray4), lineWidth: buttonBorderWidth)
 			)
-			.cornerRadius(12)
+			.cornerRadius(buttonCornerRadius)
 		}
 		.buttonStyle(.plain)
 	}
@@ -146,7 +161,7 @@ struct AlternativeFeedbackView: View {
 		VStack {
 			Spacer()
 
-			HStack(spacing: 12) {
+			HStack(spacing: confirmationIconSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
 					.foregroundStyle(.green)
@@ -155,8 +170,8 @@ struct AlternativeFeedbackView: View {
 					.font(.body)
 					.fontWeight(.medium)
 			}
-			.padding(16)
-			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+			.padding(confirmationPadding)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: confirmationCornerRadius))
 			.padding(.horizontal)
 
 			Spacer()

@@ -3,11 +3,30 @@ import SFSafeSymbols
 import DHLoggingKit
 
 struct ThankYouView: View {
+	@ScaledMetric private var spacing32: CGFloat = 32
+	@ScaledMetric private var spacing20: CGFloat = 20
+	@ScaledMetric private var spacing16: CGFloat = 16
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var padding8: CGFloat = 8
+	@ScaledMetric private var cornerRadius16: CGFloat = 16
+	@ScaledMetric private var cornerRadius14: CGFloat = 14
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var cornerRadius10: CGFloat = 10
+	@ScaledMetric private var circleSize120: CGFloat = 120
+	@ScaledMetric private var iconSize40: CGFloat = 40
+	@ScaledMetric private var iconSize24: CGFloat = 24
+	@ScaledMetric private var blurRadius20: CGFloat = 20
+	@ScaledMetric private var shadowRadius8: CGFloat = 8
+	@ScaledMetric private var shadowY4: CGFloat = 4
+
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.openURL) private var openURL
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@EnvironmentObject private var feedbackService: FeedbackService
-	
+
 	let purchaseType: PurchaseType
 	@State private var showConfetti = false
 	@State private var heartScale: CGFloat = 0.5
@@ -40,10 +59,10 @@ struct ThankYouView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(spacing: 32) {
+				VStack(spacing: spacing32) {
 					// MARK: - Hero Section
 					heroSection
-					
+
 					// MARK: - Impact Message
 					impactSection
 						.opacity(messageOpacity)
@@ -53,12 +72,12 @@ struct ThankYouView: View {
 					contributeSection
 						.opacity(buttonsOpacity)
 						.animation(reduceMotion ? .none : .easeInOut(duration: 0.8).delay(1.0), value: buttonsOpacity)
-					
+
 					// MARK: - Personal Note
 					personalNoteSection
 						.opacity(buttonsOpacity)
 						.animation(.easeInOut(duration: 0.8).delay(1.2), value: buttonsOpacity)
-					
+
 					// MARK: - Dismiss Button
 					dismissButton
 						.opacity(buttonsOpacity)
@@ -99,7 +118,7 @@ struct ThankYouView: View {
 	
 	// MARK: - View Components
 	private var heroSection: some View {
-		VStack(spacing: 20) {
+		VStack(spacing: spacing20) {
 			// Animated Heart Icon
 			ZStack {
 				Circle()
@@ -110,9 +129,9 @@ struct ThankYouView: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: 120, height: 120)
-					.blur(radius: 20)
-				
+					.frame(width: circleSize120, height: circleSize120)
+					.blur(radius: blurRadius20)
+
 				Image(systemSymbol: .heartFill)
 					.font(.system(.largeTitle, design: .default, weight: .semibold))
 					.foregroundStyle(
@@ -129,14 +148,14 @@ struct ThankYouView: View {
 						value: heartScale
 					)
 			}
-			.padding(.top, 20)
-			
-			VStack(spacing: 8) {
+			.padding(.top, spacing20)
+
+			VStack(spacing: spacing8) {
 				Text(purchaseType.title)
 					.font(.largeTitle)
 					.fontWeight(.bold)
 					.multilineTextAlignment(.center)
-				
+
 				Text(purchaseType.subtitle)
 					.font(.title3)
 					.foregroundColor(.secondary)
@@ -146,30 +165,30 @@ struct ThankYouView: View {
 	}
 	
 	private var impactSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: spacing16) {
 			Label("Your Support Helps", systemSymbol: .sparkles)
 				.font(.headline)
 				.foregroundColor(.accentColor)
-			
-			VStack(alignment: .leading, spacing: 12) {
+
+			VStack(alignment: .leading, spacing: spacing12) {
 				ImpactRow(
 					icon: .hammerFill,
 					title: "Continuous Development",
 					description: "Regular updates with new features and improvements"
 				)
-				
+
 				ImpactRow(
 					icon: .shieldLefthalfFilled,
 					title: "Privacy-First Approach",
 					description: "Keeping the app ad-free and your data private"
 				)
-				
+
 				ImpactRow(
 					icon: .heartTextSquareFill,
 					title: "Community Support",
 					description: "Responding to feedback and helping users"
 				)
-				
+
 				ImpactRow(
 					icon: .globeAmericasFill,
 					title: "Open Source Mission",
@@ -178,26 +197,26 @@ struct ThankYouView: View {
 			}
 			.padding()
 			.background(
-				RoundedRectangle(cornerRadius: 16)
+				RoundedRectangle(cornerRadius: cornerRadius16)
 					.fill(.quaternary.opacity(0.3))
 			)
 		}
 	}
 	
 	private var contributeSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: spacing16) {
 			Label("Want to Contribute More?", systemSymbol: .personCropCircleBadgePlus)
 				.font(.headline)
 				.foregroundColor(.accentColor)
-			
-			VStack(spacing: 12) {
+
+			VStack(spacing: spacing12) {
 				// GitHub Repository
 				Button(action: openGitHub) {
 					HStack {
 						Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: 40, height: 40)
+							.frame(width: iconSize40, height: iconSize40)
 							.background(
 								LinearGradient(
 									colors: [.purple, .indigo],
@@ -205,9 +224,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(10)
-						
-						VStack(alignment: .leading, spacing: 2) {
+							.cornerRadius(cornerRadius10)
+
+						VStack(alignment: .leading, spacing: spacing2) {
 							Text("View Source Code")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -216,16 +235,16 @@ struct ThankYouView: View {
 								.font(.caption)
 								.foregroundColor(.secondary)
 						}
-						
+
 						Spacer()
-						
+
 						Image(systemSymbol: .arrowUpRight)
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 12)
+						RoundedRectangle(cornerRadius: cornerRadius12)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -237,7 +256,7 @@ struct ThankYouView: View {
 						Image(systemSymbol: .exclamationmarkTriangleFill)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: 40, height: 40)
+							.frame(width: iconSize40, height: iconSize40)
 							.background(
 								LinearGradient(
 									colors: [.orange, .yellow],
@@ -245,9 +264,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(10)
-						
-						VStack(alignment: .leading, spacing: 2) {
+							.cornerRadius(cornerRadius10)
+
+						VStack(alignment: .leading, spacing: spacing2) {
 							Text("Report an Issue")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -256,28 +275,28 @@ struct ThankYouView: View {
 								.font(.caption)
 								.foregroundColor(.secondary)
 						}
-						
+
 						Spacer()
-						
+
 						Image(systemSymbol: .arrowUpRight)
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 12)
+						RoundedRectangle(cornerRadius: cornerRadius12)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
 				.buttonStyle(.plain)
-				
+
 				// Send Feedback
 				Button(action: sendFeedback) {
 					HStack {
 						Image(systemSymbol: .envelopeFill)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: 40, height: 40)
+							.frame(width: iconSize40, height: iconSize40)
 							.background(
 								LinearGradient(
 									colors: [.blue, .cyan],
@@ -285,9 +304,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(10)
-						
-						VStack(alignment: .leading, spacing: 2) {
+							.cornerRadius(cornerRadius10)
+
+						VStack(alignment: .leading, spacing: spacing2) {
 							Text("Send Feedback")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -296,16 +315,16 @@ struct ThankYouView: View {
 								.font(.caption)
 								.foregroundColor(.secondary)
 						}
-						
+
 						Spacer()
-						
+
 						Image(systemSymbol: .paperplaneFill)
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 12)
+						RoundedRectangle(cornerRadius: cornerRadius12)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -318,7 +337,7 @@ struct ThankYouView: View {
 							Image(systemSymbol: .star)
 								.font(.title2)
 								.foregroundColor(.white)
-								.frame(width: 40, height: 40)
+								.frame(width: iconSize40, height: iconSize40)
 								.background(
 									LinearGradient(
 										colors: [.orange, .yellow],
@@ -326,9 +345,9 @@ struct ThankYouView: View {
 										endPoint: .bottomTrailing
 									)
 								)
-								.cornerRadius(10)
+								.cornerRadius(cornerRadius10)
 
-							VStack(alignment: .leading, spacing: 2) {
+							VStack(alignment: .leading, spacing: spacing2) {
 								Text("Rate & Review")
 									.font(.callout)
 									.fontWeight(.semibold)
@@ -346,7 +365,7 @@ struct ThankYouView: View {
 						}
 						.padding()
 						.background(
-							RoundedRectangle(cornerRadius: 12)
+							RoundedRectangle(cornerRadius: cornerRadius12)
 								.fill(.quaternary.opacity(0.2))
 						)
 					}
@@ -357,21 +376,21 @@ struct ThankYouView: View {
 	}
 	
 	private var personalNoteSection: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: spacing12) {
 			HStack {
 				Image(systemSymbol: .personCircleFill)
 					.foregroundColor(.accentColor)
 				Text("A Note from the Developer")
 					.font(.headline)
 			}
-			
+
 			Text("Your support truly makes a difference. As an independent developer, contributions like yours allow me to dedicate time to making AsNeeded better for everyone. Thank you for believing in this project and being part of our community. 💙")
 				.font(.callout)
 				.foregroundColor(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
 				.padding()
 				.background(
-					RoundedRectangle(cornerRadius: 12)
+					RoundedRectangle(cornerRadius: cornerRadius12)
 						.fill(Color.accentColor.opacity(0.1))
 				)
 		}
@@ -389,7 +408,7 @@ struct ThankYouView: View {
 					.foregroundColor(.white)
 				Spacer()
 			}
-			.padding(.vertical, 16)
+			.padding(.vertical, padding16)
 			.background(
 				LinearGradient(
 					colors: [.accentColor, .accentColor.opacity(0.8)],
@@ -397,11 +416,11 @@ struct ThankYouView: View {
 					endPoint: .trailing
 				)
 			)
-			.cornerRadius(14)
-			.shadow(color: .accentColor.opacity(0.3), radius: 8, y: 4)
+			.cornerRadius(cornerRadius14)
+			.shadow(color: .accentColor.opacity(0.3), radius: shadowRadius8, y: shadowY4)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, 8)
+		.padding(.top, padding8)
 	}
 	
 	// MARK: - Actions
@@ -432,18 +451,22 @@ struct ThankYouView: View {
 
 // MARK: - Supporting Views
 private struct ImpactRow: View {
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var iconWidth24: CGFloat = 24
+
 	let icon: SFSymbol
 	let title: String
 	let description: String
-	
+
 	var body: some View {
-		HStack(alignment: .top, spacing: 12) {
+		HStack(alignment: .top, spacing: spacing12) {
 			Image(systemSymbol: icon)
 				.font(.body)
 				.foregroundColor(.accentColor)
-				.frame(width: 24)
-			
-			VStack(alignment: .leading, spacing: 4) {
+				.frame(width: iconWidth24)
+
+			VStack(alignment: .leading, spacing: spacing4) {
 				Text(title)
 					.font(.subheadline)
 					.fontWeight(.semibold)

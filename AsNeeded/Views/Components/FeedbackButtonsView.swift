@@ -5,11 +5,19 @@ struct FeedbackButtonsView: View {
     @StateObject private var feedbackService = FeedbackService.shared
     @State private var showingMailComposer = false
     @State private var currentFeedbackType: FeedbackType = .feedback
-    
+	@ScaledMetric private var containerSpacing: CGFloat = 12
+	@ScaledMetric private var buttonSpacing: CGFloat = 8
+	@ScaledMetric private var containerPadding: CGFloat = 20
+	@ScaledMetric private var containerCornerRadius: CGFloat = 12
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 12
+	@ScaledMetric private var buttonHorizontalPadding: CGFloat = 16
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 8
+	@ScaledMetric private var loadingSpacing: CGFloat = 12
+
     private var isLoading: Bool {
         feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
     }
-    
+
     private var loadingMessage: String {
         if feedbackService.showingLogConsentDialog {
             return "Awaiting user consent..."
@@ -21,14 +29,14 @@ struct FeedbackButtonsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: containerSpacing) {
             Text("Help Improve AsNeeded")
                 .font(.headline)
                 .fontWeight(.medium)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .redacted(reason: isLoading ? .placeholder : [])
-            
-            VStack(spacing: 8) {
+
+            VStack(spacing: buttonSpacing) {
                 FeedbackButton(
                     title: "Report a Bug",
                     icon: "exclamationmark.triangle.fill",
@@ -50,7 +58,7 @@ struct FeedbackButtonsView: View {
                         feedbackService.submitFeedback(type: .featureRequest)
                     }
                 )
-                
+
                 FeedbackButton(
                     title: "Give Feedback",
                     icon: "heart.fill",
@@ -64,26 +72,26 @@ struct FeedbackButtonsView: View {
             }
             .redacted(reason: isLoading ? .placeholder : [])
         }
-        .padding()
+        .padding(containerPadding)
         .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .cornerRadius(containerCornerRadius)
         .overlay {
             if isLoading {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: containerCornerRadius)
                     .fill(Color.black.opacity(0.4))
                     .overlay {
-                        VStack(spacing: 12) {
+                        VStack(spacing: loadingSpacing) {
                             ProgressView()
                                 .scaleEffect(1.2)
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            
+
                             Text(loadingMessage)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                         }
-                        .padding()
+                        .padding(containerPadding)
                     }
             }
         }
@@ -118,7 +126,10 @@ struct FeedbackButton: View {
     let color: Color
     let isDisabled: Bool
     let action: () -> Void
-    
+	@ScaledMetric private var verticalPadding: CGFloat = 12
+	@ScaledMetric private var horizontalPadding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 8
+
     init(title: String, icon: String, color: Color, isDisabled: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
@@ -126,7 +137,7 @@ struct FeedbackButton: View {
         self.isDisabled = isDisabled
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: isDisabled ? {} : action) {
             HStack {
@@ -141,10 +152,10 @@ struct FeedbackButton: View {
                     .font(.caption)
                     .opacity(isDisabled ? 0.5 : 1.0)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, verticalPadding)
+            .padding(.horizontal, horizontalPadding)
             .background(Color(.systemBackground))
-            .cornerRadius(8)
+            .cornerRadius(cornerRadius)
             .opacity(isDisabled ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)

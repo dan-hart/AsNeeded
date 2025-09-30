@@ -7,6 +7,12 @@ struct SettingsRowComponent: View {
 	let subtitle: String
 	let iconColor: Color
 	let action: () -> Void
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var iconSize: CGFloat = 24
+	@ScaledMetric private var textSpacing: CGFloat = 2
+	@ScaledMetric private var rowPadding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 0.5
 
 	init(
 		icon: SFSymbol,
@@ -24,13 +30,13 @@ struct SettingsRowComponent: View {
 
 	var body: some View {
 		Button(action: action) {
-			HStack(spacing: 12) {
+			HStack(spacing: rowSpacing) {
 				Image(systemSymbol: icon)
 					.font(.callout.weight(.medium))
-					.frame(width: 24, height: 24)
+					.frame(width: iconSize, height: iconSize)
 					.foregroundColor(iconColor)
 
-				VStack(alignment: .leading, spacing: 2) {
+				VStack(alignment: .leading, spacing: textSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -45,13 +51,13 @@ struct SettingsRowComponent: View {
 					.font(.caption)
 					.foregroundColor(.secondary)
 			}
-			.padding(16)
+			.padding(rowPadding)
 			.background(Color(.systemBackground))
 			.overlay(
-				RoundedRectangle(cornerRadius: 12)
-					.stroke(Color(.systemGray4), lineWidth: 0.5)
+				RoundedRectangle(cornerRadius: cornerRadius)
+					.stroke(Color(.systemGray4), lineWidth: borderWidth)
 			)
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius)
 		}
 		.buttonStyle(.plain)
 	}

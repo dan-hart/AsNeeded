@@ -29,8 +29,12 @@ struct QuickActionsComponent: View {
 	let onHistoryTapped: () -> Void
 	let onDeleteTapped: () -> Void
 
+	@ScaledMetric private var buttonSpacing: CGFloat = 12
+	@ScaledMetric private var verticalPadding: CGFloat = 12
+	@ScaledMetric private var cornerRadius: CGFloat = 10
+
 	var body: some View {
-		HStack(spacing: 12) {
+		HStack(spacing: buttonSpacing) {
 			// Edit button
 			Button {
 				onEditTapped()
@@ -39,10 +43,10 @@ struct QuickActionsComponent: View {
 					.font(.subheadline)
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
+					.padding(.vertical, verticalPadding)
 					.background(Color(.secondarySystemGroupedBackground))
 					.foregroundStyle(Color.accentColor)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
+					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("Edit")
 			.accessibilityHint("Opens edit form for this item")
@@ -55,10 +59,10 @@ struct QuickActionsComponent: View {
 					.font(.subheadline)
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
+					.padding(.vertical, verticalPadding)
 					.background(Color(.secondarySystemGroupedBackground))
 					.foregroundStyle(Color.accentColor)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
+					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("History")
 			.accessibilityHint("View history and activity for this item")
@@ -71,10 +75,10 @@ struct QuickActionsComponent: View {
 					.font(.subheadline)
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
-					.padding(.vertical, 12)
+					.padding(.vertical, verticalPadding)
 					.background(Color(.secondarySystemGroupedBackground))
 					.foregroundStyle(.red)
-					.clipShape(RoundedRectangle(cornerRadius: 10))
+					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("Delete")
 			.accessibilityHint("Delete this item permanently")

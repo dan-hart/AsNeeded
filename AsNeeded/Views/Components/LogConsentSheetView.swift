@@ -32,11 +32,33 @@ struct LogConsentSheetView: View {
 	let onIncludeLogs: () -> Void
 	let onSendWithoutLogs: () -> Void
 
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var heroSpacing: CGFloat = 16
+	@ScaledMetric private var heroIconSize: CGFloat = 100
+	@ScaledMetric private var heroGlassSize: CGFloat = 80
+	@ScaledMetric private var heroVPadding: CGFloat = 10
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var sectionHSpacing: CGFloat = 10
+	@ScaledMetric private var sectionBottomPadding: CGFloat = 4
+	@ScaledMetric private var itemRowSpacing: CGFloat = 8
+	@ScaledMetric private var itemIconWidth: CGFloat = 20
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var actionButtonSpacing: CGFloat = 16
+	@ScaledMetric private var actionButtonIconSpacing: CGFloat = 12
+	@ScaledMetric private var actionButtonVPadding: CGFloat = 18
+	@ScaledMetric private var actionButtonCornerRadius: CGFloat = 16
+	@ScaledMetric private var actionButtonBorderWidth: CGFloat = 1.5
+	@ScaledMetric private var actionTopPadding: CGFloat = 20
+	@ScaledMetric private var actionBottomPadding: CGFloat = 8
+	@ScaledMetric private var actionHPadding: CGFloat = 20
+	@ScaledMetric private var cancelTopPadding: CGFloat = 4
+	@ScaledMetric private var toolbarPadding: CGFloat = 8
+
 	var body: some View {
 		NavigationStack {
 			VStack(spacing: 0) {
 				ScrollView {
-					VStack(spacing: 24) {
+					VStack(spacing: mainSpacing) {
 						heroSection
 						whatIsIncludedSection
 						whatIsNotIncludedSection
@@ -89,7 +111,7 @@ struct LogConsentSheetView: View {
 						Image(systemSymbol: .xmark)
 							.font(.body.weight(.medium))
 							.foregroundStyle(.secondary)
-							.padding(8)
+							.padding(toolbarPadding)
 							.background(
 								Circle()
 									.fill(.ultraThinMaterial)
@@ -105,7 +127,7 @@ struct LogConsentSheetView: View {
 	// MARK: - Hero Section
 	@ViewBuilder
 	private var heroSection: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: heroSpacing) {
 			// Animated icon with glass effect
 			ZStack {
 				// Animated gradient background
@@ -120,13 +142,13 @@ struct LogConsentSheetView: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: 100, height: 100)
+					.frame(width: heroIconSize, height: heroIconSize)
 					.blur(radius: 20)
 
 				// Glass circle
 				Circle()
 					.fill(.ultraThinMaterial)
-					.frame(width: 80, height: 80)
+					.frame(width: heroGlassSize, height: heroGlassSize)
 					.overlay(
 						Circle()
 							.strokeBorder(
@@ -167,15 +189,15 @@ struct LogConsentSheetView: View {
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
 		}
-		.padding(.vertical, 10)
+		.padding(.vertical, heroVPadding)
 		.accessibilityElement(children: .combine)
 	}
 
 	// MARK: - What Is Included Section
 	@ViewBuilder
 	private var whatIsIncludedSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
-			HStack(spacing: 10) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
+			HStack(spacing: sectionHSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title2)
 					.foregroundStyle(.green)
@@ -184,10 +206,10 @@ struct LogConsentSheetView: View {
 					.font(.title3)
 					.fontWeight(.bold)
 			}
-			.padding(.bottom, 4)
+			.padding(.bottom, sectionBottomPadding)
 			.accessibilityAddTraits(.isHeader)
 
-			VStack(alignment: .leading, spacing: 8) {
+			VStack(alignment: .leading, spacing: itemRowSpacing) {
 				logItemRow(icon: .gearshapeFill, text: "App events and actions", color: .blue)
 				logItemRow(icon: .exclamationmarkTriangleFill, text: "Error messages and warnings", color: .orange)
 				logItemRow(icon: .infoCircleFill, text: "System information (iOS version, device model)", color: .cyan)
@@ -202,8 +224,8 @@ struct LogConsentSheetView: View {
 	// MARK: - What Is Not Included Section
 	@ViewBuilder
 	private var whatIsNotIncludedSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
-			HStack(spacing: 10) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
+			HStack(spacing: sectionHSpacing) {
 				Image(systemSymbol: .xmarkCircleFill)
 					.font(.title2)
 					.foregroundStyle(.red)
@@ -212,10 +234,10 @@ struct LogConsentSheetView: View {
 					.font(.title3)
 					.fontWeight(.bold)
 			}
-			.padding(.bottom, 4)
+			.padding(.bottom, sectionBottomPadding)
 			.accessibilityAddTraits(.isHeader)
 
-			VStack(alignment: .leading, spacing: 8) {
+			VStack(alignment: .leading, spacing: itemRowSpacing) {
 				logItemRow(icon: .pillsFill, text: "Medication names", color: .red, isExcluded: true)
 				logItemRow(icon: .personFill, text: "Personal health information", color: .red, isExcluded: true)
 				logItemRow(icon: .lockFill, text: "Any sensitive user data", color: .red, isExcluded: true)
@@ -229,14 +251,14 @@ struct LogConsentSheetView: View {
 	// MARK: - Action Buttons Section
 	@ViewBuilder
 	private var actionButtonsSection: some View {
-		VStack(spacing: 16) {
+		VStack(spacing: actionButtonSpacing) {
 			// Include Logs button (primary action)
 			Button {
 				isProcessing = true
 				onIncludeLogs()
 				dismiss()
 			} label: {
-				HStack(spacing: 12) {
+				HStack(spacing: actionButtonIconSpacing) {
 					Image(systemSymbol: .checkmarkCircleFill)
 						.font(.title3)
 						.accessibilityHidden(true)
@@ -247,7 +269,7 @@ struct LogConsentSheetView: View {
 				}
 				.foregroundStyle(Color.green.contrastingForegroundColor(for: colorScheme))
 				.frame(maxWidth: .infinity)
-				.padding(.vertical, 18)
+				.padding(.vertical, actionButtonVPadding)
 				.background(
 					LinearGradient(
 						colors: [Color.green, Color.green.opacity(0.8)],
@@ -255,7 +277,7 @@ struct LogConsentSheetView: View {
 						endPoint: .trailing
 					)
 				)
-				.clipShape(RoundedRectangle(cornerRadius: 16))
+				.clipShape(RoundedRectangle(cornerRadius: actionButtonCornerRadius))
 				.shadow(color: Color.green.opacity(0.3), radius: 10, y: 5)
 			}
 			.buttonStyle(.plain)
@@ -270,7 +292,7 @@ struct LogConsentSheetView: View {
 				onSendWithoutLogs()
 				dismiss()
 			} label: {
-				HStack(spacing: 12) {
+				HStack(spacing: actionButtonIconSpacing) {
 					if isProcessing {
 						ProgressView()
 							.scaleEffect(0.8)
@@ -286,13 +308,13 @@ struct LogConsentSheetView: View {
 				}
 				.foregroundStyle(.accent)
 				.frame(maxWidth: .infinity)
-				.padding(.vertical, 18)
+				.padding(.vertical, actionButtonVPadding)
 				.background(
-					RoundedRectangle(cornerRadius: 16)
+					RoundedRectangle(cornerRadius: actionButtonCornerRadius)
 						.fill(Color.accent.opacity(0.1))
 						.overlay(
-							RoundedRectangle(cornerRadius: 16)
-								.strokeBorder(Color.accent.opacity(0.3), lineWidth: 1.5)
+							RoundedRectangle(cornerRadius: actionButtonCornerRadius)
+								.strokeBorder(Color.accent.opacity(0.3), lineWidth: actionButtonBorderWidth)
 						)
 				)
 			}
@@ -314,23 +336,23 @@ struct LogConsentSheetView: View {
 			.buttonStyle(.plain)
 			.disabled(isProcessing)
 			.opacity(isProcessing ? 0.6 : 1.0)
-			.padding(.top, 4)
+			.padding(.top, cancelTopPadding)
 			.accessibilityLabel("Cancel")
 			.accessibilityHint("Close this dialog without sending feedback")
 		}
-		.padding(.horizontal, 20)
-		.padding(.top, 20)
-		.padding(.bottom, 8)
+		.padding(.horizontal, actionHPadding)
+		.padding(.top, actionTopPadding)
+		.padding(.bottom, actionBottomPadding)
 	}
 
 	// MARK: - Helper Views
 	@ViewBuilder
 	private func logItemRow(icon: SFSymbol, text: String, color: Color, isExcluded: Bool = false) -> some View {
-		HStack(spacing: 12) {
+		HStack(spacing: headerSpacing) {
 			Image(systemSymbol: icon)
 				.font(.body)
 				.foregroundStyle(color)
-				.frame(width: 20)
+				.frame(width: itemIconWidth)
 				.accessibilityHidden(true)
 
 			Text(text)

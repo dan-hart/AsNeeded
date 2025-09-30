@@ -8,10 +8,20 @@ struct AppPreferencesView: View {
 	@AppStorage("showMedicationNamesInNotifications") private var showMedicationNames: Bool = false
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
 	@State private var showingResetConfirmation = false
+	@ScaledMetric private var sectionSpacing: CGFloat = 32
+	@ScaledMetric private var itemSpacing: CGFloat = 16
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var iconSize: CGFloat = 24
+	@ScaledMetric private var padding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	@ScaledMetric private var textLeadingPadding: CGFloat = 36
+	@ScaledMetric private var stackItemSpacing: CGFloat = 2
+	@ScaledMetric private var innerSpacing: CGFloat = 4
 
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 32) {
+			VStack(alignment: .leading, spacing: sectionSpacing) {
 				// MARK: - Header
 				headerSection
 
@@ -27,10 +37,10 @@ struct AppPreferencesView: View {
 				// MARK: - Reset
 				resetSection
 
-				Spacer(minLength: 32)
+				Spacer(minLength: sectionSpacing)
 			}
-			.padding(.horizontal)
-			.padding(.vertical)
+			.padding(.horizontal, padding)
+			.padding(.vertical, padding)
 		}
 		.navigationTitle("App Preferences")
 		.navigationBarTitleDisplayMode(.large)
@@ -54,7 +64,7 @@ struct AppPreferencesView: View {
 
 	// MARK: - View Components
 	private var headerSection: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: headerSpacing) {
 			Text("Configure how As Needed behaves and interacts with you. These settings control notifications, haptic feedback, and other app behaviors.")
 				.font(.body)
 				.foregroundColor(.secondary)
@@ -62,7 +72,7 @@ struct AppPreferencesView: View {
 	}
 
 	private var notificationsSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Label("Notifications", systemSymbol: .bell)
 				.font(.title2)
 				.fontWeight(.semibold)
@@ -83,7 +93,7 @@ struct AppPreferencesView: View {
 	}
 
 	private var feedbackSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Label("Feedback", systemSymbol: .iphoneRadiowavesLeftAndRight)
 				.font(.title2)
 				.fontWeight(.semibold)
@@ -125,7 +135,7 @@ struct AppPreferencesView: View {
 	}
 
 	private var privacySection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Label("Privacy & Reviews", systemSymbol: .shieldLefthalfFilled)
 				.font(.title2)
 				.fontWeight(.semibold)
@@ -135,7 +145,7 @@ struct AppPreferencesView: View {
 				.font(.subheadline)
 				.foregroundColor(.secondary)
 
-			VStack(spacing: 12) {
+			VStack(spacing: headerSpacing) {
 				hideSupportBannersToggle
 				disableReviewRequestsToggle
 			}
@@ -163,14 +173,14 @@ struct AppPreferencesView: View {
 	}
 
 	private var notificationDisabledMessage: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			HStack(spacing: 12) {
+		VStack(alignment: .leading, spacing: headerSpacing) {
+			HStack(spacing: headerSpacing) {
 				Image(systemSymbol: .bellSlash)
 					.font(.callout.weight(.medium))
-					.frame(width: 24, height: 24)
+					.frame(width: iconSize, height: iconSize)
 					.foregroundColor(.secondary)
 
-				VStack(alignment: .leading, spacing: 4) {
+				VStack(alignment: .leading, spacing: innerSpacing) {
 					Text("Notifications Disabled")
 						.font(.body)
 						.fontWeight(.medium)
@@ -180,14 +190,14 @@ struct AppPreferencesView: View {
 						.foregroundColor(.secondary)
 				}
 			}
-			.padding(16)
+			.padding(padding)
 			.background(Color(.systemGray6))
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius)
 		}
 	}
 
 	private var resetSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Label("Reset", systemSymbol: .arrowCounterclockwise)
 				.font(.title2)
 				.fontWeight(.semibold)
@@ -198,13 +208,13 @@ struct AppPreferencesView: View {
 				.foregroundColor(.secondary)
 
 			Button(action: { showingResetConfirmation = true }) {
-				HStack(spacing: 12) {
+				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .arrowCounterclockwise)
 						.font(.callout.weight(.medium))
-						.frame(width: 24, height: 24)
+						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.red)
 
-					VStack(alignment: .leading, spacing: 2) {
+					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Reset to Defaults")
 							.font(.body)
 							.fontWeight(.medium)
@@ -221,13 +231,13 @@ struct AppPreferencesView: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
-				.padding(16)
+				.padding(padding)
 				.background(Color(.systemBackground))
 				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(Color(.systemGray4), lineWidth: 0.5)
+					RoundedRectangle(cornerRadius: cornerRadius)
+						.stroke(Color(.systemGray4), lineWidth: borderWidth)
 				)
-				.cornerRadius(12)
+				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
 		}
@@ -259,16 +269,24 @@ private struct PreferenceRow: View {
 	let detail: String
 	@Binding var isOn: Bool
 	let onChange: (Bool) -> Void
+	@ScaledMetric private var itemSpacing: CGFloat = 16
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var stackItemSpacing: CGFloat = 2
+	@ScaledMetric private var iconSize: CGFloat = 24
+	@ScaledMetric private var padding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	@ScaledMetric private var textLeadingPadding: CGFloat = 36
 
 	var body: some View {
-		VStack(alignment: .leading, spacing: 16) {
-			HStack(spacing: 12) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
+			HStack(spacing: headerSpacing) {
 				Image(systemSymbol: icon)
 					.font(.callout.weight(.medium))
-					.frame(width: 24, height: 24)
+					.frame(width: iconSize, height: iconSize)
 					.foregroundColor(.accentColor)
 
-				VStack(alignment: .leading, spacing: 2) {
+				VStack(alignment: .leading, spacing: stackItemSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -290,15 +308,15 @@ private struct PreferenceRow: View {
 			Text(detail)
 				.font(.caption)
 				.foregroundColor(.secondary)
-				.padding(.leading, 36) // Align with title text
+				.padding(.leading, textLeadingPadding)
 		}
-		.padding(16)
+		.padding(padding)
 		.background(Color(.systemBackground))
 		.overlay(
-			RoundedRectangle(cornerRadius: 12)
-				.stroke(Color(.systemGray4), lineWidth: 0.5)
+			RoundedRectangle(cornerRadius: cornerRadius)
+				.stroke(Color(.systemGray4), lineWidth: borderWidth)
 		)
-		.cornerRadius(12)
+		.cornerRadius(cornerRadius)
 	}
 }
 

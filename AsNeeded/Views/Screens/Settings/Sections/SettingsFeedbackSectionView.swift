@@ -2,8 +2,16 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsFeedbackSectionView: View {
+	@ScaledMetric private var itemSpacing: CGFloat = 16
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var stackItemSpacing: CGFloat = 2
+	@ScaledMetric private var iconSize: CGFloat = 24
+	@ScaledMetric private var padding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 0.5
+
 	var body: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Feedback")
 				.font(.title2)
 				.fontWeight(.semibold)
@@ -11,13 +19,13 @@ struct SettingsFeedbackSectionView: View {
 			NavigationLink {
 				FeedbackView()
 			} label: {
-				HStack(spacing: 12) {
+				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .bubbleLeftAndBubbleRight)
 						.font(.system(.callout, design: .default, weight: .medium))
-						.frame(width: 24, height: 24)
+						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.accentColor)
 
-					VStack(alignment: .leading, spacing: 2) {
+					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Send Feedback")
 							.font(.body)
 							.fontWeight(.medium)
@@ -32,13 +40,13 @@ struct SettingsFeedbackSectionView: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
-				.padding(16)
+				.padding(padding)
 				.background(Color(.systemBackground))
 				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(Color(.systemGray4), lineWidth: 0.5)
+					RoundedRectangle(cornerRadius: cornerRadius)
+						.stroke(Color(.systemGray4), lineWidth: borderWidth)
 				)
-				.cornerRadius(12)
+				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
 		}

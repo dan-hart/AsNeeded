@@ -28,12 +28,34 @@ struct MedicationTrendsView: View {
 	@State private var daysWindow: Int = 14
 	@AppStorage("trendsVisualizationType") private var visualizationType: VisualizationType = .chart
 
+	@ScaledMetric private var spacing16: CGFloat = 16
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var spacing6: CGFloat = 6
+	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var maxWidth160: CGFloat = 160
+	@ScaledMetric private var padding12: CGFloat = 12
+	@ScaledMetric private var minHeight90: CGFloat = 90
+	@ScaledMetric private var cornerRadius10: CGFloat = 10
+	@ScaledMetric private var height280: CGFloat = 280
+	@ScaledMetric private var padding4: CGFloat = 4
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var height20: CGFloat = 20
+	@ScaledMetric private var cornerRadius3: CGFloat = 3
+	@ScaledMetric private var strokeWidth: CGFloat = 0.5
+	@ScaledMetric private var cornerRadius2: CGFloat = 2
+	@ScaledMetric private var legendSquareSize: CGFloat = 12
+	@ScaledMetric private var lineWidth2: CGFloat = 2
+	@ScaledMetric private var symbolSize: CGFloat = 30
+
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(alignment: .leading, spacing: 16) {
+				VStack(alignment: .leading, spacing: spacing16) {
 					// Picker + context
-					VStack(spacing: 12) {
+					VStack(spacing: spacing12) {
 						HStack(alignment: .center) {
 							Picker("Medication", selection: $viewModel.selectedMedicationID) {
 								ForEach(viewModel.medications, id: \.id) { med in
@@ -49,9 +71,9 @@ struct MedicationTrendsView: View {
 							}
 							.pickerStyle(.segmented)
 							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
-							.frame(maxWidth: 160)
+							.frame(maxWidth: maxWidth160)
 						}
-						
+
 						HStack {
 							Text("View:")
 								.font(.subheadline)
@@ -84,19 +106,19 @@ struct MedicationTrendsView: View {
 					}
 					
 					// Support link at bottom
-					VStack(spacing: 16) {
+					VStack(spacing: spacing16) {
 						Divider()
-							.padding(.top, 16)
-						
+							.padding(.top, padding16)
+
 						SupportSuggestionView()
 					}
-					.padding(.bottom, 16)
+					.padding(.bottom, padding16)
 				}
 				.padding(.horizontal)
 				.padding(.vertical)
 			}
 			.navigationTitle("Trends")
-			.onAppear { 
+			.onAppear {
 				// Ensure we have a valid medication selected
 				viewModel.ensureValidSelection()
 			}
@@ -125,7 +147,7 @@ struct MedicationTrendsView: View {
 			return "~\(days)d remaining"
 		}()
 
-		LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+		LazyVGrid(columns: [GridItem(.flexible(), spacing: spacing12), GridItem(.flexible(), spacing: spacing12)], spacing: spacing12) {
 			metricCard(title: "Avg (7d)", value: avgText, systemImage: .chartLineUptrendXyaxis)
 			metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
 			metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
@@ -134,8 +156,8 @@ struct MedicationTrendsView: View {
 	}
 
 	private func metricCard(title: String, value: String, systemImage: SFSymbol) -> some View {
-		VStack(alignment: .leading, spacing: 4) {
-			HStack(spacing: 6) {
+		VStack(alignment: .leading, spacing: spacing4) {
+			HStack(spacing: spacing6) {
 				Image(systemSymbol: systemImage)
 					.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
 				Text(title)
@@ -145,9 +167,9 @@ struct MedicationTrendsView: View {
 			Text(value)
 				.font(.headline)
 		}
-		.padding(12)
-		.frame(maxWidth: .infinity, minHeight: 90, alignment: .leading)
-		.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+		.padding(padding12)
+		.frame(maxWidth: .infinity, minHeight: minHeight90, alignment: .leading)
+		.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius10, style: .continuous))
 	}
 
 	@ViewBuilder
@@ -158,11 +180,11 @@ struct MedicationTrendsView: View {
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
-			VStack(alignment: .leading, spacing: 12) {
+			VStack(alignment: .leading, spacing: spacing12) {
 				Text("Daily Usage")
 					.font(.headline)
 					.fontWeight(.semibold)
-				
+
 				Chart(data, id: \.day) { item in
 					// Area mark for visual appeal
 					AreaMark(
@@ -182,7 +204,7 @@ struct MedicationTrendsView: View {
 					)
 					.interpolationMethod(.catmullRom)
 					.foregroundStyle(med.displayColor)
-					.lineStyle(StrokeStyle(lineWidth: 2))
+					.lineStyle(StrokeStyle(lineWidth: lineWidth2))
 
 					// Point marks for data points
 					if item.total > 0 {
@@ -191,7 +213,7 @@ struct MedicationTrendsView: View {
 							y: .value("Total", item.total)
 						)
 						.foregroundStyle(med.displayColor)
-						.symbolSize(30)
+						.symbolSize(symbolSize)
 					}
 				}
 				.chartXAxis {
@@ -214,8 +236,8 @@ struct MedicationTrendsView: View {
 					Rectangle()
 						.fill(.clear)
 				}
-				.frame(height: 280)
-				.padding(.horizontal, 4)
+				.frame(height: height280)
+				.padding(.horizontal, padding4)
 				.onTapGesture {
 					// Navigate to history with the selected medication
 					if let medicationID = viewModel.selectedMedicationID {
@@ -223,8 +245,8 @@ struct MedicationTrendsView: View {
 					}
 				}
 			}
-			.padding(16)
-			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+			.padding(padding16)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius12))
 		}
 	}
 	
@@ -236,11 +258,11 @@ struct MedicationTrendsView: View {
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
-			VStack(alignment: .leading, spacing: 12) {
+			VStack(alignment: .leading, spacing: spacing12) {
 				Text("Usage Calendar")
 					.font(.headline)
 					.fontWeight(.semibold)
-				
+
 				CalendarHeatmapGrid(
 					data: data,
 					daysWindow: daysWindow,
@@ -253,8 +275,8 @@ struct MedicationTrendsView: View {
 					}
 				)
 			}
-			.padding(16)
-			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+			.padding(padding16)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius12))
 		}
 	}
 }
@@ -265,36 +287,44 @@ struct CalendarHeatmapGrid: View {
 	let medicationColor: Color
 	let onDateTapped: (Date) -> Void
 	private let calendar = Calendar.current
-	
+
+	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var height20: CGFloat = 20
+	@ScaledMetric private var cornerRadius3: CGFloat = 3
+	@ScaledMetric private var strokeWidth: CGFloat = 0.5
+	@ScaledMetric private var cornerRadius2: CGFloat = 2
+	@ScaledMetric private var legendSquareSize: CGFloat = 12
+
 	// Calculate grid layout
 	private var columns: Int { 7 } // Days of week
-	private var rows: Int { 
+	private var rows: Int {
 		let weeks = ceil(Double(daysWindow) / 7.0)
 		return Int(weeks)
 	}
 	
 	var body: some View {
-		VStack(alignment: .leading, spacing: 8) {
+		VStack(alignment: .leading, spacing: spacing8) {
 			// Weekday headers
-			HStack(spacing: 2) {
+			HStack(spacing: spacing2) {
 				ForEach(calendar.veryShortWeekdaySymbols, id: \.self) { day in
 					Text(day)
 						.font(.caption2)
 						.foregroundStyle(.secondary)
 						.frame(maxWidth: .infinity)
-						.frame(height: 20)
+						.frame(height: height20)
 				}
 			}
-			
+
 			// Calendar grid
-			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 7), spacing: 2) {
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing2), count: 7), spacing: spacing2) {
 				ForEach(paddedData, id: \.date) { day in
-					RoundedRectangle(cornerRadius: 3)
+					RoundedRectangle(cornerRadius: cornerRadius3)
 						.fill(colorForIntensity(day.intensity))
-						.frame(height: 20)
+						.frame(height: height20)
 						.overlay(
-							RoundedRectangle(cornerRadius: 3)
-								.stroke(.secondary.opacity(0.2), lineWidth: 0.5)
+							RoundedRectangle(cornerRadius: cornerRadius3)
+								.stroke(.secondary.opacity(0.2), lineWidth: strokeWidth)
 						)
 						.onTapGesture {
 							// Only navigate for actual dates, not padding
@@ -302,34 +332,34 @@ struct CalendarHeatmapGrid: View {
 								onDateTapped(day.date)
 							}
 						}
-						.help(day.total > 0 ? 
-							  "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" : 
+						.help(day.total > 0 ?
+							  "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" :
 							  "\(calendar.component(.day, from: day.date)): No doses")
 				}
 			}
-			
+
 			// Legend
 			HStack {
 				Text("Less")
 					.font(.caption)
 					.foregroundStyle(.secondary)
-				
-				HStack(spacing: 2) {
+
+				HStack(spacing: spacing2) {
 					ForEach(0..<5) { level in
-						RoundedRectangle(cornerRadius: 2)
+						RoundedRectangle(cornerRadius: cornerRadius2)
 							.fill(colorForIntensity(Double(level) / 4.0))
-							.frame(width: 12, height: 12)
+							.frame(width: legendSquareSize, height: legendSquareSize)
 							.overlay(
-								RoundedRectangle(cornerRadius: 2)
-									.stroke(.secondary.opacity(0.2), lineWidth: 0.5)
+								RoundedRectangle(cornerRadius: cornerRadius2)
+									.stroke(.secondary.opacity(0.2), lineWidth: strokeWidth)
 							)
 					}
 				}
-				
+
 				Text("More")
 					.font(.caption)
 					.foregroundStyle(.secondary)
-				
+
 				Spacer()
 			}
 		}

@@ -7,17 +7,24 @@ struct NotificationPermissionRequestView: View {
 	let onPermissionGranted: () -> Void
 	let onPermissionDenied: () -> Void
 	@Environment(\.dismiss) private var dismiss
-	
+
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var iconBottomPadding: CGFloat = 8
+	@ScaledMetric private var descriptionHPadding: CGFloat = 32
+	@ScaledMetric private var buttonSpacing: CGFloat = 12
+	@ScaledMetric private var buttonHeight: CGFloat = 50
+	@ScaledMetric private var buttonHPadding: CGFloat = 32
+
 	var body: some View {
 		NavigationView {
-			VStack(spacing: 24) {
+			VStack(spacing: mainSpacing) {
 				Spacer()
-				
+
 				// Icon
 				Image(systemSymbol: .bellBadgeFill)
 					.font(.system(.largeTitle, design: .default, weight: .medium))
 					.foregroundColor(.accentColor)
-					.padding(.bottom, 8)
+					.padding(.bottom, iconBottomPadding)
 				
 				// Title
 				Text("Enable Reminders")
@@ -30,12 +37,12 @@ struct NotificationPermissionRequestView: View {
 					.font(.body)
 					.foregroundColor(.secondary)
 					.multilineTextAlignment(.center)
-					.padding(.horizontal, 32)
-				
+					.padding(.horizontal, descriptionHPadding)
+
 				Spacer()
-				
+
 				// Buttons
-				VStack(spacing: 12) {
+				VStack(spacing: buttonSpacing) {
 					Button {
 						isRequesting = true
 						Task {
@@ -53,25 +60,25 @@ struct NotificationPermissionRequestView: View {
 							ProgressView()
 								.progressViewStyle(CircularProgressViewStyle())
 								.frame(maxWidth: .infinity)
-								.frame(height: 50)
+								.frame(height: buttonHeight)
 						} else {
 							Text("Enable Notifications")
 								.font(.headline)
 								.frame(maxWidth: .infinity)
-								.frame(height: 50)
+								.frame(height: buttonHeight)
 						}
 					}
 					.buttonStyle(.borderedProminent)
 					.disabled(isRequesting)
-					
+
 					Button("Not Now") {
 						dismiss()
 					}
 					.buttonStyle(.bordered)
 					.frame(maxWidth: .infinity)
-					.frame(height: 50)
+					.frame(height: buttonHeight)
 				}
-				.padding(.horizontal, 32)
+				.padding(.horizontal, buttonHPadding)
 				
 				Spacer()
 			}

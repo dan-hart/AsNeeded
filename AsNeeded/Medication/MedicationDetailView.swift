@@ -20,6 +20,18 @@ struct MedicationDetailView: View {
 	@State private var showReminderSheet = false
 	@State private var showReminderList = false
 	@State private var reminderCount = 0
+	@ScaledMetric private var contentSpacing: CGFloat = 20
+	@ScaledMetric private var cardSpacing: CGFloat = 16
+	@ScaledMetric private var heroIconSize: CGFloat = 100
+	@ScaledMetric private var heroSpacing: CGFloat = 12
+	@ScaledMetric private var heroNameSpacing: CGFloat = 4
+	@ScaledMetric private var cardPadding: CGFloat = 20
+	@ScaledMetric private var cardCornerRadius: CGFloat = 12
+	@ScaledMetric private var detailSpacing: CGFloat = 12
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 16
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var rowSpacing: CGFloat = 10
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 8
 	
 	init(medication: ANMedicationConcept) {
 		self.medicationId = medication.id
@@ -28,10 +40,10 @@ struct MedicationDetailView: View {
 	
 	var body: some View {
 		ScrollView {
-			VStack(spacing: 20) {
+			VStack(spacing: contentSpacing) {
 				// MARK: - Hero Section
 				heroSection
-				
+
 				// MARK: - Quick Actions
 				QuickActionsComponent(
 					onEditTapped: { showEditSheet = true },
@@ -41,23 +53,23 @@ struct MedicationDetailView: View {
 					},
 					onDeleteTapped: { showDeleteConfirm = true }
 				)
-				
+
 				// MARK: - Details Cards
-				VStack(spacing: 16) {
+				VStack(spacing: cardSpacing) {
 					medicationInfoCard
-					
+
 					if medication.quantity != nil || medication.lastRefillDate != nil || medication.nextRefillDate != nil {
 						refillInfoCard
 					}
-					
+
 					if medication.prescribedDoseAmount != nil && medication.prescribedUnit != nil {
 						prescribedDoseCard
 					}
-					
+
 					remindersCard
 				}
 				.padding(.horizontal)
-				
+
 				// MARK: - Bottom Actions
 				bottomActionsSection
 			}
@@ -164,25 +176,25 @@ struct MedicationDetailView: View {
 	
 	// MARK: - View Components
 	private var heroSection: some View {
-		VStack(spacing: 12) {
+		VStack(spacing: heroSpacing) {
 			// Large medication icon
 			ZStack {
 				Circle()
 					.fill(medication.displayColor.opacity(0.1))
-					.frame(width: 100, height: 100)
+					.frame(width: heroIconSize, height: heroIconSize)
 
 				Image(systemSymbol: .pills)
 					.font(.system(.largeTitle, design: .default, weight: .medium))
 					.foregroundStyle(medication.displayColor)
 			}
-			
+
 			// Medication names
-			VStack(spacing: 4) {
+			VStack(spacing: heroNameSpacing) {
 				Text(medication.displayName)
 					.font(.title2)
 					.fontWeight(.bold)
 					.multilineTextAlignment(.center)
-				
+
 				if medication.nickname != nil && medication.nickname != medication.clinicalName {
 					Text(medication.clinicalName)
 						.font(.subheadline)
@@ -197,38 +209,38 @@ struct MedicationDetailView: View {
 	
 	
 	private var medicationInfoCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Medication Info", systemSymbol: .info)
 					.font(.headline)
 					.foregroundStyle(.primary)
 				Spacer()
 			}
-			
-			VStack(spacing: 12) {
+
+			VStack(spacing: detailSpacing) {
 				detailRow(label: "Clinical Name", value: medication.clinicalName)
-				
+
 				if let nickname = medication.nickname {
 					Divider()
 					detailRow(label: "Nickname", value: nickname)
 				}
 			}
 		}
-		.padding()
+		.padding(cardPadding)
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 12))
+		.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 	}
 	
 	private var refillInfoCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Supply & Refills", systemSymbol: .pills)
 					.font(.headline)
 					.foregroundStyle(.primary)
 				Spacer()
 			}
-			
-			VStack(spacing: 12) {
+
+			VStack(spacing: detailSpacing) {
 				if let quantity = medication.quantity {
 					let supplyValue: String = {
 						if let unit = medication.prescribedUnit {
@@ -264,20 +276,20 @@ struct MedicationDetailView: View {
 				}
 			}
 		}
-		.padding()
+		.padding(cardPadding)
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 12))
+		.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 	}
-	
+
 	private var prescribedDoseCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Prescribed Dose", systemSymbol: .pill)
 					.font(.headline)
 					.foregroundStyle(.primary)
 				Spacer()
 			}
-			
+
 			if let amount = medication.prescribedDoseAmount, let unit = medication.prescribedUnit {
 				HStack {
 					Text("\(amount.formattedAmount)")
@@ -289,28 +301,28 @@ struct MedicationDetailView: View {
 				}
 			}
 		}
-		.padding()
+		.padding(cardPadding)
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 12))
+		.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 	}
-	
+
 	private var remindersCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Reminders", systemSymbol: .bell)
 					.font(.headline)
 					.foregroundStyle(.primary)
 				Spacer()
-				
+
 				if reminderCount > 0 {
 					Text("\(reminderCount) active")
 						.font(.subheadline)
 						.foregroundStyle(.secondary)
 				}
 			}
-			
+
 			if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
-				VStack(spacing: 10) {
+				VStack(spacing: rowSpacing) {
 					if reminderCount > 0 {
 						Button {
 							showReminderList = true
@@ -323,14 +335,14 @@ struct MedicationDetailView: View {
 									.font(.caption)
 									.foregroundStyle(.secondary)
 							}
-							.padding(.vertical, 10)
-							.padding(.horizontal, 12)
+							.padding(.vertical, rowSpacing)
+							.padding(.horizontal, detailSpacing)
 							.background(Color(.tertiarySystemGroupedBackground))
-							.clipShape(RoundedRectangle(cornerRadius: 8))
+							.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
 						}
 						.buttonStyle(.plain)
 					}
-					
+
 					Button {
 						showReminderSheet = true
 					} label: {
@@ -341,16 +353,16 @@ struct MedicationDetailView: View {
 								.fontWeight(.medium)
 						}
 						.frame(maxWidth: .infinity)
-						.padding(.vertical, 10)
+						.padding(.vertical, rowSpacing)
 						.background(medication.displayColor.opacity(0.1))
 						.foregroundStyle(medication.displayColor)
-						.clipShape(RoundedRectangle(cornerRadius: 8))
+						.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
 					}
 					.buttonStyle(.plain)
 				}
 			} else if notificationManager.authorizationStatus == .denied {
-				VStack(spacing: 10) {
-					HStack(spacing: 8) {
+				VStack(spacing: rowSpacing) {
+					HStack(spacing: contentSpacing) {
 						Image(systemSymbol: .bellSlash)
 							.foregroundColor(.orange)
 						Text("Notifications Disabled")
@@ -366,21 +378,21 @@ struct MedicationDetailView: View {
 						Label("Open Settings", systemSymbol: .gearshape)
 							.fontWeight(.medium)
 							.frame(maxWidth: .infinity)
-							.padding(.vertical, 10)
+							.padding(.vertical, rowSpacing)
 							.background(Color(.tertiarySystemGroupedBackground))
-							.clipShape(RoundedRectangle(cornerRadius: 8))
+							.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
 					}
 					.buttonStyle(.plain)
 				}
 			}
 		}
-		.padding()
+		.padding(cardPadding)
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 12))
+		.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 	}
-	
+
 	private var bottomActionsSection: some View {
-		VStack(spacing: 12) {
+		VStack(spacing: detailSpacing) {
 			// Log dose button (primary action)
 			Button {
 				showLogDose = true
@@ -388,15 +400,15 @@ struct MedicationDetailView: View {
 				Label("Log Dose", systemSymbol: .plusCircle)
 					.font(.headline)
 					.frame(maxWidth: .infinity)
-					.padding(.vertical, 16)
+					.padding(.vertical, buttonVerticalPadding)
 					.background(medication.displayColor)
 					.foregroundStyle(.white)
-					.clipShape(RoundedRectangle(cornerRadius: 12))
+					.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 			}
 			.buttonStyle(.plain)
 			.padding(.horizontal)
 		}
-		.padding(.top, 8)
+		.padding(.top, contentSpacing)
 	}
 	
 	// MARK: - Helper Views

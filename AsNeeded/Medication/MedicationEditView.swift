@@ -8,12 +8,15 @@ import SFSafeSymbols
 
 // Button style for quick date adjustments
 struct QuickDateButton: ButtonStyle {
+	@ScaledMetric private var horizontalPadding: CGFloat = 16
+	@ScaledMetric private var verticalPadding: CGFloat = 8
+
 	func makeBody(configuration: Configuration) -> some View {
 		configuration.label
 			.font(.subheadline)
 			.fontWeight(.medium)
-			.padding(.horizontal, 16)
-			.padding(.vertical, 8)
+			.padding(.horizontal, horizontalPadding)
+			.padding(.vertical, verticalPadding)
 			.background(
 				Capsule()
 					.fill(Color.accentColor.opacity(configuration.isPressed ? 0.2 : 0.1))
@@ -29,6 +32,29 @@ struct MedicationEditView: View {
 	@FocusState private var focusedField: Field?
 	@Environment(\.colorScheme) private var colorScheme
 	private let hapticsManager = HapticsManager.shared
+
+	@ScaledMetric private var sectionSpacing: CGFloat = 20
+	@ScaledMetric private var iconSpacing: CGFloat = 12
+	@ScaledMetric private var labelSpacing: CGFloat = 8
+	@ScaledMetric private var cardSpacing: CGFloat = 12
+	@ScaledMetric private var smallPadding: CGFloat = 4
+	@ScaledMetric private var mediumPadding: CGFloat = 8
+	@ScaledMetric private var standardPadding: CGFloat = 12
+	@ScaledMetric private var largePadding: CGFloat = 16
+	@ScaledMetric private var xlargePadding: CGFloat = 18
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 18
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 16
+	@ScaledMetric private var shadowRadius: CGFloat = 10
+	@ScaledMetric private var shadowY: CGFloat = 5
+	@ScaledMetric private var iconCircleSize: CGFloat = 64
+	@ScaledMetric private var removeBorderWidth: CGFloat = 1
+	@ScaledMetric private var removeButtonPadding: CGFloat = 20
+	@ScaledMetric private var removeButtonVerticalPadding: CGFloat = 12
+	@ScaledMetric private var removeButtonCornerRadius: CGFloat = 12
+	@ScaledMetric private var toolbarButtonPadding: CGFloat = 8
+	@ScaledMetric private var mainContentSpacing: CGFloat = 24
+	@ScaledMetric private var clearFrameHeight: CGFloat = 20
+	@ScaledMetric private var quickButtonSpacing: CGFloat = 10
 	
 	enum Field: Hashable {
 		case clinicalName
@@ -112,9 +138,9 @@ struct MedicationEditView: View {
 	// MARK: - Refill Info Section
 	@ViewBuilder
 	private var refillInfoSection: some View {
-		VStack(alignment: .leading, spacing: 20) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 				// Section header
-				HStack(spacing: 12) {
+				HStack(spacing: iconSpacing) {
 					Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90CircleFill)
 						.font(.title2)
 						.foregroundStyle(
@@ -131,16 +157,16 @@ struct MedicationEditView: View {
 				}
 				
 				// Current Quantity
-				VStack(alignment: .leading, spacing: 8) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Label {
-						HStack(spacing: 4) {
+						HStack(spacing: smallPadding) {
 							Text("Current Quantity")
 								.font(.subheadline)
 								.fontWeight(.medium)
 							Text("Optional")
 								.font(.caption)
 								.foregroundStyle(.tertiary)
-								.padding(.horizontal, 8)
+								.padding(.horizontal, mediumPadding)
 								.padding(.vertical, 2)
 								.background(
 									Capsule()
@@ -160,14 +186,14 @@ struct MedicationEditView: View {
 				}
 				
 				// Date Cards Section
-				VStack(alignment: .leading, spacing: 8) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text("Refill Tracking")
 						.font(.caption)
 						.fontWeight(.medium)
 						.foregroundStyle(.secondary)
-						.padding(.leading, 4)
-					
-					VStack(spacing: 12) {
+						.padding(.leading, smallPadding)
+
+					VStack(spacing: cardSpacing) {
 						// Last Refill Date Card
 						DateCardComponent(
 							title: "Last Refill",
@@ -232,7 +258,7 @@ struct MedicationEditView: View {
 		} label: {
 			let backgroundColor = isFormValid ? Color.accentColor : Color.gray
 
-			HStack(spacing: 12) {
+			HStack(spacing: iconSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
 
@@ -242,7 +268,7 @@ struct MedicationEditView: View {
 			}
 			.foregroundStyle(backgroundColor.contrastingForegroundColor())
 			.frame(maxWidth: .infinity)
-			.padding(.vertical, 18)
+			.padding(.vertical, buttonVerticalPadding)
 			.background(
 				LinearGradient(
 					colors: isFormValid ?
@@ -252,12 +278,12 @@ struct MedicationEditView: View {
 					endPoint: .trailing
 				)
 			)
-			.clipShape(RoundedRectangle(cornerRadius: 16))
-			.shadow(color: isFormValid ? Color.accentColor.opacity(0.3) : .clear, radius: 10, y: 5)
+			.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
+			.shadow(color: isFormValid ? Color.accentColor.opacity(0.3) : .clear, radius: shadowRadius, y: shadowY)
 		}
 		.disabled(!isFormValid)
 		.padding(.horizontal)
-		.padding(.vertical, 10)
+		.padding(.vertical, quickButtonSpacing)
 	}
 	
 	// MARK: - Date Picker Binding
@@ -284,9 +310,9 @@ struct MedicationEditView: View {
 	@ViewBuilder
 	private var datePickerSheet: some View {
 		NavigationStack {
-			VStack(spacing: 20) {
+			VStack(spacing: sectionSpacing) {
 				// Date picker header
-				VStack(spacing: 8) {
+				VStack(spacing: labelSpacing) {
 					ZStack {
 						Circle()
 							.fill(
@@ -299,7 +325,7 @@ struct MedicationEditView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.frame(width: 64, height: 64)
+							.frame(width: iconCircleSize, height: iconCircleSize)
 						
 						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
 							.font(.largeTitle.weight(.medium))
@@ -316,8 +342,8 @@ struct MedicationEditView: View {
 							.foregroundStyle(.secondary)
 					}
 				}
-				.padding(.top, 10)
-				
+				.padding(.top, quickButtonSpacing)
+
 				if datePickerType == .lastRefill {
 					DatePicker("", selection: currentDateBinding, in: ...Date(), displayedComponents: .date)
 						.datePickerStyle(.graphical)
@@ -329,13 +355,13 @@ struct MedicationEditView: View {
 				}
 				
 				// Quick select buttons
-				VStack(spacing: 12) {
+				VStack(spacing: cardSpacing) {
 					Text("Quick Adjust")
 						.font(.caption)
 						.fontWeight(.medium)
 						.foregroundStyle(.secondary)
-					
-					HStack(spacing: 10) {
+
+					HStack(spacing: quickButtonSpacing) {
 						Button { adjustDate(by: -30) } label: {
 							Text("-30d")
 								.font(.footnote)
@@ -380,7 +406,7 @@ struct MedicationEditView: View {
 							hapticsManager.mediumImpact()
 						}
 					} label: {
-						HStack(spacing: 8) {
+						HStack(spacing: labelSpacing) {
 							Image(systemSymbol: .trashCircle)
 								.font(.callout)
 							Text("Remove Date")
@@ -388,14 +414,14 @@ struct MedicationEditView: View {
 								.fontWeight(.medium)
 						}
 						.foregroundStyle(.red)
-						.padding(.horizontal, 20)
-						.padding(.vertical, 12)
+						.padding(.horizontal, removeButtonPadding)
+						.padding(.vertical, removeButtonVerticalPadding)
 						.background(
-							RoundedRectangle(cornerRadius: 12, style: .continuous)
+							RoundedRectangle(cornerRadius: removeButtonCornerRadius, style: .continuous)
 								.fill(Color.red.opacity(0.1))
 								.overlay(
-									RoundedRectangle(cornerRadius: 12, style: .continuous)
-										.strokeBorder(Color.red.opacity(0.2), lineWidth: 1)
+									RoundedRectangle(cornerRadius: removeButtonCornerRadius, style: .continuous)
+										.strokeBorder(Color.red.opacity(0.2), lineWidth: removeBorderWidth)
 								)
 						)
 					}
@@ -443,14 +469,14 @@ struct MedicationEditView: View {
 	@ViewBuilder
 	private var mainContent: some View {
 		ScrollView {
-			VStack(spacing: 24) {
+			VStack(spacing: mainContentSpacing) {
 				heroSection
 				medicationInfoSection
 				prescribedDoseSection
 				refillInfoSection
 				colorSection
 				saveButton
-				Color.clear.frame(height: 20)
+				Color.clear.frame(height: clearFrameHeight)
 			}
 		}
 		.background(
@@ -479,7 +505,7 @@ struct MedicationEditView: View {
 							Image(systemSymbol: .xmark)
 								.font(.body.weight(.medium))
 								.foregroundStyle(.secondary)
-								.padding(8)
+								.padding(toolbarButtonPadding)
 								.background(
 									Circle()
 										.fill(.ultraThinMaterial)

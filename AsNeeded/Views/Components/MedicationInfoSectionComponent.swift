@@ -33,10 +33,24 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 	let nicknameField: Field
 	let onMedicationSelected: (String, String) -> Void
 
+	@ScaledMetric private var sectionSpacing: CGFloat = 20
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var iconSize: CGFloat = 28
+	@ScaledMetric private var fieldContainerPadding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 16
+	@ScaledMetric private var borderWidth: CGFloat = 1
+	@ScaledMetric private var focusedBorderWidth: CGFloat = 2
+	@ScaledMetric private var fieldSpacing: CGFloat = 12
+	@ScaledMetric private var innerVStackSpacing: CGFloat = 8
+	@ScaledMetric private var requiredPaddingH: CGFloat = 8
+	@ScaledMetric private var requiredPaddingV: CGFloat = 3
+	@ScaledMetric private var optionalPaddingH: CGFloat = 8
+	@ScaledMetric private var optionalPaddingV: CGFloat = 2
+
 	var body: some View {
-		VStack(alignment: .leading, spacing: 20) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			// Section header with icon
-			HStack(spacing: 12) {
+			HStack(spacing: headerSpacing) {
 				Image(systemSymbol: .textBookClosedFill)
 					.font(.title2)
 					.foregroundStyle(
@@ -54,13 +68,13 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 			}
 
 			// Clinical Name Field - Primary Input
-			VStack(alignment: .leading, spacing: 12) {
+			VStack(alignment: .leading, spacing: fieldSpacing) {
 				// Enhanced header with better visual hierarchy
-				HStack(spacing: 8) {
+				HStack(spacing: innerVStackSpacing) {
 					ZStack {
 						Circle()
 							.fill(Color.accentColor.opacity(0.15))
-							.frame(width: 28, height: 28)
+							.frame(width: iconSize, height: iconSize)
 
 						Image(systemSymbol: .pill)
 							.font(.subheadline.weight(.semibold))
@@ -94,8 +108,8 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 						Text("REQUIRED")
 							.font(.caption2.weight(.bold))
 							.foregroundStyle(.white)
-							.padding(.horizontal, 8)
-							.padding(.vertical, 3)
+							.padding(.horizontal, requiredPaddingH)
+							.padding(.vertical, requiredPaddingV)
 							.background(
 								Capsule()
 									.fill(Color.accentColor)
@@ -119,17 +133,17 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 					.accessibilityHint("Required field. Type to search for medications.")
 					.accessibilityValue(clinicalName.isEmpty ? "Empty" : clinicalName)
 				}
-				.padding(16)
+				.padding(fieldContainerPadding)
 				.background(
-					RoundedRectangle(cornerRadius: 16)
+					RoundedRectangle(cornerRadius: cornerRadius)
 						.fill(.ultraThinMaterial)
 						.overlay(
-							RoundedRectangle(cornerRadius: 16)
+							RoundedRectangle(cornerRadius: cornerRadius)
 								.strokeBorder(
 									focusedField == clinicalNameField ?
 										Color.accentColor.opacity(0.6) :
 										Color(.separator).opacity(0.3),
-									lineWidth: focusedField == clinicalNameField ? 2 : 1
+									lineWidth: focusedField == clinicalNameField ? focusedBorderWidth : borderWidth
 								)
 						)
 						.shadow(
@@ -146,7 +160,7 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 			}
 
 			// Nickname Field
-			VStack(alignment: .leading, spacing: 8) {
+			VStack(alignment: .leading, spacing: innerVStackSpacing) {
 				Label {
 					HStack(spacing: 4) {
 						Text("Nickname")
@@ -155,8 +169,8 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 						Text("Optional")
 							.font(.caption)
 							.foregroundStyle(.tertiary)
-							.padding(.horizontal, 8)
-							.padding(.vertical, 2)
+							.padding(.horizontal, optionalPaddingH)
+							.padding(.vertical, optionalPaddingV)
 							.background(
 								Capsule()
 									.fill(Color(.tertiarySystemFill))
