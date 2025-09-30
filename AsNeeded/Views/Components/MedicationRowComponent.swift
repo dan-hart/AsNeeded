@@ -39,7 +39,7 @@ struct MedicationRowComponent: View {
 	@State private var tempSelectedColor: String?
 	private let hapticsManager = HapticsManager.shared
 
-	@ScaledMetric private var rowPadding: CGFloat = 20
+	@ScaledMetric private var rowPadding: CGFloat = 16
 	@ScaledMetric private var iconContentSpacing: CGFloat = 14
 	@ScaledMetric private var logButtonSize: CGFloat = 66
 	@ScaledMetric private var medicationIconSize: CGFloat = 56
@@ -386,14 +386,6 @@ struct MedicationRowComponent: View {
 						showingColorPicker = false
 						tempSelectedColor = medication.displayColorHex
 					}
-				}
-
-				ToolbarItem(placement: .navigationBarTrailing) {
-					Button("Save") {
-						onColorChanged?(tempSelectedColor)
-						showingColorPicker = false
-					}
-					.fontWeight(.semibold)
 				}
 			}
 		}
