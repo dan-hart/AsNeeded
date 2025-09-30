@@ -82,7 +82,6 @@ struct ColorPickerComponent: View {
 					}
 				}
 				.padding(.horizontal, contentHPadding)
-				.padding(.bottom, contentHPadding)
 			}
 
 			// Sticky Save button at bottom
@@ -160,7 +159,6 @@ struct ColorPickerComponent: View {
 				colorSwatch(colorInfo)
 			}
 		}
-		.padding(.bottom, gridBottomPadding)
 	}
 
 	private func colorSwatch(_ colorInfo: MedicationColors.ColorInfo) -> some View {
@@ -207,17 +205,8 @@ struct ColorPickerComponent: View {
 			HStack(spacing: headerSpacing) {
 				Spacer()
 
-				// Show selected color preview
-				if let hexColor = selectedColorHex, let color = Color(hex: hexColor) {
-					Circle()
-						.fill(color)
-						.frame(width: saveCircleSize, height: saveCircleSize)
-						.shadow(color: color.opacity(0.3), radius: 2, x: 0, y: 1)
-				} else {
-					Circle()
-						.fill(Color.accent)
-						.frame(width: saveCircleSize, height: saveCircleSize)
-				}
+				Image(systemSymbol: .checkmarkCircleFill)
+					.font(.title3)
 
 				Text(selectedColorHex != nil ? "Save Color Choice" : "Save Default Color")
 					.font(.headline)
