@@ -328,7 +328,7 @@ struct MedicationRowComponent: View {
 	// MARK: - Compact Color Picker Sheet
 	private var compactColorPickerSheet: some View {
 		NavigationStack {
-			VStack(spacing: 20) {
+			VStack(spacing: 0) {
 				// Header with medication info
 				VStack(spacing: 8) {
 					HStack(spacing: 12) {
@@ -364,6 +364,7 @@ struct MedicationRowComponent: View {
 						Spacer()
 					}
 				}
+				.padding()
 
 				// Compact color picker
 				ColorPickerComponent(
@@ -377,7 +378,6 @@ struct MedicationRowComponent: View {
 					}
 				)
 			}
-			.padding()
 			.navigationTitle("Medication Color")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {

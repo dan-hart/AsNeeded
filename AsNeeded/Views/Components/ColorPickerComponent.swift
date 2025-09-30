@@ -66,7 +66,6 @@ struct ColorPickerComponent: View {
 							.font(.headline)
 							.fontWeight(.semibold)
 					}
-					.padding(.top, topPadding)
 
 					// Default/Reset option
 					defaultColorOption
