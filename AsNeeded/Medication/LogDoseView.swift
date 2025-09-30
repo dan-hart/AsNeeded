@@ -10,7 +10,7 @@ struct LogDoseView: View {
 	var onLog: (ANDoseConcept, ANEventConcept) -> Void
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
-	
+
 	@State private var amount: Double = 1
 	@State private var selectedUnit: ANUnitConcept = .unit
 	@State private var selectedDate: Date = .now
@@ -20,6 +20,48 @@ struct LogDoseView: View {
 	@State private var animateHeader = false
 	@State private var selectedQuickOption: String? = "Now"
 	private let hapticsManager = HapticsManager.shared
+
+	@ScaledMetric private var iconSize: CGFloat = 80
+	@ScaledMetric private var iconShadowRadius: CGFloat = 12
+	@ScaledMetric private var iconShadowY: CGFloat = 6
+	@ScaledMetric private var topPadding: CGFloat = 8
+	@ScaledMetric private var cardVerticalPadding: CGFloat = 20
+	@ScaledMetric private var cardCornerRadius: CGFloat = 20
+	@ScaledMetric private var shadowRadius: CGFloat = 10
+	@ScaledMetric private var shadowY: CGFloat = 4
+	@ScaledMetric private var sectionPadding: CGFloat = 20
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var sectionCornerRadius: CGFloat = 20
+	@ScaledMetric private var contentSpacing: CGFloat = 24
+	@ScaledMetric private var doseSpacing: CGFloat = 20
+	@ScaledMetric private var stepperSpacing: CGFloat = 16
+	@ScaledMetric private var amountMinWidth: CGFloat = 120
+	@ScaledMetric private var amountVerticalPadding: CGFloat = 12
+	@ScaledMetric private var amountHorizontalPadding: CGFloat = 24
+	@ScaledMetric private var amountCornerRadius: CGFloat = 16
+	@ScaledMetric private var unitScrollSpacing: CGFloat = 12
+	@ScaledMetric private var unitHorizontalPadding: CGFloat = 16
+	@ScaledMetric private var unitVerticalPadding: CGFloat = 10
+	@ScaledMetric private var unitScrollPadding: CGFloat = 4
+	@ScaledMetric private var dateDisplayPadding: CGFloat = 16
+	@ScaledMetric private var dateDisplayCornerRadius: CGFloat = 14
+	@ScaledMetric private var quickButtonSpacing: CGFloat = 12
+	@ScaledMetric private var quickButtonHorizontalPadding: CGFloat = 12
+	@ScaledMetric private var quickButtonVerticalPadding: CGFloat = 8
+	@ScaledMetric private var noteHorizontalPadding: CGFloat = 8
+	@ScaledMetric private var noteVerticalPadding: CGFloat = 4
+	@ScaledMetric private var noteTextFieldPadding: CGFloat = 12
+	@ScaledMetric private var noteTextFieldCornerRadius: CGFloat = 12
+	@ScaledMetric private var buttonHorizontalPadding: CGFloat = 16
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 16
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 16
+	@ScaledMetric private var buttonShadowRadius: CGFloat = 8
+	@ScaledMetric private var borderWidth: CGFloat = 1
+	@ScaledMetric private var smallSpacing: CGFloat = 4
+	@ScaledMetric private var mediumSpacing: CGFloat = 8
+	@ScaledMetric private var bottomPadding: CGFloat = 20
+	@ScaledMetric private var sectionShadowRadius: CGFloat = 8
+	@ScaledMetric private var sectionShadowY: CGFloat = 2
 
 	init(
 		medication: ANMedicationConcept,
@@ -51,7 +93,7 @@ struct LogDoseView: View {
 	
 	// MARK: - View Components
 	private var headerCard: some View {
-		VStack(spacing: 12) {
+		VStack(spacing: quickButtonSpacing) {
 			// Medication Icon
 			ZStack {
 				Circle()
@@ -62,18 +104,18 @@ struct LogDoseView: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: 80, height: 80)
-					.shadow(color: medication.displayColor.opacity(0.3), radius: 12, x: 0, y: 6)
+					.frame(width: iconSize, height: iconSize)
+					.shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
 				
 				Image(systemSymbol: .pills)
 					.font(.system(.largeTitle, design: .default, weight: .semibold))
 					.foregroundStyle(.white)
 					.symbolEffect(.pulse, options: .repeating.speed(0.5), value: animateHeader)
 			}
-			.padding(.top, 8)
-			
+			.padding(.top, topPadding)
+
 			// Medication Name
-			VStack(spacing: 4) {
+			VStack(spacing: smallSpacing) {
 				Text(medication.displayName)
 					.font(.title2)
 					.fontWeight(.bold)
@@ -88,11 +130,11 @@ struct LogDoseView: View {
 			}
 		}
 		.frame(maxWidth: .infinity)
-		.padding(.vertical, 20)
+		.padding(.vertical, cardVerticalPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 20, style: .continuous)
+			RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
 				.fill(.regularMaterial)
-				.shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 4)
+				.shadow(color: Color.black.opacity(0.06), radius: shadowRadius, x: 0, y: shadowY)
 		)
 		.padding(.horizontal)
 		.onAppear {
@@ -103,14 +145,14 @@ struct LogDoseView: View {
 	}
 	
 	private var doseSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			Label("Dose Amount", systemSymbol: .pills)
 				.font(.headline)
 				.foregroundStyle(.primary)
-			
-			VStack(spacing: 20) {
+
+			VStack(spacing: doseSpacing) {
 				// Amount Stepper with Visual Feedback
-				HStack(spacing: 16) {
+				HStack(spacing: stepperSpacing) {
 					Button(action: {
                             if amount > 0.5 {
                                 amount -= 0.5
@@ -123,22 +165,22 @@ struct LogDoseView: View {
 							.scaleEffect(amount > 0.5 ? 1.0 : 0.9)
 					}
 					.disabled(amount <= 0.5)
-					
-					VStack(spacing: 4) {
+
+					VStack(spacing: smallSpacing) {
 						Text("\(amount, specifier: "%.1f")")
 							.font(.system(.title, design: .rounded, weight: .semibold))
 							.contentTransition(.numericText())
-						
+
 						Text(selectedUnit.displayName)
 							.font(.subheadline)
 							.foregroundStyle(.secondary)
 							.textCase(.uppercase)
 					}
-					.frame(minWidth: 120)
-					.padding(.vertical, 12)
-					.padding(.horizontal, 24)
+					.frame(minWidth: amountMinWidth)
+					.padding(.vertical, amountVerticalPadding)
+					.padding(.horizontal, amountHorizontalPadding)
 					.background(
-						RoundedRectangle(cornerRadius: 16, style: .continuous)
+						RoundedRectangle(cornerRadius: amountCornerRadius, style: .continuous)
 							.fill(Color.accentColor.opacity(0.1))
 					)
 					
@@ -158,9 +200,9 @@ struct LogDoseView: View {
 				
 				// Unit Selector
 				ScrollView(.horizontal, showsIndicators: false) {
-					HStack(spacing: 12) {
+					HStack(spacing: unitScrollSpacing) {
 						ForEach(ANUnitConcept.allCases, id: \.self) { unit in
-							Button(action: { 
+							Button(action: {
 								withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 									selectedUnit = unit
 									hapticsManager.selectionChanged()
@@ -169,8 +211,8 @@ struct LogDoseView: View {
 								Text(unit.displayName)
 									.font(.subheadline)
 									.fontWeight(selectedUnit == unit ? .semibold : .regular)
-									.padding(.horizontal, 16)
-									.padding(.vertical, 10)
+									.padding(.horizontal, unitHorizontalPadding)
+									.padding(.vertical, unitVerticalPadding)
 									.background(
 										Capsule()
 											.fill(selectedUnit == unit ? Color.accentColor : Color.secondary.opacity(0.1))
@@ -179,26 +221,26 @@ struct LogDoseView: View {
 							}
 						}
 					}
-					.padding(.horizontal, 4)
+					.padding(.horizontal, unitScrollPadding)
 				}
 			}
 		}
-		.padding(20)
+		.padding(sectionPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 20, style: .continuous)
+			RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
 				.fill(colorScheme == .dark ? Color(uiColor: .secondarySystemBackground) : .white)
-				.shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+				.shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
 		)
 		.padding(.horizontal)
 	}
 	
 	private var dateTimeSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			Label("When", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
 				.font(.headline)
 				.foregroundStyle(.primary)
-			
-			VStack(spacing: 12) {
+
+			VStack(spacing: quickButtonSpacing) {
 				// Date Display Button
 				Button(action: { 
 					withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -207,26 +249,26 @@ struct LogDoseView: View {
 					}
 				}) {
 					HStack {
-						VStack(alignment: .leading, spacing: 4) {
+						VStack(alignment: .leading, spacing: smallSpacing) {
 							Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
 								.font(.subheadline)
 								.foregroundStyle(.secondary)
-							
+
 							Text(selectedDate, format: .dateTime.hour().minute())
 								.font(.title3)
 								.fontWeight(.semibold)
 								.foregroundStyle(.primary)
 						}
-						
+
 						Spacer()
-						
+
 						Image(systemSymbol: .chevronUpChevronDown)
 							.font(.caption)
 							.foregroundStyle(.secondary)
 					}
-					.padding(16)
+					.padding(dateDisplayPadding)
 					.background(
-						RoundedRectangle(cornerRadius: 14, style: .continuous)
+						RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
 							.fill(Color.accentColor.opacity(0.08))
 					)
 				}
@@ -250,7 +292,7 @@ struct LogDoseView: View {
 				}
 				
 				// Quick Actions
-				HStack(spacing: 12) {
+				HStack(spacing: quickButtonSpacing) {
 					ForEach([
 						("Now", Date()),
 						("30 min ago", Date().addingTimeInterval(-30 * 60)),
@@ -267,8 +309,8 @@ struct LogDoseView: View {
 							Text(label)
 								.font(.caption)
 								.fontWeight(.medium)
-								.padding(.horizontal, 12)
-								.padding(.vertical, 8)
+								.padding(.horizontal, quickButtonHorizontalPadding)
+								.padding(.vertical, quickButtonVerticalPadding)
 								.background(
 									Capsule()
 										.fill(selectedQuickOption == label ? Color.accentColor : Color.secondary.opacity(0.1))
@@ -279,56 +321,56 @@ struct LogDoseView: View {
 				}
 			}
 		}
-		.padding(20)
+		.padding(sectionPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 20, style: .continuous)
+			RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
 				.fill(colorScheme == .dark ? Color(uiColor: .secondarySystemBackground) : .white)
-				.shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+				.shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
 		)
 		.padding(.horizontal)
 	}
 	
 	private var noteSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Note", systemSymbol: .noteText)
 					.font(.headline)
 					.foregroundStyle(.primary)
-				
+
 				Spacer()
-				
+
 				Text("Optional")
 					.font(.caption)
 					.foregroundStyle(.secondary)
-					.padding(.horizontal, 8)
-					.padding(.vertical, 4)
+					.padding(.horizontal, noteHorizontalPadding)
+					.padding(.vertical, noteVerticalPadding)
 					.background(
 						Capsule()
 							.fill(Color.secondary.opacity(0.1))
 					)
 			}
-			
+
 			TextField("How are you feeling? Any side effects?", text: $note, axis: .vertical)
 				.lineLimit(3...6)
-				.padding(12)
+				.padding(noteTextFieldPadding)
 				.background(
-					RoundedRectangle(cornerRadius: 12, style: .continuous)
+					RoundedRectangle(cornerRadius: noteTextFieldCornerRadius, style: .continuous)
 						.fill(Color.secondary.opacity(0.08))
 				)
 				.focused($isNoteFocused)
 		}
-		.padding(20)
+		.padding(sectionPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 20, style: .continuous)
+			RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
 				.fill(colorScheme == .dark ? Color(uiColor: .secondarySystemBackground) : .white)
-				.shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+				.shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
 		)
 		.padding(.horizontal)
 	}
 	
 	private var logButton: some View {
 		Button(action: performLogDose) {
-			HStack(spacing: 12) {
+			HStack(spacing: quickButtonSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.title3)
 
@@ -337,9 +379,9 @@ struct LogDoseView: View {
 			}
 			.foregroundStyle(.white)
 			.frame(maxWidth: .infinity)
-			.padding(.vertical, 18)
+			.padding(.vertical, buttonVerticalPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 16, style: .continuous)
+				RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
 					.fill(
 						LinearGradient(
 							colors: [medication.displayColor, medication.displayColor.opacity(0.9)],
@@ -347,17 +389,17 @@ struct LogDoseView: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.shadow(color: medication.displayColor.opacity(0.3), radius: 8, x: 0, y: 4)
+					.shadow(color: medication.displayColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
 			)
 			.overlay(
-				RoundedRectangle(cornerRadius: 16, style: .continuous)
+				RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
 					.strokeBorder(
 						LinearGradient(
 							colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						),
-						lineWidth: 1
+						lineWidth: borderWidth
 					)
 			)
 		}
@@ -369,9 +411,9 @@ struct LogDoseView: View {
 		NavigationStack {
 			VStack(spacing: 0) {
 				ScrollView {
-					VStack(spacing: 24) {
+					VStack(spacing: contentSpacing) {
 						headerCard
-							.padding(.top, 8)
+							.padding(.top, topPadding)
 
 						doseSection
 
@@ -379,7 +421,7 @@ struct LogDoseView: View {
 
 						noteSection
 					}
-					.padding(.bottom, 20)
+					.padding(.bottom, bottomPadding)
 				}
 				.background(
 					Color(uiColor: .systemGroupedBackground)
@@ -393,8 +435,8 @@ struct LogDoseView: View {
 						.background(.separator.opacity(0.5))
 
 					logButton
-						.padding(.horizontal, 16)
-						.padding(.vertical, 16)
+						.padding(.horizontal, buttonHorizontalPadding)
+						.padding(.vertical, buttonVerticalPadding)
 				}
 				.background(.regularMaterial)
 			}

@@ -11,11 +11,15 @@ struct ReminderListView: View {
   @Environment(\.dismiss) private var dismiss
   @StateObject private var notificationManager = NotificationManager.shared
   private let logger = DHLogger(category: "ReminderListView")
-  
+
   @State private var reminders: [ReminderDetail] = []
   @State private var isLoading = true
   @State private var showingDeleteConfirm = false
   @State private var reminderToDelete: ReminderDetail?
+
+  @ScaledMetric private var emptyStateSpacing: CGFloat = 16
+  @ScaledMetric private var rowSpacing: CGFloat = 8
+  @ScaledMetric private var smallSpacing: CGFloat = 4
   
   var body: some View {
     NavigationView {
@@ -78,7 +82,7 @@ struct ReminderListView: View {
   }
   
   private var emptyStateView: some View {
-    VStack(spacing: 16) {
+    VStack(spacing: emptyStateSpacing) {
       Image(systemSymbol: .bellSlash)
         .font(.system(.largeTitle, design: .default, weight: .medium))
         .foregroundColor(.secondary)
@@ -144,11 +148,15 @@ struct ReminderListView: View {
 struct ReminderRow: View {
   let reminder: ReminderDetail
   let onDelete: () -> Void
-  
+
+  @ScaledMetric private var rowSpacing: CGFloat = 8
+  @ScaledMetric private var smallSpacing: CGFloat = 4
+  @ScaledMetric private var rowVerticalPadding: CGFloat = 4
+
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: rowSpacing) {
       HStack {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: smallSpacing) {
           Text(reminder.title)
             .font(.headline)
             .lineLimit(1)
@@ -198,7 +206,7 @@ struct ReminderRow: View {
         }
       }
     }
-    .padding(.vertical, 4)
+    .padding(.vertical, rowVerticalPadding)
   }
   
   private var nextFireText: String {

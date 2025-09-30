@@ -4,38 +4,43 @@ import SFSafeSymbols
 struct SubtleSupportView: View {
 	let message: String
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
-	
+	@ScaledMetric private var contentSpacing: CGFloat = 8
+	@ScaledMetric private var dividerHeight: CGFloat = 20
+	@ScaledMetric private var verticalPadding: CGFloat = 8
+	@ScaledMetric private var horizontalPadding: CGFloat = 12
+	@ScaledMetric private var cornerRadius: CGFloat = 8
+
 	init(message: String = "If As Needed is helpful, consider supporting development") {
 		self.message = message
 	}
-	
+
 	var body: some View {
 		if !hideSupportBanners {
-			HStack(spacing: 8) {
+			HStack(spacing: contentSpacing) {
 				NavigationLink {
 					SupportView()
 				} label: {
-					HStack(spacing: 8) {
+					HStack(spacing: contentSpacing) {
 						Image(systemSymbol: .heart)
 							.font(.system(.caption, design: .default, weight: .medium))
 							.foregroundColor(.red.opacity(0.6))
-						
+
 						Text(message)
 							.font(.footnote)
 							.foregroundColor(.secondary)
-						
+
 						Spacer()
-						
+
 						Image(systemSymbol: .chevronRight)
 							.font(.system(.caption2, design: .default))
 							.foregroundColor(.secondary.opacity(0.6))
 					}
 				}
 				.buttonStyle(.plain)
-				
+
 				Divider()
-					.frame(height: 20)
-				
+					.frame(height: dividerHeight)
+
 				Button {
 					hideSupportBanners = true
 				} label: {
@@ -45,10 +50,10 @@ struct SubtleSupportView: View {
 				}
 				.buttonStyle(.plain)
 			}
-			.padding(.vertical, 8)
-			.padding(.horizontal, 12)
+			.padding(.vertical, verticalPadding)
+			.padding(.horizontal, horizontalPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 8)
+				RoundedRectangle(cornerRadius: cornerRadius)
 					.fill(Color(.tertiarySystemBackground))
 					.opacity(0.5)
 			)

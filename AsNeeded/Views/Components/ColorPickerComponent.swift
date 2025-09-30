@@ -30,11 +30,27 @@ struct ColorPickerComponent: View {
 	private let hapticsManager = HapticsManager.shared
 	private let logger = DHLogger.ui
 
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var topPadding: CGFloat = 8
+	@ScaledMetric private var gridItemSpacing: CGFloat = 20
+	@ScaledMetric private var gridBottomPadding: CGFloat = 8
+	@ScaledMetric private var saveButtonTopPadding: CGFloat = 8
+	@ScaledMetric private var contentHPadding: CGFloat = 20
+	@ScaledMetric private var defaultCircleSize: CGFloat = 32
+	@ScaledMetric private var defaultHPadding: CGFloat = 16
+	@ScaledMetric private var defaultVPadding: CGFloat = 12
+	@ScaledMetric private var defaultCornerRadius: CGFloat = 12
+	@ScaledMetric private var defaultBorderWidth: CGFloat = 1.5
+	@ScaledMetric private var swatchSize: CGFloat = 70
+	@ScaledMetric private var saveCircleSize: CGFloat = 24
+	@ScaledMetric private var saveButtonVPadding: CGFloat = 16
+
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 24) {
+			VStack(alignment: .leading, spacing: mainSpacing) {
 				// Section header
-				HStack(spacing: 12) {
+				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .paintbrushPointedFill)
 						.font(.title2)
 						.foregroundStyle(
@@ -49,13 +65,13 @@ struct ColorPickerComponent: View {
 						.font(.headline)
 						.fontWeight(.semibold)
 				}
-				.padding(.top, 8)
+				.padding(.top, topPadding)
 
 				// Default/Reset option
 				defaultColorOption
 
 				// Color grid with more spacing for large detent
-				VStack(alignment: .leading, spacing: 16) {
+				VStack(alignment: .leading, spacing: mainSpacing) {
 					Text("Choose a Color")
 						.font(.subheadline)
 						.fontWeight(.medium)
@@ -67,10 +83,10 @@ struct ColorPickerComponent: View {
 				// Save button CTA (no spacer needed - let ScrollView handle spacing)
 				if let onSave = onSave {
 					saveButton(onSave: onSave)
-						.padding(.top, 8)
+						.padding(.top, saveButtonTopPadding)
 				}
 			}
-			.padding(.horizontal, 20)
+			.padding(.horizontal, contentHPadding)
 		}
 		.accessibilityElement(children: .contain)
 		.accessibilityLabel("Color picker for medication")
@@ -83,12 +99,12 @@ struct ColorPickerComponent: View {
 			selectedColorHex = nil
 			onColorSelected(nil)
 		} label: {
-			HStack(spacing: 12) {
+			HStack(spacing: headerSpacing) {
 				// Preview circle with accent color
 				ZStack {
 					Circle()
 						.fill(Color.accent)
-						.frame(width: 32, height: 32)
+						.frame(width: defaultCircleSize, height: defaultCircleSize)
 
 					if selectedColorHex == nil {
 						Image(systemSymbol: .checkmark)
@@ -110,17 +126,17 @@ struct ColorPickerComponent: View {
 
 				Spacer()
 			}
-			.padding(.horizontal, 16)
-			.padding(.vertical, 12)
+			.padding(.horizontal, defaultHPadding)
+			.padding(.vertical, defaultVPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 12, style: .continuous)
+				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
 					.fill(selectedColorHex == nil ? Color.accent.opacity(0.1) : Color(.tertiarySystemFill))
 			)
 			.overlay(
-				RoundedRectangle(cornerRadius: 12, style: .continuous)
+				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
 					.strokeBorder(
 						selectedColorHex == nil ? Color.accent.opacity(0.3) : Color.clear,
-						lineWidth: 1.5
+						lineWidth: defaultBorderWidth
 					)
 			)
 		}
@@ -130,12 +146,12 @@ struct ColorPickerComponent: View {
 	}
 
 	private var colorGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
+		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: gridItemSpacing), count: 3), spacing: gridItemSpacing) {
 			ForEach(MedicationColors.colors, id: \.hex) { colorInfo in
 				colorSwatch(colorInfo)
 			}
 		}
-		.padding(.bottom, 8)
+		.padding(.bottom, gridBottomPadding)
 	}
 
 	private func colorSwatch(_ colorInfo: MedicationColors.ColorInfo) -> some View {
@@ -147,7 +163,7 @@ struct ColorPickerComponent: View {
 			ZStack {
 				Circle()
 					.fill(colorInfo.color)
-					.frame(width: 70, height: 70)
+					.frame(width: swatchSize, height: swatchSize)
 					.shadow(
 						color: Color.black.opacity(0.15),
 						radius: 5,
@@ -179,17 +195,17 @@ struct ColorPickerComponent: View {
 				? (Color(hex: selectedColorHex!) ?? Color.accent)
 				: Color.accent
 
-			HStack(spacing: 12) {
+			HStack(spacing: headerSpacing) {
 				// Show selected color preview
 				if let hexColor = selectedColorHex, let color = Color(hex: hexColor) {
 					Circle()
 						.fill(color)
-						.frame(width: 24, height: 24)
+						.frame(width: saveCircleSize, height: saveCircleSize)
 						.shadow(color: color.opacity(0.3), radius: 2, x: 0, y: 1)
 				} else {
 					Circle()
 						.fill(Color.accent)
-						.frame(width: 24, height: 24)
+						.frame(width: saveCircleSize, height: saveCircleSize)
 				}
 
 				Text(selectedColorHex != nil ? "Save Color Choice" : "Save Default Color")
@@ -198,9 +214,9 @@ struct ColorPickerComponent: View {
 			}
 			.foregroundStyle(backgroundColor.contrastingForegroundColor())
 			.frame(maxWidth: .infinity)
-			.padding(.vertical, 16)
+			.padding(.vertical, saveButtonVPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 12, style: .continuous)
+				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
 					.fill(backgroundColor)
 			)
 			.shadow(

@@ -32,10 +32,19 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 
 	let doseField: Field
 
+	@ScaledMetric private var sectionSpacing: CGFloat = 20
+	@ScaledMetric private var headerSpacing: CGFloat = 12
+	@ScaledMetric private var fieldsHSpacing: CGFloat = 16
+	@ScaledMetric private var fieldVSpacing: CGFloat = 8
+	@ScaledMetric private var doseFieldMaxWidth: CGFloat = 120
+	@ScaledMetric private var menuPaddingH: CGFloat = 12
+	@ScaledMetric private var menuPaddingV: CGFloat = 8
+	@ScaledMetric private var menuCornerRadius: CGFloat = 8
+
 	var body: some View {
-		VStack(alignment: .leading, spacing: 20) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			// Section header
-			HStack(spacing: 12) {
+			HStack(spacing: headerSpacing) {
 				Image(systemSymbol: .syringe)
 					.font(.title2)
 					.foregroundStyle(
@@ -52,9 +61,9 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 					.accessibilityAddTraits(.isHeader)
 			}
 
-			HStack(spacing: 16) {
+			HStack(spacing: fieldsHSpacing) {
 				// Dose Amount
-				VStack(alignment: .leading, spacing: 8) {
+				VStack(alignment: .leading, spacing: fieldVSpacing) {
 					Label {
 						Text("Amount")
 							.font(.subheadline)
@@ -69,13 +78,13 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 						.textFieldStyle(.roundedBorder)
 						.keyboardType(.decimalPad)
 						.focused($focusedField, equals: doseField)
-						.frame(maxWidth: 120)
+						.frame(maxWidth: doseFieldMaxWidth)
 						.accessibilityLabel("Dose amount")
 						.accessibilityHint("Enter the prescribed dose amount")
 				}
 
 				// Dose Unit
-				VStack(alignment: .leading, spacing: 8) {
+				VStack(alignment: .leading, spacing: fieldVSpacing) {
 					Label {
 						Text("Unit")
 							.font(.subheadline)
@@ -109,10 +118,10 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 								.font(.caption)
 								.foregroundStyle(.secondary)
 						}
-						.padding(.horizontal, 12)
-						.padding(.vertical, 8)
+						.padding(.horizontal, menuPaddingH)
+						.padding(.vertical, menuPaddingV)
 						.background(
-							RoundedRectangle(cornerRadius: 8)
+							RoundedRectangle(cornerRadius: menuCornerRadius)
 								.fill(Color(.secondarySystemGroupedBackground))
 						)
 					}

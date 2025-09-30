@@ -3,6 +3,15 @@ import MessageUI
 import SFSafeSymbols
 
 struct FeedbackView: View {
+	@ScaledMetric private var spacing20: CGFloat = 20
+	@ScaledMetric private var spacing16: CGFloat = 16
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var lineWidth05: CGFloat = 0.5
+	@ScaledMetric private var iconSize24: CGFloat = 24
+
 	@StateObject private var feedbackService = FeedbackService.shared
 	@State private var showingMailComposer = false
 	@State private var currentFeedbackType: FeedbackType = .feedback
@@ -27,7 +36,7 @@ struct FeedbackView: View {
 	var body: some View {
 		ZStack(alignment: .top) {
 			ScrollView {
-				VStack(alignment: .leading, spacing: 20) {
+				VStack(alignment: .leading, spacing: spacing20) {
 					feedbackOverviewSection
 
 					Divider()
@@ -48,7 +57,7 @@ struct FeedbackView: View {
 					Color.black.opacity(0.4)
 						.ignoresSafeArea()
 						.overlay {
-							VStack(spacing: 12) {
+							VStack(spacing: spacing12) {
 								ProgressView()
 									.scaleEffect(1.2)
 									.progressViewStyle(CircularProgressViewStyle(
@@ -63,7 +72,7 @@ struct FeedbackView: View {
 							}
 							.padding()
 							.background(Color(.systemGray6))
-							.cornerRadius(12)
+							.cornerRadius(cornerRadius12)
 						}
 				}
 			}
@@ -90,11 +99,11 @@ struct FeedbackView: View {
 	}
 	
 	private var feedbackOverviewSection: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: spacing12) {
 			Text("Help Improve As Needed")
 				.font(.headline)
 				.fontWeight(.semibold)
-			
+
 			Text("Your feedback helps make As Needed better for everyone. Choose the type of feedback you'd like to send:")
 				.font(.subheadline)
 				.foregroundColor(.secondary)
@@ -102,12 +111,12 @@ struct FeedbackView: View {
 	}
 	
 	private var feedbackTypesSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Feedback Type")
 				.font(.headline)
 				.fontWeight(.semibold)
-			
-			VStack(spacing: 12) {
+
+			VStack(spacing: spacing12) {
 				feedbackTypeButton(
 					title: "Report a Bug",
 					subtitle: "Something isn't working correctly",
@@ -118,7 +127,7 @@ struct FeedbackView: View {
 						feedbackService.submitFeedback(type: .bug)
 					}
 				)
-				
+
 				feedbackTypeButton(
 					title: "Request a Feature",
 					subtitle: "Suggest new functionality or improvements",
@@ -129,7 +138,7 @@ struct FeedbackView: View {
 						feedbackService.submitFeedback(type: .featureRequest)
 					}
 				)
-				
+
 				feedbackTypeButton(
 					title: "General Feedback",
 					subtitle: "Share your thoughts and experiences",
@@ -145,7 +154,7 @@ struct FeedbackView: View {
 	}
 
 	private var rateAndReviewSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Love As Needed?")
 				.font(.headline)
 				.fontWeight(.semibold)
@@ -172,37 +181,37 @@ struct FeedbackView: View {
 		action: @escaping () -> Void
 	) -> some View {
 		Button(action: isLoading ? {} : action) {
-			HStack(spacing: 12) {
+			HStack(spacing: spacing12) {
 				Image(systemSymbol: systemImage)
 					.font(.system(.callout, design: .default, weight: .medium))
-					.frame(width: 24, height: 24)
+					.frame(width: iconSize24, height: iconSize24)
 					.foregroundColor(isLoading ? .secondary : color)
-				
-				VStack(alignment: .leading, spacing: 2) {
+
+				VStack(alignment: .leading, spacing: spacing2) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
 						.foregroundColor(isLoading ? .secondary : .primary)
-					
+
 					Text(subtitle)
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
-				
+
 				Spacer()
-				
+
 				Image(systemSymbol: .chevronRight)
 					.font(.caption)
 					.foregroundColor(.secondary)
 					.opacity(isLoading ? 0.5 : 1.0)
 			}
-			.padding(16)
+			.padding(padding16)
 			.background(Color(.systemBackground))
 			.overlay(
-				RoundedRectangle(cornerRadius: 12)
-					.stroke(Color(.systemGray4), lineWidth: 0.5)
+				RoundedRectangle(cornerRadius: cornerRadius12)
+					.stroke(Color(.systemGray4), lineWidth: lineWidth05)
 			)
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius12)
 			.opacity(isLoading ? 0.6 : 1.0)
 		}
 		.buttonStyle(.plain)

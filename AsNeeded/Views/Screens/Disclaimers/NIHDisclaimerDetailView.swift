@@ -2,12 +2,21 @@ import SwiftUI
 import SFSafeSymbols
 
 struct NIHDisclaimerDetailView: View {
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var itemSpacing: CGFloat = 12
+	@ScaledMetric private var smallSpacing: CGFloat = 8
+	@ScaledMetric private var tinySpacing: CGFloat = 6
+	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var padding: CGFloat = 16
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 24) {
+			VStack(alignment: .leading, spacing: mainSpacing) {
 				// Main Attribution
-				VStack(alignment: .leading, spacing: 16) {
-					HStack(spacing: 12) {
+				VStack(alignment: .leading, spacing: sectionSpacing) {
+					HStack(spacing: itemSpacing) {
 						Image(systemSymbol: .buildingColumnsFill)
 							.foregroundStyle(.blue)
 							.font(.title)
@@ -21,7 +30,7 @@ struct NIHDisclaimerDetailView: View {
 						.font(.body)
 						.multilineTextAlignment(.leading)
 
-					VStack(alignment: .leading, spacing: 8) {
+					VStack(alignment: .leading, spacing: smallSpacing) {
 						Text("• U.S. National Library of Medicine (NLM)")
 							.font(.body)
 							.fontWeight(.medium)
@@ -38,7 +47,7 @@ struct NIHDisclaimerDetailView: View {
 							UIApplication.shared.open(url)
 						}
 					}) {
-						HStack(spacing: 4) {
+						HStack(spacing: spacing4) {
 							Text("Visit NIH Official Website")
 								.font(.caption)
 								.foregroundStyle(.accent)
@@ -56,14 +65,14 @@ struct NIHDisclaimerDetailView: View {
 						.foregroundColor(.secondary)
 						.multilineTextAlignment(.leading)
 				}
-				.padding()
+				.padding(padding)
 				.background(
-					RoundedRectangle(cornerRadius: 12, style: .continuous)
+					RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 						.fill(Color.blue.opacity(0.08))
 				)
-				
+
 				// Medical Information Disclaimer
-				VStack(alignment: .leading, spacing: 16) {
+				VStack(alignment: .leading, spacing: sectionSpacing) {
 					Text("Medical Information")
 						.font(.title2)
 						.fontWeight(.bold)
@@ -79,7 +88,7 @@ struct NIHDisclaimerDetailView: View {
 				}
 				
 				// About RxNorm
-				VStack(alignment: .leading, spacing: 16) {
+				VStack(alignment: .leading, spacing: sectionSpacing) {
 					Text("RxNorm Database Citation")
 						.font(.title2)
 						.fontWeight(.bold)
@@ -91,7 +100,7 @@ struct NIHDisclaimerDetailView: View {
 					Text("RxNorm provides:")
 						.font(.body)
 
-					VStack(alignment: .leading, spacing: 8) {
+					VStack(alignment: .leading, spacing: smallSpacing) {
 						Label("Medication search functionality", systemSymbol: .magnifyingglass)
 							.font(.body)
 
@@ -102,7 +111,7 @@ struct NIHDisclaimerDetailView: View {
 							.font(.body)
 					}
 
-					VStack(alignment: .leading, spacing: 6) {
+					VStack(alignment: .leading, spacing: tinySpacing) {
 						Text("Official Sources:")
 							.font(.body)
 							.fontWeight(.medium)
@@ -112,7 +121,7 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							HStack(spacing: 4) {
+							HStack(spacing: spacing4) {
 								Text("RxNorm Database Homepage")
 									.font(.caption)
 									.foregroundStyle(.accent)
@@ -129,7 +138,7 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							HStack(spacing: 4) {
+							HStack(spacing: spacing4) {
 								Text("RxNorm API Documentation")
 									.font(.caption)
 									.foregroundStyle(.accent)
@@ -148,7 +157,7 @@ struct NIHDisclaimerDetailView: View {
 						.multilineTextAlignment(.leading)
 				}
 			}
-			.padding()
+			.padding(padding)
 		}
 		.navigationTitle("Data Attribution")
 		.navigationBarTitleDisplayMode(.large)

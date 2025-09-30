@@ -25,10 +25,20 @@ struct DataManagementView: View {
     @State private var redactNotes = false
     private let logger = DHLogger(category: "DataManagementView")
 
+    @ScaledMetric private var spacing20: CGFloat = 20
+    @ScaledMetric private var spacing16: CGFloat = 16
+    @ScaledMetric private var spacing12: CGFloat = 12
+    @ScaledMetric private var spacing4: CGFloat = 4
+    @ScaledMetric private var spacing2: CGFloat = 2
+    @ScaledMetric private var padding16: CGFloat = 16
+    @ScaledMetric private var cornerRadius12: CGFloat = 12
+    @ScaledMetric private var strokeWidth: CGFloat = 0.5
+    @ScaledMetric private var iconSize: CGFloat = 24
+
     var body: some View {
         ZStack(alignment: .top) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: spacing20) {
                     dataOverviewSection
 
                     Divider()
@@ -107,16 +117,16 @@ struct DataManagementView: View {
                         
                         Section("Privacy Options") {
                             Toggle(isOn: $redactMedicationNames) {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: spacing2) {
                                     Text("Redact Medication Names")
                                     Text("Replace medication names with [REDACTED]")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
                             }
-                            
+
                             Toggle(isOn: $redactNotes) {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: spacing2) {
                                     Text("Redact Notes")
                                     Text("Remove all notes from events")
                                         .font(.caption)
@@ -252,13 +262,13 @@ struct DataManagementView: View {
     }
     
     private var dataOverviewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: spacing12) {
             Text("Data Overview")
                 .font(.headline)
                 .fontWeight(.semibold)
-            
+
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: spacing4) {
                     Text("Medications")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -266,10 +276,10 @@ struct DataManagementView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
                 }
-                
+
                 Spacer()
-                
-                VStack(alignment: .center, spacing: 4) {
+
+                VStack(alignment: .center, spacing: spacing4) {
                     Text("Events")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -277,10 +287,10 @@ struct DataManagementView: View {
                         .font(.title2)
                         .fontWeight(.semibold)
                 }
-                
+
                 Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
+
+                VStack(alignment: .trailing, spacing: spacing4) {
                     Text("Logs (24h)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -296,19 +306,19 @@ struct DataManagementView: View {
                     .fontWeight(.semibold)
                 }
             }
-            .padding(16)
+            .padding(padding16)
             .background(Color(.systemGray6))
-            .cornerRadius(12)
+            .cornerRadius(cornerRadius12)
         }
     }
     
     private var dataActionsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: spacing16) {
             Text("Data Actions")
                 .font(.headline)
                 .fontWeight(.semibold)
-            
-            VStack(spacing: 12) {
+
+            VStack(spacing: spacing12) {
                 dataActionButton(
                     title: "Export Data",
                     subtitle: "Save all your data as a JSON file",
@@ -318,7 +328,7 @@ struct DataManagementView: View {
                         viewModel.requestExport()
                     }
                 )
-                
+
                 dataActionButton(
                     title: "Import Data",
                     subtitle: "Replace current data with a JSON file",
@@ -328,7 +338,7 @@ struct DataManagementView: View {
                         viewModel.showingDocumentPicker = true
                     }
                 )
-                
+
                 dataActionButton(
                     title: "Export App Logs",
                     subtitle: "Export technical logs (no medication names)",
@@ -338,7 +348,7 @@ struct DataManagementView: View {
                         viewModel.requestLogExport()
                     }
                 )
-                
+
                 dataActionButton(
                     title: "Clear All Data",
                     subtitle: "Delete all medications and events",
@@ -349,7 +359,7 @@ struct DataManagementView: View {
                         viewModel.confirmClearUserData()
                     }
                 )
-                
+
                 dataActionButton(
                     title: "Reset App Preferences",
                     subtitle: "Restore all app preferences to defaults",
@@ -360,7 +370,7 @@ struct DataManagementView: View {
                         viewModel.confirmResetSettings()
                     }
                 )
-                
+
             }
         }
     }
@@ -374,7 +384,7 @@ struct DataManagementView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: spacing12) {
                 Group {
                     if isLoading {
                         ProgressView()
@@ -384,35 +394,35 @@ struct DataManagementView: View {
                             .font(.system(.callout, design: .default, weight: .medium))
                     }
                 }
-                .frame(width: 24, height: 24)
+                .frame(width: iconSize, height: iconSize)
                 .foregroundColor(isDestructive ? .red : .accentColor)
-                
-                VStack(alignment: .leading, spacing: 2) {
+
+                VStack(alignment: .leading, spacing: spacing2) {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
                         .foregroundColor(isDestructive ? .red : .primary)
-                    
+
                     Text(subtitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 if !isLoading {
                     Image(systemSymbol: .chevronRight)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(16)
+            .padding(padding16)
             .background(Color(.systemBackground))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color(.systemGray4), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: cornerRadius12)
+                    .stroke(Color(.systemGray4), lineWidth: strokeWidth)
             )
-            .cornerRadius(12)
+            .cornerRadius(cornerRadius12)
         }
         .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs)
         .buttonStyle(.plain)

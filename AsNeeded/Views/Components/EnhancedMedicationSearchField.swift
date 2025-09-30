@@ -16,7 +16,7 @@ struct EnhancedMedicationSearchField: View {
 	@Binding var text: String
 	let placeholder: String
 	let onMedicationSelected: ((clinicalName: String, nickname: String)) -> Void
-	
+
 	@StateObject private var searchService = MedicationSearchService.shared
 	@State private var suggestions: [RxNormSearchResult] = []
 	@State private var showSuggestions = false
@@ -26,7 +26,27 @@ struct EnhancedMedicationSearchField: View {
 	@State private var selectedMedication: RxNormDrug?
 	@State private var animateSelection = false
 	@FocusState private var isFocused: Bool
-	
+	@ScaledMetric private var sectionSpacing: CGFloat = 12
+	@ScaledMetric private var fieldHorizontalPadding: CGFloat = 16
+	@ScaledMetric private var fieldVerticalPadding: CGFloat = 14
+	@ScaledMetric private var fieldCornerRadius: CGFloat = 12
+	@ScaledMetric private var fieldBorderWidth: CGFloat = 1
+	@ScaledMetric private var suggestionRowSpacing: CGFloat = 12
+	@ScaledMetric private var suggestionRowPadding: CGFloat = 16
+	@ScaledMetric private var quickMedicationSpacing: CGFloat = 8
+	@ScaledMetric private var iconWidth: CGFloat = 24
+	@ScaledMetric private var progressViewSize: CGFloat = 20
+	@ScaledMetric private var overlayPadding: CGFloat = 4
+	@ScaledMetric private var citationPadding: CGFloat = 12
+	@ScaledMetric private var buttonSpacing: CGFloat = 4
+	@ScaledMetric private var buttonHorizontalPadding: CGFloat = 12
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 10
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 8
+	@ScaledMetric private var pillIconSpacing: CGFloat = 4
+	@ScaledMetric private var badgeHorizontalPadding: CGFloat = 4
+	@ScaledMetric private var badgeVerticalPadding: CGFloat = 2
+	@ScaledMetric private var checkmarkOffset: CGFloat = 8
+
 	private let debounceDelay: TimeInterval = 0.5 // Increased to prevent flashing
 	
 	// MARK: - Body
@@ -52,11 +72,11 @@ struct EnhancedMedicationSearchField: View {
 	// MARK: - View Components
 
 	private var searchFieldView: some View {
-		HStack(spacing: 12) {
+		HStack(spacing: sectionSpacing) {
 			Image(systemSymbol: .pillsFill)
 				.foregroundColor(.accentColor)
 				.font(.title3)
-			
+
 			TextField(placeholder, text: $text)
 				.textFieldStyle(.plain)
 				.font(.body.weight(.medium))
@@ -69,12 +89,12 @@ struct EnhancedMedicationSearchField: View {
 				.onSubmit {
 					showSuggestions = false
 				}
-			
-			
+
+
 			if isSearching {
 				ProgressView()
 					.scaleEffect(0.8)
-					.frame(width: 20, height: 20)
+					.frame(width: progressViewSize, height: progressViewSize)
 			} else if !text.isEmpty {
 				Button(action: {
 					withAnimation(.easeInOut(duration: 0.2)) {
@@ -91,21 +111,21 @@ struct EnhancedMedicationSearchField: View {
 				.buttonStyle(.plain)
 			}
 		}
-		.padding(.horizontal, 16)
-		.padding(.vertical, 14)
+		.padding(.horizontal, fieldHorizontalPadding)
+		.padding(.vertical, fieldVerticalPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 12)
+			RoundedRectangle(cornerRadius: fieldCornerRadius)
 				.fill(
-					animateSelection ? 
-						Color.accentColor.opacity(0.08) : 
+					animateSelection ?
+						Color.accentColor.opacity(0.08) :
 						(isFocused ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground))
 				)
 				.overlay(
-					RoundedRectangle(cornerRadius: 12)
+					RoundedRectangle(cornerRadius: fieldCornerRadius)
 						.strokeBorder(
-							animateSelection ? Color.accentColor : 
+							animateSelection ? Color.accentColor :
 							(isFocused ? Color.accentColor.opacity(0.4) : Color(.separator).opacity(0.2)),
-							lineWidth: animateSelection ? 2 : (isFocused ? 1.5 : 1)
+							lineWidth: animateSelection ? 2 : (isFocused ? 1.5 : fieldBorderWidth)
 						)
 				)
 		)
@@ -133,11 +153,11 @@ struct EnhancedMedicationSearchField: View {
 		}
 		.frame(maxHeight: 400)
 		.background(
-			RoundedRectangle(cornerRadius: 12)
+			RoundedRectangle(cornerRadius: fieldCornerRadius)
 				.fill(Color(.systemBackground))
 				.shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
 		)
-		.padding(.top, 4)
+		.padding(.top, overlayPadding)
 		.transition(.asymmetric(
 			insertion: .move(edge: .top).combined(with: .opacity),
 			removal: .opacity

@@ -2,12 +2,22 @@ import SwiftUI
 import SFSafeSymbols
 
 struct MedicalDisclaimerDetailView: View {
+	@ScaledMetric private var mainSpacing: CGFloat = 24
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var itemSpacing: CGFloat = 12
+	@ScaledMetric private var smallSpacing: CGFloat = 2
+	@ScaledMetric private var padding: CGFloat = 16
+	@ScaledMetric private var verticalPadding: CGFloat = 4
+	@ScaledMetric private var cornerRadius: CGFloat = 12
+	@ScaledMetric private var iconWidth: CGFloat = 24
+	@ScaledMetric private var lineWidth: CGFloat = 1
+
 	var body: some View {
 		ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: mainSpacing) {
                 // Warning Section
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: sectionSpacing) {
+                    HStack(spacing: itemSpacing) {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
                             .foregroundStyle(.yellow)
                             .font(.title)
@@ -25,14 +35,14 @@ struct MedicalDisclaimerDetailView: View {
                         .font(.body)
                         .foregroundColor(.secondary)
                 }
-                .padding()
+                .padding(padding)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(Color.yellow.opacity(0.09))
                 )
-                
+
                 // Full Disclaimer Text
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: sectionSpacing) {
                     Text("Medical Disclaimer")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -56,14 +66,14 @@ struct MedicalDisclaimerDetailView: View {
                         .fontWeight(.medium)
                         .multilineTextAlignment(.leading)
                 }
-                .padding()
+                .padding(padding)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(Color.gray.opacity(0.09))
                 )
 
                 // Trusted Medical Information Sources
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: sectionSpacing) {
                     Text("Authoritative Medical Information Sources")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -72,7 +82,7 @@ struct MedicalDisclaimerDetailView: View {
                         .font(.body)
                         .multilineTextAlignment(.leading)
 
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: itemSpacing) {
                         medicalSourceLink(
                             title: "MedlinePlus",
                             subtitle: "National Library of Medicine - Consumer health information",
@@ -104,14 +114,14 @@ struct MedicalDisclaimerDetailView: View {
                         )
                     }
                 }
-                .padding()
+                .padding(padding)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(Color.blue.opacity(0.05))
-                        .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+                        .stroke(Color.blue.opacity(0.2), lineWidth: lineWidth)
                 )
             }
-            .padding()
+            .padding(padding)
 		}
 		.navigationTitle("Medical Disclaimer")
 		.navigationBarTitleDisplayMode(.large)
@@ -125,13 +135,13 @@ struct MedicalDisclaimerDetailView: View {
 				UIApplication.shared.open(url)
 			}
 		}) {
-			HStack(spacing: 12) {
+			HStack(spacing: itemSpacing) {
 				Image(systemSymbol: .linkCircle)
 					.font(.system(.subheadline))
 					.foregroundColor(.accentColor)
-					.frame(width: 24)
+					.frame(width: iconWidth)
 
-				VStack(alignment: .leading, spacing: 2) {
+				VStack(alignment: .leading, spacing: smallSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -150,7 +160,7 @@ struct MedicalDisclaimerDetailView: View {
 					.font(.system(.caption))
 					.foregroundColor(.secondary)
 			}
-			.padding(.vertical, 4)
+			.padding(.vertical, verticalPadding)
 			.contentShape(Rectangle())
 		}
 		.buttonStyle(.plain)

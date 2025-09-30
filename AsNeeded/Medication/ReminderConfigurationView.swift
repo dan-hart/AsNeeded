@@ -12,7 +12,7 @@ struct ReminderConfigurationView: View {
 	@Environment(\.dismiss) private var dismiss
 	@StateObject private var notificationManager = NotificationManager.shared
 	private let logger = DHLogger(category: "ReminderConfigurationView")
-	
+
 	@State private var reminderType: ReminderType = .oneTime
 	@State private var reminderDate = Date()
 	@State private var selectedDays: Set<Int> = []
@@ -21,6 +21,32 @@ struct ReminderConfigurationView: View {
 	@State private var isScheduling = false
 	@State private var showingError = false
 	@State private var errorMessage = ""
+
+	@ScaledMetric private var contentSpacing: CGFloat = 24
+	@ScaledMetric private var headerVerticalPadding: CGFloat = 8
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var cardCornerRadius: CGFloat = 16
+	@ScaledMetric private var gridSpacing: CGFloat = 12
+	@ScaledMetric private var typeCardSpacing: CGFloat = 8
+	@ScaledMetric private var typeCardVerticalPadding: CGFloat = 16
+	@ScaledMetric private var typeCardHorizontalPadding: CGFloat = 8
+	@ScaledMetric private var typeCardCornerRadius: CGFloat = 12
+	@ScaledMetric private var typeBorderWidth: CGFloat = 1
+	@ScaledMetric private var dayButtonPadding: CGFloat = 12
+	@ScaledMetric private var dayButtonCornerRadius: CGFloat = 10
+	@ScaledMetric private var dayCircleSize: CGFloat = 6
+	@ScaledMetric private var dayBorderWidth: CGFloat = 2
+	@ScaledMetric private var quickButtonSpacing: CGFloat = 4
+	@ScaledMetric private var statusHorizontalPadding: CGFloat = 12
+	@ScaledMetric private var statusVerticalPadding: CGFloat = 8
+	@ScaledMetric private var statusCornerRadius: CGFloat = 8
+	@ScaledMetric private var buttonVerticalPadding: CGFloat = 12
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 12
+	@ScaledMetric private var scheduleButtonPadding: CGFloat = 16
+	@ScaledMetric private var scheduleButtonCornerRadius: CGFloat = 14
+	@ScaledMetric private var scheduleButtonShadowRadius: CGFloat = 8
+	@ScaledMetric private var scheduleButtonShadowY: CGFloat = 4
 	
 	enum ReminderType: String, CaseIterable {
 		case oneTime = "One Time"
@@ -60,7 +86,7 @@ struct ReminderConfigurationView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(spacing: 24) {
+				VStack(spacing: contentSpacing) {
 					// MARK: - Header Section
 					headerSection
 					
@@ -117,7 +143,7 @@ struct ReminderConfigurationView: View {
 	
 	// MARK: - View Components
 	private var headerSection: some View {
-		VStack(spacing: 8) {
+		VStack(spacing: headerVerticalPadding) {
 			Image(systemSymbol: .bellBadgeFill)
 				.font(.system(.largeTitle, design: .default, weight: .medium))
 				.foregroundStyle(
@@ -137,18 +163,18 @@ struct ReminderConfigurationView: View {
 				.foregroundStyle(.secondary)
 		}
 		.frame(maxWidth: .infinity)
-		.padding(.vertical, 8)
+		.padding(.vertical, headerVerticalPadding)
 	}
 	
 	@ViewBuilder
 	private var notificationPermissionCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Image(systemSymbol: notificationManager.authorizationStatus == .denied ? .bellSlash : .bellBadge)
 					.font(.title2)
 					.foregroundStyle(notificationManager.authorizationStatus == .denied ? .red : .accentColor)
 				
-				VStack(alignment: .leading, spacing: 4) {
+				VStack(alignment: .leading, spacing: quickButtonSpacing) {
 					Text(notificationManager.authorizationStatus == .denied ? "Notifications Disabled" : "Notifications Required")
 						.font(.headline)
 					
@@ -177,50 +203,50 @@ struct ReminderConfigurationView: View {
 				}
 				.font(.callout.weight(.semibold))
 				.frame(maxWidth: .infinity)
-				.padding(.vertical, 12)
+				.padding(.vertical, buttonVerticalPadding)
 				.background(
-					notificationManager.authorizationStatus == .denied ? 
+					notificationManager.authorizationStatus == .denied ?
 					Color(.systemGray5) : Color.accentColor
 				)
 				.foregroundColor(
-					notificationManager.authorizationStatus == .denied ? 
+					notificationManager.authorizationStatus == .denied ?
 					.primary : .white
 				)
-				.cornerRadius(12)
+				.cornerRadius(buttonCornerRadius)
 			}
 			.buttonStyle(.plain)
 		}
-		.padding()
+		.padding(cardPadding)
 		.background(
-			RoundedRectangle(cornerRadius: 16)
+			RoundedRectangle(cornerRadius: cardCornerRadius)
 				.fill(Color(.secondarySystemGroupedBackground))
 		)
 	}
 	
 	private var reminderTypeCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			Text("REMINDER TYPE")
 				.font(.caption)
 				.fontWeight(.semibold)
 				.foregroundStyle(.secondary)
-			
-			LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+
+			LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: gridSpacing) {
 				ForEach(ReminderType.allCases, id: \.self) { type in
 					Button {
 						withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
 							reminderType = type
 						}
 					} label: {
-						VStack(spacing: 8) {
+						VStack(spacing: typeCardSpacing) {
 							Image(systemSymbol: type.systemImage)
 								.font(.title2)
 								.foregroundStyle(reminderType == type ? .white : .accentColor)
-							
+
 							Text(type.rawValue)
 								.font(.subheadline)
 								.fontWeight(.medium)
 								.foregroundStyle(reminderType == type ? .white : .primary)
-							
+
 							Text(type.description)
 								.font(.caption2)
 								.foregroundStyle(reminderType == type ? .white.opacity(0.8) : .secondary)
@@ -228,16 +254,16 @@ struct ReminderConfigurationView: View {
 								.lineLimit(2)
 						}
 						.frame(maxWidth: .infinity)
-						.padding(.vertical, 16)
-						.padding(.horizontal, 8)
+						.padding(.vertical, typeCardVerticalPadding)
+						.padding(.horizontal, typeCardHorizontalPadding)
 						.background(
-							RoundedRectangle(cornerRadius: 12)
-								.fill(reminderType == type ? 
+							RoundedRectangle(cornerRadius: typeCardCornerRadius)
+								.fill(reminderType == type ?
 									LinearGradient(
 										colors: [.accentColor, .accentColor.opacity(0.8)],
 										startPoint: .topLeading,
 										endPoint: .bottomTrailing
-									) : 
+									) :
 									LinearGradient(
 										colors: [Color(.tertiarySystemGroupedBackground), Color(.tertiarySystemGroupedBackground)],
 										startPoint: .topLeading,
@@ -246,10 +272,10 @@ struct ReminderConfigurationView: View {
 								)
 						)
 						.overlay(
-							RoundedRectangle(cornerRadius: 12)
+							RoundedRectangle(cornerRadius: typeCardCornerRadius)
 								.strokeBorder(
 									reminderType == type ? Color.clear : Color(.separator).opacity(0.3),
-									lineWidth: 1
+									lineWidth: typeBorderWidth
 								)
 						)
 					}
@@ -261,13 +287,13 @@ struct ReminderConfigurationView: View {
 	
 	@ViewBuilder
 	private var reminderConfigurationCard: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
 			Text("SCHEDULE")
 				.font(.caption)
 				.fontWeight(.semibold)
 				.foregroundStyle(.secondary)
-			
-			VStack(spacing: 16) {
+
+			VStack(spacing: sectionSpacing) {
 				switch reminderType {
 				case .oneTime:
 					dateTimePickerCard(
@@ -288,7 +314,7 @@ struct ReminderConfigurationView: View {
 					)
 					
 				case .weekly:
-					VStack(spacing: 12) {
+					VStack(spacing: gridSpacing) {
 						dateTimePickerCard(
 							title: "Starting Date & Time",
 							selection: $reminderDate,
@@ -305,18 +331,18 @@ struct ReminderConfigurationView: View {
 								.font(.caption)
 								.foregroundStyle(.secondary)
 						}
-						.padding(.horizontal, 12)
-						.padding(.vertical, 8)
+						.padding(.horizontal, statusHorizontalPadding)
+						.padding(.vertical, statusVerticalPadding)
 						.background(
-							RoundedRectangle(cornerRadius: 8)
+							RoundedRectangle(cornerRadius: statusCornerRadius)
 								.fill(Color.accentColor.opacity(0.1))
 						)
 					}
-					
+
 				case .custom:
-					VStack(spacing: 16) {
+					VStack(spacing: sectionSpacing) {
 						// Days Selection
-						VStack(alignment: .leading, spacing: 12) {
+						VStack(alignment: .leading, spacing: gridSpacing) {
 							HStack {
 								Image(systemSymbol: .calendarBadgePlus)
 									.foregroundColor(.accentColor)
@@ -325,7 +351,7 @@ struct ReminderConfigurationView: View {
 									.fontWeight(.semibold)
 							}
 							
-							HStack(spacing: 8) {
+							HStack(spacing: headerVerticalPadding) {
 								ForEach(weekdays, id: \.0) { day in
 									Button {
 										withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
@@ -336,31 +362,31 @@ struct ReminderConfigurationView: View {
 											}
 										}
 									} label: {
-										VStack(spacing: 4) {
+										VStack(spacing: quickButtonSpacing) {
 											Text(day.2)
 												.font(.caption2)
 												.fontWeight(.semibold)
-											
+
 											Circle()
 												.fill(selectedDays.contains(day.0) ? Color.accentColor : Color(.systemGray5))
-												.frame(width: 6, height: 6)
+												.frame(width: dayCircleSize, height: dayCircleSize)
 										}
 										.frame(maxWidth: .infinity)
-										.padding(.vertical, 12)
+										.padding(.vertical, dayButtonPadding)
 										.background(
-											RoundedRectangle(cornerRadius: 10)
-												.fill(selectedDays.contains(day.0) ? 
-													Color.accentColor.opacity(0.15) : 
+											RoundedRectangle(cornerRadius: dayButtonCornerRadius)
+												.fill(selectedDays.contains(day.0) ?
+													Color.accentColor.opacity(0.15) :
 													Color(.tertiarySystemGroupedBackground)
 												)
 										)
 										.overlay(
-											RoundedRectangle(cornerRadius: 10)
+											RoundedRectangle(cornerRadius: dayButtonCornerRadius)
 												.strokeBorder(
-													selectedDays.contains(day.0) ? 
-													Color.accentColor : 
+													selectedDays.contains(day.0) ?
+													Color.accentColor :
 													Color(.separator).opacity(0.2),
-													lineWidth: selectedDays.contains(day.0) ? 2 : 1
+													lineWidth: selectedDays.contains(day.0) ? dayBorderWidth : typeBorderWidth
 												)
 										)
 									}
@@ -387,19 +413,19 @@ struct ReminderConfigurationView: View {
 									.font(.caption)
 									.foregroundStyle(.secondary)
 							}
-							.padding(.horizontal, 12)
-							.padding(.vertical, 8)
+							.padding(.horizontal, statusHorizontalPadding)
+							.padding(.vertical, statusVerticalPadding)
 							.background(
-								RoundedRectangle(cornerRadius: 8)
+								RoundedRectangle(cornerRadius: statusCornerRadius)
 									.fill(Color.green.opacity(0.1))
 							)
 						}
 					}
 				}
 			}
-			.padding()
+			.padding(cardPadding)
 			.background(
-				RoundedRectangle(cornerRadius: 16)
+				RoundedRectangle(cornerRadius: cardCornerRadius)
 					.fill(Color(.secondarySystemGroupedBackground))
 			)
 		}
@@ -412,7 +438,7 @@ struct ReminderConfigurationView: View {
 		components: DatePickerComponents,
 		icon: SFSymbol
 	) -> some View {
-		VStack(alignment: .leading, spacing: 8) {
+		VStack(alignment: .leading, spacing: headerVerticalPadding) {
 			HStack {
 				Image(systemSymbol: icon)
 					.foregroundColor(.accentColor)
@@ -464,21 +490,21 @@ struct ReminderConfigurationView: View {
 			}
 			.foregroundColor(.white)
 			.frame(maxWidth: .infinity)
-			.padding(.vertical, 16)
+			.padding(.vertical, scheduleButtonPadding)
 			.background(
 				LinearGradient(
-					colors: buttonDisabled ? 
+					colors: buttonDisabled ?
 					[Color(.systemGray3), Color(.systemGray4)] :
 					[.accentColor, .accentColor.opacity(0.8)],
 					startPoint: .leading,
 					endPoint: .trailing
 				)
 			)
-			.cornerRadius(14)
+			.cornerRadius(scheduleButtonCornerRadius)
 			.shadow(
 				color: buttonDisabled ? .clear : .accentColor.opacity(0.3),
-				radius: 8,
-				y: 4
+				radius: scheduleButtonShadowRadius,
+				y: scheduleButtonShadowY
 			)
 		}
 		.buttonStyle(.plain)

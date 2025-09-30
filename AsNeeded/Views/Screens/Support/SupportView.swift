@@ -4,6 +4,24 @@ import DHLoggingKit
 import SafariServices
 
 struct SupportView: View {
+	@ScaledMetric private var spacing24: CGFloat = 24
+	@ScaledMetric private var spacing20: CGFloat = 20
+	@ScaledMetric private var spacing16: CGFloat = 16
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var spacing6: CGFloat = 6
+	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var padding20: CGFloat = 20
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var padding12: CGFloat = 12
+	@ScaledMetric private var padding8: CGFloat = 8
+	@ScaledMetric private var padding4: CGFloat = 4
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var cornerRadius10: CGFloat = 10
+	@ScaledMetric private var lineWidth1: CGFloat = 1
+	@ScaledMetric private var minHeight100: CGFloat = 100
+
 	@Environment(\.openURL) private var openURL
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
 	@State private var isPurchasing = false
@@ -17,7 +35,7 @@ struct SupportView: View {
 	
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 24) {
+			VStack(alignment: .leading, spacing: spacing24) {
 				headerSection
 
 				supportOptionsSection
@@ -54,16 +72,16 @@ struct SupportView: View {
 						ProgressView("Processing...")
 							.padding()
 							.background(.regularMaterial)
-							.cornerRadius(12)
+							.cornerRadius(cornerRadius12)
 					}
 			}
 		}
 	}
 	
 	private var headerSection: some View {
-		VStack(alignment: .center, spacing: 16) {
-			VStack(spacing: 8) {
-				HStack(spacing: 8) {
+		VStack(alignment: .center, spacing: spacing16) {
+			VStack(spacing: spacing8) {
+				HStack(spacing: spacing8) {
 					Image(systemSymbol: .heart)
 						.font(.title2)
 						.foregroundColor(.red)
@@ -71,7 +89,7 @@ struct SupportView: View {
 						.font(.title)
 						.fontWeight(.semibold)
 				}
-				
+
 				Text("Help keep this app free, open source, and privacy-focused")
 					.font(.subheadline)
 					.foregroundColor(.secondary)
@@ -79,13 +97,13 @@ struct SupportView: View {
 			}
 		}
 		.frame(maxWidth: .infinity)
-		.padding(.vertical, 8)
+		.padding(.vertical, padding8)
 	}
 	
 	private var supportOptionsSection: some View {
-		VStack(alignment: .leading, spacing: 20) {
+		VStack(alignment: .leading, spacing: spacing20) {
 			// Support Section
-			VStack(alignment: .leading, spacing: 16) {
+			VStack(alignment: .leading, spacing: spacing16) {
 				Text("Support Development")
 					.font(.title2)
 					.fontWeight(.semibold)
@@ -111,12 +129,12 @@ struct SupportView: View {
 	}
 	
 	private var aboutOpenSourceSection: some View {
-		VStack(alignment: .leading, spacing: 16) {
+		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Open Source & Free")
 				.font(.title2)
 				.fontWeight(.semibold)
-			
-			VStack(alignment: .leading, spacing: 12) {
+
+			VStack(alignment: .leading, spacing: spacing12) {
 				Text("As Needed will always be free with all features available. No ads, no premium tiers, no subscriptions required. The app is open source - you can inspect the code or contribute improvements.")
 					.font(.body)
 					.foregroundStyle(.secondary)
@@ -126,12 +144,12 @@ struct SupportView: View {
 						openURL(url)
 					}
 				} label: {
-					HStack(spacing: 12) {
+					HStack(spacing: spacing12) {
 						Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 							.font(.title3)
 							.foregroundColor(.primary)
 
-						VStack(alignment: .leading, spacing: 2) {
+						VStack(alignment: .leading, spacing: spacing2) {
 							Text("Contribute on GitHub")
 								.font(.headline)
 								.fontWeight(.semibold)
@@ -148,9 +166,9 @@ struct SupportView: View {
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
-					.padding(16)
+					.padding(padding16)
 					.background(.regularMaterial)
-					.cornerRadius(12)
+					.cornerRadius(cornerRadius12)
 				}
 				.buttonStyle(.plain)
 			}
@@ -161,12 +179,12 @@ struct SupportView: View {
 		Button {
 			ReviewService.shared.openAppStoreReviewPage()
 		} label: {
-			HStack(spacing: 12) {
+			HStack(spacing: spacing12) {
 				Image(systemSymbol: .star)
 					.font(.title3)
 					.foregroundColor(.accent)
 
-				VStack(alignment: .leading, spacing: 2) {
+				VStack(alignment: .leading, spacing: spacing2) {
 					Text("Rate & Review on App Store")
 						.font(.headline)
 						.fontWeight(.semibold)
@@ -183,22 +201,22 @@ struct SupportView: View {
 					.font(.caption)
 					.foregroundColor(.secondary)
 			}
-			.padding(16)
+			.padding(padding16)
 			.background(.regularMaterial)
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius12)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, 8)
+		.padding(.top, padding8)
 	}
 
 	private var tipJarGrid: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: spacing12) {
 			Text("One-time Tips")
 				.font(.headline)
 				.fontWeight(.semibold)
-				.padding(.top, 8)
-			
-			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
+				.padding(.top, padding8)
+
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: spacing12) {
 				ForEach(tipTiers, id: \.title) { tip in
 					TipButton(tip: tip,
 							 isPurchasing: $isPurchasing,
@@ -213,17 +231,17 @@ struct SupportView: View {
 	}
 	
 	private var subscriptionOptions: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: spacing12) {
 			Text("Monthly Auto-Renewable Subscriptions")
 				.font(.headline)
 				.fontWeight(.semibold)
-				.padding(.top, 8)
-			
+				.padding(.top, padding8)
+
 			Text("Ongoing monthly support for development • Cancel anytime in Settings")
 				.font(.caption)
 				.foregroundColor(.secondary)
-			
-			VStack(spacing: 8) {
+
+			VStack(spacing: spacing8) {
 				ForEach(subscriptionTiers, id: \.title) { subscription in
 					SubscriptionButton(subscription: subscription,
 									  isPurchasing: $isPurchasing,
@@ -234,7 +252,7 @@ struct SupportView: View {
 									  purchaseType: $purchaseType)
 				}
 			}
-			
+
 			// Required legal information for subscriptions
 			subscriptionLegalInfo
 		}
@@ -245,9 +263,9 @@ struct SupportView: View {
 			Task {
 				isPurchasing = true
 				defer { isPurchasing = false }
-				
+
 				let success = await revenueCatManager.restorePurchases()
-				
+
 				if success {
 					alertTitle = "Restore Complete"
 					alertMessage = "Your purchases have been restored successfully."
@@ -255,7 +273,7 @@ struct SupportView: View {
 					alertTitle = "Restore Failed"
 					alertMessage = revenueCatManager.purchaseError ?? "Unable to restore purchases. Please try again later."
 				}
-				
+
 				showPurchaseAlert = true
 			}
 		} label: {
@@ -267,19 +285,19 @@ struct SupportView: View {
 					.fontWeight(.medium)
 			}
 			.foregroundColor(.white)
-			.padding(.horizontal, 20)
-			.padding(.vertical, 12)
+			.padding(.horizontal, padding20)
+			.padding(.vertical, padding12)
 			.background(
-				RoundedRectangle(cornerRadius: 10)
+				RoundedRectangle(cornerRadius: cornerRadius10)
                     .fill(.accent)
 			)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, 16)
+		.padding(.top, padding16)
 	}
 	
 	private var legalLinksSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: spacing8) {
 			Button {
 				if let url = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
 					webURL = url
@@ -290,7 +308,7 @@ struct SupportView: View {
 					.font(.caption)
 					.foregroundColor(.accentColor)
 			}
-			
+
 			Button {
 				if let url = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/PRIVACY.md") {
 					webURL = url
@@ -302,17 +320,17 @@ struct SupportView: View {
 					.foregroundColor(.accentColor)
 			}
 		}
-		.padding(.top, 4)
+		.padding(.top, padding4)
 	}
 	
 	private var subscriptionLegalInfo: some View {
-		VStack(alignment: .leading, spacing: 6) {
+		VStack(alignment: .leading, spacing: spacing6) {
 			Text("Subscription automatically renews monthly unless canceled. Manage in Settings > Apple ID > Subscriptions.")
 				.font(.caption2)
 				.foregroundColor(.secondary)
-				.padding(.top, 8)
+				.padding(.top, padding8)
 		}
-		.padding(.horizontal, 4)
+		.padding(.horizontal, padding4)
 	}
 	
 	private let tipTiers = [
@@ -331,6 +349,13 @@ struct SupportView: View {
 
 // MARK: - Tip Button
 private struct TipButton: View {
+	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var padding8: CGFloat = 8
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var lineWidth1: CGFloat = 1
+	@ScaledMetric private var minHeight100: CGFloat = 100
+
 	let tip: (title: String, emoji: String, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
 	@Binding var isPurchasing: Bool
@@ -358,29 +383,29 @@ private struct TipButton: View {
 				}
 			}
 		} label: {
-			VStack(spacing: 8) {
+			VStack(spacing: spacing8) {
 				Text(tip.emoji)
 					.font(.title2)
-				
+
 				Text(tip.title)
 					.font(.caption)
 					.fontWeight(.medium)
 					.multilineTextAlignment(.center)
 					.lineLimit(1)
-				
+
 				Text(tip.price)
 					.font(.caption2)
 					.foregroundColor(.secondary)
 			}
-			.frame(maxWidth: .infinity, minHeight: 100)
-			.padding(.vertical, 16)
-			.padding(.horizontal, 8)
+			.frame(maxWidth: .infinity, minHeight: minHeight100)
+			.padding(.vertical, padding16)
+			.padding(.horizontal, padding8)
 			.background(tip.color.opacity(0.1))
 			.overlay(
-				RoundedRectangle(cornerRadius: 12)
-					.stroke(tip.color, lineWidth: 1)
+				RoundedRectangle(cornerRadius: cornerRadius12)
+					.stroke(tip.color, lineWidth: lineWidth1)
 			)
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius12)
 		}
 		.buttonStyle(.plain)
 	}
@@ -389,6 +414,13 @@ private struct TipButton: View {
 
 // MARK: - Subscription Button
 private struct SubscriptionButton: View {
+	@ScaledMetric private var spacing12: CGFloat = 12
+	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var cornerRadius12: CGFloat = 12
+	@ScaledMetric private var lineWidth1: CGFloat = 1
+	@ScaledMetric private var iconSize24: CGFloat = 24
+
 	let subscription: (title: String, description: String, icon: SFSymbol, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
 	@Binding var isPurchasing: Bool
@@ -416,13 +448,13 @@ private struct SubscriptionButton: View {
 				}
 			}
 		} label: {
-			HStack(spacing: 12) {
+			HStack(spacing: spacing12) {
 				Image(systemSymbol: subscription.icon)
 					.font(.system(.callout, design: .default, weight: .medium))
-					.frame(width: 24, height: 24)
+					.frame(width: iconSize24, height: iconSize24)
 					.foregroundColor(subscription.color)
-				
-				VStack(alignment: .leading, spacing: 2) {
+
+				VStack(alignment: .leading, spacing: spacing2) {
 					Text(subscription.title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -430,21 +462,21 @@ private struct SubscriptionButton: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
-				
+
 				Spacer()
-				
+
 				Text(subscription.price + "/month")
 					.font(.caption)
 					.fontWeight(.medium)
 					.foregroundColor(subscription.color)
 			}
-			.padding(16)
+			.padding(padding16)
 			.background(Color(.systemBackground))
 			.overlay(
-				RoundedRectangle(cornerRadius: 12)
-					.stroke(subscription.color, lineWidth: 1)
+				RoundedRectangle(cornerRadius: cornerRadius12)
+					.stroke(subscription.color, lineWidth: lineWidth1)
 			)
-			.cornerRadius(12)
+			.cornerRadius(cornerRadius12)
 		}
 		.buttonStyle(.plain)
 	}

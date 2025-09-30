@@ -27,6 +27,11 @@ struct HeroSectionComponent: View {
 	let title: String
 	let subtitle: String
 
+	@ScaledMetric private var iconSize: CGFloat = 100
+	@ScaledMetric private var iconBlurSize: CGFloat = 120
+	@ScaledMetric private var verticalPadding: CGFloat = 30
+	@ScaledMetric private var iconSpacing: CGFloat = 20
+
 	init(
 		isEditing: Bool,
 		icon: SFSymbol? = nil,
@@ -40,7 +45,7 @@ struct HeroSectionComponent: View {
 	}
 
 	var body: some View {
-		VStack(spacing: 20) {
+		VStack(spacing: iconSpacing) {
 			// Animated icon with liquid glass effect
 			ZStack {
 				// Animated gradient background
@@ -55,13 +60,13 @@ struct HeroSectionComponent: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: 120, height: 120)
+					.frame(width: iconBlurSize, height: iconBlurSize)
 					.blur(radius: 20)
 
 				// Glass circle
 				Circle()
 					.fill(.ultraThinMaterial)
-					.frame(width: 100, height: 100)
+					.frame(width: iconSize, height: iconSize)
 					.overlay(
 						Circle()
 							.strokeBorder(
@@ -107,7 +112,7 @@ struct HeroSectionComponent: View {
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 		}
-		.padding(.vertical, 30)
+		.padding(.vertical, verticalPadding)
 		.accessibilityElement(children: .combine)
 	}
 }

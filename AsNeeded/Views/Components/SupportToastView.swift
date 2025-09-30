@@ -8,7 +8,22 @@ struct SupportToastView: View {
 	let onDismiss: () -> Void
 	let onSupportTapped: () -> Void
 	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
-	
+
+	@ScaledMetric private var mainSpacing: CGFloat = 16
+	@ScaledMetric private var iconHSpacing: CGFloat = 6
+	@ScaledMetric private var buttonHPadding: CGFloat = 20
+	@ScaledMetric private var buttonVPadding: CGFloat = 10
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 10
+	@ScaledMetric private var buttonBorderWidth: CGFloat = 1
+	@ScaledMetric private var dontShowPaddingH: CGFloat = 16
+	@ScaledMetric private var dontShowPaddingV: CGFloat = 8
+	@ScaledMetric private var dontShowCornerRadius: CGFloat = 8
+	@ScaledMetric private var dismissButtonSize: CGFloat = 44
+	@ScaledMetric private var toastPadding: CGFloat = 24
+	@ScaledMetric private var toastMaxWidth: CGFloat = 320
+	@ScaledMetric private var toastCornerRadius: CGFloat = 20
+	@ScaledMetric private var toastBorderWidth: CGFloat = 1
+
 	init(
 		message: String,
 		supportMessage: String = "Support As Needed",
@@ -26,7 +41,7 @@ struct SupportToastView: View {
 	var body: some View {
 		if isVisible && !hideSupportBanners {
 			GeometryReader { geometry in
-				VStack(spacing: 16) {
+				VStack(spacing: mainSpacing) {
 					// Success indicator with animation
 					Image(systemSymbol: .checkmarkCircleFill)
 						.font(.largeTitle.weight(.medium))
@@ -49,7 +64,7 @@ struct SupportToastView: View {
 					
 					// Support button
 					Button(action: onSupportTapped) {
-						HStack(spacing: 6) {
+						HStack(spacing: iconHSpacing) {
 							Image(systemSymbol: .heartFill)
 								.font(.caption)
 								.foregroundStyle(
@@ -64,15 +79,15 @@ struct SupportToastView: View {
 								.fontWeight(.medium)
 								.foregroundColor(.accentColor)
 						}
-						.padding(.horizontal, 20)
-						.padding(.vertical, 10)
+						.padding(.horizontal, buttonHPadding)
+						.padding(.vertical, buttonVPadding)
 						.background(
-							RoundedRectangle(cornerRadius: 10)
+							RoundedRectangle(cornerRadius: buttonCornerRadius)
 								.fill(Color.accentColor.opacity(0.1))
 						)
 						.overlay(
-							RoundedRectangle(cornerRadius: 10)
-								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: 1)
+							RoundedRectangle(cornerRadius: buttonCornerRadius)
+								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: buttonBorderWidth)
 						)
 					}
 					.buttonStyle(.plain)
@@ -85,10 +100,10 @@ struct SupportToastView: View {
 						Text("Don't Show Again")
 							.font(.caption)
 							.foregroundColor(.secondary)
-							.padding(.horizontal, 16)
-							.padding(.vertical, 8)
+							.padding(.horizontal, dontShowPaddingH)
+							.padding(.vertical, dontShowPaddingV)
 							.background(
-								RoundedRectangle(cornerRadius: 8)
+								RoundedRectangle(cornerRadius: dontShowCornerRadius)
 									.fill(Color(.tertiarySystemFill))
 							)
 					}
@@ -99,26 +114,26 @@ struct SupportToastView: View {
 						Image(systemSymbol: .xmarkCircleFill)
 							.font(.title2)
 							.foregroundStyle(.secondary)
-							.frame(width: 44, height: 44) // Minimum tap target
+							.frame(width: dismissButtonSize, height: dismissButtonSize)
 							.contentShape(Rectangle())
 					}
 					.buttonStyle(.plain)
 				}
-				.padding(24)
-				.frame(maxWidth: 320)
+				.padding(toastPadding)
+				.frame(maxWidth: toastMaxWidth)
 				.background(
-					RoundedRectangle(cornerRadius: 20)
+					RoundedRectangle(cornerRadius: toastCornerRadius)
 						.fill(.regularMaterial)
 						.shadow(color: .black.opacity(0.15), radius: 20, y: 10)
 						.overlay(
-							RoundedRectangle(cornerRadius: 20)
+							RoundedRectangle(cornerRadius: toastCornerRadius)
 								.strokeBorder(
 									LinearGradient(
 										colors: [.white.opacity(0.5), .clear],
 										startPoint: .topLeading,
 										endPoint: .bottomTrailing
 									),
-									lineWidth: 1
+									lineWidth: toastBorderWidth
 								)
 						)
 				)

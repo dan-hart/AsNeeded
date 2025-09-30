@@ -32,6 +32,13 @@ struct DateCardComponent: View {
 	let color: Color
 	let onTap: () -> Void
 	let onRemove: (() -> Void)?
+	@ScaledMetric private var iconContentSpacing: CGFloat = 12
+	@ScaledMetric private var iconSize: CGFloat = 36
+	@ScaledMetric private var labelSpacing: CGFloat = 4
+	@ScaledMetric private var addIconSpacing: CGFloat = 4
+	@ScaledMetric private var cardPadding: CGFloat = 14
+	@ScaledMetric private var cornerRadius: CGFloat = 16
+	@ScaledMetric private var borderWidth: CGFloat = 1
 
 	init(
 		title: String,
@@ -51,12 +58,12 @@ struct DateCardComponent: View {
 
 	var body: some View {
 		Button(action: onTap) {
-			HStack(spacing: 12) {
+			HStack(spacing: iconContentSpacing) {
 				// Icon with colored background
 				ZStack {
 					Circle()
 						.fill(color.opacity(0.15))
-						.frame(width: 36, height: 36)
+						.frame(width: iconSize, height: iconSize)
 
 					Image(systemSymbol: icon)
 						.font(.body.weight(.semibold))
@@ -64,7 +71,7 @@ struct DateCardComponent: View {
 				}
 
 				// Date info
-				VStack(alignment: .leading, spacing: 4) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text(title)
 						.font(.caption)
 						.fontWeight(.medium)
@@ -76,7 +83,7 @@ struct DateCardComponent: View {
 							.fontWeight(.semibold)
 							.foregroundStyle(.primary)
 					} else {
-						HStack(spacing: 4) {
+						HStack(spacing: addIconSpacing) {
 							Image(systemSymbol: .plusCircle)
 								.font(.caption2)
 							Text("Add Date")
@@ -101,21 +108,21 @@ struct DateCardComponent: View {
 					.accessibilityLabel("Remove \(title.lowercased())")
 				}
 			}
-			.padding(14)
+			.padding(cardPadding)
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.background(
-				RoundedRectangle(cornerRadius: 16, style: .continuous)
+				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 					.fill(date != nil ?
 						Color(.tertiarySystemGroupedBackground) :
 						color.opacity(0.05)
 					)
 					.overlay(
-						RoundedRectangle(cornerRadius: 16, style: .continuous)
+						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 							.strokeBorder(
 								date != nil ?
 									color.opacity(0.15) :
 									color.opacity(0.2),
-								lineWidth: 1
+								lineWidth: borderWidth
 							)
 					)
 			)
