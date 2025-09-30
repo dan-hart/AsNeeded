@@ -47,46 +47,55 @@ struct ColorPickerComponent: View {
 	@ScaledMetric private var saveButtonVPadding: CGFloat = 16
 
 	var body: some View {
-		ScrollView {
-			VStack(alignment: .leading, spacing: mainSpacing) {
-				// Section header
-				HStack(spacing: headerSpacing) {
-					Image(systemSymbol: .paintbrushPointedFill)
-						.font(.title2)
-						.foregroundStyle(
-							LinearGradient(
-								colors: [Color.accent, Color.accent.opacity(0.7)],
-								startPoint: .topLeading,
-								endPoint: .bottomTrailing
-							)
-						)
-
-					Text("Medication Color")
-						.font(.headline)
-						.fontWeight(.semibold)
-				}
-				.padding(.top, topPadding)
-
-				// Default/Reset option
-				defaultColorOption
-
-				// Color grid with more spacing for large detent
+		VStack(spacing: 0) {
+			ScrollView {
 				VStack(alignment: .leading, spacing: mainSpacing) {
-					Text("Choose a Color")
-						.font(.subheadline)
-						.fontWeight(.medium)
-						.foregroundStyle(.secondary)
+					// Section header
+					HStack(spacing: headerSpacing) {
+						Image(systemSymbol: .paintbrushPointedFill)
+							.font(.title2)
+							.foregroundStyle(
+								LinearGradient(
+									colors: [Color.accent, Color.accent.opacity(0.7)],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
+								)
+							)
 
-					colorGrid
-				}
+						Text("Medication Color")
+							.font(.headline)
+							.fontWeight(.semibold)
+					}
+					.padding(.top, topPadding)
 
-				// Save button CTA (no spacer needed - let ScrollView handle spacing)
-				if let onSave = onSave {
-					saveButton(onSave: onSave)
-						.padding(.top, saveButtonTopPadding)
+					// Default/Reset option
+					defaultColorOption
+
+					// Color grid with more spacing for large detent
+					VStack(alignment: .leading, spacing: mainSpacing) {
+						Text("Choose a Color")
+							.font(.subheadline)
+							.fontWeight(.medium)
+							.foregroundStyle(.secondary)
+
+						colorGrid
+					}
 				}
+				.padding(.horizontal, contentHPadding)
+				.padding(.bottom, contentHPadding)
 			}
-			.padding(.horizontal, contentHPadding)
+
+			// Sticky Save button at bottom
+			if let onSave = onSave {
+				VStack(spacing: 0) {
+					Divider()
+
+					saveButton(onSave: onSave)
+						.padding(.horizontal, contentHPadding)
+						.padding(.vertical, saveButtonVPadding)
+				}
+				.background(.regularMaterial)
+			}
 		}
 		.accessibilityElement(children: .contain)
 		.accessibilityLabel("Color picker for medication")
@@ -196,6 +205,8 @@ struct ColorPickerComponent: View {
 				: Color.accent
 
 			HStack(spacing: headerSpacing) {
+				Spacer()
+
 				// Show selected color preview
 				if let hexColor = selectedColorHex, let color = Color(hex: hexColor) {
 					Circle()
@@ -211,6 +222,8 @@ struct ColorPickerComponent: View {
 				Text(selectedColorHex != nil ? "Save Color Choice" : "Save Default Color")
 					.font(.headline)
 					.fontWeight(.semibold)
+
+				Spacer()
 			}
 			.foregroundStyle(backgroundColor.contrastingForegroundColor())
 			.frame(maxWidth: .infinity)
