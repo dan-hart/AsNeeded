@@ -1,12 +1,13 @@
 ---
 id: task-0012
 title: Make VoiceOver a first-class citizen
-status: In Progress
+status: To Do
 assignee: []
 created_date: '2025-09-22 12:34'
-updated_date: '2025-09-26 22:36'
+updated_date: '2025-10-01 18:30'
 labels: []
 dependencies: []
+ordinal: 10000
 ---
 
 ## Description
