@@ -1,13 +1,13 @@
 ---
 id: task-0006
 title: Simplify feedback submission without Mail app dependency
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-09-22 12:33'
-updated_date: '2025-09-26 22:37'
+updated_date: '2025-10-01 18:30'
 labels: []
 dependencies: []
-ordinal: 4000
+ordinal: 3000
 ---
 
 ## Description
