@@ -5,6 +5,7 @@ import SFSafeSymbols
 struct SettingsDebugSectionView: View {
 	@State private var showThankYouView = false
 	@State private var showWelcomeView = false
+	@State private var showFontTestView = false
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -93,6 +94,40 @@ struct SettingsDebugSectionView: View {
 			.sheet(isPresented: $showWelcomeView) {
 				WelcomeView()
 			}
+
+			NavigationLink {
+				FontTestView()
+			} label: {
+				HStack(spacing: headerSpacing) {
+					Image(systemSymbol: .textformat)
+						.font(.system(.callout, design: .default, weight: .medium))
+						.frame(width: iconSize, height: iconSize)
+						.foregroundColor(.accentColor)
+
+					VStack(alignment: .leading, spacing: stackItemSpacing) {
+						Text("Test Custom Fonts")
+							.font(.body)
+							.fontWeight(.medium)
+						Text("Check font loading and availability")
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+
+					Spacer()
+
+					Image(systemSymbol: .chevronRight)
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
+				.padding(padding)
+				.background(Color(.systemBackground))
+				.overlay(
+					RoundedRectangle(cornerRadius: cornerRadius)
+						.stroke(Color(.systemGray4), lineWidth: borderWidth)
+				)
+				.cornerRadius(cornerRadius)
+			}
+			.buttonStyle(.plain)
 		}
 	}
 }
