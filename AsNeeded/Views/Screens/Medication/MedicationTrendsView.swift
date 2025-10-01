@@ -25,6 +25,7 @@ enum VisualizationType: String, CaseIterable {
 struct MedicationTrendsView: View {
 	@StateObject private var viewModel = MedicationTrendsViewModel()
 	@EnvironmentObject private var navigationManager: NavigationManager
+	@Environment(\.fontFamily) private var fontFamily
 	@State private var daysWindow: Int = 14
 	@AppStorage("trendsVisualizationType") private var visualizationType: VisualizationType = .chart
 
@@ -57,18 +58,34 @@ struct MedicationTrendsView: View {
 					// Picker + context
 					VStack(spacing: spacing12) {
 						HStack(alignment: .center) {
-							Picker("Medication", selection: $viewModel.selectedMedicationID) {
+							Menu {
 								ForEach(viewModel.medications, id: \.id) { med in
-									Text(med.displayName).tag(Optional(med.id))
+									Button {
+										viewModel.selectedMedicationID = med.id
+									} label: {
+										Text(med.displayName)
+									}
+								}
+							} label: {
+								HStack {
+									Text(viewModel.selectedMedication?.displayName ?? "Select")
+										.font(.customFont(fontFamily, style: .body))
+										.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+									Image(systemSymbol: .chevronUpChevronDown)
+										.font(.customFont(fontFamily, style: .caption2))
+										.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
 								}
 							}
-							.pickerStyle(.menu)
-							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							Spacer()
 							Picker("Range", selection: $daysWindow) {
-								Text("14d").tag(14)
-								Text("30d").tag(30)
+								Text("14d")
+									.font(.customFont(fontFamily, style: .body))
+									.tag(14)
+								Text("30d")
+									.font(.customFont(fontFamily, style: .body))
+									.tag(30)
 							}
+							.font(.customFont(fontFamily, style: .body))
 							.pickerStyle(.segmented)
 							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							.frame(maxWidth: maxWidth160)
@@ -76,14 +93,20 @@ struct MedicationTrendsView: View {
 
 						HStack {
 							Text("View:")
-								.font(.subheadline)
+								.font(.customFont(fontFamily, style: .subheadline))
 								.foregroundStyle(.secondary)
 							Picker("Visualization", selection: $visualizationType) {
 								ForEach(VisualizationType.allCases, id: \.self) { type in
-									Label(type.displayName, systemImage: type.systemImage)
-										.tag(type)
+									Label {
+										Text(type.displayName)
+											.font(.customFont(fontFamily, style: .body))
+									} icon: {
+										Image(systemName: type.systemImage)
+									}
+									.tag(type)
 								}
 							}
+							.font(.customFont(fontFamily, style: .body))
 							.pickerStyle(.segmented)
 							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 							Spacer()

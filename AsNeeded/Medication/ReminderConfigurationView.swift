@@ -10,6 +10,7 @@ import DHLoggingKit
 struct ReminderConfigurationView: View {
 	let medication: ANMedicationConcept
 	@Environment(\.dismiss) private var dismiss
+	@Environment(\.fontFamily) private var fontFamily
 	@StateObject private var notificationManager = NotificationManager.shared
 	private let logger = DHLogger(category: "ReminderConfigurationView")
 
@@ -113,7 +114,7 @@ struct ReminderConfigurationView: View {
 				ToolbarItem(placement: .cancellationAction) {
 					Button(action: { dismiss() }) {
 						Image(systemSymbol: .xmark)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 					}
 				}
 			}

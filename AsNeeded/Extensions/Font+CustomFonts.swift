@@ -137,6 +137,16 @@ extension View {
 	func font(_ style: Font.TextStyle, weight: Font.Weight? = nil) -> some View {
 		modifier(CustomFontModifier(style: style, weight: weight))
 	}
+
+	/// Apply the custom font family to a navigation title
+	/// Creates a custom toolbar item with the environment font applied
+	/// - Parameters:
+	///   - title: The title text to display
+	///   - displayMode: The navigation bar title display mode (.inline or .large)
+	/// - Returns: A view with a custom navigation title that respects font family
+	func customNavigationTitle(_ title: String, displayMode: NavigationBarItem.TitleDisplayMode = .inline) -> some View {
+		modifier(CustomNavigationTitleModifier(title: title, displayMode: displayMode))
+	}
 }
 
 /// View modifier that applies custom fonts based on environment font family
@@ -147,5 +157,32 @@ private struct CustomFontModifier: ViewModifier {
 
 	func body(content: Content) -> some View {
 		content.font(.customFont(fontFamily, style: style, weight: weight))
+	}
+}
+
+/// View modifier that creates a custom navigation title respecting the font family environment
+private struct CustomNavigationTitleModifier: ViewModifier {
+	@Environment(\.fontFamily) private var fontFamily
+	let title: String
+	let displayMode: NavigationBarItem.TitleDisplayMode
+
+	func body(content: Content) -> some View {
+		if displayMode == .inline {
+			content
+				.navigationTitle("")
+				.navigationBarTitleDisplayMode(.inline)
+				.toolbar {
+					ToolbarItem(placement: .principal) {
+						Text(title)
+							.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					}
+				}
+		} else {
+			// For large titles, we need a different approach using UINavigationBar appearance
+			// The custom font will be applied through the environment to child views
+			content
+				.navigationTitle(title)
+				.navigationBarTitleDisplayMode(displayMode)
+		}
 	}
 }

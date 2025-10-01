@@ -14,6 +14,7 @@ struct MedicationDetailView: View {
 	@StateObject private var navigationManager = NavigationManager.shared
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.fontFamily) private var fontFamily
 	@State private var showDeleteConfirm = false
 	@State private var showLogDose = false
 	@State private var showEditSheet = false
@@ -81,13 +82,13 @@ struct MedicationDetailView: View {
 		.toolbar {
 			ToolbarItem(placement: .principal) {
 				Text(medication.displayName)
-					.font(.headline)
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 			}
 			ToolbarItem(placement: .primaryAction) {
-				Button("Done") { 
-					dismiss() 
+				Button("Done") {
+					dismiss()
 				}
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .body, weight: .semibold))
 			}
 		}
 		.confirmationDialog("Delete \(medication.displayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -310,13 +311,13 @@ struct MedicationDetailView: View {
 		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Reminders", systemSymbol: .bell)
-					.font(.headline)
+					.font(.customFont(fontFamily, style: .headline))
 					.foregroundStyle(.primary)
 				Spacer()
 
 				if reminderCount > 0 {
 					Text("\(reminderCount) active")
-						.font(.subheadline)
+						.font(.customFont(fontFamily, style: .subheadline))
 						.foregroundStyle(.secondary)
 				}
 			}
@@ -329,10 +330,10 @@ struct MedicationDetailView: View {
 						} label: {
 							HStack {
 								Text("Manage Reminders")
-									.fontWeight(.medium)
+									.font(.customFont(fontFamily, style: .body, weight: .medium))
 								Spacer()
 								Image(systemSymbol: .chevronRight)
-									.font(.caption)
+									.font(.customFont(fontFamily, style: .caption))
 									.foregroundStyle(.secondary)
 							}
 							.padding(.vertical, rowSpacing)
@@ -348,9 +349,9 @@ struct MedicationDetailView: View {
 					} label: {
 						HStack {
 							Image(systemSymbol: .plus)
-								.font(.subheadline)
+								.font(.customFont(fontFamily, style: .subheadline))
 							Text("Add Reminder")
-								.fontWeight(.medium)
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 						}
 						.frame(maxWidth: .infinity)
 						.padding(.vertical, rowSpacing)

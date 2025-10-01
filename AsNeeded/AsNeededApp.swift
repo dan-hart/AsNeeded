@@ -26,6 +26,11 @@ struct AsNeededApp: App {
 
 		// Register custom fonts for accessibility
 		FontManager.registerCustomFonts()
+
+		// Configure navigation bar appearance with default font
+		let savedFontFamily = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedFontFamily)
+		let fontFamily = FontFamily(rawValue: savedFontFamily ?? FontFamily.system.rawValue) ?? .system
+		NavigationBarAppearanceManager.configureAppearance(for: fontFamily)
 	}
 	
 	var body: some Scene {

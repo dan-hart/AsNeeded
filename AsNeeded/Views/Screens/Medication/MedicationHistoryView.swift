@@ -6,6 +6,7 @@ import SFSafeSymbols
 struct MedicationHistoryView: View {
     @StateObject private var viewModel = MedicationHistoryViewModel()
     @EnvironmentObject private var navigationManager: NavigationManager
+    @Environment(\.fontFamily) private var fontFamily
     @State private var logMedication: ANMedicationConcept?
     @State private var showSupportToast = false
     @State private var showSupportView = false
@@ -104,12 +105,14 @@ struct MedicationHistoryView: View {
                                         if let dose = event.dose {
                                             let unitName = dose.unit.abbreviation
                                             Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
+                                                .font(.customFont(fontFamily, style: .subheadline))
                                         } else {
                                             Text(event.date.formatted(date: .omitted, time: .shortened))
+                                                .font(.customFont(fontFamily, style: .subheadline))
                                         }
                                         if let rel = relativeShortIfToday(event.date) {
                                             Text(rel)
-                                                .font(.footnote)
+                                                .font(.customFont(fontFamily, style: .footnote))
                                                 .foregroundStyle(.secondary)
                                         }
                                     }
@@ -185,16 +188,17 @@ struct MedicationHistoryView: View {
         VStack(alignment: .leading, spacing: spacing2) {
             HStack {
                 Text(formatDateWithDayOfWeek(group.day))
+                    .font(.customFont(fontFamily, style: .headline))
                 Spacer()
                 if let totalText = dayTotalText(for: group.entries) {
                     Text(totalText)
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                 }
             }
             if let rel = dayRelativeLabel(for: group.day) {
                 Text(rel)
-                    .font(.footnote)
+                    .font(.customFont(fontFamily, style: .footnote))
                     .foregroundStyle(.secondary)
             }
         }
@@ -270,14 +274,29 @@ struct MedicationHistoryView: View {
                     VStack(alignment: .leading, spacing: 0) {
                     // Medication picker and date button
                     HStack(alignment: .center, spacing: spacing12) {
-                        Picker("Medication", selection: $viewModel.selectedMedicationID) {
-                            Text("All", comment: "Option to view all medications in history").tag(Optional("all"))
+                        Menu {
+                            Button {
+                                viewModel.selectedMedicationID = "all"
+                            } label: {
+                                Text("All", comment: "Option to view all medications in history")
+                            }
                             ForEach(viewModel.medications, id: \.id) { medication in
-                                Text(medication.displayName).tag(Optional(medication.id.uuidString))
+                                Button {
+                                    viewModel.selectedMedicationID = medication.id.uuidString
+                                } label: {
+                                    Text(medication.displayName)
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text(viewModel.isShowingAllMedications ? "All" : (viewModel.selectedMedication?.displayName ?? "All"))
+                                    .font(.customFont(fontFamily, style: .body))
+                                    .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                                Image(systemSymbol: .chevronUpChevronDown)
+                                    .font(.customFont(fontFamily, style: .caption2))
+                                    .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                             }
                         }
-                        .pickerStyle(.menu)
-                        .accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
 
                         Spacer()
 
@@ -389,6 +408,7 @@ struct MedicationHistoryView: View {
                             Button("Cancel") {
                                 showDatePicker = false
                             }
+                            .font(.customFont(fontFamily, style: .body))
                         }
 
                         ToolbarItem(placement: .confirmationAction) {
@@ -396,7 +416,7 @@ struct MedicationHistoryView: View {
                                 scrollTarget = Calendar.current.startOfDay(for: selectedDate)
                                 showDatePicker = false
                             }
-                            .fontWeight(.semibold)
+                            .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                         }
                     }
@@ -430,7 +450,7 @@ struct MedicationHistoryView: View {
             .sheet(item: $editingEvent) { event in
                     NavigationStack {
                         Form {
-                            Section(header: Text("Event Details")) {
+                            Section(header: Text("Event Details").font(.customFont(fontFamily, style: .subheadline))) {
                                 HStack {
                                     Text("Date")
                                     Spacer()
@@ -447,7 +467,7 @@ struct MedicationHistoryView: View {
                                 }
                             }
                             
-                            Section(header: Text("Note")) {
+                            Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
                                 TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
                                     .lineLimit(4...8)
                             }
@@ -460,6 +480,7 @@ struct MedicationHistoryView: View {
                                     editingEvent = nil
                                     editingNoteText = ""
                                 }
+                                .font(.customFont(fontFamily, style: .body))
                             }
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Save") {
@@ -474,7 +495,7 @@ struct MedicationHistoryView: View {
                                         }
                                     }
                                 }
-                                .fontWeight(.semibold)
+                                .font(.customFont(fontFamily, style: .body, weight: .semibold))
                                 .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                             }
                         }
@@ -508,7 +529,7 @@ struct MedicationHistoryView: View {
         .sheet(item: $editingEntryEvent) { event in
             NavigationStack {
                 Form {
-                    Section(header: Text("Dose Entry Details")) {
+                    Section(header: Text("Dose Entry Details").font(.customFont(fontFamily, style: .subheadline))) {
                         HStack {
                             Text("Medication")
                             Spacer()
@@ -558,6 +579,7 @@ struct MedicationHistoryView: View {
                         Button("Cancel") {
                             editingEntryEvent = nil
                         }
+                        .font(.customFont(fontFamily, style: .body))
                     }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Save") {
@@ -571,7 +593,7 @@ struct MedicationHistoryView: View {
                                 }
                             }
                         }
-                        .fontWeight(.semibold)
+                        .font(.customFont(fontFamily, style: .body, weight: .semibold))
                         .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                     }
                 }

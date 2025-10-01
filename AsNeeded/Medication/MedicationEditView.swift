@@ -31,6 +31,7 @@ struct MedicationEditView: View {
 	@State private var datePickerType: DatePickerType = .lastRefill
 	@FocusState private var focusedField: Field?
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.fontFamily) private var fontFamily
 	private let hapticsManager = HapticsManager.shared
 
 	@ScaledMetric private var sectionSpacing: CGFloat = 20
@@ -437,14 +438,15 @@ struct MedicationEditView: View {
 					Button("Cancel") {
 						showingDatePicker = false
 					}
+					.font(.customFont(fontFamily, style: .body))
 					.foregroundStyle(.secondary)
 				}
-				
+
 				ToolbarItem(placement: .confirmationAction) {
 					Button("Done") {
 						showingDatePicker = false
 					}
-					.fontWeight(.bold)
+					.font(.customFont(fontFamily, style: .body, weight: .bold))
 					.foregroundStyle(Color.accentColor)
 				}
 			}
@@ -503,7 +505,7 @@ struct MedicationEditView: View {
 							onCancel()
 						} label: {
 							Image(systemSymbol: .xmark)
-								.font(.body.weight(.medium))
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 								.foregroundStyle(.secondary)
 								.padding(toolbarButtonPadding)
 								.background(
@@ -518,7 +520,7 @@ struct MedicationEditView: View {
 							performSave()
 						} label: {
 							Text("Save")
-								.font(.body.weight(.semibold))
+								.font(.customFont(fontFamily, style: .body, weight: .semibold))
 						}
 						.disabled(!isFormValid)
 						.foregroundColor(isFormValid ? .accentColor : .secondary)

@@ -20,6 +20,8 @@
 		<string>Resources/Fonts/AtkinsonHyperlegible-Bold.ttf</string>
 		<string>Resources/Fonts/AtkinsonHyperlegible-Italic.ttf</string>
 		<string>Resources/Fonts/AtkinsonHyperlegible-BoldItalic.ttf</string>
+		<string>Resources/Fonts/OpenDyslexic-Regular.ttf</string>
+		<string>Resources/Fonts/OpenDyslexic-Bold.ttf</string>
 	</array>
 </dict>
 </plist>
