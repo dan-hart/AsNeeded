@@ -1,16 +1,17 @@
 ---
 id: task-0014
 title: Support medical marijuana dose forms and tracking
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-09-23 15:43'
-updated_date: '2025-09-26 22:36'
+updated_date: '2025-10-01 18:30'
 labels:
   - enhancement
   - user-feedback
   - medication-types
 dependencies: []
 priority: medium
+ordinal: 4000
 ---
 
 ## Description
