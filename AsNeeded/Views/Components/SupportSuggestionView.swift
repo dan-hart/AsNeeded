@@ -32,7 +32,7 @@ struct SupportSuggestionView: View {
 						.frame(width: iconSize, height: iconSize)
 					
 					Image(systemSymbol: .heart)
-						.font(.system(.callout, design: .default, weight: .semibold))
+						.font(.callout.weight(.semibold))
 						.foregroundStyle(
 							LinearGradient(
 								colors: [Color.red, Color.pink],

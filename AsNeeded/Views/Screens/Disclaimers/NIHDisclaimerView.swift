@@ -100,7 +100,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(.caption2))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}
@@ -154,7 +154,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(.caption2))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}
@@ -171,7 +171,7 @@ struct NIHFullDisclaimerView: View {
 									.foregroundStyle(.accent)
 									.underline()
 								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.system(.caption2))
+									.font(.caption2)
 									.foregroundStyle(.accent)
 							}
 						}

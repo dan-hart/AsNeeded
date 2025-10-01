@@ -18,7 +18,7 @@ extension Font {
 				return .system(style, design: .default)
 			}
 
-		case .atkinsonHyperlegible:
+		case .atkinsonHyperlegible, .openDyslexic:
 			return createCustomFont(
 				fontName: family.fontName,
 				boldFontName: family.boldFontName,

@@ -450,7 +450,7 @@ private struct SubscriptionButton: View {
 		} label: {
 			HStack(spacing: spacing12) {
 				Image(systemSymbol: subscription.icon)
-					.font(.system(.callout, design: .default, weight: .medium))
+					.font(.callout.weight(.medium))
 					.frame(width: iconSize24, height: iconSize24)
 					.foregroundColor(subscription.color)
 

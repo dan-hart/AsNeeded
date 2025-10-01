@@ -33,7 +33,7 @@ struct AppPreferencesView: View {
 				feedbackSection
 
 				// MARK: - Typography
-				typographySection
+				typographyNavigationLink
 
 				// MARK: - Privacy
 				privacySection
@@ -138,35 +138,50 @@ struct AppPreferencesView: View {
 		}
 	}
 
-	private var typographySection: some View {
+	private var typographyNavigationLink: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
-			Label {
-				Text("Typography", comment: "Typography section title in app preferences")
-			} icon: {
-				Image(systemSymbol: .textformat)
-			}
-			.font(.title2)
-			.fontWeight(.semibold)
-			.foregroundStyle(.accent)
+			Label("Typography", systemSymbol: .textformat)
+				.font(.title2)
+				.fontWeight(.semibold)
+				.foregroundColor(.accentColor)
 
-			Text("Choose an accessibility-focused font family to improve readability throughout the app.", comment: "Description for typography settings explaining font selection purpose")
+			Text("Choose an accessibility-focused font family to improve readability throughout the app.")
 				.font(.subheadline)
-				.foregroundStyle(.secondary)
+				.foregroundColor(.secondary)
 
-			fontFamilyPicker
-		}
-	}
+			NavigationLink(destination: FontPreferencesView()) {
+				HStack(spacing: headerSpacing) {
+					Image(systemSymbol: .textformat)
+						.font(.callout.weight(.medium))
+						.frame(width: iconSize, height: iconSize)
+						.foregroundColor(.accentColor)
 
-	private var fontFamilyPicker: some View {
-		VStack(alignment: .leading, spacing: headerSpacing) {
-			ForEach(FontFamily.allCases) { family in
-				FontFamilyRow(
-					fontFamily: family,
-					isSelected: selectedFontFamily == family.rawValue
-				) {
-					selectedFontFamily = family.rawValue
+					VStack(alignment: .leading, spacing: stackItemSpacing) {
+						Text("Font Family")
+							.font(.body)
+							.fontWeight(.medium)
+							.foregroundColor(.primary)
+
+						Text("Customize typography and readability")
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+
+					Spacer()
+
+					Image(systemSymbol: .chevronRight)
+						.font(.caption)
+						.foregroundColor(.secondary)
 				}
+				.padding(padding)
+				.background(Color(.systemBackground))
+				.overlay(
+					RoundedRectangle(cornerRadius: cornerRadius)
+						.stroke(Color(.systemGray4), lineWidth: borderWidth)
+				)
+				.cornerRadius(cornerRadius)
 			}
+			.buttonStyle(.plain)
 		}
 	}
 
@@ -356,127 +371,6 @@ private struct PreferenceRow: View {
 				.stroke(Color(.systemGray4), lineWidth: borderWidth)
 		)
 		.cornerRadius(cornerRadius)
-	}
-}
-
-// MARK: - Font Family Row
-/// Reusable font family selection row component
-///
-/// **Visual Appearance:**
-/// - Card-style layout with rounded corners and subtle border
-/// - Icon, title, and short description in header
-/// - Live font preview showing sample text
-/// - Full accessibility description
-/// - External link button for more information (when available)
-/// - Selection indicator (checkmark for selected, circle for unselected)
-/// - Highlighted background when selected
-///
-/// **Key Features:**
-/// - Dynamic Type support with @ScaledMetric spacing
-/// - Supports light and dark modes
-/// - VoiceOver accessible with custom labels
-/// - Shows live font preview using the actual font
-/// - Clickable link to font provider website
-///
-/// **Use Cases:**
-/// - Font selection in app preferences
-/// - Accessibility settings font picker
-/// - Font preview and comparison views
-/// - Typography customization interfaces
-private struct FontFamilyRow: View {
-	let fontFamily: FontFamily
-	let isSelected: Bool
-	let onSelect: () -> Void
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
-	@ScaledMetric private var sampleSpacing: CGFloat = 8
-
-	var body: some View {
-		Button(action: onSelect) {
-			VStack(alignment: .leading, spacing: itemSpacing) {
-				HStack(spacing: headerSpacing) {
-					Image(systemSymbol: .textformat)
-						.font(.callout.weight(.medium))
-						.frame(width: iconSize, height: iconSize)
-						.foregroundStyle(.accent)
-
-					VStack(alignment: .leading, spacing: stackItemSpacing) {
-						Text(fontFamily.displayName)
-							.font(.body)
-							.fontWeight(.medium)
-							.foregroundStyle(.primary)
-
-						Text(fontFamily.shortDescription)
-							.font(.caption)
-							.foregroundStyle(.secondary)
-					}
-
-					Spacer()
-
-					if isSelected {
-						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.title3)
-							.foregroundStyle(.accent)
-					} else {
-						Image(systemSymbol: .circle)
-							.font(.title3)
-							.foregroundStyle(.secondary)
-					}
-				}
-
-				// Sample text preview
-				VStack(alignment: .leading, spacing: sampleSpacing) {
-					Text("Sample:", comment: "Label for font sample text preview")
-						.font(.caption2)
-						.foregroundStyle(.secondary)
-
-					Text(fontFamily.sampleText)
-						.font(.customFont(fontFamily, style: .body))
-						.foregroundStyle(.primary)
-						.lineLimit(2)
-						.multilineTextAlignment(.leading)
-				}
-
-				// Accessibility description with external link
-				VStack(alignment: .leading, spacing: sampleSpacing) {
-					Text(fontFamily.accessibilityDescription)
-						.font(.caption)
-						.foregroundStyle(.secondary)
-						.lineLimit(nil)
-
-					// External link if available
-					if let infoURL = fontFamily.infoURL {
-						Link(destination: infoURL) {
-							HStack(spacing: 4) {
-								Text("Learn more", comment: "Link text to learn more about a font")
-									.font(.caption)
-									.fontWeight(.medium)
-								Image(systemSymbol: .arrowUpRightSquare)
-									.font(.caption2)
-							}
-							.foregroundStyle(.accent)
-						}
-						.accessibilityLabel(String(localized: "Learn more about \(fontFamily.displayName)", comment: "Accessibility label for link to learn more about a specific font"))
-					}
-				}
-			}
-			.padding(padding)
-			.background(isSelected ? Color.accentColor.opacity(0.05) : Color(.systemBackground))
-			.overlay(
-				RoundedRectangle(cornerRadius: cornerRadius)
-					.stroke(isSelected ? Color.accentColor : Color(.systemGray4), lineWidth: borderWidth)
-			)
-			.cornerRadius(cornerRadius)
-		}
-		.buttonStyle(.plain)
-		.accessibilityElement(children: .combine)
-		.accessibilityLabel("\(fontFamily.displayName). \(fontFamily.shortDescription). \(isSelected ? String(localized: "Selected", comment: "Accessibility label indicating this option is currently selected") : String(localized: "Not selected", comment: "Accessibility label indicating this option is not currently selected"))")
-		.accessibilityHint("Double tap to select this font for the app")
 	}
 }
 

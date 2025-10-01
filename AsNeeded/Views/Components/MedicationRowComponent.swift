@@ -173,7 +173,8 @@ struct MedicationRowComponent: View {
 	private var medicationHeader: some View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(medication.displayName)
-				.font(.system(.headline, design: .rounded))
+				.font(.headline)
+				.fontDesign(.rounded)
 				.fontWeight(.bold)
 				.lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
 				.foregroundStyle(.primary)

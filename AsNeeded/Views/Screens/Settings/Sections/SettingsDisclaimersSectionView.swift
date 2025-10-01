@@ -23,7 +23,7 @@ struct SettingsDisclaimersSectionView: View {
 				} label: {
 					HStack(spacing: headerSpacing) {
 						Image(systemSymbol: .exclamationmarkTriangle)
-							.font(.system(.callout, design: .default, weight: .medium))
+							.font(.callout.weight(.medium))
 							.frame(width: iconSize, height: iconSize)
 							.foregroundColor(.yellow)
 
@@ -58,7 +58,7 @@ struct SettingsDisclaimersSectionView: View {
 				} label: {
 					HStack(spacing: headerSpacing) {
 						Image(systemSymbol: .buildingColumns)
-							.font(.system(.callout, design: .default, weight: .medium))
+							.font(.callout.weight(.medium))
 							.frame(width: iconSize, height: iconSize)
 							.foregroundColor(.accentColor)
 

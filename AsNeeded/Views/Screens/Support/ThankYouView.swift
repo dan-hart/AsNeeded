@@ -133,7 +133,7 @@ struct ThankYouView: View {
 					.blur(radius: blurRadius20)
 
 				Image(systemSymbol: .heartFill)
-					.font(.system(.largeTitle, design: .default, weight: .semibold))
+					.font(.largeTitle.weight(.semibold))
 					.foregroundStyle(
 						LinearGradient(
 							colors: [.pink, .red],
@@ -492,7 +492,7 @@ struct ConfettiModifier: ViewModifier {
 						ForEach(confettiPieces) { piece in
 							Image(systemSymbol: piece.symbol)
 								.foregroundColor(piece.color)
-								.font(.system(.callout))
+								.font(.callout)
 								.position(piece.position)
 								.opacity(piece.opacity)
 								.rotationEffect(.degrees(piece.rotation))

@@ -220,7 +220,8 @@ struct MedicationListView: View {
                 showAddSheet = true
             }) {
                 Label("Add Your First Medication", systemSymbol: .plusCircleFill)
-                    .font(.system(.headline, design: .rounded))
+                    .font(.headline)
+                    .fontDesign(.rounded)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .padding(.vertical, buttonVerticalPadding)
