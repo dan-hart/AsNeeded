@@ -64,6 +64,7 @@ struct MedicationTrendsView: View {
 										viewModel.selectedMedicationID = med.id
 									} label: {
 										Text(med.displayName)
+											.font(.customFont(fontFamily, style: .body))
 									}
 								}
 							} label: {
@@ -184,11 +185,11 @@ struct MedicationTrendsView: View {
 				Image(systemSymbol: systemImage)
 					.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
 				Text(title)
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 			}
 			Text(value)
-				.font(.headline)
+				.font(.customFont(fontFamily, style: .headline))
 		}
 		.padding(padding12)
 		.frame(maxWidth: .infinity, minHeight: minHeight90, alignment: .leading)

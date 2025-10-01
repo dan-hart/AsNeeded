@@ -32,6 +32,8 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 
 	let doseField: Field
 
+	@Environment(\.fontFamily) private var fontFamily
+
 	@ScaledMetric private var sectionSpacing: CGFloat = 20
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var fieldsHSpacing: CGFloat = 16
@@ -56,8 +58,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 					)
 
 				Text("Prescribed Dose")
-					.font(.headline)
-					.fontWeight(.semibold)
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					.accessibilityAddTraits(.isHeader)
 			}
 
@@ -66,11 +67,10 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 				VStack(alignment: .leading, spacing: fieldVSpacing) {
 					Label {
 						Text("Amount")
-							.font(.subheadline)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 					} icon: {
 						Image(systemSymbol: .number)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundStyle(.secondary)
 					}
 
@@ -87,11 +87,10 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 				VStack(alignment: .leading, spacing: fieldVSpacing) {
 					Label {
 						Text("Unit")
-							.font(.subheadline)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 					} icon: {
 						Image(systemSymbol: .ruler)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundStyle(.secondary)
 					}
 
@@ -103,19 +102,23 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 						}
 						Divider()
 						ForEach(ANUnitConcept.allCases, id: \.self) { unit in
-							Button(unit.displayName) {
+							Button {
 								withAnimation(.spring(response: 0.3)) {
 									prescribedUnit = unit
 								}
+							} label: {
+								Text(unit.displayName)
+									.font(.customFont(fontFamily, style: .body))
 							}
 						}
 					} label: {
 						HStack {
 							Text(prescribedUnit?.displayName ?? "Select")
+								.font(.customFont(fontFamily, style: .body))
 								.foregroundStyle(prescribedUnit == nil ? .secondary : .primary)
 							Spacer()
 							Image(systemSymbol: .chevronUpChevronDown)
-								.font(.caption)
+								.font(.customFont(fontFamily, style: .caption))
 								.foregroundStyle(.secondary)
 						}
 						.padding(.horizontal, menuPaddingH)

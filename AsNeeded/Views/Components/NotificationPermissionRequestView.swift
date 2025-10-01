@@ -7,6 +7,7 @@ struct NotificationPermissionRequestView: View {
 	let onPermissionGranted: () -> Void
 	let onPermissionDenied: () -> Void
 	@Environment(\.dismiss) private var dismiss
+	@Environment(\.fontFamily) private var fontFamily
 
 	@ScaledMetric private var mainSpacing: CGFloat = 24
 	@ScaledMetric private var iconBottomPadding: CGFloat = 8
@@ -89,6 +90,7 @@ struct NotificationPermissionRequestView: View {
 					Button("Cancel") {
 						dismiss()
 					}
+					.font(.customFont(fontFamily, style: .body))
 				}
 			}
 		}
