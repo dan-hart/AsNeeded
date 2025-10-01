@@ -38,6 +38,10 @@ public enum UserDefaultsKeys {
 	// MARK: - Notification Settings
 	/// Whether to show medication names in notifications
 	static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
+
+	// MARK: - Typography Settings
+	/// Selected font family for app-wide text display
+	static let selectedFontFamily = "selectedFontFamily"
 	
 	// MARK: - All Keys
 	/// Array of all UserDefaults keys for iteration/testing
@@ -51,7 +55,8 @@ public enum UserDefaultsKeys {
 		selectedTab,
 		trendsVisualizationType,
 		hideSupportBanners,
-		showMedicationNamesInNotifications
+		showMedicationNamesInNotifications,
+		selectedFontFamily
 	]
 	
 	// MARK: - Default Values
@@ -63,7 +68,8 @@ public enum UserDefaultsKeys {
 		selectedTab: 0,
 		trendsVisualizationType: 0, // Chart view
 		hideSupportBanners: false,
-		showMedicationNamesInNotifications: false
+		showMedicationNamesInNotifications: false,
+		selectedFontFamily: "system" // Default to system font
 	]
 	
 	// MARK: - Keys to Remove

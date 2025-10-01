@@ -14,5 +14,12 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Resources/Fonts/AtkinsonHyperlegible-Regular.ttf</string>
+		<string>Resources/Fonts/AtkinsonHyperlegible-Bold.ttf</string>
+		<string>Resources/Fonts/AtkinsonHyperlegible-Italic.ttf</string>
+		<string>Resources/Fonts/AtkinsonHyperlegible-BoldItalic.ttf</string>
+	</array>
 </dict>
 </plist>

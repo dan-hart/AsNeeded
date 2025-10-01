@@ -23,6 +23,9 @@ struct AsNeededApp: App {
 	init() {
 		// Configure RevenueCat on app launch
 		RevenueCatManager.shared.configure()
+
+		// Register custom fonts for accessibility
+		FontManager.registerCustomFonts()
 	}
 	
 	var body: some Scene {

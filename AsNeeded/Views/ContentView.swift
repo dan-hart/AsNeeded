@@ -12,8 +12,13 @@ import HealthKit
 struct ContentView: View {
 	@AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
 	@AppStorage("shouldShowWelcomeOnNextLaunch") private var shouldShowWelcomeOnNextLaunch: Bool = false
+	@AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
 	@StateObject private var navigationManager = NavigationManager.shared
 	private let hapticsManager = HapticsManager.shared
+
+	private var currentFontFamily: FontFamily {
+		FontFamily(rawValue: selectedFontFamily) ?? .system
+	}
 	
 	var body: some View {
 		ZStack {
@@ -56,6 +61,7 @@ struct ContentView: View {
 				hasSeenWelcome = false
 			}
 		}
+		.fontFamily(currentFontFamily)
 	}
 }
 
