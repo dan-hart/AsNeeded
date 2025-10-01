@@ -1,13 +1,13 @@
 ---
 id: task-0004
 title: Add color-coding for medications in list
-status: In Progress
+status: Done
 assignee: []
 created_date: '2025-09-22 12:33'
-updated_date: '2025-09-26 23:26'
+updated_date: '2025-10-01 18:30'
 labels: []
 dependencies: []
-ordinal: 3000
+ordinal: 2000
 ---
 
 ## Description
