@@ -184,7 +184,7 @@ struct MedicationDetailView: View {
 					.frame(width: heroIconSize, height: heroIconSize)
 
 				Image(systemSymbol: .pills)
-					.font(.system(.largeTitle, design: .default, weight: .medium))
+					.font(.largeTitle.weight(.medium))
 					.foregroundStyle(medication.displayColor)
 			}
 

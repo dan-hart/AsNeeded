@@ -22,7 +22,7 @@ struct SubtleSupportView: View {
 				} label: {
 					HStack(spacing: contentSpacing) {
 						Image(systemSymbol: .heart)
-							.font(.system(.caption, design: .default, weight: .medium))
+							.font(.caption.weight(.medium))
 							.foregroundColor(.red.opacity(0.6))
 
 						Text(message)
@@ -32,7 +32,7 @@ struct SubtleSupportView: View {
 						Spacer()
 
 						Image(systemSymbol: .chevronRight)
-							.font(.system(.caption2, design: .default))
+							.font(.caption2)
 							.foregroundColor(.secondary.opacity(0.6))
 					}
 				}

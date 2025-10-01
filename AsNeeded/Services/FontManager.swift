@@ -16,6 +16,9 @@ final class FontManager {
 		// Register Atkinson Hyperlegible fonts
 		registerAtkinsonHyperlegibleFonts()
 
+		// Register OpenDyslexic fonts
+		registerOpenDyslexicFonts()
+
 		logger.info("Custom font registration completed")
 	}
 
@@ -30,6 +33,19 @@ final class FontManager {
 
 		for fontFile in fontFiles {
 			registerFont(fileName: fontFile, fontFamily: "Atkinson Hyperlegible")
+		}
+	}
+
+	private static func registerOpenDyslexicFonts() {
+		let fontFiles = [
+			"OpenDyslexic-Regular.ttf",
+			"OpenDyslexic-Bold.ttf",
+			"OpenDyslexic-Italic.ttf",
+			"OpenDyslexic-BoldItalic.ttf"
+		]
+
+		for fontFile in fontFiles {
+			registerFont(fileName: fontFile, fontFamily: "OpenDyslexic")
 		}
 	}
 
@@ -90,6 +106,8 @@ final class FontManager {
 			return true // System font is always available
 		case .atkinsonHyperlegible:
 			return isFontRegistered("AtkinsonHyperlegible-Regular")
+		case .openDyslexic:
+			return isFontRegistered("OpenDyslexic-Regular")
 		}
 	}
 
@@ -107,6 +125,10 @@ final class FontManager {
 		// Check Atkinson Hyperlegible
 		let atkinsonFonts = ["AtkinsonHyperlegible-Regular", "AtkinsonHyperlegible-Bold", "AtkinsonHyperlegible-Italic", "AtkinsonHyperlegible-BoldItalic"]
 		fontInfo["Atkinson Hyperlegible"] = atkinsonFonts.filter { isFontRegistered($0) }
+
+		// Check OpenDyslexic
+		let openDyslexicFonts = ["OpenDyslexic-Regular", "OpenDyslexic-Bold", "OpenDyslexic-Italic", "OpenDyslexic-BoldItalic"]
+		fontInfo["OpenDyslexic"] = openDyslexicFonts.filter { isFontRegistered($0) }
 
 		return fontInfo
 	}

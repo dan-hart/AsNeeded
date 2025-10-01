@@ -21,7 +21,7 @@ struct SettingsPreferencesSectionView: View {
 			} label: {
 				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .gearshape)
-						.font(.system(.callout, design: .default, weight: .medium))
+						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.accentColor)
 

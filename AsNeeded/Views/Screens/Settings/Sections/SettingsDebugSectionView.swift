@@ -25,7 +25,7 @@ struct SettingsDebugSectionView: View {
 			} label: {
 				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .heartFill)
-						.font(.system(.callout, design: .default, weight: .medium))
+						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.accentColor)
 
@@ -63,7 +63,7 @@ struct SettingsDebugSectionView: View {
 			} label: {
 				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .handWave)
-						.font(.system(.callout, design: .default, weight: .medium))
+						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.accentColor)
 
@@ -100,7 +100,7 @@ struct SettingsDebugSectionView: View {
 			} label: {
 				HStack(spacing: headerSpacing) {
 					Image(systemSymbol: .textformat)
-						.font(.system(.callout, design: .default, weight: .medium))
+						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
 						.foregroundColor(.accentColor)
 

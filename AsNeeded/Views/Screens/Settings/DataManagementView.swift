@@ -391,7 +391,7 @@ struct DataManagementView: View {
                             .scaleEffect(0.8)
                     } else {
                         Image(systemSymbol: systemImage)
-                            .font(.system(.callout, design: .default, weight: .medium))
+                            .font(.callout.weight(.medium))
                     }
                 }
                 .frame(width: iconSize, height: iconSize)

@@ -40,7 +40,7 @@ struct SettingsNotificationSectionView: View {
 	private var medicationNamesToggle: some View {
 		HStack(spacing: headerSpacing) {
 			Image(systemSymbol: .pills)
-				.font(.system(.callout, design: .default, weight: .medium))
+				.font(.callout.weight(.medium))
 				.frame(width: iconSize, height: iconSize)
 				.foregroundColor(.accentColor)
 

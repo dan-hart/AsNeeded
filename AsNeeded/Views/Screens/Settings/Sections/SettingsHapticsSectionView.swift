@@ -30,7 +30,7 @@ struct SettingsHapticsSectionView: View {
 	private var hapticsToggle: some View {
 		HStack(spacing: headerSpacing) {
 			Image(systemSymbol: .iphoneRadiowavesLeftAndRight)
-				.font(.system(.callout, design: .default, weight: .medium))
+				.font(.callout.weight(.medium))
 				.frame(width: iconSize, height: iconSize)
 				.foregroundColor(.accentColor)
 

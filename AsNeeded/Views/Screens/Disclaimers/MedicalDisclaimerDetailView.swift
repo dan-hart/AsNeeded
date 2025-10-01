@@ -137,7 +137,7 @@ struct MedicalDisclaimerDetailView: View {
 		}) {
 			HStack(spacing: itemSpacing) {
 				Image(systemSymbol: .linkCircle)
-					.font(.system(.subheadline))
+					.font(.subheadline)
 					.foregroundColor(.accentColor)
 					.frame(width: iconWidth)
 
@@ -157,7 +157,7 @@ struct MedicalDisclaimerDetailView: View {
 				Spacer()
 
 				Image(systemSymbol: .arrowUpRightSquare)
-					.font(.system(.caption))
+					.font(.caption)
 					.foregroundColor(.secondary)
 			}
 			.padding(.vertical, verticalPadding)

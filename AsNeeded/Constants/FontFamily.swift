@@ -5,6 +5,7 @@ import Foundation
 enum FontFamily: String, CaseIterable, Identifiable {
 	case system = "system"
 	case atkinsonHyperlegible = "atkinson-hyperlegible"
+	case openDyslexic = "open-dyslexic"
 
 	var id: String { rawValue }
 
@@ -15,6 +16,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return String(localized: "System Font")
 		case .atkinsonHyperlegible:
 			return String(localized: "Atkinson Hyperlegible")
+		case .openDyslexic:
+			return String(localized: "OpenDyslexic")
 		}
 	}
 
@@ -25,6 +28,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return String(localized: "Default system font that adapts to your device's settings and accessibility preferences")
 		case .atkinsonHyperlegible:
 			return String(localized: "Designed by the Braille Institute for greater legibility and readability for low vision readers. Features letterform distinction to increase character recognition.")
+		case .openDyslexic:
+			return String(localized: "Created to increase readability for readers with dyslexia. The typeface includes heavy weighted bottoms to add gravity to each letter and helps prevent confusion through character confusion.")
 		}
 	}
 
@@ -35,6 +40,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return String(localized: "Default iOS font with system accessibility support")
 		case .atkinsonHyperlegible:
 			return String(localized: "Enhanced legibility for low vision readers")
+		case .openDyslexic:
+			return String(localized: "Designed for dyslexia with weighted letter bottoms")
 		}
 	}
 
@@ -45,6 +52,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return "" // Use system default
 		case .atkinsonHyperlegible:
 			return "AtkinsonHyperlegible-Regular"
+		case .openDyslexic:
+			return "OpenDyslexic-Regular"
 		}
 	}
 
@@ -55,6 +64,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return "" // Use system default
 		case .atkinsonHyperlegible:
 			return "AtkinsonHyperlegible-Bold"
+		case .openDyslexic:
+			return "OpenDyslexic-Bold"
 		}
 	}
 
@@ -65,6 +76,8 @@ enum FontFamily: String, CaseIterable, Identifiable {
 			return nil
 		case .atkinsonHyperlegible:
 			return URL(string: "https://brailleinstitute.org/freefont")
+		case .openDyslexic:
+			return URL(string: "https://opendyslexic.org/")
 		}
 	}
 

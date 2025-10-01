@@ -3,12 +3,13 @@
 
 import Foundation
 import SwiftUI
+import Combine
 import ANModelKit
 
 @MainActor
 final class MedicationTrendsViewModel: ObservableObject {
 	@AppStorage("trendsSelectedMedicationID") var selectedMedicationIDString: String = ""
-	
+
 	var selectedMedicationID: UUID? {
 		get {
 			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
@@ -17,43 +18,45 @@ final class MedicationTrendsViewModel: ObservableObject {
 			selectedMedicationIDString = newValue?.uuidString ?? ""
 		}
 	}
-	
+
 	@Published var medications: [ANMedicationConcept] = []
 
 	private let dataStore: DataStore
 	private let calendar = Calendar.current
+	private var cancellables = Set<AnyCancellable>()
 
 	init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
 		self.dataStore = dataStore
 		if let initialID = selectedMedicationID {
 			self.selectedMedicationID = initialID
 		}
-		
+
 		// Load initial data and observe changes
 		loadData()
 		observeStoreChanges()
-		
+
 		// Ensure we have a valid selection
 		ensureValidSelection()
 	}
-	
+
 	private func loadData() {
 		medications = dataStore.medications
 	}
-	
+
 	private func observeStoreChanges() {
-		// Set up a timer to periodically refresh data
-		Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-			guard let self = self else { return }
-			Task { @MainActor in
+		// Use Combine's Timer publisher instead of Foundation's Timer
+		// This provides better integration with SwiftUI and proper cancellation
+		Timer.publish(every: 2.0, on: .main, in: .common)
+			.autoconnect()
+			.sink { [weak self] _ in
+				guard let self = self else { return }
 				let newMedications = self.dataStore.medications
-				
 				if self.medications != newMedications {
 					self.medications = newMedications
 					self.ensureValidSelection()
 				}
 			}
-		}
+			.store(in: &cancellables)
 	}
 	
 	/// Ensures we always have a valid medication selected
