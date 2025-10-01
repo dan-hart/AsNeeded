@@ -10,6 +10,7 @@ struct LogDoseView: View {
 	var onLog: (ANDoseConcept, ANEventConcept) -> Void
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.fontFamily) private var fontFamily
 
 	@State private var amount: Double = 1
 	@State private var selectedUnit: ANUnitConcept = .unit
@@ -445,16 +446,16 @@ struct LogDoseView: View {
 				ToolbarItem(placement: .cancellationAction) {
 					Button(action: { dismiss() }) {
 						Image(systemSymbol: .xmarkCircleFill)
-							.font(.title3)
+							.font(.customFont(fontFamily, style: .title3))
 							.symbolRenderingMode(.hierarchical)
 							.foregroundStyle(.secondary)
 					}
 				}
-				
+
 				ToolbarItem(placement: .confirmationAction) {
 					Button(action: performLogDose) {
 						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.title3)
+							.font(.customFont(fontFamily, style: .title3))
 							.symbolRenderingMode(.hierarchical)
 							.foregroundColor(.accentColor)
 					}

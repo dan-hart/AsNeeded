@@ -61,6 +61,10 @@ struct ContentView: View {
 				hasSeenWelcome = false
 			}
 		}
+		.onChange(of: currentFontFamily) { _, newFamily in
+			// Update navigation bar appearance when font family changes
+			NavigationBarAppearanceManager.configureAppearance(for: newFamily)
+		}
 		.fontFamily(currentFontFamily)
 	}
 }

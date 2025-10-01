@@ -39,9 +39,7 @@ final class FontManager {
 	private static func registerOpenDyslexicFonts() {
 		let fontFiles = [
 			"OpenDyslexic-Regular.ttf",
-			"OpenDyslexic-Bold.ttf",
-			"OpenDyslexic-Italic.ttf",
-			"OpenDyslexic-BoldItalic.ttf"
+			"OpenDyslexic-Bold.ttf"
 		]
 
 		for fontFile in fontFiles {
@@ -107,7 +105,7 @@ final class FontManager {
 		case .atkinsonHyperlegible:
 			return isFontRegistered("AtkinsonHyperlegible-Regular")
 		case .openDyslexic:
-			return isFontRegistered("OpenDyslexic-Regular")
+			return isFontRegistered("OpenDyslexicThree-Regular")
 		}
 	}
 
@@ -127,7 +125,7 @@ final class FontManager {
 		fontInfo["Atkinson Hyperlegible"] = atkinsonFonts.filter { isFontRegistered($0) }
 
 		// Check OpenDyslexic
-		let openDyslexicFonts = ["OpenDyslexic-Regular", "OpenDyslexic-Bold", "OpenDyslexic-Italic", "OpenDyslexic-BoldItalic"]
+		let openDyslexicFonts = ["OpenDyslexicThree-Regular", "OpenDyslexicThree-Bold"]
 		fontInfo["OpenDyslexic"] = openDyslexicFonts.filter { isFontRegistered($0) }
 
 		return fontInfo

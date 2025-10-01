@@ -53,7 +53,7 @@ enum FontFamily: String, CaseIterable, Identifiable {
 		case .atkinsonHyperlegible:
 			return "AtkinsonHyperlegible-Regular"
 		case .openDyslexic:
-			return "OpenDyslexic-Regular"
+			return "OpenDyslexicThree-Regular"
 		}
 	}
 
@@ -65,7 +65,7 @@ enum FontFamily: String, CaseIterable, Identifiable {
 		case .atkinsonHyperlegible:
 			return "AtkinsonHyperlegible-Bold"
 		case .openDyslexic:
-			return "OpenDyslexic-Bold"
+			return "OpenDyslexicThree-Bold"
 		}
 	}
 

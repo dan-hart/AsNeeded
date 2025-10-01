@@ -18,7 +18,20 @@
 - **Code Organization**: Use MARK comments to organize code sections (e.g., `// MARK: - Properties`, `// MARK: - View Components`, `// MARK: - Private Methods`). No blank lines should appear directly after MARK comments - code should begin immediately on the next line.
 - **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
 - **Colors**: ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
-- **Typography**: NEVER use hardcoded font sizes (e.g., `.font(.system(size: 16))`). Always use semantic font styles (e.g., `.font(.body)`, `.font(.headline)`, `.font(.caption)`) to support Dynamic Type accessibility. Use font weights with semantic sizes (e.g., `.font(.body.weight(.medium))`).
+- **Typography & Custom Fonts**:
+  - NEVER use hardcoded font sizes (e.g., `.font(.system(size: 16))`). Always use semantic font styles to support Dynamic Type accessibility.
+  - **CRITICAL**: ALWAYS use `.customFont()` instead of semantic styles directly to support user-selected accessibility fonts:
+    - ✅ CORRECT: `.font(.customFont(fontFamily, style: .body))`
+    - ✅ CORRECT: `.font(.customFont(fontFamily, style: .headline, weight: .semibold))`
+    - ❌ WRONG: `.font(.body)` or `.font(.headline)`
+  - **Environment Setup**: Add `@Environment(\.fontFamily) private var fontFamily` to ALL views that display text
+  - **Special Cases**:
+    - Pickers: Apply `.font(.customFont(...))` to BOTH the picker AND each picker item
+    - Segmented Controls: Apply fonts to the picker itself AND each option/label
+    - Section Headers: `Section(header: Text("Title").font(.customFont(fontFamily, style: .subheadline)))`
+    - Toolbar Buttons: Always use `.font(.customFont(fontFamily, style: .body, weight: .medium))`
+    - Navigation Titles: Use `.customNavigationTitle("Title")` modifier for inline titles (large titles handled automatically by NavigationBarAppearanceManager)
+  - **Performance**: The app uses `NavigationBarAppearanceManager` for global navigation bar fonts and caches font instances for performance
 - **Component Reusability**: ALWAYS search for existing reusable components in `AsNeeded/Views/Components/` before creating new UI elements. If a similar pattern exists, use or extend the existing component. When creating new views, prioritize making them reusable by extracting common UI patterns into standalone components. Examples: `SettingsRowComponent`, `SupportToastView`, `FeedbackButtonsView`. Create components for any UI pattern used in 2+ places.
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.

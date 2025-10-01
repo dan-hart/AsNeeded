@@ -7,6 +7,7 @@ import SFSafeSymbols
 
 struct MedicationListView: View {
     @StateObject private var viewModel = MedicationListViewModel()
+    @Environment(\.fontFamily) private var fontFamily
     @State private var showAddSheet = false
     private let hapticsManager = HapticsManager.shared
     @State private var editMedication: ANMedicationConcept?
@@ -49,7 +50,7 @@ struct MedicationListView: View {
                                     hapticsManager.selectionChanged()
                                 }
                             }
-                            .bold()
+                            .font(.customFont(fontFamily, style: .body, weight: .bold))
                             .accessibilityLabel(editMode == .inactive ? "Edit medication list" : "Done editing")
                             .accessibilityHint(editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
                         }
@@ -60,8 +61,8 @@ struct MedicationListView: View {
                             showAddSheet = true
                         }) {
                             Label("Add Medication", systemSymbol: .plus)
+                                .font(.customFont(fontFamily, style: .body, weight: .medium))
                                 .foregroundColor(.accentColor)
-                                .fontWeight(.medium)
                         }
                         .accessibilityLabel("Add new medication")
                         .accessibilityHint("Opens form to add a new medication to your list")

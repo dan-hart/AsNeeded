@@ -9,6 +9,7 @@ import DHLoggingKit
 struct ReminderListView: View {
   let medication: ANMedicationConcept
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.fontFamily) private var fontFamily
   @StateObject private var notificationManager = NotificationManager.shared
   private let logger = DHLogger(category: "ReminderListView")
 
@@ -38,14 +39,16 @@ struct ReminderListView: View {
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
           Button("Done") { dismiss() }
+            .font(.customFont(fontFamily, style: .body))
         }
-        
+
         if !reminders.isEmpty {
           ToolbarItem(placement: .primaryAction) {
             Button("Clear All") {
               showingDeleteConfirm = true
               reminderToDelete = nil
             }
+            .font(.customFont(fontFamily, style: .body))
             .foregroundColor(.red)
           }
         }
