@@ -1,10 +1,10 @@
 ---
 id: task-0011
 title: Add accessibility font options
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-09-22 12:33'
-updated_date: '2025-09-26 22:37'
+updated_date: '2025-10-01 18:31'
 labels: []
 dependencies: []
 ordinal: 1000
