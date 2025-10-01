@@ -34,6 +34,7 @@ struct MedicationRowComponent: View {
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.editMode) private var editMode
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.fontFamily) private var fontFamily
 	@State private var isPressed = false
 	@State private var showingColorPicker = false
 	@State private var tempSelectedColor: String?
@@ -200,7 +201,7 @@ struct MedicationRowComponent: View {
 						.accessibilityHidden(true)
 
 					Text(quantityText(for: quantity))
-						.font(.caption.weight(.semibold))
+						.font(.customFont(fontFamily, style: .caption, weight: .semibold))
 						.fontDesign(.rounded)
 						.foregroundStyle(quantityColor(for: quantity))
 				}
@@ -387,6 +388,7 @@ struct MedicationRowComponent: View {
 						showingColorPicker = false
 						tempSelectedColor = medication.displayColorHex
 					}
+					.font(.customFont(fontFamily, style: .body))
 				}
 			}
 		}
