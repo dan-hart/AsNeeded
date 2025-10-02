@@ -15,18 +15,22 @@ final class NavigationBarAppearanceManager {
 		let appearance = UINavigationBarAppearance()
 		appearance.configureWithDefaultBackground()
 
-		// Configure large title font
-		if let largeTitleFont = cachedFont(for: fontFamily, style: .largeTitle) {
-			appearance.largeTitleTextAttributes = [
-				.font: largeTitleFont
-			]
-		}
+		// For system font, use iOS native navigation title styling
+		// Only apply custom fonts for accessibility fonts (Atkinson Hyperlegible, OpenDyslexic)
+		if fontFamily != .system {
+			// Configure large title font
+			if let largeTitleFont = cachedFont(for: fontFamily, style: .largeTitle) {
+				appearance.largeTitleTextAttributes = [
+					.font: largeTitleFont
+				]
+			}
 
-		// Configure inline title font
-		if let titleFont = cachedFont(for: fontFamily, style: .headline) {
-			appearance.titleTextAttributes = [
-				.font: titleFont
-			]
+			// Configure inline title font
+			if let titleFont = cachedFont(for: fontFamily, style: .headline) {
+				appearance.titleTextAttributes = [
+					.font: titleFont
+				]
+			}
 		}
 
 		// Apply to all navigation bars
@@ -35,8 +39,11 @@ final class NavigationBarAppearanceManager {
 		UINavigationBar.appearance().compactAppearance = appearance
 
 		// Configure segmented control fonts
-		if let segmentFont = cachedFont(for: fontFamily, style: .body) {
+		if fontFamily != .system, let segmentFont = cachedFont(for: fontFamily, style: .body) {
 			UISegmentedControl.appearance().setTitleTextAttributes([.font: segmentFont], for: .normal)
+		} else if fontFamily == .system {
+			// Reset segmented control to system default
+			UISegmentedControl.appearance().setTitleTextAttributes(nil, for: .normal)
 		}
 	}
 
