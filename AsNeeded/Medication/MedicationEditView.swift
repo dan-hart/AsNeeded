@@ -60,6 +60,7 @@ struct MedicationEditView: View {
 	enum Field: Hashable {
 		case clinicalName
 		case nickname
+		case initialQuantity
 		case quantity
 		case dose
 	}
@@ -157,6 +158,36 @@ struct MedicationEditView: View {
 						.fontWeight(.semibold)
 				}
 				
+				// Initial Quantity
+				VStack(alignment: .leading, spacing: labelSpacing) {
+					Label {
+						HStack(spacing: smallPadding) {
+							Text("Initial Quantity")
+								.font(.subheadline)
+								.fontWeight(.medium)
+							Text("Optional")
+								.font(.caption)
+								.foregroundStyle(.tertiary)
+								.padding(.horizontal, mediumPadding)
+								.padding(.vertical, 2)
+								.background(
+									Capsule()
+										.fill(Color(.tertiarySystemFill))
+								)
+						}
+					} icon: {
+						Image(systemSymbol: .archiveboxFill)
+							.font(.caption)
+							.foregroundStyle(.secondary)
+					}
+
+					TextField("Original amount when prescription filled", text: $viewModel.initialQuantityText)
+						.textFieldStyle(.roundedBorder)
+						.keyboardType(.decimalPad)
+						.focused($focusedField, equals: .initialQuantity)
+						.accessibilityLabel("Initial Quantity, optional")
+				}
+
 				// Current Quantity
 				VStack(alignment: .leading, spacing: labelSpacing) {
 					Label {
@@ -179,7 +210,7 @@ struct MedicationEditView: View {
 							.font(.caption)
 							.foregroundStyle(.secondary)
 					}
-					
+
 					TextField("How many pills, mL, etc. you have", text: $viewModel.quantityText)
 						.textFieldStyle(.roundedBorder)
 						.keyboardType(.decimalPad)
@@ -551,6 +582,7 @@ struct MedicationEditView: View {
 			clinicalName: "Lisinopril",
 			nickname: "Lisi",
 			quantity: 30,
+			initialQuantity: 90,
 			lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
 			nextRefillDate: Calendar.current.date(byAdding: .day, value: 15, to: Date())
 		),

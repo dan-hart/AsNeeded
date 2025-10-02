@@ -345,6 +345,8 @@ struct DataStoreTests {
 		return ANMedicationConcept(
 			clinicalName: name,
 			nickname: nickname,
+			quantity: nil,
+			initialQuantity: 30.0,
 			prescribedUnit: .milligram,
 			prescribedDoseAmount: 10.0
 		)

@@ -15,9 +15,10 @@ struct MedicationEditViewModelTests {
 	@MainActor
 	func testInitWithNilMedication() {
 		let viewModel = MedicationEditViewModel(medication: nil)
-		
+
 		#expect(viewModel.clinicalName == "")
 		#expect(viewModel.nickname == "")
+		#expect(viewModel.initialQuantityText == "")
 		#expect(viewModel.quantityText == "")
 		#expect(viewModel.prescribedDoseText == "")
 		#expect(viewModel.prescribedUnit == nil)
@@ -35,19 +36,21 @@ struct MedicationEditViewModelTests {
 			clinicalName: "Ibuprofen",
 			nickname: "Pain Relief",
 			quantity: 100,
+			initialQuantity: 200,
 			lastRefillDate: lastRefill,
 			nextRefillDate: nextRefill,
-			prescribedUnit: .milligram,
+			prescribedUnit: ANUnitConcept.milligram,
 			prescribedDoseAmount: 200
 		)
-		
+
 		let viewModel = MedicationEditViewModel(medication: medication)
-		
+
 		#expect(viewModel.clinicalName == "Ibuprofen")
 		#expect(viewModel.nickname == "Pain Relief")
+		#expect(viewModel.initialQuantityText == "200.0")
 		#expect(viewModel.quantityText == "100.0")
 		#expect(viewModel.prescribedDoseText == "200.0")
-		#expect(viewModel.prescribedUnit == .milligram)
+		#expect(viewModel.prescribedUnit == ANUnitConcept.milligram)
 		#expect(viewModel.lastRefillDate == lastRefill)
 		#expect(viewModel.nextRefillDate == nextRefill)
 	}
