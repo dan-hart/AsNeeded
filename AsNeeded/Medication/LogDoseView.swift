@@ -462,24 +462,10 @@ struct LogDoseView: View {
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
 					Button(action: { dismiss() }) {
-						Image(systemSymbol: .xmarkCircleFill)
-							.font(.customFont(fontFamily, style: .title3))
-							.symbolRenderingMode(.hierarchical)
+						Image(systemSymbol: .xmark)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 							.foregroundStyle(.secondary)
 					}
-				}
-
-				ToolbarItem(placement: .confirmationAction) {
-					Button(action: performLogDose) {
-						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.customFont(fontFamily, style: .title3))
-							.symbolRenderingMode(.hierarchical)
-							.foregroundColor(.accentColor)
-					}
-					.disabled(amount <= 0)
-					.opacity(amount <= 0 ? 0.6 : 1.0)
-					.accessibilityLabel("Log dose")
-					.accessibilityHint("Logs the dose with current settings")
 				}
 			}
 		}

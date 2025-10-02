@@ -139,14 +139,18 @@ struct DataManagementView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") {
+                            Button {
                                 viewModel.showingExportConfirmation = false
                                 redactMedicationNames = false
                                 redactNotes = false
+                            } label: {
+                                Image(systemSymbol: .xmark)
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Export") {
+                            Button {
                                 Task {
                                     await viewModel.exportData(
                                         redactMedicationNames: redactMedicationNames,
@@ -156,8 +160,11 @@ struct DataManagementView: View {
                                     redactMedicationNames = false
                                     redactNotes = false
                                 }
+                            } label: {
+                                Image(systemSymbol: .checkmark)
+                                    .font(.title2.weight(.semibold))
+                                    .foregroundStyle(.accent)
                             }
-                            .fontWeight(.semibold)
                         }
                     }
                 }

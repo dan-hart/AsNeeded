@@ -44,6 +44,44 @@ For important actions (save, submit, log), use a sticky button pattern at the bo
 - **Examples**: LogDoseView, ColorPickerComponent, ExpandableNoteEditorComponent, MedicationHistoryView note editing
 - **Benefits**: Primary action always visible, better accessibility, consistent across screen sizes
 
+### Sheet Toolbar Patterns
+All sheets and modal views must follow iOS 26 toolbar conventions for consistency:
+- **Cancel action** (leading): Plain X icon (`Image(systemSymbol: .xmark)`) - no glass backgrounds, no text labels
+- **Confirmation action** (trailing): Large plain checkmark (`Image(systemSymbol: .checkmark)`) with accent/medication color - no circle in the symbol
+- **Font styling**: Cancel uses `.font(.customFont(fontFamily, style: .body, weight: .medium))`, confirmation uses `.font(.customFont(fontFamily, style: .title2, weight: .semibold))` for larger, more prominent appearance
+- **Exception**: Sheets with sticky bottom CTA buttons should have NO top trailing confirmation button (only cancel X on leading side)
+- Examples:
+  ```swift
+  // Standard sheet with both toolbar buttons
+  .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+          Button { dismiss() } label: {
+              Image(systemSymbol: .xmark)
+                  .font(.customFont(fontFamily, style: .body, weight: .medium))
+                  .foregroundStyle(.secondary)
+          }
+      }
+      ToolbarItem(placement: .confirmationAction) {
+          Button { performSave() } label: {
+              Image(systemSymbol: .checkmark)
+                  .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                  .foregroundStyle(.accent)
+          }
+      }
+  }
+
+  // Sheet with sticky bottom CTA (only cancel button)
+  .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+          Button { dismiss() } label: {
+              Image(systemSymbol: .xmark)
+                  .font(.customFont(fontFamily, style: .body, weight: .medium))
+                  .foregroundStyle(.secondary)
+          }
+      }
+  }
+  ```
+
 ### Keyboard Focus in Sheets
 When presenting sheets with text input that should auto-focus:
 - Use `@FocusState` with the text field

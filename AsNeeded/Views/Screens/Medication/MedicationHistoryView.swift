@@ -391,19 +391,24 @@ struct MedicationHistoryView: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") {
+                            Button {
                                 showDatePicker = false
+                            } label: {
+                                Image(systemSymbol: .xmark)
+                                    .font(.customFont(fontFamily, style: .body, weight: .medium))
+                                    .foregroundStyle(.secondary)
                             }
-                            .font(.customFont(fontFamily, style: .body))
                         }
 
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Jump") {
+                            Button {
                                 scrollTarget = Calendar.current.startOfDay(for: selectedDate)
                                 showDatePicker = false
+                            } label: {
+                                Image(systemSymbol: .checkmark)
+                                    .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                                    .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                             }
-                            .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                         }
                     }
                 }
@@ -520,11 +525,14 @@ struct MedicationHistoryView: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Cancel") {
+                                Button {
                                     editingEvent = nil
                                     editingNoteText = ""
+                                } label: {
+                                    Image(systemSymbol: .xmark)
+                                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                                        .foregroundStyle(.secondary)
                                 }
-                                .font(.customFont(fontFamily, style: .body))
                             }
                         }
                     }
@@ -610,13 +618,16 @@ struct MedicationHistoryView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
+                        Button {
                             editingEntryEvent = nil
+                        } label: {
+                            Image(systemSymbol: .xmark)
+                                .font(.customFont(fontFamily, style: .body, weight: .medium))
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.customFont(fontFamily, style: .body))
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
+                        Button {
                             if let event = editingEntryEvent {
                                 Task {
                                     // Update the event with new date/time
@@ -626,9 +637,11 @@ struct MedicationHistoryView: View {
                                     editingEntryEvent = nil
                                 }
                             }
+                        } label: {
+                            Image(systemSymbol: .checkmark)
+                                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                                .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                         }
-                        .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                     }
                 }
             }
