@@ -123,6 +123,23 @@ To add a new feature toggle:
 - **Design Consistency**: Reusable components should follow the app's design system (glass cards, accent colors, semantic fonts, accessibility support).
 - **Preview Support**: All components should include SwiftUI previews demonstrating different states and configurations.
 
+### TestFlight Beta Access
+- **Component**: Use `TestFlightAccessComponent` for linking users to the TestFlight beta program
+- **Location**: `AsNeeded/Views/Components/TestFlightAccessComponent.swift`
+- **URL Constant**: Use `AppURLs.testFlightBeta` from `AsNeeded/Constants/AppURLs.swift`
+- **Usage**: Add to feedback, support, about, and thank-you views to invite users to test beta features
+- **Localization**: Component is fully localized in 37 languages with proper translations
+- **Styling**: Uses airplane icon (`.airplaneCircleFill`) with blue gradient background, follows app design system with custom font support
+- **Example**:
+  ```swift
+  VStack(alignment: .leading, spacing: spacing16) {
+      Text("Beta Testing")
+          .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+
+      TestFlightAccessComponent()
+  }
+  ```
+
 ## Testing Guidelines
 - Framework: Swift Testing (`import Testing`, `@Test`, `#expect`).
 - Scope: Unit tests for domain and services ONLY. No UI tests, snapshot tests, or view testing.

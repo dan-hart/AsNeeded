@@ -23,6 +23,7 @@ struct SupportView: View {
 	@ScaledMetric private var minHeight100: CGFloat = 100
 
 	@Environment(\.openURL) private var openURL
+	@Environment(\.fontFamily) private var fontFamily
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
 	@State private var isPurchasing = false
 	@State private var showPurchaseAlert = false
@@ -41,6 +42,8 @@ struct SupportView: View {
 				supportOptionsSection
 
 				aboutOpenSourceSection
+
+				testFlightSection
 			}
 			.padding(.horizontal)
 			.padding(.vertical)
@@ -105,8 +108,7 @@ struct SupportView: View {
 			// Support Section
 			VStack(alignment: .leading, spacing: spacing16) {
 				Text("Support Development")
-					.font(.title2)
-					.fontWeight(.semibold)
+					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
 				// Tip Jar
 				tipJarGrid
@@ -131,8 +133,7 @@ struct SupportView: View {
 	private var aboutOpenSourceSection: some View {
 		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Open Source & Free")
-				.font(.title2)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
 			VStack(alignment: .leading, spacing: spacing12) {
 				Text("As Needed will always be free with all features available. No ads, no premium tiers, no subscriptions required. The app is open source - you can inspect the code or contribute improvements.")
@@ -172,6 +173,15 @@ struct SupportView: View {
 				}
 				.buttonStyle(.plain)
 			}
+		}
+	}
+
+	private var testFlightSection: some View {
+		VStack(alignment: .leading, spacing: spacing16) {
+			Text("Beta Testing")
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+
+			TestFlightAccessComponent()
 		}
 	}
 

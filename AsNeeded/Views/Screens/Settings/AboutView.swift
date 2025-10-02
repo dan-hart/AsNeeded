@@ -13,6 +13,7 @@ struct AboutView: View {
 	@ScaledMetric private var padding4: CGFloat = 4
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var iconSize32: CGFloat = 32
+	@Environment(\.fontFamily) private var fontFamily
 
   private var appName: String {
 	Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -42,6 +43,8 @@ struct AboutView: View {
 		specialThanksSection
 
 		technicalInfoSection
+
+		testFlightSection
 	  }
 	  .padding(.horizontal)
 	  .padding(.vertical)
@@ -74,8 +77,7 @@ struct AboutView: View {
   private var coreValuesSection: some View {
 	VStack(alignment: .leading, spacing: spacing16) {
 	  Text("Built on three core values")
-		.font(.title2)
-		.fontWeight(.semibold)
+		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 		.frame(maxWidth: .infinity)
 
 	  VStack(spacing: spacing12) {
@@ -155,8 +157,7 @@ struct AboutView: View {
   private var specialThanksSection: some View {
 	VStack(alignment: .leading, spacing: spacing16) {
 	  Text("Special Thanks")
-		.font(.title2)
-		.fontWeight(.semibold)
+		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
 	  VStack(spacing: spacing12) {
 		if let url = christineWangURL {
@@ -238,8 +239,7 @@ struct AboutView: View {
   private var technicalInfoSection: some View {
 	VStack(alignment: .leading, spacing: spacing12) {
 	  Text("Technical Information")
-		.font(.title2)
-		.fontWeight(.semibold)
+		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
 	  VStack(spacing: spacing8) {
 		HStack {
@@ -296,6 +296,15 @@ struct AboutView: View {
 	.padding(padding16)
 	.background(.regularMaterial)
 	.cornerRadius(cornerRadius12)
+  }
+
+  private var testFlightSection: some View {
+	VStack(alignment: .leading, spacing: spacing16) {
+	  Text("Join the Beta")
+		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+
+	  TestFlightAccessComponent()
+	}
   }
 }
 
