@@ -16,6 +16,7 @@ struct FeedbackView: View {
 	@State private var showingMailComposer = false
 	@State private var currentFeedbackType: FeedbackType = .feedback
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.fontFamily) private var fontFamily
 	
 	private var isLoading: Bool {
 		feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog || feedbackService.isPreparingFeedback
@@ -48,6 +49,10 @@ struct FeedbackView: View {
 
 						rateAndReviewSection
 					}
+
+					Divider()
+
+					testFlightSection
 				}
                 .padding()
 			}
@@ -101,11 +106,10 @@ struct FeedbackView: View {
 	private var feedbackOverviewSection: some View {
 		VStack(alignment: .leading, spacing: spacing12) {
 			Text("Help Improve As Needed")
-				.font(.headline)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 			Text("Your feedback helps make As Needed better for everyone. Choose the type of feedback you'd like to send:")
-				.font(.subheadline)
+				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundColor(.secondary)
 		}
 	}
@@ -113,8 +117,7 @@ struct FeedbackView: View {
 	private var feedbackTypesSection: some View {
 		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Feedback Type")
-				.font(.headline)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 			VStack(spacing: spacing12) {
 				feedbackTypeButton(
@@ -156,8 +159,7 @@ struct FeedbackView: View {
 	private var rateAndReviewSection: some View {
 		VStack(alignment: .leading, spacing: spacing16) {
 			Text("Love As Needed?")
-				.font(.headline)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 			feedbackTypeButton(
 				title: "Rate & Review on App Store",
@@ -170,6 +172,15 @@ struct FeedbackView: View {
 					}
 				}
 			)
+		}
+	}
+
+	private var testFlightSection: some View {
+		VStack(alignment: .leading, spacing: spacing16) {
+			Text("Help Shape the Future")
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+
+			TestFlightAccessComponent()
 		}
 	}
 

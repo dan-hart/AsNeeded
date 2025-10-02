@@ -25,6 +25,7 @@ struct ThankYouView: View {
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.openURL) private var openURL
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@Environment(\.fontFamily) private var fontFamily
 	@EnvironmentObject private var feedbackService: FeedbackService
 
 	let purchaseType: PurchaseType
@@ -166,9 +167,13 @@ struct ThankYouView: View {
 	
 	private var impactSection: some View {
 		VStack(alignment: .leading, spacing: spacing16) {
-			Label("Your Support Helps", systemSymbol: .sparkles)
-				.font(.headline)
-				.foregroundColor(.accentColor)
+			Label {
+				Text("Your Support Helps")
+					.font(.customFont(fontFamily, style: .headline))
+			} icon: {
+				Image(systemSymbol: .sparkles)
+			}
+			.foregroundColor(.accentColor)
 
 			VStack(alignment: .leading, spacing: spacing12) {
 				ImpactRow(
@@ -205,9 +210,13 @@ struct ThankYouView: View {
 	
 	private var contributeSection: some View {
 		VStack(alignment: .leading, spacing: spacing16) {
-			Label("Want to Contribute More?", systemSymbol: .personCropCircleBadgePlus)
-				.font(.headline)
-				.foregroundColor(.accentColor)
+			Label {
+				Text("Want to Contribute More?")
+					.font(.customFont(fontFamily, style: .headline))
+			} icon: {
+				Image(systemSymbol: .personCropCircleBadgePlus)
+			}
+			.foregroundColor(.accentColor)
 
 			VStack(spacing: spacing12) {
 				// GitHub Repository
@@ -371,6 +380,9 @@ struct ThankYouView: View {
 					}
 					.buttonStyle(.plain)
 				}
+
+				// TestFlight Beta
+				TestFlightAccessComponent()
 			}
 		}
 	}
@@ -381,7 +393,7 @@ struct ThankYouView: View {
 				Image(systemSymbol: .personCircleFill)
 					.foregroundColor(.accentColor)
 				Text("A Note from the Developer")
-					.font(.headline)
+					.font(.customFont(fontFamily, style: .headline))
 			}
 
 			Text("Your support truly makes a difference. As an independent developer, contributions like yours allow me to dedicate time to making AsNeeded better for everyone. Thank you for believing in this project and being part of our community. 💙")
