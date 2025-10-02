@@ -9,8 +9,7 @@ struct FontFamilyTests {
 	// MARK: - Enum Cases Tests
 	@Test("FontFamily has expected number of cases")
 	func testFontFamilyCount() {
-		// Should have exactly 2 cases: system and atkinsonHyperlegible
-		#expect(FontFamily.allCases.count == 2)
+		#expect(FontFamily.allCases.count == 3)
 	}
 
 	@Test("FontFamily contains system case")
@@ -21,6 +20,11 @@ struct FontFamilyTests {
 	@Test("FontFamily contains atkinsonHyperlegible case")
 	func testAtkinsonCaseExists() {
 		#expect(FontFamily.allCases.contains(.atkinsonHyperlegible))
+	}
+
+	@Test("FontFamily contains openDyslexic case")
+	func testOpenDyslexicCaseExists() {
+		#expect(FontFamily.allCases.contains(.openDyslexic))
 	}
 
 	// MARK: - Raw Value Tests
@@ -34,13 +38,20 @@ struct FontFamilyTests {
 		#expect(FontFamily.atkinsonHyperlegible.rawValue == "atkinson-hyperlegible")
 	}
 
+	@Test("OpenDyslexic has correct raw value")
+	func testOpenDyslexicRawValue() {
+		#expect(FontFamily.openDyslexic.rawValue == "open-dyslexic")
+	}
+
 	@Test("FontFamily can be initialized from raw value")
 	func testRawValueInitialization() {
 		let systemFont = FontFamily(rawValue: "system")
 		let atkinsonFont = FontFamily(rawValue: "atkinson-hyperlegible")
+		let openDyslexicFont = FontFamily(rawValue: "open-dyslexic")
 
 		#expect(systemFont == .system)
 		#expect(atkinsonFont == .atkinsonHyperlegible)
+		#expect(openDyslexicFont == .openDyslexic)
 	}
 
 	// MARK: - Display Name Tests
@@ -54,6 +65,13 @@ struct FontFamilyTests {
 	@Test("Atkinson Hyperlegible has non-empty display name")
 	func testAtkinsonDisplayName() {
 		let displayName = FontFamily.atkinsonHyperlegible.displayName
+		#expect(displayName.isEmpty == false)
+		#expect(displayName.count > 0)
+	}
+
+	@Test("OpenDyslexic has non-empty display name")
+	func testOpenDyslexicDisplayName() {
+		let displayName = FontFamily.openDyslexic.displayName
 		#expect(displayName.isEmpty == false)
 		#expect(displayName.count > 0)
 	}
@@ -80,6 +98,20 @@ struct FontFamilyTests {
 		#expect(description.lowercased().contains("braille") || description.lowercased().contains("legibility") || description.lowercased().contains("vision"))
 	}
 
+	@Test("OpenDyslexic has accessibility description")
+	func testOpenDyslexicAccessibilityDescription() {
+		let description = FontFamily.openDyslexic.accessibilityDescription
+		#expect(description.isEmpty == false)
+		#expect(description.count > 20) // Should be a meaningful description
+	}
+
+	@Test("OpenDyslexic description mentions key features")
+	func testOpenDyslexicDescriptionContent() {
+		let description = FontFamily.openDyslexic.accessibilityDescription
+		// Description should mention key features
+		#expect(description.lowercased().contains("dyslexia") || description.lowercased().contains("weighted") || description.lowercased().contains("bottom"))
+	}
+
 	// MARK: - Short Description Tests
 	@Test("System font has short description")
 	func testSystemShortDescription() {
@@ -90,6 +122,12 @@ struct FontFamilyTests {
 	@Test("Atkinson Hyperlegible has short description")
 	func testAtkinsonShortDescription() {
 		let description = FontFamily.atkinsonHyperlegible.shortDescription
+		#expect(description.isEmpty == false)
+	}
+
+	@Test("OpenDyslexic has short description")
+	func testOpenDyslexicShortDescription() {
+		let description = FontFamily.openDyslexic.shortDescription
 		#expect(description.isEmpty == false)
 	}
 
@@ -118,6 +156,13 @@ struct FontFamilyTests {
 		#expect(fontName == "AtkinsonHyperlegible-Regular")
 	}
 
+	@Test("OpenDyslexic has valid font name")
+	func testOpenDyslexicFontName() {
+		let fontName = FontFamily.openDyslexic.fontName
+		#expect(fontName.isEmpty == false)
+		#expect(fontName == "OpenDyslexicThree-Regular")
+	}
+
 	@Test("System font returns empty bold font name")
 	func testSystemBoldFontName() {
 		#expect(FontFamily.system.boldFontName == "")
@@ -128,6 +173,13 @@ struct FontFamilyTests {
 		let boldFontName = FontFamily.atkinsonHyperlegible.boldFontName
 		#expect(boldFontName.isEmpty == false)
 		#expect(boldFontName == "AtkinsonHyperlegible-Bold")
+	}
+
+	@Test("OpenDyslexic has valid bold font name")
+	func testOpenDyslexicBoldFontName() {
+		let boldFontName = FontFamily.openDyslexic.boldFontName
+		#expect(boldFontName.isEmpty == false)
+		#expect(boldFontName == "OpenDyslexicThree-Bold")
 	}
 
 	// MARK: - Info URL Tests
@@ -146,14 +198,26 @@ struct FontFamilyTests {
 		}
 	}
 
+	@Test("OpenDyslexic has valid info URL")
+	func testOpenDyslexicInfoURL() {
+		let url = FontFamily.openDyslexic.infoURL
+		#expect(url != nil)
+
+		if let url = url {
+			#expect(url.absoluteString.contains("opendyslexic.org"))
+		}
+	}
+
 	// MARK: - Sample Text Tests
 	@Test("Sample text is consistent across all fonts")
 	func testSampleTextConsistency() {
 		let systemSample = FontFamily.system.sampleText
 		let atkinsonSample = FontFamily.atkinsonHyperlegible.sampleText
+		let openDyslexicSample = FontFamily.openDyslexic.sampleText
 
 		// All fonts should use the same sample text for consistent comparison
 		#expect(systemSample == atkinsonSample)
+		#expect(systemSample == openDyslexicSample)
 	}
 
 	@Test("Sample text contains pangram elements")
@@ -178,10 +242,12 @@ struct FontFamilyTests {
 	func testIdentifiableConformance() {
 		let systemID = FontFamily.system.id
 		let atkinsonID = FontFamily.atkinsonHyperlegible.id
+		let openDyslexicID = FontFamily.openDyslexic.id
 
 		// IDs should match raw values
 		#expect(systemID == "system")
 		#expect(atkinsonID == "atkinson-hyperlegible")
+		#expect(openDyslexicID == "open-dyslexic")
 	}
 
 	@Test("Each font family has unique ID")
