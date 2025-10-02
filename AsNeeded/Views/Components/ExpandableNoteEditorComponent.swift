@@ -205,14 +205,17 @@ struct ExpandableNoteEditorComponent: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
-					Button("Cancel") {
+					Button {
 						withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 							isExpanded = false
 							localText = noteText // Reset to original
 							hapticsManager.lightImpact()
 						}
+					} label: {
+						Image(systemSymbol: .xmark)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
+							.foregroundStyle(.secondary)
 					}
-					.font(.customFont(fontFamily, style: .body))
 				}
 			}
 			.task {

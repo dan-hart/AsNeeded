@@ -46,9 +46,13 @@ struct AlternativeFeedbackView: View {
 			.navigationTitle("Send Feedback")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .navigationBarTrailing) {
-					Button("Cancel") {
+				ToolbarItem(placement: .cancellationAction) {
+					Button {
 						dismiss()
+					} label: {
+						Image(systemSymbol: .xmark)
+							.font(.body.weight(.medium))
+							.foregroundStyle(.secondary)
 					}
 				}
 			}

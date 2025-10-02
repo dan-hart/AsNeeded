@@ -111,11 +111,6 @@ struct LogConsentSheetView: View {
 						Image(systemSymbol: .xmark)
 							.font(.body.weight(.medium))
 							.foregroundStyle(.secondary)
-							.padding(toolbarPadding)
-							.background(
-								Circle()
-									.fill(.ultraThinMaterial)
-							)
 					}
 				}
 			}

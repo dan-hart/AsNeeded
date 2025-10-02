@@ -466,19 +466,23 @@ struct MedicationEditView: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
-					Button("Cancel") {
+					Button {
 						showingDatePicker = false
+					} label: {
+						Image(systemSymbol: .xmark)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
+							.foregroundStyle(.secondary)
 					}
-					.font(.customFont(fontFamily, style: .body))
-					.foregroundStyle(.secondary)
 				}
 
 				ToolbarItem(placement: .confirmationAction) {
-					Button("Done") {
+					Button {
 						showingDatePicker = false
+					} label: {
+						Image(systemSymbol: .checkmark)
+							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+							.foregroundStyle(Color.accentColor)
 					}
-					.font(.customFont(fontFamily, style: .body, weight: .bold))
-					.foregroundStyle(Color.accentColor)
 				}
 			}
 		}
@@ -538,20 +542,15 @@ struct MedicationEditView: View {
 							Image(systemSymbol: .xmark)
 								.font(.customFont(fontFamily, style: .body, weight: .medium))
 								.foregroundStyle(.secondary)
-								.padding(toolbarButtonPadding)
-								.background(
-									Circle()
-										.fill(.ultraThinMaterial)
-								)
 						}
 					}
-					
+
 					ToolbarItem(placement: .confirmationAction) {
 						Button {
 							performSave()
 						} label: {
-							Text("Save")
-								.font(.customFont(fontFamily, style: .body, weight: .semibold))
+							Image(systemSymbol: .checkmark)
+								.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 						}
 						.disabled(!isFormValid)
 						.foregroundColor(isFormValid ? .accentColor : .secondary)
