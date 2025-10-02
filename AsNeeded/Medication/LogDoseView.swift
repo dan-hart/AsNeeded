@@ -16,10 +16,10 @@ struct LogDoseView: View {
 	@State private var selectedUnit: ANUnitConcept = .unit
 	@State private var selectedDate: Date = .now
 	@State private var note: String = ""
-	@FocusState private var isNoteFocused: Bool
 	@State private var showingDatePicker = false
 	@State private var animateHeader = false
 	@State private var selectedQuickOption: String? = "Now"
+	@State private var animateNoteSection = false
 	private let hapticsManager = HapticsManager.shared
 
 	@ScaledMetric private var iconSize: CGFloat = 80
@@ -141,6 +141,14 @@ struct LogDoseView: View {
 		.onAppear {
 			withAnimation(.easeInOut(duration: 0.8).delay(0.2)) {
 				animateHeader = true
+			}
+			// Animate note section to draw attention
+			withAnimation(.easeInOut(duration: 0.8).delay(0.5)) {
+				animateNoteSection = true
+			}
+			// Stop animation after initial attention-grab
+			DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+				animateNoteSection = false
 			}
 		}
 	}
@@ -335,13 +343,13 @@ struct LogDoseView: View {
 		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack {
 				Label("Note", systemSymbol: .noteText)
-					.font(.headline)
+					.font(.customFont(fontFamily, style: .headline))
 					.foregroundStyle(.primary)
 
 				Spacer()
 
 				Text("Optional")
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 					.padding(.horizontal, noteHorizontalPadding)
 					.padding(.vertical, noteVerticalPadding)
@@ -351,14 +359,16 @@ struct LogDoseView: View {
 					)
 			}
 
-			TextField("How are you feeling? Any side effects?", text: $note, axis: .vertical)
-				.lineLimit(3...6)
-				.padding(noteTextFieldPadding)
-				.background(
-					RoundedRectangle(cornerRadius: noteTextFieldCornerRadius, style: .continuous)
-						.fill(Color.secondary.opacity(0.08))
-				)
-				.focused($isNoteFocused)
+			// Use the new expandable note editor component
+			ExpandableNoteEditorComponent(
+				noteText: $note,
+				placeholder: "How are you feeling? Any side effects?",
+				medicationName: medication.displayName,
+				onSave: {
+					// Haptic feedback when note is saved
+					hapticsManager.lightImpact()
+				}
+			)
 		}
 		.padding(sectionPadding)
 		.background(
@@ -367,6 +377,13 @@ struct LogDoseView: View {
 				.shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
 		)
 		.padding(.horizontal)
+		.scaleEffect(animateNoteSection ? 1.02 : 1.0)
+		.animation(
+			animateNoteSection ?
+				Animation.easeInOut(duration: 0.8).repeatCount(2, autoreverses: true) :
+				.default,
+			value: animateNoteSection
+		)
 	}
 	
 	private var logButton: some View {
@@ -418,9 +435,9 @@ struct LogDoseView: View {
 
 						doseSection
 
-						dateTimeSection
+						noteSection  // Moved higher for better visibility
 
-						noteSection
+						dateTimeSection
 					}
 					.padding(.bottom, bottomPadding)
 				}
