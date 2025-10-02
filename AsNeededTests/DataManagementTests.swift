@@ -475,23 +475,23 @@ struct DataManagementTests {
   func testExportWithNilValues() async throws {
 	let dataStore = createTestDataStore()
 	try await dataStore.clearAllData()
-	
+
 	let minimalMedication = ANMedicationConcept(
 	  clinicalName: "Minimal Medication"
 	  // All other fields are nil
 	)
-	
+
 	try await dataStore.addMedication(minimalMedication)
-	
+
 	let exportedData = try await dataStore.exportDataAsJSON()
-	
+
 	// Should be valid JSON
 	let json = try JSONSerialization.jsonObject(with: exportedData) as? [String: Any]
 	#expect(json != nil)
-	
+
 	// Round-trip should preserve nil values
 	try await dataStore.importDataFromJSON(exportedData)
-	
+
 	guard let importedMedication = dataStore.medications.first else {
 	  #expect(Bool(false), "No medications found after import")
 	  return
@@ -500,5 +500,404 @@ struct DataManagementTests {
 	#expect(importedMedication.nickname == nil)
 	#expect(importedMedication.quantity == nil)
 	#expect(importedMedication.lastRefillDate == nil)
+  }
+
+  // MARK: - Critical Integration Tests
+
+  // ⚠️ DO NOT DELETE OR DISABLE THIS TEST ⚠️
+  // This test ensures data import/export integrity is never broken.
+  // If this test fails, users could lose their medication data.
+  @Test("CRITICAL: Full data export-import cycle must preserve all data integrity")
+  func testComprehensiveDataExportImportIntegrity() async throws {
+	let dataStore = createTestDataStore()
+	try await dataStore.clearAllData()
+
+	// MARK: Create comprehensive test dataset
+
+	// Create diverse medications with various configurations
+	let med1 = ANMedicationConcept(
+	  id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+	  clinicalName: "Acetaminophen",
+	  nickname: "Tylenol",
+	  quantity: 100.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
+	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 500.0
+	)
+
+	let med2 = ANMedicationConcept(
+	  id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+	  clinicalName: "Ibuprofen",
+	  nickname: nil, // No nickname
+	  quantity: 50.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1641081600),
+	  nextRefillDate: nil, // No next refill
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 200.0
+	)
+
+	let med3 = ANMedicationConcept(
+	  id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+	  clinicalName: "Spéciäl Médication with Ünîcødé 💊",
+	  nickname: "Émoji Med! @#$%",
+	  quantity: nil, // No quantity tracked
+	  lastRefillDate: nil,
+	  nextRefillDate: nil,
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 10.0
+	)
+
+	let med4 = ANMedicationConcept(
+	  id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+	  clinicalName: "Minimal Medication",
+	  nickname: nil,
+	  quantity: nil,
+	  lastRefillDate: nil,
+	  nextRefillDate: nil,
+	  prescribedUnit: nil,
+	  prescribedDoseAmount: nil
+	)
+
+	let med5 = ANMedicationConcept(
+	  id: UUID(uuidString: "55555555-5555-5555-5555-555555555555")!,
+	  clinicalName: "Full Specification Medication",
+	  nickname: "Full Spec",
+	  quantity: 90.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1642291200),
+	  nextRefillDate: Date(timeIntervalSince1970: 1644883200),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 750.0
+	)
+
+	let med6 = ANMedicationConcept(
+	  id: UUID(uuidString: "66666666-6666-6666-6666-666666666666")!,
+	  clinicalName: "Test \"Quotes\" and 'Apostrophes'",
+	  nickname: "Punctuation",
+	  quantity: 30.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
+	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 100.0
+	)
+
+	let med7 = ANMedicationConcept(
+	  id: UUID(uuidString: "77777777-7777-7777-7777-777777777777")!,
+	  clinicalName: "Low Dose Medication",
+	  nickname: "Low",
+	  quantity: 15.0,
+	  lastRefillDate: nil,
+	  nextRefillDate: Date(timeIntervalSince1970: 1650000000),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 2.5
+	)
+
+	let med8 = ANMedicationConcept(
+	  id: UUID(uuidString: "88888888-8888-8888-8888-888888888888")!,
+	  clinicalName: "High Dose Medication",
+	  nickname: "High",
+	  quantity: 200.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
+	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 1000.0
+	)
+
+	let med9 = ANMedicationConcept(
+	  id: UUID(uuidString: "99999999-9999-9999-9999-999999999999")!,
+	  clinicalName: "Recent Medication",
+	  nickname: "Recent",
+	  quantity: 60.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1700000000),
+	  nextRefillDate: Date(timeIntervalSince1970: 1705000000),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 50.0
+	)
+
+	let med10 = ANMedicationConcept(
+	  id: UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!,
+	  clinicalName: "Old Medication",
+	  nickname: "Old",
+	  quantity: 5.0,
+	  lastRefillDate: Date(timeIntervalSince1970: 1600000000),
+	  nextRefillDate: Date(timeIntervalSince1970: 1605000000),
+	  prescribedUnit: ANUnitConcept.milligram,
+	  prescribedDoseAmount: 25.0
+	)
+
+	// Add all medications
+	let allMedications = [med1, med2, med3, med4, med5, med6, med7, med8, med9, med10]
+	for medication in allMedications {
+	  try await dataStore.addMedication(medication)
+	}
+
+	// Create diverse events for each medication
+	var allEvents: [ANEventConcept] = []
+
+	// Med1: Multiple events with different types and notes
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000001-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med1,
+	  dose: ANDoseConcept(amount: 500.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641000000),
+	  note: "Took with breakfast"
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000001-0000-0000-0000-000000000002")!,
+	  eventType: .doseTaken,
+	  medication: med1,
+	  dose: ANDoseConcept(amount: 500.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641086400),
+	  note: nil // No note
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000001-0000-0000-0000-000000000003")!,
+	  eventType: .doseTaken,
+	  medication: med1,
+	  dose: nil,
+	  date: Date(timeIntervalSince1970: 1641172800),
+	  note: "Felt better, skipped evening dose"
+	))
+
+	// Med2: Events with special characters in notes
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000002-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med2,
+	  dose: ANDoseConcept(amount: 200.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641100000),
+	  note: "Note with émojis 😊 and spëcial çharacters!"
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000002-0000-0000-0000-000000000002")!,
+	  eventType: .doseTaken,
+	  medication: med2,
+	  dose: ANDoseConcept(amount: 200.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641200000),
+	  note: "Quotes \"test\" and 'apostrophes' in notes"
+	))
+
+	// Med3: Unicode medication with events
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000003-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med3,
+	  dose: ANDoseConcept(amount: 10.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641300000),
+	  note: "Testing ünîcødé persistence"
+	))
+
+	// Med4: Minimal medication with minimal event
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000004-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med4,
+	  dose: nil, // No dose information
+	  date: Date(timeIntervalSince1970: 1641400000),
+	  note: nil
+	))
+
+	// Med5: Multiple events at different times
+	for i in 1...5 {
+	  allEvents.append(ANEventConcept(
+		id: UUID(uuidString: "e0000005-0000-0000-0000-00000000000\(i)")!,
+		eventType: .doseTaken,
+		medication: med5,
+		dose: ANDoseConcept(amount: 750.0, unit: ANUnitConcept.milligram),
+		date: Date(timeIntervalSince1970: 1642291200 + TimeInterval(i * 86400)),
+		note: i % 2 == 0 ? "Even dose \(i)" : nil
+	  ))
+	}
+
+	// Med6-10: Additional events to reach 30+ total
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000006-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med6,
+	  dose: ANDoseConcept(amount: 100.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641500000),
+	  note: nil
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000007-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med7,
+	  dose: ANDoseConcept(amount: 2.5, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641600000),
+	  note: "Low dose test"
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000007-0000-0000-0000-000000000002")!,
+	  eventType: .doseTaken,
+	  medication: med7,
+	  dose: nil,
+	  date: Date(timeIntervalSince1970: 1641700000),
+	  note: nil
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000008-0000-0000-0000-000000000001")!,
+	  eventType: .doseTaken,
+	  medication: med8,
+	  dose: ANDoseConcept(amount: 1000.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641800000),
+	  note: "High dose medication"
+	))
+
+	allEvents.append(ANEventConcept(
+	  id: UUID(uuidString: "e0000008-0000-0000-0000-000000000002")!,
+	  eventType: .doseTaken,
+	  medication: med8,
+	  dose: ANDoseConcept(amount: 1000.0, unit: ANUnitConcept.milligram),
+	  date: Date(timeIntervalSince1970: 1641900000),
+	  note: nil
+	))
+
+	for i in 1...3 {
+	  allEvents.append(ANEventConcept(
+		id: UUID(uuidString: "e0000009-0000-0000-0000-00000000000\(i)")!,
+		eventType: .doseTaken,
+		medication: med9,
+		dose: ANDoseConcept(amount: 50.0, unit: ANUnitConcept.milligram),
+		date: Date(timeIntervalSince1970: 1700000000 + TimeInterval(i * 3600)),
+		note: i == 2 ? "Recent medication note" : nil
+	  ))
+	}
+
+	for i in 1...3 {
+	  allEvents.append(ANEventConcept(
+		id: UUID(uuidString: "e000000a-0000-0000-0000-00000000000\(i)")!,
+		eventType: .doseTaken,
+		medication: med10,
+		dose: ANDoseConcept(amount: 25.0, unit: ANUnitConcept.milligram),
+		date: Date(timeIntervalSince1970: 1600000000 + TimeInterval(i * 3600)),
+		note: "Old medication event \(i)"
+	  ))
+	}
+
+	// Add all events
+	for event in allEvents {
+	  try await dataStore.addEvent(event)
+	}
+
+	// Verify initial state
+	#expect(dataStore.medications.count == 10, "Should have 10 medications before export")
+	#expect(dataStore.events.count == allEvents.count, "Should have \(allEvents.count) events before export")
+
+	// MARK: Export data
+
+	let exportedData = try await dataStore.exportDataAsJSON()
+	#expect(exportedData.count > 0, "Export data should not be empty")
+
+	// Verify it's valid JSON
+	let exportJSON = try JSONSerialization.jsonObject(with: exportedData) as? [String: Any]
+	#expect(exportJSON != nil, "Export should produce valid JSON")
+
+	// MARK: Clear all data
+
+	try await dataStore.clearAllData()
+
+	// Verify data is completely cleared
+	#expect(dataStore.medications.count == 0, "All medications should be cleared")
+	#expect(dataStore.events.count == 0, "All events should be cleared")
+
+	// MARK: Import data back
+
+	try await dataStore.importDataFromJSON(exportedData)
+
+	// MARK: Verify complete data integrity
+
+	// Verify counts
+	#expect(dataStore.medications.count == 10, "Should restore exactly 10 medications")
+	#expect(dataStore.events.count == allEvents.count, "Should restore exactly \(allEvents.count) events")
+
+	// Verify each medication in detail
+	for originalMed in allMedications {
+	  guard let importedMed = dataStore.medications.first(where: { $0.id == originalMed.id }) else {
+		#expect(Bool(false), "Medication \(originalMed.id) not found after import")
+		continue
+	  }
+
+	  #expect(importedMed.clinicalName == originalMed.clinicalName,
+		"Medication \(originalMed.id): Clinical name mismatch")
+	  #expect(importedMed.nickname == originalMed.nickname,
+		"Medication \(originalMed.id): Nickname mismatch")
+	  #expect(importedMed.quantity == originalMed.quantity,
+		"Medication \(originalMed.id): Quantity mismatch")
+	  #expect(importedMed.prescribedDoseAmount == originalMed.prescribedDoseAmount,
+		"Medication \(originalMed.id): Prescribed dose amount mismatch")
+
+	  // Compare dates with tolerance for JSON serialization
+	  if let originalRefill = originalMed.lastRefillDate, let importedRefill = importedMed.lastRefillDate {
+		#expect(abs(originalRefill.timeIntervalSince1970 - importedRefill.timeIntervalSince1970) < 1.0,
+		  "Medication \(originalMed.id): Last refill date mismatch")
+	  } else {
+		#expect(originalMed.lastRefillDate == nil && importedMed.lastRefillDate == nil,
+		  "Medication \(originalMed.id): Last refill date nil mismatch")
+	  }
+
+	  if let originalNext = originalMed.nextRefillDate, let importedNext = importedMed.nextRefillDate {
+		#expect(abs(originalNext.timeIntervalSince1970 - importedNext.timeIntervalSince1970) < 1.0,
+		  "Medication \(originalMed.id): Next refill date mismatch")
+	  } else {
+		#expect(originalMed.nextRefillDate == nil && importedMed.nextRefillDate == nil,
+		  "Medication \(originalMed.id): Next refill date nil mismatch")
+	  }
+	}
+
+	// Verify each event in detail
+	for originalEvent in allEvents {
+	  guard let importedEvent = dataStore.events.first(where: { $0.id == originalEvent.id }) else {
+		#expect(Bool(false), "Event \(originalEvent.id) not found after import")
+		continue
+	  }
+
+	  #expect(importedEvent.eventType == originalEvent.eventType,
+		"Event \(originalEvent.id): Event type mismatch")
+	  #expect(importedEvent.note == originalEvent.note,
+		"Event \(originalEvent.id): Note mismatch")
+
+	  // Verify medication reference
+	  if let originalMed = originalEvent.medication, let importedMed = importedEvent.medication {
+		#expect(importedMed.id == originalMed.id,
+		  "Event \(originalEvent.id): Medication ID mismatch")
+		#expect(importedMed.clinicalName == originalMed.clinicalName,
+		  "Event \(originalEvent.id): Medication clinical name mismatch")
+	  } else {
+		#expect(originalEvent.medication == nil && importedEvent.medication == nil,
+		  "Event \(originalEvent.id): Medication reference nil mismatch")
+	  }
+
+	  // Verify dose
+	  if let originalDose = originalEvent.dose, let importedDose = importedEvent.dose {
+		#expect(importedDose.amount == originalDose.amount,
+		  "Event \(originalEvent.id): Dose amount mismatch")
+	  } else {
+		#expect(originalEvent.dose == nil && importedEvent.dose == nil,
+		  "Event \(originalEvent.id): Dose nil mismatch")
+	  }
+
+	  // Verify date with tolerance
+	  #expect(abs(importedEvent.date.timeIntervalSince1970 - originalEvent.date.timeIntervalSince1970) < 1.0,
+		"Event \(originalEvent.id): Date mismatch")
+	}
+
+	// Verify relationships: all events should reference valid medications
+	for event in dataStore.events {
+	  if let eventMedication = event.medication {
+		guard let matchingMed = dataStore.medications.first(where: { $0.id == eventMedication.id }) else {
+		  #expect(Bool(false), "Event \(event.id) references non-existent medication \(eventMedication.id)")
+		  continue
+		}
+		#expect(matchingMed.clinicalName == eventMedication.clinicalName,
+		  "Event \(event.id) medication reference has mismatched clinical name")
+	  }
+	}
   }
 }
