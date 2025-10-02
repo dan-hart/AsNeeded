@@ -42,7 +42,11 @@ public enum UserDefaultsKeys {
 	// MARK: - Typography Settings
 	/// Selected font family for app-wide text display
 	static let selectedFontFamily = "selectedFontFamily"
-	
+
+	// MARK: - Feature Toggles
+	/// Feature toggle for quick note phrases
+	static let featureToggleQuickPhrases = "featureToggle.quickPhrases"
+
 	// MARK: - All Keys
 	/// Array of all UserDefaults keys for iteration/testing
 	public static let allKeys: [String] = [
@@ -56,7 +60,8 @@ public enum UserDefaultsKeys {
 		trendsVisualizationType,
 		hideSupportBanners,
 		showMedicationNamesInNotifications,
-		selectedFontFamily
+		selectedFontFamily,
+		featureToggleQuickPhrases
 	]
 	
 	// MARK: - Default Values
@@ -69,7 +74,8 @@ public enum UserDefaultsKeys {
 		trendsVisualizationType: 0, // Chart view
 		hideSupportBanners: false,
 		showMedicationNamesInNotifications: false,
-		selectedFontFamily: "system" // Default to system font
+		selectedFontFamily: "system", // Default to system font
+		featureToggleQuickPhrases: false // Feature toggles default to OFF
 	]
 	
 	// MARK: - Keys to Remove

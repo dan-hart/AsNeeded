@@ -33,6 +33,54 @@
     - Navigation Titles: Use `.customNavigationTitle("Title")` modifier for inline titles (large titles handled automatically by NavigationBarAppearanceManager)
   - **Performance**: The app uses `NavigationBarAppearanceManager` for global navigation bar fonts and caches font instances for performance
 - **Component Reusability**: ALWAYS search for existing reusable components in `AsNeeded/Views/Components/` before creating new UI elements. If a similar pattern exists, use or extend the existing component. When creating new views, prioritize making them reusable by extracting common UI patterns into standalone components. Examples: `SettingsRowComponent`, `SupportToastView`, `FeedbackButtonsView`. Create components for any UI pattern used in 2+ places.
+
+## UI Patterns
+
+### Sticky Bottom Buttons
+For important actions (save, submit, log), use a sticky button pattern at the bottom of views instead of toolbar buttons:
+- **Structure**: `VStack(spacing: 0)` containing scrollable content and sticky button container
+- **Button container**: Includes `Divider()` with `.separator.opacity(0.5)` and button with appropriate padding
+- **Background**: `.regularMaterial` for the button container
+- **Examples**: LogDoseView, ColorPickerComponent, ExpandableNoteEditorComponent, MedicationHistoryView note editing
+- **Benefits**: Primary action always visible, better accessibility, consistent across screen sizes
+
+### Keyboard Focus in Sheets
+When presenting sheets with text input that should auto-focus:
+- Use `@FocusState` with the text field
+- **Preferred**: Use `TextField` with `.axis(.vertical)` instead of `TextEditor` for better focus reliability
+- Apply focus with 0.3s delay using both approaches for redundancy:
+  - `.onChange(of: isPresented)` in the parent view
+  - `.task` modifier in the sheet content
+- Example:
+  ```swift
+  .onChange(of: isExpanded) { _, newValue in
+      if newValue {
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+              focusState = true
+          }
+      }
+  }
+  ```
+- This minimal delay accounts for sheet presentation animation
+
+## Feature Toggle System
+
+The app includes a feature toggle system for managing experimental or debug features:
+- **FeatureToggleManager**: Centralized manager (`AsNeeded/Services/FeatureToggleManager.swift`)
+- **Debug-only**: Feature toggles are only available in DEBUG builds
+- **Settings UI**: Toggle switches appear in Settings > Debug section
+- **Default OFF**: All experimental features default to OFF
+- **Current toggles**:
+  - `quickPhrasesEnabled`: Shows/hides quick phrase suggestions in note editor
+
+To add a new feature toggle:
+1. Add property to FeatureToggleManager: `@AppStorage("featureToggle.myFeature") var myFeatureEnabled: Bool = false`
+2. Add key to UserDefaultsKeys constants
+3. Add UI toggle in SettingsDebugSectionView
+4. Check toggle in your component: `if featureToggleManager.myFeatureEnabled { ... }`
+
+## Code Style
+
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
 - Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
 - Protocol‑oriented services; inject dependencies for testability.

@@ -17,6 +17,7 @@ struct MedicationHistoryView: View {
     @State private var selectedEventNote: String?
     @State private var editingEvent: ANEventConcept?
     @State private var editingNoteText: String = ""
+    @FocusState private var isNoteFieldFocused: Bool
     @State private var editingEntryEvent: ANEventConcept?
     @State private var editingEntryDate: Date = Date()
 
@@ -118,44 +119,29 @@ struct MedicationHistoryView: View {
                                     }
                                     Spacer()
 
-                                    // Show add note button if no note exists
+                                    // Show add note button on trailing side if no note exists
                                     if event.note?.isEmpty != false {
-                                        Button {
-                                            editingEvent = event
-                                            editingNoteText = ""
-                                        } label: {
-                                            HStack(spacing: spacing4) {
-                                                Text("Add Note")
-                                                Image(systemSymbol: .squareAndPencil)
-                                                    .font(.caption)
+                                        AddNoteButtonComponent(
+                                            medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
+                                            onTap: {
+                                                editingEvent = event
+                                                editingNoteText = ""
                                             }
-                                            .font(.subheadline)
-                                            .foregroundStyle(viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
-                                            .padding(.vertical, paddingVertical8)
-                                            .padding(.horizontal, paddingHorizontal12)
-                                        }
-                                        .buttonStyle(.plain)
-                                        .contentShape(Rectangle())
+                                        )
                                     }
                                 }
 
-                                // Show note below if it exists
+                                // Show enhanced note display below if it exists
                                 if let note = event.note, !note.isEmpty {
-                                    Text(note)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.primary)
-                                        .padding(.horizontal, paddingHorizontal12)
-                                        .padding(.vertical, paddingVertical8)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: cornerRadius8)
-                                                .fill(Color(.tertiarySystemGroupedBackground))
-                                        )
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
+                                    NoteDisplayCardComponent(
+                                        noteText: note,
+                                        medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
+                                        onEdit: {
                                             editingEvent = event
                                             editingNoteText = event.note ?? ""
                                         }
+                                    )
+                                    .padding(.top, spacing4)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -449,28 +435,86 @@ struct MedicationHistoryView: View {
             }
             .sheet(item: $editingEvent) { event in
                     NavigationStack {
-                        Form {
-                            Section(header: Text("Event Details").font(.customFont(fontFamily, style: .subheadline))) {
-                                HStack {
-                                    Text("Date")
-                                    Spacer()
-                                    Text(event.date.formatted(date: .abbreviated, time: .shortened))
-                                        .foregroundStyle(.secondary)
-                                }
-                                if let dose = event.dose {
+                        VStack(spacing: 0) {
+                            Form {
+                                Section(header: Text("Event Details").font(.customFont(fontFamily, style: .subheadline))) {
                                     HStack {
-                                        Text("Dose")
+                                        Text("Date")
                                         Spacer()
-                                        Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
+                                        Text(event.date.formatted(date: .abbreviated, time: .shortened))
                                             .foregroundStyle(.secondary)
+                                    }
+                                    if let dose = event.dose {
+                                        HStack {
+                                            Text("Dose")
+                                            Spacer()
+                                            Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+
+                                Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
+                                    // Use enhanced note editor for consistency
+                                    VStack {
+                                        NoteQuickPhrasesComponent(
+                                            noteText: $editingNoteText,
+                                            medicationName: viewModel.selectedMedication?.displayName
+                                        )
+                                        .padding(.vertical, paddingVertical8)
+
+                                        TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
+                                            .lineLimit(4...8)
+                                            .font(.customFont(fontFamily, style: .body))
+                                            .focused($isNoteFieldFocused)
                                     }
                                 }
                             }
-                            
-                            Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
-                                TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
-                                    .lineLimit(4...8)
+                            .scrollDismissesKeyboard(.interactively)
+
+                            // Sticky save button container
+                            VStack(spacing: 0) {
+                                Divider()
+                                    .background(.separator.opacity(0.5))
+
+                                Button(action: {
+                                    if let event = editingEvent {
+                                        Task {
+                                            let trimmedNote = editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            var updatedEvent = event
+                                            updatedEvent.note = trimmedNote.isEmpty ? nil : trimmedNote
+                                            await viewModel.updateEvent(updatedEvent)
+                                            editingEvent = nil
+                                            editingNoteText = ""
+                                        }
+                                    }
+                                }) {
+                                    HStack(spacing: spacing8) {
+                                        Image(systemSymbol: .checkmarkCircle)
+                                            .font(.customFont(fontFamily, style: .body))
+                                        Text("Save Note")
+                                            .font(.customFont(fontFamily, style: .headline))
+                                    }
+                                    .foregroundStyle(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(LinearGradient(
+                                                colors: [
+                                                    viewModel.selectedMedication?.displayColor ?? .accent,
+                                                    (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.9)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ))
+                                            .shadow(color: (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.3), radius: 4, x: 0, y: 2)
+                                    )
+                                }
+                                .padding(.horizontal, paddingHorizontal24)
+                                .padding(.vertical, paddingVertical12)
                             }
+                            .background(.regularMaterial)
                         }
                         .navigationTitle("Edit Note")
                         .navigationBarTitleDisplayMode(.inline)
@@ -482,25 +526,15 @@ struct MedicationHistoryView: View {
                                 }
                                 .font(.customFont(fontFamily, style: .body))
                             }
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("Save") {
-                                    if let event = editingEvent {
-                                        Task {
-                                            let trimmedNote = editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                            var updatedEvent = event
-                                            updatedEvent.note = trimmedNote.isEmpty ? nil : trimmedNote
-                                            await viewModel.updateEvent(updatedEvent)
-                                            editingEvent = nil
-                                            editingNoteText = ""
-                                        }
-                                    }
-                                }
-                                .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                                .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                            }
                         }
                     }
-                    .dynamicDetent()
+                    .presentationDetents([.large])
+                    .onAppear {
+                        // Auto-focus the note field when sheet opens - increased delay for reliability
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                            isNoteFieldFocused = true
+                        }
+                    }
                 }
             }
             .onAppear {
