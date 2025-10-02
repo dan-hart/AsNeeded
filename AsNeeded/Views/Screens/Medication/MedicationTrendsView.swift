@@ -171,11 +171,30 @@ struct MedicationTrendsView: View {
 			return "~\(days)d remaining"
 		}()
 
+		// Usage progress text (optional - only if initialQuantity is available)
+		let usageText: String = viewModel.usageProgressText ?? "—"
+
+		// Refill cycle status (optional)
+		let cycleStatusText: String = viewModel.refillCycleStatusText
+
 		LazyVGrid(columns: [GridItem(.flexible(), spacing: spacing12), GridItem(.flexible(), spacing: spacing12)], spacing: spacing12) {
 			metricCard(title: "Avg (7d)", value: avgText, systemImage: .chartLineUptrendXyaxis)
 			metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
+
+			// Show usage progress card ONLY if initialQuantity is available
+			if viewModel.usagePercentage != nil {
+				metricCard(title: "Usage", value: usageText, systemImage: .chartPieFill)
+					.accessibilityLabel("Medication usage progress: \(usageText)")
+			}
+
 			metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
 			metricCard(title: "Run-out ETA", value: etaText, systemImage: .hourglass)
+
+			// Show refill status card ONLY if we have the needed data
+			if viewModel.refillCycleStatus != .unknown {
+				metricCard(title: "Refill Status", value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
+					.accessibilityLabel("Refill cycle status: \(cycleStatusText)")
+			}
 		}
 	}
 

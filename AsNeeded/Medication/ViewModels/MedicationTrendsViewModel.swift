@@ -143,7 +143,89 @@ final class MedicationTrendsViewModel: ObservableObject {
 		guard avg > 0 else { return nil }
 		return Int((qty / avg).rounded())
 	}
-	
+
+	// MARK: - Usage Progress Metrics
+
+	/// Returns the percentage of medication used (0-100) if both initial and current quantities are available
+	var usagePercentage: Double? {
+		guard let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  initial > 0 else {
+			return nil
+		}
+		let used = initial - current
+		return max(0, min(100, (used / initial) * 100))
+	}
+
+	/// Returns a formatted string representing usage (e.g., "50% used (30/60 pills)")
+	var usageProgressText: String? {
+		guard let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  let percentage = usagePercentage,
+			  let unit = preferredUnit else {
+			return nil
+		}
+		let used = initial - current
+		return String(format: "%.0f%% used (%.0f/%.0f %@)",
+					  percentage, used, initial, unit.abbreviation)
+	}
+
+	/// Enum representing whether usage is on track with refill schedule
+	enum RefillCycleStatus {
+		case onTrack
+		case ahead // Using slower than expected
+		case behind // Using faster than expected
+		case unknown
+	}
+
+	/// Compares usage rate to refill schedule and returns status
+	var refillCycleStatus: RefillCycleStatus {
+		// Need both dates and quantities
+		guard let lastRefill = selectedMedication?.lastRefillDate,
+			  let nextRefill = selectedMedication?.nextRefillDate,
+			  let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  initial > 0 else {
+			return .unknown
+		}
+
+		let now = Date()
+		let totalCycleDays = calendar.dateComponents([.day], from: lastRefill, to: nextRefill).day ?? 0
+		let daysElapsed = calendar.dateComponents([.day], from: lastRefill, to: now).day ?? 0
+
+		guard totalCycleDays > 0, daysElapsed > 0 else { return .unknown }
+
+		// Calculate expected vs actual usage
+		let timeProgress = Double(daysElapsed) / Double(totalCycleDays)
+		let usedAmount = initial - current
+		let usageProgress = usedAmount / initial
+
+		// Allow 10% tolerance
+		let tolerance = 0.10
+
+		if abs(usageProgress - timeProgress) <= tolerance {
+			return .onTrack
+		} else if usageProgress < timeProgress {
+			return .ahead // Using slower
+		} else {
+			return .behind // Using faster
+		}
+	}
+
+	/// Returns a user-friendly description of refill cycle status
+	var refillCycleStatusText: String {
+		switch refillCycleStatus {
+		case .onTrack:
+			return String(localized: "On track")
+		case .ahead:
+			return String(localized: "Using slower than schedule")
+		case .behind:
+			return String(localized: "Using faster than schedule")
+		case .unknown:
+			return "—"
+		}
+	}
+
 	// Calendar heatmap data for the last N days
 	func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
 		guard let unit = preferredUnit else { return [] }

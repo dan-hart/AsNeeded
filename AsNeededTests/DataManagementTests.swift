@@ -27,6 +27,7 @@ struct DataManagementTests {
 	  clinicalName: "Test Medication",
 	  nickname: "Test Med",
 	  quantity: 30.0,
+	  initialQuantity: 60.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1640995200), // 2022-01-01
 	  nextRefillDate: Date(timeIntervalSince1970: 1643673600), // 2022-02-01
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -520,6 +521,7 @@ struct DataManagementTests {
 	  clinicalName: "Acetaminophen",
 	  nickname: "Tylenol",
 	  quantity: 100.0,
+	  initialQuantity: 200.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
 	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -531,6 +533,7 @@ struct DataManagementTests {
 	  clinicalName: "Ibuprofen",
 	  nickname: nil, // No nickname
 	  quantity: 50.0,
+	  initialQuantity: 100.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1641081600),
 	  nextRefillDate: nil, // No next refill
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -542,6 +545,7 @@ struct DataManagementTests {
 	  clinicalName: "Spéciäl Médication with Ünîcødé 💊",
 	  nickname: "Émoji Med! @#$%",
 	  quantity: nil, // No quantity tracked
+	  initialQuantity: 30.0,
 	  lastRefillDate: nil,
 	  nextRefillDate: nil,
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -553,6 +557,7 @@ struct DataManagementTests {
 	  clinicalName: "Minimal Medication",
 	  nickname: nil,
 	  quantity: nil,
+	  initialQuantity: nil,
 	  lastRefillDate: nil,
 	  nextRefillDate: nil,
 	  prescribedUnit: nil,
@@ -564,6 +569,7 @@ struct DataManagementTests {
 	  clinicalName: "Full Specification Medication",
 	  nickname: "Full Spec",
 	  quantity: 90.0,
+	  initialQuantity: 180.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1642291200),
 	  nextRefillDate: Date(timeIntervalSince1970: 1644883200),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -575,6 +581,7 @@ struct DataManagementTests {
 	  clinicalName: "Test \"Quotes\" and 'Apostrophes'",
 	  nickname: "Punctuation",
 	  quantity: 30.0,
+	  initialQuantity: 60.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
 	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -586,6 +593,7 @@ struct DataManagementTests {
 	  clinicalName: "Low Dose Medication",
 	  nickname: "Low",
 	  quantity: 15.0,
+	  initialQuantity: 30.0,
 	  lastRefillDate: nil,
 	  nextRefillDate: Date(timeIntervalSince1970: 1650000000),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -597,6 +605,7 @@ struct DataManagementTests {
 	  clinicalName: "High Dose Medication",
 	  nickname: "High",
 	  quantity: 200.0,
+	  initialQuantity: 300.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1640995200),
 	  nextRefillDate: Date(timeIntervalSince1970: 1643673600),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -608,6 +617,7 @@ struct DataManagementTests {
 	  clinicalName: "Recent Medication",
 	  nickname: "Recent",
 	  quantity: 60.0,
+	  initialQuantity: 120.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1700000000),
 	  nextRefillDate: Date(timeIntervalSince1970: 1705000000),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -619,6 +629,7 @@ struct DataManagementTests {
 	  clinicalName: "Old Medication",
 	  nickname: "Old",
 	  quantity: 5.0,
+	  initialQuantity: 10.0,
 	  lastRefillDate: Date(timeIntervalSince1970: 1600000000),
 	  nextRefillDate: Date(timeIntervalSince1970: 1605000000),
 	  prescribedUnit: ANUnitConcept.milligram,
@@ -828,6 +839,8 @@ struct DataManagementTests {
 		"Medication \(originalMed.id): Clinical name mismatch")
 	  #expect(importedMed.nickname == originalMed.nickname,
 		"Medication \(originalMed.id): Nickname mismatch")
+	  #expect(importedMed.initialQuantity == originalMed.initialQuantity,
+		"Medication \(originalMed.id): Initial quantity mismatch")
 	  #expect(importedMed.quantity == originalMed.quantity,
 		"Medication \(originalMed.id): Quantity mismatch")
 	  #expect(importedMed.prescribedDoseAmount == originalMed.prescribedDoseAmount,

@@ -11,6 +11,7 @@ final class MedicationEditViewModel: ObservableObject {
 	// Form fields
 	@Published var clinicalName: String
 	@Published var nickname: String
+	@Published var initialQuantityText: String
 	@Published var quantityText: String
 	@Published var lastRefillDate: Date?
 	@Published var nextRefillDate: Date?
@@ -25,6 +26,7 @@ final class MedicationEditViewModel: ObservableObject {
 		self.existingID = medication?.id
 		self.clinicalName = medication?.clinicalName ?? ""
 		self.nickname = medication?.nickname ?? ""
+		self.initialQuantityText = medication?.initialQuantity.map { String(describing: $0) } ?? ""
 		self.quantityText = medication?.quantity.map { String(describing: $0) } ?? ""
 		// Set dates from existing medication or nil for new medication
 		if let medication = medication {
@@ -57,6 +59,7 @@ final class MedicationEditViewModel: ObservableObject {
 	}
 
 	func buildMedication() -> ANMedicationConcept {
+		let initialQuantity = Double(initialQuantityText.trimmingCharacters(in: .whitespacesAndNewlines))
 		let quantity = Double(quantityText.trimmingCharacters(in: .whitespacesAndNewlines))
 		let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
 		let amount = (Double(doseText).flatMap { $0 > 0 ? $0 : nil })
@@ -66,6 +69,7 @@ final class MedicationEditViewModel: ObservableObject {
 			clinicalName: clinicalName.trimmingCharacters(in: .whitespacesAndNewlines),
 			nickname: nickname.trimmingCharacters(in: .whitespacesAndNewlines),
 			quantity: quantity,
+			initialQuantity: initialQuantity,
 			displayColorHex: displayColorHex,
 			lastRefillDate: lastRefillDate,
 			nextRefillDate: nextRefillDate,

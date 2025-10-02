@@ -194,24 +194,32 @@ struct MedicationRowComponent: View {
 		VStack(alignment: .leading, spacing: 6) {
 			// Quantity Badge
 			if let quantity = medication.quantity {
-				HStack(spacing: 6) {
-					Image(systemSymbol: .squareStack3dUp)
-						.font(.caption2.weight(.semibold))
-						.foregroundStyle(quantityColor(for: quantity))
-						.accessibilityHidden(true)
+				VStack(alignment: .leading, spacing: 4) {
+					HStack(spacing: 6) {
+						Image(systemSymbol: .squareStack3dUp)
+							.font(.caption2.weight(.semibold))
+							.foregroundStyle(quantityColor(for: quantity))
+							.accessibilityHidden(true)
 
-					Text(quantityText(for: quantity))
-						.font(.customFont(fontFamily, style: .caption, weight: .semibold))
-						.fontDesign(.rounded)
-						.foregroundStyle(quantityColor(for: quantity))
+						Text(quantityText(for: quantity))
+							.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+							.fontDesign(.rounded)
+							.foregroundStyle(quantityColor(for: quantity))
+					}
+					.padding(.horizontal, 10)
+					.padding(.vertical, 5)
+					.background(
+						Capsule()
+							.fill(quantityColor(for: quantity).opacity(0.12))
+					)
+					.accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+
+					// Usage Progress Bar (only if initialQuantity is available)
+					if let usagePercentage = usagePercentage {
+						usageProgressBar(percentage: usagePercentage)
+							.accessibilityLabel("Usage progress: \(Int(usagePercentage))% used")
+					}
 				}
-				.padding(.horizontal, 10)
-				.padding(.vertical, 5)
-				.background(
-					Capsule()
-						.fill(quantityColor(for: quantity).opacity(0.12))
-				)
-				.accessibilityLabel("Quantity: \(quantityText(for: quantity))")
 			}
 		}
 	}
@@ -308,6 +316,49 @@ struct MedicationRowComponent: View {
 	}
 
 	// MARK: - Helper Methods
+
+	/// Calculates the percentage of medication used (0-100) if both quantities are available
+	private var usagePercentage: Double? {
+		guard let initial = medication.initialQuantity,
+			  let current = medication.quantity,
+			  initial > 0 else {
+			return nil
+		}
+		let used = initial - current
+		return max(0, min(100, (used / initial) * 100))
+	}
+
+	/// Creates a thin progress bar showing usage percentage
+	@ViewBuilder
+	private func usageProgressBar(percentage: Double) -> some View {
+		GeometryReader { geometry in
+			ZStack(alignment: .leading) {
+				// Background track
+				Capsule()
+					.fill(Color(.tertiarySystemFill))
+					.frame(height: 4)
+
+				// Progress fill
+				Capsule()
+					.fill(progressBarColor(for: percentage))
+					.frame(width: geometry.size.width * (percentage / 100), height: 4)
+			}
+		}
+		.frame(height: 4)
+		.padding(.horizontal, 10)
+	}
+
+	/// Returns color for progress bar based on percentage used
+	private func progressBarColor(for percentage: Double) -> Color {
+		if percentage < 33 {
+			return .green
+		} else if percentage < 66 {
+			return .orange
+		} else {
+			return .red
+		}
+	}
+
 	private func quantityColor(for quantity: Double) -> Color {
 		if quantity < 10 {
 			return .red
@@ -402,6 +453,7 @@ struct MedicationRowComponent: View {
 			clinicalName: "Lisinopril",
 			nickname: "Blood Pressure",
 			quantity: 28.5,
+			initialQuantity: 90.0,
 			lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
 			nextRefillDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
 			prescribedUnit: .tablet,
@@ -414,6 +466,7 @@ struct MedicationRowComponent: View {
 			clinicalName: "Albuterol Inhaler",
 			nickname: "Rescue Inhaler",
 			quantity: 5,
+			initialQuantity: 60,
 			lastRefillDate: Calendar.current.date(byAdding: .day, value: -30, to: Date()),
 			nextRefillDate: Calendar.current.date(byAdding: .day, value: -5, to: Date()),
 			prescribedUnit: .puff,
@@ -426,6 +479,7 @@ struct MedicationRowComponent: View {
 			clinicalName: "Vitamin D3",
 			nickname: "",
 			quantity: 45,
+			initialQuantity: 60,
 			lastRefillDate: Calendar.current.date(byAdding: .day, value: -10, to: Date()),
 			nextRefillDate: Calendar.current.date(byAdding: .day, value: 20, to: Date()),
 			prescribedUnit: .tablet,
@@ -442,6 +496,7 @@ struct MedicationRowComponent: View {
 		clinicalName: "Lisinopril",
 		nickname: "Blood Pressure Med",
 		quantity: 15,
+		initialQuantity: 30,
 		prescribedUnit: .tablet,
 		prescribedDoseAmount: 10.0
 	)) {
