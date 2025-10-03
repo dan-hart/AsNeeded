@@ -405,7 +405,7 @@ struct MedicationHistoryView: View {
                                 scrollTarget = Calendar.current.startOfDay(for: selectedDate)
                                 showDatePicker = false
                             } label: {
-                                Image(systemSymbol: .checkmark)
+                                Image(systemSymbol: .checkmarkCircleFill)
                                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                                     .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                             }
@@ -638,7 +638,7 @@ struct MedicationHistoryView: View {
                                 }
                             }
                         } label: {
-                            Image(systemSymbol: .checkmark)
+                            Image(systemSymbol: .checkmarkCircleFill)
                                 .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                                 .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
                         }

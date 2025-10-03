@@ -479,7 +479,7 @@ struct MedicationEditView: View {
 					Button {
 						showingDatePicker = false
 					} label: {
-						Image(systemSymbol: .checkmark)
+						Image(systemSymbol: .checkmarkCircleFill)
 							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 							.foregroundStyle(Color.accentColor)
 					}
@@ -549,7 +549,7 @@ struct MedicationEditView: View {
 						Button {
 							performSave()
 						} label: {
-							Image(systemSymbol: .checkmark)
+							Image(systemSymbol: .checkmarkCircleFill)
 								.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 						}
 						.disabled(!isFormValid)
