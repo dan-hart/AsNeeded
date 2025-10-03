@@ -29,6 +29,8 @@ import SFSafeSymbols
 struct MedicationRowComponent: View {
 	let medication: ANMedicationConcept
 	var onLogTapped: () -> Void = {}
+	var onQuickLog: (() async -> Bool)? = nil  // Quick log with default dose
+	var onQuickLogSuccess: (() -> Void)? = nil  // Called when quick log succeeds to show toast
 	var onAppearanceChanged: ((String?, String?) -> Void)? = nil
 
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -36,10 +38,14 @@ struct MedicationRowComponent: View {
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.fontFamily) private var fontFamily
 	@State private var isPressed = false
+	@State private var isLongPressing = false
+	@State private var longPressWorkItem: DispatchWorkItem?
+	@State private var hasTriggeredQuickLog = false
 	@State private var showingAppearancePicker = false
 	@State private var tempSelectedColor: String?
 	@State private var tempSelectedSymbol: String?
 	private let hapticsManager = HapticsManager.shared
+	private let longPressDuration: TimeInterval = 0.5
 
 	@ScaledMetric private var rowPadding: CGFloat = 16
 	@ScaledMetric private var iconContentSpacing: CGFloat = 14
@@ -211,17 +217,7 @@ struct MedicationRowComponent: View {
 	}
 
 	private var enhancedLogButton: some View {
-		Button(action: {
-			withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-				isPressed = true
-			}
-			hapticsManager.mediumImpact()
-			onLogTapped()
-
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-				isPressed = false
-			}
-		}) {
+		Group {
 			if dynamicTypeSize.isAccessibilitySize {
 				// Full width button for accessibility
 				HStack(spacing: 10) {
@@ -293,12 +289,73 @@ struct MedicationRowComponent: View {
 							lineWidth: 1
 						)
 				)
-				.scaleEffect(isPressed ? 0.95 : 1.0)
+				.scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
 			}
 		}
-		.buttonStyle(.plain)
+		.contentShape(Rectangle())
+		.highPriorityGesture(
+			DragGesture(minimumDistance: 0)
+				.onChanged { _ in
+					// Only set up the timer on first change event
+					if longPressWorkItem == nil {
+						// Visual feedback - press started
+						withAnimation(.easeInOut(duration: 0.1)) {
+							isPressed = true
+						}
+
+						// Schedule long press action to fire at exact threshold
+						let workItem = DispatchWorkItem { [self] in
+							guard !hasTriggeredQuickLog else { return }
+
+							// Trigger quick log immediately when threshold reached
+							hasTriggeredQuickLog = true
+							withAnimation(.easeInOut(duration: 0.1)) {
+								isLongPressing = true
+							}
+							hapticsManager.heavyImpact()
+
+							// Execute quick log
+							if let quickLog = onQuickLog {
+								Task {
+									let success = await quickLog()
+									if success {
+										await MainActor.run {
+											// Notify parent to show toast
+											onQuickLogSuccess?()
+										}
+									}
+								}
+							}
+						}
+
+						longPressWorkItem = workItem
+						DispatchQueue.main.asyncAfter(deadline: .now() + longPressDuration, execute: workItem)
+					}
+				}
+				.onEnded { _ in
+					// Cancel scheduled long press if it hasn't fired yet
+					longPressWorkItem?.cancel()
+					longPressWorkItem = nil
+
+					// Reset visual states
+					withAnimation(.easeInOut(duration: 0.1)) {
+						isPressed = false
+						isLongPressing = false
+					}
+
+					// Only trigger tap action if it was a short press (long press wasn't triggered)
+					if !hasTriggeredQuickLog {
+						// Short press - show log sheet
+						hapticsManager.mediumImpact()
+						onLogTapped()
+					}
+
+					// Reset for next interaction
+					hasTriggeredQuickLog = false
+				}
+		)
 		.accessibilityLabel("Log dose for \(medication.displayName)")
-		.accessibilityHint("Opens dose logging for this medication")
+		.accessibilityHint("Tap to customize dose, hold to log default dose")
 	}
 
 	// MARK: - Helper Methods

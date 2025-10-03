@@ -43,22 +43,23 @@ struct SymbolPickerComponent: View {
 
 	@State private var searchText = ""
 	@State private var selectedCategory = SymbolCategory.medical
+	@State private var isSearching = false
 	@FocusState private var searchFieldFocused: Bool
 
 	private let hapticsManager = HapticsManager.shared
 	private let logger = DHLogger.ui
 
-	// Scaled metrics for Dynamic Type support
-	@ScaledMetric private var mainSpacing: CGFloat = 20
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var gridSpacing: CGFloat = 16
-	@ScaledMetric private var symbolSize: CGFloat = 44
-	@ScaledMetric private var previewSymbolSize: CGFloat = 60
-	@ScaledMetric private var categoryPadding: CGFloat = 8
-	@ScaledMetric private var contentPadding: CGFloat = 20
-	@ScaledMetric private var searchBarHeight: CGFloat = 44
-	@ScaledMetric private var saveButtonPadding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
+	// Scaled metrics for Dynamic Type support - Reduced for better space usage
+	@ScaledMetric private var mainSpacing: CGFloat = 12
+	@ScaledMetric private var headerSpacing: CGFloat = 10
+	@ScaledMetric private var gridSpacing: CGFloat = 12
+	@ScaledMetric private var symbolSize: CGFloat = 40
+	@ScaledMetric private var previewSymbolSize: CGFloat = 48
+	@ScaledMetric private var categoryPadding: CGFloat = 6
+	@ScaledMetric private var contentPadding: CGFloat = 16
+	@ScaledMetric private var searchBarHeight: CGFloat = 36
+	@ScaledMetric private var saveButtonPadding: CGFloat = 14
+	@ScaledMetric private var cornerRadius: CGFloat = 10
 
 	enum SymbolCategory: String, CaseIterable {
 		case medical = "Medical"
@@ -123,25 +124,17 @@ struct SymbolPickerComponent: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-			// Header with search
-			VStack(spacing: mainSpacing) {
-				headerSection
-				searchBar
-				categoryPicker
+			// Compact header with inline search and categories
+			if !isSearching {
+				compactHeader
 			}
-			.padding(.horizontal, contentPadding)
-			.padding(.top, categoryPadding)
 
-			// Scrollable symbol grid
+			// Scrollable content
 			ScrollView {
-				VStack(alignment: .leading, spacing: mainSpacing) {
-					// Preview section if symbol is selected
-					if let symbol = selectedSymbol {
-						previewSection(symbol: symbol)
-					}
-
-					// Symbol grid
+				VStack(spacing: mainSpacing) {
+					// Show grid directly, no preview section taking space
 					symbolGrid
+						.padding(.top, isSearching ? mainSpacing : 0)
 				}
 				.padding(.horizontal, contentPadding)
 				.padding(.vertical, categoryPadding)
@@ -160,6 +153,12 @@ struct SymbolPickerComponent: View {
 				.background(.regularMaterial)
 			}
 		}
+		.searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search symbols")
+		.onChange(of: searchText) { _, newValue in
+			withAnimation(.easeInOut(duration: 0.2)) {
+				isSearching = !newValue.isEmpty
+			}
+		}
 		.onAppear {
 			// Focus search field after a delay for smooth sheet presentation
 			if !reduceMotion {
@@ -172,63 +171,41 @@ struct SymbolPickerComponent: View {
 
 	// MARK: - View Components
 
-	private var headerSection: some View {
-		HStack(spacing: headerSpacing) {
-			Image(systemSymbol: .squareGrid3x3Fill)
-				.font(.customFont(fontFamily, style: .title2))
-				.foregroundStyle(
-					LinearGradient(
-						colors: [medicationColor, medicationColor.opacity(0.7)],
-						startPoint: .topLeading,
-						endPoint: .bottomTrailing
-					)
-				)
-
-			Text("Choose Symbol")
-				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
-
-			Spacer()
-		}
-		.accessibilityElement(children: .combine)
-		.accessibilityLabel("Choose a symbol for your medication")
-	}
-
-	private var searchBar: some View {
-		HStack(spacing: headerSpacing) {
-			Image(systemSymbol: .magnifyingglass)
-				.font(.customFont(fontFamily, style: .body))
-				.foregroundStyle(.secondary)
-
-			TextField("Search Symbols", text: $searchText)
-				.font(.customFont(fontFamily, style: .body))
-				.textFieldStyle(.plain)
-				.focused($searchFieldFocused)
-				.submitLabel(.search)
-				.autocorrectionDisabled()
-				.textInputAutocapitalization(.never)
-
-			if !searchText.isEmpty {
-				Button {
-					searchText = ""
-					hapticsManager.lightImpact()
-				} label: {
-					Image(systemSymbol: .xmarkCircleFill)
+	private var compactHeader: some View {
+		VStack(spacing: categoryPadding) {
+			// Mini header with selected symbol indicator
+			HStack(spacing: headerSpacing) {
+				if let symbol = selectedSymbol {
+					// Show selected symbol inline
+					Image(systemName: symbol)
+						.font(.customFont(fontFamily, style: .body))
+						.symbolRenderingMode(.hierarchical)
+						.foregroundStyle(medicationColor)
+						.frame(width: 24, height: 24)
+				} else {
+					Image(systemSymbol: .squareGrid3x3Fill)
 						.font(.customFont(fontFamily, style: .body))
 						.foregroundStyle(.secondary)
+						.frame(width: 24, height: 24)
 				}
-				.buttonStyle(.plain)
+
+				Text(selectedSymbol != nil ? "Symbol Selected" : "Choose Symbol")
+					.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+					.foregroundStyle(.primary)
+
+				Spacer()
 			}
+			.padding(.horizontal, contentPadding)
+			.padding(.top, categoryPadding)
+
+			// Inline category picker with bottom spacing
+			categoryPicker
+				.padding(.horizontal, contentPadding)
+				.padding(.bottom, 10)  // Add space after categories
 		}
-		.padding(.horizontal, headerSpacing)
-		.padding(.vertical, categoryPadding)
-		.background(
-			RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-				.fill(Color(.tertiarySystemFill))
-		)
-		.accessibilityElement(children: .contain)
-		.accessibilityLabel("Search for symbols")
-		.accessibilityHint("Type to search for symbol names")
+		.background(Color(.secondarySystemBackground))
 	}
+
 
 	private var categoryPicker: some View {
 		ScrollView(.horizontal, showsIndicators: false) {
@@ -264,46 +241,6 @@ struct SymbolPickerComponent: View {
 		.accessibilityAddTraits(selectedCategory == category ? [.isSelected] : [])
 	}
 
-	private func previewSection(symbol: String) -> some View {
-		VStack(spacing: headerSpacing) {
-			Text("Preview")
-				.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-				.foregroundStyle(.secondary)
-
-			HStack(spacing: mainSpacing) {
-				// Symbol with medication color
-				ZStack {
-					Circle()
-						.fill(medicationColor.opacity(0.15))
-						.frame(width: previewSymbolSize * 1.5, height: previewSymbolSize * 1.5)
-
-					Image(systemName: symbol)
-						.font(.system(size: previewSymbolSize))
-						.symbolRenderingMode(.hierarchical)
-						.foregroundStyle(medicationColor)
-				}
-
-				VStack(alignment: .leading, spacing: 4) {
-					Text("Symbol: \(symbol)")
-						.font(.customFont(fontFamily, style: .caption))
-						.foregroundStyle(.secondary)
-
-					Text("Tap symbols below to change")
-						.font(.customFont(fontFamily, style: .caption2))
-						.foregroundStyle(.tertiary)
-				}
-
-				Spacer()
-			}
-			.padding()
-			.background(
-				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(Color(.secondarySystemBackground))
-			)
-		}
-		.accessibilityElement(children: .combine)
-		.accessibilityLabel("Preview of selected symbol: \(symbol)")
-	}
 
 	private var symbolGrid: some View {
 		let filteredSymbols = searchText.isEmpty
@@ -311,8 +248,8 @@ struct SymbolPickerComponent: View {
 			: allSymbols.filter { $0.localizedCaseInsensitiveContains(searchText) }
 
 		return LazyVGrid(
-			columns: Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: columnCount),
-			spacing: gridSpacing
+			columns: Array(repeating: GridItem(.flexible(), spacing: adaptiveGridSpacing), count: columnCount),
+			spacing: adaptiveGridSpacing
 		) {
 			ForEach(filteredSymbols, id: \.self) { symbolName in
 				symbolCell(symbolName)
@@ -323,58 +260,59 @@ struct SymbolPickerComponent: View {
 	}
 
 	private func symbolCell(_ symbolName: String) -> some View {
-		Button {
+		let isSelected = selectedSymbol == symbolName
+
+		return Button {
 			selectedSymbol = symbolName
 			onSymbolSelected(symbolName)
 			hapticsManager.lightImpact()
-
-			// Log selection for analytics
 			logger.info("Symbol selected: \(symbolName)")
 		} label: {
-			VStack(spacing: 8) {
+			VStack(spacing: 4) {
 				ZStack {
-					RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-						.fill(Color(.tertiarySystemFill))
-						.frame(width: symbolSize * 1.5, height: symbolSize * 1.5)
+					RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
+						.fill(isSelected ? medicationColor.opacity(0.2) : Color(.tertiarySystemFill))
+						.frame(width: symbolSize * 1.4, height: symbolSize * 1.4)
 
-					if selectedSymbol == symbolName {
-						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-							.stroke(medicationColor, lineWidth: 2)
-							.frame(width: symbolSize * 1.5, height: symbolSize * 1.5)
+					if isSelected {
+						RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
+							.stroke(medicationColor, lineWidth: 2.5)
+							.frame(width: symbolSize * 1.4, height: symbolSize * 1.4)
 					}
 
 					Image(systemName: symbolName)
-						.font(.system(size: symbolSize * 0.7))
+						.font(.system(size: symbolSize * 0.65))
 						.symbolRenderingMode(.hierarchical)
-						.foregroundStyle(selectedSymbol == symbolName ? medicationColor : .primary)
+						.foregroundStyle(isSelected ? medicationColor : .primary)
 
-					if selectedSymbol == symbolName {
+					// Add checkmark badge for selected state
+					if isSelected {
 						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundStyle(medicationColor)
+							.font(.system(size: 14, weight: .bold))
+							.foregroundStyle(.white)
 							.background(
 								Circle()
-									.fill(Color(.systemBackground))
-									.frame(width: 20, height: 20)
+									.fill(medicationColor)
+									.frame(width: 18, height: 18)
 							)
-							.offset(x: symbolSize * 0.6, y: -symbolSize * 0.6)
+							.offset(x: symbolSize * 0.5, y: -symbolSize * 0.5)
 					}
 				}
 
-				Text(symbolName.replacingOccurrences(of: ".", with: " "))
-					.font(.customFont(fontFamily, style: .caption2))
-					.foregroundStyle(.secondary)
-					.lineLimit(1)
-					.truncationMode(.middle)
+				if !isSearching {
+					Text(symbolName.components(separatedBy: ".").first ?? symbolName)
+						.font(.customFont(fontFamily, style: .caption2, weight: isSelected ? .semibold : .regular))
+						.foregroundStyle(isSelected ? medicationColor : .secondary)
+						.lineLimit(1)
+				}
 			}
 			.frame(maxWidth: .infinity)
 		}
 		.buttonStyle(.plain)
-		.scaleEffect(selectedSymbol == symbolName && !reduceMotion ? 1.05 : 1.0)
-		.animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedSymbol)
+		.scaleEffect(isSelected && !reduceMotion ? 1.08 : 1.0)
+		.animation(.spring(response: 0.2, dampingFraction: 0.8), value: selectedSymbol)
 		.accessibilityLabel("\(symbolName.replacingOccurrences(of: ".", with: " ")) symbol")
-		.accessibilityAddTraits(selectedSymbol == symbolName ? [.isSelected] : [])
-		.accessibilityHint("Tap to select this symbol")
+		.accessibilityAddTraits(isSelected ? [.isSelected] : [])
 	}
 
 	private func saveButton(onSave: @escaping () -> Void) -> some View {
@@ -417,13 +355,37 @@ struct SymbolPickerComponent: View {
 
 	// MARK: - Helper Properties
 
-	private var columnCount: Int {
+	private var adaptiveGridSpacing: CGFloat {
+		// Increase spacing for larger Dynamic Type sizes
 		if dynamicTypeSize >= .accessibility1 {
-			return 3
-		} else if dynamicTypeSize >= .xxLarge {
-			return 4
+			return gridSpacing * 1.8  // Much more space for very large text
+		} else if dynamicTypeSize >= .xxxLarge {
+			return gridSpacing * 1.5  // More space for large text
+		} else if dynamicTypeSize >= .xLarge {
+			return gridSpacing * 1.3  // Slightly more space
+		}
+		return gridSpacing  // Default spacing
+	}
+
+	private var columnCount: Int {
+		// More columns when searching to maximize visible results
+		if isSearching {
+			if dynamicTypeSize >= .accessibility1 {
+				return 3  // Fewer columns for better readability
+			} else if dynamicTypeSize >= .xxLarge {
+				return 4
+			} else {
+				return 5
+			}
 		} else {
-			return 5
+			// Regular browsing mode
+			if dynamicTypeSize >= .accessibility1 {
+				return 3
+			} else if dynamicTypeSize >= .xxLarge {
+				return 4
+			} else {
+				return 5
+			}
 		}
 	}
 

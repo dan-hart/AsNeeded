@@ -144,51 +144,41 @@ struct MedicationAppearancePickerComponent: View {
 	// MARK: - View Components
 
 	private var previewHeader: some View {
-		VStack(spacing: mainSpacing) {
-			HStack(spacing: mainSpacing) {
-				// Icon Preview
-				ZStack {
-					Circle()
-						.fill(
-							LinearGradient(
-								colors: [
-									displayColor.opacity(0.15),
-									displayColor.opacity(0.08)
-								],
-								startPoint: .topLeading,
-								endPoint: .bottomTrailing
-							)
-						)
-						.frame(width: iconSize, height: iconSize)
+		// Only show preview on Color tab to save space on Symbol tab
+		Group {
+			if selectedTab == .color {
+				HStack(spacing: 12) {
+					// Small icon preview
+					ZStack {
+						Circle()
+							.fill(displayColor.opacity(0.15))
+							.frame(width: 36, height: 36)
 
-					Image(systemName: displaySymbol)
-						.font(.title2.weight(.semibold))
-						.symbolRenderingMode(.hierarchical)
-						.foregroundStyle(displayColor)
-				}
+						Image(systemName: displaySymbol)
+							.font(.body.weight(.medium))
+							.symbolRenderingMode(.hierarchical)
+							.foregroundStyle(displayColor)
+					}
 
-				// Medication Info
-				VStack(alignment: .leading, spacing: 4) {
+					// Medication name only
 					Text(medication.displayName)
-						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+						.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+						.foregroundStyle(.primary)
 
-					Text("Tap below to customize")
-						.font(.customFont(fontFamily, style: .caption))
+					Spacer()
+
+					// Current selection indicator
+					Text(selectedTab == .color ? "Color" : "Symbol")
+						.font(.customFont(fontFamily, style: .caption2))
 						.foregroundStyle(.secondary)
 				}
-
-				Spacer()
+				.padding(.horizontal, headerPadding)
+				.padding(.vertical, 10)
+				.background(Color(.secondarySystemBackground))
 			}
-			.padding(headerPadding)
-			.background(
-				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(Color(.secondarySystemBackground))
-			)
 		}
-		.padding(.horizontal, headerPadding)
-		.padding(.top, segmentedPadding)
 		.accessibilityElement(children: .combine)
-		.accessibilityLabel("Preview of \(medication.displayName) appearance")
+		.accessibilityLabel("\(medication.displayName) appearance")
 	}
 
 	private var segmentedControl: some View {

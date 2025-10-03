@@ -27,7 +27,7 @@ struct MedicationHistoryView: View {
     @ScaledMetric private var spacing8: CGFloat = 8
     @ScaledMetric private var spacing4: CGFloat = 4
     @ScaledMetric private var spacing2: CGFloat = 2
-    @ScaledMetric private var circleSize: CGFloat = 16
+    @ScaledMetric private var circleSize: CGFloat = 26
     @ScaledMetric private var shadowRadius: CGFloat = 3
     @ScaledMetric private var strokeWidth: CGFloat = 0.5
     @ScaledMetric private var paddingVertical8: CGFloat = 8
@@ -98,13 +98,13 @@ struct MedicationHistoryView: View {
                                                let eventMedicationID = event.medication?.id,
                                                let currentMedication = viewModel.medications.first(where: { $0.id == eventMedicationID }) {
                                                 Image(systemName: currentMedication.effectiveDisplaySymbol)
-                                                    .font(.customFont(fontFamily, style: .caption2, weight: .medium))
+                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                                     .symbolRenderingMode(.hierarchical)
                                                     .foregroundStyle(medicationColor)
                                             } else if !viewModel.isShowingAllMedications,
                                                      let medication = viewModel.selectedMedication {
                                                 Image(systemName: medication.effectiveDisplaySymbol)
-                                                    .font(.customFont(fontFamily, style: .caption2, weight: .medium))
+                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                                     .symbolRenderingMode(.hierarchical)
                                                     .foregroundStyle(medicationColor)
                                             }

@@ -19,6 +19,13 @@ struct MedicationListView: View {
     @State private var editMode: EditMode = .inactive
     @AppStorage("medicationOrder") private var medicationOrder: [String] = []
 
+    // Quick log toast state
+    @State private var showQuickLogToast = false
+    @State private var quickLogMedicationName = ""
+    @State private var quickLogDoseAmount: Double = 0
+    @State private var quickLogDoseUnit = ""
+    @State private var quickLogAccentColor: Color = .blue
+
     @ScaledMetric private var emptyStateSpacing: CGFloat = 32
     @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
     @ScaledMetric private var emptyStateSubSpacing: CGFloat = 8
@@ -254,6 +261,67 @@ struct MedicationListView: View {
                             onLogTapped: {
                                 logMedication = med
                             },
+                            onQuickLog: {
+                                // Quick log with default dose on long press
+                                // Create default dose from prescribed values
+                                let dose = ANDoseConcept(
+                                    amount: med.prescribedDoseAmount ?? 1,
+                                    unit: med.prescribedUnit ?? .unit
+                                )
+
+                                // Update medication quantity
+                                var updatedMed = med
+                                if let quantity = updatedMed.quantity, dose.amount > 0 {
+                                    updatedMed.quantity = quantity - dose.amount
+                                }
+
+                                // Create event with current time, no note
+                                let event = ANEventConcept(
+                                    eventType: .doseTaken,
+                                    medication: updatedMed,
+                                    dose: dose,
+                                    date: Date(),
+                                    note: nil
+                                )
+
+                                // Perform operations concurrently
+                                async let updateResult = viewModel.update(updatedMed)
+                                async let eventResult = viewModel.addEvent(event, shouldRecordForReview: false)
+
+                                // Wait for both operations to complete
+                                let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
+
+                                // Only proceed if operations succeeded
+                                if updateSuccess && eventSuccess {
+                                    await MainActor.run {
+                                        hapticsManager.doseLogged()
+                                    }
+                                }
+
+                                // Return success status
+                                return updateSuccess && eventSuccess
+                            },
+                            onQuickLogSuccess: {
+                                // Set toast data and show it
+                                quickLogMedicationName = med.displayName
+                                quickLogDoseAmount = med.prescribedDoseAmount ?? 1
+                                quickLogDoseUnit = (med.prescribedUnit ?? .unit).abbreviation
+                                quickLogAccentColor = med.displayColor
+
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    showQuickLogToast = true
+                                }
+
+                                // Auto-dismiss after 3 seconds
+                                Task {
+                                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                    await MainActor.run {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            showQuickLogToast = false
+                                        }
+                                    }
+                                }
+                            },
                             onAppearanceChanged: { newColorHex, newSymbol in
                                 Task {
                                     var updatedMed = med
@@ -307,6 +375,22 @@ struct MedicationListView: View {
             SupportSuggestionView()
                 .padding(.bottom, supportViewBottomPadding)
                 .background(Color(.systemGroupedBackground))
+        }
+        .overlay(alignment: .top) {
+            if showQuickLogToast {
+                QuickLogToastView(
+                    medicationName: quickLogMedicationName,
+                    doseAmount: quickLogDoseAmount,
+                    doseUnit: quickLogDoseUnit,
+                    accentColor: quickLogAccentColor,
+                    isVisible: showQuickLogToast,
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            showQuickLogToast = false
+                        }
+                    }
+                )
+            }
         }
     }
     private var sortedMedications: [ANMedicationConcept] {

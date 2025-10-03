@@ -47,9 +47,9 @@ final class MedicationListViewModel: ObservableObject {
 		}
 	}
 
-	func addEvent(_ event: ANEventConcept) async -> Bool {
+	func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async -> Bool {
 		do {
-			try await dataStore.addEvent(event)
+			try await dataStore.addEvent(event, shouldRecordForReview: shouldRecordForReview)
 			return true
 		} catch {
 			print("Failed to add event: \(error)")
