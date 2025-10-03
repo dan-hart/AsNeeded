@@ -23,6 +23,7 @@ struct DataManagementView: View {
     @State private var showSupportView = false
     @State private var redactMedicationNames = false
     @State private var redactNotes = false
+    @Environment(\.fontFamily) private var fontFamily
     private let logger = DHLogger(category: "DataManagementView")
 
     @ScaledMetric private var spacing20: CGFloat = 20
@@ -145,7 +146,7 @@ struct DataManagementView: View {
                                 redactNotes = false
                             } label: {
                                 Image(systemSymbol: .xmark)
-                                    .font(.body.weight(.medium))
+                                    .font(.customFont(fontFamily, style: .body, weight: .medium))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -161,8 +162,8 @@ struct DataManagementView: View {
                                     redactNotes = false
                                 }
                             } label: {
-                                Image(systemSymbol: .checkmark)
-                                    .font(.title2.weight(.semibold))
+                                Image(systemSymbol: .checkmarkCircleFill)
+                                    .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                                     .foregroundStyle(.accent)
                             }
                         }

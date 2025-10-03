@@ -90,8 +90,9 @@ struct ThankYouView: View {
 			.toolbar {
 				ToolbarItem(placement: .confirmationAction) {
 					Button(action: { dismiss() }) {
-						Text("Done")
-							.fontWeight(.semibold)
+						Image(systemSymbol: .checkmarkCircleFill)
+							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+							.foregroundStyle(.accent)
 					}
 				}
 			}
