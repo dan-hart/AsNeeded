@@ -30,6 +30,7 @@ struct AboutView: View {
   private var githubProfileURL: URL? { URL(string: "https://github.com/dan-hart") }
   private var mastodonURL: URL? { URL(string: "https://mas.to/@codedbydan") }
   private var christineWangURL: URL? { URL(string: "https://christinewang.design/") }
+  private var kevinWangURL: URL? { URL(string: "https://www.linkedin.com/in/kevinwywang/") }
 
   var body: some View {
 	ScrollView {
@@ -210,6 +211,37 @@ struct AboutView: View {
 		  .padding(padding16)
 		  .background(.regularMaterial)
 		  .cornerRadius(cornerRadius12)
+		}
+
+		if let url = kevinWangURL {
+		  Link(destination: url) {
+			HStack(spacing: spacing16) {
+			  Image(systemSymbol: .sparkles)
+				.font(.title3.weight(.medium))
+				.frame(width: iconSize32, height: iconSize32)
+				.foregroundColor(.purple)
+
+			  VStack(alignment: .leading, spacing: spacing4) {
+				Text("Kevin Wang")
+				  .font(.headline)
+				  .fontWeight(.semibold)
+				  .foregroundColor(.primary)
+				Text("Vision & Details")
+				  .font(.subheadline)
+				  .foregroundColor(.secondary)
+			  }
+
+			  Spacer()
+
+			  Image(systemSymbol: .arrowUpRightSquare)
+				.font(.caption)
+				.foregroundColor(.secondary)
+			}
+			.padding(padding16)
+			.background(.regularMaterial)
+			.cornerRadius(cornerRadius12)
+		  }
+		  .buttonStyle(.plain)
 		}
 
 		HStack(spacing: spacing16) {
