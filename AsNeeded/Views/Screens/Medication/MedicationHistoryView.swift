@@ -83,14 +83,32 @@ struct MedicationHistoryView: View {
                                             return .accent
                                         }()
 
-                                        Circle()
-                                            .fill(medicationColor)
-                                            .frame(width: circleSize, height: circleSize)
-                                            .shadow(color: medicationColor.opacity(0.4), radius: shadowRadius, x: 0, y: 1)
-                                            .overlay(
-                                                Circle()
-                                                    .stroke(.white.opacity(0.3), lineWidth: strokeWidth)
-                                            )
+                                        ZStack {
+                                            Circle()
+                                                .fill(medicationColor.opacity(0.15))
+                                                .frame(width: circleSize, height: circleSize)
+                                                .shadow(color: medicationColor.opacity(0.4), radius: shadowRadius, x: 0, y: 1)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(.white.opacity(0.3), lineWidth: strokeWidth)
+                                                )
+
+                                            // Add medication symbol
+                                            if viewModel.isShowingAllMedications,
+                                               let eventMedicationID = event.medication?.id,
+                                               let currentMedication = viewModel.medications.first(where: { $0.id == eventMedicationID }) {
+                                                Image(systemName: currentMedication.effectiveDisplaySymbol)
+                                                    .font(.customFont(fontFamily, style: .caption2, weight: .medium))
+                                                    .symbolRenderingMode(.hierarchical)
+                                                    .foregroundStyle(medicationColor)
+                                            } else if !viewModel.isShowingAllMedications,
+                                                     let medication = viewModel.selectedMedication {
+                                                Image(systemName: medication.effectiveDisplaySymbol)
+                                                    .font(.customFont(fontFamily, style: .caption2, weight: .medium))
+                                                    .symbolRenderingMode(.hierarchical)
+                                                    .foregroundStyle(medicationColor)
+                                            }
+                                        }
                                     }
 
                                     VStack(alignment: .leading, spacing: spacing2) {

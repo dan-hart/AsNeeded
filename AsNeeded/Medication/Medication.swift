@@ -11,8 +11,8 @@ extension ANMedicationConcept {
 	// Centralized access to the shared medications store.
 	@MainActor
 	static var store: Store<ANMedicationConcept> { DataStore.shared.medicationsStore }
-	
-	var displayName: String { 
+
+	var displayName: String {
 		if let nickname = nickname, !nickname.isEmpty {
 			return nickname
 		} else if !clinicalName.isEmpty {
@@ -20,6 +20,47 @@ extension ANMedicationConcept {
 		} else {
 			return "Unknown"
 		}
+	}
+
+	// Default symbol based on medication unit type
+	var defaultSymbol: String {
+		if let unit = prescribedUnit {
+			switch unit {
+			case .puff:
+				return "wind"
+			case .drop:
+				return "drop.fill"
+			case .spray:
+				return "humidity"
+			case .injection:
+				return "syringe.fill"
+			case .patch:
+				return "bandage.fill"
+			case .lozenge:
+				return "circle.fill"
+			case .suppository:
+				return "capsule.fill"
+			case .tablet:
+				return "pills.fill"
+			case .capsule:
+				return "capsule.portrait.fill"
+			default:
+				// For units like .milligram, .microgram, etc.
+				return "pills.fill"
+			}
+		}
+		return "pills.fill"
+	}
+
+	// Display symbol with fallback to default
+	var effectiveDisplaySymbol: String {
+		symbolInfo?.name ?? defaultSymbol
+	}
+
+	// Helper to create ANSymbolInfo from string
+	static func createSymbolInfo(from symbolName: String?) -> ANSymbolInfo? {
+		guard let symbolName = symbolName else { return nil }
+		return ANSymbolInfo(name: symbolName)
 	}
 }
 

@@ -18,6 +18,7 @@ final class MedicationEditViewModel: ObservableObject {
 	@Published var prescribedDoseText: String
 	@Published var prescribedUnit: ANUnitConcept?
 	@Published var displayColorHex: String?
+	@Published var displaySymbol: String?
 
 	// Editing existing or adding new
 	private let existingID: UUID?
@@ -39,6 +40,15 @@ final class MedicationEditViewModel: ObservableObject {
 		self.prescribedDoseText = medication?.prescribedDoseAmount.map { String(describing: $0) } ?? ""
 		self.prescribedUnit = medication?.prescribedUnit
 		self.displayColorHex = medication?.displayColorHex
+		self.displaySymbol = medication?.symbolInfo?.name
+	}
+
+	// Computed property for display color
+	var displayColor: Color {
+		if let hex = displayColorHex, let color = Color(hex: hex) {
+			return color
+		}
+		return .accent
 	}
 
 	var isFormValid: Bool {
@@ -64,18 +74,20 @@ final class MedicationEditViewModel: ObservableObject {
 		let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
 		let amount = (Double(doseText).flatMap { $0 > 0 ? $0 : nil })
 		let unit = (amount != nil) ? prescribedUnit : nil
-		return ANMedicationConcept(
+		var medication = ANMedicationConcept(
 			id: existingID ?? UUID(),
 			clinicalName: clinicalName.trimmingCharacters(in: .whitespacesAndNewlines),
 			nickname: nickname.trimmingCharacters(in: .whitespacesAndNewlines),
 			quantity: quantity,
 			initialQuantity: initialQuantity,
-			displayColorHex: displayColorHex,
 			lastRefillDate: lastRefillDate,
 			nextRefillDate: nextRefillDate,
 			prescribedUnit: unit,
 			prescribedDoseAmount: amount
 		)
+		medication.displayColorHex = displayColorHex
+		medication.symbolInfo = ANMedicationConcept.createSymbolInfo(from: displaySymbol)
+		return medication
 	}
 
 }

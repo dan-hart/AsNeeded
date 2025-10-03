@@ -254,10 +254,11 @@ struct MedicationListView: View {
                             onLogTapped: {
                                 logMedication = med
                             },
-                            onColorChanged: { newColorHex in
+                            onAppearanceChanged: { newColorHex, newSymbol in
                                 Task {
                                     var updatedMed = med
                                     updatedMed.displayColorHex = newColorHex
+                                    updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
                                     let _ = await viewModel.update(updatedMed)
                                 }
                             }
