@@ -121,15 +121,17 @@ public final class DataStore {
 	}
 
 	// MARK: - Events
-	public func addEvent(_ event: ANEventConcept) async throws {
+	public func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
 		logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
 		do {
 			try await eventsStore.insert(event)
 			logger.info("Successfully added event: \(event.id)")
 
-			// Track medication event for review eligibility
-			await MainActor.run {
-				AppReviewManager.shared.recordMedicationEvent()
+			// Track medication event for review eligibility (skip for quick log)
+			if shouldRecordForReview {
+				await MainActor.run {
+					AppReviewManager.shared.recordMedicationEvent()
+				}
 			}
 		} catch {
 			logger.error("Failed to add event: \(error.localizedDescription)")
