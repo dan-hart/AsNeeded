@@ -107,9 +107,10 @@ struct LogDoseView: View {
 					)
 					.frame(width: iconSize, height: iconSize)
 					.shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
-				
-				Image(systemSymbol: .pills)
+
+				Image(systemName: medication.effectiveDisplaySymbol)
 					.font(.largeTitle.weight(.semibold))
+					.symbolRenderingMode(.hierarchical)
 					.foregroundStyle(.white)
 					.symbolEffect(.pulse, options: .repeating.speed(0.5), value: animateHeader)
 			}

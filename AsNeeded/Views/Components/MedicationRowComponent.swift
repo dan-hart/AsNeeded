@@ -29,15 +29,16 @@ import SFSafeSymbols
 struct MedicationRowComponent: View {
 	let medication: ANMedicationConcept
 	var onLogTapped: () -> Void = {}
-	var onColorChanged: ((String?) -> Void)? = nil
+	var onAppearanceChanged: ((String?, String?) -> Void)? = nil
 
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.editMode) private var editMode
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.fontFamily) private var fontFamily
 	@State private var isPressed = false
-	@State private var showingColorPicker = false
+	@State private var showingAppearancePicker = false
 	@State private var tempSelectedColor: String?
+	@State private var tempSelectedSymbol: String?
 	private let hapticsManager = HapticsManager.shared
 
 	@ScaledMetric private var rowPadding: CGFloat = 16
@@ -124,7 +125,8 @@ struct MedicationRowComponent: View {
 		Button {
 			hapticsManager.lightImpact()
 			tempSelectedColor = medication.displayColorHex
-			showingColorPicker = true
+			tempSelectedSymbol = medication.symbolInfo?.name
+			showingAppearancePicker = true
 		} label: {
 			ZStack {
 				Circle()
@@ -140,35 +142,19 @@ struct MedicationRowComponent: View {
 					)
 					.frame(width: medicationIconSize, height: medicationIconSize)
 
-				Image(systemSymbol: iconForMedication)
+				Image(systemName: medication.effectiveDisplaySymbol)
 					.font(.title3.weight(.semibold))
+					.symbolRenderingMode(.hierarchical)
 					.foregroundStyle(medication.displayColor)
 					.symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
 			}
 		}
 		.buttonStyle(.plain)
-		.accessibilityLabel("Change medication color")
-		.accessibilityHint("Tap to change the color for \(medication.displayName)")
-		.sheet(isPresented: $showingColorPicker) {
-			compactColorPickerSheet
+		.accessibilityLabel("Change medication appearance")
+		.accessibilityHint("Tap to change the color and symbol for \(medication.displayName)")
+		.sheet(isPresented: $showingAppearancePicker) {
+			medicationAppearanceSheet
 		}
-	}
-
-	private var iconForMedication: SFSymbol {
-		// Choose icon based on medication type or unit
-		if let unit = medication.prescribedUnit {
-			switch unit {
-			case .puff:
-				return .wind
-			case .drop:
-				return .drop
-			case .spray:
-				return .humidity
-			default:
-				return .pills
-			}
-		}
-		return .pills
 	}
 
 	private var medicationHeader: some View {
@@ -378,71 +364,22 @@ struct MedicationRowComponent: View {
 		}
 	}
 
-	// MARK: - Compact Color Picker Sheet
-	private var compactColorPickerSheet: some View {
-		NavigationStack {
-			VStack(spacing: 0) {
-				// Header with medication info
-				VStack(spacing: 8) {
-					HStack(spacing: 12) {
-						ZStack {
-							Circle()
-								.fill(
-									LinearGradient(
-										colors: [
-											medication.displayColor.opacity(0.15),
-											medication.displayColor.opacity(0.08)
-										],
-										startPoint: .topLeading,
-										endPoint: .bottomTrailing
-									)
-								)
-								.frame(width: 32, height: 32)
-
-							Image(systemSymbol: iconForMedication)
-								.font(.title3.weight(.semibold))
-								.foregroundStyle(medication.displayColor)
-						}
-
-						VStack(alignment: .leading, spacing: 2) {
-							Text(medication.displayName)
-								.font(.headline)
-								.fontWeight(.semibold)
-
-							Text("Choose Color")
-								.font(.subheadline)
-								.foregroundStyle(.secondary)
-						}
-
-						Spacer()
-					}
-				}
-				.padding()
-
-				// Compact color picker
-				ColorPickerComponent(
-					selectedColorHex: $tempSelectedColor,
-					onColorSelected: { newColor in
-						tempSelectedColor = newColor
-					},
-					onSave: {
-						onColorChanged?(tempSelectedColor)
-						showingColorPicker = false
-					}
-				)
+	// MARK: - Medication Appearance Sheet
+	private var medicationAppearanceSheet: some View {
+		MedicationAppearancePickerComponent(
+			medication: medication,
+			selectedColorHex: $tempSelectedColor,
+			selectedSymbol: $tempSelectedSymbol,
+			onSave: {
+				onAppearanceChanged?(tempSelectedColor, tempSelectedSymbol)
+				showingAppearancePicker = false
+			},
+			onCancel: {
+				tempSelectedColor = medication.displayColorHex
+				tempSelectedSymbol = medication.symbolInfo?.name
+				showingAppearancePicker = false
 			}
-			.navigationTitle("Medication Color")
-			.navigationBarTitleDisplayMode(.inline)
-			.toolbar {
-				ToolbarItem(placement: .navigationBarLeading) {
-					Button("Cancel") {
-						showingColorPicker = false
-						tempSelectedColor = medication.displayColorHex
-					}
-					.font(.customFont(fontFamily, style: .body))
-				}
-			}
-		}
+		)
 	}
 }
 

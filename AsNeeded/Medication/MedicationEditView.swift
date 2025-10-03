@@ -29,6 +29,7 @@ struct MedicationEditView: View {
 	@StateObject private var viewModel: MedicationEditViewModel
 	@State private var showingDatePicker = false
 	@State private var datePickerType: DatePickerType = .lastRefill
+	@State private var showingAppearancePicker = false
 	@FocusState private var focusedField: Field?
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.fontFamily) private var fontFamily
@@ -266,20 +267,93 @@ struct MedicationEditView: View {
 		.padding(.horizontal)
 	}
 
-	// MARK: - Color Section
+	// MARK: - Appearance Section
 	@ViewBuilder
-	private var colorSection: some View {
-		ColorPickerComponent(
-			selectedColorHex: $viewModel.displayColorHex,
-			onColorSelected: { newColorHex in
-				withAnimation(.spring(response: 0.3)) {
-					viewModel.displayColorHex = newColorHex
+	private var appearanceSection: some View {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
+			// Section header
+			HStack(spacing: iconSpacing) {
+				Image(systemSymbol: .paintbrushPointedFill)
+					.font(.customFont(fontFamily, style: .title2))
+					.foregroundStyle(
+						LinearGradient(
+							colors: [Color.accent, Color.accent.opacity(0.7)],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
+					)
+
+				Text("Medication Appearance")
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+			}
+
+			// Appearance preview button
+			Button {
+				hapticsManager.lightImpact()
+				showingAppearancePicker = true
+			} label: {
+				HStack(spacing: iconSpacing) {
+					// Icon preview
+					ZStack {
+						Circle()
+							.fill(
+								LinearGradient(
+									colors: [
+										viewModel.displayColor.opacity(0.15),
+										viewModel.displayColor.opacity(0.08)
+									],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
+								)
+							)
+							.frame(width: iconCircleSize, height: iconCircleSize)
+
+						Image(systemName: viewModel.displaySymbol ?? (medication?.effectiveDisplaySymbol ?? "pills.fill"))
+							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+							.symbolRenderingMode(.hierarchical)
+							.foregroundStyle(viewModel.displayColor)
+					}
+
+					VStack(alignment: .leading, spacing: smallPadding) {
+						Text("Tap to customize")
+							.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+						Text("Color & Symbol")
+							.font(.customFont(fontFamily, style: .caption))
+							.foregroundStyle(.secondary)
+					}
+
+					Spacer()
+
+					Image(systemSymbol: .chevronRight)
+						.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+						.foregroundStyle(.tertiary)
 				}
-			},
-			onSave: nil // No save button needed in edit form
-		)
+				.padding(standardPadding)
+				.background(
+					RoundedRectangle(cornerRadius: buttonCornerRadius - 4, style: .continuous)
+						.fill(Color(.tertiarySystemFill))
+				)
+			}
+			.buttonStyle(.plain)
+			.accessibilityLabel("Customize medication appearance")
+			.accessibilityHint("Opens color and symbol picker")
+		}
 		.glassCard()
 		.padding(.horizontal)
+		.sheet(isPresented: $showingAppearancePicker) {
+			MedicationAppearancePickerComponent(
+				medication: viewModel.buildMedication(),
+				selectedColorHex: $viewModel.displayColorHex,
+				selectedSymbol: $viewModel.displaySymbol,
+				onSave: {
+					showingAppearancePicker = false
+				},
+				onCancel: {
+					showingAppearancePicker = false
+				}
+			)
+		}
 	}
 
 	// MARK: - Save Button
@@ -511,7 +585,7 @@ struct MedicationEditView: View {
 				medicationInfoSection
 				prescribedDoseSection
 				refillInfoSection
-				colorSection
+				appearanceSection
 				saveButton
 				Color.clear.frame(height: clearFrameHeight)
 			}
