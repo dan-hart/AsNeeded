@@ -19,7 +19,6 @@ struct LogDoseView: View {
 	@State private var showingDatePicker = false
 	@State private var animateHeader = false
 	@State private var selectedQuickOption: String? = "Now"
-	@State private var animateNoteSection = false
 	private let hapticsManager = HapticsManager.shared
 
 	@ScaledMetric private var iconSize: CGFloat = 80
@@ -142,14 +141,6 @@ struct LogDoseView: View {
 		.onAppear {
 			withAnimation(.easeInOut(duration: 0.8).delay(0.2)) {
 				animateHeader = true
-			}
-			// Animate note section to draw attention
-			withAnimation(.easeInOut(duration: 0.8).delay(0.5)) {
-				animateNoteSection = true
-			}
-			// Stop animation after initial attention-grab
-			DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-				animateNoteSection = false
 			}
 		}
 	}
@@ -378,13 +369,6 @@ struct LogDoseView: View {
 				.shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
 		)
 		.padding(.horizontal)
-		.scaleEffect(animateNoteSection ? 1.02 : 1.0)
-		.animation(
-			animateNoteSection ?
-				Animation.easeInOut(duration: 0.8).repeatCount(2, autoreverses: true) :
-				.default,
-			value: animateNoteSection
-		)
 	}
 	
 	private var logButton: some View {
