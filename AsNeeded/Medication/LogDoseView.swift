@@ -420,9 +420,9 @@ struct LogDoseView: View {
 
 						doseSection
 
-						noteSection  // Moved higher for better visibility
-
 						dateTimeSection
+
+						noteSection
 					}
 					.padding(.bottom, bottomPadding)
 				}
