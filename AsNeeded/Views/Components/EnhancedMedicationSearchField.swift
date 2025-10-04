@@ -10,11 +10,12 @@ import SwiftRxNorm
 import SFSafeSymbols
 import DHLoggingKit
 
-struct EnhancedMedicationSearchField: View {
+struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 	// MARK: - Properties
 
 	@Binding var text: String
 	let placeholder: String
+	let scrollID: ScrollID?
 	let onMedicationSelected: ((clinicalName: String, nickname: String)) -> Void
 
 	@StateObject private var searchService = MedicationSearchService.shared
@@ -111,6 +112,7 @@ struct EnhancedMedicationSearchField: View {
 				.buttonStyle(.plain)
 			}
 		}
+		.id(scrollID)
 		.padding(.horizontal, fieldHorizontalPadding)
 		.padding(.vertical, fieldVerticalPadding)
 		.background(
@@ -624,16 +626,17 @@ struct SuggestionButtonStyle: ButtonStyle {
 			Text("Clinical Name")
 				.font(.subheadline)
 				.foregroundStyle(.secondary)
-			
+
 			EnhancedMedicationSearchField(
 				text: .constant(""),
 				placeholder: "Search for medication...",
+				scrollID: nil as String?,
 				onMedicationSelected: { clinicalName, nickname in
                     DHLogger.ui.oslog.debug("Medication selected: clinical=\\(clinicalName, privacy: .private) nickname=\\(nickname, privacy: .private)")
 				}
 			)
 		}
-		
+
 		Spacer()
 	}
 	.padding()
