@@ -65,10 +65,14 @@ struct MedicationEditView: View {
 		case quantity
 		case dose
 	}
-	
+
 	enum DatePickerType {
 		case lastRefill
 		case nextRefill
+	}
+
+	enum ScrollTarget: Hashable {
+		case searchFieldContainer
 	}
 	
 	let medication: ANMedicationConcept?
@@ -117,6 +121,7 @@ struct MedicationEditView: View {
 			focusedField: $focusedField,
 			clinicalNameField: .clinicalName,
 			nicknameField: .nickname,
+			searchFieldScrollID: ScrollTarget.searchFieldContainer,
 			onMedicationSelected: { clinicalName, nickname in
 				viewModel.clinicalName = clinicalName
 				viewModel.nickname = nickname
@@ -579,28 +584,37 @@ struct MedicationEditView: View {
 	// MARK: - Main Content
 	@ViewBuilder
 	private var mainContent: some View {
-		ScrollView {
-			VStack(spacing: mainContentSpacing) {
-				heroSection
-				medicationInfoSection
-				prescribedDoseSection
-				refillInfoSection
-				appearanceSection
-				saveButton
-				Color.clear.frame(height: clearFrameHeight)
+		ScrollViewReader { proxy in
+			ScrollView {
+				VStack(spacing: mainContentSpacing) {
+					heroSection
+					medicationInfoSection
+					prescribedDoseSection
+					refillInfoSection
+					appearanceSection
+					saveButton
+					Color.clear.frame(height: clearFrameHeight)
+				}
+			}
+			.background(
+				LinearGradient(
+					colors: [
+						Color(.systemGroupedBackground),
+						Color.accentColor.opacity(0.05)
+					],
+					startPoint: .top,
+					endPoint: .bottom
+				)
+				.ignoresSafeArea()
+			)
+			.onChange(of: focusedField) { _, newValue in
+				if newValue == .clinicalName {
+					withAnimation(.easeInOut(duration: 0.3)) {
+						proxy.scrollTo(ScrollTarget.searchFieldContainer, anchor: .top)
+					}
+				}
 			}
 		}
-		.background(
-			LinearGradient(
-				colors: [
-					Color(.systemGroupedBackground),
-					Color.accentColor.opacity(0.05)
-				],
-				startPoint: .top,
-				endPoint: .bottom
-			)
-			.ignoresSafeArea()
-		)
 	}
 	
 	// MARK: - Body

@@ -24,13 +24,14 @@ import SFSafeSymbols
 /// - Medical record input sections
 /// - Healthcare app medication forms
 /// - Any form requiring medication identification with search
-struct MedicationInfoSectionComponent<Field: Hashable>: View {
+struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View {
 	@Binding var clinicalName: String
 	@Binding var nickname: String
 	@FocusState.Binding var focusedField: Field?
 
 	let clinicalNameField: Field
 	let nicknameField: Field
+	let searchFieldScrollID: ScrollID?
 	let onMedicationSelected: (String, String) -> Void
 
 	@ScaledMetric private var sectionSpacing: CGFloat = 20
@@ -124,6 +125,7 @@ struct MedicationInfoSectionComponent<Field: Hashable>: View {
 					EnhancedMedicationSearchField(
 						text: $clinicalName,
 						placeholder: "Type medication name (e.g., Ibuprofen, Tylenol)",
+						scrollID: searchFieldScrollID,
 						onMedicationSelected: { clinicalName, nickname in
 							onMedicationSelected(clinicalName, nickname)
 						}
@@ -216,6 +218,7 @@ private enum MedicationInfoMockField: Hashable {
 				focusedField: $focusedField,
 				clinicalNameField: .clinicalName,
 				nicknameField: .nickname,
+				searchFieldScrollID: nil as String?,
 				onMedicationSelected: { clinicalName, nickname in
 					self.clinicalName = clinicalName
 					self.nickname = nickname
