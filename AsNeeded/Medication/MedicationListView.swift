@@ -17,7 +17,7 @@ struct MedicationListView: View {
     @State private var showSupportToast = false
     @State private var showSupportView = false
     @State private var editMode: EditMode = .inactive
-    @AppStorage("medicationOrder") private var medicationOrder: [String] = []
+    @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
 
     // Quick log toast state
     @State private var showQuickLogToast = false

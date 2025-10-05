@@ -86,21 +86,21 @@ public final class DataStore {
 			let deletedIDString = med.id.uuidString
 			
 			// Clear from history view selection
-			if UserDefaults.standard.string(forKey: "historySelectedMedicationID") == deletedIDString {
-				UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
+			if UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == deletedIDString {
+				UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
 				logger.info("Cleared deleted medication from history selection")
 			}
-			
+
 			// Clear from trends view selection
-			if UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == deletedIDString {
-				UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
+			if UserDefaults.standard.string(forKey: UserDefaultsKeys.trendsSelectedMedicationID) == deletedIDString {
+				UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
 				logger.info("Cleared deleted medication from trends selection")
 			}
-			
+
 			// Clear from medication order array
-			if var order = UserDefaults.standard.array(forKey: "medicationOrder") as? [String] {
+			if var order = UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder) as? [String] {
 				order.removeAll { $0 == deletedIDString }
-				UserDefaults.standard.set(order, forKey: "medicationOrder")
+				UserDefaults.standard.set(order, forKey: UserDefaultsKeys.medicationOrder)
 				logger.info("Removed deleted medication from order array")
 			}
 			

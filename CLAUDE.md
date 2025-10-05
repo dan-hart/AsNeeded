@@ -112,10 +112,11 @@ The app includes a feature toggle system for managing experimental or debug feat
   - `quickPhrasesEnabled`: Shows/hides quick phrase suggestions in note editor
 
 To add a new feature toggle:
-1. Add property to FeatureToggleManager: `@AppStorage("featureToggle.myFeature") var myFeatureEnabled: Bool = false`
-2. Add key to UserDefaultsKeys constants
-3. Add UI toggle in SettingsDebugSectionView
-4. Check toggle in your component: `if featureToggleManager.myFeatureEnabled { ... }`
+1. Add key to UserDefaultsKeys constants: `static let featureToggleMyFeature = "featureToggle.myFeature"`
+2. Add to `allKeys` array and `defaultValues` dictionary (default to `false`)
+3. Add property to FeatureToggleManager: `@AppStorage(UserDefaultsKeys.featureToggleMyFeature) var myFeatureEnabled: Bool = false`
+4. Add UI toggle in SettingsDebugSectionView
+5. Check toggle in your component: `if featureToggleManager.myFeatureEnabled { ... }`
 
 ## Code Style
 
@@ -124,6 +125,34 @@ To add a new feature toggle:
 - Protocol‑oriented services; inject dependencies for testability.
 - Naming: Views end with `View` (e.g., `MedicationDetailView`), tests end with `Tests` (e.g., `AsNeededTests`). Filenames match primary type.
 - **No force unwraps**: Avoid force unwraps (`!`) in both app code AND tests. Use safe unwrapping with `guard let`, `if let`, or optional chaining to prevent runtime crashes.
+
+## UserDefaults & AppStorage Best Practices
+
+**ALWAYS use strongly-typed keys from `UserDefaultsKeys.swift` for all UserDefaults and AppStorage usage:**
+
+- **Location**: All keys are centralized in `AsNeeded/Constants/UserDefaultsKeys.swift`
+- **AppStorage usage**: `@AppStorage(UserDefaultsKeys.keyName) private var property: Type = defaultValue`
+- **UserDefaults usage**: `UserDefaults.standard.string(forKey: UserDefaultsKeys.keyName)`
+- **NEVER use string literals**: String literals like `"myKey"` are prohibited - always use the constant
+- **Adding new keys**:
+  1. Add constant to appropriate section in `UserDefaultsKeys.swift`
+  2. Add to `allKeys` array
+  3. Add to `defaultValues` dictionary if it should have a default value
+  4. Add to `keysToRemove` set if it should be removed (not reset) during app reset
+  5. Add to `keysToSkip` set if it requires special handling during reset
+
+**Example:**
+```swift
+// ✅ CORRECT
+@AppStorage(UserDefaultsKeys.hapticsEnabled) var hapticsEnabled: Bool = true
+UserDefaults.standard.bool(forKey: UserDefaultsKeys.hasSeenWelcome)
+
+// ❌ WRONG
+@AppStorage("hapticsEnabled") var hapticsEnabled: Bool = true
+UserDefaults.standard.bool(forKey: "hasSeenWelcome")
+```
+
+**Benefits**: Single source of truth, prevents typos, enables refactoring, supports testing and reset functionality.
 
 ## Architecture Overview
 - Domain: Pure models and use cases that encode business rules; no UI or persistence code. Keep calculation/validation logic here.

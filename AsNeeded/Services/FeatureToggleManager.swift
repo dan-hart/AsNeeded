@@ -6,7 +6,7 @@ final class FeatureToggleManager: ObservableObject {
 	static let shared = FeatureToggleManager()
 
 	// Feature Toggle for Quick Phrases - OFF by default
-	@AppStorage("featureToggle.quickPhrases") public var quickPhrasesEnabled: Bool = false
+	@AppStorage(UserDefaultsKeys.featureToggleQuickPhrases) public var quickPhrasesEnabled: Bool = false
 
 	private init() {}
 }

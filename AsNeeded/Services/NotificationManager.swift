@@ -23,14 +23,14 @@ final class NotificationManager: ObservableObject {
   @Published var authorizationStatus: AuthorizationStatus = .notDetermined
   @Published var showMedicationNames: Bool = false {
     didSet {
-      UserDefaults.standard.set(showMedicationNames, forKey: "showMedicationNamesInNotifications")
+      UserDefaults.standard.set(showMedicationNames, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
     }
   }
-  
+
   private let notificationCenter = UNUserNotificationCenter.current()
-  
+
   private init() {
-    showMedicationNames = UserDefaults.standard.object(forKey: "showMedicationNamesInNotifications") as? Bool ?? false
+    showMedicationNames = UserDefaults.standard.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
     Task {
       await checkAuthorizationStatus()
       await setupNotificationCategories()

@@ -5,8 +5,8 @@ struct AppPreferencesView: View {
 	@StateObject private var notificationManager = NotificationManager.shared
 	@StateObject private var hapticsManager = HapticsManager.shared
 	@StateObject private var appReviewManager = AppReviewManager.shared
-	@AppStorage("showMedicationNamesInNotifications") private var showMedicationNames: Bool = false
-	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@AppStorage(UserDefaultsKeys.showMedicationNamesInNotifications) private var showMedicationNames: Bool = false
+	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 	@AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
 	@State private var showingResetConfirmation = false
 	@ScaledMetric private var sectionSpacing: CGFloat = 32

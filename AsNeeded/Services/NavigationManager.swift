@@ -6,7 +6,7 @@ import Combine
 final class NavigationManager: ObservableObject {
 	static let shared = NavigationManager()
 	
-	@AppStorage("selectedTab") var selectedTab: Int = 0 {
+	@AppStorage(UserDefaultsKeys.selectedTab) var selectedTab: Int = 0 {
 		didSet {
 			objectWillChange.send()
 		}

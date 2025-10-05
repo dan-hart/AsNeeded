@@ -2,7 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SupportSuggestionView: View {
-	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 	@ScaledMetric private var containerSpacing: CGFloat = 8
 	@ScaledMetric private var contentSpacing: CGFloat = 14
 	@ScaledMetric private var iconSize: CGFloat = 36

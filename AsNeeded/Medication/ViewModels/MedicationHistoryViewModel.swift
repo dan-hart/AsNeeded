@@ -7,7 +7,7 @@ import ANModelKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
-	@AppStorage("historySelectedMedicationID") private var selectedMedicationIDString: String = ""
+	@AppStorage(UserDefaultsKeys.historySelectedMedicationID) private var selectedMedicationIDString: String = ""
 
 	@Published var selectedMedicationID: String? {
 		didSet {

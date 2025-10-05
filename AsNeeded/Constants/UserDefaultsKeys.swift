@@ -47,6 +47,25 @@ public enum UserDefaultsKeys {
 	/// Feature toggle for quick note phrases
 	static let featureToggleQuickPhrases = "featureToggle.quickPhrases"
 
+	// MARK: - App Review & Analytics
+	/// Whether the user has opted out of review requests
+	static let hasUserOptedOutOfReviews = "hasUserOptedOutOfReviews"
+
+	/// Total number of app launches
+	static let appLaunchCount = "appLaunchCount"
+
+	/// Total number of medication events logged
+	static let medicationEventsCount = "medicationEventsCount"
+
+	/// Number of consecutive days the app has been used
+	static let consecutiveDaysOfUse = "consecutiveDaysOfUse"
+
+	/// Date of last app usage
+	static let lastAppUseDate = "lastAppUseDate"
+
+	/// Date of last review request shown to user
+	static let lastReviewRequestDate = "lastReviewRequestDate"
+
 	// MARK: - All Keys
 	/// Array of all UserDefaults keys for iteration/testing
 	public static let allKeys: [String] = [
@@ -61,7 +80,13 @@ public enum UserDefaultsKeys {
 		hideSupportBanners,
 		showMedicationNamesInNotifications,
 		selectedFontFamily,
-		featureToggleQuickPhrases
+		featureToggleQuickPhrases,
+		hasUserOptedOutOfReviews,
+		appLaunchCount,
+		medicationEventsCount,
+		consecutiveDaysOfUse,
+		lastAppUseDate,
+		lastReviewRequestDate
 	]
 	
 	// MARK: - Default Values
@@ -75,7 +100,11 @@ public enum UserDefaultsKeys {
 		hideSupportBanners: false,
 		showMedicationNamesInNotifications: false,
 		selectedFontFamily: "system", // Default to system font
-		featureToggleQuickPhrases: false // Feature toggles default to OFF
+		featureToggleQuickPhrases: false, // Feature toggles default to OFF
+		hasUserOptedOutOfReviews: false,
+		appLaunchCount: 0,
+		medicationEventsCount: 0,
+		consecutiveDaysOfUse: 0
 	]
 	
 	// MARK: - Keys to Remove
@@ -83,7 +112,9 @@ public enum UserDefaultsKeys {
 	public static let keysToRemove: Set<String> = [
 		historySelectedMedicationID,
 		trendsSelectedMedicationID,
-		medicationOrder
+		medicationOrder,
+		lastAppUseDate,
+		lastReviewRequestDate
 	]
 	
 	// MARK: - Keys to Skip
