@@ -112,8 +112,8 @@ final class AppReviewManager: ObservableObject {
 	}
 
 	private func checkAndRequestReviewIfAppropriate(trigger: ReviewTrigger) async {
-		// Check if reviews are allowed (both app-level and system-level)
-		guard canMakeReviewRequest() else { return }
+		// Check if automatic reviews are allowed (includes opt-out check)
+		guard canShowAutomaticReviewRequest() else { return }
 
 		// Check engagement criteria
 		guard isEngagementCriteriaMet() else { return }
@@ -213,8 +213,8 @@ final class AppReviewManager: ObservableObject {
 
 	/// Shows the custom alert flow (used for automatic review requests)
 	func requestReviewWithAlert() async {
-		// Check if reviews are allowed (both app-level and system-level)
-		guard canMakeReviewRequest() else { return }
+		// Check if automatic reviews are allowed (includes opt-out check)
+		guard canShowAutomaticReviewRequest() else { return }
 
 		// Always record the request
 		recordReviewRequest()
@@ -223,8 +223,8 @@ final class AppReviewManager: ObservableObject {
 		await showPreReviewAlert()
 	}
 
-	/// Comprehensive check for whether review requests are allowed
-	func canMakeReviewRequest() -> Bool {
+	/// Check for automatic review requests (includes opt-out)
+	private func canShowAutomaticReviewRequest() -> Bool {
 		// Check app-level opt-out first
 		guard !hasOptedOutOfReviews else { return false }
 
@@ -232,6 +232,13 @@ final class AppReviewManager: ObservableObject {
 		guard canRequestReviews() else { return false }
 
 		return true
+	}
+
+	/// Check for manual review requests (ignores opt-out, only checks system settings)
+	func canMakeReviewRequest() -> Bool {
+		// Manual requests bypass the opt-out preference
+		// Only check system-level settings
+		return canRequestReviews()
 	}
 
 	// MARK: - Settings and Debug Info

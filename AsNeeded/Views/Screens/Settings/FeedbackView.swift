@@ -44,11 +44,9 @@ struct FeedbackView: View {
 
 					feedbackTypesSection
 
-					if ReviewService.shared.canShowReviewButtons {
-						Divider()
+					Divider()
 
-						rateAndReviewSection
-					}
+					rateAndReviewSection
 
 					Divider()
 

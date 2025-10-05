@@ -24,9 +24,10 @@ final class ReviewService: ObservableObject {
 		}
 	}
 
-	/// Checks if review requests are allowed (for UI visibility)
+	/// Always show review CTAs regardless of opt-out preference
+	/// (Opt-out only affects automatic review alerts, not manual CTAs)
 	var canShowReviewButtons: Bool {
-		AppReviewManager.shared.canMakeReviewRequest()
+		true
 	}
 
 }
