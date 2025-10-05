@@ -8,7 +8,7 @@ import ANModelKit
 
 @MainActor
 final class MedicationTrendsViewModel: ObservableObject {
-	@AppStorage("trendsSelectedMedicationID") var selectedMedicationIDString: String = ""
+	@AppStorage(UserDefaultsKeys.trendsSelectedMedicationID) var selectedMedicationIDString: String = ""
 
 	var selectedMedicationID: UUID? {
 		get {

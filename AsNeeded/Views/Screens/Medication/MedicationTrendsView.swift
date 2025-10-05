@@ -27,7 +27,7 @@ struct MedicationTrendsView: View {
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
 	@State private var daysWindow: Int = 14
-	@AppStorage("trendsVisualizationType") private var visualizationType: VisualizationType = .chart
+	@AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
 
 	@ScaledMetric private var spacing16: CGFloat = 16
 	@ScaledMetric private var spacing12: CGFloat = 12

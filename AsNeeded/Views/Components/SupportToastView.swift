@@ -7,7 +7,7 @@ struct SupportToastView: View {
 	let isVisible: Bool
 	let onDismiss: () -> Void
 	let onSupportTapped: () -> Void
-	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 
 	@ScaledMetric private var mainSpacing: CGFloat = 16
 	@ScaledMetric private var iconHSpacing: CGFloat = 6

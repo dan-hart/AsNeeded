@@ -10,8 +10,8 @@ import SFSafeSymbols
 import HealthKit
 
 struct ContentView: View {
-	@AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
-	@AppStorage("shouldShowWelcomeOnNextLaunch") private var shouldShowWelcomeOnNextLaunch: Bool = false
+	@AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
+	@AppStorage(UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) private var shouldShowWelcomeOnNextLaunch: Bool = false
 	@AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
 	@StateObject private var navigationManager = NavigationManager.shared
 	private let hapticsManager = HapticsManager.shared

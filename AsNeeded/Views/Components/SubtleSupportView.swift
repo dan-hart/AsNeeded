@@ -3,7 +3,7 @@ import SFSafeSymbols
 
 struct SubtleSupportView: View {
 	let message: String
-	@AppStorage("hideSupportBanners") private var hideSupportBanners = false
+	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 	@ScaledMetric private var contentSpacing: CGFloat = 8
 	@ScaledMetric private var dividerHeight: CGFloat = 20
 	@ScaledMetric private var verticalPadding: CGFloat = 8

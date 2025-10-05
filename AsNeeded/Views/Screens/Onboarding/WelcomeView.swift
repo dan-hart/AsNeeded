@@ -12,7 +12,7 @@ struct WelcomeView: View {
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var iconSize32: CGFloat = 32
 
-  @AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
+  @AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
   @Environment(\.dismiss) private var dismiss
   @State private var showMedicalDisclaimer = false
 

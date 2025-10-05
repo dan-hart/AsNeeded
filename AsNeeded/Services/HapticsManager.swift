@@ -6,7 +6,7 @@ import SwiftUI
 public final class HapticsManager: ObservableObject {
 	public static let shared = HapticsManager()
 	
-	@AppStorage("hapticsEnabled") public var hapticsEnabled: Bool = true
+	@AppStorage(UserDefaultsKeys.hapticsEnabled) public var hapticsEnabled: Bool = true
 	
 	// Haptic generators for different feedback types
 	private let impactLight = UIImpactFeedbackGenerator(style: .light)
