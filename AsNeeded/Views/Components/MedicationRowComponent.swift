@@ -166,16 +166,14 @@ struct MedicationRowComponent: View {
 	private var medicationHeader: some View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(medication.displayName)
-				.font(.headline)
-				.fontDesign(.rounded)
-				.fontWeight(.bold)
+				.font(.customFont(fontFamily, style: .headline, weight: .bold))
 				.lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
 				.foregroundStyle(.primary)
 				.accessibilityAddTraits(.isHeader)
 
 			if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
 				Text(medication.clinicalName)
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 					.lineLimit(1)
 			}
@@ -225,8 +223,7 @@ struct MedicationRowComponent: View {
 						.font(.title3)
 						.accessibilityHidden(true)
 					Text("Log Dose")
-						.font(.headline)
-						.fontWeight(.semibold)
+						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				}
 				.foregroundStyle(medication.displayColor.contrastingForegroundColor())
 				.frame(maxWidth: .infinity)
@@ -245,13 +242,12 @@ struct MedicationRowComponent: View {
 				// Compact button with icon and text
 				VStack(spacing: 4) {
 					Image(systemSymbol: .plusCircleFill)
-						.font(.title2.weight(.semibold))
+						.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 						.symbolRenderingMode(.hierarchical)
 						.accessibilityHidden(true)
 
 					Text("Log")
-						.font(.caption2.weight(.bold))
-						.fontDesign(.rounded)
+						.font(.customFont(fontFamily, style: .caption2, weight: .bold))
 						.textCase(.uppercase)
 				}
 				.foregroundStyle(medication.displayColor.contrastingForegroundColor())
