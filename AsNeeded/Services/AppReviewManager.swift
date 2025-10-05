@@ -175,6 +175,16 @@ final class AppReviewManager: ObservableObject {
 		// Check if reviews are disabled at the iOS system level
 		guard canRequestReviews() else { return }
 
+		// For TestFlight builds, open App Store URL directly
+		// Native review prompts don't work in TestFlight
+		if Bundle.main.isTestFlight {
+			if let reviewURL = AppURLs.appStoreReview {
+				UIApplication.shared.open(reviewURL)
+			}
+			return
+		}
+
+		// For App Store and Debug builds, use native review prompt
 		if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
 			if #available(iOS 18.0, *) {
 				// Use new AppStore API for iOS 18+

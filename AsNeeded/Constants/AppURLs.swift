@@ -9,6 +9,10 @@ public enum AppURLs {
 	/// TestFlight beta program join URL
 	static let testFlightBeta = URL(string: "https://testflight.apple.com/join/ZgW1r5Fd")
 
+	// MARK: - App Store
+	/// App Store review page URL (for TestFlight builds)
+	static let appStoreReview = URL(string: "https://apps.apple.com/app/id6714469235?action=write-review")
+
 	// MARK: - GitHub
 	/// GitHub repository URL
 	static let githubRepository = URL(string: "https://github.com/dan-hart/AsNeeded")
