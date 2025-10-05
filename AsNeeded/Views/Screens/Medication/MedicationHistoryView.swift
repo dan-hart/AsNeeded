@@ -20,6 +20,8 @@ struct MedicationHistoryView: View {
     @FocusState private var isNoteFieldFocused: Bool
     @State private var editingEntryEvent: ANEventConcept?
     @State private var editingEntryDate: Date = Date()
+    @State private var editingEntryAmount: Double = 1.0
+    @State private var editingEntryUnit: ANUnitConcept = .unit
 
     @ScaledMetric private var spacing24: CGFloat = 24
     @ScaledMetric private var spacing32: CGFloat = 32
@@ -166,10 +168,26 @@ struct MedicationHistoryView: View {
                             .onTapGesture {
                                 editingEntryEvent = event
                                 editingEntryDate = event.date
+                                editingEntryAmount = event.dose?.amount ?? 1.0
+                                editingEntryUnit = event.dose?.unit ?? .unit
                             }
-                        }
-                        .onDelete { indexSet in
-                            Task { await viewModel.deleteEvents(at: indexSet, in: group.day) }
+                            .swipeActions(edge: .trailing) {
+                                Button {
+                                    editingEntryEvent = event
+                                    editingEntryDate = event.date
+                                    editingEntryAmount = event.dose?.amount ?? 1.0
+                                    editingEntryUnit = event.dose?.unit ?? .unit
+                                } label: {
+                                    Label("Edit", systemSymbol: .pencil)
+                                }
+                                .tint(viewModel.selectedMedication?.displayColor ?? .accent)
+
+                                Button(role: .destructive) {
+                                    Task { await viewModel.deleteEvent(event) }
+                                } label: {
+                                    Label("Delete", systemSymbol: .trash)
+                                }
+                            }
                         }
                     }
                     .id(group.day)
@@ -506,7 +524,7 @@ struct MedicationHistoryView: View {
                                             let trimmedNote = editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
                                             var updatedEvent = event
                                             updatedEvent.note = trimmedNote.isEmpty ? nil : trimmedNote
-                                            await viewModel.updateEvent(updatedEvent)
+                                            await viewModel.updateEventNote(updatedEvent)
                                             editingEvent = nil
                                             editingNoteText = ""
                                         }
@@ -601,12 +619,70 @@ struct MedicationHistoryView: View {
                             }
                         }
 
-                        if let dose = event.dose {
-                            HStack {
-                                Text("Dose")
-                                Spacer()
-                                Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
-                                    .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: spacing12) {
+                            Text("Dose Amount")
+                                .font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+
+                            HStack(spacing: spacing12) {
+                                Button(action: {
+                                    if editingEntryAmount > 0.5 {
+                                        editingEntryAmount -= 0.5
+                                    }
+                                }) {
+                                    Image(systemSymbol: .minusCircleFill)
+                                        .font(.customFont(fontFamily, style: .title2))
+                                        .foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(editingEntryAmount <= 0.5)
+
+                                VStack(spacing: spacing2) {
+                                    Text("\(editingEntryAmount, specifier: "%.1f")")
+                                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                                        .contentTransition(.numericText())
+
+                                    Text(editingEntryUnit.displayName)
+                                        .font(.customFont(fontFamily, style: .caption))
+                                        .foregroundStyle(.secondary)
+                                        .textCase(.uppercase)
+                                }
+                                .frame(minWidth: 80)
+
+                                Button(action: {
+                                    if editingEntryAmount < 100 {
+                                        editingEntryAmount += 0.5
+                                    }
+                                }) {
+                                    Image(systemSymbol: .plusCircleFill)
+                                        .font(.customFont(fontFamily, style: .title2))
+                                        .foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(editingEntryAmount >= 100)
+                            }
+                            .frame(maxWidth: .infinity)
+
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: spacing8) {
+                                    ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                editingEntryUnit = unit
+                                            }
+                                        }) {
+                                            Text(unit.displayName)
+                                                .font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
+                                                .padding(.horizontal, spacing12)
+                                                .padding(.vertical, spacing8)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(editingEntryUnit == unit ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.1))
+                                                )
+                                                .foregroundStyle(editingEntryUnit == unit ? .white : .primary)
+                                        }
+                                        .buttonStyle(.borderless)
+                                    }
+                                }
                             }
                         }
 
@@ -648,10 +724,13 @@ struct MedicationHistoryView: View {
                         Button {
                             if let event = editingEntryEvent {
                                 Task {
-                                    // Update the event with new date/time
-                                    var updatedEvent = event
-                                    updatedEvent.date = editingEntryDate
-                                    await viewModel.updateEvent(updatedEvent)
+                                    // Update the event with new date, dose amount, and unit
+                                    await viewModel.updateEvent(
+                                        event,
+                                        newDate: editingEntryDate,
+                                        newAmount: editingEntryAmount,
+                                        newUnit: editingEntryUnit
+                                    )
                                     editingEntryEvent = nil
                                 }
                             }

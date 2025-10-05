@@ -66,6 +66,7 @@ struct MedicationSearchTests {
 		let searchField = EnhancedMedicationSearchField(
 			text: .constant(""),
 			placeholder: "Test",
+			scrollID: nil as String?,
 			onMedicationSelected: { clinical, nickname in
 				capturedClinicalName = clinical
 				capturedNickname = nickname
@@ -187,10 +188,11 @@ struct MedicationSearchTests {
 	}
 	
 	// MARK: - Helper Methods
-	private func createTestSearchField() -> EnhancedMedicationSearchField {
+	private func createTestSearchField() -> EnhancedMedicationSearchField<String> {
 		return EnhancedMedicationSearchField(
 			text: .constant(""),
 			placeholder: "Test",
+			scrollID: nil as String?,
 			onMedicationSelected: { _, _ in }
 		)
 	}
