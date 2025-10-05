@@ -157,8 +157,35 @@ final class MedicationHistoryViewModel: ObservableObject {
 		}
 	}
 	
-	func updateEvent(_ event: ANEventConcept) async {
-		// Find and update the event in the store
+	func updateEvent(_ event: ANEventConcept, newDate: Date, newAmount: Double, newUnit: ANUnitConcept) async {
+		// Calculate the difference in dose amount
+		let oldAmount = event.dose?.amount ?? 0
+		let difference = newAmount - oldAmount
+
+		// Create updated event with new dose and date
+		var updatedEvent = event
+		updatedEvent.date = newDate
+		updatedEvent.dose = ANDoseConcept(amount: newAmount, unit: newUnit)
+
+		// Update event in store
+		if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
+		   let existingEvent = dataStore.events[doesExistAt: index] {
+			try? await dataStore.eventsStore.remove(existingEvent)
+			try? await dataStore.eventsStore.insert(updatedEvent)
+		}
+
+		// Adjust medication quantity by the difference
+		if let medicationID = event.medication?.id,
+		   let medication = medications.first(where: { $0.id == medicationID }),
+		   let quantity = medication.quantity {
+			var updated = medication
+			updated.quantity = quantity - difference
+			try? await dataStore.updateMedication(updated)
+		}
+	}
+
+	func updateEventNote(_ event: ANEventConcept) async {
+		// Legacy method for updating just the note without dose changes
 		if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
 		   let existingEvent = dataStore.events[doesExistAt: index] {
 			try? await dataStore.eventsStore.remove(existingEvent)
