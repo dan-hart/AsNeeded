@@ -211,12 +211,11 @@ struct MedicationListView: View {
 
                 VStack(spacing: emptyStateSubSpacing) {
                     Text("Welcome to As Needed")
-                        .font(.title2)
-                        .fontWeight(.semibold)
+                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                         .foregroundColor(.primary)
 
                     Text("Track your medications and view trends")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, emptyHorizontalPadding)
@@ -228,9 +227,7 @@ struct MedicationListView: View {
                 showAddSheet = true
             }) {
                 Label("Add Your First Medication", systemSymbol: .plusCircleFill)
-                    .font(.headline)
-                    .fontDesign(.rounded)
-                    .fontWeight(.semibold)
+                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.vertical, buttonVerticalPadding)
                     .padding(.horizontal, buttonHorizontalPadding)
