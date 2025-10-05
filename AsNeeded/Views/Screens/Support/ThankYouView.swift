@@ -341,46 +341,44 @@ struct ThankYouView: View {
 				.buttonStyle(.plain)
 
 				// Rate & Review
-				if ReviewService.shared.canShowReviewButtons {
-					Button(action: openAppStoreReview) {
-						HStack {
-							Image(systemSymbol: .star)
-								.font(.title2)
-								.foregroundColor(.white)
-								.frame(width: iconSize40, height: iconSize40)
-								.background(
-									LinearGradient(
-										colors: [.orange, .yellow],
-										startPoint: .topLeading,
-										endPoint: .bottomTrailing
-									)
+				Button(action: openAppStoreReview) {
+					HStack {
+						Image(systemSymbol: .star)
+							.font(.title2)
+							.foregroundColor(.white)
+							.frame(width: iconSize40, height: iconSize40)
+							.background(
+								LinearGradient(
+									colors: [.orange, .yellow],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
 								)
-								.cornerRadius(cornerRadius10)
+							)
+							.cornerRadius(cornerRadius10)
 
-							VStack(alignment: .leading, spacing: spacing2) {
-								Text("Rate & Review")
-									.font(.callout)
-									.fontWeight(.semibold)
-									.foregroundColor(.primary)
-								Text("Share your experience on the App Store")
-									.font(.caption)
-									.foregroundColor(.secondary)
-							}
-
-							Spacer()
-
-							Image(systemSymbol: .arrowUpRight)
+						VStack(alignment: .leading, spacing: spacing2) {
+							Text("Rate & Review")
+								.font(.callout)
+								.fontWeight(.semibold)
+								.foregroundColor(.primary)
+							Text("Share your experience on the App Store")
 								.font(.caption)
 								.foregroundColor(.secondary)
 						}
-						.padding()
-						.background(
-							RoundedRectangle(cornerRadius: cornerRadius12)
-								.fill(.quaternary.opacity(0.2))
-						)
+
+						Spacer()
+
+						Image(systemSymbol: .arrowUpRight)
+							.font(.caption)
+							.foregroundColor(.secondary)
 					}
-					.buttonStyle(.plain)
+					.padding()
+					.background(
+						RoundedRectangle(cornerRadius: cornerRadius12)
+							.fill(.quaternary.opacity(0.2))
+					)
 				}
+				.buttonStyle(.plain)
 
 				// TestFlight Beta
 				TestFlightAccessComponent()

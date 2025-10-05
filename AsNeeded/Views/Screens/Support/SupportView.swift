@@ -114,9 +114,7 @@ struct SupportView: View {
 				tipJarGrid
 
 				// Rate & Review CTA (between tips and subscriptions)
-				if ReviewService.shared.canShowReviewButtons {
-					rateAndReviewButton
-				}
+				rateAndReviewButton
 
 				// Subscription Options
 				subscriptionOptions
