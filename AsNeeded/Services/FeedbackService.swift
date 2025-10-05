@@ -50,9 +50,10 @@ enum FeedbackType {
             
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached to help diagnose the issue.
             No medication names are stored in logs - only technical information.
             """
@@ -71,9 +72,10 @@ enum FeedbackType {
             
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached for context.
             No medication names are stored in logs - only technical information.
             """
@@ -95,9 +97,10 @@ enum FeedbackType {
             
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached for context.
             No medication names are stored in logs - only technical information.
             """
@@ -264,6 +267,7 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
 
         Device Information:
         • App Version: \(Bundle.main.appVersionLong)
+        • Distribution: \(Bundle.main.distributionType)
         • iOS Version: \(UIDevice.current.systemVersion)
         • Device Model: \(UIDevice.current.model)
         """
