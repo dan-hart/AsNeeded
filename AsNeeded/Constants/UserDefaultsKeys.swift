@@ -31,7 +31,10 @@ public enum UserDefaultsKeys {
 	// MARK: - Display Settings
 	/// Trends visualization type (chart, list, etc.)
 	static let trendsVisualizationType = "trendsVisualizationType"
-	
+
+	/// Trends time window in days (14 or 30)
+	static let trendsDaysWindow = "trendsDaysWindow"
+
 	/// Whether to hide support banners
 	static let hideSupportBanners = "hideSupportBanners"
 	
@@ -77,6 +80,7 @@ public enum UserDefaultsKeys {
 		hapticsEnabled,
 		selectedTab,
 		trendsVisualizationType,
+		trendsDaysWindow,
 		hideSupportBanners,
 		showMedicationNamesInNotifications,
 		selectedFontFamily,
@@ -97,6 +101,7 @@ public enum UserDefaultsKeys {
 		hapticsEnabled: true,
 		selectedTab: 0,
 		trendsVisualizationType: 0, // Chart view
+		trendsDaysWindow: 14, // 14 days by default
 		hideSupportBanners: false,
 		showMedicationNamesInNotifications: false,
 		selectedFontFamily: "system", // Default to system font
