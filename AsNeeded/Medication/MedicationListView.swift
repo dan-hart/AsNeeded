@@ -24,7 +24,7 @@ struct MedicationListView: View {
     @State private var quickLogMedicationName = ""
     @State private var quickLogDoseAmount: Double = 0
     @State private var quickLogDoseUnit = ""
-    @State private var quickLogAccentColor: Color = .blue
+    @State private var quickLogAccentColor: Color = .accentColor
 
     @ScaledMetric private var emptyStateSpacing: CGFloat = 32
     @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
