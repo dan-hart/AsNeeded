@@ -51,7 +51,7 @@ struct HealthKitOnboardingCard: View {
 	}
 
 	var body: some View {
-		if showOnboarding && !syncManager.isSyncEnabled {
+		if showOnboarding && !syncManager.isSyncEnabled && syncManager.isHealthKitAvailable {
 			VStack(alignment: .leading, spacing: contentSpacing) {
 				// MARK: - Header with Icon
 				HStack(spacing: contentSpacing) {
