@@ -23,25 +23,25 @@ struct MedicationHistoryView: View {
     @State private var editingEntryAmount: Double = 1.0
     @State private var editingEntryUnit: ANUnitConcept = .unit
 
-    @ScaledMetric private var spacing24: CGFloat = 24
-    @ScaledMetric private var spacing32: CGFloat = 32
-    @ScaledMetric private var spacing12: CGFloat = 12
-    @ScaledMetric private var spacing8: CGFloat = 8
-    @ScaledMetric private var spacing4: CGFloat = 4
-    @ScaledMetric private var spacing2: CGFloat = 2
-    @ScaledMetric private var circleSize: CGFloat = 26
-    @ScaledMetric private var shadowRadius: CGFloat = 3
-    @ScaledMetric private var strokeWidth: CGFloat = 0.5
-    @ScaledMetric private var paddingVertical8: CGFloat = 8
-    @ScaledMetric private var paddingHorizontal12: CGFloat = 12
-    @ScaledMetric private var cornerRadius8: CGFloat = 8
-    @ScaledMetric private var paddingVertical12: CGFloat = 12
-    @ScaledMetric private var paddingHorizontal24: CGFloat = 24
-    @ScaledMetric private var paddingVertical16: CGFloat = 16
-    @ScaledMetric private var paddingTrailing20: CGFloat = 20
-    @ScaledMetric private var paddingBottom20: CGFloat = 20
-    @ScaledMetric private var shadowRadius4: CGFloat = 4
-    @ScaledMetric private var spacing20: CGFloat = 20
+    @ScaledMetric private var emptySectionSpacing: CGFloat = 24
+    @ScaledMetric private var supportViewPaddingH: CGFloat = 32
+    @ScaledMetric private var rowSpacing: CGFloat = 12
+    @ScaledMetric private var entrySpacing: CGFloat = 8
+    @ScaledMetric private var noteTopSpacing: CGFloat = 4
+    @ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
+    @ScaledMetric private var medicationColorCircleSize: CGFloat = 26
+    @ScaledMetric private var colorCircleShadowRadius: CGFloat = 3
+    @ScaledMetric private var colorCircleStrokeWidth: CGFloat = 0.5
+    @ScaledMetric private var quickPhrasesPaddingV: CGFloat = 8
+    @ScaledMetric private var unitPickerItemPaddingH: CGFloat = 12
+    @ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
+    @ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
+    @ScaledMetric private var fabPaddingH: CGFloat = 24
+    @ScaledMetric private var fabPaddingV: CGFloat = 16
+    @ScaledMetric private var fabTrailingPadding: CGFloat = 20
+    @ScaledMetric private var fabBottomPadding: CGFloat = 20
+    @ScaledMetric private var fabShadowRadius: CGFloat = 4
+    @ScaledMetric private var datePickerSpacing: CGFloat = 20
 
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
     
@@ -50,13 +50,13 @@ struct MedicationHistoryView: View {
     @ViewBuilder
     private func emptyHistoryView(for selected: ANMedicationConcept) -> some View {
         Spacer()
-        VStack(spacing: spacing24) {
+        VStack(spacing: emptySectionSpacing) {
             Text("No history for \(selected.displayName).")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             SubtleSupportView(message: "If As Needed helps you manage medications, consider supporting its development")
-                .padding(.horizontal, spacing32)
+                .padding(.horizontal, supportViewPaddingH)
         }
         Spacer()
     }
@@ -68,7 +68,7 @@ struct MedicationHistoryView: View {
                 ForEach(viewModel.groupedHistory, id: \.day) { group in
                     Section(header: sectionHeader(for: group)) {
                         ForEach(group.entries, id: \.id) { event in
-                            VStack(alignment: .leading, spacing: spacing8) {
+                            VStack(alignment: .leading, spacing: entrySpacing) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
                                     if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
@@ -88,11 +88,11 @@ struct MedicationHistoryView: View {
                                         ZStack {
                                             Circle()
                                                 .fill(medicationColor.opacity(0.15))
-                                                .frame(width: circleSize, height: circleSize)
-                                                .shadow(color: medicationColor.opacity(0.4), radius: shadowRadius, x: 0, y: 1)
+                                                .frame(width: medicationColorCircleSize, height: medicationColorCircleSize)
+                                                .shadow(color: medicationColor.opacity(0.4), radius: colorCircleShadowRadius, x: 0, y: 1)
                                                 .overlay(
                                                     Circle()
-                                                        .stroke(.white.opacity(0.3), lineWidth: strokeWidth)
+                                                        .stroke(.white.opacity(0.3), lineWidth: colorCircleStrokeWidth)
                                                 )
 
                                             // Add medication symbol
@@ -113,7 +113,7 @@ struct MedicationHistoryView: View {
                                         }
                                     }
 
-                                    VStack(alignment: .leading, spacing: spacing2) {
+                                    VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
                                         // Show medication name when viewing all medications
                                         if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
                                             let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
@@ -161,7 +161,7 @@ struct MedicationHistoryView: View {
                                             editingNoteText = event.note ?? ""
                                         }
                                     )
-                                    .padding(.top, spacing4)
+                                    .padding(.top, noteTopSpacing)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -207,7 +207,7 @@ struct MedicationHistoryView: View {
     // MARK: - Section Header Helpers
     @ViewBuilder
     private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
-        VStack(alignment: .leading, spacing: spacing2) {
+        VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
             HStack {
                 Text(formatDateWithDayOfWeek(group.day))
                     .font(.customFont(fontFamily, style: .headline))
@@ -295,7 +295,7 @@ struct MedicationHistoryView: View {
                 ZStack(alignment: .bottomTrailing) {
                     VStack(alignment: .leading, spacing: 0) {
                     // Medication picker and date button
-                    HStack(alignment: .center, spacing: spacing12) {
+                    HStack(alignment: .center, spacing: rowSpacing) {
                         Menu {
                             Button {
                                 viewModel.selectedMedicationID = "all"
@@ -334,20 +334,20 @@ struct MedicationHistoryView: View {
                         .accessibilityLabel("Jump to date")
                     }
                     .padding(.horizontal)
-                    .padding(.vertical, paddingVertical12)
+                    .padding(.vertical, pickerContainerPaddingV)
                     
                     Divider()
                     
                     if viewModel.isShowingAllMedications {
                         if viewModel.groupedHistory.isEmpty {
                             Spacer()
-                            VStack(spacing: spacing24) {
+                            VStack(spacing: emptySectionSpacing) {
                                 Text("No dose history found.")
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .center)
 
                                 SubtleSupportView(message: "If As Needed helps you manage medications, consider supporting its development")
-                                    .padding(.horizontal, spacing32)
+                                    .padding(.horizontal, supportViewPaddingH)
                             }
                             Spacer()
                         } else {
@@ -376,16 +376,16 @@ struct MedicationHistoryView: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
-                            .padding(.horizontal, paddingHorizontal24)
-                            .padding(.vertical, paddingVertical16)
+                            .padding(.horizontal, fabPaddingH)
+                            .padding(.vertical, fabPaddingV)
                             .background(
                                 Capsule()
                                     .fill(viewModel.selectedMedication?.displayColor ?? .accent)
-                                    .shadow(color: .black.opacity(0.3), radius: shadowRadius4, x: 0, y: 2)
+                                    .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
                             )
                     }
-                    .padding(.trailing, paddingTrailing20)
-                    .padding(.bottom, paddingBottom20)
+                    .padding(.trailing, fabTrailingPadding)
+                    .padding(.bottom, fabBottomPadding)
                     .accessibilityLabel("Log dose for selected medication")
                 }
             }
@@ -412,7 +412,7 @@ struct MedicationHistoryView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 NavigationStack {
-                    VStack(spacing: spacing20) {
+                    VStack(spacing: sectionHeaderSpacing0) {
                         DatePicker(
                             "Select Date",
                             selection: $selectedDate,
@@ -502,7 +502,7 @@ struct MedicationHistoryView: View {
                                             noteText: $editingNoteText,
                                             medicationName: viewModel.selectedMedication?.displayName
                                         )
-                                        .padding(.vertical, paddingVertical8)
+                                        .padding(.vertical, quickPhrasesPaddingV)
 
                                         TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
                                             .lineLimit(4...8)
@@ -530,7 +530,7 @@ struct MedicationHistoryView: View {
                                         }
                                     }
                                 }) {
-                                    HStack(spacing: spacing8) {
+                                    HStack(spacing: entrySpacing) {
                                         Image(systemSymbol: .checkmarkCircle)
                                             .font(.customFont(fontFamily, style: .body))
                                         Text("Save Note")
@@ -552,8 +552,8 @@ struct MedicationHistoryView: View {
                                             .shadow(color: (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.3), radius: 4, x: 0, y: 2)
                                     )
                                 }
-                                .padding(.horizontal, paddingHorizontal24)
-                                .padding(.vertical, paddingVertical12)
+                                .padding(.horizontal, fabPaddingH)
+                                .padding(.vertical, pickerContainerPaddingV)
                             }
                             .background(.regularMaterial)
                         }
@@ -619,11 +619,11 @@ struct MedicationHistoryView: View {
                             }
                         }
 
-                        VStack(alignment: .leading, spacing: spacing12) {
+                        VStack(alignment: .leading, spacing: rowSpacing) {
                             Text("Dose Amount")
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
 
-                            HStack(spacing: spacing12) {
+                            HStack(spacing: rowSpacing) {
                                 Button(action: {
                                     if editingEntryAmount > 0.5 {
                                         editingEntryAmount -= 0.5
@@ -636,7 +636,7 @@ struct MedicationHistoryView: View {
                                 .buttonStyle(.borderless)
                                 .disabled(editingEntryAmount <= 0.5)
 
-                                VStack(spacing: spacing2) {
+                                VStack(spacing: sectionHeaderSpacing) {
                                     Text("\(editingEntryAmount, specifier: "%.1f")")
                                         .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                                         .contentTransition(.numericText())
@@ -663,7 +663,7 @@ struct MedicationHistoryView: View {
                             .frame(maxWidth: .infinity)
 
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: spacing8) {
+                                HStack(spacing: entrySpacing) {
                                     ForEach(ANUnitConcept.allCases, id: \.self) { unit in
                                         Button(action: {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -672,8 +672,8 @@ struct MedicationHistoryView: View {
                                         }) {
                                             Text(unit.displayName)
                                                 .font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
-                                                .padding(.horizontal, spacing12)
-                                                .padding(.vertical, spacing8)
+                                                .padding(.horizontal, rowSpacing)
+                                                .padding(.vertical, entrySpacing)
                                                 .background(
                                                     Capsule()
                                                         .fill(editingEntryUnit == unit ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.1))

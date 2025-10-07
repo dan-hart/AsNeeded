@@ -2,15 +2,15 @@ import SwiftUI
 import SFSafeSymbols
 
 struct AboutView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing6: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding4: CGFloat = 4
+	@ScaledMetric private var sectionSpacing: CGFloat = 24
+	@ScaledMetric private var subsectionSpacing: CGFloat = 16
+	@ScaledMetric private var groupSpacing: CGFloat = 12
+	@ScaledMetric private var itemSpacing: CGFloat = 8
+	@ScaledMetric private var mediumSpacing: CGFloat = 6
+	@ScaledMetric private var tightSpacing: CGFloat = 4
+	@ScaledMetric private var textSpacing: CGFloat = 2
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var smallPadding: CGFloat = 4
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var iconSize32: CGFloat = 32
 	@Environment(\.fontFamily) private var fontFamily
@@ -34,7 +34,7 @@ struct AboutView: View {
 
   var body: some View {
 	ScrollView {
-	  VStack(alignment: .leading, spacing: spacing24) {
+	  VStack(alignment: .leading, spacing: sectionSpacing) {
 		heroSection
 
 		coreValuesSection
@@ -56,8 +56,8 @@ struct AboutView: View {
   }
 
   private var heroSection: some View {
-	VStack(alignment: .center, spacing: spacing16) {
-	  VStack(spacing: spacing8) {
+	VStack(alignment: .center, spacing: subsectionSpacing) {
+	  VStack(spacing: itemSpacing) {
 		Text(appName)
 		  .font(.largeTitle)
 		  .fontWeight(.bold)
@@ -74,16 +74,16 @@ struct AboutView: View {
 	  }
 	}
 	.frame(maxWidth: .infinity)
-	.padding(.vertical, spacing8)
+	.padding(.vertical, itemSpacing)
   }
 
   private var coreValuesSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
+	VStack(alignment: .leading, spacing: subsectionSpacing) {
 	  Text("Built on three core values")
 		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 		.frame(maxWidth: .infinity)
 
-	  VStack(spacing: spacing12) {
+	  VStack(spacing: groupSpacing) {
 		valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
 		valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
 		valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
@@ -92,12 +92,12 @@ struct AboutView: View {
   }
   
   private var developerAndSupportSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  VStack(alignment: .leading, spacing: spacing8) {
-		HStack(spacing: spacing16) {
+	VStack(alignment: .leading, spacing: subsectionSpacing) {
+	  VStack(alignment: .leading, spacing: itemSpacing) {
+		HStack(spacing: subsectionSpacing) {
 		  if let url = mastodonURL {
 			Link(destination: url) {
-			  HStack(spacing: spacing6) {
+			  HStack(spacing: mediumSpacing) {
 				Image(systemSymbol: .atCircle)
 				  .font(.subheadline)
 				Text("Dan Hart on Mastodon")
@@ -110,7 +110,7 @@ struct AboutView: View {
 
 		  if let url = githubProfileURL {
 			Link(destination: url) {
-			  HStack(spacing: spacing6) {
+			  HStack(spacing: mediumSpacing) {
 				Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 				  .font(.subheadline)
 				Text("Dan Hart on GitHub")
@@ -121,18 +121,18 @@ struct AboutView: View {
 			}
 		  }
 		}
-		.padding(.top, padding4)
+		.padding(.top, smallPadding)
 	  }
 
 	  NavigationLink {
 		SupportView()
 	  } label: {
-		HStack(spacing: spacing12) {
+		HStack(spacing: groupSpacing) {
 		  Image(systemSymbol: .heart)
 			.font(.title3)
 			.foregroundColor(.red)
 
-		  VStack(alignment: .leading, spacing: spacing2) {
+		  VStack(alignment: .leading, spacing: textSpacing) {
 			Text("Support As Needed")
 			  .font(.headline)
 			  .fontWeight(.semibold)
@@ -149,7 +149,7 @@ struct AboutView: View {
 			.font(.caption)
 			.foregroundColor(.secondary)
 		}
-		.padding(padding16)
+		.padding(cardPadding)
 		.background(.regularMaterial)
 		.cornerRadius(cornerRadius12)
 	  }
@@ -158,20 +158,20 @@ struct AboutView: View {
   }
   
   private var specialThanksSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
+	VStack(alignment: .leading, spacing: subsectionSpacing) {
 	  Text("Special Thanks")
 		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
-	  VStack(spacing: spacing12) {
+	  VStack(spacing: groupSpacing) {
 		if let url = christineWangURL {
 		  Link(destination: url) {
-			HStack(spacing: spacing16) {
+			HStack(spacing: subsectionSpacing) {
 			  Image(systemSymbol: .starFill)
 				.font(.title3.weight(.medium))
 				.frame(width: iconSize32, height: iconSize32)
 				.foregroundColor(.yellow)
 
-			  VStack(alignment: .leading, spacing: spacing4) {
+			  VStack(alignment: .leading, spacing: tightSpacing) {
 				Text("Christine Wang")
 				  .font(.headline)
 				  .fontWeight(.semibold)
@@ -187,19 +187,19 @@ struct AboutView: View {
 				.font(.caption)
 				.foregroundColor(.secondary)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(.regularMaterial)
 			.cornerRadius(cornerRadius12)
 		  }
 		  .buttonStyle(.plain)
 		} else {
-		  HStack(spacing: spacing16) {
+		  HStack(spacing: subsectionSpacing) {
 			Image(systemSymbol: .starFill)
 			  .font(.title3.weight(.medium))
 			  .frame(width: iconSize32, height: iconSize32)
 			  .foregroundColor(.yellow)
 
-			VStack(alignment: .leading, spacing: spacing4) {
+			VStack(alignment: .leading, spacing: tightSpacing) {
 			  Text("Christine Wang")
 				.font(.headline)
 				.fontWeight(.semibold)
@@ -210,20 +210,20 @@ struct AboutView: View {
 
 			Spacer()
 		  }
-		  .padding(padding16)
+		  .padding(cardPadding)
 		  .background(.regularMaterial)
 		  .cornerRadius(cornerRadius12)
 		}
 
 		if let url = kevinWangURL {
 		  Link(destination: url) {
-			HStack(spacing: spacing16) {
+			HStack(spacing: subsectionSpacing) {
 			  Image(systemSymbol: .sparkles)
 				.font(.title3.weight(.medium))
 				.frame(width: iconSize32, height: iconSize32)
 				.foregroundColor(.purple)
 
-			  VStack(alignment: .leading, spacing: spacing4) {
+			  VStack(alignment: .leading, spacing: tightSpacing) {
 				Text("Kevin Wang")
 				  .font(.headline)
 				  .fontWeight(.semibold)
@@ -239,20 +239,20 @@ struct AboutView: View {
 				.font(.caption)
 				.foregroundColor(.secondary)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(.regularMaterial)
 			.cornerRadius(cornerRadius12)
 		  }
 		  .buttonStyle(.plain)
 		}
 
-		HStack(spacing: spacing16) {
+		HStack(spacing: subsectionSpacing) {
 		  Image(systemSymbol: .heartFill)
 			.font(.title3.weight(.medium))
 			.frame(width: iconSize32, height: iconSize32)
             .foregroundColor(.pink)
 
-		  VStack(alignment: .leading, spacing: spacing4) {
+		  VStack(alignment: .leading, spacing: tightSpacing) {
 			Text("My Wife, Jesse")
 			  .font(.headline)
 			  .fontWeight(.semibold)
@@ -263,7 +263,7 @@ struct AboutView: View {
 
 		  Spacer()
 		}
-		.padding(padding16)
+		.padding(cardPadding)
 		.background(.regularMaterial)
 		.cornerRadius(cornerRadius12)
 	  }
@@ -271,11 +271,11 @@ struct AboutView: View {
   }
   
   private var technicalInfoSection: some View {
-	VStack(alignment: .leading, spacing: spacing12) {
+	VStack(alignment: .leading, spacing: groupSpacing) {
 	  Text("Technical Information")
 		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
-	  VStack(spacing: spacing8) {
+	  VStack(spacing: itemSpacing) {
 		HStack {
 		  Text("Version")
 			.foregroundStyle(.secondary)
@@ -304,7 +304,7 @@ struct AboutView: View {
 		}
 	  }
 	}
-	.padding(padding16)
+	.padding(cardPadding)
 	.background(.regularMaterial)
 	.cornerRadius(cornerRadius12)
   }
@@ -313,12 +313,12 @@ struct AboutView: View {
 	NavigationLink {
 	  AppDependenciesView()
 	} label: {
-	  HStack(spacing: spacing12) {
+	  HStack(spacing: groupSpacing) {
 		Image(systemSymbol: .shippingboxFill)
 		  .font(.title3)
 		  .foregroundColor(.accent)
 
-		VStack(alignment: .leading, spacing: spacing2) {
+		VStack(alignment: .leading, spacing: textSpacing) {
 		  Text("App Dependencies")
 			.font(.headline)
 			.fontWeight(.semibold)
@@ -335,7 +335,7 @@ struct AboutView: View {
 		  .font(.caption)
 		  .foregroundColor(.secondary)
 	  }
-	  .padding(padding16)
+	  .padding(cardPadding)
 	  .background(.regularMaterial)
 	  .cornerRadius(cornerRadius12)
 	}
@@ -343,13 +343,13 @@ struct AboutView: View {
   }
 
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
-	HStack(spacing: spacing16) {
+	HStack(spacing: subsectionSpacing) {
 	  Image(systemSymbol: icon)
 		.font(.title3.weight(.medium))
 		.frame(width: iconSize32, height: iconSize32)
 		.foregroundColor(.accentColor)
 
-	  VStack(alignment: .leading, spacing: spacing4) {
+	  VStack(alignment: .leading, spacing: tightSpacing) {
 		Text(title)
 		  .font(.headline)
 		  .fontWeight(.semibold)
@@ -360,13 +360,13 @@ struct AboutView: View {
 
 	  Spacer()
 	}
-	.padding(padding16)
+	.padding(cardPadding)
 	.background(.regularMaterial)
 	.cornerRadius(cornerRadius12)
   }
 
   private var testFlightSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
+	VStack(alignment: .leading, spacing: subsectionSpacing) {
 	  Text("Join the Beta")
 		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 

@@ -20,15 +20,15 @@ import SFSafeSymbols
 /// - License compliance and attribution
 /// - Developer reference for package versions
 struct AppDependenciesView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing6: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var padding4: CGFloat = 4
+	@ScaledMetric private var sectionSpacing: CGFloat = 24
+	@ScaledMetric private var subsectionSpacing: CGFloat = 16
+	@ScaledMetric private var groupSpacing: CGFloat = 12
+	@ScaledMetric private var itemSpacing: CGFloat = 8
+	@ScaledMetric private var mediumSpacing: CGFloat = 6
+	@ScaledMetric private var tightSpacing: CGFloat = 4
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var mediumPadding: CGFloat = 8
+	@ScaledMetric private var smallPadding: CGFloat = 4
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var cornerRadius6: CGFloat = 6
 	@ScaledMetric private var iconSize28: CGFloat = 28
@@ -46,7 +46,7 @@ struct AppDependenciesView: View {
 
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: spacing24) {
+			VStack(alignment: .leading, spacing: sectionSpacing) {
 				headerSection
 
 				if !directDependencies.isEmpty {
@@ -67,7 +67,7 @@ struct AppDependenciesView: View {
 
 	// MARK: - View Components
 	private var headerSection: some View {
-		VStack(alignment: .leading, spacing: spacing8) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Open Source Libraries")
 				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
@@ -78,12 +78,12 @@ struct AppDependenciesView: View {
 	}
 
 	private var directDependenciesSection: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: groupSpacing) {
 			Text("Direct Dependencies")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				.foregroundStyle(.secondary)
 
-			VStack(spacing: spacing8) {
+			VStack(spacing: itemSpacing) {
 				ForEach(directDependencies) { dependency in
 					dependencyRow(dependency)
 				}
@@ -92,7 +92,7 @@ struct AppDependenciesView: View {
 	}
 
 	private var transitiveDependenciesSection: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: groupSpacing) {
 			Text("Transitive Dependencies")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				.foregroundStyle(.secondary)
@@ -101,7 +101,7 @@ struct AppDependenciesView: View {
 				.font(.customFont(fontFamily, style: .caption))
 				.foregroundStyle(.tertiary)
 
-			VStack(spacing: spacing8) {
+			VStack(spacing: itemSpacing) {
 				ForEach(transitiveDependencies) { dependency in
 					dependencyRow(dependency)
 				}
@@ -113,7 +113,7 @@ struct AppDependenciesView: View {
 		Button {
 			openURL(dependency.repositoryURL)
 		} label: {
-			HStack(spacing: spacing12) {
+			HStack(spacing: groupSpacing) {
 				// Package icon
 				Image(systemSymbol: .shippingboxFill)
 					.font(.title2)
@@ -121,7 +121,7 @@ struct AppDependenciesView: View {
 					.foregroundStyle(.accent)
 
 				// Content
-				VStack(alignment: .leading, spacing: spacing6) {
+				VStack(alignment: .leading, spacing: mediumSpacing) {
 					// Package name
 					Text(dependency.name)
 						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
@@ -134,7 +134,7 @@ struct AppDependenciesView: View {
 						.lineLimit(2)
 
 					// Metadata row
-					HStack(spacing: spacing8) {
+					HStack(spacing: itemSpacing) {
 						// License badge
 						licenseBadge(for: dependency.license)
 
@@ -158,14 +158,14 @@ struct AppDependenciesView: View {
 					}
 				}
 
-				Spacer(minLength: spacing8)
+				Spacer(minLength: itemSpacing)
 
 				// External link indicator
 				Image(systemSymbol: .arrowUpRightSquare)
 					.font(.body)
 					.foregroundStyle(.tertiary)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(.regularMaterial)
 			.cornerRadius(cornerRadius12)
 		}
@@ -178,8 +178,8 @@ struct AppDependenciesView: View {
 		Text(license.displayName)
 			.font(.customFont(fontFamily, style: .caption2, weight: .bold))
 			.foregroundStyle(licenseForegroundColor(for: license))
-			.padding(.horizontal, padding8)
-			.padding(.vertical, padding4)
+			.padding(.horizontal, mediumPadding)
+			.padding(.vertical, smallPadding)
 			.background(licenseBackgroundColor(for: license))
 			.cornerRadius(cornerRadius6)
 	}
@@ -210,7 +210,7 @@ struct AppDependenciesView: View {
 	}
 
 	private var footerSection: some View {
-		VStack(alignment: .leading, spacing: spacing8) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("License Information")
 				.font(.customFont(fontFamily, style: .caption, weight: .semibold))
 				.foregroundStyle(.secondary)
@@ -219,7 +219,7 @@ struct AppDependenciesView: View {
 				.font(.customFont(fontFamily, style: .caption))
 				.foregroundStyle(.tertiary)
 		}
-		.padding(padding16)
+		.padding(cardPadding)
 		.background(.regularMaterial)
 		.cornerRadius(cornerRadius12)
 	}

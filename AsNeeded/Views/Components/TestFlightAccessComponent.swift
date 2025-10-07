@@ -27,9 +27,9 @@ import SFSafeSymbols
 /// TestFlightAccessComponent()
 /// ```
 struct TestFlightAccessComponent: View {
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var elementSpacing: CGFloat = 12
+	@ScaledMetric private var textSpacing: CGFloat = 2
+	@ScaledMetric private var cardPadding: CGFloat = 16
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var cornerRadius10: CGFloat = 10
 	@ScaledMetric private var iconSize40: CGFloat = 40
@@ -38,7 +38,7 @@ struct TestFlightAccessComponent: View {
 
 	var body: some View {
 		Button(action: openTestFlight) {
-			HStack(spacing: spacing12) {
+			HStack(spacing: elementSpacing) {
 				Image(systemSymbol: .airplaneCircleFill)
 					.font(.title2)
 					.foregroundColor(.white)
@@ -52,7 +52,7 @@ struct TestFlightAccessComponent: View {
 					)
 					.cornerRadius(cornerRadius10)
 
-				VStack(alignment: .leading, spacing: spacing2) {
+				VStack(alignment: .leading, spacing: textSpacing) {
 					Text(String(localized: "Join TestFlight Beta"))
 						.font(.customFont(fontFamily, style: .callout, weight: .semibold))
 						.foregroundColor(.primary)
@@ -68,7 +68,7 @@ struct TestFlightAccessComponent: View {
 					.font(.caption)
 					.foregroundColor(.secondary)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(.regularMaterial)
 			.cornerRadius(cornerRadius12)
 		}

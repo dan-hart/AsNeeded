@@ -37,14 +37,14 @@ struct ExpandableNoteEditorComponent: View {
 	// Scaled metrics
 	@ScaledMetric private var compactHeight: CGFloat = 56
 	@ScaledMetric private var expandedMinHeight: CGFloat = 200
-	@ScaledMetric private var padding12: CGFloat = 12
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
+	@ScaledMetric private var standardPadding: CGFloat = 12
+	@ScaledMetric private var horizontalPadding: CGFloat = 16
+	@ScaledMetric private var verticalPadding: CGFloat = 8
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var cornerRadius16: CGFloat = 16
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing16: CGFloat = 16
+	@ScaledMetric private var buttonSpacing: CGFloat = 8
+	@ScaledMetric private var elementSpacing: CGFloat = 12
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
 	@ScaledMetric private var iconSize: CGFloat = 20
 
 	private let hapticsManager = HapticsManager.shared
@@ -60,7 +60,7 @@ struct ExpandableNoteEditorComponent: View {
 			isExpanded = true
 			hapticsManager.lightImpact()
 		} label: {
-			HStack(spacing: spacing12) {
+			HStack(spacing: elementSpacing) {
 				Image(systemSymbol: .noteText)
 					.font(.customFont(fontFamily, style: .body))
 					.foregroundStyle(hasContent ? .accent : .secondary)
@@ -92,7 +92,7 @@ struct ExpandableNoteEditorComponent: View {
 					.font(.customFont(fontFamily, style: .body))
 					.foregroundStyle(hasContent ? .accent : .secondary)
 			}
-			.padding(padding12)
+			.padding(standardPadding)
 			.frame(minHeight: compactHeight)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
@@ -116,7 +116,7 @@ struct ExpandableNoteEditorComponent: View {
 				hapticsManager.lightImpact()
 			}
 		}) {
-			HStack(spacing: spacing8) {
+			HStack(spacing: buttonSpacing) {
 				Image(systemSymbol: .checkmarkCircle)
 					.font(.customFont(fontFamily, style: .body))
 				Text("Save Note")
@@ -151,8 +151,8 @@ struct ExpandableNoteEditorComponent: View {
 									.foregroundStyle(.secondary)
 								Spacer()
 							}
-							.padding(.horizontal, padding16)
-							.padding(.vertical, padding8)
+							.padding(.horizontal, horizontalPadding)
+							.padding(.vertical, verticalPadding)
 						}
 
 						// Quick phrases (only if enabled)
@@ -161,8 +161,8 @@ struct ExpandableNoteEditorComponent: View {
 								noteText: $localText,
 								medicationName: medicationName
 							)
-							.padding(.horizontal, padding16)
-							.padding(.bottom, padding8)
+							.padding(.horizontal, horizontalPadding)
+							.padding(.bottom, verticalPadding)
 						}
 
 						// Text field with vertical axis for multi-line support
@@ -171,7 +171,7 @@ struct ExpandableNoteEditorComponent: View {
 							.lineLimit(8...20)
 							.textFieldStyle(.plain)
 							.focused($isTextFieldFocused)
-							.padding(padding12)
+							.padding(standardPadding)
 							.background(
 								RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
 									.fill(colorScheme == .dark ?
@@ -179,9 +179,9 @@ struct ExpandableNoteEditorComponent: View {
 										Color(uiColor: .secondarySystemBackground))
 							)
 							.frame(minHeight: expandedMinHeight)
-							.padding(.horizontal, padding16)
-							.padding(.top, featureToggleManager.quickPhrasesEnabled ? 0 : padding16)
-							.padding(.bottom, padding16)
+							.padding(.horizontal, horizontalPadding)
+							.padding(.top, featureToggleManager.quickPhrasesEnabled ? 0 : horizontalPadding)
+							.padding(.bottom, horizontalPadding)
 							.onAppear {
 								// Immediate focus attempt
 								isTextFieldFocused = true
@@ -196,8 +196,8 @@ struct ExpandableNoteEditorComponent: View {
 						.background(.separator.opacity(0.5))
 
 					saveButton
-						.padding(.horizontal, padding16)
-						.padding(.vertical, padding12)
+						.padding(.horizontal, horizontalPadding)
+						.padding(.vertical, standardPadding)
 				}
 				.background(.regularMaterial)
 			}

@@ -7,7 +7,7 @@ struct NIHDisclaimerDetailView: View {
 	@ScaledMetric private var itemSpacing: CGFloat = 12
 	@ScaledMetric private var smallSpacing: CGFloat = 8
 	@ScaledMetric private var tinySpacing: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var tightSpacing: CGFloat = 4
 	@ScaledMetric private var padding: CGFloat = 16
 	@ScaledMetric private var cornerRadius: CGFloat = 12
 
@@ -47,7 +47,7 @@ struct NIHDisclaimerDetailView: View {
 							UIApplication.shared.open(url)
 						}
 					}) {
-						HStack(spacing: spacing4) {
+						HStack(spacing: tightSpacing) {
 							Text("Visit NIH Official Website")
 								.font(.caption)
 								.foregroundStyle(.accent)
@@ -121,7 +121,7 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							HStack(spacing: spacing4) {
+							HStack(spacing: tightSpacing) {
 								Text("RxNorm Database Homepage")
 									.font(.caption)
 									.foregroundStyle(.accent)
@@ -138,7 +138,7 @@ struct NIHDisclaimerDetailView: View {
 								UIApplication.shared.open(url)
 							}
 						}) {
-							HStack(spacing: spacing4) {
+							HStack(spacing: tightSpacing) {
 								Text("RxNorm API Documentation")
 									.font(.caption)
 									.foregroundStyle(.accent)

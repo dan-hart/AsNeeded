@@ -51,7 +51,7 @@ struct MoreDisclaimerInfoView: View {
 	@ScaledMetric private var listSpacing: CGFloat = 12
 	@ScaledMetric private var smallSpacing: CGFloat = 8
 	@ScaledMetric private var tinySpacing: CGFloat = 4
-	@ScaledMetric private var spacing2: CGFloat = 2
+	@ScaledMetric private var tightestSpacing: CGFloat = 2
 	@ScaledMetric private var padding: CGFloat = 16
 	@ScaledMetric private var outerPadding: CGFloat = 20
 	@ScaledMetric private var cornerRadius: CGFloat = 12
@@ -181,7 +181,7 @@ struct MoreDisclaimerInfoView: View {
 					.foregroundColor(.accentColor)
 					.frame(width: iconWidth)
 
-				VStack(alignment: .leading, spacing: spacing2) {
+				VStack(alignment: .leading, spacing: tightestSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)

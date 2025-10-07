@@ -3,24 +3,24 @@ import SFSafeSymbols
 import DHLoggingKit
 
 struct ThankYouView: View {
-	@ScaledMetric private var spacing32: CGFloat = 32
-	@ScaledMetric private var spacing20: CGFloat = 20
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var cornerRadius16: CGFloat = 16
-	@ScaledMetric private var cornerRadius14: CGFloat = 14
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var cornerRadius10: CGFloat = 10
-	@ScaledMetric private var circleSize120: CGFloat = 120
-	@ScaledMetric private var iconSize40: CGFloat = 40
-	@ScaledMetric private var iconSize24: CGFloat = 24
-	@ScaledMetric private var blurRadius20: CGFloat = 20
-	@ScaledMetric private var shadowRadius8: CGFloat = 8
-	@ScaledMetric private var shadowY4: CGFloat = 4
+	@ScaledMetric private var sectionSpacing: CGFloat = 32
+	@ScaledMetric private var heroSpacing: CGFloat = 20
+	@ScaledMetric private var contentSpacing: CGFloat = 16
+	@ScaledMetric private var itemSpacing: CGFloat = 12
+	@ScaledMetric private var compactSpacing: CGFloat = 8
+	@ScaledMetric private var labelSpacing: CGFloat = 2
+	@ScaledMetric private var buttonPaddingV: CGFloat = 16
+	@ScaledMetric private var dismissButtonPaddingTop: CGFloat = 8
+	@ScaledMetric private var impactCardCornerRadius: CGFloat = 16
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 14
+	@ScaledMetric private var actionCardCornerRadius: CGFloat = 12
+	@ScaledMetric private var iconCornerRadius: CGFloat = 10
+	@ScaledMetric private var heroCircleSize: CGFloat = 120
+	@ScaledMetric private var actionIconSize: CGFloat = 40
+	@ScaledMetric private var impactIconWidth: CGFloat = 24
+	@ScaledMetric private var heroBlurRadius: CGFloat = 20
+	@ScaledMetric private var buttonShadowRadius: CGFloat = 8
+	@ScaledMetric private var buttonShadowY: CGFloat = 4
 
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.openURL) private var openURL
@@ -60,7 +60,7 @@ struct ThankYouView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(spacing: spacing32) {
+				VStack(spacing: sectionSpacing) {
 					// MARK: - Hero Section
 					heroSection
 
@@ -120,7 +120,7 @@ struct ThankYouView: View {
 	
 	// MARK: - View Components
 	private var heroSection: some View {
-		VStack(spacing: spacing20) {
+		VStack(spacing: heroSpacing) {
 			// Animated Heart Icon
 			ZStack {
 				Circle()
@@ -131,8 +131,8 @@ struct ThankYouView: View {
 							endPoint: .bottomTrailing
 						)
 					)
-					.frame(width: circleSize120, height: circleSize120)
-					.blur(radius: blurRadius20)
+					.frame(width: heroCircleSize, height: heroCircleSize)
+					.blur(radius: heroBlurRadius)
 
 				Image(systemSymbol: .heartFill)
 					.font(.largeTitle.weight(.semibold))
@@ -150,9 +150,9 @@ struct ThankYouView: View {
 						value: heartScale
 					)
 			}
-			.padding(.top, spacing20)
+			.padding(.top, heroSpacing)
 
-			VStack(spacing: spacing8) {
+			VStack(spacing: compactSpacing) {
 				Text(purchaseType.title)
 					.font(.largeTitle)
 					.fontWeight(.bold)
@@ -167,7 +167,7 @@ struct ThankYouView: View {
 	}
 	
 	private var impactSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: contentSpacing) {
 			Label {
 				Text("Your Support Helps")
 					.font(.customFont(fontFamily, style: .headline))
@@ -176,7 +176,7 @@ struct ThankYouView: View {
 			}
 			.foregroundColor(.accentColor)
 
-			VStack(alignment: .leading, spacing: spacing12) {
+			VStack(alignment: .leading, spacing: itemSpacing) {
 				ImpactRow(
 					icon: .hammerFill,
 					title: "Continuous Development",
@@ -203,14 +203,14 @@ struct ThankYouView: View {
 			}
 			.padding()
 			.background(
-				RoundedRectangle(cornerRadius: cornerRadius16)
+				RoundedRectangle(cornerRadius: impactCardCornerRadius)
 					.fill(.quaternary.opacity(0.3))
 			)
 		}
 	}
 	
 	private var contributeSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: contentSpacing) {
 			Label {
 				Text("Want to Contribute More?")
 					.font(.customFont(fontFamily, style: .headline))
@@ -219,14 +219,14 @@ struct ThankYouView: View {
 			}
 			.foregroundColor(.accentColor)
 
-			VStack(spacing: spacing12) {
+			VStack(spacing: itemSpacing) {
 				// GitHub Repository
 				Button(action: openGitHub) {
 					HStack {
 						Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: iconSize40, height: iconSize40)
+							.frame(width: actionIconSize, height: actionIconSize)
 							.background(
 								LinearGradient(
 									colors: [.purple, .indigo],
@@ -234,9 +234,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(cornerRadius10)
+							.cornerRadius(iconCornerRadius)
 
-						VStack(alignment: .leading, spacing: spacing2) {
+						VStack(alignment: .leading, spacing: labelSpacing) {
 							Text("View Source Code")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -254,7 +254,7 @@ struct ThankYouView: View {
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: cornerRadius12)
+						RoundedRectangle(cornerRadius: actionCardCornerRadius)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -266,7 +266,7 @@ struct ThankYouView: View {
 						Image(systemSymbol: .exclamationmarkTriangleFill)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: iconSize40, height: iconSize40)
+							.frame(width: actionIconSize, height: actionIconSize)
 							.background(
 								LinearGradient(
 									colors: [.orange, .yellow],
@@ -274,9 +274,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(cornerRadius10)
+							.cornerRadius(iconCornerRadius)
 
-						VStack(alignment: .leading, spacing: spacing2) {
+						VStack(alignment: .leading, spacing: labelSpacing) {
 							Text("Report an Issue")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -294,7 +294,7 @@ struct ThankYouView: View {
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: cornerRadius12)
+						RoundedRectangle(cornerRadius: actionCardCornerRadius)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -306,7 +306,7 @@ struct ThankYouView: View {
 						Image(systemSymbol: .envelopeFill)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: iconSize40, height: iconSize40)
+							.frame(width: actionIconSize, height: actionIconSize)
 							.background(
 								LinearGradient(
 									colors: [.blue, .cyan],
@@ -314,9 +314,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(cornerRadius10)
+							.cornerRadius(iconCornerRadius)
 
-						VStack(alignment: .leading, spacing: spacing2) {
+						VStack(alignment: .leading, spacing: labelSpacing) {
 							Text("Send Feedback")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -334,7 +334,7 @@ struct ThankYouView: View {
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: cornerRadius12)
+						RoundedRectangle(cornerRadius: actionCardCornerRadius)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -346,7 +346,7 @@ struct ThankYouView: View {
 						Image(systemSymbol: .star)
 							.font(.title2)
 							.foregroundColor(.white)
-							.frame(width: iconSize40, height: iconSize40)
+							.frame(width: actionIconSize, height: actionIconSize)
 							.background(
 								LinearGradient(
 									colors: [.orange, .yellow],
@@ -354,9 +354,9 @@ struct ThankYouView: View {
 									endPoint: .bottomTrailing
 								)
 							)
-							.cornerRadius(cornerRadius10)
+							.cornerRadius(iconCornerRadius)
 
-						VStack(alignment: .leading, spacing: spacing2) {
+						VStack(alignment: .leading, spacing: labelSpacing) {
 							Text("Rate & Review")
 								.font(.callout)
 								.fontWeight(.semibold)
@@ -374,7 +374,7 @@ struct ThankYouView: View {
 					}
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: cornerRadius12)
+						RoundedRectangle(cornerRadius: actionCardCornerRadius)
 							.fill(.quaternary.opacity(0.2))
 					)
 				}
@@ -387,7 +387,7 @@ struct ThankYouView: View {
 	}
 	
 	private var personalNoteSection: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			HStack {
 				Image(systemSymbol: .personCircleFill)
 					.foregroundColor(.accentColor)
@@ -401,7 +401,7 @@ struct ThankYouView: View {
 				.fixedSize(horizontal: false, vertical: true)
 				.padding()
 				.background(
-					RoundedRectangle(cornerRadius: cornerRadius12)
+					RoundedRectangle(cornerRadius: actionCardCornerRadius)
 						.fill(Color.accentColor.opacity(0.1))
 				)
 		}
@@ -419,7 +419,7 @@ struct ThankYouView: View {
 					.foregroundColor(.white)
 				Spacer()
 			}
-			.padding(.vertical, padding16)
+			.padding(.vertical, buttonPaddingV)
 			.background(
 				LinearGradient(
 					colors: [.accentColor, .accentColor.opacity(0.8)],
@@ -427,11 +427,11 @@ struct ThankYouView: View {
 					endPoint: .trailing
 				)
 			)
-			.cornerRadius(cornerRadius14)
-			.shadow(color: .accentColor.opacity(0.3), radius: shadowRadius8, y: shadowY4)
+			.cornerRadius(buttonCornerRadius)
+			.shadow(color: .accentColor.opacity(0.3), radius: buttonShadowRadius, y: buttonShadowY)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, padding8)
+		.padding(.top, dismissButtonPaddingTop)
 	}
 	
 	// MARK: - Actions
@@ -462,22 +462,22 @@ struct ThankYouView: View {
 
 // MARK: - Supporting Views
 private struct ImpactRow: View {
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var iconWidth24: CGFloat = 24
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var labelSpacing: CGFloat = 4
+	@ScaledMetric private var iconWidth: CGFloat = 24
 
 	let icon: SFSymbol
 	let title: String
 	let description: String
 
 	var body: some View {
-		HStack(alignment: .top, spacing: spacing12) {
+		HStack(alignment: .top, spacing: rowSpacing) {
 			Image(systemSymbol: icon)
 				.font(.body)
 				.foregroundColor(.accentColor)
-				.frame(width: iconWidth24)
+				.frame(width: iconWidth)
 
-			VStack(alignment: .leading, spacing: spacing4) {
+			VStack(alignment: .leading, spacing: labelSpacing) {
 				Text(title)
 					.font(.subheadline)
 					.fontWeight(.semibold)
