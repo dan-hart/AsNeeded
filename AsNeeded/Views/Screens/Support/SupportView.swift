@@ -4,23 +4,23 @@ import DHLoggingKit
 import SafariServices
 
 struct SupportView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing20: CGFloat = 20
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing6: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding20: CGFloat = 20
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding12: CGFloat = 12
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var padding4: CGFloat = 4
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var cornerRadius10: CGFloat = 10
-	@ScaledMetric private var lineWidth1: CGFloat = 1
-	@ScaledMetric private var minHeight100: CGFloat = 100
+	@ScaledMetric private var sectionSpacing: CGFloat = 24
+	@ScaledMetric private var subsectionSpacing: CGFloat = 20
+	@ScaledMetric private var itemSpacing: CGFloat = 16
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var compactSpacing: CGFloat = 8
+	@ScaledMetric private var legalLinksSpacing: CGFloat = 6
+	@ScaledMetric private var subscriptionInfoSpacing: CGFloat = 4
+	@ScaledMetric private var labelSpacing: CGFloat = 2
+	@ScaledMetric private var restoreButtonPaddingH: CGFloat = 20
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var buttonPaddingV: CGFloat = 12
+	@ScaledMetric private var headerPaddingV: CGFloat = 8
+	@ScaledMetric private var legalLinksPaddingTop: CGFloat = 4
+	@ScaledMetric private var cardCornerRadius: CGFloat = 12
+	@ScaledMetric private var buttonCornerRadius: CGFloat = 10
+	@ScaledMetric private var borderWidth: CGFloat = 1
+	@ScaledMetric private var tipButtonMinHeight: CGFloat = 100
 
 	@Environment(\.openURL) private var openURL
 	@Environment(\.fontFamily) private var fontFamily
@@ -36,7 +36,7 @@ struct SupportView: View {
 	
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: spacing24) {
+			VStack(alignment: .leading, spacing: sectionSpacing) {
 				headerSection
 
 				supportOptionsSection
@@ -75,16 +75,16 @@ struct SupportView: View {
 						ProgressView("Processing...")
 							.padding()
 							.background(.regularMaterial)
-							.cornerRadius(cornerRadius12)
+							.cornerRadius(cardCornerRadius)
 					}
 			}
 		}
 	}
 	
 	private var headerSection: some View {
-		VStack(alignment: .center, spacing: spacing16) {
-			VStack(spacing: spacing8) {
-				HStack(spacing: spacing8) {
+		VStack(alignment: .center, spacing: itemSpacing) {
+			VStack(spacing: compactSpacing) {
+				HStack(spacing: compactSpacing) {
 					Image(systemSymbol: .heart)
 						.font(.title2)
 						.foregroundColor(.red)
@@ -100,13 +100,13 @@ struct SupportView: View {
 			}
 		}
 		.frame(maxWidth: .infinity)
-		.padding(.vertical, padding8)
+		.padding(.vertical, headerPaddingV)
 	}
 	
 	private var supportOptionsSection: some View {
-		VStack(alignment: .leading, spacing: spacing20) {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
 			// Support Section
-			VStack(alignment: .leading, spacing: spacing16) {
+			VStack(alignment: .leading, spacing: itemSpacing) {
 				Text("Support Development")
 					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
@@ -129,11 +129,11 @@ struct SupportView: View {
 	}
 	
 	private var aboutOpenSourceSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Open Source & Free")
 				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
-			VStack(alignment: .leading, spacing: spacing12) {
+			VStack(alignment: .leading, spacing: rowSpacing) {
 				Text("As Needed will always be free with all features available. No ads, no premium tiers, no subscriptions required. The app is open source - you can inspect the code or contribute improvements.")
 					.font(.body)
 					.foregroundStyle(.secondary)
@@ -143,12 +143,12 @@ struct SupportView: View {
 						openURL(url)
 					}
 				} label: {
-					HStack(spacing: spacing12) {
+					HStack(spacing: rowSpacing) {
 						Image(systemSymbol: .chevronLeftForwardslashChevronRight)
 							.font(.title3)
 							.foregroundColor(.primary)
 
-						VStack(alignment: .leading, spacing: spacing2) {
+						VStack(alignment: .leading, spacing: labelSpacing) {
 							Text("Contribute on GitHub")
 								.font(.headline)
 								.fontWeight(.semibold)
@@ -165,9 +165,9 @@ struct SupportView: View {
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
-					.padding(padding16)
+					.padding(cardPadding)
 					.background(.regularMaterial)
-					.cornerRadius(cornerRadius12)
+					.cornerRadius(cardCornerRadius)
 				}
 				.buttonStyle(.plain)
 			}
@@ -175,7 +175,7 @@ struct SupportView: View {
 	}
 
 	private var testFlightSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Beta Testing")
 				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
@@ -187,12 +187,12 @@ struct SupportView: View {
 		Button {
 			ReviewService.shared.openAppStoreReviewPage()
 		} label: {
-			HStack(spacing: spacing12) {
+			HStack(spacing: rowSpacing) {
 				Image(systemSymbol: .star)
 					.font(.title3)
 					.foregroundColor(.accent)
 
-				VStack(alignment: .leading, spacing: spacing2) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text("Rate & Review on App Store")
 						.font(.headline)
 						.fontWeight(.semibold)
@@ -209,22 +209,22 @@ struct SupportView: View {
 					.font(.caption)
 					.foregroundColor(.secondary)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(.regularMaterial)
-			.cornerRadius(cornerRadius12)
+			.cornerRadius(cardCornerRadius)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, padding8)
+		.padding(.top, headerPaddingV)
 	}
 
 	private var tipJarGrid: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: rowSpacing) {
 			Text("One-time Tips")
 				.font(.headline)
 				.fontWeight(.semibold)
-				.padding(.top, padding8)
+				.padding(.top, headerPaddingV)
 
-			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: spacing12) {
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: rowSpacing) {
 				ForEach(tipTiers, id: \.title) { tip in
 					TipButton(tip: tip,
 							 isPurchasing: $isPurchasing,
@@ -239,17 +239,17 @@ struct SupportView: View {
 	}
 	
 	private var subscriptionOptions: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: rowSpacing) {
 			Text("Monthly Auto-Renewable Subscriptions")
 				.font(.headline)
 				.fontWeight(.semibold)
-				.padding(.top, padding8)
+				.padding(.top, headerPaddingV)
 
 			Text("Ongoing monthly support for development • Cancel anytime in Settings")
 				.font(.caption)
 				.foregroundColor(.secondary)
 
-			VStack(spacing: spacing8) {
+			VStack(spacing: compactSpacing) {
 				ForEach(subscriptionTiers, id: \.title) { subscription in
 					SubscriptionButton(subscription: subscription,
 									  isPurchasing: $isPurchasing,
@@ -293,19 +293,19 @@ struct SupportView: View {
 					.fontWeight(.medium)
 			}
 			.foregroundColor(.white)
-			.padding(.horizontal, padding20)
-			.padding(.vertical, padding12)
+			.padding(.horizontal, restoreButtonPaddingH)
+			.padding(.vertical, buttonPaddingV)
 			.background(
-				RoundedRectangle(cornerRadius: cornerRadius10)
+				RoundedRectangle(cornerRadius: buttonCornerRadius)
                     .fill(.accent)
 			)
 		}
 		.buttonStyle(.plain)
-		.padding(.top, padding16)
+		.padding(.top, cardPadding)
 	}
 	
 	private var legalLinksSection: some View {
-        VStack(alignment: .leading, spacing: spacing8) {
+        VStack(alignment: .leading, spacing: compactSpacing) {
 			Button {
 				if let url = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/") {
 					webURL = url
@@ -328,17 +328,17 @@ struct SupportView: View {
 					.foregroundColor(.accentColor)
 			}
 		}
-		.padding(.top, padding4)
+		.padding(.top, legalLinksPaddingTop)
 	}
 	
 	private var subscriptionLegalInfo: some View {
-		VStack(alignment: .leading, spacing: spacing6) {
+		VStack(alignment: .leading, spacing: legalLinksSpacing) {
 			Text("Subscription automatically renews monthly unless canceled. Manage in Settings > Apple ID > Subscriptions.")
 				.font(.caption2)
 				.foregroundColor(.secondary)
-				.padding(.top, padding8)
+				.padding(.top, headerPaddingV)
 		}
-		.padding(.horizontal, padding4)
+		.padding(.horizontal, subscriptionInfoSpacing)
 	}
 	
 	private let tipTiers = [
@@ -357,12 +357,12 @@ struct SupportView: View {
 
 // MARK: - Tip Button
 private struct TipButton: View {
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var lineWidth1: CGFloat = 1
-	@ScaledMetric private var minHeight100: CGFloat = 100
+	@ScaledMetric private var contentSpacing: CGFloat = 8
+	@ScaledMetric private var paddingV: CGFloat = 16
+	@ScaledMetric private var paddingH: CGFloat = 8
+	@ScaledMetric private var cardCornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 1
+	@ScaledMetric private var minHeight: CGFloat = 100
 
 	let tip: (title: String, emoji: String, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
@@ -391,7 +391,7 @@ private struct TipButton: View {
 				}
 			}
 		} label: {
-			VStack(spacing: spacing8) {
+			VStack(spacing: contentSpacing) {
 				Text(tip.emoji)
 					.font(.title2)
 
@@ -405,15 +405,15 @@ private struct TipButton: View {
 					.font(.caption2)
 					.foregroundColor(.secondary)
 			}
-			.frame(maxWidth: .infinity, minHeight: minHeight100)
-			.padding(.vertical, padding16)
-			.padding(.horizontal, padding8)
+			.frame(maxWidth: .infinity, minHeight: minHeight)
+			.padding(.vertical, paddingV)
+			.padding(.horizontal, paddingH)
 			.background(tip.color.opacity(0.1))
 			.overlay(
-				RoundedRectangle(cornerRadius: cornerRadius12)
-					.stroke(tip.color, lineWidth: lineWidth1)
+				RoundedRectangle(cornerRadius: cardCornerRadius)
+					.stroke(tip.color, lineWidth: borderWidth)
 			)
-			.cornerRadius(cornerRadius12)
+			.cornerRadius(cardCornerRadius)
 		}
 		.buttonStyle(.plain)
 	}
@@ -422,12 +422,12 @@ private struct TipButton: View {
 
 // MARK: - Subscription Button
 private struct SubscriptionButton: View {
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var lineWidth1: CGFloat = 1
-	@ScaledMetric private var iconSize24: CGFloat = 24
+	@ScaledMetric private var contentSpacing: CGFloat = 12
+	@ScaledMetric private var labelSpacing: CGFloat = 2
+	@ScaledMetric private var cardPadding: CGFloat = 16
+	@ScaledMetric private var cardCornerRadius: CGFloat = 12
+	@ScaledMetric private var borderWidth: CGFloat = 1
+	@ScaledMetric private var iconSize: CGFloat = 24
 
 	let subscription: (title: String, description: String, icon: SFSymbol, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
 	@EnvironmentObject private var revenueCatManager: RevenueCatManager
@@ -456,13 +456,13 @@ private struct SubscriptionButton: View {
 				}
 			}
 		} label: {
-			HStack(spacing: spacing12) {
+			HStack(spacing: contentSpacing) {
 				Image(systemSymbol: subscription.icon)
 					.font(.callout.weight(.medium))
-					.frame(width: iconSize24, height: iconSize24)
+					.frame(width: iconSize, height: iconSize)
 					.foregroundColor(subscription.color)
 
-				VStack(alignment: .leading, spacing: spacing2) {
+				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text(subscription.title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -478,13 +478,13 @@ private struct SubscriptionButton: View {
 					.fontWeight(.medium)
 					.foregroundColor(subscription.color)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(Color(.systemBackground))
 			.overlay(
-				RoundedRectangle(cornerRadius: cornerRadius12)
-					.stroke(subscription.color, lineWidth: lineWidth1)
+				RoundedRectangle(cornerRadius: cardCornerRadius)
+					.stroke(subscription.color, lineWidth: borderWidth)
 			)
-			.cornerRadius(cornerRadius12)
+			.cornerRadius(cardCornerRadius)
 		}
 		.buttonStyle(.plain)
 	}

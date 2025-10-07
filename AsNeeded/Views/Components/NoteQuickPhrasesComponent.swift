@@ -34,7 +34,7 @@ struct NoteQuickPhrasesComponent: View {
 	@ScaledMetric private var chipHeight: CGFloat = 32
 	@ScaledMetric private var chipPaddingH: CGFloat = 12
 	@ScaledMetric private var chipPaddingV: CGFloat = 6
-	@ScaledMetric private var spacing8: CGFloat = 8
+	@ScaledMetric private var chipSpacing: CGFloat = 8
 	@ScaledMetric private var cornerRadius16: CGFloat = 16
 
 	private let hapticsManager = HapticsManager.shared
@@ -144,13 +144,13 @@ struct NoteQuickPhrasesComponent: View {
 	var body: some View {
 		// Check if feature is enabled
 		if featureToggleManager.quickPhrasesEnabled {
-			VStack(alignment: .leading, spacing: spacing8) {
+			VStack(alignment: .leading, spacing: chipSpacing) {
 				Text("Quick phrases")
 					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 
 				ScrollView(.horizontal, showsIndicators: false) {
-					HStack(spacing: spacing8) {
+					HStack(spacing: chipSpacing) {
 						ForEach(suggestedPhrases, id: \.self) { phrase in
 							Button {
 								addPhrase(phrase)

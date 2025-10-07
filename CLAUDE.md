@@ -16,6 +16,9 @@
 ## Coding Style & Naming
 - **Indentation**: Use tabs (not spaces) for indentation; wrap at ~120 cols.
 - **Code Organization**: Use MARK comments to organize code sections (e.g., `// MARK: - Properties`, `// MARK: - View Components`, `// MARK: - Private Methods`). No blank lines should appear directly after MARK comments - code should begin immediately on the next line.
+- **Semantic Naming**: Use semantic names for constants, not value-based names. Name variables based on their purpose, not their current value. This improves maintainability when values change.
+  - ✅ CORRECT: `private var cardSpacing: CGFloat = 24`, `private var sectionPadding: CGFloat = 16`, `private var cornerRadius: CGFloat = 12`
+  - ❌ WRONG: `private var spacing24: CGFloat = 24`, `private var padding16: CGFloat = 16`, `private var radius12: CGFloat = 12`
 - **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
 - **Colors**: ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
 - **Typography & Custom Fonts**:

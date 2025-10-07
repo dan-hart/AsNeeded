@@ -3,11 +3,11 @@ import MessageUI
 import SFSafeSymbols
 
 struct FeedbackView: View {
-	@ScaledMetric private var spacing20: CGFloat = 20
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
+	@ScaledMetric private var sectionSpacing: CGFloat = 20
+	@ScaledMetric private var subsectionSpacing: CGFloat = 16
+	@ScaledMetric private var itemSpacing: CGFloat = 12
+	@ScaledMetric private var textSpacing: CGFloat = 2
+	@ScaledMetric private var cardPadding: CGFloat = 16
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var lineWidth05: CGFloat = 0.5
 	@ScaledMetric private var iconSize24: CGFloat = 24
@@ -37,7 +37,7 @@ struct FeedbackView: View {
 	var body: some View {
 		ZStack(alignment: .top) {
 			ScrollView {
-				VStack(alignment: .leading, spacing: spacing20) {
+				VStack(alignment: .leading, spacing: sectionSpacing) {
 					feedbackOverviewSection
 
 					Divider()
@@ -60,7 +60,7 @@ struct FeedbackView: View {
 					Color.black.opacity(0.4)
 						.ignoresSafeArea()
 						.overlay {
-							VStack(spacing: spacing12) {
+							VStack(spacing: itemSpacing) {
 								ProgressView()
 									.scaleEffect(1.2)
 									.progressViewStyle(CircularProgressViewStyle(
@@ -102,7 +102,7 @@ struct FeedbackView: View {
 	}
 	
 	private var feedbackOverviewSection: some View {
-		VStack(alignment: .leading, spacing: spacing12) {
+		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Help Improve As Needed")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
@@ -113,11 +113,11 @@ struct FeedbackView: View {
 	}
 	
 	private var feedbackTypesSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
 			Text("Feedback Type")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
-			VStack(spacing: spacing12) {
+			VStack(spacing: itemSpacing) {
 				feedbackTypeButton(
 					title: "Report a Bug",
 					subtitle: "Something isn't working correctly",
@@ -155,7 +155,7 @@ struct FeedbackView: View {
 	}
 
 	private var rateAndReviewSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
 			Text("Love As Needed?")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
@@ -174,7 +174,7 @@ struct FeedbackView: View {
 	}
 
 	private var testFlightSection: some View {
-		VStack(alignment: .leading, spacing: spacing16) {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
 			Text("Help Shape the Future")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
@@ -190,13 +190,13 @@ struct FeedbackView: View {
 		action: @escaping () -> Void
 	) -> some View {
 		Button(action: isLoading ? {} : action) {
-			HStack(spacing: spacing12) {
+			HStack(spacing: itemSpacing) {
 				Image(systemSymbol: systemImage)
 					.font(.callout.weight(.medium))
 					.frame(width: iconSize24, height: iconSize24)
 					.foregroundColor(isLoading ? .secondary : color)
 
-				VStack(alignment: .leading, spacing: spacing2) {
+				VStack(alignment: .leading, spacing: textSpacing) {
 					Text(title)
 						.font(.body)
 						.fontWeight(.medium)
@@ -214,7 +214,7 @@ struct FeedbackView: View {
 					.foregroundColor(.secondary)
 					.opacity(isLoading ? 0.5 : 1.0)
 			}
-			.padding(padding16)
+			.padding(cardPadding)
 			.background(Color(.systemBackground))
 			.overlay(
 				RoundedRectangle(cornerRadius: cornerRadius12)

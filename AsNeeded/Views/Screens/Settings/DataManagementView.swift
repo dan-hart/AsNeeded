@@ -26,20 +26,20 @@ struct DataManagementView: View {
     @Environment(\.fontFamily) private var fontFamily
     private let logger = DHLogger(category: "DataManagementView")
 
-    @ScaledMetric private var spacing20: CGFloat = 20
-    @ScaledMetric private var spacing16: CGFloat = 16
-    @ScaledMetric private var spacing12: CGFloat = 12
-    @ScaledMetric private var spacing4: CGFloat = 4
-    @ScaledMetric private var spacing2: CGFloat = 2
-    @ScaledMetric private var padding16: CGFloat = 16
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var strokeWidth: CGFloat = 0.5
-    @ScaledMetric private var iconSize: CGFloat = 24
+    @ScaledMetric private var sectionSpacing: CGFloat = 20
+    @ScaledMetric private var contentSpacing: CGFloat = 16
+    @ScaledMetric private var actionSpacing: CGFloat = 12
+    @ScaledMetric private var statSpacing: CGFloat = 4
+    @ScaledMetric private var toggleLabelSpacing: CGFloat = 2
+    @ScaledMetric private var cardPadding: CGFloat = 16
+    @ScaledMetric private var cardCornerRadius: CGFloat = 12
+    @ScaledMetric private var borderWidth: CGFloat = 0.5
+    @ScaledMetric private var actionIconSize: CGFloat = 24
 
     var body: some View {
         ZStack(alignment: .top) {
             ScrollView {
-                VStack(alignment: .leading, spacing: spacing20) {
+                VStack(alignment: .leading, spacing: sectionSpacing) {
                     dataOverviewSection
 
                     Divider()
@@ -118,7 +118,7 @@ struct DataManagementView: View {
                         
                         Section("Privacy Options") {
                             Toggle(isOn: $redactMedicationNames) {
-                                VStack(alignment: .leading, spacing: spacing2) {
+                                VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Redact Medication Names")
                                     Text("Replace medication names with [REDACTED]")
                                         .font(.caption)
@@ -127,7 +127,7 @@ struct DataManagementView: View {
                             }
 
                             Toggle(isOn: $redactNotes) {
-                                VStack(alignment: .leading, spacing: spacing2) {
+                                VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Redact Notes")
                                     Text("Remove all notes from events")
                                         .font(.caption)
@@ -270,13 +270,13 @@ struct DataManagementView: View {
     }
     
     private var dataOverviewSection: some View {
-        VStack(alignment: .leading, spacing: spacing12) {
+        VStack(alignment: .leading, spacing: actionSpacing) {
             Text("Data Overview")
                 .font(.headline)
                 .fontWeight(.semibold)
 
             HStack {
-                VStack(alignment: .leading, spacing: spacing4) {
+                VStack(alignment: .leading, spacing: statSpacing) {
                     Text("Medications")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -287,7 +287,7 @@ struct DataManagementView: View {
 
                 Spacer()
 
-                VStack(alignment: .center, spacing: spacing4) {
+                VStack(alignment: .center, spacing: statSpacing) {
                     Text("Events")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -298,7 +298,7 @@ struct DataManagementView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: spacing4) {
+                VStack(alignment: .trailing, spacing: statSpacing) {
                     Text("Logs (24h)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -314,19 +314,19 @@ struct DataManagementView: View {
                     .fontWeight(.semibold)
                 }
             }
-            .padding(padding16)
+            .padding(cardPadding)
             .background(Color(.systemGray6))
-            .cornerRadius(cornerRadius12)
+            .cornerRadius(cardCornerRadius)
         }
     }
     
     private var dataActionsSection: some View {
-        VStack(alignment: .leading, spacing: spacing16) {
+        VStack(alignment: .leading, spacing: contentSpacing) {
             Text("Data Actions")
                 .font(.headline)
                 .fontWeight(.semibold)
 
-            VStack(spacing: spacing12) {
+            VStack(spacing: actionSpacing) {
                 dataActionButton(
                     title: "Export Data",
                     subtitle: "Save all your data as a JSON file",
@@ -392,7 +392,7 @@ struct DataManagementView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: spacing12) {
+            HStack(spacing: actionSpacing) {
                 Group {
                     if isLoading {
                         ProgressView()
@@ -402,10 +402,10 @@ struct DataManagementView: View {
                             .font(.callout.weight(.medium))
                     }
                 }
-                .frame(width: iconSize, height: iconSize)
+                .frame(width: actionIconSize, height: actionIconSize)
                 .foregroundColor(isDestructive ? .red : .accentColor)
 
-                VStack(alignment: .leading, spacing: spacing2) {
+                VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
@@ -424,13 +424,13 @@ struct DataManagementView: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(padding16)
+            .padding(cardPadding)
             .background(Color(.systemBackground))
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius12)
-                    .stroke(Color(.systemGray4), lineWidth: strokeWidth)
+                RoundedRectangle(cornerRadius: cardCornerRadius)
+                    .stroke(Color(.systemGray4), lineWidth: borderWidth)
             )
-            .cornerRadius(cornerRadius12)
+            .cornerRadius(cardCornerRadius)
         }
         .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs)
         .buttonStyle(.plain)

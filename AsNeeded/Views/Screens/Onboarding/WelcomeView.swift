@@ -2,13 +2,13 @@ import SwiftUI
 import SFSafeSymbols
 
 struct WelcomeView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
+	@ScaledMetric private var sectionSpacing: CGFloat = 24
+	@ScaledMetric private var subsectionSpacing: CGFloat = 16
+	@ScaledMetric private var itemSpacing: CGFloat = 12
+	@ScaledMetric private var textSpacing: CGFloat = 8
+	@ScaledMetric private var tightSpacing: CGFloat = 4
+	@ScaledMetric private var standardPadding: CGFloat = 16
+	@ScaledMetric private var smallPadding: CGFloat = 8
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
 	@ScaledMetric private var iconSize32: CGFloat = 32
 
@@ -27,7 +27,7 @@ struct WelcomeView: View {
 
   var body: some View {
 	ScrollView {
-	  VStack(alignment: .leading, spacing: spacing24) {
+	  VStack(alignment: .leading, spacing: sectionSpacing) {
 		welcomeSection
 
 		coreValuesSection
@@ -41,8 +41,8 @@ struct WelcomeView: View {
   }
 
   private var welcomeSection: some View {
-	VStack(alignment: .center, spacing: spacing16) {
-	  VStack(spacing: spacing8) {
+	VStack(alignment: .center, spacing: subsectionSpacing) {
+	  VStack(spacing: textSpacing) {
 		Text("Welcome to")
 		  .font(.title2)
 		  .foregroundStyle(.secondary)
@@ -59,17 +59,17 @@ struct WelcomeView: View {
 	  }
 	}
 	.frame(maxWidth: .infinity)
-	.padding(.vertical, padding16)
+	.padding(.vertical, standardPadding)
   }
 
   private var coreValuesSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
+	VStack(alignment: .leading, spacing: subsectionSpacing) {
 	  Text("Built on three core values")
 		.font(.title2)
 		.fontWeight(.semibold)
 		.frame(maxWidth: .infinity)
 
-	  VStack(spacing: spacing12) {
+	  VStack(spacing: itemSpacing) {
 		valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
 		valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
 		valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
@@ -78,7 +78,7 @@ struct WelcomeView: View {
   }
   
   private var continueSection: some View {
-	VStack(spacing: spacing16) {
+	VStack(spacing: subsectionSpacing) {
 	  medicalDisclaimer
 
 	  Button {
@@ -93,7 +93,7 @@ struct WelcomeView: View {
 			.foregroundColor(.white)
 		  Spacer()
 		}
-		.padding(.vertical, padding16)
+		.padding(.vertical, standardPadding)
 		.background(Color.accentColor)
 		.cornerRadius(cornerRadius12)
 	  }
@@ -104,7 +104,7 @@ struct WelcomeView: View {
 		.foregroundStyle(.tertiary)
 		.frame(maxWidth: .infinity)
 	}
-	.padding(.top, padding8)
+	.padding(.top, smallPadding)
   }
   
   private var medicalDisclaimer: some View {
@@ -119,13 +119,13 @@ struct WelcomeView: View {
   }
 
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
-	HStack(spacing: spacing16) {
+	HStack(spacing: subsectionSpacing) {
 	  Image(systemSymbol: icon)
 		.font(.title3.weight(.medium))
 		.frame(width: iconSize32, height: iconSize32)
 		.foregroundColor(.accentColor)
 
-	  VStack(alignment: .leading, spacing: spacing4) {
+	  VStack(alignment: .leading, spacing: tightSpacing) {
 		Text(title)
 		  .font(.headline)
 		  .fontWeight(.semibold)
@@ -136,7 +136,7 @@ struct WelcomeView: View {
 
 	  Spacer()
 	}
-	.padding(padding16)
+	.padding(standardPadding)
 	.background(.regularMaterial)
 	.cornerRadius(cornerRadius12)
   }

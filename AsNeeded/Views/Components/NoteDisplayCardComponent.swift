@@ -33,12 +33,12 @@ struct NoteDisplayCardComponent: View {
 
 	// Scaled metrics
 	@ScaledMetric private var iconSize: CGFloat = 16
-	@ScaledMetric private var padding12: CGFloat = 12
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var padding4: CGFloat = 4
+	@ScaledMetric private var cardPadding: CGFloat = 12
+	@ScaledMetric private var mediumPadding: CGFloat = 8
+	@ScaledMetric private var smallPadding: CGFloat = 4
 	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var elementSpacing: CGFloat = 8
+	@ScaledMetric private var tightSpacing: CGFloat = 4
 	@ScaledMetric private var editButtonSize: CGFloat = 28
 
 	private let hapticsManager = HapticsManager.shared
@@ -76,9 +76,9 @@ struct NoteDisplayCardComponent: View {
 				}
 				onTap?()
 			} label: {
-				VStack(alignment: .leading, spacing: spacing8) {
+				VStack(alignment: .leading, spacing: elementSpacing) {
 					// Header with icon and expand indicator
-					HStack(spacing: spacing8) {
+					HStack(spacing: elementSpacing) {
 						Image(systemSymbol: .noteText)
 							.font(.customFont(fontFamily, style: .caption))
 							.foregroundStyle(medicationColor)
@@ -131,10 +131,10 @@ struct NoteDisplayCardComponent: View {
 								.font(.customFont(fontFamily, style: .caption2))
 								.foregroundStyle(.secondary)
 						}
-						.padding(.top, spacing4)
+						.padding(.top, tightSpacing)
 					}
 				}
-				.padding(padding12)
+				.padding(cardPadding)
 			}
 			.buttonStyle(.plain)
 			.frame(maxWidth: .infinity, alignment: .leading)
@@ -174,9 +174,9 @@ struct AddNoteButtonComponent: View {
 	@State private var isPulsing = false
 
 	// Scaled metrics
-	@ScaledMetric private var paddingH: CGFloat = 10
-	@ScaledMetric private var paddingV: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
+	@ScaledMetric private var horizontalPadding: CGFloat = 10
+	@ScaledMetric private var verticalPadding: CGFloat = 6
+	@ScaledMetric private var textSpacing: CGFloat = 4
 
 	private let hapticsManager = HapticsManager.shared
 
@@ -185,15 +185,15 @@ struct AddNoteButtonComponent: View {
 			onTap()
 			hapticsManager.selectionChanged()
 		} label: {
-			HStack(spacing: spacing4) {
+			HStack(spacing: textSpacing) {
 				Text("Add Note")
 					.font(.customFont(fontFamily, style: .subheadline))
 				Image(systemSymbol: .squareAndPencil)
 					.font(.customFont(fontFamily, style: .caption))
 			}
 			.foregroundStyle(medicationColor)
-			.padding(.horizontal, paddingH)
-			.padding(.vertical, paddingV)
+			.padding(.horizontal, horizontalPadding)
+			.padding(.vertical, verticalPadding)
 		}
 		.buttonStyle(.plain)
 		.contentShape(Rectangle())
