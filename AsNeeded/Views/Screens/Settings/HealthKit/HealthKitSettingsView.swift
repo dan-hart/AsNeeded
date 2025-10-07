@@ -177,7 +177,7 @@ struct HealthKitSettingsView: View {
 							.scaleEffect(0.8)
 							.frame(width: iconSize, height: iconSize)
 					} else {
-						Image(systemSymbol: .arrowTriangle2Circlepath)
+						Image(systemSymbol: .arrowTrianglehead2ClockwiseRotate90)
 							.font(.callout.weight(.medium))
 							.frame(width: iconSize, height: iconSize)
 							.foregroundColor(.accent)

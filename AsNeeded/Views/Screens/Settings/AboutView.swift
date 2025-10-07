@@ -292,6 +292,26 @@ struct AboutView: View {
 			.fontWeight(.medium)
 		}
 
+		#if DEBUG
+		HStack {
+		  Text("Distribution")
+			.foregroundStyle(.secondary)
+		  Spacer()
+		  Text(Bundle.main.distributionType)
+			.fontWeight(.medium)
+		}
+		#else
+		if Bundle.main.isTestFlight {
+		  HStack {
+			Text("Distribution")
+			  .foregroundStyle(.secondary)
+			Spacer()
+			Text("TestFlight")
+			  .fontWeight(.medium)
+		  }
+		}
+		#endif
+
 		if let url = githubURL {
 		  HStack {
 			Text("Source Code")
