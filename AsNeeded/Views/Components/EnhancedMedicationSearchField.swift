@@ -119,14 +119,14 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			RoundedRectangle(cornerRadius: fieldCornerRadius)
 				.fill(
 					animateSelection ?
-						Color.accentColor.opacity(0.08) :
+						.accent.opacity(0.08) :
 						(isFocused ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground))
 				)
 				.overlay(
 					RoundedRectangle(cornerRadius: fieldCornerRadius)
 						.strokeBorder(
-							animateSelection ? Color.accentColor :
-							(isFocused ? Color.accentColor.opacity(0.4) : Color(.separator).opacity(0.2)),
+							animateSelection ? .accent :
+							(isFocused ? .accent.opacity(0.4) : Color(.separator).opacity(0.2)),
 							lineWidth: animateSelection ? 2 : (isFocused ? 1.5 : fieldBorderWidth)
 						)
 				)
@@ -375,7 +375,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			.contentShape(Rectangle())
 			.background(
 				selectedMedication?.rxCUI == result.drug.rxCUI ?
-				Color.accentColor.opacity(0.08) : Color.clear
+				.accent.opacity(0.08) : Color.clear
 			)
 		}
 		.buttonStyle(SuggestionButtonStyle())

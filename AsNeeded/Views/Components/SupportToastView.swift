@@ -83,11 +83,11 @@ struct SupportToastView: View {
 						.padding(.vertical, buttonVPadding)
 						.background(
 							RoundedRectangle(cornerRadius: buttonCornerRadius)
-								.fill(Color.accentColor.opacity(0.1))
+								.fill(.accent.opacity(0.1))
 						)
 						.overlay(
 							RoundedRectangle(cornerRadius: buttonCornerRadius)
-								.strokeBorder(Color.accentColor.opacity(0.3), lineWidth: buttonBorderWidth)
+								.strokeBorder(.accent.opacity(0.3), lineWidth: buttonBorderWidth)
 						)
 					}
 					.buttonStyle(.plain)

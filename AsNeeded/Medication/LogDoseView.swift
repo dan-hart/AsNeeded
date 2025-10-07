@@ -162,7 +162,7 @@ struct LogDoseView: View {
 					}) {
 						Image(systemSymbol: .minusCircleFill)
 							.font(.title2)
-							.foregroundStyle(amount > 0.5 ? Color.accentColor : Color.secondary.opacity(0.5))
+							.foregroundStyle(amount > 0.5 ? .accent : Color.secondary.opacity(0.5))
 							.scaleEffect(amount > 0.5 ? 1.0 : 0.9)
 					}
 					.disabled(amount <= 0.5)
@@ -182,7 +182,7 @@ struct LogDoseView: View {
 					.padding(.horizontal, amountHorizontalPadding)
 					.background(
 						RoundedRectangle(cornerRadius: amountCornerRadius, style: .continuous)
-							.fill(Color.accentColor.opacity(0.1))
+							.fill(.accent.opacity(0.1))
 					)
 					
 					Button(action: {
@@ -193,7 +193,7 @@ struct LogDoseView: View {
 					}) {
 						Image(systemSymbol: .plusCircleFill)
 							.font(.title2)
-							.foregroundStyle(amount < 100 ? Color.accentColor : Color.secondary.opacity(0.5))
+							.foregroundStyle(amount < 100 ? .accent : Color.secondary.opacity(0.5))
 							.scaleEffect(amount < 100 ? 1.0 : 0.9)
 					}
 					.disabled(amount >= 100)
@@ -216,7 +216,7 @@ struct LogDoseView: View {
 									.padding(.vertical, unitVerticalPadding)
 									.background(
 										Capsule()
-											.fill(selectedUnit == unit ? Color.accentColor : Color.secondary.opacity(0.1))
+											.fill(selectedUnit == unit ? .accent : Color.secondary.opacity(0.1))
 									)
 									.foregroundStyle(selectedUnit == unit ? .white : .primary)
 							}
@@ -270,7 +270,7 @@ struct LogDoseView: View {
 					.padding(dateDisplayPadding)
 					.background(
 						RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
-							.fill(Color.accentColor.opacity(0.08))
+							.fill(.accent.opacity(0.08))
 					)
 				}
 				.buttonStyle(.plain)
@@ -314,7 +314,7 @@ struct LogDoseView: View {
 								.padding(.vertical, quickButtonVerticalPadding)
 								.background(
 									Capsule()
-										.fill(selectedQuickOption == label ? Color.accentColor : Color.secondary.opacity(0.1))
+										.fill(selectedQuickOption == label ? .accent : Color.secondary.opacity(0.1))
 								)
 								.foregroundStyle(selectedQuickOption == label ? .white : .primary)
 						}

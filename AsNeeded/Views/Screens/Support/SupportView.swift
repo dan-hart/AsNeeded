@@ -348,7 +348,7 @@ struct SupportView: View {
 	]
 	
 	private let subscriptionTiers = [
-		(title: "Supporter", description: "Basic monthly support", icon: SFSymbol.heart, color: Color.accentColor, price: "$1.99", productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
+		(title: "Supporter", description: "Basic monthly support", icon: SFSymbol.heart, color: .accent, price: "$1.99", productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
 		(title: "Advocate", description: "Enhanced monthly support", icon: SFSymbol.handRaisedFill, color: Color.green, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
 		(title: "Champion", description: "Premium monthly support", icon: SFSymbol.crownFill, color: Color.purple, price: "$9.99", productId: RevenueCatManager.ProductIdentifier.subscriptionChampion)
 	]

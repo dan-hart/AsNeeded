@@ -53,8 +53,8 @@ struct HeroSectionComponent: View {
 					.fill(
 						LinearGradient(
 							colors: [
-								Color.accentColor.opacity(0.3),
-								Color.accentColor.opacity(0.1)
+								.accent.opacity(0.3),
+								.accent.opacity(0.1)
 							],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
@@ -87,7 +87,7 @@ struct HeroSectionComponent: View {
 					.font(.largeTitle.weight(.medium))
 					.foregroundStyle(
 						LinearGradient(
-							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+							colors: [.accent, .accent.opacity(0.7)],
 							startPoint: .top,
 							endPoint: .bottom
 						)

@@ -104,7 +104,7 @@ struct AboutView: View {
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
-			  .foregroundStyle(Color.accentColor)
+			  .foregroundStyle(.accent)
 			}
 		  }
 
@@ -117,7 +117,7 @@ struct AboutView: View {
 				  .font(.subheadline)
 				  .fontWeight(.medium)
 			  }
-			  .foregroundStyle(Color.accentColor)
+			  .foregroundStyle(.accent)
 			}
 		  }
 		}
@@ -299,7 +299,7 @@ struct AboutView: View {
 			Spacer()
 			Link("GitHub", destination: url)
 			  .fontWeight(.medium)
-			  .foregroundStyle(Color.accentColor)
+			  .foregroundStyle(.accent)
 		  }
 		}
 	  }

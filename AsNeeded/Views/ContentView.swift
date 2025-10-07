@@ -44,7 +44,7 @@ struct ContentView: View {
 					}
 					.tag(3)
 			}
-			.tint(Color.accentColor)
+			.tint(.accent)
 			.onChange(of: navigationManager.selectedTab) { _, _ in
 				hapticsManager.selectionChanged()
 			}

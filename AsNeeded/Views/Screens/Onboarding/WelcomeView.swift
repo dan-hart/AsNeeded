@@ -94,7 +94,7 @@ struct WelcomeView: View {
 		  Spacer()
 		}
 		.padding(.vertical, standardPadding)
-		.background(Color.accentColor)
+		.background(.accent)
 		.cornerRadius(cornerRadius12)
 	  }
 	  .buttonStyle(.plain)

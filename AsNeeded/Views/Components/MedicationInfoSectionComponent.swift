@@ -56,7 +56,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 					.font(.title2)
 					.foregroundStyle(
 						LinearGradient(
-							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+							colors: [.accent, .accent.opacity(0.7)],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						)
@@ -74,7 +74,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 				HStack(spacing: innerVStackSpacing) {
 					ZStack {
 						Circle()
-							.fill(Color.accentColor.opacity(0.15))
+							.fill(.accent.opacity(0.15))
 							.frame(width: iconSize, height: iconSize)
 
 						Image(systemSymbol: .pill)
@@ -113,7 +113,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 							.padding(.vertical, requiredPaddingV)
 							.background(
 								Capsule()
-									.fill(Color.accentColor)
+									.fill(.accent)
 							)
 							.accessibilityLabel("Required field indicator")
 							.accessibilityHidden(true) // Hide from VoiceOver since it's already conveyed in the hint
@@ -143,14 +143,14 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 							RoundedRectangle(cornerRadius: cornerRadius)
 								.strokeBorder(
 									focusedField == clinicalNameField ?
-										Color.accentColor.opacity(0.6) :
+										.accent.opacity(0.6) :
 										Color(.separator).opacity(0.3),
 									lineWidth: focusedField == clinicalNameField ? focusedBorderWidth : borderWidth
 								)
 						)
 						.shadow(
 							color: focusedField == clinicalNameField ?
-								Color.accentColor.opacity(0.2) :
+								.accent.opacity(0.2) :
 								Color.black.opacity(0.05),
 							radius: focusedField == clinicalNameField ? 8 : 4,
 							x: 0,

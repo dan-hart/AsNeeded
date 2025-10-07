@@ -167,7 +167,7 @@ struct MedicationRowComponent: View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(medication.displayName)
 				.font(.customFont(fontFamily, style: .headline, weight: .bold))
-				.lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+				.noTruncate()
 				.foregroundStyle(.primary)
 				.accessibilityAddTraits(.isHeader)
 
@@ -175,7 +175,7 @@ struct MedicationRowComponent: View {
 				Text(medication.clinicalName)
 					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
-					.lineLimit(1)
+					.noTruncate()
 			}
 		}
 	}
