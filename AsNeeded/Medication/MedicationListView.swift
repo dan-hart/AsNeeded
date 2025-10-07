@@ -50,16 +50,34 @@ struct MedicationListView: View {
                 .navigationTitle("Medication")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        if viewModel.items.count > 1 {
-                            Button(editMode == .inactive ? "Edit" : "Done") {
-                                withAnimation {
-                                    editMode = editMode == .inactive ? .active : .inactive
-                                    hapticsManager.selectionChanged()
+                        HStack(spacing: 12) {
+                            if viewModel.items.count > 1 {
+                                Button(editMode == .inactive ? "Edit" : "Done") {
+                                    withAnimation {
+                                        editMode = editMode == .inactive ? .active : .inactive
+                                        hapticsManager.selectionChanged()
+                                    }
                                 }
+                                .font(.customFont(fontFamily, style: .body, weight: .bold))
+                                .accessibilityLabel(editMode == .inactive ? "Edit medication list" : "Done editing")
+                                .accessibilityHint(editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
                             }
-                            .font(.customFont(fontFamily, style: .body, weight: .bold))
-                            .accessibilityLabel(editMode == .inactive ? "Edit medication list" : "Done editing")
-                            .accessibilityHint(editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
+
+                            // Show archived toggle if there are any archived medications
+                            if !viewModel.items.archived.isEmpty && editMode == .inactive {
+                                Button(action: {
+                                    withAnimation {
+                                        viewModel.showArchivedMedications.toggle()
+                                        hapticsManager.selectionChanged()
+                                    }
+                                }) {
+                                    Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
+                                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                }
+                                .accessibilityLabel(viewModel.showArchivedMedications ? "Hide archived medications" : "Show archived medications")
+                                .accessibilityHint("Toggle visibility of archived medications in the list")
+                            }
                         }
                     }
                     ToolbarItem(placement: .primaryAction) {
@@ -221,6 +239,10 @@ struct MedicationListView: View {
                         .padding(.horizontal, emptyHorizontalPadding)
                 }
             }
+
+            // HealthKit onboarding card
+            HealthKitOnboardingCard(context: .emptyState)
+                .padding(.horizontal)
 
             Button(action: {
                 hapticsManager.mediumImpact()
@@ -391,7 +413,7 @@ struct MedicationListView: View {
         }
     }
     private var sortedMedications: [ANMedicationConcept] {
-        let items = viewModel.items
+        let items = viewModel.displayedMedications
 
         // If we have no saved order, return items as-is
         if medicationOrder.isEmpty {

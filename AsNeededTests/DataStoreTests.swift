@@ -339,8 +339,172 @@ struct DataStoreTests {
 		#expect(elapsed < 5.0, "Bulk insert should complete within 5 seconds")
 	}
 	
+	// MARK: - HealthKit Conditional Write Tests
+
+	@Test("Medication writes to local storage when HealthKit sync disabled")
+	func medicationWritesWhenHealthKitDisabled() async throws {
+		// Given - HealthKit sync is disabled
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+
+		// When
+		let medication = createTestMedication(name: "Local Med")
+		try await dataStore.addMedication(medication)
+
+		// Then - Should write to local storage
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.medications.first?.clinicalName == "Local Med")
+	}
+
+	@Test("Medication writes to local storage in bidirectional mode")
+	func medicationWritesInBidirectionalMode() async throws {
+		// Given - HealthKit sync enabled with bidirectional mode
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("bidirectional", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+		// When
+		let medication = createTestMedication(name: "Bidirectional Med")
+		try await dataStore.addMedication(medication)
+
+		// Then - Should write to local storage (bidirectional writes locally)
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.medications.first?.clinicalName == "Bidirectional Med")
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Medication skips local storage in HealthKit SOT mode")
+	func medicationSkipsLocalStorageInHealthKitSOT() async throws {
+		// Given - HealthKit sync enabled with HealthKit as source of truth
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+		// When
+		let medication = createTestMedication(name: "HealthKit SOT Med")
+		try await dataStore.addMedication(medication)
+
+		// Then - Should NOT write to local storage (data lives in HealthKit only)
+		#expect(dataStore.medications.count == 0)
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Medication writes to local storage in AsNeeded SOT mode")
+	func medicationWritesInAsNeededSOTMode() async throws {
+		// Given - HealthKit sync enabled with AsNeeded as source of truth
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("asNeededSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+		// When
+		let medication = createTestMedication(name: "AsNeeded SOT Med")
+		try await dataStore.addMedication(medication)
+
+		// Then - Should write to local storage (AsNeeded is primary)
+		#expect(dataStore.medications.count == 1)
+		#expect(dataStore.medications.first?.clinicalName == "AsNeeded SOT Med")
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Data export availability respects sync mode")
+	func dataExportAvailability() async throws {
+		// When HealthKit sync is disabled, export should be available
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		#expect(dataStore.canExportData == true)
+
+		// When bidirectional sync, export should be available
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("bidirectional", forKey: UserDefaultsKeys.healthKitSyncMode)
+		#expect(dataStore.canExportData == true)
+
+		// When HealthKit SOT, export should NOT be available
+		UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+		#expect(dataStore.canExportData == false)
+
+		// When AsNeeded SOT, export should be available
+		UserDefaults.standard.set("asNeededSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+		#expect(dataStore.canExportData == true)
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Event writes respect HealthKit sync mode")
+	func eventWritesRespectSyncMode() async throws {
+		// Setup medication first
+		let medication = createTestMedication(name: "Event Test Med")
+
+		// Test 1: Events write when HealthKit disabled
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		let event1 = createTestEvent(medication: medication)
+		try await dataStore.addEvent(event1)
+		#expect(dataStore.events.count == 1)
+
+		// Clear for next test
+		try await dataStore.clearAllData()
+
+		// Test 2: Events skip local storage in HealthKit SOT mode
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+		let event2 = createTestEvent(medication: medication)
+		try await dataStore.addEvent(event2)
+		#expect(dataStore.events.count == 0) // Should not write locally
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Update operations respect HealthKit sync mode")
+	func updateOperationsRespectSyncMode() async throws {
+		// Given - Add medication with HealthKit disabled
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		let medication = createTestMedication(name: "Update Test")
+		try await dataStore.addMedication(medication)
+		#expect(dataStore.medications.count == 1)
+
+		// When - Enable HealthKit SOT mode and try to update
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+		var updated = medication
+		updated.clinicalName = "Updated Name"
+		try await dataStore.updateMedication(updated)
+
+		// Then - Local storage should not be updated (HealthKit SOT mode)
+		// Original medication should still be there (or removed if HealthKit manages it)
+		// In HealthKit SOT mode, updates don't affect local storage
+		#expect(dataStore.medications.first?.clinicalName == "Update Test") // Not updated
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
+	@Test("Delete operations respect HealthKit sync mode")
+	func deleteOperationsRespectSyncMode() async throws {
+		// Given - Add medication with HealthKit disabled
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		let medication = createTestMedication(name: "Delete Test")
+		try await dataStore.addMedication(medication)
+		#expect(dataStore.medications.count == 1)
+
+		// When - Enable HealthKit SOT mode and delete
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+		UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+		try await dataStore.deleteMedication(medication)
+
+		// Then - Local storage delete should be skipped (data managed in HealthKit)
+		// UserDefaults cleanup should still happen
+		#expect(dataStore.medications.first?.clinicalName == "Delete Test") // Still there
+
+		// Cleanup
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+	}
+
 	// MARK: - Helper Methods
-	
+
 	private func createTestMedication(name: String, nickname: String? = nil) -> ANMedicationConcept {
 		return ANMedicationConcept(
 			clinicalName: name,
