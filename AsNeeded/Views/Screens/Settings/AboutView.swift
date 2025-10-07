@@ -347,7 +347,7 @@ struct AboutView: View {
 	  Image(systemSymbol: icon)
 		.font(.title3.weight(.medium))
 		.frame(width: iconSize32, height: iconSize32)
-		.foregroundColor(.accentColor)
+		.foregroundColor(.accent)
 
 	  VStack(alignment: .leading, spacing: tightSpacing) {
 		Text(title)

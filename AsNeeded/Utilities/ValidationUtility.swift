@@ -63,10 +63,10 @@ public enum ValidationUtility {
 		// Note: ANMedicationConcept doesn't have notes field, removed validation
 		
 		if errors.isEmpty {
-			logger.debug("Medication validation passed for: \(medication.displayName)")
+			logger.debug("Medication validation passed for ID: \(medication.id)")
 			return .success
 		} else {
-			logger.warning("Medication validation failed: \(errors)")
+			logger.warning("Medication validation failed for ID: \(medication.id) - \(errors)")
 			return .failure(errors)
 		}
 	}
@@ -103,10 +103,10 @@ public enum ValidationUtility {
 		// Note: ANEventConcept doesn't have notes field, removed validation
 		
 		if errors.isEmpty {
-			logger.debug("Event validation passed for: \(event.id)")
+			logger.debug("Event validation passed for ID: \(event.id)")
 			return .success
 		} else {
-			logger.warning("Event validation failed: \(errors)")
+			logger.warning("Event validation failed for ID: \(event.id) - \(errors)")
 			return .failure(errors)
 		}
 	}

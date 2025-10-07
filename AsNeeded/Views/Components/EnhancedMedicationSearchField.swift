@@ -75,7 +75,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 	private var searchFieldView: some View {
 		HStack(spacing: sectionSpacing) {
 			Image(systemSymbol: .pillsFill)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 				.font(.title3)
 
 			TextField(placeholder, text: $text)
@@ -257,7 +257,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 					Text("NIH/NLM RxNorm")
 						.font(.caption2)
 						.fontWeight(.medium)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 						.underline()
 				}
 				.buttonStyle(.plain)
@@ -286,7 +286,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 		title: String,
 		subtitle: String?,
 		icon: SFSymbol,
-		iconColor: Color = .accentColor,
+		iconColor: Color = .accent,
 		action: @escaping () -> Void
 	) -> some View {
 		Button(action: action) {
@@ -328,7 +328,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 				ZStack {
 					Image(systemSymbol: .pillsFill)
 						.font(.body)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 					
 					if result.score >= 0.95 {
 						Image(systemSymbol: .checkmarkCircleFill)
@@ -365,7 +365,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 				
 				Image(systemSymbol: .plusCircleFill)
 					.font(.title3)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 					.rotationEffect(.degrees(selectedMedication?.rxCUI == result.drug.rxCUI ? 45 : 0))
 					.animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedMedication?.rxCUI == result.drug.rxCUI)
 					.accessibilityHidden(true) // Decorative

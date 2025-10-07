@@ -21,7 +21,7 @@ public enum MedicationSearchUtility {
 		let searchCollection = medications ?? DataStore.shared.medications
 		let searchName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 		
-		logger.debug("Searching for medication: '\(searchName)' in \(searchCollection.count) medications")
+		logger.debug("Searching for medication in \(searchCollection.count) medications")
 		
 		// Return nil for empty search
 		guard !searchName.isEmpty else {
@@ -34,7 +34,7 @@ public enum MedicationSearchUtility {
 			medication.clinicalName.lowercased() == searchName ||
 			(medication.nickname?.lowercased() == searchName)
 		}) {
-			logger.info("Found exact match for '\(searchName)': \(exactMatch.displayName)")
+			logger.info("Found exact match for medication ID: \(exactMatch.id)")
 			return exactMatch
 		}
 		
@@ -43,7 +43,7 @@ public enum MedicationSearchUtility {
 			medication.clinicalName.lowercased().contains(searchName) ||
 			(medication.nickname?.lowercased().contains(searchName) == true)
 		}) {
-			logger.info("Found partial match for '\(searchName)': \(partialMatch.displayName)")
+			logger.info("Found partial match for medication ID: \(partialMatch.id)")
 			return partialMatch
 		}
 		
@@ -60,9 +60,9 @@ public enum MedicationSearchUtility {
 		}
 		
 		if let fuzzyMatch = fuzzyMatch {
-			logger.info("Found fuzzy match for '\(searchName)': \(fuzzyMatch.displayName)")
+			logger.info("Found fuzzy match for medication ID: \(fuzzyMatch.id)")
 		} else {
-			logger.warning("No match found for '\(searchName)'")
+			logger.warning("No match found for search query")
 		}
 		
 		return fuzzyMatch

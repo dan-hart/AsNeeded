@@ -23,7 +23,7 @@ struct SettingsFeedbackSectionView: View {
 					Image(systemSymbol: .bubbleLeftAndBubbleRight)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Send Feedback")

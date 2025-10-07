@@ -37,7 +37,7 @@ struct FontTestView: View {
 		VStack(alignment: .leading, spacing: 12) {
 			Text(fontFamily.displayName)
 				.font(.headline)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			Text(fontFamily.accessibilityDescription)
 				.font(.caption)
@@ -76,7 +76,7 @@ struct FontTestView: View {
 		VStack(alignment: .leading, spacing: 12) {
 			Text("System Available Fonts")
 				.font(.headline)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			ForEach(Array(availableFonts.keys.sorted()), id: \.self) { family in
 				VStack(alignment: .leading, spacing: 4) {

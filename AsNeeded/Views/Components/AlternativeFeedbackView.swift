@@ -2,6 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct AlternativeFeedbackView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@EnvironmentObject private var feedbackService: FeedbackService
 	@Environment(\.openURL) private var openURL
 	@Environment(\.dismiss) private var dismiss
@@ -34,7 +35,7 @@ struct AlternativeFeedbackView: View {
 				// MARK: - Feedback Options
 				VStack(spacing: optionsSpacing) {
 					Text("Choose how to send feedback:", comment: "Instruction text for selecting feedback sending method")
-						.font(.headline)
+						.font(.customFont(fontFamily, style: .headline))
 						.multilineTextAlignment(.center)
 
 					feedbackOptionsSection
@@ -51,7 +52,7 @@ struct AlternativeFeedbackView: View {
 						dismiss()
 					} label: {
 						Image(systemSymbol: .xmark)
-							.font(.body.weight(.medium))
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 							.foregroundStyle(.secondary)
 					}
 				}
@@ -69,16 +70,15 @@ struct AlternativeFeedbackView: View {
 	private var headerSection: some View {
 		VStack(spacing: headerIconSpacing) {
 			Image(systemSymbol: .envelopeBadge)
-				.font(.largeTitle)
+				.font(.customFont(fontFamily, style: .largeTitle))
 				.foregroundStyle(.accent)
 
 			VStack(spacing: headerTextSpacing) {
 				Text("Mail App Not Configured", comment: "Title shown when Mail app is not configured for sending feedback")
-					.font(.title2)
-					.fontWeight(.semibold)
+					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
 				Text("As Needed uses Apple's Mail app to send feedback. Choose an alternative method below or configure Mail in Settings.", comment: "Explanation message when Mail app is not configured")
-					.font(.body)
+					.font(.customFont(fontFamily, style: .body))
 					.foregroundStyle(.secondary)
 					.multilineTextAlignment(.center)
 			}
@@ -129,25 +129,24 @@ struct AlternativeFeedbackView: View {
 		Button(action: action) {
 			HStack(spacing: buttonIconSpacing) {
 				Image(systemSymbol: icon)
-					.font(.title2)
+					.font(.customFont(fontFamily, style: .title2))
 					.foregroundStyle(iconColor)
 					.frame(width: buttonIconSize, height: buttonIconSize)
 
 				VStack(alignment: .leading, spacing: buttonTextSpacing) {
 					Text(title)
-						.font(.body)
-						.fontWeight(.medium)
+						.font(.customFont(fontFamily, style: .body, weight: .medium))
 						.foregroundStyle(.primary)
 
 					Text(subtitle)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundStyle(.secondary)
 				}
 
 				Spacer()
 
 				Image(systemSymbol: .chevronRight)
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.tertiary)
 			}
 			.padding(buttonPadding)
@@ -167,12 +166,11 @@ struct AlternativeFeedbackView: View {
 
 			HStack(spacing: confirmationIconSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
-					.font(.title3)
+					.font(.customFont(fontFamily, style: .title3))
 					.foregroundStyle(.green)
 
 				Text(copiedMessage)
-					.font(.body)
-					.fontWeight(.medium)
+					.font(.customFont(fontFamily, style: .body, weight: .medium))
 			}
 			.padding(confirmationPadding)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: confirmationCornerRadius))

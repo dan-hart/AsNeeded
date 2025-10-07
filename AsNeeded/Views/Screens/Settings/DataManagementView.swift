@@ -403,7 +403,7 @@ struct DataManagementView: View {
                     }
                 }
                 .frame(width: actionIconSize, height: actionIconSize)
-                .foregroundColor(isDestructive ? .red : .accentColor)
+                .foregroundColor(isDestructive ? .red : .accent)
 
                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                     Text(title)

@@ -25,6 +25,7 @@ import SFSafeSymbols
 /// - Privacy-sensitive data collection prompts
 /// - Support ticket creation with optional diagnostics
 struct LogConsentSheetView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dismiss) private var dismiss
 	@State private var isProcessing = false
@@ -109,7 +110,7 @@ struct LogConsentSheetView: View {
 						dismiss()
 					} label: {
 						Image(systemSymbol: .xmark)
-							.font(.body.weight(.medium))
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 							.foregroundStyle(.secondary)
 					}
 				}
@@ -161,7 +162,7 @@ struct LogConsentSheetView: View {
 
 				// Icon
 				Image(systemSymbol: .lockShieldFill)
-					.font(.largeTitle.weight(.medium))
+					.font(.customFont(fontFamily, style: .largeTitle, weight: .medium))
 					.foregroundStyle(
 						LinearGradient(
 							colors: [Color.green, Color.green.opacity(0.7)],
@@ -173,13 +174,12 @@ struct LogConsentSheetView: View {
 			}
 
 			Text("Help Us Improve")
-				.font(.title2)
-				.fontWeight(.bold)
+				.font(.customFont(fontFamily, style: .title2, weight: .bold))
 				.foregroundStyle(.primary)
 				.accessibilityAddTraits(.isHeader)
 
 			Text("Technical logs help diagnose issues faster. Your privacy is protected—no medication names are ever stored in logs.")
-				.font(.subheadline)
+				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.multilineTextAlignment(.center)
 				.fixedSize(horizontal: false, vertical: true)
@@ -194,12 +194,11 @@ struct LogConsentSheetView: View {
 		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack(spacing: sectionHSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
-					.font(.title2)
+					.font(.customFont(fontFamily, style: .title2))
 					.foregroundStyle(.green)
 					.accessibilityHidden(true)
 				Text("What's Included")
-					.font(.title3)
-					.fontWeight(.bold)
+					.font(.customFont(fontFamily, style: .title3, weight: .bold))
 			}
 			.padding(.bottom, sectionBottomPadding)
 			.accessibilityAddTraits(.isHeader)
@@ -222,12 +221,11 @@ struct LogConsentSheetView: View {
 		VStack(alignment: .leading, spacing: sectionSpacing) {
 			HStack(spacing: sectionHSpacing) {
 				Image(systemSymbol: .xmarkCircleFill)
-					.font(.title2)
+					.font(.customFont(fontFamily, style: .title2))
 					.foregroundStyle(.red)
 					.accessibilityHidden(true)
 				Text("What's NOT Included")
-					.font(.title3)
-					.fontWeight(.bold)
+					.font(.customFont(fontFamily, style: .title3, weight: .bold))
 			}
 			.padding(.bottom, sectionBottomPadding)
 			.accessibilityAddTraits(.isHeader)
@@ -255,12 +253,11 @@ struct LogConsentSheetView: View {
 			} label: {
 				HStack(spacing: actionButtonIconSpacing) {
 					Image(systemSymbol: .checkmarkCircleFill)
-						.font(.title3)
+						.font(.customFont(fontFamily, style: .title3))
 						.accessibilityHidden(true)
 
 					Text("Include Logs")
-						.font(.headline)
-						.fontWeight(.semibold)
+						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				}
 				.foregroundStyle(Color.green.contrastingForegroundColor(for: colorScheme))
 				.frame(maxWidth: .infinity)
@@ -293,13 +290,12 @@ struct LogConsentSheetView: View {
 							.scaleEffect(0.8)
 					} else {
 						Image(systemSymbol: .paperplaneFill)
-							.font(.title3)
+							.font(.customFont(fontFamily, style: .title3))
 							.accessibilityHidden(true)
 					}
 
 					Text("Send Without Logs")
-						.font(.headline)
-						.fontWeight(.medium)
+						.font(.customFont(fontFamily, style: .headline, weight: .medium))
 				}
 				.foregroundStyle(.accent)
 				.frame(maxWidth: .infinity)
@@ -324,8 +320,7 @@ struct LogConsentSheetView: View {
 				dismiss()
 			} label: {
 				Text("Cancel")
-					.font(.body)
-					.fontWeight(.medium)
+					.font(.customFont(fontFamily, style: .body, weight: .medium))
 					.foregroundStyle(.secondary)
 			}
 			.buttonStyle(.plain)
@@ -345,20 +340,20 @@ struct LogConsentSheetView: View {
 	private func logItemRow(icon: SFSymbol, text: String, color: Color, isExcluded: Bool = false) -> some View {
 		HStack(spacing: headerSpacing) {
 			Image(systemSymbol: icon)
-				.font(.body)
+				.font(.customFont(fontFamily, style: .body))
 				.foregroundStyle(color)
 				.frame(width: itemIconWidth)
 				.accessibilityHidden(true)
 
 			Text(text)
-				.font(.subheadline)
+				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(isExcluded ? .secondary : .primary)
 
 			Spacer()
 
 			if isExcluded {
 				Image(systemSymbol: .eyeSlashFill)
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 					.accessibilityHidden(true)
 			}

@@ -26,6 +26,7 @@ import SFSafeSymbols
 /// - Calendar integration components
 /// - Any interface requiring date selection with visual feedback
 struct DateCardComponent: View {
+	@Environment(\.fontFamily) private var fontFamily
 	let title: String
 	let icon: SFSymbol
 	let date: Date?
@@ -66,28 +67,26 @@ struct DateCardComponent: View {
 						.frame(width: iconSize, height: iconSize)
 
 					Image(systemSymbol: icon)
-						.font(.body.weight(.semibold))
+						.font(.customFont(fontFamily, style: .body, weight: .semibold))
 						.foregroundStyle(color)
 				}
 
 				// Date info
 				VStack(alignment: .leading, spacing: labelSpacing) {
 					Text(title)
-						.font(.caption)
-						.fontWeight(.medium)
+						.font(.customFont(fontFamily, style: .caption, weight: .medium))
 						.foregroundStyle(.secondary)
 
 					if let date = date {
 						Text(date.formatted(date: .abbreviated, time: .omitted))
-							.font(.subheadline)
-							.fontWeight(.semibold)
+							.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
 							.foregroundStyle(.primary)
 					} else {
 						HStack(spacing: addIconSpacing) {
 							Image(systemSymbol: .plusCircle)
-								.font(.caption2)
+								.font(.customFont(fontFamily, style: .caption2))
 							Text("Add Date")
-								.font(.subheadline)
+								.font(.customFont(fontFamily, style: .subheadline))
 						}
 						.foregroundStyle(color)
 					}
@@ -99,7 +98,7 @@ struct DateCardComponent: View {
 				if date != nil, let onRemove = onRemove {
 					Button(action: onRemove) {
 						Image(systemSymbol: .xmarkCircleFill)
-							.font(.title3)
+							.font(.customFont(fontFamily, style: .title3))
 							.foregroundStyle(.tertiary)
 							.symbolRenderingMode(.hierarchical)
 					}
@@ -128,7 +127,10 @@ struct DateCardComponent: View {
 			)
 		}
 		.buttonStyle(.plain)
-		.accessibilityLabel(date != nil ? "\(title): \(date!.formatted(date: .abbreviated, time: .omitted))" : "Add \(title.lowercased())")
+		.accessibilityLabel(
+			date.map { "\(title): \($0.formatted(date: .abbreviated, time: .omitted))" }
+			?? "Add \(title.lowercased())"
+		)
 		.accessibilityHint(date != nil ? "Tap to edit \(title.lowercased())" : "Tap to add \(title.lowercased())")
 	}
 }

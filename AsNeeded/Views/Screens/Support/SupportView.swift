@@ -314,7 +314,7 @@ struct SupportView: View {
 			} label: {
 				Text("Terms of Use (EULA)")
 					.font(.caption)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 			}
 
 			Button {
@@ -325,7 +325,7 @@ struct SupportView: View {
 			} label: {
 				Text("Privacy Policy")
 					.font(.caption)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 			}
 		}
 		.padding(.top, legalLinksPaddingTop)

@@ -54,14 +54,14 @@ final class MedicationSearchService: ObservableObject {
 	}
 	
 	private func loadRecentSearches() {
-		recentSearches = userDefaults.stringArray(forKey: "RecentMedicationSearches") ?? []
+		recentSearches = userDefaults.stringArray(forKey: UserDefaultsKeys.recentMedicationSearches) ?? []
 	}
-	
+
 	private func saveRecentSearch(_ term: String) {
 		var searches = recentSearches.filter { $0 != term }
 		searches.insert(term, at: 0)
 		recentSearches = Array(searches.prefix(10))
-		userDefaults.set(recentSearches, forKey: "RecentMedicationSearches")
+		userDefaults.set(recentSearches, forKey: UserDefaultsKeys.recentMedicationSearches)
 	}
 	
 	private func loadPopularMedications() {
@@ -313,6 +313,6 @@ final class MedicationSearchService: ObservableObject {
 	/// Clears recent searches
 	func clearRecentSearches() {
 		recentSearches = []
-		userDefaults.removeObject(forKey: "RecentMedicationSearches")
+		userDefaults.removeObject(forKey: UserDefaultsKeys.recentMedicationSearches)
 	}
 }

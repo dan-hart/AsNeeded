@@ -174,7 +174,7 @@ struct ThankYouView: View {
 			} icon: {
 				Image(systemSymbol: .sparkles)
 			}
-			.foregroundColor(.accentColor)
+			.foregroundColor(.accent)
 
 			VStack(alignment: .leading, spacing: itemSpacing) {
 				ImpactRow(
@@ -217,7 +217,7 @@ struct ThankYouView: View {
 			} icon: {
 				Image(systemSymbol: .personCropCircleBadgePlus)
 			}
-			.foregroundColor(.accentColor)
+			.foregroundColor(.accent)
 
 			VStack(spacing: itemSpacing) {
 				// GitHub Repository
@@ -390,7 +390,7 @@ struct ThankYouView: View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			HStack {
 				Image(systemSymbol: .personCircleFill)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 				Text("A Note from the Developer")
 					.font(.customFont(fontFamily, style: .headline))
 			}
@@ -422,13 +422,13 @@ struct ThankYouView: View {
 			.padding(.vertical, buttonPaddingV)
 			.background(
 				LinearGradient(
-					colors: [.accentColor, .accentColor.opacity(0.8)],
+					colors: [.accent, .accent.opacity(0.8)],
 					startPoint: .leading,
 					endPoint: .trailing
 				)
 			)
 			.cornerRadius(buttonCornerRadius)
-			.shadow(color: .accentColor.opacity(0.3), radius: buttonShadowRadius, y: buttonShadowY)
+			.shadow(color: .accent.opacity(0.3), radius: buttonShadowRadius, y: buttonShadowY)
 		}
 		.buttonStyle(.plain)
 		.padding(.top, dismissButtonPaddingTop)
@@ -474,7 +474,7 @@ private struct ImpactRow: View {
 		HStack(alignment: .top, spacing: rowSpacing) {
 			Image(systemSymbol: icon)
 				.font(.body)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 				.frame(width: iconWidth)
 
 			VStack(alignment: .leading, spacing: labelSpacing) {
@@ -564,5 +564,5 @@ private struct ConfettiPiece: Identifiable {
 
 #Preview("Subscription") {
 	ThankYouView(purchaseType: .subscription(plan: "Monthly Pro"))
-		.environmentObject(FeedbackService.shared)
+        .environmentObject(FeedbackService.shared)
 }

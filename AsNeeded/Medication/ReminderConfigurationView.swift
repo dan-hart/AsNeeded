@@ -149,7 +149,7 @@ struct ReminderConfigurationView: View {
 				.font(.largeTitle.weight(.medium))
 				.foregroundStyle(
 					LinearGradient(
-						colors: [.accentColor, .accentColor.opacity(0.7)],
+						colors: [.accent, .accent.opacity(0.7)],
 						startPoint: .topLeading,
 						endPoint: .bottomTrailing
 					)
@@ -173,7 +173,7 @@ struct ReminderConfigurationView: View {
 			HStack {
 				Image(systemSymbol: notificationManager.authorizationStatus == .denied ? .bellSlash : .bellBadge)
 					.font(.title2)
-					.foregroundStyle(notificationManager.authorizationStatus == .denied ? .red : .accentColor)
+					.foregroundStyle(notificationManager.authorizationStatus == .denied ? .red : .accent)
 				
 				VStack(alignment: .leading, spacing: quickButtonSpacing) {
 					Text(notificationManager.authorizationStatus == .denied ? "Notifications Disabled" : "Notifications Required")
@@ -241,7 +241,7 @@ struct ReminderConfigurationView: View {
 						VStack(spacing: typeCardSpacing) {
 							Image(systemSymbol: type.systemImage)
 								.font(.title2)
-								.foregroundStyle(reminderType == type ? .white : .accentColor)
+								.foregroundStyle(reminderType == type ? .white : .accent)
 
 							Text(type.rawValue)
 								.font(.subheadline)
@@ -261,7 +261,7 @@ struct ReminderConfigurationView: View {
 							RoundedRectangle(cornerRadius: typeCardCornerRadius)
 								.fill(reminderType == type ?
 									LinearGradient(
-										colors: [.accentColor, .accentColor.opacity(0.8)],
+										colors: [.accent, .accent.opacity(0.8)],
 										startPoint: .topLeading,
 										endPoint: .bottomTrailing
 									) :
@@ -327,7 +327,7 @@ struct ReminderConfigurationView: View {
 						HStack {
 							Image(systemSymbol: .repeat)
 								.font(.caption)
-								.foregroundColor(.accentColor)
+								.foregroundColor(.accent)
 							Text("Repeats every \(dayOfWeekString(from: reminderDate))")
 								.font(.caption)
 								.foregroundStyle(.secondary)
@@ -346,7 +346,7 @@ struct ReminderConfigurationView: View {
 						VStack(alignment: .leading, spacing: gridSpacing) {
 							HStack {
 								Image(systemSymbol: .calendarBadgePlus)
-									.foregroundColor(.accentColor)
+									.foregroundColor(.accent)
 								Text("Select Days")
 									.font(.subheadline)
 									.fontWeight(.semibold)
@@ -442,7 +442,7 @@ struct ReminderConfigurationView: View {
 		VStack(alignment: .leading, spacing: headerVerticalPadding) {
 			HStack {
 				Image(systemSymbol: icon)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 				Text(title)
 					.font(.subheadline)
 					.fontWeight(.medium)
@@ -457,7 +457,7 @@ struct ReminderConfigurationView: View {
 				)
 				.labelsHidden()
 				.datePickerStyle(.compact)
-				.tint(.accentColor)
+				.tint(.accent)
 			} else {
 				DatePicker(
 					"",
@@ -466,7 +466,7 @@ struct ReminderConfigurationView: View {
 				)
 				.labelsHidden()
 				.datePickerStyle(.compact)
-				.tint(.accentColor)
+				.tint(.accent)
 			}
 		}
 	}
@@ -496,14 +496,14 @@ struct ReminderConfigurationView: View {
 				LinearGradient(
 					colors: buttonDisabled ?
 					[Color(.systemGray3), Color(.systemGray4)] :
-					[.accentColor, .accentColor.opacity(0.8)],
+					[.accent, .accent.opacity(0.8)],
 					startPoint: .leading,
 					endPoint: .trailing
 				)
 			)
 			.cornerRadius(scheduleButtonCornerRadius)
 			.shadow(
-				color: buttonDisabled ? .clear : .accentColor.opacity(0.3),
+				color: buttonDisabled ? .clear : .accent.opacity(0.3),
 				radius: scheduleButtonShadowRadius,
 				y: scheduleButtonShadowY
 			)

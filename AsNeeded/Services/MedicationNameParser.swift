@@ -13,7 +13,7 @@ import DHLoggingKit
 import NaturalLanguage
 
 /// Components extracted from a medication name
-@available(iOS 26.0, *)
+@available(iOS 18.0, *)
 struct MedicationComponents: Codable {
 	let genericName: String
 	let brandName: String?
@@ -36,7 +36,7 @@ struct MedicationComponents: Codable {
 }
 
 /// Modern AI-powered medication name parser using Foundation Models
-@available(iOS 26.0, *)
+@available(iOS 18.0, *)
 @MainActor
 final class MedicationNameParser {
 	static let shared = MedicationNameParser()
@@ -158,7 +158,7 @@ enum MedicationParsingError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .foundationModelsUnavailable:
-			return "Foundation Models framework requires iOS 26 or later"
+			return "Foundation Models framework requires iOS 18 or later"
 		case .parsingFailed(let details):
 			return "Failed to parse medication name: \(details)"
 		}
@@ -170,8 +170,8 @@ struct MedicationNameSimplifierEnhanced {
 	
 	/// Simplifies medication name using best available method
 	static func simplifyName(_ name: String) async -> String {
-		// Try AI-powered parsing first on iOS 26+
-		if #available(iOS 26.0, *) {
+		// Try AI-powered parsing first on iOS 18+
+		if #available(iOS 18.0, *) {
 			do {
 				return try await MedicationNameParser.shared.simplifyName(name)
 			} catch {
@@ -186,8 +186,8 @@ struct MedicationNameSimplifierEnhanced {
 	
 	/// Extracts brand name using best available method
 	static func extractBrandName(_ name: String) async -> String? {
-		// Try AI-powered extraction first on iOS 26+
-		if #available(iOS 26.0, *) {
+		// Try AI-powered extraction first on iOS 18+
+		if #available(iOS 18.0, *) {
 			do {
 				return try await MedicationNameParser.shared.extractBrandName(from: name)
 			} catch {
@@ -202,7 +202,7 @@ struct MedicationNameSimplifierEnhanced {
 	
 	/// Process search results with AI enhancement when available
 	static func processSearchResults(_ results: [RxNormSearchResult]) async -> [(clinicalName: String, nickname: String, original: RxNormSearchResult)] {
-		if #available(iOS 26.0, *) {
+		if #available(iOS 18.0, *) {
 			// Process with AI for better accuracy
 			return await withTaskGroup(of: (String, String?, RxNormSearchResult).self) { group in
 				for result in results {

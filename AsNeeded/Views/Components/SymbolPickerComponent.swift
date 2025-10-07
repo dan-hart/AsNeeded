@@ -281,14 +281,14 @@ struct SymbolPickerComponent: View {
 					}
 
 					Image(systemName: symbolName)
-						.font(.system(size: symbolSize * 0.65))
+						.font(.customFont(fontFamily, style: .title2))
 						.symbolRenderingMode(.hierarchical)
 						.foregroundStyle(isSelected ? medicationColor : .primary)
 
 					// Add checkmark badge for selected state
 					if isSelected {
 						Image(systemSymbol: .checkmarkCircleFill)
-							.font(.system(size: 14, weight: .bold))
+							.font(.customFont(fontFamily, style: .caption, weight: .bold))
 							.foregroundStyle(.white)
 							.background(
 								Circle()

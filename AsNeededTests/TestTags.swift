@@ -36,12 +36,18 @@ extension Tag {
 	@Tag static var list: Self
 	@Tag static var edit: Self
 	@Tag static var history: Self
-	
+	@Tag static var detail: Self
+	@Tag static var trends: Self
+
 	// MARK: - Service Tags
 	@Tag static var service: Self
 	@Tag static var networking: Self
 	@Tag static var rxNorm: Self
 	@Tag static var intent: Self
+	@Tag static var featureToggle: Self
+	@Tag static var fonts: Self
+	@Tag static var haptics: Self
+	@Tag static var notifications: Self
 	
 	// MARK: - Priority Tags
 	@Tag static var critical: Self
