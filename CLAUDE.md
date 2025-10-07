@@ -171,6 +171,56 @@ UserDefaults.standard.bool(forKey: "hasSeenWelcome")
 - No SwiftUI in packages: Do not add any SwiftUI code or imports to `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`. These packages must remain UI‑free (domain models, use cases, networking only).
 - UI lives in app targets: Place SwiftUI views and UI helpers under `AsNeeded/` (e.g., `Views/`, `Medication/`). Keep packages platform‑agnostic and testable.
 
+## Package Dependencies Management
+**CRITICAL**: The app dependencies displayed in the About screen are hardcoded in `AsNeeded/Services/PackageDependencyManager.swift`.
+
+**When Package.resolved changes, you MUST manually update the hardcoded dependencies list:**
+1. **Location**: `PackageDependencyManager.swift` lines 13-134 in the `getAllDependencies()` method
+2. **What to update**:
+   - Package version numbers (e.g., `versionInfo: .version("6.2.0")`)
+   - Commit hashes (full hash, truncated to 7 chars automatically)
+   - Branch names if using branch dependencies (e.g., `versionInfo: .branch("main")`)
+   - Add new packages if dependencies are added
+   - Remove packages if dependencies are removed
+3. **How to update**:
+   - Open `AsNeeded.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+   - Find the updated package in the `pins` array
+   - Copy the new `revision` (commit hash) and `version`/`branch` to the hardcoded entry
+   - Verify the package name, description, and license are still accurate
+4. **Why hardcoded**: Package.resolved is a build-time file not bundled with the app, so runtime parsing isn't possible without bundling it as a resource.
+
+**Example update process:**
+```swift
+// Before (outdated)
+PackageDependency(
+    id: "sfsafesymbols",
+    name: "SFSafeSymbols",
+    description: "Type-safe access to SF Symbols icons",
+    repositoryURL: URL(string: "https://github.com/SFSafeSymbols/SFSafeSymbols")!,
+    versionInfo: .version("6.2.0"),
+    commitHash: "3dd282d3269b061853a3b3bcd23a509d2aa166ce",
+    license: .mit,
+    isDirect: true
+)
+
+// After (Package.resolved shows 6.3.0)
+PackageDependency(
+    id: "sfsafesymbols",
+    name: "SFSafeSymbols",
+    description: "Type-safe access to SF Symbols icons",
+    repositoryURL: URL(string: "https://github.com/SFSafeSymbols/SFSafeSymbols")!,
+    versionInfo: .version("6.3.0"),  // ← Updated version
+    commitHash: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",  // ← Updated commit hash
+    license: .mit,
+    isDirect: true
+)
+```
+
+**Testing after updates:**
+- Navigate to Settings → About → App Dependencies
+- Verify all packages display with correct versions and commit hashes
+- Tap each package to ensure repository URLs still work
+
 ## Accessibility Guidelines
 - **VoiceOver Support**: Add `.accessibilityLabel()` to all interactive elements and images. Use `.accessibilityHint()` for complex interactions. Hide decorative elements with `.accessibilityHidden(true)`.
 - **Dynamic Type**: Always use semantic font styles (`.body`, `.headline`, `.caption`) instead of hardcoded sizes. Test with large accessibility font sizes.
