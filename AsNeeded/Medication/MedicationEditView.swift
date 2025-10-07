@@ -19,7 +19,7 @@ struct QuickDateButton: ButtonStyle {
 			.padding(.vertical, verticalPadding)
 			.background(
 				Capsule()
-					.fill(Color.accentColor.opacity(configuration.isPressed ? 0.2 : 0.1))
+					.fill(.accent.opacity(configuration.isPressed ? 0.2 : 0.1))
 			)
 			.scaleEffect(configuration.isPressed ? 0.95 : 1)
 	}
@@ -153,7 +153,7 @@ struct MedicationEditView: View {
 						.font(.title2)
 						.foregroundStyle(
 							LinearGradient(
-								colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+								colors: [.accent, .accent.opacity(0.7)],
 								startPoint: .topLeading,
 								endPoint: .bottomTrailing
 							)
@@ -237,7 +237,7 @@ struct MedicationEditView: View {
 							title: "Last Refill",
 							icon: .clockArrowTriangleheadCounterclockwiseRotate90,
 							date: viewModel.lastRefillDate,
-							color: .blue,
+							color: .accent,
 							onTap: {
 								datePickerType = .lastRefill
 								showingDatePicker = true
@@ -367,7 +367,7 @@ struct MedicationEditView: View {
 		Button {
 			performSave()
 		} label: {
-			let backgroundColor = isFormValid ? Color.accentColor : Color.gray
+			let backgroundColor = isFormValid ? .accent : Color.gray
 
 			HStack(spacing: iconSpacing) {
 				Image(systemSymbol: .checkmarkCircleFill)
@@ -383,14 +383,14 @@ struct MedicationEditView: View {
 			.background(
 				LinearGradient(
 					colors: isFormValid ?
-						[Color.accentColor, Color.accentColor.opacity(0.8)] :
+						[.accent, .accent.opacity(0.8)] :
 						[Color.gray, Color.gray.opacity(0.8)],
 					startPoint: .leading,
 					endPoint: .trailing
 				)
 			)
 			.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
-			.shadow(color: isFormValid ? Color.accentColor.opacity(0.3) : .clear, radius: shadowRadius, y: shadowY)
+			.shadow(color: isFormValid ? .accent.opacity(0.3) : .clear, radius: shadowRadius, y: shadowY)
 		}
 		.disabled(!isFormValid)
 		.padding(.horizontal)
@@ -429,8 +429,8 @@ struct MedicationEditView: View {
 							.fill(
 								LinearGradient(
 									colors: [
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.2),
-										(datePickerType == .lastRefill ? Color.blue : Color.green).opacity(0.05)
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.2),
+										(datePickerType == .lastRefill ? Color.accent : Color.green).opacity(0.05)
 									],
 									startPoint: .topLeading,
 									endPoint: .bottomTrailing
@@ -440,7 +440,7 @@ struct MedicationEditView: View {
 						
 						Image(systemSymbol: datePickerType == .lastRefill ? .clockArrowTriangleheadCounterclockwiseRotate90 : .calendarBadgePlus)
 							.font(.largeTitle.weight(.medium))
-							.foregroundStyle(datePickerType == .lastRefill ? Color.blue : Color.green)
+							.foregroundStyle(datePickerType == .lastRefill ? Color.accent : Color.green)
 					}
 					
 					Text(datePickerType == .lastRefill ? "Last Refill Date" : "Next Refill Date")
@@ -560,7 +560,7 @@ struct MedicationEditView: View {
 					} label: {
 						Image(systemSymbol: .checkmarkCircleFill)
 							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-							.foregroundStyle(Color.accentColor)
+							.foregroundStyle(.accent)
 					}
 				}
 			}
@@ -600,7 +600,7 @@ struct MedicationEditView: View {
 				LinearGradient(
 					colors: [
 						Color(.systemGroupedBackground),
-						Color.accentColor.opacity(0.05)
+						.accent.opacity(0.05)
 					],
 					startPoint: .top,
 					endPoint: .bottom
@@ -639,9 +639,9 @@ struct MedicationEditView: View {
 						} label: {
 							Image(systemSymbol: .checkmarkCircleFill)
 								.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+								.foregroundStyle(.accent)
 						}
 						.disabled(!isFormValid)
-						.foregroundColor(isFormValid ? .accentColor : .secondary)
 						.accessibilityLabel("Save medication")
 						.accessibilityHint(isFormValid ? "Saves the medication details" : "Complete required fields to save")
 					}

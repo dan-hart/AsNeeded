@@ -20,7 +20,12 @@
   - ✅ CORRECT: `private var cardSpacing: CGFloat = 24`, `private var sectionPadding: CGFloat = 16`, `private var cornerRadius: CGFloat = 12`
   - ❌ WRONG: `private var spacing24: CGFloat = 24`, `private var padding16: CGFloat = 16`, `private var radius12: CGFloat = 12`
 - **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
-- **Colors**: ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
+- **Colors**:
+  - ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
+  - **CRITICAL**: ALWAYS use `.accent` instead of `Color.accentColor`. The shorthand `.accent` is the modern SwiftUI approach and ensures the app's custom accent color is used, not the system default.
+    - ✅ CORRECT: `.foregroundStyle(.accent)`, `.fill(.accent.opacity(0.1))`, `.tint(.accent)`
+    - ❌ WRONG: `.foregroundStyle(Color.accentColor)`, `.fill(Color.accentColor.opacity(0.1))`, `.tint(Color.accentColor)`
+  - All toolbar confirmation buttons (checkmarks) must have explicit `.foregroundStyle(.accent)` to ensure they use the app's accent color.
 - **Typography & Custom Fonts**:
   - NEVER use hardcoded font sizes (e.g., `.font(.system(size: 16))`). Always use semantic font styles to support Dynamic Type accessibility.
   - **CRITICAL**: ALWAYS use `.customFont()` instead of semantic styles directly to support user-selected accessibility fonts:
@@ -35,6 +40,13 @@
     - Toolbar Buttons: Always use `.font(.customFont(fontFamily, style: .body, weight: .medium))`
     - Navigation Titles: Use `.customNavigationTitle("Title")` modifier for inline titles (large titles handled automatically by NavigationBarAppearanceManager)
   - **Performance**: The app uses `NavigationBarAppearanceManager` for global navigation bar fonts and caches font instances for performance
+  - **Text Truncation & Growth**:
+    - Use `.noTruncate()` for critical text that must never truncate (medication names, important labels)
+    - Use `.lineLimit(n)` for preview text or when consistent row height is needed
+    - ✅ CORRECT: `Text(medication.clinicalName).noTruncate()` - Clinical names always fully visible
+    - ❌ WRONG: `Text(medication.clinicalName).lineLimit(1)` - May hide important medical information
+    - The `.noTruncate()` modifier is especially important for accessibility and Dynamic Type support
+    - Extension: `AsNeeded/Extensions/View+NoTruncate.swift`
 - **Component Reusability**: ALWAYS search for existing reusable components in `AsNeeded/Views/Components/` before creating new UI elements. If a similar pattern exists, use or extend the existing component. When creating new views, prioritize making them reusable by extracting common UI patterns into standalone components. Examples: `SettingsRowComponent`, `SupportToastView`, `FeedbackButtonsView`. Create components for any UI pattern used in 2+ places.
 
 ## UI Patterns

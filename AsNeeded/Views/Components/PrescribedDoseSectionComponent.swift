@@ -51,7 +51,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 					.font(.title2)
 					.foregroundStyle(
 						LinearGradient(
-							colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+							colors: [.accent, .accent.opacity(0.7)],
 							startPoint: .topLeading,
 							endPoint: .bottomTrailing
 						)

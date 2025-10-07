@@ -207,7 +207,7 @@ struct ReminderConfigurationView: View {
 				.padding(.vertical, buttonVerticalPadding)
 				.background(
 					notificationManager.authorizationStatus == .denied ?
-					Color(.systemGray5) : Color.accentColor
+					Color(.systemGray5) : .accent
 				)
 				.foregroundColor(
 					notificationManager.authorizationStatus == .denied ?
@@ -336,7 +336,7 @@ struct ReminderConfigurationView: View {
 						.padding(.vertical, statusVerticalPadding)
 						.background(
 							RoundedRectangle(cornerRadius: statusCornerRadius)
-								.fill(Color.accentColor.opacity(0.1))
+								.fill(.accent.opacity(0.1))
 						)
 					}
 
@@ -369,7 +369,7 @@ struct ReminderConfigurationView: View {
 												.fontWeight(.semibold)
 
 											Circle()
-												.fill(selectedDays.contains(day.0) ? Color.accentColor : Color(.systemGray5))
+												.fill(selectedDays.contains(day.0) ? .accent : Color(.systemGray5))
 												.frame(width: dayCircleSize, height: dayCircleSize)
 										}
 										.frame(maxWidth: .infinity)
@@ -377,7 +377,7 @@ struct ReminderConfigurationView: View {
 										.background(
 											RoundedRectangle(cornerRadius: dayButtonCornerRadius)
 												.fill(selectedDays.contains(day.0) ?
-													Color.accentColor.opacity(0.15) :
+													.accent.opacity(0.15) :
 													Color(.tertiarySystemGroupedBackground)
 												)
 										)
@@ -385,7 +385,7 @@ struct ReminderConfigurationView: View {
 											RoundedRectangle(cornerRadius: dayButtonCornerRadius)
 												.strokeBorder(
 													selectedDays.contains(day.0) ?
-													Color.accentColor :
+													.accent :
 													Color(.separator).opacity(0.2),
 													lineWidth: selectedDays.contains(day.0) ? dayBorderWidth : typeBorderWidth
 												)

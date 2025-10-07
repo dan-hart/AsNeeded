@@ -402,7 +402,7 @@ struct ThankYouView: View {
 				.padding()
 				.background(
 					RoundedRectangle(cornerRadius: actionCardCornerRadius)
-						.fill(Color.accentColor.opacity(0.1))
+						.fill(.accent.opacity(0.1))
 				)
 		}
 	}

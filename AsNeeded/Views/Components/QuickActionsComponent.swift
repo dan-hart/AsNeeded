@@ -45,7 +45,7 @@ struct QuickActionsComponent: View {
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, verticalPadding)
 					.background(Color(.secondarySystemGroupedBackground))
-					.foregroundStyle(Color.accentColor)
+					.foregroundStyle(.accent)
 					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("Edit")
@@ -61,7 +61,7 @@ struct QuickActionsComponent: View {
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, verticalPadding)
 					.background(Color(.secondarySystemGroupedBackground))
-					.foregroundStyle(Color.accentColor)
+					.foregroundStyle(.accent)
 					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("History")

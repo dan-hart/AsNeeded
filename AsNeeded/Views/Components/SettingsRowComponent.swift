@@ -78,7 +78,7 @@ struct SettingsRowComponent: View {
 			icon: .infoCircle,
 			title: "About",
 			subtitle: "Version info and acknowledgments",
-			iconColor: .blue
+			iconColor: .accent
 		) {
 			print("About tapped")
 		}

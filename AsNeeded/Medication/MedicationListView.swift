@@ -233,9 +233,9 @@ struct MedicationListView: View {
                     .padding(.horizontal, buttonHorizontalPadding)
                     .background(
                         RoundedRectangle(cornerRadius: buttonCornerRadius)
-                            .fill(Color.accentColor.gradient)
+                            .fill(.accent.gradient)
                     )
-                    .shadow(color: Color.accentColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
+                    .shadow(color: .accent.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             }
             .buttonStyle(.plain)
             .scaleEffect(1.0)

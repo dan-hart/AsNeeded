@@ -254,10 +254,10 @@ private struct FontFamilyRow: View {
 				}
 			}
 			.padding(padding)
-			.background(isSelected ? Color.accentColor.opacity(0.05) : Color(.systemBackground))
+			.background(isSelected ? .accent.opacity(0.05) : Color(.systemBackground))
 			.overlay(
 				RoundedRectangle(cornerRadius: cornerRadius)
-					.stroke(isSelected ? Color.accentColor : Color(.systemGray4), lineWidth: borderWidth)
+					.stroke(isSelected ? .accent : Color(.systemGray4), lineWidth: borderWidth)
 			)
 			.cornerRadius(cornerRadius)
 		}

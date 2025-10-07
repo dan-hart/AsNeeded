@@ -412,7 +412,7 @@ struct MedicationHistoryView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 NavigationStack {
-                    VStack(spacing: sectionHeaderSpacing0) {
+                    VStack(spacing: sectionHeaderSpacing) {
                         DatePicker(
                             "Select Date",
                             selection: $selectedDate,
@@ -443,7 +443,7 @@ struct MedicationHistoryView: View {
                             } label: {
                                 Image(systemSymbol: .checkmarkCircleFill)
                                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                    .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                                    .foregroundStyle(.accent)
                             }
                         }
                     }
@@ -737,7 +737,7 @@ struct MedicationHistoryView: View {
                         } label: {
                             Image(systemSymbol: .checkmarkCircleFill)
                                 .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                                .foregroundStyle(.accent)
                         }
                     }
                 }

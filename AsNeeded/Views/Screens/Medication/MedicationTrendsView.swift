@@ -256,7 +256,7 @@ struct MedicationTrendsView: View {
 							y: .value("Total", item.total)
 						)
 						.foregroundStyle(med.displayColor)
-						.chartSymbolSize(chartSymbolSize)
+						.symbolSize(chartSymbolSize)
 					}
 				}
 				.chartXAxis {
