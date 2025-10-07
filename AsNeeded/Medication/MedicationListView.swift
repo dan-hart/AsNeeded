@@ -375,6 +375,7 @@ struct MedicationListView: View {
                             } label: {
                                 Label("Delete", systemSymbol: .trash)
                             }
+                            .tint(.red)
                             .accessibilityLabel("Delete \(med.displayName)")
                             .accessibilityHint("Removes this medication permanently")
                         }

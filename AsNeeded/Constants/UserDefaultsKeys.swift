@@ -58,7 +58,7 @@ public enum UserDefaultsKeys {
 	static let healthKitSyncMode = "healthKitSyncMode"
 
 	/// Whether to show HealthKit onboarding prompts
-	static let healthKitDontShowOnboarding = "healthKitDontShowOnboarding"
+	static let healthKitShowOnboarding = "healthKitShowOnboarding"
 
 	/// Date of last successful HealthKit sync
 	static let healthKitLastSyncDate = "healthKitLastSyncDate"
@@ -144,7 +144,7 @@ public enum UserDefaultsKeys {
 		featureToggleQuickPhrases,
 		healthKitSyncEnabled,
 		healthKitSyncMode,
-		healthKitDontShowOnboarding,
+		healthKitShowOnboarding,
 		healthKitLastSyncDate,
 		healthKitHasCompletedInitialSetup,
 		healthKitBackgroundSyncEnabled,
@@ -183,7 +183,7 @@ public enum UserDefaultsKeys {
 		featureToggleQuickPhrases: false, // Feature toggles default to OFF
 		healthKitSyncEnabled: false, // HealthKit disabled by default
 		healthKitSyncMode: "bidirectional", // Default sync mode
-		healthKitDontShowOnboarding: false, // Show onboarding by default
+		healthKitShowOnboarding: true, // Show onboarding by default
 		healthKitHasCompletedInitialSetup: false,
 		healthKitBackgroundSyncEnabled: true, // Background sync enabled by default when HealthKit is on
 		hasUserOptedOutOfReviews: false,

@@ -272,7 +272,7 @@ var canExportData: Bool {
 
 **Onboarding Card** (`Views/Components/HealthKitOnboardingCard.swift`):
 - Show when medication list is empty OR in settings
-- Check `healthKitDontShowOnboarding` preference
+- Check `healthKitShowOnboarding` preference
 - Present authorization flow on connect
 
 **Settings Section** (`Views/Screens/Settings/Sections/SettingsHealthKitSectionView.swift`):

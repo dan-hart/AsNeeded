@@ -7,7 +7,7 @@ import SFSafeSymbols
 /// Onboarding card for HealthKit integration
 /// Shows when user has no medications or in settings as a CTA
 struct HealthKitOnboardingCard: View {
-	@AppStorage(UserDefaultsKeys.healthKitDontShowOnboarding) private var dontShowAgain = false
+	@AppStorage(UserDefaultsKeys.healthKitShowOnboarding) private var showOnboarding = true
 	@StateObject private var syncManager = HealthKitSyncManager.shared
 	@Environment(\.fontFamily) private var fontFamily
 	@State private var showAuthorizationFlow = false
@@ -51,7 +51,7 @@ struct HealthKitOnboardingCard: View {
 	}
 
 	var body: some View {
-		if !dontShowAgain && !syncManager.isSyncEnabled {
+		if showOnboarding && !syncManager.isSyncEnabled {
 			VStack(alignment: .leading, spacing: contentSpacing) {
 				// MARK: - Header with Icon
 				HStack(spacing: contentSpacing) {
@@ -115,7 +115,7 @@ struct HealthKitOnboardingCard: View {
 
 					Button {
 						withAnimation {
-							dontShowAgain = true
+							showOnboarding = false
 						}
 					} label: {
 						Text("Not Now")
@@ -127,7 +127,7 @@ struct HealthKitOnboardingCard: View {
 							.cornerRadius(buttonCornerRadius)
 					}
 					.accessibilityLabel("Dismiss HealthKit prompt")
-					.accessibilityHint("Hides this card and won't show it again")
+					.accessibilityHint("Hides this card until re-enabled in preferences")
 				}
 			}
 			.padding(cardPadding)
