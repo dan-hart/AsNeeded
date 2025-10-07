@@ -45,6 +45,8 @@ struct AboutView: View {
 
 		technicalInfoSection
 
+		appDependenciesSection
+
 		testFlightSection
 	  }
 	  .padding(.horizontal)
@@ -305,6 +307,39 @@ struct AboutView: View {
 	.padding(padding16)
 	.background(.regularMaterial)
 	.cornerRadius(cornerRadius12)
+  }
+
+  private var appDependenciesSection: some View {
+	NavigationLink {
+	  AppDependenciesView()
+	} label: {
+	  HStack(spacing: spacing12) {
+		Image(systemSymbol: .shippingboxFill)
+		  .font(.title3)
+		  .foregroundColor(.accent)
+
+		VStack(alignment: .leading, spacing: spacing2) {
+		  Text("App Dependencies")
+			.font(.headline)
+			.fontWeight(.semibold)
+			.foregroundColor(.primary)
+
+		  Text("Third-party libraries used in this app")
+			.font(.subheadline)
+			.foregroundColor(.secondary)
+		}
+
+		Spacer()
+
+		Image(systemSymbol: .chevronRight)
+		  .font(.caption)
+		  .foregroundColor(.secondary)
+	  }
+	  .padding(padding16)
+	  .background(.regularMaterial)
+	  .cornerRadius(cornerRadius12)
+	}
+	.buttonStyle(.plain)
   }
 
   private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
