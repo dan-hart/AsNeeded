@@ -99,7 +99,7 @@ public enum DateUtility {
 		let totalAmount = dayEvents.compactMap { $0.dose?.amount }.reduce(0, +)
 		let unit = medication.prescribedUnit ?? .unit
 		
-		logger.debug("Daily stats for \(medication.displayName) on \(date): \(totalDoses) doses, \(totalAmount) \(unit.displayName)")
+		logger.debug("Daily stats for medication \(medication.id) on \(date): \(totalDoses) doses, \(totalAmount) \(unit.displayName)")
 		
 		return (totalDoses, totalAmount, unit)
 	}
@@ -111,8 +111,7 @@ public enum DateUtility {
 	) -> [(date: Date, doses: Int, amount: Double)] {
 		let calendar = Calendar.current
 		let endDate = Date()
-		_ = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
-		
+
 		var stats: [(date: Date, doses: Int, amount: Double)] = []
 		
 		for dayOffset in 0..<7 {

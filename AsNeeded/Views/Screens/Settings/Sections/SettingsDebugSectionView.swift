@@ -32,7 +32,7 @@ struct SettingsDebugSectionView: View {
 					Image(systemSymbol: .textBubble)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Quick Note Phrases")
@@ -64,7 +64,7 @@ struct SettingsDebugSectionView: View {
 					Image(systemSymbol: .heartFill)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Thank You View")
@@ -102,7 +102,7 @@ struct SettingsDebugSectionView: View {
 					Image(systemSymbol: .handWave)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Welcome View")
@@ -139,7 +139,7 @@ struct SettingsDebugSectionView: View {
 					Image(systemSymbol: .textformat)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Custom Fonts")

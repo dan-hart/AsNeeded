@@ -241,10 +241,13 @@ struct MedicationIDMismatchTests {
 		// Then - Event should be matched to medication by name
 		#expect(dataStore.medications.count == 1)
 		#expect(dataStore.events.count == 1)
-		
-		let medication = dataStore.medications.first!
-		let event = dataStore.events.first!
-		
+
+		guard let medication = dataStore.medications.first,
+			  let event = dataStore.events.first else {
+			Issue.record("Expected medication and event to exist")
+			return
+		}
+
 		#expect(event.medication?.id == medication.id,
 			"Event medication ID should be corrected to match imported medication")
 		#expect(event.medication?.clinicalName == "Alprazolam")

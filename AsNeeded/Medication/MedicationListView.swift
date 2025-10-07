@@ -24,7 +24,7 @@ struct MedicationListView: View {
     @State private var quickLogMedicationName = ""
     @State private var quickLogDoseAmount: Double = 0
     @State private var quickLogDoseUnit = ""
-    @State private var quickLogAccentColor: Color = .accentColor
+    @State private var quickLogAccentColor: Color = .accent
 
     @ScaledMetric private var emptyStateSpacing: CGFloat = 32
     @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
@@ -69,7 +69,7 @@ struct MedicationListView: View {
                         }) {
                             Label("Add Medication", systemSymbol: .plus)
                                 .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                .foregroundColor(.accentColor)
+                                .foregroundColor(.accent)
                         }
                         .accessibilityLabel("Add new medication")
                         .accessibilityHint("Opens form to add a new medication to your list")
@@ -343,7 +343,7 @@ struct MedicationListView: View {
                             } label: {
                                 Label("Edit", systemSymbol: .pencil)
                             }
-                            .tint(.accentColor)
+                            .tint(.accent)
                             .accessibilityLabel("Edit \(med.displayName)")
                             .accessibilityHint("Opens edit form for this medication")
 

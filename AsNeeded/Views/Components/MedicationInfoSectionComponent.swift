@@ -79,7 +79,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 
 						Image(systemSymbol: .pill)
 							.font(.subheadline.weight(.semibold))
-							.foregroundColor(.accentColor)
+							.foregroundColor(.accent)
 							.accessibilityHidden(true) // Decorative icon
 					}
 

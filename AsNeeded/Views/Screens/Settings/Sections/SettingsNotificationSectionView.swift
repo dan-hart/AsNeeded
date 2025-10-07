@@ -42,7 +42,7 @@ struct SettingsNotificationSectionView: View {
 			Image(systemSymbol: .pills)
 				.font(.callout.weight(.medium))
 				.frame(width: iconSize, height: iconSize)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			VStack(alignment: .leading, spacing: stackItemSpacing) {
 				Text("Show Medication Names")

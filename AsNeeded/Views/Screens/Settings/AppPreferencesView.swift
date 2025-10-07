@@ -80,7 +80,7 @@ struct AppPreferencesView: View {
 			Label("Notifications", systemSymbol: .bell)
 				.font(.title2)
 				.fontWeight(.semibold)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			Text("Control how medication reminders appear and what information they display.")
 				.font(.subheadline)
@@ -101,7 +101,7 @@ struct AppPreferencesView: View {
 			Label("Feedback", systemSymbol: .iphoneRadiowavesLeftAndRight)
 				.font(.title2)
 				.fontWeight(.semibold)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			Text("Control how the app provides tactile feedback for your interactions and actions.")
 				.font(.subheadline)
@@ -143,7 +143,7 @@ struct AppPreferencesView: View {
 			Label("Typography", systemSymbol: .textformat)
 				.font(.title2)
 				.fontWeight(.semibold)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			Text("Choose an accessibility-focused font family to improve readability throughout the app.")
 				.font(.subheadline)
@@ -154,7 +154,7 @@ struct AppPreferencesView: View {
 					Image(systemSymbol: .textformat)
 						.font(.callout.weight(.medium))
 						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accentColor)
+						.foregroundColor(.accent)
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Font Family")
@@ -190,7 +190,7 @@ struct AppPreferencesView: View {
 			Label("Privacy & Reviews", systemSymbol: .shieldLefthalfFilled)
 				.font(.title2)
 				.fontWeight(.semibold)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			Text("Control what information is shared and how the app requests feedback from you.")
 				.font(.subheadline)
@@ -338,7 +338,7 @@ private struct PreferenceRow: View {
 				Image(systemSymbol: icon)
 					.font(.callout.weight(.medium))
 					.frame(width: iconSize, height: iconSize)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 
 				VStack(alignment: .leading, spacing: stackItemSpacing) {
 					Text(title)

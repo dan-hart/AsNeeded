@@ -34,7 +34,7 @@ struct MedicationListView: View {
 					.font(.caption)
 					.padding(.horizontal, 16)
 					.padding(.vertical, 8)
-					.background(Color.accentColor)
+					.background(Color.accent)
 					.foregroundColor(.white)
 					.cornerRadius(8)
 				}

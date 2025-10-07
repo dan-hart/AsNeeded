@@ -87,16 +87,18 @@ extension View {
 
 #if DEBUG
 #Preview {
+	@Previewable @Environment(\.fontFamily) var fontFamily
+
 	VStack(spacing: 20) {
 		Text("Default Glass Card")
-			.font(.headline)
+			.font(.customFont(fontFamily, style: .headline))
 			.glassCard()
 
 		VStack {
 			Text("Custom Glass Card")
-				.font(.headline)
+				.font(.customFont(fontFamily, style: .headline))
 			Text("With custom parameters")
-				.font(.subheadline)
+				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 		}
 		.glassCard(cornerRadius: 12, padding: 16)
@@ -105,7 +107,7 @@ extension View {
 			Image(systemName: "star.fill")
 				.foregroundStyle(.yellow)
 			Text("Compact Card")
-				.font(.body)
+				.font(.customFont(fontFamily, style: .body))
 		}
 		.glassCard(cornerRadius: 8, padding: 12, shadowRadius: 5, shadowY: 2)
 	}

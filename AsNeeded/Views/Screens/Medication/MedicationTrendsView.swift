@@ -88,7 +88,7 @@ struct MedicationTrendsView: View {
 							}
 							.font(.customFont(fontFamily, style: .body))
 							.pickerStyle(.segmented)
-							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
+							.tint(viewModel.selectedMedication?.displayColor ?? .accent)
 							.frame(maxWidth: pickerMaxWidth)
 						}
 
@@ -109,7 +109,7 @@ struct MedicationTrendsView: View {
 							}
 							.font(.customFont(fontFamily, style: .body))
 							.pickerStyle(.segmented)
-							.accentColor(viewModel.selectedMedication?.displayColor ?? .accent)
+							.tint(viewModel.selectedMedication?.displayColor ?? .accent)
 							Spacer()
 						}
 					}

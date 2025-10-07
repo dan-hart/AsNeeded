@@ -2,6 +2,7 @@ import SwiftUI
 import MessageUI
 
 struct FeedbackButtonsView: View {
+	@Environment(\.fontFamily) private var fontFamily
     @StateObject private var feedbackService = FeedbackService.shared
     @State private var showingMailComposer = false
     @State private var currentFeedbackType: FeedbackType = .feedback
@@ -31,8 +32,7 @@ struct FeedbackButtonsView: View {
     var body: some View {
         VStack(spacing: containerSpacing) {
             Text("Help Improve AsNeeded")
-                .font(.headline)
-                .fontWeight(.medium)
+                .font(.customFont(fontFamily, style: .headline, weight: .medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .redacted(reason: isLoading ? .placeholder : [])
 
@@ -51,7 +51,7 @@ struct FeedbackButtonsView: View {
                 FeedbackButton(
                     title: "Feature Request",
                     icon: "lightbulb.fill",
-                    color: .accentColor,
+                    color: .accent,
                     isDisabled: isLoading,
                     action: {
                         currentFeedbackType = .featureRequest
@@ -86,8 +86,7 @@ struct FeedbackButtonsView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
 
                             Text(loadingMessage)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                                .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                         }
@@ -121,6 +120,7 @@ struct FeedbackButtonsView: View {
 }
 
 struct FeedbackButton: View {
+	@Environment(\.fontFamily) private var fontFamily
     let title: String
     let icon: String
     let color: Color
@@ -144,12 +144,12 @@ struct FeedbackButton: View {
                 Image(systemName: icon)
                     .foregroundColor(isDisabled ? .secondary : color)
                 Text(title)
-                    .fontWeight(.medium)
+                    .font(.customFont(fontFamily, style: .body, weight: .medium))
                     .foregroundColor(isDisabled ? .secondary : .primary)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .foregroundColor(.secondary)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .opacity(isDisabled ? 0.5 : 1.0)
             }
             .padding(.vertical, verticalPadding)

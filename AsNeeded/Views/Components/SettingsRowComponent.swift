@@ -18,7 +18,7 @@ struct SettingsRowComponent: View {
 		icon: SFSymbol,
 		title: String,
 		subtitle: String,
-		iconColor: Color = .accentColor,
+		iconColor: Color = .accent,
 		action: @escaping () -> Void
 	) {
 		self.icon = icon

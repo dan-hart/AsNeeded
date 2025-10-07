@@ -69,7 +69,7 @@ struct MedicationDetailView: View {
 						}
 						.frame(maxWidth: .infinity)
 						.padding()
-						.background(Color.accentColor)
+						.background(Color.accent)
 						.foregroundColor(.white)
 						.cornerRadius(12)
 					}

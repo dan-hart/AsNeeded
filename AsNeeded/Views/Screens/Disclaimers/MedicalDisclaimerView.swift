@@ -178,7 +178,7 @@ struct MoreDisclaimerInfoView: View {
 			HStack(spacing: listSpacing) {
 				Image(systemSymbol: .linkCircle)
 					.font(.subheadline)
-					.foregroundColor(.accentColor)
+					.foregroundColor(.accent)
 					.frame(width: iconWidth)
 
 				VStack(alignment: .leading, spacing: tightestSpacing) {

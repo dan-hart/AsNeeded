@@ -69,6 +69,44 @@ public enum UserDefaultsKeys {
 	/// Date of last review request shown to user
 	static let lastReviewRequestDate = "lastReviewRequestDate"
 
+	/// Number of review requests shown to user
+	static let reviewRequestsShown = "reviewRequestsShown"
+
+	/// Number of review requests dismissed by user
+	static let reviewRequestsDismissed = "reviewRequestsDismissed"
+
+	// MARK: - Analytics Service
+	/// Date of first app launch
+	static let analyticsFirstLaunchDate = "analytics.firstLaunchDate"
+
+	/// Total analytics launch count
+	static let analyticsLaunchCount = "analytics.launchCount"
+
+	/// Date of last app launch
+	static let analyticsLastLaunchDate = "analytics.lastLaunchDate"
+
+	/// Total medications added
+	static let analyticsTotalMedicationsAdded = "analytics.totalMedicationsAdded"
+
+	/// Total events logged
+	static let analyticsTotalEventsLogged = "analytics.totalEventsLogged"
+
+	/// Date of last data export
+	static let analyticsLastExportDate = "analytics.lastExportDate"
+
+	/// Date of last data import
+	static let analyticsLastImportDate = "analytics.lastImportDate"
+
+	/// Dictionary of most used features with counts
+	static let analyticsMostUsedFeatures = "analytics.mostUsedFeatures"
+
+	/// Date tracking daily active use
+	static let analyticsDailyActiveUse = "analytics.dailyActiveUse"
+
+	// MARK: - Search
+	/// Recent medication search terms
+	static let recentMedicationSearches = "RecentMedicationSearches"
+
 	// MARK: - All Keys
 	/// Array of all UserDefaults keys for iteration/testing
 	public static let allKeys: [String] = [
@@ -90,7 +128,19 @@ public enum UserDefaultsKeys {
 		medicationEventsCount,
 		consecutiveDaysOfUse,
 		lastAppUseDate,
-		lastReviewRequestDate
+		lastReviewRequestDate,
+		reviewRequestsShown,
+		reviewRequestsDismissed,
+		analyticsFirstLaunchDate,
+		analyticsLaunchCount,
+		analyticsLastLaunchDate,
+		analyticsTotalMedicationsAdded,
+		analyticsTotalEventsLogged,
+		analyticsLastExportDate,
+		analyticsLastImportDate,
+		analyticsMostUsedFeatures,
+		analyticsDailyActiveUse,
+		recentMedicationSearches
 	]
 	
 	// MARK: - Default Values
@@ -109,7 +159,12 @@ public enum UserDefaultsKeys {
 		hasUserOptedOutOfReviews: false,
 		appLaunchCount: 0,
 		medicationEventsCount: 0,
-		consecutiveDaysOfUse: 0
+		consecutiveDaysOfUse: 0,
+		reviewRequestsShown: 0,
+		reviewRequestsDismissed: 0,
+		analyticsLaunchCount: 0,
+		analyticsTotalMedicationsAdded: 0,
+		analyticsTotalEventsLogged: 0
 	]
 	
 	// MARK: - Keys to Remove
@@ -119,7 +174,14 @@ public enum UserDefaultsKeys {
 		trendsSelectedMedicationID,
 		medicationOrder,
 		lastAppUseDate,
-		lastReviewRequestDate
+		lastReviewRequestDate,
+		analyticsFirstLaunchDate,
+		analyticsLastLaunchDate,
+		analyticsLastExportDate,
+		analyticsLastImportDate,
+		analyticsMostUsedFeatures,
+		analyticsDailyActiveUse,
+		recentMedicationSearches
 	]
 	
 	// MARK: - Keys to Skip

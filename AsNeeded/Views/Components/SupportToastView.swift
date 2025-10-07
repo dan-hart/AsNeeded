@@ -77,7 +77,7 @@ struct SupportToastView: View {
 							Text(supportMessage)
 								.font(.subheadline)
 								.fontWeight(.medium)
-								.foregroundColor(.accentColor)
+								.foregroundColor(.accent)
 						}
 						.padding(.horizontal, buttonHPadding)
 						.padding(.vertical, buttonVPadding)

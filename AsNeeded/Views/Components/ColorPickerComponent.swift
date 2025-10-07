@@ -23,6 +23,7 @@ import SFSafeSymbols
 import DHLoggingKit
 
 struct ColorPickerComponent: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@Binding var selectedColorHex: String?
 	let onColorSelected: (String?) -> Void
 	let onSave: (() -> Void)?
@@ -53,7 +54,7 @@ struct ColorPickerComponent: View {
 					// Section header
 					HStack(spacing: headerSpacing) {
 						Image(systemSymbol: .paintbrushPointedFill)
-							.font(.title2)
+							.font(.customFont(fontFamily, style: .title2))
 							.foregroundStyle(
 								LinearGradient(
 									colors: [Color.accent, Color.accent.opacity(0.7)],
@@ -63,8 +64,7 @@ struct ColorPickerComponent: View {
 							)
 
 						Text("Medication Color")
-							.font(.headline)
-							.fontWeight(.semibold)
+							.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					}
 
 					// Default/Reset option
@@ -73,8 +73,7 @@ struct ColorPickerComponent: View {
 					// Color grid with more spacing for large detent
 					VStack(alignment: .leading, spacing: mainSpacing) {
 						Text("Choose a Color")
-							.font(.subheadline)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 							.foregroundStyle(.secondary)
 
 						colorGrid
@@ -115,19 +114,18 @@ struct ColorPickerComponent: View {
 
 					if selectedColorHex == nil {
 						Image(systemSymbol: .checkmark)
-							.font(.caption.weight(.bold))
+							.font(.customFont(fontFamily, style: .caption, weight: .bold))
 							.foregroundStyle(Color.accent.contrastingForegroundColor())
 					}
 				}
 
 				VStack(alignment: .leading, spacing: 2) {
 					Text("Default")
-						.font(.subheadline)
-						.fontWeight(.medium)
+						.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 						.foregroundStyle(.primary)
 
 					Text("Uses app accent color")
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundStyle(.secondary)
 				}
 
@@ -180,7 +178,7 @@ struct ColorPickerComponent: View {
 				// Checkmark for selected color
 				if selectedColorHex == colorInfo.hex {
 					Image(systemSymbol: .checkmark)
-						.font(.title2.weight(.bold))
+						.font(.customFont(fontFamily, style: .title2, weight: .bold))
 						.foregroundStyle(colorInfo.color.contrastingForegroundColor())
 				}
 			}
@@ -197,19 +195,16 @@ struct ColorPickerComponent: View {
 			hapticsManager.mediumImpact()
 			onSave()
 		} label: {
-			let backgroundColor = selectedColorHex != nil
-				? (Color(hex: selectedColorHex!) ?? Color.accent)
-				: Color.accent
+			let backgroundColor = selectedColorHex.flatMap { Color(hex: $0) } ?? Color.accent
 
 			HStack(spacing: headerSpacing) {
 				Spacer()
 
 				Image(systemSymbol: .checkmarkCircleFill)
-					.font(.title3)
+					.font(.customFont(fontFamily, style: .title3))
 
 				Text(selectedColorHex != nil ? "Save Color Choice" : "Save Default Color")
-					.font(.headline)
-					.fontWeight(.semibold)
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 				Spacer()
 			}
