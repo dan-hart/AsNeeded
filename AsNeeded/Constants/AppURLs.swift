@@ -27,6 +27,9 @@ public enum AppURLs {
 	/// Developer's Mastodon profile
 	static let mastodon = URL(string: "https://mas.to/@codedbydan")
 
+	/// Buy Me a Coffee support page
+	static let buyMeACoffee = URL(string: "https://buymeacoffee.com/codedbydan")
+
 	// MARK: - Contributors
 	/// Christine Wang's portfolio URL
 	static let christineWang = URL(string: "https://christinewang.design/")

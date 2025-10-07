@@ -10,14 +10,16 @@ extension Bundle {
 	/// This distinguishes them from both Debug builds (have provisioning profile) and
 	/// App Store builds (have production receipt).
 	var isTestFlight: Bool {
-		// Get the receipt URL
-		guard let receiptURL = appStoreReceiptURL else { return false }
+		// Construct path to sandbox receipt (avoiding deprecated appStoreReceiptURL)
+		let sandboxReceiptURL = bundleURL
+			.appendingPathComponent("StoreKit")
+			.appendingPathComponent("sandboxReceipt")
 
-		// Check for sandbox receipt (indicates TestFlight or Debug)
-		let isSandbox = receiptURL.lastPathComponent == "sandboxReceipt"
+		// Check if sandbox receipt exists (indicates TestFlight or Debug)
+		let isSandbox = FileManager.default.fileExists(atPath: sandboxReceiptURL.path)
 
 		// Check for embedded provisioning profile (indicates development/ad-hoc)
-		let hasEmbeddedProfile = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") != nil
+		let hasEmbeddedProfile = path(forResource: "embedded", ofType: "mobileprovision") != nil
 
 		// TestFlight = sandbox receipt WITHOUT embedded profile
 		return isSandbox && !hasEmbeddedProfile
