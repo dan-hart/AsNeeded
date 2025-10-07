@@ -155,17 +155,19 @@ struct MedicationTrendsViewModelTests {
 		try await dataStore.addMedication(medication)
 
 		let doseTakenEvent = createTestEvent(medication: medication, date: Date(), amount: 1.0, unit: .tablet)
-		let refillEvent = ANEventConcept(
-			eventType: .doseTaken,
+		// Create a non-doseTaken event to verify it's filtered out
+		let reconcileEvent = ANEventConcept(
+			eventType: .reconcile,
 			medication: medication,
 			dose: nil,
-			date: Date()
+			date: Date().addingTimeInterval(1)
 		)
 		try await dataStore.addEvent(doseTakenEvent)
-		try await dataStore.addEvent(refillEvent)
+		try await dataStore.addEvent(reconcileEvent)
 
 		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
 
+		// Only doseTaken events should be included
 		#expect(viewModel.events.count == 1)
 		#expect(viewModel.events.first?.eventType == .doseTaken)
 	}

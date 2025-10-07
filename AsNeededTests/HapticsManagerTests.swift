@@ -8,6 +8,13 @@ import Foundation
 @MainActor
 @Suite("HapticsManager Tests", .tags(.service, .haptics, .unit))
 struct HapticsManagerTests {
+
+	init() {
+		// Reset UserDefaults before each test to ensure isolation
+		// Note: Default for hapticsEnabled is true
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+	}
+
 	// MARK: - Initialization Tests
 
 	@Test("HapticsManager is a singleton")
@@ -53,6 +60,9 @@ struct HapticsManagerTests {
 		manager.hapticsEnabled = false
 
 		#expect(manager.hapticsEnabled == false)
+
+		// Clean up - restore to default
+		manager.hapticsEnabled = true
 	}
 
 	@Test("Haptics can be enabled")
@@ -95,14 +105,20 @@ struct HapticsManagerTests {
 
 	@Test("Haptics reads from UserDefaults correctly")
 	func testHapticsReadsFromUserDefaults() {
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
-
 		let manager = HapticsManager.shared
 
+		// Set value through manager (which updates UserDefaults via @AppStorage)
+		manager.hapticsEnabled = false
+
+		// Verify it's stored in UserDefaults
+		let storedValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+		#expect(storedValue == false)
+
+		// Verify manager reads it correctly
 		#expect(manager.hapticsEnabled == false)
 
 		// Clean up
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		manager.hapticsEnabled = true
 	}
 
 	// MARK: - Haptic Method Tests (Behavior Verification)
@@ -127,6 +143,9 @@ struct HapticsManagerTests {
 		manager.selectionChanged()
 
 		#expect(true)
+
+		// Clean up
+		manager.hapticsEnabled = true
 	}
 
 	@Test("LightImpact method does not crash when enabled")
@@ -147,6 +166,9 @@ struct HapticsManagerTests {
 		manager.lightImpact()
 
 		#expect(true)
+
+		// Clean up
+		manager.hapticsEnabled = true
 	}
 
 	@Test("MediumImpact method does not crash")
@@ -306,6 +328,9 @@ struct HapticsManagerTests {
 		manager.swipeAction()
 
 		#expect(true)
+
+		// Clean up
+		manager.hapticsEnabled = true
 	}
 
 	// MARK: - PerformFeedback Extension Tests
@@ -443,6 +468,9 @@ struct HapticsManagerTests {
 		manager.performFeedback(style: .error)
 
 		#expect(true)
+
+		// Clean up
+		manager.hapticsEnabled = true
 	}
 
 	// MARK: - HapticFeedbackStyle Enum Tests
@@ -538,6 +566,9 @@ struct HapticsManagerTests {
 		// Verify it resets to default (true)
 		let resetValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
 		#expect(resetValue == false) // Bool defaults to false when not set
+
+		// Clean up - restore to default
+		manager.hapticsEnabled = true
 	}
 
 	@Test("Sequential haptic patterns execute without crash")
