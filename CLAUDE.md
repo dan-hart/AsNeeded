@@ -182,6 +182,218 @@ UserDefaults.standard.bool(forKey: "hasSeenWelcome")
 - Helpers: Prefer `DataStore` ops (`addMedication`, `updateMedication`, `deleteMedication`, `addEvent`) over raw insert/remove.
 - Tests: Inject `DataStore` and, if needed, adapt it to use in‑memory storage; avoid file‑backed stores in tests.
 
+## HealthKit Integration
+
+### Overview
+AsNeeded integrates with Apple HealthKit to provide medication data synchronization across devices. This feature is critical for v1.1 and enables cloud sync without backend infrastructure.
+
+### Architecture
+
+**Three Sync Modes:**
+1. **Bidirectional Sync**: Keep data in sync between AsNeeded and Apple Health
+   - Local storage: ✅ Yes (Boutique)
+   - Export capability: ✅ Yes
+   - Use case: Full feature set with cloud backup
+
+2. **HealthKit as Source of Truth**: Manage medications in Apple Health, view in AsNeeded
+   - Local storage: ❌ No (data lives in HealthKit only)
+   - Export capability: ❌ No (data not stored locally)
+   - Use case: Users who prefer Apple's native medication tracking
+
+3. **AsNeeded as Source of Truth**: Manage in AsNeeded, backup to Apple Health
+   - Local storage: ✅ Yes (Boutique)
+   - Export capability: ✅ Yes
+   - Use case: Full AsNeeded features with HealthKit backup
+
+### Service Usage
+
+**HealthKitSyncManager** (`Services/HealthKit/HealthKitSyncManager.swift`):
+```swift
+let syncManager = HealthKitSyncManager.shared
+
+// Check availability
+if syncManager.isHealthKitAvailable {
+    // Request authorization
+    try await syncManager.requestAuthorization()
+
+    // Perform sync
+    try await syncManager.performSync()
+}
+```
+
+**HealthKitMigrationManager** (`Services/HealthKit/HealthKitMigrationManager.swift`):
+```swift
+let migrationManager = HealthKitMigrationManager.shared
+
+// Get migration suggestion
+let direction = await migrationManager.getMigrationSuggestion()
+
+// Perform migration with progress tracking
+try await migrationManager.performMigration(direction: .toHealthKit) { progress, message in
+    print("Migration: \(progress * 100)% - \(message)")
+}
+```
+
+### Conditional Write Logic
+
+**DataStore respects HealthKit sync mode:**
+```swift
+// In DataStore
+private func shouldWriteToLocalStorage() -> Bool {
+    guard UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitSyncEnabled) else {
+        return true // HealthKit disabled, always write locally
+    }
+
+    let mode = HealthKitSyncManager.shared.currentSyncMode
+    return mode?.writesToLocalStorage ?? true
+}
+```
+
+**All write operations check sync mode:**
+- `addMedication()`: Writes locally only if `shouldWriteToLocalStorage()` returns true
+- `updateMedication()`: Skips Boutique writes in HealthKit SOT mode
+- `deleteMedication()`: Skips Boutique deletes in HealthKit SOT mode
+- `addEvent()`: Respects sync mode for event storage
+
+**Export restrictions:**
+```swift
+// DataStore checks export availability
+var canExportData: Bool {
+    guard UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitSyncEnabled) else {
+        return true // HealthKit disabled, export available
+    }
+
+    let mode = HealthKitSyncManager.shared.currentSyncMode
+    return mode?.allowsDataExport ?? true
+}
+```
+
+### UI Integration
+
+**Onboarding Card** (`Views/Components/HealthKitOnboardingCard.swift`):
+- Show when medication list is empty OR in settings
+- Check `healthKitDontShowOnboarding` preference
+- Present authorization flow on connect
+
+**Settings Section** (`Views/Screens/Settings/Sections/SettingsHealthKitSectionView.swift`):
+- Summary card in main Settings
+- Navigate to full HealthKit settings
+- Show connection status
+
+**Full Settings** (`Views/Screens/Settings/HealthKit/HealthKitSettingsView.swift`):
+- Authorization status
+- Sync mode selection
+- Manual sync button
+- Background sync toggle
+- Disconnect option
+
+### User Flow
+
+1. **First-time Setup:**
+   - User sees HealthKitOnboardingCard (if no medications)
+   - Taps "Connect" → HealthKitAuthorizationView
+   - Grants permissions → HealthKitSyncModeView
+   - Selects sync mode → HealthKitMigrationView (if data exists)
+   - Optionally migrates data → Setup complete
+
+2. **Ongoing Sync:**
+   - Background sync runs every 5 minutes (configurable)
+   - Manual sync available in settings
+   - Conflict resolution based on sync mode
+
+3. **Mode Changes:**
+   - User can change sync mode in settings
+   - Warning shown about consequences
+   - Migration offered if switching between modes
+
+### Archived Medications
+
+**Support for Apple Health archived status:**
+```swift
+// Medication extension
+extension ANMedicationConcept {
+    var isArchived: Bool { get set }
+    mutating func archive()
+    mutating func unarchive()
+}
+
+// Sequence extensions
+extension Sequence where Element == ANMedicationConcept {
+    var active: [ANMedicationConcept]
+    var archived: [ANMedicationConcept]
+}
+```
+
+**UI Integration:**
+- MedicationEditView: Archive toggle
+- MedicationListView: Archive filter button
+- MedicationRowComponent: Archived badge
+- Storage: UserDefaults array of archived medication IDs
+
+### Testing
+
+**Unit Tests:**
+- `HealthKitSyncManagerTests.swift`: Sync modes, authorization, background sync
+- `HealthKitMigrationManagerTests.swift`: Migration directions, progress tracking
+- `HealthKitSyncModeTests.swift`: Mode properties, export availability
+- `DataStoreTests.swift`: Conditional writes for each sync mode
+
+**Testing Patterns:**
+```swift
+@Test("Medication skips local storage in HealthKit SOT mode")
+func medicationSkipsLocalStorageInHealthKitSOT() async throws {
+    UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitSyncEnabled)
+    UserDefaults.standard.set("healthKitSOT", forKey: UserDefaultsKeys.healthKitSyncMode)
+
+    let medication = createTestMedication(name: "Test")
+    try await dataStore.addMedication(medication)
+
+    #expect(dataStore.medications.count == 0) // Not written locally
+}
+```
+
+### Important Notes
+
+- **Platform availability**: HealthKit requires iOS 26+, unavailable on iPad
+- **Physical device testing**: HealthKit doesn't work fully in simulator
+- **Per-object permissions**: Users can selectively share medications
+- **Conflict resolution**: Newer data wins in bidirectional mode
+- **Data privacy**: All HealthKit operations respect user permissions
+- **ANModelKit integration**: Use `ANModelKitHealthKit` module for HealthKit operations
+- **RxNorm codes**: Support for standardized medication codes from ANModelKit
+
+### Common Patterns
+
+**Check HealthKit availability before showing features:**
+```swift
+if HealthKitSyncManager.shared.isHealthKitAvailable {
+    HealthKitOnboardingCard(context: .emptyState)
+}
+```
+
+**Respect export restrictions:**
+```swift
+if DataStore.shared.canExportData {
+    // Show export button
+} else {
+    // Show HealthKit warning, link to settings
+}
+```
+
+**Handle authorization status:**
+```swift
+switch syncManager.authorizationStatus {
+case .notDetermined:
+    // Show connect button
+case .authorized:
+    // Show connected status
+case .denied:
+    // Show settings link
+case .notAvailable:
+    // Hide HealthKit features
+}
+```
+
 ## Package Boundaries
 - No SwiftUI in packages: Do not add any SwiftUI code or imports to `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`. These packages must remain UI‑free (domain models, use cases, networking only).
 - UI lives in app targets: Place SwiftUI views and UI helpers under `AsNeeded/` (e.g., `Views/`, `Medication/`). Keep packages platform‑agnostic and testable.

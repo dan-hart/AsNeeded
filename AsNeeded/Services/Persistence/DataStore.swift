@@ -48,8 +48,13 @@ public final class DataStore {
 	public func addMedication(_ med: ANMedicationConcept) async throws {
 		logger.logMedicationOperation("Adding", id: med.id)
 		do {
-			try await medicationsStore.insert(med)
-			logger.logMedicationOperation("Successfully added", id: med.id)
+			// Check if we should write to local storage based on HealthKit sync mode
+			if shouldWriteToLocalStorage() {
+				try await medicationsStore.insert(med)
+				logger.logMedicationOperation("Successfully added to local storage", id: med.id)
+			} else {
+				logger.info("Skipped local storage write (HealthKit SOT mode)")
+			}
 		} catch {
 			logger.error("Failed to add medication \(med.id.uuidString): \(error.localizedDescription)")
 			throw error
@@ -59,10 +64,15 @@ public final class DataStore {
 	public func updateMedication(_ med: ANMedicationConcept) async throws {
 		logger.logMedicationOperation("Updating", id: med.id)
 		do {
-			// Boutique has no explicit update; remove + insert to replace by id.
-			try await medicationsStore.remove(med)
-			try await medicationsStore.insert(med)
-			logger.logMedicationOperation("Successfully updated", id: med.id)
+			// Check if we should write to local storage based on HealthKit sync mode
+			if shouldWriteToLocalStorage() {
+				// Boutique has no explicit update; remove + insert to replace by id.
+				try await medicationsStore.remove(med)
+				try await medicationsStore.insert(med)
+				logger.logMedicationOperation("Successfully updated in local storage", id: med.id)
+			} else {
+				logger.info("Skipped local storage write (HealthKit SOT mode)")
+			}
 		} catch {
 			logger.error("Failed to update medication \(med.id.uuidString): \(error.localizedDescription)")
 			throw error
@@ -72,15 +82,21 @@ public final class DataStore {
 	public func deleteMedication(_ med: ANMedicationConcept) async throws {
 		logger.logMedicationOperation("Deleting", id: med.id)
 		do {
-			// Also delete associated events
+			// Find associated events first (needed for logging regardless of sync mode)
 			let associatedEvents = events.filter { $0.medication?.id == med.id }
-			logger.debug("Found \(associatedEvents.count) associated events to delete")
-			
-			for event in associatedEvents {
-				try await eventsStore.remove(event)
+
+			// Check if we should write to local storage based on HealthKit sync mode
+			if shouldWriteToLocalStorage() {
+				logger.debug("Found \(associatedEvents.count) associated events to delete")
+
+				for event in associatedEvents {
+					try await eventsStore.remove(event)
+				}
+
+				try await medicationsStore.remove(med)
+			} else {
+				logger.info("Skipped local storage delete (HealthKit SOT mode)")
 			}
-			
-			try await medicationsStore.remove(med)
 			
 			// Clear the deleted medication ID from AppStorage selections to prevent crashes
 			let deletedIDString = med.id.uuidString
@@ -124,8 +140,13 @@ public final class DataStore {
 	public func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
 		logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
 		do {
-			try await eventsStore.insert(event)
-			logger.info("Successfully added event: \(event.id)")
+			// Check if we should write to local storage based on HealthKit sync mode
+			if shouldWriteToLocalStorage() {
+				try await eventsStore.insert(event)
+				logger.info("Successfully added event to local storage: \(event.id)")
+			} else {
+				logger.info("Skipped local storage write (HealthKit SOT mode)")
+			}
 
 			// Track medication event for review eligibility (skip for quick log)
 			if shouldRecordForReview {
@@ -324,6 +345,41 @@ public final class DataStore {
 			logger.error("Failed to clear data: \(error.localizedDescription)")
 			throw error
 		}
+	}
+
+	// MARK: - HealthKit Integration
+
+	/// Check if data should be written to local Boutique storage based on HealthKit sync mode
+	private func shouldWriteToLocalStorage() -> Bool {
+		// Check if HealthKit sync is enabled
+		guard UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitSyncEnabled) else {
+			return true // HealthKit not enabled, always write locally
+		}
+
+		// Check sync mode
+		guard let modeString = UserDefaults.standard.string(forKey: UserDefaultsKeys.healthKitSyncMode),
+			  let syncMode = HealthKitSyncMode(rawValue: modeString) else {
+			return true // No sync mode set, write locally
+		}
+
+		// Only skip local writes in HealthKit SOT mode
+		return syncMode.writesToLocalStorage
+	}
+
+	/// Whether data export is available based on HealthKit sync mode
+	public var canExportData: Bool {
+		// Check if HealthKit sync is enabled
+		guard UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitSyncEnabled) else {
+			return true // HealthKit not enabled, can export
+		}
+
+		// Check sync mode
+		guard let modeString = UserDefaults.standard.string(forKey: UserDefaultsKeys.healthKitSyncMode),
+			  let syncMode = HealthKitSyncMode(rawValue: modeString) else {
+			return true // No sync mode set, can export
+		}
+
+		return syncMode.allowsDataExport
 	}
 }
 

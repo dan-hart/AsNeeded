@@ -361,6 +361,50 @@ struct MedicationEditView: View {
 		}
 	}
 
+	// MARK: - Archived Status Section
+	@ViewBuilder
+	private var archivedStatusSection: some View {
+		VStack(alignment: .leading, spacing: sectionSpacing) {
+			// Section header
+			HStack(spacing: iconSpacing) {
+				Image(systemSymbol: .archiveboxFill)
+					.font(.customFont(fontFamily, style: .title2))
+					.foregroundStyle(
+						LinearGradient(
+							colors: [Color.gray, Color.gray.opacity(0.7)],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
+					)
+
+				Text("Status")
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+			}
+
+			// Archive toggle
+			Toggle(isOn: $viewModel.isArchived) {
+				VStack(alignment: .leading, spacing: smallPadding) {
+					Text("Archive Medication")
+						.font(.customFont(fontFamily, style: .body, weight: .medium))
+
+					Text("Archived medications are hidden from your active list but retained for history")
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+			}
+			.padding(standardPadding)
+			.background(
+				RoundedRectangle(cornerRadius: buttonCornerRadius - 4, style: .continuous)
+					.fill(Color(.tertiarySystemFill))
+			)
+			.accessibilityLabel("Archive medication")
+			.accessibilityHint("Toggle to archive or unarchive this medication")
+		}
+		.glassCard()
+		.padding(.horizontal)
+	}
+
 	// MARK: - Save Button
 	@ViewBuilder
 	private var saveButton: some View {
@@ -592,6 +636,7 @@ struct MedicationEditView: View {
 					prescribedDoseSection
 					refillInfoSection
 					appearanceSection
+					archivedStatusSection
 					saveButton
 					Color.clear.frame(height: clearFrameHeight)
 				}

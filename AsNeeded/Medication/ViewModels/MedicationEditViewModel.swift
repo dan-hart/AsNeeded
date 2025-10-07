@@ -19,6 +19,7 @@ final class MedicationEditViewModel: ObservableObject {
 	@Published var prescribedUnit: ANUnitConcept?
 	@Published var displayColorHex: String?
 	@Published var displaySymbol: String?
+	@Published var isArchived: Bool
 
 	// Editing existing or adding new
 	private let existingID: UUID?
@@ -41,6 +42,7 @@ final class MedicationEditViewModel: ObservableObject {
 		self.prescribedUnit = medication?.prescribedUnit
 		self.displayColorHex = medication?.displayColorHex
 		self.displaySymbol = medication?.symbolInfo?.name
+		self.isArchived = medication?.isArchived ?? false
 	}
 
 	// Computed property for display color
@@ -87,6 +89,7 @@ final class MedicationEditViewModel: ObservableObject {
 		)
 		medication.displayColorHex = displayColorHex
 		medication.symbolInfo = ANMedicationConcept.createSymbolInfo(from: displaySymbol)
+		medication.isArchived = isArchived
 		return medication
 	}
 

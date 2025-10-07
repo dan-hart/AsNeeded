@@ -12,6 +12,8 @@ struct SettingsView: View {
 
 					SettingsFeedbackSectionView()
 
+					SettingsHealthKitSectionView()
+
 					SettingsDataSectionView()
 
 					SettingsAboutSectionView()

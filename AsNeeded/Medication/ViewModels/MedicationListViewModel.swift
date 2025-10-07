@@ -10,11 +10,19 @@ final class MedicationListViewModel: ObservableObject {
 	private let dataStore: DataStore
 	private let logger = DHLogger.ui
 
+	/// Whether to show archived medications in the list
+	@Published var showArchivedMedications: Bool = false
+
 	init(dataStore: DataStore = .shared) {
 		self.dataStore = dataStore
 	}
 
 	var items: [ANMedicationConcept] { dataStore.medications }
+
+	/// Filtered medications based on archived status
+	var displayedMedications: [ANMedicationConcept] {
+		showArchivedMedications ? items : items.active
+	}
 
 	func add(_ med: ANMedicationConcept) async -> Bool {
 		do {

@@ -23,5 +23,9 @@
 		<string>Resources/Fonts/OpenDyslexic-Regular.ttf</string>
 		<string>Resources/Fonts/OpenDyslexic-Bold.ttf</string>
 	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.</string>
 </dict>
 </plist>

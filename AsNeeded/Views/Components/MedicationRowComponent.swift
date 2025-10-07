@@ -165,11 +165,20 @@ struct MedicationRowComponent: View {
 
 	private var medicationHeader: some View {
 		VStack(alignment: .leading, spacing: 4) {
-			Text(medication.displayName)
-				.font(.customFont(fontFamily, style: .headline, weight: .bold))
-				.noTruncate()
-				.foregroundStyle(.primary)
-				.accessibilityAddTraits(.isHeader)
+			HStack(spacing: 8) {
+				Text(medication.displayName)
+					.font(.customFont(fontFamily, style: .headline, weight: .bold))
+					.noTruncate()
+					.foregroundStyle(.primary)
+					.accessibilityAddTraits(.isHeader)
+
+				if medication.isArchived {
+					Image(systemSymbol: .archiveboxFill)
+						.font(.customFont(fontFamily, style: .caption, weight: .medium))
+						.foregroundStyle(.secondary)
+						.accessibilityLabel("Archived")
+				}
+			}
 
 			if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
 				Text(medication.clinicalName)
