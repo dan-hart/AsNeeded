@@ -264,16 +264,16 @@ struct HealthKitSyncManagerTests {
 		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitSyncEnabled)
 	}
 
-	@Test("Don't show onboarding preference")
-	func dontShowOnboardingPreference() {
-		// Default should be false (show onboarding)
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitDontShowOnboarding)
-		let shouldShow = !UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitDontShowOnboarding)
+	@Test("Show onboarding preference")
+	func showOnboardingPreference() {
+		// Default should be true (show onboarding)
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitShowOnboarding)
+		let shouldShow = UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitShowOnboarding)
 		#expect(shouldShow == true)
 
 		// User dismisses onboarding
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.healthKitDontShowOnboarding)
-		let shouldHide = UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitDontShowOnboarding)
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.healthKitShowOnboarding)
+		let shouldHide = !UserDefaults.standard.bool(forKey: UserDefaultsKeys.healthKitShowOnboarding)
 		#expect(shouldHide == true)
 	}
 }
