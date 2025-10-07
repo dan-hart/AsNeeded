@@ -3,6 +3,9 @@
 
 import SwiftUI
 import SFSafeSymbols
+#if canImport(HealthKit)
+import HealthKit
+#endif
 
 /// Main HealthKit settings and configuration view
 struct HealthKitSettingsView: View {
@@ -59,6 +62,11 @@ struct HealthKitSettingsView: View {
 				if syncManager.isSyncEnabled {
 					advancedSection
 				}
+
+				// MARK: - Diagnostics Section (DEBUG only)
+				#if DEBUG
+				diagnosticsSection
+				#endif
 
 				Spacer(minLength: 24)
 			}
@@ -339,6 +347,65 @@ struct HealthKitSettingsView: View {
 			.buttonStyle(.plain)
 		}
 	}
+
+	// MARK: - Diagnostics Section (DEBUG)
+	#if DEBUG
+	@ViewBuilder
+	private var diagnosticsSection: some View {
+		VStack(alignment: .leading, spacing: itemSpacing) {
+			Text("HealthKit Diagnostics")
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+				.padding(.horizontal)
+
+			VStack(alignment: .leading, spacing: 8) {
+				diagnosticRow(label: "HealthKit Available", value: "\(syncManager.isHealthKitAvailable)")
+
+				#if canImport(HealthKit)
+				diagnosticRow(label: "HealthKit Framework", value: "✅ Imported")
+				diagnosticRow(label: "HKHealthStore.isHealthDataAvailable()", value: "\(HKHealthStore.isHealthDataAvailable())")
+				#else
+				diagnosticRow(label: "HealthKit Framework", value: "❌ Not Imported")
+				#endif
+
+				if #available(iOS 26.0, *) {
+					diagnosticRow(label: "iOS 26.0+", value: "✅ Available")
+				} else {
+					diagnosticRow(label: "iOS 26.0+", value: "❌ Requires Update")
+				}
+
+				diagnosticRow(label: "iOS Version", value: "\(UIDevice.current.systemVersion)")
+				diagnosticRow(label: "Device Model", value: "\(UIDevice.current.model)")
+
+				#if canImport(ANModelKitHealthKit)
+				diagnosticRow(label: "ANModelKitHealthKit", value: "✅ Imported")
+				#else
+				diagnosticRow(label: "ANModelKitHealthKit", value: "❌ Not Imported")
+				#endif
+			}
+			.padding(cardPadding)
+			.background(Color(.systemBackground))
+			.overlay(
+				RoundedRectangle(cornerRadius: cornerRadius)
+					.stroke(Color(.systemGray4), lineWidth: borderWidth)
+			)
+			.cornerRadius(cornerRadius)
+			.padding(.horizontal)
+		}
+	}
+
+	@ViewBuilder
+	private func diagnosticRow(label: String, value: String) -> some View {
+		HStack {
+			Text(label)
+				.font(.customFont(fontFamily, style: .caption, weight: .medium))
+				.foregroundColor(.secondary)
+			Spacer()
+			Text(value)
+				.font(.customFont(fontFamily, style: .caption, weight: .bold))
+				.foregroundColor(.primary)
+		}
+	}
+	#endif
 
 	// MARK: - Helper Views
 	@ViewBuilder

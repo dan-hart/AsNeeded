@@ -88,9 +88,32 @@ final class HealthKitSyncManager: ObservableObject {
 	// MARK: - HealthKit Availability
 
 	var isHealthKitAvailable: Bool {
-		#if canImport(ANModelKitHealthKit)
-		return ANModelKitHealthKit.isHealthKitAvailable
+		// Check 1: Can we import HealthKit at all?
+		#if !canImport(HealthKit)
+		logger.debug("HealthKit framework cannot be imported")
+		return false
+		#endif
+
+		// Check 2: iOS version must be 26.0+
+		if #available(iOS 26.0, *) {
+			logger.debug("iOS 26.0+ detected, proceeding with HealthKit availability check")
+		} else {
+			logger.debug("iOS version < 26.0, HealthKit Medications API not available")
+			return false
+		}
+
+		// Check 3: Runtime availability check
+		#if canImport(HealthKit)
+		let available = HKHealthStore.isHealthDataAvailable()
+		logger.debug("HKHealthStore.isHealthDataAvailable() returned: \(available)")
+
+		if !available {
+			logger.warning("HealthKit is not available on this device - check device region, Family Setup, or MDM restrictions")
+		}
+
+		return available
 		#else
+		logger.error("HealthKit framework missing despite previous check - this should not happen")
 		return false
 		#endif
 	}
