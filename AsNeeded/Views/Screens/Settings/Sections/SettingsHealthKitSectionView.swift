@@ -51,6 +51,20 @@ struct SettingsHealthKitSectionView: View {
 	private var onboardingCard: some View {
 		if syncManager.authorizationStatus == .notAvailable {
 			// HealthKit not available on this device
+			#if DEBUG
+			// In DEBUG builds, allow navigation to diagnostics screen
+			NavigationLink(destination: HealthKitSettingsView()) {
+				SettingsRowComponent(
+					icon: .exclamationmarkTriangleFill,
+					title: "Not Available (Tap for Diagnostics)",
+					subtitle: "HealthKit is not available on this device",
+					iconColor: .orange,
+					action: {}
+				)
+			}
+			.buttonStyle(.plain)
+			#else
+			// In RELEASE builds, show non-interactive row
 			SettingsRowComponent(
 				icon: .exclamationmarkTriangleFill,
 				title: "Not Available",
@@ -58,6 +72,7 @@ struct SettingsHealthKitSectionView: View {
 				iconColor: .orange,
 				action: {}
 			)
+			#endif
 		} else {
 			// Connect CTA
 			NavigationLink(destination: HealthKitSettingsView()) {
