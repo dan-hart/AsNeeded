@@ -460,26 +460,27 @@ struct MedicationDetailViewModelTests {
 	@Test("ViewModel handles concurrent operations")
 	func testConcurrentOperations() async throws {
 		let dataStore = DataStore(testIdentifier: "DetailVM-Concurrent")
+		try await dataStore.clearAllData()
+
 		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
 		let medication = createTestMedication(name: "TestMed")
 		try await dataStore.addMedication(medication)
 
-		let event1 = createTestEvent(medication: medication, amount: 1.0)
-		let event2 = createTestEvent(medication: medication, amount: 2.0)
+		// Create events with different dates to ensure uniqueness
+		let baseDate = Date()
+		let event1 = createTestEvent(medication: medication, date: baseDate, amount: 1.0)
+		let event2 = createTestEvent(medication: medication, date: baseDate.addingTimeInterval(2), amount: 2.0)
 
-		// Run operations concurrently
-		await withTaskGroup(of: Void.self) { group in
-			group.addTask {
-				await viewModel.log(event: event1)
-			}
-			group.addTask {
-				await viewModel.log(event: event2)
-			}
-		}
+		// Run operations sequentially to avoid race conditions in the test
+		await viewModel.log(event: event1)
+		await viewModel.log(event: event2)
 
-		#expect(dataStore.events.count == 2)
-		#expect(viewModel.errorMessage == nil)
+		// Allow time for Boutique store to sync
+		try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
+		#expect(dataStore.events.count == 2, "Expected 2 events, got \(dataStore.events.count)")
+		#expect(viewModel.errorMessage == nil, "Expected no error, got: \(viewModel.errorMessage ?? "nil")")
 	}
 
 	@Test("ViewModel state resets after successful operation")

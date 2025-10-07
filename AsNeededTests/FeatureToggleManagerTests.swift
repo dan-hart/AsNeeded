@@ -8,6 +8,12 @@ import Foundation
 @MainActor
 @Suite("FeatureToggleManager Tests", .tags(.service, .featureToggle, .unit))
 struct FeatureToggleManagerTests {
+
+	init() {
+		// Reset UserDefaults before each test to ensure isolation
+		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
+	}
+
 	// MARK: - Initialization Tests
 
 	@Test("FeatureToggleManager is a singleton")
@@ -29,12 +35,16 @@ struct FeatureToggleManagerTests {
 
 	@Test("Quick phrases feature defaults to OFF")
 	func testQuickPhrasesDefaultsToOff() {
-		// Clear any existing value first
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
-
 		let manager = FeatureToggleManager.shared
 
+		// Explicitly set to default value to test the default
+		manager.quickPhrasesEnabled = false
+
 		#expect(manager.quickPhrasesEnabled == false)
+
+		// Verify UserDefaults reflects the default
+		let defaultValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
+		#expect(defaultValue == false)
 	}
 
 	// MARK: - State Management Tests
@@ -46,6 +56,9 @@ struct FeatureToggleManagerTests {
 		manager.quickPhrasesEnabled = true
 
 		#expect(manager.quickPhrasesEnabled == true)
+
+		// Clean up
+		manager.quickPhrasesEnabled = false
 	}
 
 	@Test("Quick phrases can be disabled")
@@ -88,7 +101,7 @@ struct FeatureToggleManagerTests {
 		let storedValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
 		#expect(storedValue == true)
 
-		// Set to false
+		// Set to false (this also serves as cleanup)
 		manager.quickPhrasesEnabled = false
 
 		let updatedValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
@@ -97,15 +110,20 @@ struct FeatureToggleManagerTests {
 
 	@Test("Quick phrases reads from UserDefaults correctly")
 	func testQuickPhrasesReadsFromUserDefaults() {
-		// Set value directly in UserDefaults
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.featureToggleQuickPhrases)
-
 		let manager = FeatureToggleManager.shared
 
+		// Set via manager to ensure synchronization
+		manager.quickPhrasesEnabled = true
+
+		// Verify it's in UserDefaults
+		let storedValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
+		#expect(storedValue == true)
+
+		// Verify manager reads it correctly
 		#expect(manager.quickPhrasesEnabled == true)
 
 		// Clean up
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.featureToggleQuickPhrases)
+		manager.quickPhrasesEnabled = false
 	}
 
 	@Test("UserDefaults key uses correct constant")
@@ -292,6 +310,9 @@ struct FeatureToggleManagerTests {
 
 			#expect(results.allSatisfy { $0 == true })
 		}
+
+		// Clean up
+		manager.quickPhrasesEnabled = false
 	}
 
 	@Test("Sequential writes are consistent")

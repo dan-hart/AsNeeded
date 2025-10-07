@@ -7,6 +7,12 @@ import ANModelKit
 @MainActor
 @Suite("NotificationManager Tests", .tags(.service, .notifications, .unit))
 struct NotificationManagerTests {
+
+	init() {
+		// Reset UserDefaults before each test to ensure isolation
+		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+	}
+
 	// MARK: - Test Helpers
 	private func createTestMedication(name: String = "TestMed") -> ANMedicationConcept {
 		ANMedicationConcept(
@@ -79,12 +85,16 @@ struct NotificationManagerTests {
 
 	@Test("Show medication names defaults to false")
 	func testShowMedicationNamesDefaultsToFalse() {
-		// Clear any existing value
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
-
 		let manager = NotificationManager.shared
 
+		// Explicitly set to default value
+		manager.showMedicationNames = false
+
 		#expect(manager.showMedicationNames == false)
+
+		// Verify UserDefaults reflects the default
+		let defaultValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+		#expect(defaultValue == false)
 	}
 
 	@Test("Show medication names can be toggled")

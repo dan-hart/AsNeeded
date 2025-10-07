@@ -158,7 +158,7 @@ enum MedicationParsingError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .foundationModelsUnavailable:
-			return "Foundation Models framework requires iOS 18 or later"
+			return "Foundation Models framework requires iOS 26 or later"
 		case .parsingFailed(let details):
 			return "Failed to parse medication name: \(details)"
 		}
