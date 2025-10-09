@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SFSafeSymbols
-import HealthKit
 
 struct ContentView: View {
 	@AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false

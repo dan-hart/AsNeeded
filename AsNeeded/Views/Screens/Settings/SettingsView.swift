@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct SettingsView: View {
-	@ScaledMetric private var sectionSpacing: CGFloat = 32
+	@StateObject private var featureToggleManager = FeatureToggleManager.shared
+	@ScaledMetric private var sectionSpacing: CGFloat = 24
 	@ScaledMetric private var padding: CGFloat = 16
 
 	var body: some View {
@@ -12,8 +13,6 @@ struct SettingsView: View {
 
 					SettingsFeedbackSectionView()
 
-					SettingsHealthKitSectionView()
-
 					SettingsDataSectionView()
 
 					SettingsAboutSectionView()
@@ -22,9 +21,10 @@ struct SettingsView: View {
 
 					SettingsDisclaimersSectionView()
 
-#if DEBUG
-					SettingsDebugSectionView()
-#endif
+					// Show debug section in DEBUG builds or TestFlight
+					if featureToggleManager.isFeatureToggleAvailable {
+						SettingsDebugSectionView()
+					}
 
 					Spacer(minLength: sectionSpacing)
 				}

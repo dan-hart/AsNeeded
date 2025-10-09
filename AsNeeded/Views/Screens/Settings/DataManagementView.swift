@@ -44,11 +44,6 @@ struct DataManagementView: View {
 
                     Divider()
 
-                    // HealthKit warning if export is disabled
-                    if !DataStore.shared.canExportData {
-                        healthKitWarningSection
-                    }
-
                     dataActionsSection
                 }
                 .padding()
@@ -439,38 +434,6 @@ struct DataManagementView: View {
         }
         .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs)
         .buttonStyle(.plain)
-    }
-
-    // MARK: - HealthKit Warning Section
-    private var healthKitWarningSection: some View {
-        VStack(alignment: .leading, spacing: actionSpacing) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemSymbol: .exclamationmarkTriangleFill)
-                    .font(.customFont(fontFamily, style: .title2))
-                    .foregroundColor(.orange)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("HealthKit Sync Active")
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                        .foregroundColor(.primary)
-
-                    Text("Your data is managed in Apple Health. Data export is not available in this mode. To export, switch to a different sync mode in HealthKit settings.")
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    NavigationLink(destination: HealthKitSettingsView()) {
-                        Text("HealthKit Settings")
-                            .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-                            .foregroundColor(.accent)
-                    }
-                }
-            }
-            .padding(cardPadding)
-            .background(Color(.systemOrange).opacity(0.1))
-            .cornerRadius(cardCornerRadius)
-        }
     }
 
     private let dateFormatter: DateFormatter = {

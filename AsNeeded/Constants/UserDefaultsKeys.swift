@@ -50,25 +50,6 @@ public enum UserDefaultsKeys {
 	/// Feature toggle for quick note phrases
 	static let featureToggleQuickPhrases = "featureToggle.quickPhrases"
 
-	// MARK: - HealthKit Integration
-	/// Whether HealthKit sync is enabled
-	static let healthKitSyncEnabled = "healthKitSyncEnabled"
-
-	/// Current HealthKit sync mode (bidirectional, healthKitSOT, asNeededSOT)
-	static let healthKitSyncMode = "healthKitSyncMode"
-
-	/// Whether to show HealthKit onboarding prompts
-	static let healthKitShowOnboarding = "healthKitShowOnboarding"
-
-	/// Date of last successful HealthKit sync
-	static let healthKitLastSyncDate = "healthKitLastSyncDate"
-
-	/// Whether user has completed initial HealthKit setup
-	static let healthKitHasCompletedInitialSetup = "healthKitHasCompletedInitialSetup"
-
-	/// Whether background HealthKit sync is enabled
-	static let healthKitBackgroundSyncEnabled = "healthKitBackgroundSyncEnabled"
-
 	// MARK: - App Review & Analytics
 	/// Whether the user has opted out of review requests
 	static let hasUserOptedOutOfReviews = "hasUserOptedOutOfReviews"
@@ -142,12 +123,6 @@ public enum UserDefaultsKeys {
 		showMedicationNamesInNotifications,
 		selectedFontFamily,
 		featureToggleQuickPhrases,
-		healthKitSyncEnabled,
-		healthKitSyncMode,
-		healthKitShowOnboarding,
-		healthKitLastSyncDate,
-		healthKitHasCompletedInitialSetup,
-		healthKitBackgroundSyncEnabled,
 		hasUserOptedOutOfReviews,
 		appLaunchCount,
 		medicationEventsCount,
@@ -181,11 +156,6 @@ public enum UserDefaultsKeys {
 		showMedicationNamesInNotifications: false,
 		selectedFontFamily: "system", // Default to system font
 		featureToggleQuickPhrases: false, // Feature toggles default to OFF
-		healthKitSyncEnabled: false, // HealthKit disabled by default
-		healthKitSyncMode: "bidirectional", // Default sync mode
-		healthKitShowOnboarding: true, // Show onboarding by default
-		healthKitHasCompletedInitialSetup: false,
-		healthKitBackgroundSyncEnabled: true, // Background sync enabled by default when HealthKit is on
 		hasUserOptedOutOfReviews: false,
 		appLaunchCount: 0,
 		medicationEventsCount: 0,
@@ -205,7 +175,6 @@ public enum UserDefaultsKeys {
 		medicationOrder,
 		lastAppUseDate,
 		lastReviewRequestDate,
-		healthKitLastSyncDate, // Remove sync date on reset
 		analyticsFirstLaunchDate,
 		analyticsLastLaunchDate,
 		analyticsLastExportDate,

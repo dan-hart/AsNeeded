@@ -242,10 +242,6 @@ struct MedicationListView: View {
                 }
             }
 
-            // HealthKit onboarding card
-            HealthKitOnboardingCard(context: .emptyState)
-                .padding(.horizontal)
-
             Button(action: {
                 hapticsManager.mediumImpact()
                 showAddSheet = true
