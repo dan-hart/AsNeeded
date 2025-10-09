@@ -1,7 +1,6 @@
 import SwiftUI
 import SFSafeSymbols
 
-#if DEBUG
 struct SettingsDebugSectionView: View {
 	@StateObject private var featureToggleManager = FeatureToggleManager.shared
 	@State private var showThankYouView = false
@@ -172,4 +171,3 @@ struct SettingsDebugSectionView: View {
 #Preview {
 	SettingsDebugSectionView()
 }
-#endif

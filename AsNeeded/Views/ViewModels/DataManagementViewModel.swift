@@ -64,14 +64,6 @@ final class DataManagementViewModel: ObservableObject {
   }
   
   func requestExport() {
-	// Check if export is allowed based on HealthKit sync mode
-	guard dataStore.canExportData else {
-		alertMessage = "Data export is not available when using HealthKit as source of truth. Your data is managed in Apple Health."
-		showingAlert = true
-		logger.warning("Export blocked - HealthKit SOT mode active")
-		return
-	}
-
 	logger.info("Export requested - showing confirmation dialog")
 	showingExportConfirmation = true
   }

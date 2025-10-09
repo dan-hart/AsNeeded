@@ -17,7 +17,7 @@ final class PackageDependencyManager: Sendable {
 				description: "Domain models and business logic for medication tracking",
 				repositoryURL: URL(string: "https://github.com/dan-hart/ANModelKit")!,
 				versionInfo: .branch("main"),
-				commitHash: "b8cc3483c39d1e3819058b4a9bf94b7e952d5e2e",
+				commitHash: "02380bee063a136dd6ed7fce7cee047b4f8d4d6e",
 				license: .gpl3,
 				isDirect: true
 			),
@@ -47,7 +47,7 @@ final class PackageDependencyManager: Sendable {
 				description: "Flat UI color palette for medication customization",
 				repositoryURL: URL(string: "https://github.com/dan-hart/DHFlatUIColors")!,
 				versionInfo: .branch("main"),
-				commitHash: "cae2cbd0a59586a83a89bc52cf18b9419681d863",
+				commitHash: "821b077fc94ba45422ded8f38ee5b532dbabfd3e",
 				license: .gpl3,
 				isDirect: true
 			),
@@ -58,6 +58,16 @@ final class PackageDependencyManager: Sendable {
 				repositoryURL: URL(string: "https://github.com/dan-hart/DHLoggingKit")!,
 				versionInfo: .version("1.0.0"),
 				commitHash: "b75135996d38c93eda5d635949389006fc2e45ed",
+				license: .gpl3,
+				isDirect: true
+			),
+			PackageDependency(
+				id: "dhutilitykit",
+				name: "DHUtilityKit",
+				description: "Utility functions and extensions",
+				repositoryURL: URL(string: "https://github.com/dan-hart/DHUtilityKit")!,
+				versionInfo: .version("1.0.4"),
+				commitHash: "d2e2c03d509ace79ffdec913626099fe57d9933e",
 				license: .gpl3,
 				isDirect: true
 			),
