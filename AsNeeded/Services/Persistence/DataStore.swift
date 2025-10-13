@@ -11,6 +11,9 @@ public final class DataStore {
 	public static let shared = DataStore()
 	private let logger = DHLogger.data
 
+	// App Group identifier for shared storage with widgets
+	private static let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
+
 	// Underlying Boutique stores
 	public let medicationsStore: Store<ANMedicationConcept>
 	public let eventsStore: Store<ANEventConcept>
@@ -19,13 +22,41 @@ public final class DataStore {
 	public var events: [ANEventConcept] { eventsStore.items }
 
 	private init() {
-		logger.info("Initializing DataStore with persistent storage")
+		logger.info("Initializing DataStore with persistent storage in App Group")
+
+		// Get shared container URL for App Group
+		guard let sharedContainerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+		) else {
+			logger.error("Unable to access App Group container: \(Self.appGroupIdentifier)")
+			// Fallback to default container if App Group unavailable
+			self.medicationsStore = Store<ANMedicationConcept>(
+				storage: SQLiteStorageEngine.default(appendingPath: "medications"),
+				cacheIdentifier: \ANMedicationConcept.id.uuidString
+			)
+			self.eventsStore = Store<ANEventConcept>(
+				storage: SQLiteStorageEngine.default(appendingPath: "events"),
+				cacheIdentifier: \ANEventConcept.id.uuidString
+			)
+			logger.oslog.debug("DataStore initialized with default container: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
+			return
+		}
+
+		logger.info("Using shared container at: \(sharedContainerURL.path)")
+
+		// Initialize stores with shared container path using FileManager.Directory
 		self.medicationsStore = Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "medications.sqlite"),
+			storage: SQLiteStorageEngine(
+				directory: FileManager.Directory(url: sharedContainerURL),
+				databaseFilename: "medications"
+			)!,
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
 		self.eventsStore = Store<ANEventConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "events.sqlite"),
+			storage: SQLiteStorageEngine(
+				directory: FileManager.Directory(url: sharedContainerURL),
+				databaseFilename: "events"
+			)!,
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
 		logger.oslog.debug("DataStore initialized: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
@@ -35,11 +66,11 @@ public final class DataStore {
 	public init(testIdentifier: String) {
 		let testId = UUID().uuidString
 		self.medicationsStore = Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId).sqlite"),
+			storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
 		self.eventsStore = Store<ANEventConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "test_events_\(testIdentifier)_\(testId).sqlite"),
+			storage: SQLiteStorageEngine.default(appendingPath: "test_events_\(testIdentifier)_\(testId)"),
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
 	}

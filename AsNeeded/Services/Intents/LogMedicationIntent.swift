@@ -108,7 +108,7 @@ struct AsNeededShortcuts: AppShortcutsProvider {
 			intent: LogMedicationIntent(),
 			phrases: [
 				"Log medication in \(.applicationName)",
-				"Take medication with \(.applicationName)", 
+				"Take medication with \(.applicationName)",
 				"Record dose in \(.applicationName)",
 				"Log \(\.$medication) in \(.applicationName)",
 				"I took \(\.$medication) in \(.applicationName)"
@@ -137,6 +137,39 @@ struct AsNeededShortcuts: AppShortcutsProvider {
 			],
 			shortTitle: "Check Daily Usage",
 			systemImageName: "chart.bar.fill"
+		)
+		AppShortcut(
+			intent: GetNextDoseIntent(),
+			phrases: [
+				"When can I take my medication in \(.applicationName)",
+				"When is my next dose in \(.applicationName)",
+				"When do I need to take \(\.$medication) in \(.applicationName)",
+				"Check my next dose in \(.applicationName)"
+			],
+			shortTitle: "Check Next Dose",
+			systemImageName: "clock.fill"
+		)
+		AppShortcut(
+			intent: CheckRefillStatusIntent(),
+			phrases: [
+				"What medications need refills in \(.applicationName)",
+				"Check my refill status in \(.applicationName)",
+				"Which medications are running low in \(.applicationName)",
+				"Do I need any refills in \(.applicationName)"
+			],
+			shortTitle: "Check Refills",
+			systemImageName: "calendar.badge.exclamationmark"
+		)
+		AppShortcut(
+			intent: GetMedicationInfoIntent(),
+			phrases: [
+				"Tell me about \(\.$medication) in \(.applicationName)",
+				"Get information about \(\.$medication) in \(.applicationName)",
+				"What do I have for \(\.$medication) in \(.applicationName)",
+				"Show me \(\.$medication) details in \(.applicationName)"
+			],
+			shortTitle: "Get Medication Info",
+			systemImageName: "info.circle.fill"
 		)
 	}
 }

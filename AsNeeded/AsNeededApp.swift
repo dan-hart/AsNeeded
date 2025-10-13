@@ -16,6 +16,7 @@ import AppIntents
 struct AsNeededApp: App {
 	@StateObject private var watchConnectivityReceiver = WCReceiver()
 	@StateObject private var revenueCatManager = RevenueCatManager.shared
+	@StateObject private var quickActionHandler = QuickActionHandler.shared
 	private let logger = DHLogger.general
 	
 	init() {
@@ -36,12 +37,18 @@ struct AsNeededApp: App {
 			ContentView()
 				.environmentObject(watchConnectivityReceiver)
 				.environmentObject(revenueCatManager)
+				.environmentObject(quickActionHandler)
 				.onAppear {
 					logger.info("AsNeeded app launched successfully")
 					Task { @MainActor in
 						AppReviewManager.shared.recordAppLaunch()
 					}
 				}
+				.onOpenURL { url in
+					logger.info("Received URL: \(url.absoluteString)")
+					quickActionHandler.handleURL(url)
+				}
 		}
+		.handlesExternalEvents(matching: ["asneeded"])
 	}
 }

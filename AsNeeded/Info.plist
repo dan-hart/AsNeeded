@@ -27,5 +27,48 @@
 	<string>As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.</string>
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypePlus</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Log Dose</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Quick log medication</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).quickaction.logdose</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeTime</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>View History</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>See dose history</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).quickaction.history</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeCompose</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Add Medication</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Add new medication</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).quickaction.addmed</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeTaskCompleted</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>View Trends</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>See usage patterns</string>
+			<key>UIApplicationShortcutItemType</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER).quickaction.trends</string>
+		</dict>
+	</array>
 </dict>
 </plist>
