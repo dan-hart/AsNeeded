@@ -36,7 +36,7 @@ struct QuickLogToastView: View {
 				HStack(spacing: contentSpacing) {
 					// Success checkmark
 					Image(systemSymbol: .checkmarkCircleFill)
-						.font(.system(size: iconSize))
+						.font(.customFont(fontFamily, style: .title3))
 						.foregroundStyle(accentColor)
 						.symbolEffect(.bounce, value: isVisible)
 
