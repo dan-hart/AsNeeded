@@ -874,5 +874,3 @@ sys     0m5.678s   # System time
 - `real` time: Actual wall-clock time
 - `user` time > `real` time: Good parallelization (using multiple cores)
 - If `real` time exceeds expectations: Run cleanup
-
-**Never leave the project in a broken state.** A working build is the foundation for all development work.
