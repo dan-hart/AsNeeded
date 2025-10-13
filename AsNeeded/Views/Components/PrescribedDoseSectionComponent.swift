@@ -125,7 +125,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 						.padding(.vertical, menuPaddingV)
 						.background(
 							RoundedRectangle(cornerRadius: menuCornerRadius)
-								.fill(Color(.secondarySystemGroupedBackground))
+								.fill(.regularMaterial)
 						)
 					}
 					.accessibilityLabel("Dose unit")

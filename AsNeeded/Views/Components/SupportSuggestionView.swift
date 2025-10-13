@@ -98,10 +98,10 @@ struct SupportSuggestionView: View {
 						.foregroundColor(.secondary)
 						.frame(maxWidth: .infinity)
 						.padding(.vertical, buttonVerticalPadding)
-						.background(
-							RoundedRectangle(cornerRadius: buttonCornerRadius)
-								.fill(Color(.tertiarySystemFill))
-						)
+						.background {
+							RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
+								.fill(.regularMaterial)
+						}
 				}
 				.buttonStyle(.plain)
 			}

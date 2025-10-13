@@ -102,10 +102,10 @@ struct SupportToastView: View {
 							.foregroundColor(.secondary)
 							.padding(.horizontal, dontShowPaddingH)
 							.padding(.vertical, dontShowPaddingV)
-							.background(
-								RoundedRectangle(cornerRadius: dontShowCornerRadius)
-									.fill(Color(.tertiarySystemFill))
-							)
+							.background {
+								RoundedRectangle(cornerRadius: dontShowCornerRadius, style: .continuous)
+									.fill(.regularMaterial)
+							}
 					}
 					.buttonStyle(.plain)
 					
