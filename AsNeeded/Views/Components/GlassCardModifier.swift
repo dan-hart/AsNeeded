@@ -47,12 +47,12 @@ struct GlassCardModifier: ViewModifier {
 	func body(content: Content) -> some View {
 		content
 			.padding(padding)
-			.background(
-				RoundedRectangle(cornerRadius: cornerRadius)
+			.background {
+				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 					.fill(.regularMaterial)
 					.shadow(color: Color.black.opacity(0.1), radius: shadowRadius, y: shadowY)
 					.overlay(
-						RoundedRectangle(cornerRadius: cornerRadius)
+						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 							.strokeBorder(
 								LinearGradient(
 									colors: [
@@ -65,7 +65,7 @@ struct GlassCardModifier: ViewModifier {
 								lineWidth: 1
 							)
 					)
-			)
+			}
 	}
 }
 

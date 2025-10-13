@@ -214,10 +214,15 @@ struct LogDoseView: View {
 									.fontWeight(selectedUnit == unit ? .semibold : .regular)
 									.padding(.horizontal, unitHorizontalPadding)
 									.padding(.vertical, unitVerticalPadding)
-									.background(
-										Capsule()
-											.fill(selectedUnit == unit ? .accent : Color.secondary.opacity(0.1))
-									)
+									.background {
+										if selectedUnit == unit {
+											Capsule()
+												.fill(.accent.gradient)
+										} else {
+											Capsule()
+												.fill(.regularMaterial)
+										}
+									}
 									.foregroundStyle(selectedUnit == unit ? .white : .primary)
 							}
 						}
@@ -312,10 +317,15 @@ struct LogDoseView: View {
 								.fontWeight(.medium)
 								.padding(.horizontal, quickButtonHorizontalPadding)
 								.padding(.vertical, quickButtonVerticalPadding)
-								.background(
-									Capsule()
-										.fill(selectedQuickOption == label ? .accent : Color.secondary.opacity(0.1))
-								)
+								.background {
+									if selectedQuickOption == label {
+										Capsule()
+											.fill(.accent.gradient)
+									} else {
+										Capsule()
+											.fill(.regularMaterial)
+									}
+								}
 								.foregroundStyle(selectedQuickOption == label ? .white : .primary)
 						}
 					}
