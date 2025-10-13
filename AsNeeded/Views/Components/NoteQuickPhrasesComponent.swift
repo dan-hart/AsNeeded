@@ -160,12 +160,15 @@ struct NoteQuickPhrasesComponent: View {
 									.foregroundStyle(selectedPhrase == phrase ? .white : .primary)
 									.padding(.horizontal, chipPaddingH)
 									.padding(.vertical, chipPaddingV)
-									.background(
-										Capsule()
-											.fill(selectedPhrase == phrase ?
-												Color.accent :
-												Color.secondary.opacity(0.1))
-									)
+									.background {
+										if selectedPhrase == phrase {
+											Capsule()
+												.fill(Color.accent)
+										} else {
+											Capsule()
+												.fill(.regularMaterial)
+										}
+									}
 									.scaleEffect(selectedPhrase == phrase ? 1.05 : 1.0)
 							}
 							.buttonStyle(.plain)
