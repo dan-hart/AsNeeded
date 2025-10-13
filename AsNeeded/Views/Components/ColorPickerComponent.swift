@@ -133,17 +133,19 @@ struct ColorPickerComponent: View {
 			}
 			.padding(.horizontal, defaultHPadding)
 			.padding(.vertical, defaultVPadding)
-			.background(
-				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
-					.fill(selectedColorHex == nil ? Color.accent.opacity(0.1) : Color(.tertiarySystemFill))
-			)
-			.overlay(
-				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
-					.strokeBorder(
-						selectedColorHex == nil ? Color.accent.opacity(0.3) : Color.clear,
-						lineWidth: defaultBorderWidth
-					)
-			)
+			.background {
+				if selectedColorHex == nil {
+					RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
+						.fill(Color.accent.opacity(0.1))
+						.overlay(
+							RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
+								.strokeBorder(Color.accent.opacity(0.3), lineWidth: defaultBorderWidth)
+						)
+				} else {
+					RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
+						.fill(.regularMaterial)
+				}
+			}
 		}
 		.buttonStyle(.plain)
 		.accessibilityLabel("Default color")

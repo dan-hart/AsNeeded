@@ -115,22 +115,30 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 		.id(scrollID)
 		.padding(.horizontal, fieldHorizontalPadding)
 		.padding(.vertical, fieldVerticalPadding)
-		.background(
-			RoundedRectangle(cornerRadius: fieldCornerRadius)
-				.fill(
-					animateSelection ?
-						.accent.opacity(0.08) :
-						(isFocused ? Color(.systemBackground) : Color(.secondarySystemGroupedBackground))
-				)
-				.overlay(
-					RoundedRectangle(cornerRadius: fieldCornerRadius)
-						.strokeBorder(
-							animateSelection ? .accent :
-							(isFocused ? .accent.opacity(0.4) : Color(.separator).opacity(0.2)),
-							lineWidth: animateSelection ? 2 : (isFocused ? 1.5 : fieldBorderWidth)
-						)
-				)
-		)
+		.background {
+			if animateSelection {
+				RoundedRectangle(cornerRadius: fieldCornerRadius)
+					.fill(.accent.opacity(0.08))
+					.overlay(
+						RoundedRectangle(cornerRadius: fieldCornerRadius)
+							.strokeBorder(.accent, lineWidth: 2)
+					)
+			} else if isFocused {
+				RoundedRectangle(cornerRadius: fieldCornerRadius)
+					.fill(Color(.systemBackground))
+					.overlay(
+						RoundedRectangle(cornerRadius: fieldCornerRadius)
+							.strokeBorder(.accent.opacity(0.4), lineWidth: 1.5)
+					)
+			} else {
+				RoundedRectangle(cornerRadius: fieldCornerRadius)
+					.fill(.regularMaterial)
+					.overlay(
+						RoundedRectangle(cornerRadius: fieldCornerRadius)
+							.strokeBorder(Color(.separator).opacity(0.2), lineWidth: fieldBorderWidth)
+					)
+			}
+		}
 		.animation(.easeInOut(duration: 0.2), value: isFocused)
 		.animation(.spring(response: 0.3, dampingFraction: 0.7), value: animateSelection)
 	}

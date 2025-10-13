@@ -138,7 +138,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 				.padding(fieldContainerPadding)
 				.background(
 					RoundedRectangle(cornerRadius: cornerRadius)
-						.fill(.ultraThinMaterial)
+						.fill(.regularMaterial)
 						.overlay(
 							RoundedRectangle(cornerRadius: cornerRadius)
 								.strokeBorder(
@@ -175,7 +175,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 							.padding(.vertical, optionalPaddingV)
 							.background(
 								Capsule()
-									.fill(Color(.tertiarySystemFill))
+									.fill(.regularMaterial)
 							)
 					}
 				} icon: {

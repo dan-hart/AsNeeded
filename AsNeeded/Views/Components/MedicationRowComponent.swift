@@ -383,7 +383,7 @@ struct MedicationRowComponent: View {
 			ZStack(alignment: .leading) {
 				// Background track
 				Capsule()
-					.fill(Color(.tertiarySystemFill))
+					.fill(.regularMaterial)
 					.frame(height: 4)
 
 				// Progress fill
