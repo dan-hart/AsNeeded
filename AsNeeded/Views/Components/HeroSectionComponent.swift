@@ -81,6 +81,22 @@ struct HeroSectionComponent: View {
 								lineWidth: 1
 							)
 					)
+					.overlay(
+						// Specular highlight for premium glass effect
+						Circle()
+							.fill(
+								LinearGradient(
+									colors: [
+										.white.opacity(0.3),
+										.clear,
+										.white.opacity(0.1)
+									],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
+								)
+							)
+							.blendMode(.overlay)
+					)
 
 				// Icon
 				Image(systemSymbol: icon)
