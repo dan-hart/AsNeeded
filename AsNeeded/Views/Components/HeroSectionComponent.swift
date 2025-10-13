@@ -65,7 +65,7 @@ struct HeroSectionComponent: View {
 
 				// Glass circle
 				Circle()
-					.fill(.ultraThinMaterial)
+					.fill(.regularMaterial)
 					.frame(width: iconSize, height: iconSize)
 					.overlay(
 						Circle()
