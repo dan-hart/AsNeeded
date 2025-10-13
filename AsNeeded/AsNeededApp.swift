@@ -45,7 +45,7 @@ struct AsNeededApp: App {
 					}
 				}
 				.onOpenURL { url in
-					logger.info("Received URL: \(url.absoluteString)")
+					logger.info("Received URL with scheme: \(url.scheme ?? "unknown")")
 					quickActionHandler.handleURL(url)
 				}
 		}

@@ -85,23 +85,20 @@ struct ContentView: View {
 
 		switch action {
 		case .logDose(let medicationID):
-			// Navigate to medications tab
-			navigationManager.selectedTab = 0
-			// If medicationID provided, the medication list will handle showing log sheet
-			// This could be enhanced with a published property in NavigationManager
 			if let medicationID = medicationID {
-				// Store the medication ID to log in NavigationManager for pickup
-				// This is a future enhancement
-				print("Quick action: Log dose for medication \(medicationID)")
+				// Navigate to log dose for specific medication
+				navigationManager.navigateToLogDose(medicationID: medicationID.uuidString)
+			} else {
+				// Navigate to medications tab without specific medication
+				navigationManager.selectedTab = 0
 			}
 
 		case .viewHistory:
 			navigationManager.selectedTab = 1
 
 		case .addMedication:
-			// Navigate to medications tab
-			// The add medication flow will be triggered by the medication list view
-			navigationManager.selectedTab = 0
+			// Navigate to medications tab and trigger add medication flow
+			navigationManager.navigateToAddMedication()
 
 		case .viewTrends:
 			navigationManager.selectedTab = 2

@@ -13,19 +13,43 @@ final class NavigationManager: ObservableObject {
 	}
 	@Published var historyTargetDate: Date?
 	@Published var historyTargetMedicationID: String?
-	
+	@Published var pendingLogMedicationID: String?
+	@Published var shouldShowAddMedication = false
+
 	private init() {}
-	
+
 	/// Navigate to history tab with optional date and medication filter
 	func navigateToHistory(date: Date? = nil, medicationID: String? = nil) {
 		historyTargetDate = date
 		historyTargetMedicationID = medicationID
 		selectedTab = 1 // History tab index
 	}
-	
+
+	/// Navigate to medication tab to log a dose for a specific medication
+	func navigateToLogDose(medicationID: String) {
+		pendingLogMedicationID = medicationID
+		selectedTab = 0 // Medication tab index
+	}
+
+	/// Navigate to medication tab to add a new medication
+	func navigateToAddMedication() {
+		shouldShowAddMedication = true
+		selectedTab = 0 // Medication tab index
+	}
+
 	/// Clear navigation state
 	func clearHistoryNavigation() {
 		historyTargetDate = nil
 		historyTargetMedicationID = nil
+	}
+
+	/// Clear log dose navigation state
+	func clearLogDoseNavigation() {
+		pendingLogMedicationID = nil
+	}
+
+	/// Clear add medication navigation state
+	func clearAddMedicationNavigation() {
+		shouldShowAddMedication = false
 	}
 }

@@ -81,7 +81,7 @@ struct LargeWidgetProvider: TimelineProvider {
 		let provider = WidgetDataProvider.shared
 
 		// Get up to 6 medications for large widget
-		let medications = Array(provider.medicationsByNextDose.prefix(6)).map { medication in
+		let medications = Array(provider.medicationsByName.prefix(6)).map { medication in
 			MedicationInfo(
 				medication: medication,
 				nextDoseTime: provider.nextDoseTime(for: medication),
@@ -119,10 +119,14 @@ struct LargeWidgetView: View {
 				// Medication list
 				VStack(alignment: .leading, spacing: 10) {
 					ForEach(entry.medications, id: \.medication.id) { info in
-						Link(destination: URL(string: "asneeded://log/\(info.medication.id.uuidString)")!) {
+						if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
+							Link(destination: url) {
+								medicationRow(info: info)
+							}
+							.buttonStyle(.plain)
+						} else {
 							medicationRow(info: info)
 						}
-						.buttonStyle(.plain)
 					}
 				}
 

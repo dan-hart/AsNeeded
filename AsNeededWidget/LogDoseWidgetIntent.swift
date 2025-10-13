@@ -58,7 +58,8 @@ struct LogDoseWidgetIntent: AppIntent {
 			if let quantity = medication.quantity, quantity > 0 {
 				var updatedMedication = medication
 				updatedMedication.quantity = max(0, quantity - doseAmount)
-				try await provider.medicationsStore.remove(medication)
+				// Boutique's insert will replace existing item with same ID
+				// No need to remove first, avoiding race condition
 				try await provider.medicationsStore.insert(updatedMedication)
 			}
 
