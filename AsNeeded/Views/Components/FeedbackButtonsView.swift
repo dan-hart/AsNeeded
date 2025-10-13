@@ -1,5 +1,6 @@
 import SwiftUI
 import MessageUI
+import SFSafeSymbols
 
 struct FeedbackButtonsView: View {
 	@Environment(\.fontFamily) private var fontFamily
@@ -147,7 +148,7 @@ struct FeedbackButton: View {
                     .font(.customFont(fontFamily, style: .body, weight: .medium))
                     .foregroundColor(isDisabled ? .secondary : .primary)
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemSymbol: .chevronRight)
                     .foregroundColor(.secondary)
                     .font(.customFont(fontFamily, style: .caption))
                     .opacity(isDisabled ? 0.5 : 1.0)

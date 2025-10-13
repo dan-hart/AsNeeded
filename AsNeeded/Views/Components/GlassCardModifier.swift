@@ -1,4 +1,5 @@
 import SwiftUI
+import SFSafeSymbols
 
 /// A SwiftUI view modifier that applies a glass morphism card appearance
 ///
@@ -104,7 +105,7 @@ extension View {
 		.glassCard(cornerRadius: 12, padding: 16)
 
 		HStack {
-			Image(systemName: "star.fill")
+			Image(systemSymbol: .starFill)
 				.foregroundStyle(.yellow)
 			Text("Compact Card")
 				.font(.customFont(fontFamily, style: .body))

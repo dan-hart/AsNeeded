@@ -525,6 +525,42 @@ PackageDependency(
 ## Agent-Specific Instructions
 > Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift 6 best practices is of utmost importance.
 
+### Automated Code Review Requirement
+**MANDATORY: Run automated code review after completing each user prompt.**
+
+After completing any task (code changes, refactoring, bug fixes, new features), you MUST:
+1. Run `coderabbit --plain` to perform automated code review
+2. Review the feedback provided by CodeRabbit
+3. Implement any critical issues or suggestions found
+4. Only mark the task as complete after addressing CodeRabbit feedback
+
+**When to run:**
+- After making code changes (any `.swift` file modifications)
+- After completing multi-step tasks
+- Before marking tasks as "done" in the todo list
+- Even for small changes (enforcement ensures consistency)
+
+**How to run:**
+```bash
+coderabbit --plain
+```
+
+**Expected workflow:**
+1. Complete the user's requested task
+2. Run `coderabbit --plain`
+3. If issues found: Fix them and verify build still passes
+4. If no issues found: Task is complete
+5. Report results to user with summary of any changes made
+
+**Note:** CodeRabbit provides AI-powered code review checking for:
+- Code quality and best practices
+- Potential bugs and security issues
+- Performance optimizations
+- Style consistency with CLAUDE.md guidelines
+- Architecture and design patterns
+
+This ensures all code meets high quality standards before being committed.
+
 ### Performance Optimization for AI Agents
 **CRITICAL: Always optimize for speed when working with this codebase:**
 
