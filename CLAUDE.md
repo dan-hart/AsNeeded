@@ -129,6 +129,47 @@ When presenting sheets with text input that should auto-focus:
   ```
 - This minimal delay accounts for sheet presentation animation
 
+### Liquid Glass Design (iOS 26+)
+The app follows Apple's iOS 26 Liquid Glass design language for modern, translucent interfaces. See complete guide: **[docs/LIQUID_GLASS.md](docs/LIQUID_GLASS.md)**
+
+**Quick Reference:**
+- **Primary modifier**: `.glassEffect(.regular)` replaces `.regularMaterial`
+- **Interactive controls**: Use `.glassEffect(.regular.interactive(true))` for all buttons
+- **Tinted glass**: `.glassEffect(.regular.tint(.accent.opacity(0.3)))` for primary actions
+- **Shape preference**: Use `Capsule()` for controls, `RoundedRectangle(cornerRadius:, style: .continuous)` for cards
+- **Avoid**: Glass-on-glass stacking; use solid backgrounds for nested content
+
+**Common Patterns:**
+```swift
+// Glass card (current implementation in GlassCardModifier)
+.background {
+	RoundedRectangle(cornerRadius: 20, style: .continuous)
+		.glassEffect(.regular)
+}
+
+// Interactive button
+Button("Action") { ... }
+	.background {
+		Capsule()
+			.glassEffect(.regular.interactive(true))
+	}
+
+// Tinted CTA
+.background {
+	Capsule()
+		.fill(.accent.gradient)
+		.glassEffect(.regular.tint(.accent.opacity(0.2)))
+}
+```
+
+**Documentation Contents:**
+- Core principles and layer hierarchy
+- Technical implementation with code examples
+- Current app analysis and recommendations
+- Migration guide from pre-iOS 26 materials
+- Accessibility considerations
+- Best practices and anti-patterns
+
 ## Feature Toggle System
 
 The app includes a feature toggle system for managing experimental or debug features:
