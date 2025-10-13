@@ -44,9 +44,11 @@ struct QuickActionsComponent: View {
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, verticalPadding)
-					.background(Color(.secondarySystemGroupedBackground))
+					.background {
+						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+							.fill(.regularMaterial)
+					}
 					.foregroundStyle(.accent)
-					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("Edit")
 			.accessibilityHint("Opens edit form for this item")
@@ -60,9 +62,11 @@ struct QuickActionsComponent: View {
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, verticalPadding)
-					.background(Color(.secondarySystemGroupedBackground))
+					.background {
+						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+							.fill(.regularMaterial)
+					}
 					.foregroundStyle(.accent)
-					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("History")
 			.accessibilityHint("View history and activity for this item")
@@ -76,9 +80,11 @@ struct QuickActionsComponent: View {
 					.fontWeight(.medium)
 					.frame(maxWidth: .infinity)
 					.padding(.vertical, verticalPadding)
-					.background(Color(.secondarySystemGroupedBackground))
+					.background {
+						RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+							.fill(.regularMaterial)
+					}
 					.foregroundStyle(.red)
-					.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 			}
 			.accessibilityLabel("Delete")
 			.accessibilityHint("Delete this item permanently")

@@ -136,6 +136,22 @@ struct SupportToastView: View {
 									lineWidth: toastBorderWidth
 								)
 						)
+						.overlay(
+							// Specular highlight for premium glass effect
+							RoundedRectangle(cornerRadius: toastCornerRadius)
+								.fill(
+									LinearGradient(
+										colors: [
+											.white.opacity(0.3),
+											.clear,
+											.white.opacity(0.1)
+										],
+										startPoint: .topLeading,
+										endPoint: .bottomTrailing
+									)
+								)
+								.blendMode(.overlay)
+						)
 				)
 				.position(
 					x: geometry.size.width / 2,

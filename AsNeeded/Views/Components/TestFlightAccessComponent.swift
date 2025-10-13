@@ -69,8 +69,26 @@ struct TestFlightAccessComponent: View {
 					.foregroundColor(.secondary)
 			}
 			.padding(cardPadding)
-			.background(.regularMaterial)
-			.cornerRadius(cornerRadius12)
+			.background {
+				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+					.fill(.regularMaterial)
+					.overlay(
+						// Specular highlight for premium glass effect
+						RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+							.fill(
+								LinearGradient(
+									colors: [
+										.white.opacity(0.3),
+										.clear,
+										.white.opacity(0.1)
+									],
+									startPoint: .topLeading,
+									endPoint: .bottomTrailing
+								)
+							)
+							.blendMode(.overlay)
+					)
+			}
 		}
 		.buttonStyle(.plain)
 		.accessibilityLabel(String(localized: "Join TestFlight Beta"))

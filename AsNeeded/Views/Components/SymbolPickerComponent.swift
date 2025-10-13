@@ -155,7 +155,7 @@ struct SymbolPickerComponent: View {
 		}
 		.searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search symbols")
 		.onChange(of: searchText) { _, newValue in
-			withAnimation(.easeInOut(duration: 0.2)) {
+			withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
 				isSearching = !newValue.isEmpty
 			}
 		}
@@ -231,10 +231,15 @@ struct SymbolPickerComponent: View {
 				.padding(.horizontal, headerSpacing)
 				.padding(.vertical, categoryPadding)
 				.foregroundStyle(selectedCategory == category ? medicationColor.contrastingForegroundColor() : .primary)
-				.background(
-					RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
-						.fill(selectedCategory == category ? medicationColor : Color(.tertiarySystemFill))
-				)
+				.background {
+					if selectedCategory == category {
+						RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
+							.fill(medicationColor)
+					} else {
+						RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
+							.fill(.regularMaterial)
+					}
+				}
 		}
 		.buttonStyle(.plain)
 		.accessibilityLabel("\(category.rawValue) symbols")
@@ -270,9 +275,15 @@ struct SymbolPickerComponent: View {
 		} label: {
 			VStack(spacing: 4) {
 				ZStack {
-					RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
-						.fill(isSelected ? medicationColor.opacity(0.2) : Color(.tertiarySystemFill))
-						.frame(width: symbolSize * 1.4, height: symbolSize * 1.4)
+					if isSelected {
+						RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
+							.fill(medicationColor.opacity(0.2))
+							.frame(width: symbolSize * 1.4, height: symbolSize * 1.4)
+					} else {
+						RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
+							.fill(.regularMaterial)
+							.frame(width: symbolSize * 1.4, height: symbolSize * 1.4)
+					}
 
 					if isSelected {
 						RoundedRectangle(cornerRadius: cornerRadius - 2, style: .continuous)
