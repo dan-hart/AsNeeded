@@ -212,7 +212,7 @@ struct MedicationTrendsView: View {
 		}
 		.padding(metricCardPadding)
 		.frame(maxWidth: .infinity, minHeight: metricCardMinHeight, alignment: .leading)
-		.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
+		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
 	}
 
 	@ViewBuilder
