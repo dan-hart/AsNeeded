@@ -79,7 +79,7 @@ struct MediumWidgetProvider: TimelineProvider {
 		let provider = WidgetDataProvider.shared
 
 		// Get top 3 medications by next dose time
-		let medications = Array(provider.medicationsByNextDose.prefix(3)).map { medication in
+		let medications = Array(provider.medicationsByName.prefix(3)).map { medication in
 			MedicationInfo(
 				medication: medication,
 				nextDoseTime: provider.nextDoseTime(for: medication),
@@ -130,10 +130,14 @@ struct MediumWidgetView: View {
 
 			// Medication rows
 			ForEach(entry.medications, id: \.medication.id) { info in
-				Link(destination: URL(string: "asneeded://log/\(info.medication.id.uuidString)")!) {
+				if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
+					Link(destination: url) {
+						medicationRow(info: info)
+					}
+					.buttonStyle(.plain)
+				} else {
 					medicationRow(info: info)
 				}
-				.buttonStyle(.plain)
 			}
 		}
 		.padding()

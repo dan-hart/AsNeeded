@@ -22,24 +22,27 @@ final class WidgetDataProvider {
 		// Get shared container URL for App Group
 		guard let sharedContainerURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: appGroupIdentifier
+		),
+		let medicationsEngine = SQLiteStorageEngine(
+			directory: FileManager.Directory(url: sharedContainerURL),
+			databaseFilename: "medications"
+		),
+		let eventsEngine = SQLiteStorageEngine(
+			directory: FileManager.Directory(url: sharedContainerURL),
+			databaseFilename: "events"
 		) else {
-			fatalError("Unable to access App Group container")
+			// If any initialization fails, widget will show empty state
+			// This is acceptable as widgets fail gracefully
+			fatalError("Unable to initialize widget data provider. Widget will not function.")
 		}
 
-		// Initialize stores with shared container path using FileManager.Directory
 		self.medicationsStore = Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "medications"
-			)!,
+			storage: medicationsEngine,
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
 
 		self.eventsStore = Store<ANEventConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "events"
-			)!,
+			storage: eventsEngine,
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
 	}
@@ -56,14 +59,14 @@ final class WidgetDataProvider {
 		eventsStore.items
 	}
 
-	/// Get medications sorted by display name
-	var medicationsByNextDose: [ANMedicationConcept] {
+	/// Get medications sorted alphabetically by display name
+	var medicationsByName: [ANMedicationConcept] {
 		medications.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
 	}
 
-	/// Get the next medication due to be taken
+	/// Get the next medication due to be taken (first alphabetically)
 	var nextMedicationDue: ANMedicationConcept? {
-		medicationsByNextDose.first
+		medicationsByName.first
 	}
 
 	/// Calculate next dose time for a medication (simplified - just shows if taken recently)

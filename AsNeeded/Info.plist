@@ -31,7 +31,7 @@
 	<array>
 		<dict>
 			<key>UIApplicationShortcutItemIconType</key>
-			<string>UIApplicationShortcutIconTypePlus</string>
+			<string>UIApplicationShortcutIconTypeAdd</string>
 			<key>UIApplicationShortcutItemTitle</key>
 			<string>Log Dose</string>
 			<key>UIApplicationShortcutItemSubtitle</key>
