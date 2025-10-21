@@ -38,8 +38,9 @@ struct ReminderListView: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
-          Button("Done") { dismiss() }
-            .font(.customFont(fontFamily, style: .body))
+          Button(role: .close) {
+            dismiss()
+          }
         }
 
         if !reminders.isEmpty {
