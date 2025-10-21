@@ -119,13 +119,13 @@ struct MedicationAppearancePickerComponent: View {
 				}
 
 				ToolbarItem(placement: .confirmationAction) {
-					Button {
+					Button(role: .confirm) {
 						performSave()
 					} label: {
 						Image(systemSymbol: .checkmark)
 							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-							.foregroundStyle(.accent)
 					}
+					.tint(.accent)
 					.accessibilityLabel("Save appearance")
 				}
 			}

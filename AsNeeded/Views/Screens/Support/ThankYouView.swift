@@ -89,11 +89,13 @@ struct ThankYouView: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .confirmationAction) {
-					Button(action: { dismiss() }) {
-						Image(systemSymbol: .checkmarkCircleFill)
+					Button(role: .confirm) {
+						dismiss()
+					} label: {
+						Image(systemSymbol: .checkmark)
 							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-							.foregroundStyle(.accent)
 					}
+					.tint(.accent)
 				}
 			}
 		}

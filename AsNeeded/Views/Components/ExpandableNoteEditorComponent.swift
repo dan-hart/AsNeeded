@@ -204,12 +204,29 @@ struct ExpandableNoteEditorComponent: View {
 			.navigationTitle("Add Note")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				Button(role: .close) {
-					withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-						isExpanded = false
-						localText = noteText // Reset to original
-						hapticsManager.lightImpact()
+				ToolbarItem(placement: .cancellationAction) {
+					Button(role: .close) {
+						withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+							isExpanded = false
+							localText = noteText // Reset to original
+							hapticsManager.lightImpact()
+						}
 					}
+				}
+
+				ToolbarItem(placement: .confirmationAction) {
+					Button(role: .confirm) {
+						withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+							noteText = localText.trimmingCharacters(in: .whitespacesAndNewlines)
+							isExpanded = false
+							onSave?()
+							hapticsManager.lightImpact()
+						}
+					} label: {
+						Image(systemSymbol: .checkmark)
+							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+					}
+					.tint(.accent)
 				}
 			}
 			.task {
