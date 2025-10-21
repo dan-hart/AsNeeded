@@ -160,8 +160,8 @@ struct MoreDisclaimerInfoView: View {
 			.navigationTitle("Medical Disclaimer")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
-					Button("Done") { dismiss() }
+				Button(role: .close) {
+					dismiss()
 				}
 			}
 		}

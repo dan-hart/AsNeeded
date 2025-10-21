@@ -111,11 +111,8 @@ struct ReminderConfigurationView: View {
 			.navigationTitle("Set Reminder")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
-					Button(action: { dismiss() }) {
-						Image(systemSymbol: .xmark)
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-					}
+				Button(role: .close) {
+					dismiss()
 				}
 			}
 			.disabled(isScheduling)

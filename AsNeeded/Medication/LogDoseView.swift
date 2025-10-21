@@ -455,12 +455,8 @@ struct LogDoseView: View {
 			}
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
-					Button(action: { dismiss() }) {
-						Image(systemSymbol: .xmark)
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-							.foregroundStyle(.secondary)
-					}
+				Button(role: .close) {
+					dismiss()
 				}
 			}
 		}
