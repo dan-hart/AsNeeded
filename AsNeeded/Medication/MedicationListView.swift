@@ -18,6 +18,7 @@ struct MedicationListView: View {
     @State private var showSupportView = false
     @State private var editMode: EditMode = .inactive
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
+    @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 
     // Quick log toast state
     @State private var showQuickLogToast = false
@@ -146,16 +147,41 @@ struct MedicationListView: View {
                             if updateSuccess && eventSuccess {
                                 logMedication = nil
 
-                                // Show success toast with optimized timing
-                                Task { @MainActor in
-                                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showSupportToast = true
-                                    }
+                                // Show appropriate success feedback based on support banner setting
+                                if hideSupportBanners {
+                                    // Show quick log toast when support banners are OFF
+                                    await MainActor.run {
+                                        quickLogMedicationName = med.displayName
+                                        quickLogDoseAmount = dose.amount
+                                        quickLogDoseUnit = dose.unit.abbreviation
+                                        quickLogAccentColor = med.displayColor
 
-                                    try? await Task.sleep(nanoseconds: 6_000_000_000) // 6 seconds
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showSupportToast = false
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                            showQuickLogToast = true
+                                        }
+
+                                        // Auto-dismiss after 3 seconds
+                                        Task {
+                                            try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                            await MainActor.run {
+                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                                    showQuickLogToast = false
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Show support toast when support banners are ON
+                                    Task { @MainActor in
+                                        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            showSupportToast = true
+                                        }
+
+                                        try? await Task.sleep(nanoseconds: 6_000_000_000) // 6 seconds
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            showSupportToast = false
+                                        }
                                     }
                                 }
                             }
@@ -199,6 +225,12 @@ struct MedicationListView: View {
                             }
                         }
                     )
+                }
+                .task {
+                    // Initialize medication order if empty to ensure stable sorting
+                    if medicationOrder.isEmpty && !viewModel.items.isEmpty {
+                        medicationOrder = viewModel.items.map { $0.id.uuidString }
+                    }
                 }
         }
     }
