@@ -107,6 +107,28 @@ public enum UserDefaultsKeys {
 	/// Recent medication search terms
 	static let recentMedicationSearches = "RecentMedicationSearches"
 
+	// MARK: - Automatic Backup
+	/// Whether automatic backup is enabled
+	static let automaticBackupEnabled = "automaticBackup.enabled"
+
+	/// Security-scoped bookmark data for backup location
+	static let automaticBackupLocationBookmark = "automaticBackup.locationBookmark"
+
+	/// Whether to redact medication names in automatic backups
+	static let automaticBackupRedactMedicationNames = "automaticBackup.redactMedicationNames"
+
+	/// Whether to redact notes in automatic backups
+	static let automaticBackupRedactNotes = "automaticBackup.redactNotes"
+
+	/// Date of last successful automatic backup
+	static let automaticBackupLastBackupDate = "automaticBackup.lastBackupDate"
+
+	/// Date of last cleanup run
+	static let automaticBackupLastCleanupDate = "automaticBackup.lastCleanupDate"
+
+	/// Number of days to retain automatic backups before deletion
+	static let automaticBackupRetentionDays = "automaticBackup.retentionDays"
+
 	// MARK: - All Keys
 	/// Array of all UserDefaults keys for iteration/testing
 	public static let allKeys: [String] = [
@@ -140,7 +162,14 @@ public enum UserDefaultsKeys {
 		analyticsLastImportDate,
 		analyticsMostUsedFeatures,
 		analyticsDailyActiveUse,
-		recentMedicationSearches
+		recentMedicationSearches,
+		automaticBackupEnabled,
+		automaticBackupLocationBookmark,
+		automaticBackupRedactMedicationNames,
+		automaticBackupRedactNotes,
+		automaticBackupLastBackupDate,
+		automaticBackupLastCleanupDate,
+		automaticBackupRetentionDays
 	]
 	
 	// MARK: - Default Values
@@ -164,7 +193,11 @@ public enum UserDefaultsKeys {
 		reviewRequestsDismissed: 0,
 		analyticsLaunchCount: 0,
 		analyticsTotalMedicationsAdded: 0,
-		analyticsTotalEventsLogged: 0
+		analyticsTotalEventsLogged: 0,
+		automaticBackupEnabled: false,
+		automaticBackupRedactMedicationNames: false,
+		automaticBackupRedactNotes: false,
+		automaticBackupRetentionDays: 90
 	]
 	
 	// MARK: - Keys to Remove
@@ -181,7 +214,10 @@ public enum UserDefaultsKeys {
 		analyticsLastImportDate,
 		analyticsMostUsedFeatures,
 		analyticsDailyActiveUse,
-		recentMedicationSearches
+		recentMedicationSearches,
+		automaticBackupLocationBookmark,
+		automaticBackupLastBackupDate,
+		automaticBackupLastCleanupDate
 	]
 	
 	// MARK: - Keys to Skip

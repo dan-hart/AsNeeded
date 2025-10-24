@@ -33,6 +33,7 @@ final class DataManagementViewModel: ObservableObject {
   
   init(dataStore: DataStore = .shared) {
 	self.dataStore = dataStore
+	refreshAutomaticBackupStatus()
 	Task {
 	  await fetchLogCount()
 	}
@@ -268,8 +269,19 @@ final class DataManagementViewModel: ObservableObject {
   var medicationCount: Int {
 	dataStore.medications.count
   }
-  
+
   var eventCount: Int {
 	dataStore.events.count
+  }
+
+  // MARK: - Automatic Backup
+  /// Used by navigation link to show status
+  @Published var isAutomaticBackupEnabled: Bool = false
+  @Published var lastAutomaticBackupDate: Date?
+
+  /// Refresh automatic backup status from UserDefaults
+  func refreshAutomaticBackupStatus() {
+	isAutomaticBackupEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+	lastAutomaticBackupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
   }
 }
