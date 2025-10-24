@@ -29,6 +29,19 @@
 	<string>As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>As Needed needs access to save automatic backups of your medication data to a location you choose.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.codedbydan.AsNeeded</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>asneeded</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>
