@@ -44,6 +44,10 @@ struct DataManagementView: View {
 
                     Divider()
 
+                    automaticBackupSection
+
+                    Divider()
+
                     dataActionsSection
                 }
                 .padding()
@@ -113,7 +117,7 @@ struct DataManagementView: View {
                         Section {
                             Text("Choose what information to include in the export")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                         
                         Section("Privacy Options") {
@@ -122,7 +126,7 @@ struct DataManagementView: View {
                                     Text("Redact Medication Names")
                                     Text("Replace medication names with [REDACTED]")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
 
@@ -131,7 +135,7 @@ struct DataManagementView: View {
                                     Text("Redact Notes")
                                     Text("Remove all notes from events")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -267,6 +271,9 @@ struct DataManagementView: View {
                 SupportView()
             }
         }
+        .onAppear {
+            viewModel.refreshAutomaticBackupStatus()
+        }
     }
     
     private var dataOverviewSection: some View {
@@ -279,7 +286,7 @@ struct DataManagementView: View {
                 VStack(alignment: .leading, spacing: statSpacing) {
                     Text("Medications")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Text("\(viewModel.medicationCount)")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -290,7 +297,7 @@ struct DataManagementView: View {
                 VStack(alignment: .center, spacing: statSpacing) {
                     Text("Events")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Text("\(viewModel.eventCount)")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -301,7 +308,7 @@ struct DataManagementView: View {
                 VStack(alignment: .trailing, spacing: statSpacing) {
                     Text("Logs (24h)")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Group {
                         if viewModel.isLoadingLogCount {
                             ProgressView()
@@ -312,6 +319,51 @@ struct DataManagementView: View {
                     }
                     .font(.title2)
                     .fontWeight(.semibold)
+                }
+            }
+            .padding(cardPadding)
+            .background(Color(.systemGray6))
+            .cornerRadius(cardCornerRadius)
+        }
+    }
+
+    private var automaticBackupSection: some View {
+        NavigationLink(destination: AutomaticBackupView()) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Automatic Backup")
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                        .foregroundStyle(.primary)
+
+                    if viewModel.isAutomaticBackupEnabled {
+                        if let lastBackup = viewModel.lastAutomaticBackupDate {
+                            Text("Active • Last: \(lastBackup, style: .relative) ago")
+                                .font(.customFont(fontFamily, style: .caption))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Active")
+                                .font(.customFont(fontFamily, style: .caption))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Not Configured")
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    if viewModel.isAutomaticBackupEnabled {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                    }
+
+                    Image(systemSymbol: .chevronRight)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(cardPadding)
@@ -403,17 +455,17 @@ struct DataManagementView: View {
                     }
                 }
                 .frame(width: actionIconSize, height: actionIconSize)
-                .foregroundColor(isDestructive ? .red : .accent)
+                .foregroundStyle(isDestructive ? .red : .accent)
 
                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(isDestructive ? .red : .primary)
+                        .foregroundStyle(isDestructive ? .red : .primary)
 
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -421,7 +473,7 @@ struct DataManagementView: View {
                 if !isLoading {
                     Image(systemSymbol: .chevronRight)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(cardPadding)

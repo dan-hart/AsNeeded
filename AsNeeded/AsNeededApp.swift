@@ -42,6 +42,9 @@ struct AsNeededApp: App {
 					logger.info("AsNeeded app launched successfully")
 					Task { @MainActor in
 						AppReviewManager.shared.recordAppLaunch()
+
+						// Perform daily automatic backup cleanup if needed
+						await AutomaticBackupManager.shared.performDailyCleanupIfNeeded()
 					}
 				}
 				.onOpenURL { url in

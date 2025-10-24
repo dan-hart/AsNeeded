@@ -164,6 +164,11 @@ public final class DataStore {
 					AppReviewManager.shared.recordMedicationEvent()
 				}
 			}
+
+			// Trigger automatic backup (debounced)
+			await MainActor.run {
+				AutomaticBackupManager.shared.triggerBackup()
+			}
 		} catch {
 			logger.error("Failed to add event: \(error.localizedDescription)")
 			throw error
@@ -360,7 +365,7 @@ public final class DataStore {
 }
 
 /// Structure for data export/import
-private struct DataExport: Codable {
+struct DataExport: Codable {
 	let medications: [ANMedicationConcept]
 	let events: [ANEventConcept]
 	let exportDate: Date
