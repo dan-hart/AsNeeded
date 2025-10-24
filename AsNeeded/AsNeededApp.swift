@@ -14,6 +14,7 @@ import SwiftUI
 
 @main
 struct AsNeededApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var watchConnectivityReceiver = WCReceiver()
     @StateObject private var revenueCatManager = RevenueCatManager.shared
     @StateObject private var quickActionHandler = QuickActionHandler.shared
