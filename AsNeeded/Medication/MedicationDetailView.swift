@@ -21,6 +21,7 @@ struct MedicationDetailView: View {
     @State private var showReminderSheet = false
     @State private var showReminderList = false
     @State private var reminderCount = 0
+    @State private var showCopyToast = false
     @ScaledMetric private var contentSpacing: CGFloat = 20
     @ScaledMetric private var cardSpacing: CGFloat = 16
     @ScaledMetric private var heroIconSize: CGFloat = 100
@@ -163,6 +164,19 @@ struct MedicationDetailView: View {
                     }
                 }
         }
+        .overlay(alignment: .top) {
+            if showCopyToast {
+                CopyToastView(
+                    message: "Clinical name copied",
+                    isVisible: showCopyToast,
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            showCopyToast = false
+                        }
+                    }
+                )
+            }
+        }
         .task {
             // Refresh medication data from store
             await refreshMedication()
@@ -203,10 +217,26 @@ struct MedicationDetailView: View {
                     .multilineTextAlignment(.center)
 
                 if medication.nickname != nil && medication.nickname != medication.clinicalName {
-                    Text(medication.clinicalName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                    CopyableText(
+                        medication.clinicalName,
+                        font: .subheadline,
+                        color: .secondary
+                    ) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showCopyToast = true
+                        }
+
+                        // Auto-dismiss after 2.5 seconds
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_500_000_000)
+                            await MainActor.run {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    showCopyToast = false
+                                }
+                            }
+                        }
+                    }
+                    .multilineTextAlignment(.center)
                 }
             }
             .padding(.horizontal)
@@ -224,7 +254,33 @@ struct MedicationDetailView: View {
             }
 
             VStack(spacing: detailSpacing) {
-                detailRow(label: "Clinical Name", value: medication.clinicalName)
+                // Custom row with copyable clinical name
+                HStack {
+                    Text("Clinical Name")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    CopyableText(
+                        medication.clinicalName,
+                        font: .subheadline,
+                        weight: .medium,
+                        color: .secondary
+                    ) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showCopyToast = true
+                        }
+
+                        // Auto-dismiss after 2.5 seconds
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_500_000_000)
+                            await MainActor.run {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    showCopyToast = false
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if let nickname = medication.nickname {
                     Divider()
