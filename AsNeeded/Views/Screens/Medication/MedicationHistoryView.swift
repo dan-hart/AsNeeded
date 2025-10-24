@@ -189,6 +189,7 @@ struct MedicationHistoryView: View {
                                 } label: {
                                     Label("Delete", systemSymbol: .trash)
                                 }
+                                .tint(.red)
                             }
                         }
                     }
