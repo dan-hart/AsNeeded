@@ -169,6 +169,16 @@ final class AutomaticBackupViewModel: ObservableObject {
 		}
 
 		do {
+			// Access security-scoped resource before creating bookmark
+			guard url.startAccessingSecurityScopedResource() else {
+				alertMessage = "Permission denied to access selected location"
+				showingAlert = true
+				return
+			}
+			defer {
+				url.stopAccessingSecurityScopedResource()
+			}
+
 			// Create security-scoped bookmark
 			let bookmark = try url.bookmarkData(
 				options: [],
