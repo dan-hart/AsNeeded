@@ -1,9 +1,9 @@
 // MedicationListView.swift
 // SwiftUI view displaying all medications and navigation to add/edit/detail screens.
 
-import SwiftUI
 import ANModelKit
 import SFSafeSymbols
+import SwiftUI
 
 struct MedicationListView: View {
     @StateObject private var viewModel = MedicationListViewModel()
@@ -44,7 +44,7 @@ struct MedicationListView: View {
     @ScaledMetric private var listRowBottomPadding: CGFloat = 8
     @ScaledMetric private var listRowTrailingPadding: CGFloat = 12
     @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
-    
+
     var body: some View {
         NavigationStack {
             mainContent
@@ -234,9 +234,9 @@ struct MedicationListView: View {
                 }
         }
     }
-    
+
     // MARK: - Computed Properties
-    
+
     @ViewBuilder
     private var mainContent: some View {
         Group {
@@ -247,7 +247,7 @@ struct MedicationListView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var emptyStateView: some View {
         VStack(spacing: emptyStateSpacing) {
@@ -298,7 +298,7 @@ struct MedicationListView: View {
             Spacer()
         }
     }
-    
+
     @ViewBuilder
     private var medicationListContent: some View {
         VStack(spacing: 0) {
@@ -341,7 +341,7 @@ struct MedicationListView: View {
                                 let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
 
                                 // Only proceed if operations succeeded
-                                if updateSuccess && eventSuccess {
+                                if updateSuccess, eventSuccess {
                                     await MainActor.run {
                                         hapticsManager.doseLogged()
                                     }
@@ -376,13 +376,13 @@ struct MedicationListView: View {
                                     var updatedMed = med
                                     updatedMed.displayColorHex = newColorHex
                                     updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
-                                    let _ = await viewModel.update(updatedMed)
+                                    _ = await viewModel.update(updatedMed)
                                 }
                             }
                         )
                     }
                     .contentShape(Rectangle())
-                    .onTapGesture { 
+                    .onTapGesture {
                         if editMode == .inactive {
                             viewMedication = med
                         }
@@ -443,6 +443,7 @@ struct MedicationListView: View {
             }
         }
     }
+
     private var sortedMedications: [ANMedicationConcept] {
         let items = viewModel.displayedMedications
 
@@ -475,14 +476,15 @@ struct MedicationListView: View {
 
         return sorted
     }
-    
+
     // MARK: - Private Methods
+
     private func moveMedications(from source: IndexSet, to destination: Int) {
         var items = sortedMedications
         items.move(fromOffsets: source, toOffset: destination)
         medicationOrder = items.map { $0.id.uuidString }
     }
-    
+
     private func deleteMedications(at offsets: IndexSet) {
         for index in offsets {
             guard let med = sortedMedications[doesExistAt: index] else { continue }
@@ -492,56 +494,55 @@ struct MedicationListView: View {
     }
 }
 
-    
-    #Preview {
-        MedicationListView()
+#Preview {
+    MedicationListView()
+}
+
+#Preview("Empty List") {
+    MedicationListView()
+}
+
+#Preview("Medication Row Samples") {
+    List {
+        MedicationRowComponent(medication: ANMedicationConcept(
+            clinicalName: "Lisinopril",
+            nickname: "Blood Pressure",
+            quantity: 28.5,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
+            prescribedUnit: .tablet,
+            prescribedDoseAmount: 10.0
+        ))
+
+        MedicationRowComponent(medication: ANMedicationConcept(
+            clinicalName: "Metformin",
+            quantity: 90.0,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -1, to: Date()), // Yesterday
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()), // In 1 month
+            prescribedUnit: .tablet
+        ))
+
+        MedicationRowComponent(medication: ANMedicationConcept(
+            clinicalName: "Very Long Medication Name That Could Wrap",
+            quantity: 250.0,
+            prescribedUnit: .milligram
+        ))
+
+        MedicationRowComponent(medication: ANMedicationConcept(
+            clinicalName: "Albuterol",
+            nickname: "Rescue Inhaler",
+            quantity: 150.0,
+            lastRefillDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()), // 1 week ago
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()), // Overdue
+            prescribedUnit: .puff
+        ))
+
+        MedicationRowComponent(medication: ANMedicationConcept(
+            clinicalName: "Vitamin D3",
+            quantity: 75.0,
+            nextRefillDate: Calendar.current.date(byAdding: .day, value: 1, to: Date()), // Tomorrow
+            prescribedUnit: .tablet
+        ))
     }
-    
-    #Preview("Empty List") {
-        MedicationListView()
-    }
-    
-    #Preview("Medication Row Samples") {
-        List {
-            MedicationRowComponent(medication: ANMedicationConcept(
-                clinicalName: "Lisinopril",
-                nickname: "Blood Pressure",
-                quantity: 28.5,
-                lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
-                nextRefillDate: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
-                prescribedUnit: .tablet,
-                prescribedDoseAmount: 10.0
-            ))
-
-            MedicationRowComponent(medication: ANMedicationConcept(
-                clinicalName: "Metformin",
-                quantity: 90.0,
-                lastRefillDate: Calendar.current.date(byAdding: .day, value: -1, to: Date()), // Yesterday
-                nextRefillDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()), // In 1 month
-                prescribedUnit: .tablet
-            ))
-
-            MedicationRowComponent(medication: ANMedicationConcept(
-                clinicalName: "Very Long Medication Name That Could Wrap",
-                quantity: 250.0,
-                prescribedUnit: .milligram
-            ))
-
-            MedicationRowComponent(medication: ANMedicationConcept(
-                clinicalName: "Albuterol",
-                nickname: "Rescue Inhaler",
-                quantity: 150.0,
-                lastRefillDate: Calendar.current.date(byAdding: .day, value: -7, to: Date()), // 1 week ago
-                nextRefillDate: Calendar.current.date(byAdding: .day, value: -2, to: Date()), // Overdue
-                prescribedUnit: .puff
-            ))
-
-            MedicationRowComponent(medication: ANMedicationConcept(
-                clinicalName: "Vitamin D3",
-                quantity: 75.0,
-                nextRefillDate: Calendar.current.date(byAdding: .day, value: 1, to: Date()), // Tomorrow
-                prescribedUnit: .tablet
-            ))
-        }
-        .listStyle(.insetGrouped)
-    }
+    .listStyle(.insetGrouped)
+}

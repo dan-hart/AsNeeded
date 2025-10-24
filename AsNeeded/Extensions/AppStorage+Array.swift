@@ -1,5 +1,5 @@
-import SwiftUI
 import Foundation
+import SwiftUI
 
 /// Extension to enable AppStorage support for String arrays through retroactive RawRepresentable conformance
 ///
@@ -55,17 +55,17 @@ import Foundation
 /// UserDefaults is thread-safe, so this extension can be safely used from any thread. However, SwiftUI
 /// property wrappers like `@AppStorage` must be accessed from the main thread as they trigger view updates.
 extension Array: @retroactive RawRepresentable where Element == String {
-	public init?(rawValue: String) {
-		guard let data = rawValue.data(using: .utf8),
-			  let result = try? JSONDecoder().decode([String].self, from: data)
-		else { return nil }
-		self = result
-	}
+    public init?(rawValue: String) {
+        guard let data = rawValue.data(using: .utf8),
+              let result = try? JSONDecoder().decode([String].self, from: data)
+        else { return nil }
+        self = result
+    }
 
-	public var rawValue: String {
-		guard let data = try? JSONEncoder().encode(self),
-			  let result = String(data: data, encoding: .utf8)
-		else { return "[]" }
-		return result
-	}
+    public var rawValue: String {
+        guard let data = try? JSONEncoder().encode(self),
+              let result = String(data: data, encoding: .utf8)
+        else { return "[]" }
+        return result
+    }
 }

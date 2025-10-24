@@ -1,5 +1,5 @@
-import SwiftUI
 import SFSafeSymbols
+import SwiftUI
 
 /// A reusable component for linking users to the TestFlight beta program
 ///
@@ -27,88 +27,88 @@ import SFSafeSymbols
 /// TestFlightAccessComponent()
 /// ```
 struct TestFlightAccessComponent: View {
-	@ScaledMetric private var elementSpacing: CGFloat = 12
-	@ScaledMetric private var textSpacing: CGFloat = 2
-	@ScaledMetric private var cardPadding: CGFloat = 16
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var cornerRadius10: CGFloat = 10
-	@ScaledMetric private var iconSize40: CGFloat = 40
-	@Environment(\.openURL) private var openURL
-	@Environment(\.fontFamily) private var fontFamily
+    @ScaledMetric private var elementSpacing: CGFloat = 12
+    @ScaledMetric private var textSpacing: CGFloat = 2
+    @ScaledMetric private var cardPadding: CGFloat = 16
+    @ScaledMetric private var cornerRadius12: CGFloat = 12
+    @ScaledMetric private var cornerRadius10: CGFloat = 10
+    @ScaledMetric private var iconSize40: CGFloat = 40
+    @Environment(\.openURL) private var openURL
+    @Environment(\.fontFamily) private var fontFamily
 
-	var body: some View {
-		Button(action: openTestFlight) {
-			HStack(spacing: elementSpacing) {
-				Image(systemSymbol: .airplaneCircleFill)
-					.font(.title2)
-					.foregroundColor(.white)
-					.frame(width: iconSize40, height: iconSize40)
-					.background(
-						LinearGradient(
-							colors: [.blue, .cyan],
-							startPoint: .topLeading,
-							endPoint: .bottomTrailing
-						)
-					)
-					.cornerRadius(cornerRadius10)
+    var body: some View {
+        Button(action: openTestFlight) {
+            HStack(spacing: elementSpacing) {
+                Image(systemSymbol: .airplaneCircleFill)
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .frame(width: iconSize40, height: iconSize40)
+                    .background(
+                        LinearGradient(
+                            colors: [.blue, .cyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(cornerRadius10)
 
-				VStack(alignment: .leading, spacing: textSpacing) {
-					Text(String(localized: "Join TestFlight Beta"))
-						.font(.customFont(fontFamily, style: .callout, weight: .semibold))
-						.foregroundColor(.primary)
+                VStack(alignment: .leading, spacing: textSpacing) {
+                    Text(String(localized: "Join TestFlight Beta"))
+                        .font(.customFont(fontFamily, style: .callout, weight: .semibold))
+                        .foregroundColor(.primary)
 
-					Text(String(localized: "Get early access to new features and updates"))
-						.font(.customFont(fontFamily, style: .caption))
-						.foregroundColor(.secondary)
-				}
+                    Text(String(localized: "Get early access to new features and updates"))
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundColor(.secondary)
+                }
 
-				Spacer()
+                Spacer()
 
-				Image(systemSymbol: .arrowUpRight)
-					.font(.caption)
-					.foregroundColor(.secondary)
-			}
-			.padding(cardPadding)
-			.background {
-				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
-					.fill(.regularMaterial)
-					.overlay(
-						// Specular highlight for premium glass effect
-						RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
-							.fill(
-								LinearGradient(
-									colors: [
-										.white.opacity(0.3),
-										.clear,
-										.white.opacity(0.1)
-									],
-									startPoint: .topLeading,
-									endPoint: .bottomTrailing
-								)
-							)
-							.blendMode(.overlay)
-					)
-			}
-		}
-		.buttonStyle(.plain)
-		.accessibilityLabel(String(localized: "Join TestFlight Beta"))
-		.accessibilityHint(String(localized: "Join TestFlight to test new features before release"))
-	}
+                Image(systemSymbol: .arrowUpRight)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(cardPadding)
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+                    .fill(.regularMaterial)
+                    .overlay(
+                        // Specular highlight for premium glass effect
+                        RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        .white.opacity(0.3),
+                                        .clear,
+                                        .white.opacity(0.1),
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .blendMode(.overlay)
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Join TestFlight Beta"))
+        .accessibilityHint(String(localized: "Join TestFlight to test new features before release"))
+    }
 
-	private func openTestFlight() {
-		if let url = AppURLs.testFlightBeta {
-			openURL(url)
-		}
-	}
+    private func openTestFlight() {
+        if let url = AppURLs.testFlightBeta {
+            openURL(url)
+        }
+    }
 }
 
 #if DEBUG
-#Preview {
-	VStack(spacing: 16) {
-		TestFlightAccessComponent()
+    #Preview {
+        VStack(spacing: 16) {
+            TestFlightAccessComponent()
 
-		TestFlightAccessComponent()
-	}
-	.padding()
-}
+            TestFlightAccessComponent()
+        }
+        .padding()
+    }
 #endif

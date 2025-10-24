@@ -5,16 +5,16 @@
 //  Main widget entry point for AsNeeded medication tracking widgets
 //
 
-import WidgetKit
-import SwiftUI
 import ANModelKit
+import SwiftUI
+import WidgetKit
 
 @main
 struct AsNeededWidgets: WidgetBundle {
-	var body: some Widget {
-		MedicationSmallWidget()
-		MedicationMediumWidget()
-		MedicationLargeWidget()
-		MedicationLockScreenWidget()
-	}
+    var body: some Widget {
+        MedicationSmallWidget()
+        MedicationMediumWidget()
+        MedicationLargeWidget()
+        MedicationLockScreenWidget()
+    }
 }

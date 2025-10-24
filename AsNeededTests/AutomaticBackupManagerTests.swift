@@ -1,251 +1,258 @@
 // AutomaticBackupManagerTests.swift
 // Tests for AutomaticBackupManager functionality
 
-import Testing
-import Foundation
 @testable import AsNeeded
+import Foundation
+import Testing
 
 @Suite("AutomaticBackupManager Tests", .tags(.unit, .backup))
 @MainActor
 struct AutomaticBackupManagerTests {
-	init() {
-		// Clear UserDefaults before each test
-		clearAutomaticBackupSettings()
-	}
+    init() {
+        // Clear UserDefaults before each test
+        clearAutomaticBackupSettings()
+    }
 
-	// MARK: - Helper Methods
-	private func clearAutomaticBackupSettings() {
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupEnabled)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
-		UserDefaults.standard.synchronize()
-	}
+    // MARK: - Helper Methods
 
-	private func createTestBookmark() -> Data {
-		// Create a test bookmark data (this is mock data for testing)
-		return "test-bookmark".data(using: .utf8) ?? Data()
-	}
+    private func clearAutomaticBackupSettings() {
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        UserDefaults.standard.synchronize()
+    }
 
-	// MARK: - Enable/Disable Tests
-	@Test("Automatic backup is disabled by default")
-	func defaultDisabledState() {
-		// Given - Fresh UserDefaults
-		clearAutomaticBackupSettings()
+    private func createTestBookmark() -> Data {
+        // Create a test bookmark data (this is mock data for testing)
+        return "test-bookmark".data(using: .utf8) ?? Data()
+    }
 
-		// When - Check enabled state
-		let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+    // MARK: - Enable/Disable Tests
 
-		// Then
-		#expect(isEnabled == false)
-	}
+    @Test("Automatic backup is disabled by default")
+    func defaultDisabledState() {
+        // Given - Fresh UserDefaults
+        clearAutomaticBackupSettings()
 
-	@Test("Save backup location enables automatic backup")
-	func saveLocationEnablesBackup() {
-		// Given
-		let manager = AutomaticBackupManager.shared
-		let testBookmark = createTestBookmark()
+        // When - Check enabled state
+        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
 
-		// When
-		manager.saveBackupLocation(bookmark: testBookmark)
+        // Then
+        #expect(isEnabled == false)
+    }
 
-		// Then
-		let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
-		let savedBookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+    @Test("Save backup location enables automatic backup")
+    func saveLocationEnablesBackup() {
+        // Given
+        let manager = AutomaticBackupManager.shared
+        let testBookmark = createTestBookmark()
 
-		#expect(isEnabled == true)
-		#expect(savedBookmark == testBookmark)
-	}
+        // When
+        manager.saveBackupLocation(bookmark: testBookmark)
 
-	@Test("Disable clears all automatic backup settings")
-	func disableClearsSettings() {
-		// Given
-		let manager = AutomaticBackupManager.shared
-		manager.saveBackupLocation(bookmark: createTestBookmark())
-		UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-		UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        // Then
+        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        let savedBookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
-		// When
-		manager.disable()
+        #expect(isEnabled == true)
+        #expect(savedBookmark == testBookmark)
+    }
 
-		// Then
-		let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
-		let bookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-		let lastBackup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-		let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+    @Test("Disable clears all automatic backup settings")
+    func disableClearsSettings() {
+        // Given
+        let manager = AutomaticBackupManager.shared
+        manager.saveBackupLocation(bookmark: createTestBookmark())
+        UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
-		#expect(isEnabled == false)
-		#expect(bookmark == nil)
-		#expect(lastBackup == nil)
-		#expect(lastCleanup == nil)
-	}
+        // When
+        manager.disable()
 
-	// MARK: - Privacy Settings Tests
-	@Test("Redact medication names defaults to false")
-	func redactNamesDefaultFalse() {
-		// Given - Fresh UserDefaults
-		clearAutomaticBackupSettings()
+        // Then
+        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        let bookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        let lastBackup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
-		// When
-		let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        #expect(isEnabled == false)
+        #expect(bookmark == nil)
+        #expect(lastBackup == nil)
+        #expect(lastCleanup == nil)
+    }
 
-		// Then
-		#expect(redactNames == false)
-	}
+    // MARK: - Privacy Settings Tests
 
-	@Test("Redact notes defaults to false")
-	func redactNotesDefaultFalse() {
-		// Given - Fresh UserDefaults
-		clearAutomaticBackupSettings()
+    @Test("Redact medication names defaults to false")
+    func redactNamesDefaultFalse() {
+        // Given - Fresh UserDefaults
+        clearAutomaticBackupSettings()
 
-		// When
-		let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        // When
+        let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
 
-		// Then
-		#expect(redactNotes == false)
-	}
+        // Then
+        #expect(redactNames == false)
+    }
 
-	@Test("Privacy settings persist correctly")
-	func privacySettingsPersist() {
-		// Given
-		clearAutomaticBackupSettings()
+    @Test("Redact notes defaults to false")
+    func redactNotesDefaultFalse() {
+        // Given - Fresh UserDefaults
+        clearAutomaticBackupSettings()
 
-		// When
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        // When
+        let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
-		// Then
-		let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-		let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        // Then
+        #expect(redactNotes == false)
+    }
 
-		#expect(redactNames == true)
-		#expect(redactNotes == true)
-	}
+    @Test("Privacy settings persist correctly")
+    func privacySettingsPersist() {
+        // Given
+        clearAutomaticBackupSettings()
 
-	// MARK: - Last Backup Date Tests
-	@Test("Last backup date is nil by default")
-	func lastBackupDateNilByDefault() {
-		// Given - Fresh UserDefaults
-		clearAutomaticBackupSettings()
+        // When
+        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
-		// When
-		let lastBackupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
+        // Then
+        let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
-		// Then
-		#expect(lastBackupDate == nil)
-	}
+        #expect(redactNames == true)
+        #expect(redactNotes == true)
+    }
 
-	@Test("Last backup date persists correctly")
-	func lastBackupDatePersists() {
-		// Given
-		clearAutomaticBackupSettings()
-		let testDate = Date()
+    // MARK: - Last Backup Date Tests
 
-		// When
-		UserDefaults.standard.set(testDate, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+    @Test("Last backup date is nil by default")
+    func lastBackupDateNilByDefault() {
+        // Given - Fresh UserDefaults
+        clearAutomaticBackupSettings()
 
-		// Then
-		let savedDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
+        // When
+        let lastBackupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
 
-		#expect(savedDate != nil)
-		// Comparing dates within 1 second tolerance due to precision
-		if let saved = savedDate {
-			#expect(abs(saved.timeIntervalSince(testDate)) < 1.0)
-		}
-	}
+        // Then
+        #expect(lastBackupDate == nil)
+    }
 
-	// MARK: - Cleanup Date Tests
-	@Test("Last cleanup date is nil by default")
-	func lastCleanupDateNilByDefault() {
-		// Given - Fresh UserDefaults
-		clearAutomaticBackupSettings()
+    @Test("Last backup date persists correctly")
+    func lastBackupDatePersists() {
+        // Given
+        clearAutomaticBackupSettings()
+        let testDate = Date()
 
-		// When
-		let lastCleanupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
+        // When
+        UserDefaults.standard.set(testDate, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
 
-		// Then
-		#expect(lastCleanupDate == nil)
-	}
+        // Then
+        let savedDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
 
-	@Test("Cleanup does not run if already performed today")
-	func cleanupSkipsIfAlreadyPerformedToday() async {
-		// Given
-		let manager = AutomaticBackupManager.shared
-		manager.saveBackupLocation(bookmark: createTestBookmark())
-		let today = Date()
-		UserDefaults.standard.set(today, forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        #expect(savedDate != nil)
+        // Comparing dates within 1 second tolerance due to precision
+        if let saved = savedDate {
+            #expect(abs(saved.timeIntervalSince(testDate)) < 1.0)
+        }
+    }
 
-		// When
-		await manager.performDailyCleanupIfNeeded()
+    // MARK: - Cleanup Date Tests
 
-		// Then
-		let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
+    @Test("Last cleanup date is nil by default")
+    func lastCleanupDateNilByDefault() {
+        // Given - Fresh UserDefaults
+        clearAutomaticBackupSettings()
 
-		// Should still be the same date (within 1 second)
-		if let cleanup = lastCleanup {
-			#expect(abs(cleanup.timeIntervalSince(today)) < 1.0)
-		}
-	}
+        // When
+        let lastCleanupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
 
-	// MARK: - UserDefaults Keys Tests
-	@Test("All automatic backup keys are in allKeys array")
-	func allKeysIncludesAutomaticBackupKeys() {
-		// Then
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupEnabled))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLocationBookmark))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRedactMedicationNames))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRedactNotes))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLastBackupDate))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLastCleanupDate))
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRetentionDays))
-	}
+        // Then
+        #expect(lastCleanupDate == nil)
+    }
 
-	@Test("Retention days defaults to 90")
-	func retentionDaysDefaultValue() {
-		// Given
-		clearAutomaticBackupSettings()
+    @Test("Cleanup does not run if already performed today")
+    func cleanupSkipsIfAlreadyPerformedToday() async {
+        // Given
+        let manager = AutomaticBackupManager.shared
+        manager.saveBackupLocation(bookmark: createTestBookmark())
+        let today = Date()
+        UserDefaults.standard.set(today, forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
-		// When
-		let manager = AutomaticBackupManager.shared
+        // When
+        await manager.performDailyCleanupIfNeeded()
 
-		// Then
-		#expect(manager.retentionDays == 90)
-	}
+        // Then
+        let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
 
-	@Test("Retention days can be changed")
-	func retentionDaysCanBeChanged() {
-		// Given
-		clearAutomaticBackupSettings()
+        // Should still be the same date (within 1 second)
+        if let cleanup = lastCleanup {
+            #expect(abs(cleanup.timeIntervalSince(today)) < 1.0)
+        }
+    }
 
-		// When
-		UserDefaults.standard.set(30, forKey: UserDefaultsKeys.automaticBackupRetentionDays)
-		let manager = AutomaticBackupManager.shared
+    // MARK: - UserDefaults Keys Tests
 
-		// Then
-		#expect(manager.retentionDays == 30)
-	}
+    @Test("All automatic backup keys are in allKeys array")
+    func allKeysIncludesAutomaticBackupKeys() {
+        // Then
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupEnabled))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLocationBookmark))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRedactMedicationNames))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRedactNotes))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLastBackupDate))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupLastCleanupDate))
+        #expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.automaticBackupRetentionDays))
+    }
 
-	@Test("Boolean settings have default values")
-	func booleanSettingsHaveDefaults() {
-		// Then
-		#expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupEnabled] as? Bool == false)
-		#expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRedactMedicationNames] as? Bool == false)
-		#expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRedactNotes] as? Bool == false)
-		#expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRetentionDays] as? Int == 90)
-	}
+    @Test("Retention days defaults to 90")
+    func retentionDaysDefaultValue() {
+        // Given
+        clearAutomaticBackupSettings()
 
-	@Test("Date and bookmark keys are in keysToRemove")
-	func dateAndBookmarkKeysInKeysToRemove() {
-		// Then
-		#expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLocationBookmark))
-		#expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLastBackupDate))
-		#expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLastCleanupDate))
-	}
+        // When
+        let manager = AutomaticBackupManager.shared
+
+        // Then
+        #expect(manager.retentionDays == 90)
+    }
+
+    @Test("Retention days can be changed")
+    func retentionDaysCanBeChanged() {
+        // Given
+        clearAutomaticBackupSettings()
+
+        // When
+        UserDefaults.standard.set(30, forKey: UserDefaultsKeys.automaticBackupRetentionDays)
+        let manager = AutomaticBackupManager.shared
+
+        // Then
+        #expect(manager.retentionDays == 30)
+    }
+
+    @Test("Boolean settings have default values")
+    func booleanSettingsHaveDefaults() {
+        // Then
+        #expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupEnabled] as? Bool == false)
+        #expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRedactMedicationNames] as? Bool == false)
+        #expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRedactNotes] as? Bool == false)
+        #expect(UserDefaultsKeys.defaultValues[UserDefaultsKeys.automaticBackupRetentionDays] as? Int == 90)
+    }
+
+    @Test("Date and bookmark keys are in keysToRemove")
+    func dateAndBookmarkKeysInKeysToRemove() {
+        // Then
+        #expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLocationBookmark))
+        #expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLastBackupDate))
+        #expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.automaticBackupLastCleanupDate))
+    }
 }
 
 // MARK: - Test Tags Extension
+
 extension Tag {
-	@Tag static var backup: Self
+    @Tag static var backup: Self
 }

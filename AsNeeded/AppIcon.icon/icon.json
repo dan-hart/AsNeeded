@@ -6,25 +6,25 @@
     {
       "layers" : [
         {
-          "image-name" : "an-top-pill.png",
-          "name" : "an-top-pill",
+          "hidden" : false,
+          "image-name" : "an-top-pill-export-02.png",
+          "name" : "an-top-pill-export-02",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
-              6.4765625,
-              157.1171875
+              8.109375,
+              158.2265625
             ]
           }
         },
         {
-          "glass" : true,
-          "image-name" : "AN-Bottom-Pill.png",
-          "name" : "AN-Bottom-Pill",
+          "image-name" : "AN-Bottom-Pill-export-02 2.png",
+          "name" : "AN-Bottom-Pill-export-02 2",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
-              -39.2421875,
-              -84.296875
+              -37.734375,
+              -85.609375
             ]
           }
         }
