@@ -1,564 +1,565 @@
 // MedicationDetailViewModelTests.swift
 // Comprehensive unit tests for MedicationDetailViewModel
 
-import Testing
-import Foundation
-@testable import AsNeeded
 import ANModelKit
+@testable import AsNeeded
+import Foundation
+import Testing
 
 @MainActor
 @Suite("MedicationDetailViewModel Tests", .tags(.medication, .viewModel, .detail, .unit))
 struct MedicationDetailViewModelTests {
-	// MARK: - Test Helpers
-	private func createTestMedication(
-		name: String = "TestMed",
-		quantity: Double = 100.0,
-		unit: ANUnitConcept = .tablet
-	) -> ANMedicationConcept {
-		ANMedicationConcept(
-			clinicalName: name,
-			nickname: nil,
-			quantity: quantity,
-			prescribedUnit: unit,
-			prescribedDoseAmount: 2.0
-		)
-	}
-
-	private func createTestEvent(
-		medication: ANMedicationConcept,
-		date: Date = Date(),
-		amount: Double = 1.0,
-		unit: ANUnitConcept = .tablet
-	) -> ANEventConcept {
-		let dose = ANDoseConcept(amount: amount, unit: unit)
-		return ANEventConcept(
-			eventType: .doseTaken,
-			medication: medication,
-			dose: dose,
-			date: date
-		)
-	}
-
-	// MARK: - Initialization Tests
-
-	@Test("ViewModel initializes with default dataStore")
-	func testInitializationDefault() {
-		let viewModel = MedicationDetailViewModel()
-
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-	}
-
-	@Test("ViewModel initializes with custom dataStore")
-	func testInitializationCustomDataStore() {
-		let dataStore = DataStore(testIdentifier: "DetailVM-CustomInit")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
-
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-	}
-
-	// MARK: - Save Medication Tests
-
-	@Test("Save medication succeeds with valid data")
-	func testSaveMedicationSuccess() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveSuccess")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
-
-		let medication = createTestMedication(name: "Aspirin")
-		try await dataStore.addMedication(medication)
-
-		var updatedMedication = medication
-		updatedMedication.quantity = 50.0
-
-		await viewModel.save(updated: updatedMedication)
-
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-
-		let savedMedication = dataStore.medications.first { $0.id == medication.id }
-		#expect(savedMedication?.quantity == 50.0)
-	}
-
-	@Test("Save medication updates isLoading state")
-	func testSaveMedicationLoadingState() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveLoading")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
-
-		let medication = createTestMedication(name: "Ibuprofen")
-		try await dataStore.addMedication(medication)
+    // MARK: - Test Helpers
+
+    private func createTestMedication(
+        name: String = "TestMed",
+        quantity: Double = 100.0,
+        unit: ANUnitConcept = .tablet
+    ) -> ANMedicationConcept {
+        ANMedicationConcept(
+            clinicalName: name,
+            nickname: nil,
+            quantity: quantity,
+            prescribedUnit: unit,
+            prescribedDoseAmount: 2.0
+        )
+    }
+
+    private func createTestEvent(
+        medication: ANMedicationConcept,
+        date: Date = Date(),
+        amount: Double = 1.0,
+        unit: ANUnitConcept = .tablet
+    ) -> ANEventConcept {
+        let dose = ANDoseConcept(amount: amount, unit: unit)
+        return ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: dose,
+            date: date
+        )
+    }
+
+    // MARK: - Initialization Tests
+
+    @Test("ViewModel initializes with default dataStore")
+    func initializationDefault() {
+        let viewModel = MedicationDetailViewModel()
+
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    @Test("ViewModel initializes with custom dataStore")
+    func initializationCustomDataStore() {
+        let dataStore = DataStore(testIdentifier: "DetailVM-CustomInit")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+    }
+
+    // MARK: - Save Medication Tests
+
+    @Test("Save medication succeeds with valid data")
+    func saveMedicationSuccess() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveSuccess")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let saveTask = Task {
-			await viewModel.save(updated: medication)
-		}
-
-		await saveTask.value
+        let medication = createTestMedication(name: "Aspirin")
+        try await dataStore.addMedication(medication)
 
-		#expect(viewModel.isLoading == false)
-	}
+        var updatedMedication = medication
+        updatedMedication.quantity = 50.0
+
+        await viewModel.save(updated: updatedMedication)
 
-	@Test("Save medication clears previous error")
-	func testSaveMedicationClearsPreviousError() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveClearError")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
 
-		// Set an error manually
-		await MainActor.run {
-			viewModel.errorMessage = "Previous error"
-		}
+        let savedMedication = dataStore.medications.first { $0.id == medication.id }
+        #expect(savedMedication?.quantity == 50.0)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Save medication updates isLoading state")
+    func saveMedicationLoadingState() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveLoading")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.save(updated: medication)
+        let medication = createTestMedication(name: "Ibuprofen")
+        try await dataStore.addMedication(medication)
 
-		#expect(viewModel.errorMessage == nil)
-	}
+        let saveTask = Task {
+            await viewModel.save(updated: medication)
+        }
 
-	@Test("Save medication with clinical name change")
-	func testSaveMedicationNameChange() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveNameChange")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await saveTask.value
 
-		let medication = createTestMedication(name: "Original Name")
-		try await dataStore.addMedication(medication)
+        #expect(viewModel.isLoading == false)
+    }
 
-		var updatedMedication = medication
-		updatedMedication.clinicalName = "Updated Name"
+    @Test("Save medication clears previous error")
+    func saveMedicationClearsPreviousError() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveClearError")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.save(updated: updatedMedication)
+        // Set an error manually
+        await MainActor.run {
+            viewModel.errorMessage = "Previous error"
+        }
 
-		let savedMedication = dataStore.medications.first { $0.id == medication.id }
-		#expect(savedMedication?.clinicalName == "Updated Name")
-	}
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-	@Test("Save medication with quantity change")
-	func testSaveMedicationQuantityChange() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveQtyChange")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await viewModel.save(updated: medication)
 
-		let medication = createTestMedication(name: "TestMed", quantity: 100.0)
-		try await dataStore.addMedication(medication)
+        #expect(viewModel.errorMessage == nil)
+    }
 
-		var updatedMedication = medication
-		updatedMedication.quantity = 75.0
+    @Test("Save medication with clinical name change")
+    func saveMedicationNameChange() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveNameChange")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.save(updated: updatedMedication)
+        let medication = createTestMedication(name: "Original Name")
+        try await dataStore.addMedication(medication)
 
-		let savedMedication = dataStore.medications.first { $0.id == medication.id }
-		#expect(savedMedication?.quantity == 75.0)
-	}
+        var updatedMedication = medication
+        updatedMedication.clinicalName = "Updated Name"
 
-	@Test("Save medication with unit change")
-	func testSaveMedicationUnitChange() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SaveUnitChange")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await viewModel.save(updated: updatedMedication)
 
-		let medication = createTestMedication(name: "TestMed", unit: .tablet)
-		try await dataStore.addMedication(medication)
+        let savedMedication = dataStore.medications.first { $0.id == medication.id }
+        #expect(savedMedication?.clinicalName == "Updated Name")
+    }
 
-		var updatedMedication = medication
-		updatedMedication.prescribedUnit = .milligram
+    @Test("Save medication with quantity change")
+    func saveMedicationQuantityChange() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveQtyChange")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.save(updated: updatedMedication)
+        let medication = createTestMedication(name: "TestMed", quantity: 100.0)
+        try await dataStore.addMedication(medication)
 
-		let savedMedication = dataStore.medications.first { $0.id == medication.id }
-		#expect(savedMedication?.prescribedUnit == .milligram)
-	}
+        var updatedMedication = medication
+        updatedMedication.quantity = 75.0
 
-	@Test("Save medication preserves ID")
-	func testSaveMedicationPreservesID() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-SavePreserveID")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await viewModel.save(updated: updatedMedication)
 
-		let medication = createTestMedication(name: "TestMed")
-		let originalID = medication.id
-		try await dataStore.addMedication(medication)
+        let savedMedication = dataStore.medications.first { $0.id == medication.id }
+        #expect(savedMedication?.quantity == 75.0)
+    }
 
-		var updatedMedication = medication
-		updatedMedication.clinicalName = "Updated"
+    @Test("Save medication with unit change")
+    func saveMedicationUnitChange() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SaveUnitChange")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.save(updated: updatedMedication)
+        let medication = createTestMedication(name: "TestMed", unit: .tablet)
+        try await dataStore.addMedication(medication)
 
-		let savedMedication = dataStore.medications.first { $0.id == originalID }
-		#expect(savedMedication != nil)
-		#expect(savedMedication?.id == originalID)
-	}
+        var updatedMedication = medication
+        updatedMedication.prescribedUnit = .milligram
 
-	// MARK: - Delete Medication Tests
+        await viewModel.save(updated: updatedMedication)
 
-	@Test("Delete medication succeeds")
-	func testDeleteMedicationSuccess() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-DeleteSuccess")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        let savedMedication = dataStore.medications.first { $0.id == medication.id }
+        #expect(savedMedication?.prescribedUnit == .milligram)
+    }
 
-		let medication = createTestMedication(name: "ToDelete")
-		try await dataStore.addMedication(medication)
+    @Test("Save medication preserves ID")
+    func saveMedicationPreservesID() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-SavePreserveID")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		#expect(dataStore.medications.count == 1)
+        let medication = createTestMedication(name: "TestMed")
+        let originalID = medication.id
+        try await dataStore.addMedication(medication)
 
-		await viewModel.delete(medication)
+        var updatedMedication = medication
+        updatedMedication.clinicalName = "Updated"
 
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-		#expect(dataStore.medications.isEmpty)
-	}
+        await viewModel.save(updated: updatedMedication)
 
-	@Test("Delete medication updates isLoading state")
-	func testDeleteMedicationLoadingState() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-DeleteLoading")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        let savedMedication = dataStore.medications.first { $0.id == originalID }
+        #expect(savedMedication != nil)
+        #expect(savedMedication?.id == originalID)
+    }
 
-		let medication = createTestMedication(name: "ToDelete")
-		try await dataStore.addMedication(medication)
+    // MARK: - Delete Medication Tests
 
-		let deleteTask = Task {
-			await viewModel.delete(medication)
-		}
+    @Test("Delete medication succeeds")
+    func deleteMedicationSuccess() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-DeleteSuccess")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await deleteTask.value
+        let medication = createTestMedication(name: "ToDelete")
+        try await dataStore.addMedication(medication)
 
-		#expect(viewModel.isLoading == false)
-	}
+        #expect(dataStore.medications.count == 1)
 
-	@Test("Delete medication clears previous error")
-	func testDeleteMedicationClearsPreviousError() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-DeleteClearError")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await viewModel.delete(medication)
 
-		// Set an error manually
-		await MainActor.run {
-			viewModel.errorMessage = "Previous error"
-		}
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+        #expect(dataStore.medications.isEmpty)
+    }
 
-		let medication = createTestMedication(name: "ToDelete")
-		try await dataStore.addMedication(medication)
+    @Test("Delete medication updates isLoading state")
+    func deleteMedicationLoadingState() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-DeleteLoading")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.delete(medication)
+        let medication = createTestMedication(name: "ToDelete")
+        try await dataStore.addMedication(medication)
 
-		#expect(viewModel.errorMessage == nil)
-	}
+        let deleteTask = Task {
+            await viewModel.delete(medication)
+        }
 
-	@Test("Delete medication removes all references")
-	func testDeleteMedicationRemovesReferences() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-DeleteReferences")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        await deleteTask.value
 
-		let medication = createTestMedication(name: "ToDelete")
-		try await dataStore.addMedication(medication)
+        #expect(viewModel.isLoading == false)
+    }
 
-		let event = createTestEvent(medication: medication)
-		try await dataStore.addEvent(event)
+    @Test("Delete medication clears previous error")
+    func deleteMedicationClearsPreviousError() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-DeleteClearError")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		#expect(dataStore.medications.count == 1)
+        // Set an error manually
+        await MainActor.run {
+            viewModel.errorMessage = "Previous error"
+        }
 
-		await viewModel.delete(medication)
+        let medication = createTestMedication(name: "ToDelete")
+        try await dataStore.addMedication(medication)
 
-		#expect(dataStore.medications.isEmpty)
-		// Events are typically removed by cascade or separate logic
-	}
+        await viewModel.delete(medication)
 
-	@Test("Delete medication with multiple medications only deletes one")
-	func testDeleteMedicationSelectiveDelete() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-DeleteSelective")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(viewModel.errorMessage == nil)
+    }
 
-		let med1 = createTestMedication(name: "Med1")
-		let med2 = createTestMedication(name: "Med2")
-		try await dataStore.addMedication(med1)
-		try await dataStore.addMedication(med2)
+    @Test("Delete medication removes all references")
+    func deleteMedicationRemovesReferences() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-DeleteReferences")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		#expect(dataStore.medications.count == 2)
+        let medication = createTestMedication(name: "ToDelete")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.delete(med1)
+        let event = createTestEvent(medication: medication)
+        try await dataStore.addEvent(event)
 
-		#expect(dataStore.medications.count == 1)
-		#expect(dataStore.medications.first?.id == med2.id)
-	}
+        #expect(dataStore.medications.count == 1)
 
-	// MARK: - Log Event Tests
+        await viewModel.delete(medication)
 
-	@Test("Log event succeeds")
-	func testLogEventSuccess() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogSuccess")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(dataStore.medications.isEmpty)
+        // Events are typically removed by cascade or separate logic
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Delete medication with multiple medications only deletes one")
+    func deleteMedicationSelectiveDelete() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-DeleteSelective")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event = createTestEvent(medication: medication, amount: 2.0)
+        let med1 = createTestMedication(name: "Med1")
+        let med2 = createTestMedication(name: "Med2")
+        try await dataStore.addMedication(med1)
+        try await dataStore.addMedication(med2)
 
-		await viewModel.log(event: event)
+        #expect(dataStore.medications.count == 2)
 
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-		#expect(dataStore.events.count == 1)
-	}
+        await viewModel.delete(med1)
 
-	@Test("Log event updates isLoading state")
-	func testLogEventLoadingState() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogLoading")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(dataStore.medications.count == 1)
+        #expect(dataStore.medications.first?.id == med2.id)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    // MARK: - Log Event Tests
 
-		let event = createTestEvent(medication: medication)
+    @Test("Log event succeeds")
+    func logEventSuccess() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogSuccess")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let logTask = Task {
-			await viewModel.log(event: event)
-		}
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await logTask.value
+        let event = createTestEvent(medication: medication, amount: 2.0)
 
-		#expect(viewModel.isLoading == false)
-	}
+        await viewModel.log(event: event)
 
-	@Test("Log event clears previous error")
-	func testLogEventClearsPreviousError() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogClearError")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+        #expect(dataStore.events.count == 1)
+    }
 
-		// Set an error manually
-		await MainActor.run {
-			viewModel.errorMessage = "Previous error"
-		}
+    @Test("Log event updates isLoading state")
+    func logEventLoadingState() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogLoading")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		let event = createTestEvent(medication: medication)
+        let event = createTestEvent(medication: medication)
 
-		await viewModel.log(event: event)
+        let logTask = Task {
+            await viewModel.log(event: event)
+        }
 
-		#expect(viewModel.errorMessage == nil)
-	}
+        await logTask.value
 
-	@Test("Log event stores correct date")
-	func testLogEventStoresDate() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogDate")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(viewModel.isLoading == false)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Log event clears previous error")
+    func logEventClearsPreviousError() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogClearError")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let specificDate = Date().addingTimeInterval(-3600) // 1 hour ago
-		let event = createTestEvent(medication: medication, date: specificDate)
+        // Set an error manually
+        await MainActor.run {
+            viewModel.errorMessage = "Previous error"
+        }
 
-		await viewModel.log(event: event)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		guard let loggedEvent = dataStore.events.first else {
-			Issue.record("Expected logged event")
-			return
-		}
+        let event = createTestEvent(medication: medication)
 
-		#expect(abs(loggedEvent.date.timeIntervalSince(specificDate)) < 1.0)
-	}
+        await viewModel.log(event: event)
 
-	@Test("Log event stores correct dose amount")
-	func testLogEventStoresDoseAmount() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogAmount")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(viewModel.errorMessage == nil)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Log event stores correct date")
+    func logEventStoresDate() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogDate")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event = createTestEvent(medication: medication, amount: 5.5)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.log(event: event)
+        let specificDate = Date().addingTimeInterval(-3600) // 1 hour ago
+        let event = createTestEvent(medication: medication, date: specificDate)
 
-		guard let loggedEvent = dataStore.events.first else {
-			Issue.record("Expected logged event")
-			return
-		}
+        await viewModel.log(event: event)
 
-		#expect(loggedEvent.dose?.amount == 5.5)
-	}
+        guard let loggedEvent = dataStore.events.first else {
+            Issue.record("Expected logged event")
+            return
+        }
 
-	@Test("Log event stores correct unit")
-	func testLogEventStoresUnit() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogUnit")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(abs(loggedEvent.date.timeIntervalSince(specificDate)) < 1.0)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Log event stores correct dose amount")
+    func logEventStoresDoseAmount() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogAmount")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event = createTestEvent(medication: medication, amount: 10.0, unit: .milligram)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.log(event: event)
+        let event = createTestEvent(medication: medication, amount: 5.5)
 
-		guard let loggedEvent = dataStore.events.first else {
-			Issue.record("Expected logged event")
-			return
-		}
+        await viewModel.log(event: event)
 
-		#expect(loggedEvent.dose?.unit == .milligram)
-	}
+        guard let loggedEvent = dataStore.events.first else {
+            Issue.record("Expected logged event")
+            return
+        }
 
-	@Test("Log multiple events accumulates correctly")
-	func testLogMultipleEvents() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogMultiple")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(loggedEvent.dose?.amount == 5.5)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Log event stores correct unit")
+    func logEventStoresUnit() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogUnit")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event1 = createTestEvent(medication: medication, amount: 1.0)
-		let event2 = createTestEvent(medication: medication, amount: 2.0)
-		let event3 = createTestEvent(medication: medication, amount: 3.0)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.log(event: event1)
-		await viewModel.log(event: event2)
-		await viewModel.log(event: event3)
+        let event = createTestEvent(medication: medication, amount: 10.0, unit: .milligram)
 
-		#expect(dataStore.events.count == 3)
-	}
+        await viewModel.log(event: event)
 
-	@Test("Log event with note")
-	func testLogEventWithNote() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogNote")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        guard let loggedEvent = dataStore.events.first else {
+            Issue.record("Expected logged event")
+            return
+        }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+        #expect(loggedEvent.dose?.unit == .milligram)
+    }
 
-		var event = createTestEvent(medication: medication)
-		event.note = "Test note"
+    @Test("Log multiple events accumulates correctly")
+    func logMultipleEvents() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogMultiple")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		await viewModel.log(event: event)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		guard let loggedEvent = dataStore.events.first else {
-			Issue.record("Expected logged event")
-			return
-		}
+        let event1 = createTestEvent(medication: medication, amount: 1.0)
+        let event2 = createTestEvent(medication: medication, amount: 2.0)
+        let event3 = createTestEvent(medication: medication, amount: 3.0)
 
-		#expect(loggedEvent.note == "Test note")
-	}
+        await viewModel.log(event: event1)
+        await viewModel.log(event: event2)
+        await viewModel.log(event: event3)
 
-	@Test("Log event preserves medication reference")
-	func testLogEventPreservesMedicationReference() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogMedRef")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(dataStore.events.count == 3)
+    }
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+    @Test("Log event with note")
+    func logEventWithNote() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogNote")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event = createTestEvent(medication: medication)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.log(event: event)
+        var event = createTestEvent(medication: medication)
+        event.note = "Test note"
 
-		guard let loggedEvent = dataStore.events.first else {
-			Issue.record("Expected logged event")
-			return
-		}
+        await viewModel.log(event: event)
 
-		#expect(loggedEvent.medication?.id == medication.id)
-	}
+        guard let loggedEvent = dataStore.events.first else {
+            Issue.record("Expected logged event")
+            return
+        }
 
-	// MARK: - Error State Tests
+        #expect(loggedEvent.note == "Test note")
+    }
 
-	@Test("ViewModel handles concurrent operations")
-	func testConcurrentOperations() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-Concurrent")
-		try await dataStore.clearAllData()
+    @Test("Log event preserves medication reference")
+    func logEventPreservesMedicationReference() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogMedRef")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+        let event = createTestEvent(medication: medication)
 
-		// Create events with different dates to ensure uniqueness
-		let baseDate = Date()
-		let event1 = createTestEvent(medication: medication, date: baseDate, amount: 1.0)
-		let event2 = createTestEvent(medication: medication, date: baseDate.addingTimeInterval(2), amount: 2.0)
+        await viewModel.log(event: event)
 
-		// Run operations sequentially to avoid race conditions in the test
-		await viewModel.log(event: event1)
-		await viewModel.log(event: event2)
+        guard let loggedEvent = dataStore.events.first else {
+            Issue.record("Expected logged event")
+            return
+        }
 
-		// Allow time for Boutique store to sync
-		try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        #expect(loggedEvent.medication?.id == medication.id)
+    }
 
-		#expect(dataStore.events.count == 2, "Expected 2 events, got \(dataStore.events.count)")
-		#expect(viewModel.errorMessage == nil, "Expected no error, got: \(viewModel.errorMessage ?? "nil")")
-	}
+    // MARK: - Error State Tests
 
-	@Test("ViewModel state resets after successful operation")
-	func testStateResetsAfterSuccess() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-StateReset")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+    @Test("ViewModel handles concurrent operations")
+    func concurrentOperations() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-Concurrent")
+        try await dataStore.clearAllData()
 
-		let medication = createTestMedication(name: "TestMed")
-		try await dataStore.addMedication(medication)
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		let event = createTestEvent(medication: medication)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		await viewModel.log(event: event)
+        // Create events with different dates to ensure uniqueness
+        let baseDate = Date()
+        let event1 = createTestEvent(medication: medication, date: baseDate, amount: 1.0)
+        let event2 = createTestEvent(medication: medication, date: baseDate.addingTimeInterval(2), amount: 2.0)
 
-		#expect(viewModel.isLoading == false)
-		#expect(viewModel.errorMessage == nil)
-	}
+        // Run operations sequentially to avoid race conditions in the test
+        await viewModel.log(event: event1)
+        await viewModel.log(event: event2)
 
-	// MARK: - Integration Tests
+        // Allow time for Boutique store to sync
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
 
-	@Test("Complete workflow: save, log, delete")
-	func testCompleteWorkflow() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-Workflow")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+        #expect(dataStore.events.count == 2, "Expected 2 events, got \(dataStore.events.count)")
+        #expect(viewModel.errorMessage == nil, "Expected no error, got: \(viewModel.errorMessage ?? "nil")")
+    }
 
-		// Step 1: Create and save medication
-		var medication = createTestMedication(name: "WorkflowMed", quantity: 100.0)
-		try await dataStore.addMedication(medication)
+    @Test("ViewModel state resets after successful operation")
+    func stateResetsAfterSuccess() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-StateReset")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		// Step 2: Update quantity
-		medication.quantity = 90.0
-		await viewModel.save(updated: medication)
+        let medication = createTestMedication(name: "TestMed")
+        try await dataStore.addMedication(medication)
 
-		guard let savedMed = dataStore.medications.first else {
-			Issue.record("Expected saved medication")
-			return
-		}
-		#expect(savedMed.quantity == 90.0)
+        let event = createTestEvent(medication: medication)
 
-		// Step 3: Log event
-		let event = createTestEvent(medication: medication, amount: 10.0)
-		await viewModel.log(event: event)
-		#expect(dataStore.events.count == 1)
+        await viewModel.log(event: event)
 
-		// Step 4: Delete medication
-		await viewModel.delete(medication)
-		#expect(dataStore.medications.isEmpty)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.errorMessage == nil)
+    }
 
-		#expect(viewModel.errorMessage == nil)
-	}
+    // MARK: - Integration Tests
 
-	@Test("Multiple medications workflow")
-	func testMultipleMedicationsWorkflow() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-MultiWorkflow")
-		let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+    @Test("Complete workflow: save, log, delete")
+    func completeWorkflow() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-Workflow")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
 
-		// Add multiple medications
-		let med1 = createTestMedication(name: "Med1")
-		let med2 = createTestMedication(name: "Med2")
-		let med3 = createTestMedication(name: "Med3")
+        // Step 1: Create and save medication
+        var medication = createTestMedication(name: "WorkflowMed", quantity: 100.0)
+        try await dataStore.addMedication(medication)
 
-		try await dataStore.addMedication(med1)
-		try await dataStore.addMedication(med2)
-		try await dataStore.addMedication(med3)
+        // Step 2: Update quantity
+        medication.quantity = 90.0
+        await viewModel.save(updated: medication)
 
-		#expect(dataStore.medications.count == 3)
+        guard let savedMed = dataStore.medications.first else {
+            Issue.record("Expected saved medication")
+            return
+        }
+        #expect(savedMed.quantity == 90.0)
 
-		// Log events for each
-		await viewModel.log(event: createTestEvent(medication: med1))
-		await viewModel.log(event: createTestEvent(medication: med2))
-		await viewModel.log(event: createTestEvent(medication: med3))
+        // Step 3: Log event
+        let event = createTestEvent(medication: medication, amount: 10.0)
+        await viewModel.log(event: event)
+        #expect(dataStore.events.count == 1)
 
-		#expect(dataStore.events.count == 3)
+        // Step 4: Delete medication
+        await viewModel.delete(medication)
+        #expect(dataStore.medications.isEmpty)
 
-		// Delete one
-		await viewModel.delete(med2)
+        #expect(viewModel.errorMessage == nil)
+    }
 
-		#expect(dataStore.medications.count == 2)
-		#expect(viewModel.errorMessage == nil)
-	}
+    @Test("Multiple medications workflow")
+    func multipleMedicationsWorkflow() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-MultiWorkflow")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+
+        // Add multiple medications
+        let med1 = createTestMedication(name: "Med1")
+        let med2 = createTestMedication(name: "Med2")
+        let med3 = createTestMedication(name: "Med3")
+
+        try await dataStore.addMedication(med1)
+        try await dataStore.addMedication(med2)
+        try await dataStore.addMedication(med3)
+
+        #expect(dataStore.medications.count == 3)
+
+        // Log events for each
+        await viewModel.log(event: createTestEvent(medication: med1))
+        await viewModel.log(event: createTestEvent(medication: med2))
+        await viewModel.log(event: createTestEvent(medication: med3))
+
+        #expect(dataStore.events.count == 3)
+
+        // Delete one
+        await viewModel.delete(med2)
+
+        #expect(dataStore.medications.count == 2)
+        #expect(viewModel.errorMessage == nil)
+    }
 }

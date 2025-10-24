@@ -29,6 +29,9 @@ See `scripts/README.md` for complete documentation.
 - **Semantic Naming**: Name variables by purpose, not value.
   - ✅ CORRECT: `private var cardSpacing: CGFloat = 24`
   - ❌ WRONG: `private var spacing24: CGFloat = 24`
+- **Inclusive Terminology**: Use modern, inclusive terminology in all code, comments, and documentation.
+  - ✅ CORRECT: `allowlist`, `blocklist`, `primary/replica`, `main branch`
+  - ❌ WRONG: `whitelist`, `blacklist`, `master/slave`, `master branch`
 - **SF Symbols**: ALWAYS use SFSafeSymbols: `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`. Exception: WatchOS targets.
 - **Colors**:
   - ALWAYS use `.accent` instead of `.blue` or `Color.accentColor` for interactive elements.

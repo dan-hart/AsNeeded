@@ -1,44 +1,44 @@
 import SwiftUI
 
 struct SettingsView: View {
-	@StateObject private var featureToggleManager = FeatureToggleManager.shared
-	@ScaledMetric private var sectionSpacing: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
+    @StateObject private var featureToggleManager = FeatureToggleManager.shared
+    @ScaledMetric private var sectionSpacing: CGFloat = 24
+    @ScaledMetric private var padding: CGFloat = 16
 
-	var body: some View {
-		NavigationView {
-			ScrollView {
-				VStack(alignment: .leading, spacing: sectionSpacing) {
-					SettingsSupportSectionView()
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: sectionSpacing) {
+                    SettingsSupportSectionView()
 
-					SettingsFeedbackSectionView()
+                    SettingsFeedbackSectionView()
 
-					SettingsDataSectionView()
+                    SettingsDataSectionView()
 
-					SettingsAboutSectionView()
+                    SettingsAboutSectionView()
 
-					SettingsPreferencesSectionView()
+                    SettingsPreferencesSectionView()
 
-					SettingsDisclaimersSectionView()
+                    SettingsDisclaimersSectionView()
 
-					// Show debug section in DEBUG builds or TestFlight
-					if featureToggleManager.isFeatureToggleAvailable {
-						SettingsDebugSectionView()
-					}
+                    // Show debug section in DEBUG builds or TestFlight
+                    if featureToggleManager.isFeatureToggleAvailable {
+                        SettingsDebugSectionView()
+                    }
 
-					Spacer(minLength: sectionSpacing)
-				}
-				.padding(.horizontal, padding)
-				.padding(.vertical, padding)
-			}
-			.navigationTitle("Settings")
-			.navigationBarTitleDisplayMode(.large)
-		}
-	}
+                    Spacer(minLength: sectionSpacing)
+                }
+                .padding(.horizontal, padding)
+                .padding(.vertical, padding)
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
 }
 
 #if DEBUG
-#Preview {
-	SettingsView()
-}
+    #Preview {
+        SettingsView()
+    }
 #endif
