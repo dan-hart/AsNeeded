@@ -27,6 +27,8 @@
 	<string>As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>As Needed needs access to save automatic backups of your medication data to a location you choose.</string>
 	<key>UIApplicationShortcutItems</key>
 	<array>
 		<dict>
