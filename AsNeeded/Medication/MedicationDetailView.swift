@@ -15,6 +15,7 @@ struct MedicationDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
     @State private var showEditSheet = false
@@ -35,6 +36,28 @@ struct MedicationDetailView: View {
     @ScaledMetric private var rowSpacing: CGFloat = 10
     @ScaledMetric private var buttonCornerRadius: CGFloat = 8
 
+    // MARK: - Computed Properties
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+
+    private var adaptiveContentSpacing: CGFloat {
+        isRegularWidth ? 32 : contentSpacing
+    }
+
+    private var adaptiveCardPadding: CGFloat {
+        isRegularWidth ? 32 : cardPadding
+    }
+
+    private var adaptiveHeroIconSize: CGFloat {
+        isRegularWidth ? 140 : heroIconSize
+    }
+
+    private var cardMaxWidth: CGFloat? {
+        isRegularWidth ? 600 : nil
+    }
+
     init(medication: ANMedicationConcept) {
         medicationId = medication.id
         _medication = State(initialValue: medication)
@@ -42,7 +65,7 @@ struct MedicationDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: contentSpacing) {
+            VStack(spacing: adaptiveContentSpacing) {
                 // MARK: - Hero Section
 
                 heroSection
@@ -53,10 +76,10 @@ struct MedicationDetailView: View {
                     onEditTapped: { showEditSheet = true },
                     onHistoryTapped: {
                         navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
-                        dismiss()
                     },
                     onDeleteTapped: { showDeleteConfirm = true }
                 )
+                .frame(maxWidth: cardMaxWidth)
 
                 // MARK: - Details Cards
 
@@ -73,7 +96,8 @@ struct MedicationDetailView: View {
 
                     remindersCard
                 }
-                .padding(.horizontal)
+                .frame(maxWidth: cardMaxWidth)
+                .padding(.horizontal, isRegularWidth ? 32 : 20)
 
                 // MARK: - Bottom Actions
 
@@ -82,18 +106,46 @@ struct MedicationDetailView: View {
             .padding(.vertical)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(medication.displayName)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(medication.displayName)
-                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-            }
             ToolbarItem(placement: .primaryAction) {
-                Button("Done") {
-                    dismiss()
+                Button {
+                    showLogDose = true
+                } label: {
+                    Image(systemSymbol: .pillsFill)
+                        .font(.customFont(fontFamily, style: .body, weight: .semibold))
+                        .foregroundStyle(medication.displayColor)
                 }
-                .font(.customFont(fontFamily, style: .body, weight: .semibold))
+                .accessibilityLabel("Log dose")
+                .accessibilityHint("Open log dose view")
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Menu {
+                    Button {
+                        showEditSheet = true
+                    } label: {
+                        Label("Edit", systemSymbol: .pencil)
+                    }
+
+                    Button {
+                        navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
+                    } label: {
+                        Label("View History", systemSymbol: .clockArrowCirclepath)
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemSymbol: .trash)
+                    }
+                } label: {
+                    Image(systemSymbol: .ellipsisCircle)
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                }
+                .accessibilityLabel("More actions")
             }
         }
         .confirmationDialog("Delete \(medication.displayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -117,7 +169,6 @@ struct MedicationDetailView: View {
                     medication = medicationToUpdate
                 }
             }
-            .dynamicDetent()
         }
         .sheet(isPresented: $showEditSheet) {
             MedicationEditView(
@@ -201,7 +252,7 @@ struct MedicationDetailView: View {
             ZStack {
                 Circle()
                     .fill(medication.displayColor.opacity(0.1))
-                    .frame(width: heroIconSize, height: heroIconSize)
+                    .frame(width: adaptiveHeroIconSize, height: adaptiveHeroIconSize)
 
                 Image(systemName: medication.effectiveDisplaySymbol)
                     .font(.largeTitle.weight(.medium))
@@ -288,7 +339,7 @@ struct MedicationDetailView: View {
                 }
             }
         }
-        .padding(cardPadding)
+        .padding(adaptiveCardPadding)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
@@ -338,7 +389,7 @@ struct MedicationDetailView: View {
                 }
             }
         }
-        .padding(cardPadding)
+        .padding(adaptiveCardPadding)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
@@ -363,7 +414,7 @@ struct MedicationDetailView: View {
                 }
             }
         }
-        .padding(cardPadding)
+        .padding(adaptiveCardPadding)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
@@ -448,7 +499,7 @@ struct MedicationDetailView: View {
                 }
             }
         }
-        .padding(cardPadding)
+        .padding(adaptiveCardPadding)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
@@ -468,9 +519,10 @@ struct MedicationDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal)
+            .padding(.horizontal, isRegularWidth ? 32 : 20)
         }
-        .padding(.top, contentSpacing)
+        .frame(maxWidth: cardMaxWidth)
+        .padding(.top, adaptiveContentSpacing)
     }
 
     // MARK: - Helper Views
