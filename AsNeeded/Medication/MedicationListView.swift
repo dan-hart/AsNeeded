@@ -6,12 +6,12 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicationListView: View {
+    @Binding var navigationPath: NavigationPath
     @StateObject private var viewModel = MedicationListViewModel()
     @Environment(\.fontFamily) private var fontFamily
     @State private var showAddSheet = false
     private let hapticsManager = HapticsManager.shared
     @State private var editMedication: ANMedicationConcept?
-    @State private var viewMedication: ANMedicationConcept?
     @State private var logMedication: ANMedicationConcept?
     @State private var pendingDelete: ANMedicationConcept?
     @State private var showSupportToast = false
@@ -46,9 +46,8 @@ struct MedicationListView: View {
     @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
 
     var body: some View {
-        NavigationStack {
-            mainContent
-                .navigationTitle("Medication")
+        mainContent
+            .navigationTitle("Medication")
                 .toolbar {
                     if viewModel.items.count > 1 || !viewModel.items.archived.isEmpty {
                         ToolbarItem(placement: .navigationBarLeading) {
@@ -121,11 +120,6 @@ struct MedicationListView: View {
                         },
                         onCancel: { showAddSheet = false }
                     )
-                }
-                .sheet(item: $viewMedication) { med in
-                    NavigationView {
-                        MedicationDetailView(medication: med)
-                    }
                 }
                 .sheet(item: $logMedication) { med in
                     LogDoseView(medication: med) { dose, event in
@@ -232,7 +226,6 @@ struct MedicationListView: View {
                         medicationOrder = viewModel.items.map { $0.id.uuidString }
                     }
                 }
-        }
     }
 
     // MARK: - Computed Properties
@@ -384,7 +377,7 @@ struct MedicationListView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         if editMode == .inactive {
-                            viewMedication = med
+                            navigationPath.append(med)
                         }
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: editMode == .inactive) {
@@ -495,11 +488,15 @@ struct MedicationListView: View {
 }
 
 #Preview {
-    MedicationListView()
+    NavigationStack {
+        MedicationListView(navigationPath: .constant(NavigationPath()))
+    }
 }
 
 #Preview("Empty List") {
-    MedicationListView()
+    NavigationStack {
+        MedicationListView(navigationPath: .constant(NavigationPath()))
+    }
 }
 
 #Preview("Medication Row Samples") {

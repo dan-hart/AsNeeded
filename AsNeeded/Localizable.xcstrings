@@ -57366,7 +57366,6 @@
       }
     },
     "Log dose" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -63451,6 +63450,9 @@
         }
       }
     },
+    "More actions" : {
+
+    },
     "My Wife, Jesse" : {
       "localizations" : {
         "ar" : {
@@ -69403,6 +69405,9 @@
           }
         }
       }
+    },
+    "Open log dose view" : {
+
     },
     "Open Settings" : {
       "localizations" : {
@@ -96330,6 +96335,9 @@
           }
         }
       }
+    },
+    "View History" : {
+
     },
     "View history and activity for this item" : {
       "comment" : "An accessibility hint for the History button in the QuickActionsComponent.",

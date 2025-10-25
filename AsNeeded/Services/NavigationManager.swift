@@ -16,6 +16,7 @@ final class NavigationManager: ObservableObject {
     @Published var historyTargetMedicationID: String?
     @Published var pendingLogMedicationID: String?
     @Published var shouldShowAddMedication = false
+    @Published var pendingMedicationDetail: String?
 
     private init() {}
 
@@ -52,5 +53,16 @@ final class NavigationManager: ObservableObject {
     /// Clear add medication navigation state
     func clearAddMedicationNavigation() {
         shouldShowAddMedication = false
+    }
+
+    /// Navigate to medication detail view for a specific medication
+    func navigateToMedicationDetail(medicationID: String) {
+        pendingMedicationDetail = medicationID
+        selectedTab = 0 // Medication tab index
+    }
+
+    /// Clear medication detail navigation state
+    func clearMedicationDetailNavigation() {
+        pendingMedicationDetail = nil
     }
 }
