@@ -2,19 +2,19 @@ import SFSafeSymbols
 import SwiftUI
 import UIKit
 
-/// A text view that can be copied to clipboard via tap or long-press context menu
+/// A text view that can be copied to clipboard via tap gesture
 ///
 /// Features:
 /// - Tap gesture to copy text immediately to clipboard
-/// - Long-press context menu with "Copy" option
+/// - Inline "Copied to Clipboard!" confirmation message
 /// - Haptic feedback on copy action
-/// - Completion handler for parent view notifications (e.g., showing toast)
+/// - Completion handler for parent view notifications
 /// - Full accessibility support with proper labels and hints
 ///
 /// **Appearance:**
 /// - Maintains original text styling from parent
 /// - Visual feedback on tap (subtle scale animation)
-/// - Context menu with SF Symbol icon
+/// - Text temporarily changes to "Copied to Clipboard!" with accent color for 2.5 seconds
 ///
 /// **Use Cases:**
 /// - Copyable medication clinical names
@@ -31,6 +31,7 @@ struct CopyableText: View {
 
 	@Environment(\.fontFamily) private var fontFamily
 	@State private var isPressed = false
+	@State private var showCopiedMessage = false
 	private let hapticsManager = HapticsManager.shared
 
 	init(
@@ -48,25 +49,19 @@ struct CopyableText: View {
 	}
 
 	var body: some View {
-		Text(text)
+		Text(showCopiedMessage ? "Copied to Clipboard!" : text)
 			.font(font)
 			.fontWeight(weight)
-			.foregroundStyle(color)
+			.foregroundStyle(showCopiedMessage ? .accent : color)
 			.noTruncate()
 			.scaleEffect(isPressed ? 0.98 : 1.0)
 			.animation(.easeInOut(duration: 0.1), value: isPressed)
+			.animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedMessage)
 			.contentShape(Rectangle())
 			.onTapGesture {
 				copyToClipboard()
 			}
-			.contextMenu {
-				Button {
-					copyToClipboard()
-				} label: {
-					Label("Copy", systemSymbol: .docOnDoc)
-				}
-			}
-			.accessibilityLabel("\(text)")
+			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
 			.accessibilityHint("Tap to copy clinical name to clipboard")
 			.accessibilityAddTraits(.isButton)
 	}
@@ -82,10 +77,21 @@ struct CopyableText: View {
 		hapticsManager.mediumImpact()
 		onCopied?()
 
+		// Show "Copied to Clipboard!" message
+		withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+			showCopiedMessage = true
+		}
+
 		Task { @MainActor in
 			try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
 			withAnimation(.easeInOut(duration: 0.1)) {
 				isPressed = false
+			}
+
+			// Hide message after 2.5 seconds
+			try? await Task.sleep(nanoseconds: 2_500_000_000)
+			withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+				showCopiedMessage = false
 			}
 		}
 	}

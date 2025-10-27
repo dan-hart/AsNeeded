@@ -87,7 +87,8 @@ struct CopyToastView: View {
 			}
 			.transition(.move(edge: .top).combined(with: .opacity))
 			.animation(.spring(response: 0.4, dampingFraction: 0.8), value: isVisible)
-			.zIndex(1000)
+			.zIndex(10000)
+			.ignoresSafeArea()
 		}
 	}
 }

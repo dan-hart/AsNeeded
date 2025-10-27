@@ -44,7 +44,6 @@ struct MedicationRowComponent: View {
     @State private var showingAppearancePicker = false
     @State private var tempSelectedColor: String?
     @State private var tempSelectedSymbol: String?
-    @State private var showCopyToast = false
     private let hapticsManager = HapticsManager.shared
     private let longPressDuration: TimeInterval = 0.5
 
@@ -125,19 +124,6 @@ struct MedicationRowComponent: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Medication: \(medication.displayName)")
         .accessibilityHint("Tap to view details or log dose")
-        .overlay(alignment: .top) {
-            if showCopyToast {
-                CopyToastView(
-                    message: "Clinical name copied",
-                    isVisible: showCopyToast,
-                    onDismiss: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            showCopyToast = false
-                        }
-                    }
-                )
-            }
-        }
     }
 
     // MARK: - View Components
@@ -200,21 +186,7 @@ struct MedicationRowComponent: View {
                     medication.clinicalName,
                     font: .customFont(fontFamily, style: .caption),
                     color: .secondary
-                ) {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        showCopyToast = true
-                    }
-
-                    // Auto-dismiss after 2.5 seconds
-                    Task {
-                        try? await Task.sleep(nanoseconds: 2_500_000_000)
-                        await MainActor.run {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                showCopyToast = false
-                            }
-                        }
-                    }
-                }
+                )
             }
         }
     }
