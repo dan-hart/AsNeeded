@@ -17121,9 +17121,6 @@
         }
       }
     },
-    "Copy" : {
-
-    },
     "Copy asneeded@codedbydan.com to send email manually" : {
       "comment" : "Button subtitle explaining what copying support email does"
     },
