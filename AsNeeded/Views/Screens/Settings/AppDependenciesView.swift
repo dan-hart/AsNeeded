@@ -34,6 +34,7 @@ struct AppDependenciesView: View {
     @ScaledMetric private var iconSize28: CGFloat = 28
     @Environment(\.openURL) private var openURL
     @Environment(\.fontFamily) private var fontFamily
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private let directDependencies: [PackageDependency]
     private let transitiveDependencies: [PackageDependency]
@@ -114,61 +115,107 @@ struct AppDependenciesView: View {
         Button {
             openURL(dependency.repositoryURL)
         } label: {
-            HStack(spacing: groupSpacing) {
-                // Package icon
-                Image(systemSymbol: .shippingboxFill)
-                    .font(.title2)
-                    .frame(width: iconSize28, height: iconSize28)
-                    .foregroundStyle(.accent)
+            if dynamicTypeSize.isAccessibilitySize {
+                // Accessibility layout - vertical stacking
+                VStack(alignment: .leading, spacing: subsectionSpacing) {
+                    // Icon and name
+                    HStack(spacing: groupSpacing) {
+                        Image(systemSymbol: .shippingboxFill)
+                            .font(.title2)
+                            .foregroundStyle(.accent)
 
-                // Content
-                VStack(alignment: .leading, spacing: mediumSpacing) {
-                    // Package name
-                    Text(dependency.name)
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                        .foregroundStyle(.primary)
+                        Text(dependency.name)
+                            .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .noTruncate()
+                    }
 
                     // Description
                     Text(dependency.description)
                         .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
 
-                    // Metadata row
-                    HStack(spacing: itemSpacing) {
-                        // License badge
+                    // Metadata - stacked vertically
+                    VStack(alignment: .leading, spacing: tightSpacing) {
                         licenseBadge(for: dependency.license)
 
-                        Text("•")
-                            .font(.customFont(fontFamily, style: .caption2))
-                            .foregroundStyle(.tertiary)
-
-                        // Version
                         Text(dependency.versionInfo.displayText)
                             .font(.customFont(fontFamily, style: .caption))
                             .foregroundStyle(.secondary)
 
-                        Text("•")
-                            .font(.customFont(fontFamily, style: .caption2))
-                            .foregroundStyle(.tertiary)
-
-                        // Commit hash
                         Text(dependency.commitHash)
                             .font(.customFont(fontFamily, style: .caption).monospaced())
                             .foregroundStyle(.tertiary)
                     }
+
+                    // Link indicator
+                    HStack {
+                        Spacer()
+                        Image(systemSymbol: .arrowUpRightSquare)
+                            .font(.body)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
+                .padding(cardPadding)
+                .background(.regularMaterial)
+                .cornerRadius(cornerRadius12)
+            } else {
+                // Standard layout - horizontal with improved wrapping
+                HStack(spacing: groupSpacing) {
+                    // Package icon
+                    Image(systemSymbol: .shippingboxFill)
+                        .font(.title2)
+                        .frame(width: iconSize28, height: iconSize28)
+                        .foregroundStyle(.accent)
 
-                Spacer(minLength: itemSpacing)
+                    // Content
+                    VStack(alignment: .leading, spacing: mediumSpacing) {
+                        // Package name
+                        Text(dependency.name)
+                            .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .noTruncate()
 
-                // External link indicator
-                Image(systemSymbol: .arrowUpRightSquare)
-                    .font(.body)
-                    .foregroundStyle(.tertiary)
+                        // Description
+                        Text(dependency.description)
+                            .font(.customFont(fontFamily, style: .subheadline))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+
+                        // Metadata row - improved to prevent overflow
+                        VStack(alignment: .leading, spacing: tightSpacing) {
+                            HStack(spacing: itemSpacing) {
+                                // License badge
+                                licenseBadge(for: dependency.license)
+
+                                Text("•")
+                                    .font(.customFont(fontFamily, style: .caption2))
+                                    .foregroundStyle(.tertiary)
+
+                                // Version
+                                Text(dependency.versionInfo.displayText)
+                                    .font(.customFont(fontFamily, style: .caption))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            // Commit hash on separate line for better wrapping
+                            Text(dependency.commitHash)
+                                .font(.customFont(fontFamily, style: .caption).monospaced())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    Spacer(minLength: itemSpacing)
+
+                    // External link indicator
+                    Image(systemSymbol: .arrowUpRightSquare)
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(cardPadding)
+                .background(.regularMaterial)
+                .cornerRadius(cornerRadius12)
             }
-            .padding(cardPadding)
-            .background(.regularMaterial)
-            .cornerRadius(cornerRadius12)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(dependency.name), \(dependency.description), version \(dependency.versionInfo.displayText), \(dependency.license.displayName) license")
