@@ -28,19 +28,35 @@ public final class DataStore {
         guard let sharedContainerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
         ) else {
-            logger.error("Unable to access App Group container: \(Self.appGroupIdentifier)")
-            logger.error("⚠️ CRITICAL: Falling back to default app container - data may be isolated from App Group!")
-            // Fallback to default container if App Group unavailable
-            medicationsStore = Store<ANMedicationConcept>(
-                storage: SQLiteStorageEngine.default(appendingPath: "medications"),
-                cacheIdentifier: \ANMedicationConcept.id.uuidString
-            )
-            eventsStore = Store<ANEventConcept>(
-                storage: SQLiteStorageEngine.default(appendingPath: "events"),
-                cacheIdentifier: \ANEventConcept.id.uuidString
-            )
-            logger.info("DataStore initialized with DEFAULT CONTAINER (not App Group): \(medications.count) medications, \(events.count) events")
-            return
+            // CRITICAL: App Group is REQUIRED for data storage
+            // If App Group is unavailable, the app cannot function correctly
+            // This should NEVER happen if MigrationCoordinator succeeded
+            logger.error("❌ FATAL: Unable to access App Group container: \(Self.appGroupIdentifier)")
+            logger.error("This indicates a critical configuration issue:")
+            logger.error("1. App Group entitlement may be missing or misconfigured")
+            logger.error("2. Provisioning profile may not include App Group")
+            logger.error("3. Migration may have failed (check MigrationCoordinator error)")
+            logger.error("")
+            logger.error("Cannot continue without App Group access - app will crash")
+            logger.error("User data is at risk if we fall back to default container")
+
+            fatalError("""
+                App Group container is unavailable: \(Self.appGroupIdentifier)
+
+                This is a CRITICAL error. The app requires App Group access for data storage.
+
+                Possible causes:
+                1. App Group entitlement missing or misconfigured
+                2. Provisioning profile doesn't include App Group
+                3. Data migration failed (check migration logs)
+
+                Please check:
+                - Xcode project capabilities
+                - Provisioning profile configuration
+                - Migration coordinator error state
+
+                If you're seeing this error, please report it with full logs.
+                """)
         }
 
         logger.info("Using shared container at: \(sharedContainerURL.path)")

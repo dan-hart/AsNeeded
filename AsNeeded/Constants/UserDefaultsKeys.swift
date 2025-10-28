@@ -154,6 +154,11 @@ public enum UserDefaultsKeys {
     /// Should NOT be reset during app resets - this is a one-time version-specific migration
     static let dataMigrationCompleted = "dataMigration.completed"
 
+    /// Whether a migration attempt has been made (tracks attempts vs completions)
+    /// Used to distinguish between "migration not needed" and "migration failed"
+    /// Should NOT be reset during app resets - used for retry logic
+    static let dataMigrationAttempted = "dataMigration.attempted"
+
     // MARK: - All Keys
 
     /// Array of all UserDefaults keys for iteration/testing
@@ -199,6 +204,7 @@ public enum UserDefaultsKeys {
         automaticBackupIncludeSettings,
         importSettingsDefaultBehavior,
         dataMigrationCompleted,
+        dataMigrationAttempted,
     ]
 
     // MARK: - Default Values
@@ -259,6 +265,7 @@ public enum UserDefaultsKeys {
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
         dataMigrationCompleted, // Never reset migration status - it's a one-time version migration
+        dataMigrationAttempted, // Never reset migration attempts - used for retry logic
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -337,5 +344,6 @@ public enum UserDefaultsKeys {
 
         // Migration state (device/version-specific)
         dataMigrationCompleted,
+        dataMigrationAttempted,
     ]
 }

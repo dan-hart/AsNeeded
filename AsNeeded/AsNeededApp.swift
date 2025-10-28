@@ -56,6 +56,11 @@ struct AsNeededApp: App {
                             logger.info("Received URL with scheme: \(url.scheme ?? "unknown")")
                             quickActionHandler.handleURL(url)
                         }
+                } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {
+                    // Migration failed - show error screen with retry option
+                    MigrationErrorView(error: error) {
+                        await migrationCoordinator.retry()
+                    }
                 } else {
                     // Migration in progress - show loading screen
                     MigrationLoadingView()
