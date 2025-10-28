@@ -147,6 +147,13 @@ public enum UserDefaultsKeys {
     /// Default behavior when importing data that contains settings ("keep" or "import")
     static let importSettingsDefaultBehavior = "importSettings.defaultBehavior"
 
+    // MARK: - Data Migration
+
+    /// Whether the one-time data migration from legacy storage to App Group has completed
+    /// This flag prevents re-running the migration on subsequent app launches
+    /// Should NOT be reset during app resets - this is a one-time version-specific migration
+    static let dataMigrationCompleted = "dataMigration.completed"
+
     // MARK: - All Keys
 
     /// Array of all UserDefaults keys for iteration/testing
@@ -191,6 +198,7 @@ public enum UserDefaultsKeys {
         automaticBackupRetentionDays,
         automaticBackupIncludeSettings,
         importSettingsDefaultBehavior,
+        dataMigrationCompleted,
     ]
 
     // MARK: - Default Values
@@ -250,6 +258,7 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
+        dataMigrationCompleted, // Never reset migration status - it's a one-time version migration
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -325,5 +334,8 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         hasUserOptedOutOfReviews,
+
+        // Migration state (device/version-specific)
+        dataMigrationCompleted,
     ]
 }
