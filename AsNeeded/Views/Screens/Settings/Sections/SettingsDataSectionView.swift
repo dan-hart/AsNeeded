@@ -52,6 +52,8 @@ struct SettingsDataSectionView: View {
 			}
 			.buttonStyle(.plain)
 
+			// Storage Diagnostic - DEBUG and TestFlight only
+			#if DEBUG
 			NavigationLink {
 				StorageDiagnosticView()
 			} label: {
@@ -85,6 +87,43 @@ struct SettingsDataSectionView: View {
 				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
+			#else
+			if Bundle.main.isTestFlight {
+				NavigationLink {
+					StorageDiagnosticView()
+				} label: {
+					HStack(spacing: headerSpacing) {
+						Image(systemSymbol: .infoCircle)
+							.font(.callout.weight(.medium))
+							.frame(width: iconSize, height: iconSize)
+							.foregroundColor(.accent)
+
+						VStack(alignment: .leading, spacing: stackItemSpacing) {
+							Text("Storage Diagnostic")
+								.font(.body)
+								.fontWeight(.medium)
+							Text("View storage locations and migration status")
+								.font(.caption)
+								.foregroundColor(.secondary)
+						}
+
+						Spacer()
+
+						Image(systemSymbol: .chevronRight)
+							.font(.caption)
+							.foregroundColor(.secondary)
+					}
+					.padding(padding)
+					.background(Color(.systemBackground))
+					.overlay(
+						RoundedRectangle(cornerRadius: cornerRadius)
+							.stroke(Color(.systemGray4), lineWidth: borderWidth)
+					)
+					.cornerRadius(cornerRadius)
+				}
+				.buttonStyle(.plain)
+			}
+			#endif
 		}
 	}
 }
