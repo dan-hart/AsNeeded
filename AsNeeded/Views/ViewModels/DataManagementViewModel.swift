@@ -18,6 +18,7 @@ final class DataManagementViewModel: ObservableObject {
     @Published var isExportingLogs = false
     @Published var showingClearConfirmation = false
     @Published var showingClearUserDataConfirmation = false
+    @Published var showingPreClearExportDialog = false
     @Published var showingResetSettingsConfirmation = false
     @Published var showingExportConfirmation = false
     @Published var showingDocumentPicker = false
@@ -30,6 +31,7 @@ final class DataManagementViewModel: ObservableObject {
     @Published var showingAlert = false
     @Published var logCount: Int = 0
     @Published var isLoadingLogCount = false
+    @Published var shouldClearAfterExport = false
 
     // Settings export/import
     @Published var includeSettings = true // Default enabled per requirements
@@ -117,10 +119,25 @@ final class DataManagementViewModel: ObservableObject {
             exportedDataURL = tempURL
             showingDataShareSheet = true
             logger.debug("exportedDataURL set - share sheet should be triggered")
+
+            // If this export was part of the clear flow, show clear confirmation after share sheet dismisses
+            if shouldClearAfterExport {
+                logger.info("Export completed as part of clear flow - will show clear confirmation")
+                // The clear confirmation will be shown after user dismisses the share sheet
+            }
         } catch {
             logger.error("Export failed", error: error)
             alertMessage = "Export failed: \(error.localizedDescription)"
             showingAlert = true
+            shouldClearAfterExport = false // Reset flag on error
+        }
+    }
+
+    func onShareSheetDismissed() {
+        if shouldClearAfterExport {
+            logger.info("Share sheet dismissed - showing clear confirmation")
+            shouldClearAfterExport = false
+            showingClearUserDataConfirmation = true
         }
     }
 
@@ -177,7 +194,11 @@ final class DataManagementViewModel: ObservableObject {
                 logger.info("Import does not contain settings, importing data only")
                 try await dataStore.importDataFromJSON(data, mergeExisting: false, applySettings: false)
                 logger.info("Data imported successfully")
-                alertMessage = "Data imported successfully"
+
+                // Get counts for success message
+                let medicationCount = dataStore.medications.count
+                let eventCount = dataStore.events.count
+                alertMessage = "Data imported successfully\n\(medicationCount) medications, \(eventCount) events"
                 showingAlert = true
             }
         } catch {
@@ -220,7 +241,11 @@ final class DataManagementViewModel: ObservableObject {
                 showingAutomaticBackupReconfigAlert = true
             }
 
-            alertMessage = applySettings ? "Data and settings imported successfully" : "Data imported successfully (settings kept)"
+            // Get counts for success message
+            let medicationCount = dataStore.medications.count
+            let eventCount = dataStore.events.count
+            let baseMessage = applySettings ? "Data and settings imported successfully" : "Data imported successfully (settings kept)"
+            alertMessage = "\(baseMessage)\n\(medicationCount) medications, \(eventCount) events"
             showingAlert = true
         } catch {
             logger.error("Import failed", error: error)
@@ -290,8 +315,21 @@ final class DataManagementViewModel: ObservableObject {
     }
 
     func confirmClearUserData() {
-        logger.info("Clear user data confirmation requested")
-        showingClearUserDataConfirmation = true
+        logger.info("Clear user data confirmation requested - showing pre-export dialog")
+        showingPreClearExportDialog = true
+    }
+
+    func handlePreClearExportChoice(shouldExport: Bool) {
+        logger.info("User chose to \(shouldExport ? "export before clearing" : "clear without exporting")")
+
+        if shouldExport {
+            shouldClearAfterExport = true
+            // Show export confirmation sheet
+            showingExportConfirmation = true
+        } else {
+            // Skip export and go directly to clear confirmation
+            showingClearUserDataConfirmation = true
+        }
     }
 
     func confirmResetSettings() {
