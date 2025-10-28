@@ -142,8 +142,9 @@ public final class DataMigrationManager {
 		}
 
 		// Check for multiple filename variations:
-		// 1. "medications.sqlite" (most common)
-		// 2. "medications" (no extension - some SQLite engines use this)
+		// 1. "medications.sqlite3" (current Boutique default)
+		// 2. "medications.sqlite" (legacy variant)
+		// 3. "medications" (no extension - some SQLite engines use this)
 		let medicationsPath = findDatabaseFile(
 			in: appSupportURL,
 			baseName: "medications"
@@ -161,12 +162,12 @@ public final class DataMigrationManager {
 			logger.info("Found legacy events database: \(evtPath)")
 		}
 
-		// Return the first found variation for each database
-		// If neither medications nor events exist, we still return paths for the .sqlite version
+	// Return the first found variation for each database
+	// If neither medications nor events exist, we still return paths for the .sqlite3 version
 		// (the calling code will check if files actually exist)
 		return (
-			medications: medicationsPath ?? appSupportURL.appendingPathComponent("medications.sqlite").path,
-			events: eventsPath ?? appSupportURL.appendingPathComponent("events.sqlite").path
+			medications: medicationsPath ?? appSupportURL.appendingPathComponent("medications.sqlite3").path,
+			events: eventsPath ?? appSupportURL.appendingPathComponent("events.sqlite3").path
 		)
 	}
 
@@ -177,9 +178,10 @@ public final class DataMigrationManager {
 
 		// Check variations in order of likelihood
 		let variations = [
-			"\(baseName).sqlite",     // Most common
-			baseName,                  // No extension
-			"\(baseName).db",          // Alternative extension
+			"\(baseName).sqlite3",    // Current Boutique default
+			"\(baseName).sqlite",     // Legacy extension variant
+			baseName,                 // No extension
+			"\(baseName).db",         // Alternative extension
 		]
 
 		for variation in variations {
@@ -191,13 +193,23 @@ public final class DataMigrationManager {
 		}
 
 		// Also check for WAL files without main DB (data might be in WAL)
-		let walPath = directory.appendingPathComponent("\(baseName).sqlite-wal").path
-		if fileManager.fileExists(atPath: walPath) {
-			logger.warning("Found WAL file without main database: \(baseName).sqlite-wal")
+		let walCandidates: [(wal: String, db: String)] = [
+			(
+				wal: directory.appendingPathComponent("\(baseName).sqlite3-wal").path,
+				db: directory.appendingPathComponent("\(baseName).sqlite3").path
+			),
+			(
+				wal: directory.appendingPathComponent("\(baseName).sqlite-wal").path,
+				db: directory.appendingPathComponent("\(baseName).sqlite").path
+			),
+		]
+
+		for candidate in walCandidates where fileManager.fileExists(atPath: candidate.wal) {
+			logger.warning("Found WAL file without main database: \(URL(fileURLWithPath: candidate.wal).lastPathComponent)")
 			logger.warning("Data may be in WAL file - will attempt to checkpoint")
 			// Return path to main DB even if it doesn't exist yet
 			// The WAL file will be handled separately
-			return directory.appendingPathComponent("\(baseName).sqlite").path
+			return candidate.db
 		}
 
 		return nil
@@ -212,13 +224,13 @@ public final class DataMigrationManager {
 			return nil
 		}
 
-		// New databases use "medications.sqlite" and "events.sqlite"
-		// (SQLiteStorageEngine adds .sqlite extension to the filename)
+		// New databases use "medications.sqlite3" and "events.sqlite3"
+		// (SQLiteStorageEngine adds .sqlite3 extension to the filename)
 		let medicationsPath = sharedContainerURL
-			.appendingPathComponent("medications.sqlite")
+			.appendingPathComponent("medications.sqlite3")
 			.path
 		let eventsPath = sharedContainerURL
-			.appendingPathComponent("events.sqlite")
+			.appendingPathComponent("events.sqlite3")
 			.path
 
 		return (medications: medicationsPath, events: eventsPath)
@@ -295,11 +307,16 @@ public final class DataMigrationManager {
 			// Check for and log WAL/SHM files
 			checkForWALFiles(at: legacyPaths.medications)
 
+			let medicationsURL = try prepareReadableDatabase(
+				originalPath: legacyPaths.medications,
+				label: "legacy_medications"
+			)
+			let medicationsStorage = try createStorageEngine(forDatabaseAt: medicationsURL)
 			let legacyMedicationsStore = try await Store<ANMedicationConcept>(
-				storage: try SQLiteStorageEngine.default(appendingPath: "medications.sqlite"),
+				storage: medicationsStorage,
 				cacheIdentifier: \ANMedicationConcept.id.uuidString
 			)
-			// Opening the store automatically integrates WAL file data into the read
+			// Opening the store automatically integrates WAL data into the read
 			medications = await legacyMedicationsStore.items
 			logger.debug("Loaded \(medications.count) medications from legacy database (including WAL data if present)")
 		}
@@ -309,16 +326,99 @@ public final class DataMigrationManager {
 			// Check for and log WAL/SHM files
 			checkForWALFiles(at: legacyPaths.events)
 
+			let eventsURL = try prepareReadableDatabase(
+				originalPath: legacyPaths.events,
+				label: "legacy_events"
+			)
+			let eventsStorage = try createStorageEngine(forDatabaseAt: eventsURL)
 			let legacyEventsStore = try await Store<ANEventConcept>(
-				storage: try SQLiteStorageEngine.default(appendingPath: "events.sqlite"),
+				storage: eventsStorage,
 				cacheIdentifier: \ANEventConcept.id.uuidString
 			)
-			// Opening the store automatically integrates WAL file data into the read
+			// Opening the store automatically integrates WAL data into the read
 			events = await legacyEventsStore.items
 			logger.debug("Loaded \(events.count) events from legacy database (including WAL data if present)")
 		}
 
 		return (medications: medications, events: events)
+	}
+
+	/// Ensures the database at `originalPath` can be opened by SQLiteStorageEngine
+	/// Copies legacy files with non-standard extensions to a temporary `.sqlite3` location for reading
+	private func prepareReadableDatabase(originalPath: String, label: String) throws -> URL {
+		let fileManager = FileManager.default
+		let originalURL = URL(fileURLWithPath: originalPath)
+
+		guard fileManager.fileExists(atPath: originalURL.path) else {
+			return originalURL
+		}
+
+		let normalizedExtension = originalURL.pathExtension.lowercased()
+		if normalizedExtension == "sqlite3" {
+			return originalURL
+		}
+
+		let tempDirectory = fileManager.temporaryDirectory.appendingPathComponent("AsNeededMigration", isDirectory: true)
+		if !fileManager.fileExists(atPath: tempDirectory.path) {
+			try fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+		}
+
+		let destinationURL = tempDirectory
+			.appendingPathComponent(label)
+			.appendingPathExtension("sqlite3")
+
+		do {
+			if fileManager.fileExists(atPath: destinationURL.path) {
+				try fileManager.removeItem(at: destinationURL)
+			}
+
+			logger.info("Preparing sqlite3-compatible copy for legacy database: \(originalURL.lastPathComponent) -> \(destinationURL.path)")
+			try fileManager.copyItem(at: originalURL, to: destinationURL)
+			try copySQLiteSidecars(from: originalURL, to: destinationURL, fileManager: fileManager)
+		} catch {
+			logger.error("Failed to prepare readable copy of database \(originalURL.path): \(error.localizedDescription)")
+			throw MigrationError.copyFailed(source: originalURL.path, destination: destinationURL.path)
+		}
+
+		return destinationURL
+	}
+
+	/// Creates a storage engine pointing to the provided database URL
+	private func createStorageEngine(forDatabaseAt databaseURL: URL) throws -> SQLiteStorageEngine {
+		let directoryURL = databaseURL.deletingLastPathComponent()
+		let baseName = databaseURL.deletingPathExtension().lastPathComponent
+
+		guard !baseName.isEmpty else {
+			logger.error("Invalid database filename for URL: \(databaseURL.path)")
+			throw MigrationError.invalidPath
+		}
+
+		guard let storage = try SQLiteStorageEngine(
+			directory: FileManager.Directory(url: directoryURL),
+			databaseFilename: baseName
+		) else {
+			logger.error("Failed to create storage engine for database at \(databaseURL.path)")
+			throw MigrationError.invalidPath
+		}
+
+		return storage
+	}
+
+	/// Copies accompanying SQLite sidecar files (WAL/SHM) to the target URL if they exist
+	private func copySQLiteSidecars(from sourceURL: URL, to destinationURL: URL, fileManager: FileManager) throws {
+		let suffixes = ["-wal", "-shm"]
+
+		for suffix in suffixes {
+			let sourceSidecar = URL(fileURLWithPath: sourceURL.path + suffix)
+			guard fileManager.fileExists(atPath: sourceSidecar.path) else { continue }
+
+			let destinationSidecar = URL(fileURLWithPath: destinationURL.path + suffix)
+			if fileManager.fileExists(atPath: destinationSidecar.path) {
+				try fileManager.removeItem(at: destinationSidecar)
+			}
+
+			try fileManager.copyItem(at: sourceSidecar, to: destinationSidecar)
+		}
 	}
 
 	/// Checks for and logs WAL (Write-Ahead Log) and SHM (Shared Memory) files

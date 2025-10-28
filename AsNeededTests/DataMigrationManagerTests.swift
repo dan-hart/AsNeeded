@@ -140,6 +140,77 @@ struct DataMigrationManagerTests {
 		try await legacyStore.removeAll()
 	}
 
+	@Test("Migration handles legacy .sqlite databases")
+	func migrationHandlesLegacySqliteDatabases() async throws {
+		// Given
+		migrationManager.resetMigrationFlagForTesting()
+		cleanupTestDatabases()
+
+		let medication = createTestMedication(name: "Legacy SQLite Format")
+
+		do {
+			let legacyStore = createLegacyStore()
+			try await legacyStore.insert(medication)
+		}
+
+		let fileManager = FileManager.default
+		let candidateDirectories = [
+			fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+			fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
+		].compactMap { $0 }
+
+		func relocateSidecar(from source: URL, to destination: URL, suffix: String) {
+			let sourcePath = source.path + suffix
+			let destinationPath = destination.path + suffix
+
+			guard fileManager.fileExists(atPath: sourcePath) else { return }
+			if fileManager.fileExists(atPath: destinationPath) {
+				try? fileManager.removeItem(atPath: destinationPath)
+			}
+			try? fileManager.moveItem(atPath: sourcePath, toPath: destinationPath)
+		}
+
+		var finalLegacyURL: URL?
+
+		for directory in candidateDirectories {
+			let sqlite3URL = directory.appendingPathComponent("test_legacy_medications.sqlite3")
+			let sqliteURL = directory.appendingPathComponent("test_legacy_medications.sqlite")
+
+			if fileManager.fileExists(atPath: sqlite3URL.path) {
+				if fileManager.fileExists(atPath: sqliteURL.path) {
+					try? fileManager.removeItem(at: sqliteURL)
+				}
+				try fileManager.moveItem(at: sqlite3URL, to: sqliteURL)
+				relocateSidecar(from: sqlite3URL, to: sqliteURL, suffix: "-wal")
+				relocateSidecar(from: sqlite3URL, to: sqliteURL, suffix: "-shm")
+				finalLegacyURL = sqliteURL
+				break
+			} else if fileManager.fileExists(atPath: sqliteURL.path) {
+				finalLegacyURL = sqliteURL
+				break
+			}
+		}
+
+		guard finalLegacyURL != nil else {
+			throw TestError.setupFailed
+		}
+
+		let appGroupStore = createAppGroupStore()
+		try await appGroupStore.removeAll()
+
+		// When
+		await migrationManager.migrateIfNeeded()
+
+		// Then
+		let migratedStore = createAppGroupStore()
+		let migratedNames = await migratedStore.items.map(\.clinicalName)
+		#expect(migratedNames.contains("Legacy SQLite Format"))
+
+		// Cleanup
+		try await migratedStore.removeAll()
+		cleanupTestDatabases()
+	}
+
 	// MARK: - Idempotency Tests
 
 	@Test("Running migration multiple times produces same result")
@@ -196,6 +267,30 @@ struct DataMigrationManagerTests {
 	}
 
 	// MARK: - Filename Variation Tests
+
+	@Test("Detect database with .sqlite3 extension")
+	func detectDatabaseWithSqlite3Extension() async throws {
+		// Given - database file with .sqlite3 extension
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create test database with .sqlite3 extension
+		let dbPath = appSupportURL.appendingPathComponent("test_variation.sqlite3")
+		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
+
+		// Then - file should be detected
+		let detected = FileManager.default.fileExists(atPath: dbPath.path)
+		#expect(detected == true)
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: dbPath)
+	}
 
 	@Test("Detect database with .sqlite extension")
 	func detectDatabaseWithSqliteExtension() async throws {
@@ -473,11 +568,14 @@ struct DataMigrationManagerTests {
 
 		// Clean legacy location
 		if let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-			let legacyFiles = [
-				"test_legacy_medications.sqlite",
-				"test_legacy_medications.sqlite-wal",
-				"test_legacy_medications.sqlite-shm",
-			]
+		let legacyFiles = [
+			"test_legacy_medications.sqlite3",
+			"test_legacy_medications.sqlite3-wal",
+			"test_legacy_medications.sqlite3-shm",
+			"test_legacy_medications.sqlite",
+			"test_legacy_medications.sqlite-wal",
+			"test_legacy_medications.sqlite-shm",
+		]
 
 			for filename in legacyFiles {
 				let fileURL = appSupportURL.appendingPathComponent(filename)
@@ -490,6 +588,9 @@ struct DataMigrationManagerTests {
 			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
 		) {
 			let appGroupFiles = [
+				"test_migration_medications.sqlite3",
+				"test_migration_medications.sqlite3-wal",
+				"test_migration_medications.sqlite3-shm",
 				"test_migration_medications.sqlite",
 				"test_migration_medications.sqlite-wal",
 				"test_migration_medications.sqlite-shm",
