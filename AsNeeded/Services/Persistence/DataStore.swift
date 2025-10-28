@@ -62,20 +62,40 @@ public final class DataStore {
         logger.info("Using shared container at: \(sharedContainerURL.path)")
 
         // Initialize stores with shared container path using FileManager.Directory
+        logger.info("Creating SQLiteStorageEngine for medications database...")
+        guard let medicationsStorage = try? SQLiteStorageEngine(
+            directory: FileManager.Directory(url: sharedContainerURL),
+            databaseFilename: "medications"
+        ) else {
+            logger.error("❌ FATAL: Failed to create SQLiteStorageEngine for medications")
+            fatalError("Failed to initialize medications storage engine")
+        }
+        logger.info("✅ Medications storage engine created successfully")
+
+        logger.info("Creating SQLiteStorageEngine for events database...")
+        guard let eventsStorage = try? SQLiteStorageEngine(
+            directory: FileManager.Directory(url: sharedContainerURL),
+            databaseFilename: "events"
+        ) else {
+            logger.error("❌ FATAL: Failed to create SQLiteStorageEngine for events")
+            fatalError("Failed to initialize events storage engine")
+        }
+        logger.info("✅ Events storage engine created successfully")
+
+        logger.info("Initializing Boutique stores...")
         medicationsStore = Store<ANMedicationConcept>(
-            storage: SQLiteStorageEngine(
-                directory: FileManager.Directory(url: sharedContainerURL),
-                databaseFilename: "medications"
-            )!,
+            storage: medicationsStorage,
             cacheIdentifier: \ANMedicationConcept.id.uuidString
         )
         eventsStore = Store<ANEventConcept>(
-            storage: SQLiteStorageEngine(
-                directory: FileManager.Directory(url: sharedContainerURL),
-                databaseFilename: "events"
-            )!,
+            storage: eventsStorage,
             cacheIdentifier: \ANEventConcept.id.uuidString
         )
+        logger.info("✅ Boutique stores initialized successfully")
+
+        // Log detailed initialization diagnostics
+        logInitializationDiagnostics(containerURL: sharedContainerURL)
+
         logger.info("✅ DataStore initialized in APP GROUP: \(medications.count) medications, \(events.count) events")
 
         // Note: Migration is now handled by MigrationCoordinator before DataStore is accessed
@@ -418,6 +438,107 @@ public final class DataStore {
         } catch {
             logger.error("Failed to clear data: \(error.localizedDescription)")
             throw error
+        }
+    }
+
+    // MARK: - Initialization Diagnostics
+
+    /// Logs detailed diagnostics during DataStore initialization
+    private func logInitializationDiagnostics(containerURL: URL) {
+        logger.info("=== DataStore Initialization Diagnostics ===")
+
+        let fileManager = FileManager.default
+
+        // Database file paths
+        let medicationsDBPath = containerURL.appendingPathComponent("medications.sqlite")
+        let eventsDBPath = containerURL.appendingPathComponent("events.sqlite")
+
+        logger.info("Database paths:")
+        logger.info("  Medications: \(medicationsDBPath.path)")
+        logger.info("  Events: \(eventsDBPath.path)")
+
+        // Check file existence and sizes
+        logFileInfo(at: medicationsDBPath, name: "Medications DB")
+        logFileInfo(at: eventsDBPath, name: "Events DB")
+
+        // Check for WAL/SHM files
+        checkForWALFiles(basePath: medicationsDBPath.path, name: "Medications")
+        checkForWALFiles(basePath: eventsDBPath.path, name: "Events")
+
+        // Available disk space
+        if let volumeURL = try? fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        ) {
+            if let resourceValues = try? volumeURL.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
+               let availableCapacity = resourceValues.volumeAvailableCapacity {
+                let capacityMB = Double(availableCapacity) / 1_048_576 // Convert to MB
+                logger.info("Available disk space: \(String(format: "%.2f", capacityMB)) MB")
+
+                if capacityMB < 50 {
+                    logger.warning("⚠️ Low disk space: \(String(format: "%.2f", capacityMB)) MB (minimum 50 MB recommended)")
+                }
+            }
+        }
+
+        // Test write permissions
+        let testFile = containerURL.appendingPathComponent(".datastore_write_test")
+        do {
+            try "test".write(to: testFile, atomically: true, encoding: .utf8)
+            try? fileManager.removeItem(at: testFile)
+            logger.info("✅ App Group container is writable")
+        } catch {
+            logger.error("❌ App Group container is NOT writable: \(error.localizedDescription)")
+        }
+
+        // List directory contents
+        if let contents = try? fileManager.contentsOfDirectory(atPath: containerURL.path) {
+            logger.info("App Group contents (\(contents.count) items): \(contents.joined(separator: ", "))")
+        }
+
+        logger.info("=== End Initialization Diagnostics ===")
+    }
+
+    /// Logs file information (existence, size, permissions)
+    private func logFileInfo(at url: URL, name: String) {
+        let fileManager = FileManager.default
+        let exists = fileManager.fileExists(atPath: url.path)
+
+        if exists {
+            if let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+               let size = attributes[.size] as? Int64 {
+                let sizeMB = Double(size) / 1_048_576
+                logger.info("  \(name): EXISTS (size: \(String(format: "%.2f", sizeMB)) MB)")
+            } else {
+                logger.info("  \(name): EXISTS (size unknown)")
+            }
+        } else {
+            logger.info("  \(name): DOES NOT EXIST (will be created)")
+        }
+    }
+
+    /// Checks for and logs WAL (Write-Ahead Log) and SHM (Shared Memory) files
+    private func checkForWALFiles(basePath: String, name: String) {
+        let fileManager = FileManager.default
+        let walPath = "\(basePath)-wal"
+        let shmPath = "\(basePath)-shm"
+
+        let walExists = fileManager.fileExists(atPath: walPath)
+        let shmExists = fileManager.fileExists(atPath: shmPath)
+
+        if walExists || shmExists {
+            logger.info("  \(name) SQLite WAL files:")
+            if walExists {
+                if let attributes = try? fileManager.attributesOfItem(atPath: walPath),
+                   let size = attributes[.size] as? Int64 {
+                    logger.info("    - WAL: \(size) bytes")
+                }
+            }
+            if shmExists {
+                logger.info("    - SHM: present")
+            }
         }
     }
 }

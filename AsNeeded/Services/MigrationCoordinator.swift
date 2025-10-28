@@ -55,6 +55,22 @@ public final class MigrationCoordinator {
 		migrationStartTime = Date()
 		logger.info("Starting migration coordinator")
 
+		// Pre-flight health check
+		logger.info("Running pre-flight storage health check...")
+		let healthChecker = StorageHealthChecker()
+		let healthResult = healthChecker.performHealthCheck()
+
+		if !healthResult.isHealthy {
+			logger.error("❌ Storage health check failed - see issues above")
+			let healthError = StorageHealthError.unhealthyStorage(issues: healthResult.issues)
+			self.error = healthError
+			isComplete = false
+			isRunning = false
+			return
+		}
+
+		logger.info("✅ Storage health check passed - proceeding with migration")
+
 		// Start timeout watchdog
 		let watchdogTask = Task {
 			try? await Task.sleep(for: .seconds(30))
@@ -102,5 +118,22 @@ public final class MigrationCoordinator {
 		isComplete = false
 		isRunning = false
 		error = nil
+	}
+}
+
+// MARK: - Errors
+
+/// Errors that can occur during storage health checks
+enum StorageHealthError: LocalizedError {
+	case unhealthyStorage(issues: [String])
+
+	var errorDescription: String? {
+		switch self {
+		case let .unhealthyStorage(issues):
+			if issues.isEmpty {
+				return "Storage system is unhealthy"
+			}
+			return "Storage system issues detected:\n" + issues.map { "• \($0)" }.joined(separator: "\n")
+		}
 	}
 }

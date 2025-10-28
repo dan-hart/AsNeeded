@@ -573,6 +573,73 @@ public final class DataMigrationManager {
 		}
 
 		logger.info("✅ Migration verification passed - all data accounted for")
+
+		// Log post-migration details
+		logPostMigrationDetails(appGroupPaths: appGroupPaths)
+	}
+
+	/// Logs details after migration completes successfully
+	private func logPostMigrationDetails(appGroupPaths: (medications: String, events: String)) {
+		logger.info("=== Post-Migration Details ===")
+
+		let fileManager = FileManager.default
+
+		// Log file sizes
+		if let medAttributes = try? fileManager.attributesOfItem(atPath: appGroupPaths.medications),
+		   let medSize = medAttributes[.size] as? Int64 {
+			let sizeMB = Double(medSize) / 1_048_576
+			logger.info("Medications database size: \(String(format: "%.2f", sizeMB)) MB")
+		}
+
+		if let evtAttributes = try? fileManager.attributesOfItem(atPath: appGroupPaths.events),
+		   let evtSize = evtAttributes[.size] as? Int64 {
+			let sizeMB = Double(evtSize) / 1_048_576
+			logger.info("Events database size: \(String(format: "%.2f", sizeMB)) MB")
+		}
+
+		// Check WAL file status
+		let medWAL = "\(appGroupPaths.medications)-wal"
+		let medSHM = "\(appGroupPaths.medications)-shm"
+		let evtWAL = "\(appGroupPaths.events)-wal"
+		let evtSHM = "\(appGroupPaths.events)-shm"
+
+		let medWALExists = fileManager.fileExists(atPath: medWAL)
+		let medSHMExists = fileManager.fileExists(atPath: medSHM)
+		let evtWALExists = fileManager.fileExists(atPath: evtWAL)
+		let evtSHMExists = fileManager.fileExists(atPath: evtSHM)
+
+		if medWALExists || medSHMExists {
+			logger.info("Medications WAL files present: WAL=\(medWALExists), SHM=\(medSHMExists)")
+			if medWALExists, let walAttr = try? fileManager.attributesOfItem(atPath: medWAL),
+			   let walSize = walAttr[.size] as? Int64 {
+				logger.info("  WAL size: \(walSize) bytes")
+			}
+		} else {
+			logger.info("Medications: No WAL files (clean state)")
+		}
+
+		if evtWALExists || evtSHMExists {
+			logger.info("Events WAL files present: WAL=\(evtWALExists), SHM=\(evtSHMExists)")
+			if evtWALExists, let walAttr = try? fileManager.attributesOfItem(atPath: evtWAL),
+			   let walSize = walAttr[.size] as? Int64 {
+				logger.info("  WAL size: \(walSize) bytes")
+			}
+		} else {
+			logger.info("Events: No WAL files (clean state)")
+		}
+
+		// Available disk space after migration
+		if let appGroupURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+		) {
+			if let resourceValues = try? appGroupURL.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
+			   let availableCapacity = resourceValues.volumeAvailableCapacity {
+				let capacityMB = Double(availableCapacity) / 1_048_576
+				logger.info("Available disk space after migration: \(String(format: "%.2f", capacityMB)) MB")
+			}
+		}
+
+		logger.info("=== End Post-Migration Details ===")
 	}
 
 	/// Marks that a migration attempt has been made
