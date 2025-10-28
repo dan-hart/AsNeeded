@@ -60,6 +60,15 @@ public final class DataStore {
             cacheIdentifier: \ANEventConcept.id.uuidString
         )
         logger.oslog.debug("DataStore initialized: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
+
+        // CRITICAL: Trigger migration asynchronously on first launch
+        // This ensures data from legacy storage location is merged into App Group container
+        // Migration runs in background and is idempotent (safe to run multiple times)
+        // See DataMigrationManager for details on the migration process
+        Task {
+            await DataMigrationManager().migrateIfNeeded()
+            logger.info("Migration check completed")
+        }
     }
 
     // Test initializer using isolated test storage

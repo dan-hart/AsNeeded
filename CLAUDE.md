@@ -95,6 +95,63 @@ See complete guide: **[docs/LIQUID_GLASS.md](docs/LIQUID_GLASS.md)**
 - Inject DataStore in view models for testability
 - Prefer DataStore helpers over raw insert/remove
 
+## Data Storage & Migration
+
+**CRITICAL**: Read `docs/DATA_STORAGE_GUIDELINES.md` before making ANY storage changes.
+
+### Storage Location
+- **Current**: App Group container `group.com.codedbydan.AsNeeded`
+- **Databases**: `medications.sqlite`, `events.sqlite`
+- **Engine**: Boutique + SQLiteStorageEngine
+- **Location**: `AsNeeded/Services/Persistence/DataStore.swift`
+
+### The October 2025 Data Loss Incident
+In October 2025, a storage path change (commit `61e6ad5`) caused complete data loss for all users. The app was migrated from default app container to App Group container WITHOUT migration logic, leaving all existing data orphaned and inaccessible.
+
+**Lesson**: NEVER change storage paths without implementing data migration.
+
+### Mandatory Rules for Storage Changes
+
+1. **NEVER change storage paths without migration**
+   - ANY path/filename change REQUIRES `DataMigrationManager`
+   - Migration MUST merge data (not replace)
+   - Migration MUST be non-destructive
+   - Migration MUST be idempotent
+
+2. **Migration Implementation Checklist**
+   - [ ] Create migration manager class
+   - [ ] Add migration flag to `UserDefaultsKeys.swift`
+   - [ ] Implement data loading from both old and new locations
+   - [ ] Implement merge logic (deduplicate by ID)
+   - [ ] Add comprehensive logging
+   - [ ] Call migration from `DataStore.init()` with semaphore
+   - [ ] Create unit tests
+   - [ ] Test on simulator AND physical device
+   - [ ] Test all scenarios: fresh install, old data only, new data only, both
+   - [ ] Verify idempotency (run migration multiple times)
+   - [ ] Update `docs/DATA_STORAGE_GUIDELINES.md`
+
+3. **Testing Requirements**
+   - Test with real user data in old location
+   - Test migration idempotency (run twice, verify no duplicates)
+   - Test on physical device (NOT just simulator)
+   - Test with large databases (1000+ items)
+   - Verify old data still exists after migration
+
+4. **Documentation Requirements**
+   - Document all storage paths in `DATA_STORAGE_GUIDELINES.md`
+   - Document migration strategy and rationale
+   - Update version history table
+   - Add migration to troubleshooting guide
+
+### Migration Code Template
+See `docs/DATA_STORAGE_GUIDELINES.md` for complete template and examples.
+
+### Current Migration Status
+- **DataMigrationManager**: Handles legacy → App Group migration
+- **Status**: Active, runs on every app launch (cached after first run)
+- **Flag**: `UserDefaultsKeys.dataMigrationCompleted`
+
 ## HealthKit Integration
 
 ### Overview
