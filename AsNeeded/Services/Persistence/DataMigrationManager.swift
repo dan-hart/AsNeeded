@@ -49,9 +49,13 @@ public final class DataMigrationManager {
 	/// Performs one-time migration of data from legacy storage to App Group container
 	/// This should be called BEFORE initializing DataStore
 	public func migrateIfNeeded() async {
+		// Log bundle ID for diagnostic purposes
+		let bundleID = Bundle.main.bundleIdentifier ?? "unknown"
+		logger.info("Migration check starting - Bundle ID: \(bundleID)")
+
 		// Check if migration already completed
 		guard !UserDefaults.standard.bool(forKey: Self.migrationCompletedKey) else {
-			logger.debug("Data migration already completed, skipping")
+			logger.info("⏭ Data migration already completed, skipping")
 			return
 		}
 

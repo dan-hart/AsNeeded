@@ -29,6 +29,7 @@ public final class DataStore {
             forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
         ) else {
             logger.error("Unable to access App Group container: \(Self.appGroupIdentifier)")
+            logger.error("⚠️ CRITICAL: Falling back to default app container - data may be isolated from App Group!")
             // Fallback to default container if App Group unavailable
             medicationsStore = Store<ANMedicationConcept>(
                 storage: SQLiteStorageEngine.default(appendingPath: "medications"),
@@ -38,7 +39,7 @@ public final class DataStore {
                 storage: SQLiteStorageEngine.default(appendingPath: "events"),
                 cacheIdentifier: \ANEventConcept.id.uuidString
             )
-            logger.oslog.debug("DataStore initialized with default container: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
+            logger.info("DataStore initialized with DEFAULT CONTAINER (not App Group): \(medications.count) medications, \(events.count) events")
             return
         }
 
@@ -59,7 +60,7 @@ public final class DataStore {
             )!,
             cacheIdentifier: \ANEventConcept.id.uuidString
         )
-        logger.oslog.debug("DataStore initialized: \\(medications.count, privacy: .public) medications, \\(events.count, privacy: .public) events")
+        logger.info("✅ DataStore initialized in APP GROUP: \(medications.count) medications, \(events.count) events")
 
         // Note: Migration is now handled by MigrationCoordinator before DataStore is accessed
         // See AsNeededApp.swift and MigrationCoordinator.swift for migration flow
