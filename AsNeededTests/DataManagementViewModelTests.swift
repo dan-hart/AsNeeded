@@ -185,7 +185,9 @@ struct DataManagementViewModelTests {
 
         // Verify success
         #expect(viewModel.isImporting == false)
-        #expect(viewModel.alertMessage == "Data imported successfully")
+        #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
+        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
         // Verify data was imported
@@ -277,7 +279,9 @@ struct DataManagementViewModelTests {
 
         // Verify import succeeded
         #expect(viewModel.isImporting == false)
-        #expect(viewModel.alertMessage == "Data imported successfully")
+        #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
+        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
         // Verify the data was actually imported
@@ -317,14 +321,63 @@ struct DataManagementViewModelTests {
         #expect(viewModel.showingClearConfirmation == true)
     }
 
-    @Test("Clear user data confirmation should set flag")
+    @Test("Clear user data confirmation should show pre-export dialog")
     func testConfirmClearUserData() {
         let dataStore = createTestDataStore()
         let viewModel = DataManagementViewModel(dataStore: dataStore)
 
         viewModel.confirmClearUserData()
 
+        #expect(viewModel.showingPreClearExportDialog == true)
+        #expect(viewModel.showingClearUserDataConfirmation == false)
+    }
+
+    @Test("Handle pre-clear export choice - export option should show export confirmation")
+    func testHandlePreClearExportChoiceWithExport() {
+        let dataStore = createTestDataStore()
+        let viewModel = DataManagementViewModel(dataStore: dataStore)
+
+        viewModel.handlePreClearExportChoice(shouldExport: true)
+
+        #expect(viewModel.shouldClearAfterExport == true)
+        #expect(viewModel.showingExportConfirmation == true)
+        #expect(viewModel.showingClearUserDataConfirmation == false)
+    }
+
+    @Test("Handle pre-clear export choice - skip export option should show clear confirmation")
+    func testHandlePreClearExportChoiceWithoutExport() {
+        let dataStore = createTestDataStore()
+        let viewModel = DataManagementViewModel(dataStore: dataStore)
+
+        viewModel.handlePreClearExportChoice(shouldExport: false)
+
+        #expect(viewModel.shouldClearAfterExport == false)
+        #expect(viewModel.showingExportConfirmation == false)
         #expect(viewModel.showingClearUserDataConfirmation == true)
+    }
+
+    @Test("Share sheet dismissed should show clear confirmation if shouldClearAfterExport is true")
+    func testOnShareSheetDismissedWithClearFlag() {
+        let dataStore = createTestDataStore()
+        let viewModel = DataManagementViewModel(dataStore: dataStore)
+
+        viewModel.shouldClearAfterExport = true
+        viewModel.onShareSheetDismissed()
+
+        #expect(viewModel.shouldClearAfterExport == false)
+        #expect(viewModel.showingClearUserDataConfirmation == true)
+    }
+
+    @Test("Share sheet dismissed should not show clear confirmation if shouldClearAfterExport is false")
+    func testOnShareSheetDismissedWithoutClearFlag() {
+        let dataStore = createTestDataStore()
+        let viewModel = DataManagementViewModel(dataStore: dataStore)
+
+        viewModel.shouldClearAfterExport = false
+        viewModel.onShareSheetDismissed()
+
+        #expect(viewModel.shouldClearAfterExport == false)
+        #expect(viewModel.showingClearUserDataConfirmation == false)
     }
 
     @Test("Reset settings confirmation should set flag")
@@ -491,6 +544,7 @@ struct DataManagementViewModelTests {
         // 5. Verify data is restored
         #expect(viewModel.medicationCount == 1)
         #expect(dataStore.medications.first?.clinicalName == "Test Medication")
-        #expect(viewModel.alertMessage == "Data imported successfully")
+        #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
+        #expect(viewModel.alertMessage?.contains("1 medications") == true)
     }
 }

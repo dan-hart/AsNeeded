@@ -65,6 +65,9 @@ struct DataManagementView: View {
                             }
                             viewModel.exportedDataURL = nil
 
+                            // Handle post-export flow (e.g., clear data if requested)
+                            viewModel.onShareSheetDismissed()
+
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     showSupportToast = true
@@ -185,6 +188,21 @@ struct DataManagementView: View {
                     }
                 }
                 .dynamicDetent()
+            }
+            .confirmationDialog(
+                "Export Before Clearing?",
+                isPresented: $viewModel.showingPreClearExportDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Export & Continue") {
+                    viewModel.handlePreClearExportChoice(shouldExport: true)
+                }
+                Button("Clear Without Export", role: .destructive) {
+                    viewModel.handlePreClearExportChoice(shouldExport: false)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Would you like to export your data before permanently deleting it? This ensures you have a backup if needed.")
             }
             .confirmationDialog(
                 "Clear All Data",

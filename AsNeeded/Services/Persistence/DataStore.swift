@@ -228,7 +228,13 @@ public final class DataStore {
 
     /// Export all data as JSON
     public func exportDataAsJSON(redactNames: Bool = false, redactNotes: Bool = false, includeSettings: Bool = false) async throws -> Data {
+        let startTime = Date()
         logger.info("Starting data export (redactNames: \(redactNames), redactNotes: \(redactNotes), includeSettings: \(includeSettings))")
+
+        // Count items before processing
+        let medicationCount = medications.count
+        let eventCount = events.count
+        logger.debug("Source data: \(medicationCount) medications, \(eventCount) events")
 
         // Redact medication names if requested
         let exportMedications = redactNames ? medications.map { medication in
@@ -239,6 +245,7 @@ public final class DataStore {
         } : medications
 
         // Handle event redaction - redact medication names and/or notes as requested
+        var notesRedactedCount = 0
         let exportEvents = events.map { event in
             var modifiedEvent = event
 
@@ -248,14 +255,19 @@ public final class DataStore {
             }
 
             // Additionally redact notes if requested
-            if redactNotes {
+            if redactNotes, event.note != nil {
                 modifiedEvent.note = nil
+                notesRedactedCount += 1
             }
 
             return modifiedEvent
         }
 
-        logger.debug("Exporting \(exportMedications.count) medications and \(exportEvents.count) events")
+        // Log redaction statistics
+        if redactNames || redactNotes {
+            let redactedMedCount = redactNames ? medicationCount : 0
+            logger.debug("Redaction applied: \(redactedMedCount) medication names, \(notesRedactedCount) notes")
+        }
 
         // Export settings if requested
         let exportedSettings: AppSettings? = includeSettings ? exportSettings() : nil
@@ -278,7 +290,19 @@ public final class DataStore {
 
         do {
             let data = try encoder.encode(exportData)
-            logger.info("Successfully exported \(data.count) bytes of data")
+            let duration = Date().timeIntervalSince(startTime)
+
+            // Use enhanced privacy-safe logging
+            logger.logExportOperation(
+                medicationCount: medicationCount,
+                eventCount: eventCount,
+                includeSettings: includeSettings,
+                redactedMedications: redactNames ? medicationCount : 0,
+                redactedNotes: notesRedactedCount,
+                fileSize: data.count
+            )
+
+            logger.info(String(format: "Export completed in %.2fs", duration))
             return data
         } catch {
             logger.error("Failed to export data: \(error.localizedDescription)")
@@ -303,7 +327,14 @@ public final class DataStore {
 
     /// Import data from JSON, with options for merge or replace
     public func importDataFromJSON(_ data: Data, mergeExisting: Bool = false, applySettings: Bool = false) async throws {
-        logger.info("Starting data import (merge: \(mergeExisting), applySettings: \(applySettings), size: \(data.count) bytes)")
+        let startTime = Date()
+        let fileSizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+        logger.info("Starting data import (merge: \(mergeExisting), applySettings: \(applySettings), size: \(fileSizeFormatted))")
+
+        // Capture before counts
+        let beforeMedicationCount = medications.count
+        let beforeEventCount = events.count
+        logger.debug("Current data: \(beforeMedicationCount) medications, \(beforeEventCount) events")
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -330,26 +361,34 @@ public final class DataStore {
 
         // Import medications
         var medicationImportCount = 0
+        var medicationFailureCount = 0
+        var medicationDuplicateCount = 0
         for medication in importedData.medications {
             do {
                 if mergeExisting, medications.contains(where: { $0.id == medication.id }) {
                     logger.debug("Skipping duplicate medication: \(medication.id.uuidString)")
+                    medicationDuplicateCount += 1
                     continue
                 }
                 try await medicationsStore.insert(medication)
                 medicationImportCount += 1
             } catch {
                 logger.error("Failed to import medication \(medication.id.uuidString): \(error.localizedDescription)")
+                medicationFailureCount += 1
                 // Continue with other medications
             }
         }
 
         // Import events with medication reference validation
         var eventImportCount = 0
+        var eventFailureCount = 0
+        var eventDuplicateCount = 0
+        var eventValidationFailureCount = 0
         for var event in importedData.events {
             do {
                 if mergeExisting, events.contains(where: { $0.id == event.id }) {
                     logger.debug("Skipping duplicate event: \(event.id)")
+                    eventDuplicateCount += 1
                     continue
                 }
 
@@ -368,6 +407,7 @@ public final class DataStore {
                     } else {
                         // Medication not found, skip this event
                         logger.warning("Skipping event \(event.id): medication \(eventMedication.id.uuidString) not found")
+                        eventValidationFailureCount += 1
                         continue
                     }
                 }
@@ -376,11 +416,32 @@ public final class DataStore {
                 eventImportCount += 1
             } catch {
                 logger.error("Failed to import event \(event.id): \(error.localizedDescription)")
+                eventFailureCount += 1
                 // Continue with other events
             }
         }
 
-        logger.info("Import completed: \(medicationImportCount) medications, \(eventImportCount) events imported")
+        // Capture after counts
+        let afterMedicationCount = medications.count
+        let afterEventCount = events.count
+
+        // Log detailed statistics
+        logger.info("Import statistics: Medications: \(medicationImportCount) imported, \(medicationDuplicateCount) duplicates, \(medicationFailureCount) failures")
+        logger.info("Import statistics: Events: \(eventImportCount) imported, \(eventDuplicateCount) duplicates, \(eventValidationFailureCount) validation failures, \(eventFailureCount) other failures")
+
+        let duration = Date().timeIntervalSince(startTime)
+        let totalValidationFailures = eventValidationFailureCount + medicationFailureCount + eventFailureCount
+
+        // Use enhanced privacy-safe logging
+        logger.logImportOperation(
+            medicationCount: afterMedicationCount,
+            eventCount: afterEventCount,
+            includeSettings: applySettings && importedData.settings != nil,
+            beforeMedicationCount: beforeMedicationCount,
+            beforeEventCount: beforeEventCount,
+            validationFailures: totalValidationFailures,
+            duration: duration
+        )
 
         // Import settings if present and requested
         if applySettings, let settings = importedData.settings {

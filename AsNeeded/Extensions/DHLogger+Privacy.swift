@@ -38,6 +38,85 @@ extension DHLogger {
     func logMedicationCount(_ operation: String, count: Int) {
         info("\(operation): \(count) medications")
     }
+
+    /// Logs an export operation with privacy-safe details
+    /// - Parameters:
+    ///   - medicationCount: Number of medications being exported
+    ///   - eventCount: Number of events being exported
+    ///   - includeSettings: Whether settings are included
+    ///   - redactedMedications: Number of medications with names redacted
+    ///   - redactedNotes: Number of items with notes redacted
+    ///   - fileSize: Size of export file in bytes (optional)
+    func logExportOperation(
+        medicationCount: Int,
+        eventCount: Int,
+        includeSettings: Bool,
+        redactedMedications: Int = 0,
+        redactedNotes: Int = 0,
+        fileSize: Int? = nil
+    ) {
+        var details = "Exporting \(medicationCount) medications, \(eventCount) events"
+
+        if includeSettings {
+            details += ", including settings"
+        }
+
+        if redactedMedications > 0 {
+            details += ", \(redactedMedications) medication names redacted"
+        }
+
+        if redactedNotes > 0 {
+            details += ", \(redactedNotes) notes redacted"
+        }
+
+        if let fileSize = fileSize {
+            let sizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(fileSize), countStyle: .file)
+            details += ", file size: \(sizeFormatted)"
+        }
+
+        info(details)
+    }
+
+    /// Logs an import operation with privacy-safe details
+    /// - Parameters:
+    ///   - medicationCount: Number of medications being imported
+    ///   - eventCount: Number of events being imported
+    ///   - includeSettings: Whether settings are included
+    ///   - beforeMedicationCount: Number of medications before import (optional)
+    ///   - beforeEventCount: Number of events before import (optional)
+    ///   - validationFailures: Number of items that failed validation (optional)
+    ///   - duration: Import duration in seconds (optional)
+    func logImportOperation(
+        medicationCount: Int,
+        eventCount: Int,
+        includeSettings: Bool,
+        beforeMedicationCount: Int? = nil,
+        beforeEventCount: Int? = nil,
+        validationFailures: Int = 0,
+        duration: TimeInterval? = nil
+    ) {
+        var details = "Importing \(medicationCount) medications, \(eventCount) events"
+
+        if includeSettings {
+            details += ", including settings"
+        }
+
+        if let beforeMeds = beforeMedicationCount, let beforeEvents = beforeEventCount {
+            let medDelta = medicationCount - beforeMeds
+            let eventDelta = eventCount - beforeEvents
+            details += " (Δ \(medDelta > 0 ? "+" : "")\(medDelta) meds, \(eventDelta > 0 ? "+" : "")\(eventDelta) events)"
+        }
+
+        if validationFailures > 0 {
+            details += ", \(validationFailures) validation failures"
+        }
+
+        if let duration = duration {
+            details += String(format: ", completed in %.2fs", duration)
+        }
+
+        info(details)
+    }
 }
 
 // MARK: - Privacy Guidelines
