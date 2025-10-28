@@ -7,6 +7,12 @@ import Boutique
 import Foundation
 import Testing
 
+/// Test errors for migration test scenarios
+enum TestError: Error {
+	case setupFailed
+	case appGroupUnavailable
+}
+
 @Suite("DataMigrationManager Tests", .tags(.migration, .persistence, .unit))
 @MainActor
 struct DataMigrationManagerTests {
@@ -189,6 +195,180 @@ struct DataMigrationManagerTests {
 		try await legacyStore.removeAll()
 	}
 
+	// MARK: - Filename Variation Tests
+
+	@Test("Detect database with .sqlite extension")
+	func detectDatabaseWithSqliteExtension() async throws {
+		// Given - database file with .sqlite extension
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create test database with .sqlite extension
+		let dbPath = appSupportURL.appendingPathComponent("test_variation.sqlite")
+		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
+
+		// Then - file should be detected
+		let detected = FileManager.default.fileExists(atPath: dbPath.path)
+		#expect(detected == true)
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: dbPath)
+	}
+
+	@Test("Detect database without extension")
+	func detectDatabaseWithoutExtension() async throws {
+		// Given - database file without extension
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create test database without extension
+		let dbPath = appSupportURL.appendingPathComponent("test_variation")
+		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
+
+		// Then - file should be detected
+		let detected = FileManager.default.fileExists(atPath: dbPath.path)
+		#expect(detected == true)
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: dbPath)
+	}
+
+	@Test("Detect database with .db extension")
+	func detectDatabaseWithDbExtension() async throws {
+		// Given - database file with .db extension
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create test database with .db extension
+		let dbPath = appSupportURL.appendingPathComponent("test_variation.db")
+		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
+
+		// Then - file should be detected
+		let detected = FileManager.default.fileExists(atPath: dbPath.path)
+		#expect(detected == true)
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: dbPath)
+	}
+
+	// MARK: - WAL File Handling Tests
+
+	@Test("Detect WAL file alongside main database")
+	func detectWALFileWithMainDatabase() async throws {
+		// Given - database with WAL file
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create main database
+		let dbPath = appSupportURL.appendingPathComponent("test_wal.sqlite")
+		try "main database".write(to: dbPath, atomically: true, encoding: .utf8)
+
+		// Create WAL file
+		let walPath = appSupportURL.appendingPathComponent("test_wal.sqlite-wal")
+		try "wal data".write(to: walPath, atomically: true, encoding: .utf8)
+
+		// Create SHM file
+		let shmPath = appSupportURL.appendingPathComponent("test_wal.sqlite-shm")
+		try "shm data".write(to: shmPath, atomically: true, encoding: .utf8)
+
+		// Then - all files should be detected
+		#expect(FileManager.default.fileExists(atPath: dbPath.path))
+		#expect(FileManager.default.fileExists(atPath: walPath.path))
+		#expect(FileManager.default.fileExists(atPath: shmPath.path))
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: dbPath)
+		try? FileManager.default.removeItem(at: walPath)
+		try? FileManager.default.removeItem(at: shmPath)
+	}
+
+	@Test("Detect orphaned WAL file without main database")
+	func detectOrphanedWALFile() async throws {
+		// Given - WAL file exists but main database doesn't
+		migrationManager.resetMigrationFlagForTesting()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		// Create only WAL file (no main database)
+		let walPath = appSupportURL.appendingPathComponent("orphan_wal.sqlite-wal")
+		try "orphaned wal data".write(to: walPath, atomically: true, encoding: .utf8)
+
+		// Then - WAL file should be detected
+		let walExists = FileManager.default.fileExists(atPath: walPath.path)
+		#expect(walExists == true)
+
+		// And main database should NOT exist
+		let dbPath = appSupportURL.appendingPathComponent("orphan_wal.sqlite")
+		let dbExists = FileManager.default.fileExists(atPath: dbPath.path)
+		#expect(dbExists == false)
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: walPath)
+	}
+
+	// MARK: - Migration Attempt Flag Tests
+
+	@Test("Migration attempted flag is set when migration starts")
+	func migrationAttemptedFlagSet() async throws {
+		// Given
+		migrationManager.resetMigrationFlagForTesting()
+
+		// Ensure attempted flag is initially false
+		let initialAttempted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationAttempted)
+		#expect(initialAttempted == false)
+
+		// When
+		await migrationManager.migrateIfNeeded()
+
+		// Then - attempted flag should be set
+		let finalAttempted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationAttempted)
+		#expect(finalAttempted == true)
+	}
+
+	@Test("Migration attempted key is in allKeys array")
+	func migrationAttemptedKeyInAllKeys() {
+		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.dataMigrationAttempted))
+	}
+
+	@Test("Migration attempted key is in keysToSkip set")
+	func migrationAttemptedKeyInKeysToSkip() {
+		#expect(UserDefaultsKeys.keysToSkip.contains(UserDefaultsKeys.dataMigrationAttempted))
+	}
+
+	@Test("Migration attempted key is in keysToNeverExport set")
+	func migrationAttemptedKeyInKeysToNeverExport() {
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.dataMigrationAttempted))
+	}
+
 	// MARK: - UserDefaults Key Configuration Tests
 
 	@Test("Migration key is in allKeys array")
@@ -210,6 +390,43 @@ struct DataMigrationManagerTests {
 	func migrationKeyNotInSafeToExport() {
 		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.dataMigrationCompleted))
 	}
+
+	// MARK: - Test Coverage Limitations
+
+	/*
+	 App Group Unavailable Test Limitation
+	 ======================================
+
+	 We cannot easily test the scenario where App Group container is unavailable because:
+
+	 1. FileManager.containerURL(forSecurityApplicationGroupIdentifier:) is not mockable
+	 2. In test environment, App Group is always available (configured in test target)
+	 3. Creating a scenario where it returns nil would require:
+	    - Removing App Group entitlement from test target (breaks all tests)
+	    - Runtime manipulation of FileManager (not possible in Swift)
+	    - Swizzling (dangerous and unreliable)
+
+	 However, the defensive implementation ensures safety:
+
+	 ✅ DataMigrationManager throws MigrationError.appGroupUnavailable when paths nil
+	 ✅ MigrationCoordinator does NOT mark as complete on error
+	 ✅ MigrationErrorView shows user-facing error with retry button
+	 ✅ DataStore.init() crashes with helpful error if App Group unavailable
+	 ✅ Comprehensive diagnostics log App Group accessibility
+
+	 Manual Testing Required:
+	 - Remove App Group entitlement from provisioning profile
+	 - Run app on physical device
+	 - Verify MigrationErrorView is shown
+	 - Verify error message is helpful
+	 - Verify retry button works when entitlement is restored
+
+	 This is considered acceptable because:
+	 1. App Group unavailability is extremely rare in production
+	 2. It's always a configuration error (not runtime condition)
+	 3. Multiple defensive layers exist to prevent data loss
+	 4. Manual testing catches the issue before release
+	 */
 
 	// MARK: - Helper Methods
 

@@ -23,6 +23,11 @@ public final class MigrationCoordinator {
 	/// Error that occurred during migration, if any
 	public private(set) var error: Error?
 
+	/// Whether migration has failed (has error and not running)
+	public var hasFailed: Bool {
+		error != nil && !isRunning
+	}
+
 	/// When migration started (for timeout detection)
 	private var migrationStartTime: Date?
 
@@ -70,13 +75,26 @@ public final class MigrationCoordinator {
 
 		} catch {
 			logger.error("Migration failed: \(error.localizedDescription)")
+			logger.error("Migration will be retried on next app launch")
 			self.error = error
-			isComplete = true // Mark complete even on error to unblock UI
+			// CRITICAL: Do NOT mark as complete on error
+			// This ensures migration will retry on next launch
+			// The error will be shown to the user via MigrationErrorView
+			isComplete = false
 			isRunning = false
 		}
 
 		// Cancel watchdog
 		watchdogTask.cancel()
+	}
+
+	/// Retries migration after a failure
+	/// Clears error state and runs migration again
+	public func retry() async {
+		logger.info("Retrying migration after previous failure")
+		error = nil
+		isComplete = false
+		await runMigrationIfNeeded()
 	}
 
 	/// Resets migration state (for testing only)
