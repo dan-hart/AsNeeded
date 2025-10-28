@@ -23,7 +23,19 @@ public final class MigrationCoordinator {
 	/// Error that occurred during migration, if any
 	public private(set) var error: Error?
 
+	/// When migration started (for timeout detection)
+	private var migrationStartTime: Date?
+
 	private init() {}
+
+	/// Logs current migration state (for diagnostics)
+	public func logCurrentState() {
+		logger.info("Migration State - isComplete: \(isComplete), isRunning: \(isRunning), error: \(String(describing: error))")
+		if let startTime = migrationStartTime {
+			let elapsed = Date().timeIntervalSince(startTime)
+			logger.info("Migration elapsed time: \(String(format: "%.1f", elapsed))s")
+		}
+	}
 
 	/// Runs migration if needed
 	/// Should be called on app launch before showing main UI
@@ -35,13 +47,24 @@ public final class MigrationCoordinator {
 		}
 
 		isRunning = true
+		migrationStartTime = Date()
 		logger.info("Starting migration coordinator")
+
+		// Start timeout watchdog
+		let watchdogTask = Task {
+			try? await Task.sleep(for: .seconds(30))
+			if isRunning && !isComplete {
+				logger.warning("⚠️ Migration still running after 30 seconds - possible hang")
+				logCurrentState()
+			}
+		}
 
 		do {
 			// Run the migration
 			await DataMigrationManager().migrateIfNeeded()
 
-			logger.info("Migration completed successfully")
+			let duration = Date().timeIntervalSince(migrationStartTime ?? Date())
+			logger.info("Migration completed successfully in \(String(format: "%.1f", duration))s")
 			isComplete = true
 			isRunning = false
 
@@ -51,6 +74,9 @@ public final class MigrationCoordinator {
 			isComplete = true // Mark complete even on error to unblock UI
 			isRunning = false
 		}
+
+		// Cancel watchdog
+		watchdogTask.cancel()
 	}
 
 	/// Resets migration state (for testing only)
