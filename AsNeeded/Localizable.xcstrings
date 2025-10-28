@@ -56901,6 +56901,9 @@
         }
       }
     },
+    "Loading Your Data" : {
+
+    },
     "Loading..." : {
 
     },
@@ -71537,6 +71540,9 @@
           }
         }
       }
+    },
+    "Please wait while we prepare your medications..." : {
+
     },
     "Preferences" : {
       "comment" : "A section header in the settings view, describing the preferences option.",

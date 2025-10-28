@@ -18,6 +18,7 @@ struct AsNeededApp: App {
     @StateObject private var watchConnectivityReceiver = WCReceiver()
     @StateObject private var revenueCatManager = RevenueCatManager.shared
     @StateObject private var quickActionHandler = QuickActionHandler.shared
+    @State private var migrationCoordinator = MigrationCoordinator.shared
     private let logger = DHLogger.general
 
     init() {
@@ -35,23 +36,35 @@ struct AsNeededApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(watchConnectivityReceiver)
-                .environmentObject(revenueCatManager)
-                .environmentObject(quickActionHandler)
-                .onAppear {
-                    logger.info("AsNeeded app launched successfully")
-                    Task { @MainActor in
-                        AppReviewManager.shared.recordAppLaunch()
+            Group {
+                if migrationCoordinator.isComplete {
+                    // Migration complete - show normal app
+                    ContentView()
+                        .environmentObject(watchConnectivityReceiver)
+                        .environmentObject(revenueCatManager)
+                        .environmentObject(quickActionHandler)
+                        .onAppear {
+                            logger.info("AsNeeded app launched successfully")
+                            Task { @MainActor in
+                                AppReviewManager.shared.recordAppLaunch()
 
-                        // Perform daily automatic backup cleanup if needed
-                        await AutomaticBackupManager.shared.performDailyCleanupIfNeeded()
-                    }
+                                // Perform daily automatic backup cleanup if needed
+                                await AutomaticBackupManager.shared.performDailyCleanupIfNeeded()
+                            }
+                        }
+                        .onOpenURL { url in
+                            logger.info("Received URL with scheme: \(url.scheme ?? "unknown")")
+                            quickActionHandler.handleURL(url)
+                        }
+                } else {
+                    // Migration in progress - show loading screen
+                    MigrationLoadingView()
+                        .task {
+                            // Run migration on first launch
+                            await migrationCoordinator.runMigrationIfNeeded()
+                        }
                 }
-                .onOpenURL { url in
-                    logger.info("Received URL with scheme: \(url.scheme ?? "unknown")")
-                    quickActionHandler.handleURL(url)
-                }
+            }
         }
         .handlesExternalEvents(matching: ["asneeded"])
     }
