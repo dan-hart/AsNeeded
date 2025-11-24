@@ -183,7 +183,7 @@ public final class DataStore {
             }
 
             // Synchronize UserDefaults to ensure changes are persisted
-            UserDefaults.standard.synchronize()
+
 
             logger.logMedicationOperation("Successfully deleted", id: med.id, details: "\(associatedEvents.count) associated events")
         } catch {
@@ -483,7 +483,7 @@ public final class DataStore {
             NavigationManager.shared.clearHistoryNavigation()
 
             // Synchronize to ensure changes are persisted
-            UserDefaults.standard.synchronize()
+
 
             logger.info("Successfully reset all app settings to defaults")
         }

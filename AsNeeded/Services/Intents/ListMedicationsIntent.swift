@@ -48,7 +48,7 @@ struct ListMedicationsIntent: AppIntent {
         }
 
         if names.count == 2 {
-            guard let first = names[doesExistAt: 0], let second = names[doesExistAt: 1] else {
+            guard let first = names[safe: 0], let second = names[safe: 1] else {
                 return names.joined(separator: ", ")
             }
             return "\(first) and \(second)"
