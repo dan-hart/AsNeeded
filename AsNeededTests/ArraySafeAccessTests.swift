@@ -15,43 +15,43 @@ struct ArraySafeAccessTests {
     func safeSubscriptValidIndex() {
         let array = [1, 2, 3, 4, 5]
 
-        #expect(array[doesExistAt: 0] == 1)
-        #expect(array[doesExistAt: 2] == 3)
-        #expect(array[doesExistAt: 4] == 5)
+        #expect(array[safe: 0] == 1)
+        #expect(array[safe: 2] == 3)
+        #expect(array[safe: 4] == 5)
     }
 
     @Test("Safe subscript returns nil for negative index")
     func safeSubscriptNegativeIndex() {
         let array = ["a", "b", "c"]
 
-        #expect(array[doesExistAt: -1] == nil)
-        #expect(array[doesExistAt: -100] == nil)
+        #expect(array[safe: -1] == nil)
+        #expect(array[safe: -100] == nil)
     }
 
     @Test("Safe subscript returns nil for out of bounds index")
     func safeSubscriptOutOfBounds() {
         let array = [10, 20, 30]
 
-        #expect(array[doesExistAt: 3] == nil)
-        #expect(array[doesExistAt: 100] == nil)
+        #expect(array[safe: 3] == nil)
+        #expect(array[safe: 100] == nil)
     }
 
     @Test("Safe subscript works with empty array")
     func safeSubscriptEmptyArray() {
         let array: [String] = []
 
-        #expect(array[doesExistAt: 0] == nil)
-        #expect(array[doesExistAt: -1] == nil)
-        #expect(array[doesExistAt: 1] == nil)
+        #expect(array[safe: 0] == nil)
+        #expect(array[safe: -1] == nil)
+        #expect(array[safe: 1] == nil)
     }
 
     @Test("Safe subscript works with single element array")
     func safeSubscriptSingleElement() {
         let array = [42]
 
-        #expect(array[doesExistAt: 0] == 42)
-        #expect(array[doesExistAt: 1] == nil)
-        #expect(array[doesExistAt: -1] == nil)
+        #expect(array[safe: 0] == 42)
+        #expect(array[safe: 1] == nil)
+        #expect(array[safe: -1] == nil)
     }
 
     // MARK: - Range Subscript Tests
@@ -60,10 +60,10 @@ struct ArraySafeAccessTests {
     func safeRangeSubscriptValid() {
         let array = [1, 2, 3, 4, 5]
 
-        let slice1 = array[doesExistAt: 1 ..< 3]
+        let slice1 = array[safe: 1 ..< 3]
         #expect(Array(slice1) == [2, 3])
 
-        let slice2 = array[doesExistAt: 0 ..< 5]
+        let slice2 = array[safe: 0 ..< 5]
         #expect(Array(slice2) == [1, 2, 3, 4, 5])
     }
 
@@ -71,13 +71,13 @@ struct ArraySafeAccessTests {
     func safeRangeSubscriptOutOfBounds() {
         let array = [10, 20, 30]
 
-        let slice1 = array[doesExistAt: -2 ..< 5]
+        let slice1 = array[safe: -2 ..< 5]
         #expect(Array(slice1) == [10, 20, 30])
 
-        let slice2 = array[doesExistAt: 1 ..< 10]
+        let slice2 = array[safe: 1 ..< 10]
         #expect(Array(slice2) == [20, 30])
 
-        let slice3 = array[doesExistAt: 5 ..< 10]
+        let slice3 = array[safe: 5 ..< 10]
         #expect(Array(slice3).isEmpty)
     }
 
@@ -85,7 +85,7 @@ struct ArraySafeAccessTests {
     func safeRangeSubscriptEmptyRange() {
         let array = [1, 2, 3]
 
-        let slice = array[doesExistAt: 2 ..< 2]
+        let slice = array[safe: 2 ..< 2]
         #expect(Array(slice).isEmpty)
     }
 
@@ -93,7 +93,7 @@ struct ArraySafeAccessTests {
     func safeRangeSubscriptEmptyArray() {
         let array: [Int] = []
 
-        let slice = array[doesExistAt: 0 ..< 5]
+        let slice = array[safe: 0 ..< 5]
         #expect(Array(slice).isEmpty)
     }
 
@@ -103,10 +103,10 @@ struct ArraySafeAccessTests {
     func safeClosedRangeSubscriptValid() {
         let array = ["a", "b", "c", "d", "e"]
 
-        let slice1 = array[doesExistAt: 1 ... 3]
+        let slice1 = array[safe: 1 ... 3]
         #expect(Array(slice1) == ["b", "c", "d"])
 
-        let slice2 = array[doesExistAt: 0 ... 4]
+        let slice2 = array[safe: 0 ... 4]
         #expect(Array(slice2) == ["a", "b", "c", "d", "e"])
     }
 
@@ -114,13 +114,13 @@ struct ArraySafeAccessTests {
     func safeClosedRangeSubscriptOutOfBounds() {
         let array = [100, 200, 300]
 
-        let slice1 = array[doesExistAt: -2 ... 5]
+        let slice1 = array[safe: -2 ... 5]
         #expect(Array(slice1) == [100, 200, 300])
 
-        let slice2 = array[doesExistAt: 1 ... 10]
+        let slice2 = array[safe: 1 ... 10]
         #expect(Array(slice2) == [200, 300])
 
-        let slice3 = array[doesExistAt: 5 ... 10]
+        let slice3 = array[safe: 5 ... 10]
         #expect(Array(slice3).isEmpty)
     }
 
@@ -128,7 +128,7 @@ struct ArraySafeAccessTests {
     func safeClosedRangeSubscriptSingleElement() {
         let array = [1, 2, 3, 4, 5]
 
-        let slice = array[doesExistAt: 2 ... 2]
+        let slice = array[safe: 2 ... 2]
         #expect(Array(slice) == [3])
     }
 
@@ -136,7 +136,7 @@ struct ArraySafeAccessTests {
     func safeClosedRangeSubscriptEmptyArray() {
         let array: [Double] = []
 
-        let slice = array[doesExistAt: 0 ... 5]
+        let slice = array[safe: 0 ... 5]
         #expect(Array(slice).isEmpty)
     }
 
@@ -185,21 +185,21 @@ struct ArraySafeAccessTests {
     func safeAccessDifferentTypes() {
         // Strings
         let strings = ["hello", "world"]
-        #expect(strings[doesExistAt: 0] == "hello")
-        #expect(strings[doesExistAt: 5] == nil)
+        #expect(strings[safe: 0] == "hello")
+        #expect(strings[safe: 5] == nil)
 
         // Custom structs
         struct Person {
             let name: String
         }
         let people = [Person(name: "Alice"), Person(name: "Bob")]
-        #expect(people[doesExistAt: 0]?.name == "Alice")
-        #expect(people[doesExistAt: 2] == nil)
+        #expect(people[safe: 0]?.name == "Alice")
+        #expect(people[safe: 2] == nil)
 
         // Optionals
         let optionals: [Int?] = [1, nil, 3]
-        #expect(optionals[doesExistAt: 0] == 1)
-        #expect(optionals[doesExistAt: 3] == nil) // Out of bounds
+        #expect(optionals[safe: 0] == 1)
+        #expect(optionals[safe: 3] == nil) // Out of bounds
     }
 
     @Test("Safe access preserves array behavior")
@@ -208,14 +208,14 @@ struct ArraySafeAccessTests {
 
         // Modification through safe subscript should not be possible
         // This is expected behavior - safe subscript is read-only
-        if let value = array[doesExistAt: 0] {
+        if let value = array[safe: 0] {
             #expect(value == 1)
         }
 
         // Regular subscript still works for modification
         array[0] = 10
         #expect(array[0] == 10)
-        #expect(array[doesExistAt: 0] == 10)
+        #expect(array[safe: 0] == 10)
     }
 
     @Test("Performance - safe subscript doesn't cause issues with large arrays")
@@ -223,13 +223,13 @@ struct ArraySafeAccessTests {
         let largeArray = Array(0 ..< 10000)
 
         // Access various indices
-        #expect(largeArray[doesExistAt: 0] == 0)
-        #expect(largeArray[doesExistAt: 5000] == 5000)
-        #expect(largeArray[doesExistAt: 9999] == 9999)
-        #expect(largeArray[doesExistAt: 10000] == nil)
+        #expect(largeArray[safe: 0] == 0)
+        #expect(largeArray[safe: 5000] == 5000)
+        #expect(largeArray[safe: 9999] == 9999)
+        #expect(largeArray[safe: 10000] == nil)
 
         // Range access
-        let slice = largeArray[doesExistAt: 100 ..< 200]
+        let slice = largeArray[safe: 100 ..< 200]
         #expect(Array(slice).count == 100)
     }
 }

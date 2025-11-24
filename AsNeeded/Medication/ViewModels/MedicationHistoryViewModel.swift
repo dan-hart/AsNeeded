@@ -140,7 +140,7 @@ final class MedicationHistoryViewModel: ObservableObject {
         // Match UI ordering: most recent first within a day
         filtered.sort { $0.date > $1.date }
         let toDelete = offsets.compactMap { index in
-            filtered[doesExistAt: index]
+            filtered[safe: index]
         }
         for event in toDelete {
             try? await dataStore.eventsStore.remove(event)
@@ -169,7 +169,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 
         // Update event in store
         if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
-           let existingEvent = dataStore.events[doesExistAt: index]
+           let existingEvent = dataStore.events[safe: index]
         {
             try? await dataStore.eventsStore.remove(existingEvent)
             try? await dataStore.eventsStore.insert(updatedEvent)
@@ -189,7 +189,7 @@ final class MedicationHistoryViewModel: ObservableObject {
     func updateEventNote(_ event: ANEventConcept) async {
         // Legacy method for updating just the note without dose changes
         if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
-           let existingEvent = dataStore.events[doesExistAt: index]
+           let existingEvent = dataStore.events[safe: index]
         {
             try? await dataStore.eventsStore.remove(existingEvent)
             try? await dataStore.eventsStore.insert(event)

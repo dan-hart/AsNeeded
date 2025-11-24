@@ -22,7 +22,7 @@ struct AutomaticBackupManagerTests {
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
-        UserDefaults.standard.synchronize()
+
     }
 
     private func createTestBookmark() -> Data {

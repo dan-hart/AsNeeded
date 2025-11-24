@@ -4,8 +4,8 @@ import Foundation
 import Testing
 
 @MainActor
-@Suite(.tags(.medication, .list, .ui, .unit))
-struct MedicationListViewModelTests {
+@Suite("Medication Model Tests", .tags(Tag.medication, Tag.dataStore, Tag.unit))
+struct MedicationModelTests {
     @Test("Medication model stores properties correctly")
     func medicationModelProperties() {
         let medication = ANMedicationConcept(

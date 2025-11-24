@@ -63,45 +63,7 @@ extension ANMedicationConcept {
         return ANSymbolInfo(name: symbolName)
     }
 
-    // MARK: - Archived Status
 
-    // NOTE: This is a local extension property. If ANModelKit adds native support
-    // for archived status in the future, this extension should be updated or removed.
-
-    /// Storage key for archived status in local app storage
-    /// Uses medication ID to track which medications are archived
-    private static let archivedMedicationsKey = "archivedMedicationIDs"
-
-    /// Whether this medication is archived
-    /// Archived medications are no longer actively used but retained for history
-    var isArchived: Bool {
-        get {
-            let archivedIDs = UserDefaults.standard.array(forKey: Self.archivedMedicationsKey) as? [String] ?? []
-            return archivedIDs.contains(id.uuidString)
-        }
-        set {
-            var archivedIDs = UserDefaults.standard.array(forKey: Self.archivedMedicationsKey) as? [String] ?? []
-            if newValue {
-                if !archivedIDs.contains(id.uuidString) {
-                    archivedIDs.append(id.uuidString)
-                }
-            } else {
-                archivedIDs.removeAll { $0 == id.uuidString }
-            }
-            UserDefaults.standard.set(archivedIDs, forKey: Self.archivedMedicationsKey)
-            UserDefaults.standard.synchronize()
-        }
-    }
-
-    /// Archive this medication
-    mutating func archive() {
-        isArchived = true
-    }
-
-    /// Unarchive this medication
-    mutating func unarchive() {
-        isArchived = false
-    }
 }
 
 // MARK: - Medication Filtering Helpers

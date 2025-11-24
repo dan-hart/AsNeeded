@@ -299,7 +299,7 @@ struct AnalyticsServiceTests {
 
         // Check that features are sorted in descending order by count
         for i in 0 ..< features.count - 1 {
-            if let current = features[doesExistAt: i], let next = features[doesExistAt: i + 1] {
+            if let current = features[safe: i], let next = features[safe: i + 1] {
                 #expect(current.count >= next.count)
             }
         }

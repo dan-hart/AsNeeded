@@ -745,15 +745,13 @@ public final class DataMigrationManager {
 	/// Marks that a migration attempt has been made
 	private func markMigrationAttempted() {
 		UserDefaults.standard.set(true, forKey: Self.migrationAttemptedKey)
-		UserDefaults.standard.synchronize()
-		logger.debug("Migration attempt recorded")
+				logger.debug("Migration attempt recorded")
 	}
 
 	/// Marks migration as complete in UserDefaults
 	private func markMigrationComplete() {
 		UserDefaults.standard.set(true, forKey: Self.migrationCompletedKey)
-		UserDefaults.standard.synchronize()
-		logger.info("Migration marked as complete")
+				logger.info("Migration marked as complete")
 	}
 
 	/// Logs system diagnostics to help troubleshoot migration issues
@@ -821,8 +819,7 @@ public final class DataMigrationManager {
 	public func resetMigrationFlagForTesting() {
 		UserDefaults.standard.removeObject(forKey: Self.migrationCompletedKey)
 		UserDefaults.standard.removeObject(forKey: Self.migrationAttemptedKey)
-		UserDefaults.standard.synchronize()
-		logger.warning("Migration flags reset (testing only)")
+				logger.warning("Migration flags reset (testing only)")
 	}
 }
 

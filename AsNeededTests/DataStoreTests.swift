@@ -20,7 +20,7 @@ struct DataStoreTests {
         UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
         UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
         UserDefaults.standard.removeObject(forKey: "medicationOrder")
-        UserDefaults.standard.synchronize()
+
 
         // Clear NavigationManager state
         NavigationManager.shared.historyTargetMedicationID = nil
@@ -101,7 +101,7 @@ struct DataStoreTests {
         UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
         UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
         UserDefaults.standard.removeObject(forKey: "medicationOrder")
-        UserDefaults.standard.synchronize()
+
 
         // Given
         let medication = createTestMedication(name: "Selected Med")

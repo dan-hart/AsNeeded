@@ -68,7 +68,7 @@ struct DataStoreClearTests {
         try await store.clearAllData()
 
         // Force a synchronize to ensure changes are persisted
-        UserDefaults.standard.synchronize()
+
 
         // Then: Re-read values to ensure they're actually cleared
         let historyID = UserDefaults.standard.string(forKey: "historySelectedMedicationID")
