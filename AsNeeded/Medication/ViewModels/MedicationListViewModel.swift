@@ -125,7 +125,7 @@ final class MedicationListViewModel: ObservableObject {
     func deleteMedications(at offsets: IndexSet) {
         for index in offsets {
             // Using the renamed subscript(safe: index)
-            guard let med = sortedMedications[safe: index] else { continue }
+            guard let med = sortedMedications[doesExistAt: index] else { continue }
             Task { _ = await delete(med) }
         }
     }

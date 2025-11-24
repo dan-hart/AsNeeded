@@ -11,7 +11,7 @@ extension Array {
     // MARK: - Safe Subscript
 
     /// Returns the element at the specified index if it exists, otherwise nil
-    subscript(safe index: Index) -> Element? {
+    subscript(doesExistAt index: Index) -> Element? {
         indices.contains(index) ? self[index] : nil
     }
 
@@ -20,7 +20,7 @@ extension Array {
     /// Returns the slice within `bounds`, clamped to this collection’s indices.
     /// If the clamped lower bound is not less than the clamped upper bound,
     /// an empty slice is returned instead of trapping.
-    subscript<R: RangeExpression>(safe bounds: R) -> SubSequence where R.Bound == Index {
+    subscript<R: RangeExpression>(doesExistAt bounds: R) -> SubSequence where R.Bound == Index {
         // Convert any RangeExpression (e.g. `..<`, `...`) to a concrete Range
         let requested = bounds.relative(to: self)
 
@@ -39,7 +39,7 @@ extension Array {
     // MARK: - Safe Closed Range Subscript
 
     /// Returns the elements in the specified closed range, safely bounded to array indices
-    subscript(safe range: ClosedRange<Index>) -> ArraySlice<Element> {
+    subscript(doesExistAt range: ClosedRange<Index>) -> ArraySlice<Element> {
         guard !isEmpty else {
             return ArraySlice<Element>()
         }
