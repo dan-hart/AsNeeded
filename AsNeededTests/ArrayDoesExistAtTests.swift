@@ -8,7 +8,7 @@
 @testable import AsNeeded
 import Testing
 
-struct ArraySafeAccessTests {
+struct ArrayDoesExistAtTests {
     // MARK: - Single Index Subscript Tests
 
     @Test("Safe subscript returns element at valid index")
