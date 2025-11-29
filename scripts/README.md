@@ -1,10 +1,13 @@
 # AsNeeded Build Scripts
 
-Ultra-optimized build and test scripts that maximize parallelization for high-performance systems with multiple CPU cores.
+Ultra-optimized build, test, and security scripts for high-performance development.
 
 ## 🚀 Quick Start
 
 ```bash
+# FIRST: Install security hooks (one-time setup)
+./scripts/install-hooks.sh
+
 # Fast development build (incremental, max speed)
 ./scripts/dev-build.sh
 
@@ -19,9 +22,60 @@ Ultra-optimized build and test scripts that maximize parallelization for high-pe
 
 # Weekly cleanup (recommended)
 ./scripts/clean-deriveddata.sh --asneeded
+
+# Scan repository for secrets
+./scripts/scan-repo.sh
 ```
 
 ## 📋 Scripts Overview
+
+### `install-hooks.sh` - Security Setup (Run First!)
+
+**Purpose:** Configure git to use security hooks that prevent accidental secret commits.
+
+**What it does:**
+- Configures `git config core.hooksPath .githooks`
+- Makes hooks executable
+- Runs initial security scan
+- Verifies hook installation
+
+**Usage:**
+```bash
+# One-time setup for new contributors
+./scripts/install-hooks.sh
+```
+
+**Important:** Run this before making any commits to the repository.
+
+### `scan-repo.sh` - Repository Security Scanner
+
+**Purpose:** Scan the repository for potential secrets in code and git history.
+
+**Detection:**
+- GitHub, OpenAI, Anthropic API keys
+- AWS, Slack, Stripe credentials
+- RevenueCat, Jira/Atlassian tokens
+- Private keys and certificates
+- Generic passwords and connection strings
+
+**Usage:**
+```bash
+# Full history scan (uses gitleaks if available)
+./scripts/scan-repo.sh
+
+# Quick scan - current files only (faster)
+./scripts/scan-repo.sh --quick
+```
+
+**Scanners supported (in order of preference):**
+1. gitleaks (recommended)
+2. trufflehog
+3. git-secrets
+4. grep fallback
+
+Install gitleaks for best results: `brew install gitleaks`
+
+---
 
 ### `dev-build.sh` - Fast Development Builds ⚡️
 
@@ -234,7 +288,7 @@ while true; do ./scripts/test-parallel.sh; sleep 10; done
 Add to `.git/hooks/pre-push`:
 ```bash
 #!/bin/bash
-cd /Users/danhart/Developer/AsNeeded
+cd "$(git rev-parse --show-toplevel)"
 ./scripts/test-parallel.sh
 ```
 
@@ -243,7 +297,7 @@ cd /Users/danhart/Developer/AsNeeded
 ### "Scheme not found" error
 Ensure you're in the project root directory:
 ```bash
-cd /Users/danhart/Developer/AsNeeded
+cd path/to/AsNeeded
 ./scripts/dev-build.sh
 ```
 
