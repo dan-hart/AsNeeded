@@ -1,0 +1,375 @@
+#!/bin/bash
+# Pre-commit hook to prevent secrets from being committed
+# Install with: ./scripts/install-hooks.sh
+#
+# This hook scans ALL staged files for sensitive data patterns.
+# It will block commits containing API keys, tokens, passwords, or private keys.
+#
+# SECURITY NOTES:
+# - This is client-side protection only
+# - Can be bypassed with --no-verify (server-side scanning catches this)
+# - See SECURITY.md for the repository security policy
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Audit log location
+AUDIT_LOG="$(git rev-parse --git-dir)/security-audit.log"
+
+# =============================================================================
+# API KEY PATTERNS - Specific formats for known services
+# =============================================================================
+
+# GitHub tokens
+GITHUB_PATTERNS=(
+    'ghp_[a-zA-Z0-9]{36}'
+    'github_pat_[a-zA-Z0-9_]{20,}'
+    'gho_[a-zA-Z0-9]{36}'
+    'ghu_[a-zA-Z0-9]{36}'
+    'ghs_[a-zA-Z0-9]{36}'
+    'ghr_[a-zA-Z0-9]{36}'
+)
+
+# OpenAI API keys
+OPENAI_PATTERNS=(
+    'sk-[a-zA-Z0-9]{20,}'
+    'sk-proj-[a-zA-Z0-9]{20,}'
+    'sk-svcacct-[a-zA-Z0-9]+'
+)
+
+# Anthropic API keys
+ANTHROPIC_PATTERNS=(
+    'sk-ant-[a-zA-Z0-9-]{20,}'
+)
+
+# Atlassian/Jira API tokens
+JIRA_PATTERNS=(
+    'ATLASSIAN_API_TOKEN\s*[=:]\s*[a-zA-Z0-9]+'
+    'JIRA_API_TOKEN\s*[=:]\s*[a-zA-Z0-9]+'
+    'JIRA_TOKEN\s*[=:]\s*[a-zA-Z0-9]+'
+    'CONFLUENCE_API_TOKEN\s*[=:]\s*[a-zA-Z0-9]+'
+    'ATATT[a-zA-Z0-9]{20,}'
+)
+
+# AWS credentials
+AWS_PATTERNS=(
+    'AKIA[0-9A-Z]{16}'
+    'ABIA[0-9A-Z]{16}'
+    'ACCA[0-9A-Z]{16}'
+    'AGPA[0-9A-Z]{16}'
+    'AIDA[0-9A-Z]{16}'
+    'AIPA[0-9A-Z]{16}'
+    'ANPA[0-9A-Z]{16}'
+    'ANVA[0-9A-Z]{16}'
+    'APKA[0-9A-Z]{16}'
+    'AROA[0-9A-Z]{16}'
+    'ASCA[0-9A-Z]{16}'
+    'ASIA[0-9A-Z]{16}'
+    'aws_access_key_id\s*[=:]\s*[A-Z0-9]+'
+    'aws_secret_access_key\s*[=:]\s*[a-zA-Z0-9/+]+'
+)
+
+# Slack tokens
+SLACK_PATTERNS=(
+    'xoxb-[0-9]+-[0-9A-Za-z]+'
+    'xoxp-[0-9]+-[0-9A-Za-z]+'
+    'xoxa-[0-9]+-[0-9A-Za-z]+'
+    'xoxr-[0-9]+-[0-9A-Za-z]+'
+    'xoxs-[0-9]+-[0-9A-Za-z]+'
+)
+
+# Stripe API keys
+STRIPE_PATTERNS=(
+    'sk_live_[a-zA-Z0-9]{24,}'
+    'sk_test_[a-zA-Z0-9]{24,}'
+    'pk_live_[a-zA-Z0-9]{24,}'
+    'pk_test_[a-zA-Z0-9]{24,}'
+    'rk_live_[a-zA-Z0-9]{24,}'
+    'rk_test_[a-zA-Z0-9]{24,}'
+)
+
+# Google API keys and service accounts
+GOOGLE_PATTERNS=(
+    'AIza[0-9A-Za-z_-]{35}'
+    '"type"\s*:\s*"service_account"'
+)
+
+# Discord tokens
+DISCORD_PATTERNS=(
+    '[MN][A-Za-z0-9]{23,}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27}'
+)
+
+# Twilio
+TWILIO_PATTERNS=(
+    'SK[a-f0-9]{32}'
+    'AC[a-f0-9]{32}'
+)
+
+# SendGrid
+SENDGRID_PATTERNS=(
+    'SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}'
+)
+
+# DigitalOcean
+DIGITALOCEAN_PATTERNS=(
+    'dop_v1_[a-f0-9]{64}'
+    'doo_v1_[a-f0-9]{64}'
+)
+
+# NPM tokens
+NPM_PATTERNS=(
+    'npm_[a-zA-Z0-9]{36}'
+)
+
+# PyPI tokens
+PYPI_PATTERNS=(
+    'pypi-[a-zA-Z0-9_-]{50,}'
+)
+
+# Heroku API key (UUID format)
+HEROKU_PATTERNS=(
+    'heroku.*[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+)
+
+# RevenueCat (iOS-specific)
+REVENUECAT_PATTERNS=(
+    'appl_[a-zA-Z0-9]{24,}'
+)
+
+# Apple (App Store Connect, APNs)
+APPLE_PATTERNS=(
+    'ey[a-zA-Z0-9_-]{100,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'  # JWT format
+)
+
+# =============================================================================
+# GENERIC SECRET PATTERNS (relaxed - no quotes required)
+# =============================================================================
+
+GENERIC_PATTERNS=(
+    # Private keys
+    '-----BEGIN[A-Z ]*PRIVATE KEY-----'
+
+    # Generic API key assignments (relaxed - with or without quotes)
+    'api[_-]?key\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'apikey\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'api[_-]?secret\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+
+    # Tokens (relaxed)
+    'access[_-]?token\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'auth[_-]?token\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'bearer\s+[a-zA-Z0-9_.-]{20,}'
+
+    # Passwords (with assignment, relaxed)
+    'password\s*[=:]\s*[^\s]{8,}'
+    'passwd\s*[=:]\s*[^\s]{8,}'
+
+    # Connection strings with embedded credentials
+    '://[^:]+:[^@]+@[a-zA-Z0-9.-]+[:/]'
+
+    # Common secret environment variables (relaxed)
+    'SECRET_KEY\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'ENCRYPTION_KEY\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'SIGNING_KEY\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'JWT_SECRET\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'SESSION_SECRET\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+    'PRIVATE_KEY\s*[=:]\s*[a-zA-Z0-9_-]{16,}'
+
+    # Database URLs
+    'DATABASE_URL\s*[=:]\s*[^\s]+'
+    'MONGO_URI\s*[=:]\s*[^\s]+'
+    'REDIS_URL\s*[=:]\s*[^\s]+'
+
+    # Hardcoded user paths (macOS/Linux)
+    '/Users/[a-zA-Z][a-zA-Z0-9_-]+/'
+    '/home/[a-zA-Z][a-zA-Z0-9_-]+/'
+
+    # String concatenation indicators (potential multi-line secret assembly)
+    '"[a-zA-Z0-9_-]*"\s*\+\s*$'
+    "'[a-zA-Z0-9_-]*'\s*\+\s*$"
+)
+
+# =============================================================================
+# HIGH ENTROPY BASE64 DETECTION
+# Base64 strings that are 32+ chars and look like encoded secrets
+# =============================================================================
+
+BASE64_PATTERNS=(
+    # Long base64 strings that could be encoded secrets (44+ chars = 33+ bytes)
+    '[A-Za-z0-9+/]{44,}={0,2}'
+)
+
+# =============================================================================
+# BUILD COMBINED PATTERN
+# =============================================================================
+
+ALL_PATTERNS=(
+    "${GITHUB_PATTERNS[@]}"
+    "${OPENAI_PATTERNS[@]}"
+    "${ANTHROPIC_PATTERNS[@]}"
+    "${JIRA_PATTERNS[@]}"
+    "${AWS_PATTERNS[@]}"
+    "${SLACK_PATTERNS[@]}"
+    "${STRIPE_PATTERNS[@]}"
+    "${GOOGLE_PATTERNS[@]}"
+    "${DISCORD_PATTERNS[@]}"
+    "${TWILIO_PATTERNS[@]}"
+    "${SENDGRID_PATTERNS[@]}"
+    "${DIGITALOCEAN_PATTERNS[@]}"
+    "${NPM_PATTERNS[@]}"
+    "${PYPI_PATTERNS[@]}"
+    "${HEROKU_PATTERNS[@]}"
+    "${REVENUECAT_PATTERNS[@]}"
+    "${APPLE_PATTERNS[@]}"
+    "${GENERIC_PATTERNS[@]}"
+)
+
+# Build grep pattern string
+PATTERN=""
+for p in "${ALL_PATTERNS[@]}"; do
+    if [ -n "$PATTERN" ]; then
+        PATTERN="$PATTERN|$p"
+    else
+        PATTERN="$p"
+    fi
+done
+
+# Base64 pattern (separate due to high false positive rate - used with entropy check)
+BASE64_PATTERN='[A-Za-z0-9+/]{44,}={0,2}'
+
+# =============================================================================
+# FILES TO SKIP
+# =============================================================================
+
+SKIP_FILES=(
+    '.githooks/pre-commit'
+    '.githooks/pre-push'
+    '.github/workflows/security-scan.yml'
+)
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+log_audit() {
+    local message="$1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $message" >> "$AUDIT_LOG"
+}
+
+# =============================================================================
+# MAIN SCANNING LOGIC
+# =============================================================================
+
+# Get staged files (Added, Copied, Modified)
+FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+
+if [ -z "$FILES" ]; then
+    exit 0
+fi
+
+echo -e "${GREEN}Running pre-commit security scan...${NC}"
+echo -e "${CYAN}Checking for: GitHub, OpenAI, Anthropic, Jira, AWS, Slack, Stripe, Google, Twilio, SendGrid, DigitalOcean, NPM, PyPI, RevenueCat tokens${NC}"
+
+FOUND_SECRETS=0
+FINDINGS=""
+
+for FILE in $FILES; do
+    # Skip if file doesn't exist
+    [ -f "$FILE" ] || continue
+
+    # Skip binary files
+    if file "$FILE" | grep -q "binary"; then
+        continue
+    fi
+
+    # Skip specific files (hooks themselves, workflows)
+    SKIP=0
+    for SKIP_PATTERN in "${SKIP_FILES[@]}"; do
+        if [[ "$FILE" == "$SKIP_PATTERN" ]]; then
+            SKIP=1
+            break
+        fi
+    done
+    [ $SKIP -eq 1 ] && continue
+
+    # Check for secret patterns (LC_ALL=C ensures consistent ASCII handling, prevents Unicode bypass)
+    MATCHES=$(LC_ALL=C grep -n -E "$PATTERN" "$FILE" 2>/dev/null || true)
+
+    if [ -n "$MATCHES" ]; then
+        FOUND_SECRETS=1
+        FINDINGS="$FINDINGS\n${YELLOW}$FILE:${NC}\n$MATCHES\n"
+    fi
+
+    # Check for high-entropy base64 strings (potential encoded secrets)
+    # Only in non-binary, non-image, non-asset files
+    if [[ ! "$FILE" =~ \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|xcassets|car|strings|storyboard|xib)$ ]]; then
+        BASE64_MATCHES=$(LC_ALL=C grep -n -o -E "$BASE64_PATTERN" "$FILE" 2>/dev/null || true)
+        if [ -n "$BASE64_MATCHES" ]; then
+            while IFS= read -r match; do
+                # Extract just the base64 string (after line number)
+                b64_str=$(echo "$match" | cut -d: -f2-)
+                # Skip if it looks like a hash or normal data (lowered from 60 to catch shorter encoded secrets)
+                if [ ${#b64_str} -gt 32 ]; then
+                    FOUND_SECRETS=1
+                    FINDINGS="$FINDINGS\n${YELLOW}$FILE (potential base64 encoded secret):${NC}\n$match\n"
+                fi
+            done <<< "$BASE64_MATCHES"
+        fi
+    fi
+done
+
+# =============================================================================
+# OUTPUT RESULTS
+# =============================================================================
+
+if [ $FOUND_SECRETS -eq 1 ]; then
+    # Log to audit file
+    log_audit "BLOCKED: Commit attempt with potential secrets in files: $FILES"
+
+    echo -e "\n${RED}========================================================================${NC}"
+    echo -e "${RED}  COMMIT BLOCKED: Potential secrets/sensitive data detected!           ${NC}"
+    echo -e "${RED}========================================================================${NC}\n"
+    echo -e "The following files contain patterns that look like secrets:\n"
+    echo -e "$FINDINGS"
+    echo -e "${YELLOW}Detected pattern types:${NC}"
+    echo "  - GitHub tokens (ghp_, github_pat_, gho_, ghu_, ghs_, ghr_)"
+    echo "  - OpenAI API keys (sk-...)"
+    echo "  - Anthropic API keys (sk-ant-...)"
+    echo "  - Jira/Atlassian tokens"
+    echo "  - AWS credentials (AKIA...)"
+    echo "  - Slack tokens (xoxb-, xoxp-)"
+    echo "  - Stripe keys (sk_live_, sk_test_)"
+    echo "  - Google API keys (AIza...)"
+    echo "  - Twilio (SK..., AC...)"
+    echo "  - SendGrid (SG....)"
+    echo "  - DigitalOcean (dop_v1_, doo_v1_)"
+    echo "  - NPM tokens (npm_)"
+    echo "  - PyPI tokens (pypi-)"
+    echo "  - RevenueCat keys (appl_)"
+    echo "  - Private keys (-----BEGIN...PRIVATE KEY-----)"
+    echo "  - Generic passwords, tokens, connection strings"
+    echo "  - High-entropy base64 strings"
+    echo "  - Hardcoded user paths"
+    echo ""
+    echo -e "${YELLOW}What to do:${NC}"
+    echo "  1. Remove the sensitive data from the file(s)"
+    echo "  2. Use environment variables instead of hardcoding"
+    echo "  3. Add files with real secrets to .gitignore"
+    echo "  4. If FALSE POSITIVE: obfuscate examples (e.g., sk-xxxx...)"
+    echo ""
+    echo -e "${RED}NOTE: Using --no-verify will bypass this check but server-side${NC}"
+    echo -e "${RED}      scanning will still catch secrets on push/PR.${NC}"
+    echo ""
+    echo "See SECURITY.md for the repository security policy."
+    echo ""
+    exit 1
+fi
+
+echo -e "${GREEN}No secrets detected. Proceeding with commit.${NC}"
+log_audit "PASSED: Commit approved for files: $FILES"
+exit 0

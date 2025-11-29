@@ -60,3 +60,24 @@ TestResults
 TestResults.xcresult
 *.xcresult
 /.TranslateKit
+
+# Secrets and credentials
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+secrets.json
+**/secrets/
+*.pem
+*.key
+*.p12
+*.p8
+
+# Keychain exports
+*.keychain
+*.keychain-db
+
+# Security audit logs (local only)
+.git/security-audit.log

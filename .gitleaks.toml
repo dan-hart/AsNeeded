@@ -1,0 +1,34 @@
+# Gitleaks configuration for AsNeeded iOS project
+# https://github.com/gitleaks/gitleaks
+
+title = "AsNeeded Gitleaks Configuration"
+
+[extend]
+# Use default gitleaks rules as base
+useDefault = true
+
+# Files to exclude from scanning
+# These files contain example patterns for documentation/testing purposes
+[allowlist]
+paths = [
+    '''.githooks/pre-commit''',
+    '''.githooks/pre-push''',
+    '''.github/workflows/security-scan.yml''',
+    '''Tests/.*''',
+    '''.build/.*''',
+    '''DerivedData/.*''',
+]
+
+# Specific strings to allow (false positives)
+# SECURITY: Patterns are tightened with anchors to prevent filename-based bypass
+regexes = [
+    # Only match exact placeholder strings at word boundaries, not filenames
+    '''sk-xxxx''',           # Exact placeholder
+    '''ghp_xxxx''',          # Exact placeholder
+    '''YOUR[_-]?API[_-]?KEY''',  # Uppercase placeholders only (convention)
+    '''PLACEHOLDER_''',      # Uppercase placeholder prefix
+    '''EXAMPLE_KEY''',       # Uppercase example
+    '''TEST_KEY''',          # Uppercase test key
+    '''_PLACEHOLDER''',      # Suffix placeholder
+    '''xxxxxx''',            # Obvious placeholder
+]

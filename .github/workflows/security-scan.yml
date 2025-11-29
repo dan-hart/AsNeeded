@@ -1,0 +1,116 @@
+name: Security Scan
+
+on:
+  push:
+    branches: ['**']  # All branches - catches secrets pushed to feature branches
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive scanning
+
+      - name: TruffleHog Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --fail  # Catch ALL secrets, not just verified/active ones
+
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pattern-check:
+    name: Custom Pattern Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for common secret patterns
+        run: |
+          echo "Scanning for secret patterns..."
+
+          PATTERNS=(
+            # GitHub
+            'ghp_[a-zA-Z0-9]{36}'
+            'github_pat_'
+            # OpenAI
+            'sk-[a-zA-Z0-9]{20,}'
+            # Anthropic
+            'sk-ant-'
+            # AWS
+            'AKIA[0-9A-Z]{16}'
+            # Stripe
+            'sk_live_'
+            'sk_test_'
+            # Slack
+            'xox[bpas]-'
+            # RevenueCat
+            'appl_[a-zA-Z0-9]{20,}'
+            # Jira/Atlassian
+            'ATATT[a-zA-Z0-9]{20,}'
+            # Private keys
+            'BEGIN.*PRIVATE KEY'
+            # Generic
+            'api[_-]?key.*[=:].*[a-zA-Z0-9]{20,}'
+            'password.*[=:].*[^\s]{8,}'
+          )
+
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            # Exclude workflow file, docs, hook files, and test files from scanning
+            MATCHES=$(grep -r -n -E -i "$pattern" \
+              --include="*.swift" \
+              --include="*.m" \
+              --include="*.h" \
+              --include="*.json" \
+              --include="*.plist" \
+              --include="*.yml" \
+              --include="*.yaml" \
+              --include="*.env*" \
+              --include="*.sh" \
+              --include="*.rb" \
+              --include="*.py" \
+              --include="*.md" \
+              --include="*.txt" \
+              . 2>/dev/null \
+              | grep -v ".github/workflows/security-scan.yml" \
+              | grep -v ".githooks/" \
+              | grep -v "Tests/" \
+              | grep -v ".build/" \
+              | grep -v "SECURITY.md" \
+              || true)
+            if [ -n "$MATCHES" ]; then
+              echo "::error::Found potential secret matching pattern: $pattern"
+              echo "$MATCHES"
+              FOUND=1
+            fi
+          done
+
+          if [ $FOUND -eq 1 ]; then
+            echo "::error::Potential secrets detected! Review the matches above."
+            exit 1
+          fi
+
+          echo "No secret patterns detected."
