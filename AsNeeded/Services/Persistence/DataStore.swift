@@ -510,9 +510,9 @@ public final class DataStore {
 
         let fileManager = FileManager.default
 
-        // Database file paths
-        let medicationsDBPath = containerURL.appendingPathComponent("medications.sqlite")
-        let eventsDBPath = containerURL.appendingPathComponent("events.sqlite")
+        // Database file paths (SQLiteStorageEngine adds .sqlite3 extension)
+        let medicationsDBPath = containerURL.appendingPathComponent("medications.sqlite3")
+        let eventsDBPath = containerURL.appendingPathComponent("events.sqlite3")
 
         logger.info("Database paths:")
         logger.info("  Medications: \(medicationsDBPath.path)")
