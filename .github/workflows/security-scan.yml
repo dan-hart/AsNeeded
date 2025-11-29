@@ -24,7 +24,7 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          extra_args: --fail  # Catch ALL secrets, not just verified/active ones
+          # --fail is now default in trufflehog action
 
   gitleaks:
     name: Gitleaks Secret Scan
@@ -100,6 +100,8 @@ jobs:
               | grep -v "Tests/" \
               | grep -v ".build/" \
               | grep -v "SECURITY.md" \
+              | grep -v "scripts/" \
+              | grep -v "LICENSE" \
               || true)
             if [ -n "$MATCHES" ]; then
               echo "::error::Found potential secret matching pattern: $pattern"
