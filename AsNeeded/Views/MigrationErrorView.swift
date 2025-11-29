@@ -84,8 +84,6 @@ struct MigrationErrorView: View {
 				return "Unable to access secure data storage. This may be a configuration issue. Please try again or contact support if the problem persists."
 			case .invalidPath:
 				return "Unable to locate your medication data. Please try again or contact support if the problem persists."
-			case .copyFailed:
-				return "Failed to migrate your data to secure storage. Please try again or contact support if the problem persists."
 			case let .verificationFailed(expected, actual, type):
 				return "Data verification failed after migration. Expected \(expected) \(type) but found \(actual). Please retry or contact support immediately."
 			}

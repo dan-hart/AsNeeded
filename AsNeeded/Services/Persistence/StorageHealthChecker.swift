@@ -133,8 +133,8 @@ public final class StorageHealthChecker {
 	/// Checks database file integrity if files exist
 	private func checkDatabaseIntegrity(in containerURL: URL, issues: inout [String]) {
 		let fileManager = FileManager.default
-		let medicationsPath = containerURL.appendingPathComponent("medications.sqlite")
-		let eventsPath = containerURL.appendingPathComponent("events.sqlite")
+		let medicationsPath = containerURL.appendingPathComponent("medications.sqlite3")
+		let eventsPath = containerURL.appendingPathComponent("events.sqlite3")
 
 		// Check if databases exist
 		let medicationsExists = fileManager.fileExists(atPath: medicationsPath.path)
