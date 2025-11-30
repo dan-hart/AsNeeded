@@ -24,7 +24,12 @@ url="$2"
 
 PROJECT_FILE="AsNeeded.xcodeproj/project.pbxproj"
 
-echo -e "${CYAN}🔨 Auto-incrementing build numbers...${NC}"
+# Check if last commit was already a build bump (prevents double-bumping)
+LAST_COMMIT_MSG=$(git log -1 --format=%s)
+if [ "$LAST_COMMIT_MSG" = "Build Bump" ]; then
+    echo -e "${CYAN}⏭️  Last commit was already a build bump, skipping...${NC}"
+else
+    echo -e "${CYAN}🔨 Auto-incrementing build numbers...${NC}"
 
 # Check if project file exists
 if [ ! -f "$PROJECT_FILE" ]; then
@@ -69,6 +74,7 @@ git add "$PROJECT_FILE"
 git commit -m "Build Bump" --no-verify
 
 echo -e "${GREEN}✅ Build number incremented and committed!${NC}"
+fi
 echo ""
 
 # =============================================================================
