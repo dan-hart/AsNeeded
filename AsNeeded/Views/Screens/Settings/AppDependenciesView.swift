@@ -134,6 +134,7 @@ struct AppDependenciesView: View {
                     Text(dependency.description)
                         .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
+                        .noTruncate()
 
                     // Metadata - stacked vertically
                     VStack(alignment: .leading, spacing: tightSpacing) {
@@ -180,7 +181,7 @@ struct AppDependenciesView: View {
                         Text(dependency.description)
                             .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                            .noTruncate()
 
                         // Metadata row - improved to prevent overflow
                         VStack(alignment: .leading, spacing: tightSpacing) {
@@ -226,6 +227,7 @@ struct AppDependenciesView: View {
         Text(license.displayName)
             .font(.customFont(fontFamily, style: .caption2, weight: .bold))
             .foregroundStyle(licenseForegroundColor(for: license))
+            .noTruncate()
             .padding(.horizontal, mediumPadding)
             .padding(.vertical, smallPadding)
             .background(licenseBackgroundColor(for: license))
