@@ -39,7 +39,7 @@ if [ "$USE_XCSIFT" = true ]; then
     xcodebuild \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 16' \
+        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
         -configuration Debug \
         -jobs $PARALLEL_JOBS \
         -parallelizeTargets \
@@ -62,7 +62,7 @@ else
     xcodebuild \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 16' \
+        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
         -configuration Debug \
         -jobs $PARALLEL_JOBS \
         -parallelizeTargets \

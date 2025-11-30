@@ -142,6 +142,13 @@ public enum UserDefaultsKeys {
     /// Default behavior when importing data that contains settings ("keep" or "import")
     static let importSettingsDefaultBehavior = "importSettings.defaultBehavior"
 
+    // MARK: - Storage Schema Versioning
+
+    /// Current storage schema version - tracks database structure for migrations
+    /// Increment when changing storage paths, database structure, or file formats
+    /// See StorageConstants.swift for the current version number
+    static let storageSchemaVersion = "storage.schemaVersion"
+
     // MARK: - All Keys
 
     /// Array of all UserDefaults keys for iteration/testing
@@ -185,6 +192,7 @@ public enum UserDefaultsKeys {
         automaticBackupRetentionDays,
         automaticBackupIncludeSettings,
         importSettingsDefaultBehavior,
+        storageSchemaVersion,
     ]
 
     // MARK: - Default Values
@@ -315,5 +323,8 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         hasUserOptedOutOfReviews,
+
+        // Storage schema version (device-specific, must not be overwritten)
+        storageSchemaVersion,
     ]
 }

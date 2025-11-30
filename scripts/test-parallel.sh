@@ -48,7 +48,7 @@ if [ "$USE_XCSIFT" = true ]; then
     xcodebuild test \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 16,OS=26.0' \
+        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
         -parallel-testing-enabled YES \
         -maximum-parallel-testing-workers $TEST_WORKERS \
         -jobs $CPU_CORES \
@@ -67,7 +67,7 @@ else
     xcodebuild test \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 16,OS=26.0' \
+        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
         -parallel-testing-enabled YES \
         -maximum-parallel-testing-workers $TEST_WORKERS \
         -jobs $CPU_CORES \

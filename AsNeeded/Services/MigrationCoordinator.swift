@@ -55,6 +55,11 @@ public final class MigrationCoordinator {
 		migrationStartTime = Date()
 		logger.info("Starting migration coordinator")
 
+		// Check schema version
+		let currentVersion = UserDefaults.standard.integer(forKey: UserDefaultsKeys.storageSchemaVersion)
+		let targetVersion = StorageConstants.currentStorageVersion
+		logger.info("Storage schema version: current=\(currentVersion), target=\(targetVersion)")
+
 		// Pre-flight health check
 		logger.info("Running pre-flight storage health check...")
 		let healthChecker = StorageHealthChecker()
@@ -62,7 +67,7 @@ public final class MigrationCoordinator {
 
 		if !healthResult.isHealthy {
 			logger.error("❌ Storage health check failed - see issues above")
-			let healthError = StorageHealthError.unhealthyStorage(issues: healthResult.issues)
+			let healthError = StorageHealthError.unhealthyStorage(issues: healthResult.issueMessages)
 			self.error = healthError
 			isComplete = false
 			isRunning = false
@@ -70,6 +75,23 @@ public final class MigrationCoordinator {
 		}
 
 		logger.info("✅ Storage health check passed - proceeding with migration")
+
+		// Create pre-migration backup (CRITICAL - must succeed before migration)
+		if currentVersion < targetVersion || currentVersion == 0 {
+			logger.info("Creating pre-migration backup...")
+			let backupResult = await BackupManager.shared.createPreMigrationBackup()
+			if backupResult.success {
+				logger.info("✅ Pre-migration backup created at: \(backupResult.backupPath?.path ?? "unknown")")
+			} else {
+				// CRITICAL: Backup failure is now blocking to prevent unrecoverable data loss
+				logger.error("❌ Pre-migration backup failed: \(backupResult.error?.localizedDescription ?? "unknown error")")
+				logger.error("Migration aborted - cannot proceed without backup protection")
+				self.error = MigrationBackupFailure(underlyingError: backupResult.error)
+				isComplete = false
+				isRunning = false
+				return
+			}
+		}
 
 		// Start timeout watchdog
 		let watchdogTask = Task {
@@ -83,6 +105,12 @@ public final class MigrationCoordinator {
 		do {
 			// Run the migration
 			await DataMigrationManager().migrateIfNeeded()
+
+			// Update schema version after successful migration
+			if currentVersion < targetVersion {
+				UserDefaults.standard.set(targetVersion, forKey: UserDefaultsKeys.storageSchemaVersion)
+				logger.info("Updated storage schema version: \(currentVersion) → \(targetVersion)")
+			}
 
 			let duration = Date().timeIntervalSince(migrationStartTime ?? Date())
 			logger.info("Migration completed successfully in \(String(format: "%.1f", duration))s")
@@ -135,5 +163,17 @@ enum StorageHealthError: LocalizedError {
 			}
 			return "Storage system issues detected:\n" + issues.map { "• \($0)" }.joined(separator: "\n")
 		}
+	}
+}
+
+/// Error when pre-migration backup fails
+struct MigrationBackupFailure: LocalizedError {
+	let underlyingError: Error?
+
+	var errorDescription: String? {
+		if let underlying = underlyingError {
+			return "Pre-migration backup failed: \(underlying.localizedDescription). Migration cannot proceed without backup protection."
+		}
+		return "Pre-migration backup failed. Migration cannot proceed without backup protection."
 	}
 }

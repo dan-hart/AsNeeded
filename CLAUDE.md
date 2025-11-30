@@ -21,7 +21,7 @@ See `scripts/README.md` for complete documentation.
 ### Manual Build Commands (Fallback)
 - **xcsift installation** (required): `brew tap ldomaradzki/xcsift && brew install xcsift`
 - Build (CLI): `xcodebuild -project AsNeeded.xcodeproj -scheme AsNeeded -configuration Debug build -quiet 2>&1 | xcsift`
-- Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16' 2>&1 | xcsift`
+- Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' 2>&1 | xcsift`
 
 ## Coding Style & Naming
 - **Indentation**: Use tabs (not spaces); wrap at ~120 cols.
@@ -152,6 +152,52 @@ See `docs/DATA_STORAGE_GUIDELINES.md` for complete template and examples.
 - **Status**: Active, runs on every app launch (cached after first run)
 - **Flag**: `UserDefaultsKeys.dataMigrationCompleted`
 
+### Dangerous Files Registry (MANDATORY REVIEW)
+
+The following files require **EXTRA SCRUTINY** before modification. Changes to these files can cause data loss, app rejection, or settings corruption.
+
+| File | Risk Level | Required Actions Before Modifying |
+|------|------------|-----------------------------------|
+| `StorageConstants.swift` | **DATA LOSS** | Central source of truth - ANY change requires migration, update version history |
+| `DataStore.swift` | **DATA LOSS** | Read `DATA_STORAGE_GUIDELINES.md`, verify migration exists, test on physical device |
+| `DataMigrationManager.swift` | **DATA LOSS** | Test with real data in old location, verify idempotency, physical device test |
+| `StorageHealthChecker.swift` | **DATA LOSS** | Ensure health checks don't block legitimate data access |
+| `MigrationCoordinator.swift` | **DATA LOSS** | Verify error handling doesn't mark failed migrations as complete |
+| `UserDefaultsKeys.swift` | **SETTINGS LOSS** | Check for breaking key renames, ensure backward compatibility |
+| `Info.plist` | **APP REJECTION** | Verify entitlements match capabilities, check privacy descriptions |
+
+**MANDATORY**: Before modifying ANY file above, the AI agent MUST:
+1. State which dangerous file is being modified and why
+2. Explain why the change is safe (cite specific safeguards)
+3. List the verification steps that will be taken after the change
+4. Run tests on physical device for any storage-related changes
+
+### Storage Impact Analysis (MANDATORY for Infrastructure Changes)
+
+Before modifying ANY file in `Services/Persistence/`, complete this mental checklist and **output your analysis**:
+
+1. **Path Analysis**: Does this change affect where data is stored?
+   - If YES → STOP. Read `DATA_STORAGE_GUIDELINES.md` first.
+   - Check: containerURL, appGroupIdentifier, database names, file extensions
+
+2. **Schema Analysis**: Does this change affect data structure?
+   - If YES → Verify backward compatibility with existing data.
+   - Check: Model changes, Codable conformance, migration requirements
+
+3. **Migration Analysis**: Will existing users need their data migrated?
+   - If YES → Implement migration BEFORE making the change.
+   - Rule: Data-driven migrations (check if data exists, not flags)
+
+4. **Rollback Analysis**: If this change causes problems, can we rollback?
+   - If NO → Add backup mechanism first.
+   - Consider: What happens if migration fails mid-way?
+
+5. **Test Analysis**: How will we verify this doesn't break existing data?
+   - Document specific test scenarios before implementing.
+   - Required: Fresh install, old data only, new data only, both, idempotency
+
+**Output Required**: Before any storage change, output a brief "Storage Impact Analysis" section in your response explaining your answers to these 5 questions.
+
 ## HealthKit Integration
 
 ### Overview
@@ -262,7 +308,7 @@ Ensure ignored: build artifacts (`build/`, `DerivedData/`), user data (`*.xcuser
 
 **Commands (in order):**
 1. **Preferred**: `./scripts/dev-build.sh` (incremental, 16 cores, ~15s)
-2. **Alternative**: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16' build -quiet 2>&1 | xcsift`
+2. **Alternative**: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' build -quiet 2>&1 | xcsift`
 3. **Tests**: `./scripts/test-parallel.sh` (12 workers, ~35s)
 4. **Clean build**: `./scripts/clean-deriveddata.sh --asneeded && ./scripts/dev-build.sh`
 5. **Nuclear**: `./scripts/clean-all.sh` then rebuild

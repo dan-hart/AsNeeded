@@ -11,9 +11,6 @@ public final class DataStore {
     public static let shared = DataStore()
     private let logger = DHLogger.data
 
-    // App Group identifier for shared storage with widgets
-    private static let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
-
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
     public let eventsStore: Store<ANEventConcept>
@@ -26,12 +23,12 @@ public final class DataStore {
 
         // Get shared container URL for App Group
         guard let sharedContainerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+            forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
         ) else {
             // CRITICAL: App Group is REQUIRED for data storage
             // If App Group is unavailable, the app cannot function correctly
             // This should NEVER happen if MigrationCoordinator succeeded
-            logger.error("❌ FATAL: Unable to access App Group container: \(Self.appGroupIdentifier)")
+            logger.error("❌ FATAL: Unable to access App Group container: \(StorageConstants.appGroupIdentifier)")
             logger.error("This indicates a critical configuration issue:")
             logger.error("1. App Group entitlement may be missing or misconfigured")
             logger.error("2. Provisioning profile may not include App Group")
@@ -41,7 +38,7 @@ public final class DataStore {
             logger.error("User data is at risk if we fall back to default container")
 
             fatalError("""
-                App Group container is unavailable: \(Self.appGroupIdentifier)
+                App Group container is unavailable: \(StorageConstants.appGroupIdentifier)
 
                 This is a CRITICAL error. The app requires App Group access for data storage.
 
@@ -65,7 +62,7 @@ public final class DataStore {
         logger.info("Creating SQLiteStorageEngine for medications database...")
         guard let medicationsStorage = try? SQLiteStorageEngine(
             directory: FileManager.Directory(url: sharedContainerURL),
-            databaseFilename: "medications"
+            databaseFilename: StorageConstants.medicationsDBName
         ) else {
             logger.error("❌ FATAL: Failed to create SQLiteStorageEngine for medications")
             fatalError("Failed to initialize medications storage engine")
@@ -75,7 +72,7 @@ public final class DataStore {
         logger.info("Creating SQLiteStorageEngine for events database...")
         guard let eventsStorage = try? SQLiteStorageEngine(
             directory: FileManager.Directory(url: sharedContainerURL),
-            databaseFilename: "events"
+            databaseFilename: StorageConstants.eventsDBName
         ) else {
             logger.error("❌ FATAL: Failed to create SQLiteStorageEngine for events")
             fatalError("Failed to initialize events storage engine")
@@ -510,9 +507,9 @@ public final class DataStore {
 
         let fileManager = FileManager.default
 
-        // Database file paths (SQLiteStorageEngine adds .sqlite3 extension)
-        let medicationsDBPath = containerURL.appendingPathComponent("medications.sqlite3")
-        let eventsDBPath = containerURL.appendingPathComponent("events.sqlite3")
+        // Database file paths (using centralized StorageConstants to prevent path drift)
+        let medicationsDBPath = containerURL.appendingPathComponent(StorageConstants.medicationsDBPath)
+        let eventsDBPath = containerURL.appendingPathComponent(StorageConstants.eventsDBPath)
 
         logger.info("Database paths:")
         logger.info("  Medications: \(medicationsDBPath.path)")

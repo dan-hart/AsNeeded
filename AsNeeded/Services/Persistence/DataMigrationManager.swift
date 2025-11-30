@@ -23,9 +23,90 @@ import Foundation
 @MainActor
 public final class DataMigrationManager {
 	private let logger = DHLogger.data
-	private static let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
+
+	// MARK: - Migration Report
+
+	/// Report of migration operation for dry-run and verification
+	public struct MigrationReport {
+		/// Status of the migration
+		public enum Status {
+			case noLegacyData
+			case dryRunComplete
+			case migrationComplete
+			case migrationFailed(Error)
+		}
+
+		public var status: Status = .noLegacyData
+		public var foundLegacyMedications: Int = 0
+		public var foundLegacyEvents: Int = 0
+		public var currentMedications: Int = 0
+		public var currentEvents: Int = 0
+		public var postMergeMedications: Int = 0
+		public var postMergeEvents: Int = 0
+		public var conflicts: Int = 0
+		public var legacyMedicationsPath: String?
+		public var legacyEventsPath: String?
+	}
 
 	// MARK: - Public API
+
+	/// Performs a dry-run migration to preview what would happen
+	/// Does NOT modify any data - safe to call anytime
+	/// - Returns: A report of what would be migrated
+	public func dryRun() async -> MigrationReport {
+		logger.info("=== Starting Migration DRY RUN ===")
+		var report = MigrationReport()
+
+		// Step 1: Find legacy data
+		guard let legacyPaths = findLegacyDatabases() else {
+			logger.info("✅ DRY RUN: No legacy data found")
+			report.status = .noLegacyData
+			return report
+		}
+
+		report.legacyMedicationsPath = legacyPaths.medications?.path
+		report.legacyEventsPath = legacyPaths.events?.path
+
+		// Step 2: Load legacy data (read-only)
+		do {
+			let legacyData = try await loadLegacyData(from: legacyPaths)
+			report.foundLegacyMedications = legacyData.medications.count
+			report.foundLegacyEvents = legacyData.events.count
+
+			logger.info("DRY RUN: Found \(legacyData.medications.count) legacy medications, \(legacyData.events.count) legacy events")
+
+			// Step 3: Load current data (read-only)
+			let currentData = try await loadCurrentAppGroupData()
+			report.currentMedications = currentData.medications.count
+			report.currentEvents = currentData.events.count
+
+			logger.info("DRY RUN: Found \(currentData.medications.count) current medications, \(currentData.events.count) current events")
+
+			// Step 4: Simulate merge
+			let legacyMedicationIDs = Set(legacyData.medications.map { $0.id })
+			let currentMedicationIDs = Set(currentData.medications.map { $0.id })
+			let mergedMedicationIDs = legacyMedicationIDs.union(currentMedicationIDs)
+
+			let legacyEventIDs = Set(legacyData.events.map { $0.id })
+			let currentEventIDs = Set(currentData.events.map { $0.id })
+			let mergedEventIDs = legacyEventIDs.union(currentEventIDs)
+
+			report.postMergeMedications = mergedMedicationIDs.count
+			report.postMergeEvents = mergedEventIDs.count
+			report.conflicts = legacyMedicationIDs.intersection(currentMedicationIDs).count
+
+			logger.info("DRY RUN: Post-merge would have \(mergedMedicationIDs.count) medications, \(mergedEventIDs.count) events")
+			logger.info("DRY RUN: \(report.conflicts) ID conflicts (legacy data takes precedence)")
+
+			report.status = .dryRunComplete
+		} catch {
+			logger.error("DRY RUN failed: \(error.localizedDescription)")
+			report.status = .migrationFailed(error)
+		}
+
+		logger.info("=== Migration DRY RUN Complete ===")
+		return report
+	}
 
 	/// Performs data-driven migration from legacy storage to App Group container
 	/// Safe to call on every app launch - only migrates if legacy data exists
@@ -93,8 +174,8 @@ public final class DataMigrationManager {
 			let medicationsFolder = documentsURL.appendingPathComponent("medications.sqlite")
 			let eventsFolder = documentsURL.appendingPathComponent("events.sqlite")
 
-			let medicationsDB = medicationsFolder.appendingPathComponent("data.sqlite3")
-			let eventsDB = eventsFolder.appendingPathComponent("data.sqlite3")
+			let medicationsDB = medicationsFolder.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
+			let eventsDB = eventsFolder.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
 
 			if fileManager.fileExists(atPath: medicationsDB.path) {
 				logger.info("✅ Found medications at: \(medicationsDB.path)")
@@ -153,7 +234,7 @@ public final class DataMigrationManager {
 
 		// Check Bodega folder structure first: <name>.sqlite/data.sqlite3
 		let bodegaFolder = directory.appendingPathComponent("\(baseName).sqlite")
-		let bodegaDataFile = bodegaFolder.appendingPathComponent("data.sqlite3")
+		let bodegaDataFile = bodegaFolder.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
 		if fileManager.fileExists(atPath: bodegaDataFile.path) {
 			logger.info("Found Bodega-style database: \(bodegaDataFile.path)")
 			return bodegaDataFile
@@ -258,9 +339,9 @@ public final class DataMigrationManager {
 	/// Merges legacy data into App Group storage
 	private func mergeIntoAppGroup(legacyData: (medications: [ANMedicationConcept], events: [ANEventConcept])) async throws {
 		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
 		) else {
-			logger.error("App Group unavailable: \(Self.appGroupIdentifier)")
+			logger.error("App Group unavailable: \(StorageConstants.appGroupIdentifier)")
 			throw MigrationError.appGroupUnavailable
 		}
 
@@ -290,8 +371,8 @@ public final class DataMigrationManager {
 		var medications: [ANMedicationConcept] = []
 		var events: [ANEventConcept] = []
 
-		let medicationsPath = containerURL.appendingPathComponent("medications.sqlite3").path
-		let eventsPath = containerURL.appendingPathComponent("events.sqlite3").path
+		let medicationsPath = containerURL.appendingPathComponent(StorageConstants.medicationsDBPath).path
+		let eventsPath = containerURL.appendingPathComponent(StorageConstants.eventsDBPath).path
 
 		if fileManager.fileExists(atPath: medicationsPath) {
 			guard let storage = try SQLiteStorageEngine(
@@ -322,6 +403,16 @@ public final class DataMigrationManager {
 		}
 
 		return (medications: medications, events: events)
+	}
+
+	/// Loads current data from App Group storage (convenience method)
+	private func loadCurrentAppGroupData() async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {
+		guard let containerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
+		) else {
+			throw MigrationError.appGroupUnavailable
+		}
+		return try await loadCurrentAppGroupData(containerURL: containerURL)
 	}
 
 	/// Merges two arrays by ID, with legacy taking precedence
@@ -394,7 +485,7 @@ public final class DataMigrationManager {
 	/// Verifies that merge completed successfully
 	private func verifyMerge(expectedMedicationsCount: Int, expectedEventsCount: Int) async throws -> Bool {
 		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: Self.appGroupIdentifier
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
 		) else {
 			throw MigrationError.appGroupUnavailable
 		}

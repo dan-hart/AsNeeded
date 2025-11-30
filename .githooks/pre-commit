@@ -370,6 +370,128 @@ if [ $FOUND_SECRETS -eq 1 ]; then
     exit 1
 fi
 
-echo -e "${GREEN}No secrets detected. Proceeding with commit.${NC}"
-log_audit "PASSED: Commit approved for files: $FILES"
+echo -e "${GREEN}No secrets detected.${NC}"
+log_audit "PASSED: Secret scan approved for files: $FILES"
+
+# =============================================================================
+# STORAGE PATH SENTINEL - Prevent data loss from unprotected storage changes
+# =============================================================================
+
+echo -e "${CYAN}Running storage path sentinel check...${NC}"
+
+# Files that are considered storage-sensitive (changes can cause DATA LOSS)
+STORAGE_SENSITIVE_FILES=(
+    "StorageConstants.swift"
+    "DataStore.swift"
+    "DataMigrationManager.swift"
+    "StorageHealthChecker.swift"
+    "MigrationCoordinator.swift"
+)
+
+# Files that indicate proper migration handling
+MIGRATION_INDICATOR_FILES=(
+    "DataMigrationManager.swift"
+    "DATA_STORAGE_GUIDELINES.md"
+)
+
+# Patterns that indicate dangerous storage changes
+DANGEROUS_STORAGE_PATTERNS=(
+    "appGroupIdentifier"
+    "containerURL"
+    "SQLiteStorageEngine"
+    "\.sqlite"
+    "databaseFilename"
+    "sharedContainerURL"
+)
+
+STORAGE_CHANGE_DETECTED=0
+STORAGE_FINDINGS=""
+MIGRATION_FILE_CHANGED=0
+GUIDELINES_UPDATED=0
+
+# Check if any storage-sensitive files are being modified
+for FILE in $FILES; do
+    FILENAME=$(basename "$FILE")
+
+    # Check if this is a storage-sensitive file
+    for SENSITIVE_FILE in "${STORAGE_SENSITIVE_FILES[@]}"; do
+        if [[ "$FILENAME" == "$SENSITIVE_FILE" ]]; then
+            STORAGE_CHANGE_DETECTED=1
+            STORAGE_FINDINGS="$STORAGE_FINDINGS\n  - $FILE (storage-sensitive file)"
+        fi
+    done
+
+    # Check if migration indicator files are being modified
+    for INDICATOR in "${MIGRATION_INDICATOR_FILES[@]}"; do
+        if [[ "$FILENAME" == "$INDICATOR" ]]; then
+            if [[ "$INDICATOR" == "DataMigrationManager.swift" ]]; then
+                MIGRATION_FILE_CHANGED=1
+            fi
+            if [[ "$INDICATOR" == "DATA_STORAGE_GUIDELINES.md" ]]; then
+                GUIDELINES_UPDATED=1
+            fi
+        fi
+    done
+
+    # Check for dangerous patterns in any Swift file
+    if [[ "$FILE" =~ \.swift$ ]] && [ -f "$FILE" ]; then
+        for PATTERN in "${DANGEROUS_STORAGE_PATTERNS[@]}"; do
+            # Check if file has changes involving this pattern
+            DIFF_MATCHES=$(git diff --cached "$FILE" 2>/dev/null | grep -E "^\+" | grep -E "$PATTERN" || true)
+            if [ -n "$DIFF_MATCHES" ]; then
+                STORAGE_CHANGE_DETECTED=1
+                STORAGE_FINDINGS="$STORAGE_FINDINGS\n  - $FILE (contains storage pattern: $PATTERN)"
+                break
+            fi
+        done
+    fi
+done
+
+# If storage changes detected, verify migration safeguards are in place
+if [ $STORAGE_CHANGE_DETECTED -eq 1 ]; then
+    echo -e "\n${YELLOW}========================================================================${NC}"
+    echo -e "${YELLOW}  STORAGE CHANGE DETECTED - Verification Required                      ${NC}"
+    echo -e "${YELLOW}========================================================================${NC}\n"
+
+    echo -e "The following storage-sensitive changes were detected:"
+    echo -e "$STORAGE_FINDINGS\n"
+
+    WARNINGS=0
+
+    if [ $MIGRATION_FILE_CHANGED -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  WARNING: DataMigrationManager.swift was NOT modified${NC}"
+        echo -e "   If changing storage paths, you MUST implement a migration."
+        WARNINGS=1
+    else
+        echo -e "${GREEN}✅ DataMigrationManager.swift is being updated${NC}"
+    fi
+
+    if [ $GUIDELINES_UPDATED -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  WARNING: DATA_STORAGE_GUIDELINES.md was NOT updated${NC}"
+        echo -e "   Storage changes should be documented."
+        WARNINGS=1
+    else
+        echo -e "${GREEN}✅ DATA_STORAGE_GUIDELINES.md is being updated${NC}"
+    fi
+
+    echo ""
+    echo -e "${CYAN}REMINDER - Before committing storage changes:${NC}"
+    echo "  1. Read docs/DATA_STORAGE_GUIDELINES.md"
+    echo "  2. Verify migration exists for path/schema changes"
+    echo "  3. Test on physical device with real user data"
+    echo "  4. Verify migration idempotency (run twice)"
+    echo ""
+
+    if [ $WARNINGS -eq 1 ]; then
+        echo -e "${YELLOW}Proceeding with commit - but please verify the above.${NC}"
+        echo -e "${YELLOW}See CLAUDE.md 'Dangerous Files Registry' for requirements.${NC}"
+        log_audit "WARNING: Storage-sensitive commit with missing safeguards: $STORAGE_FINDINGS"
+    else
+        echo -e "${GREEN}All storage safeguards appear to be in place.${NC}"
+        log_audit "PASSED: Storage-sensitive commit with proper safeguards: $STORAGE_FINDINGS"
+    fi
+    echo ""
+fi
+
+echo -e "${GREEN}Pre-commit checks complete. Proceeding with commit.${NC}"
 exit 0

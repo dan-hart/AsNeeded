@@ -1,0 +1,201 @@
+# Storage Change Detector - Prevents data loss from unreviewed storage changes
+# This workflow flags PRs that modify storage-sensitive files and requires acknowledgment
+#
+# Triggered on: Pull requests to main branch
+# Purpose: Server-side safety net for storage changes that could cause data loss
+
+name: Storage Change Detector
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      # Storage-sensitive Swift files
+      - '**/StorageConstants.swift'
+      - '**/DataStore.swift'
+      - '**/DataMigrationManager.swift'
+      - '**/StorageHealthChecker.swift'
+      - '**/MigrationCoordinator.swift'
+      # Any file in Persistence directory
+      - '**/Services/Persistence/**'
+      # Database-related changes
+      - '**/*SQLite*'
+      - '**/*Storage*'
+
+jobs:
+  detect-storage-changes:
+    name: Detect Storage Changes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for storage-sensitive changes
+        id: storage-check
+        run: |
+          echo "🔍 Scanning for storage-sensitive changes..."
+
+          # Define dangerous patterns
+          DANGEROUS_PATTERNS=(
+            "appGroupIdentifier"
+            "containerURL"
+            "SQLiteStorageEngine"
+            "\.sqlite"
+            "databaseFilename"
+            "sharedContainerURL"
+            "StorageConstants\."
+          )
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          STORAGE_CHANGES_FOUND=false
+          FINDINGS=""
+
+          # Check each changed file for dangerous patterns
+          for file in $CHANGED_FILES; do
+            if [[ -f "$file" ]]; then
+              for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+                if git diff origin/main...HEAD -- "$file" | grep -E "^\+" | grep -qE "$pattern"; then
+                  STORAGE_CHANGES_FOUND=true
+                  FINDINGS="$FINDINGS\n- $file (pattern: $pattern)"
+                  break
+                fi
+              done
+            fi
+          done
+
+          # Check for specific sensitive files
+          SENSITIVE_FILES=(
+            "StorageConstants.swift"
+            "DataStore.swift"
+            "DataMigrationManager.swift"
+            "StorageHealthChecker.swift"
+            "MigrationCoordinator.swift"
+          )
+
+          for file in $CHANGED_FILES; do
+            filename=$(basename "$file")
+            for sensitive in "${SENSITIVE_FILES[@]}"; do
+              if [[ "$filename" == "$sensitive" ]]; then
+                STORAGE_CHANGES_FOUND=true
+                FINDINGS="$FINDINGS\n- $file (storage-sensitive file)"
+              fi
+            done
+          done
+
+          # Output results
+          echo "storage_changes_found=$STORAGE_CHANGES_FOUND" >> $GITHUB_OUTPUT
+
+          if [ "$STORAGE_CHANGES_FOUND" = true ]; then
+            echo "::warning::Storage-sensitive changes detected!"
+            echo -e "Findings:$FINDINGS"
+
+            # Check if migration file was also modified
+            if echo "$CHANGED_FILES" | grep -q "DataMigrationManager.swift"; then
+              echo "migration_updated=true" >> $GITHUB_OUTPUT
+              echo "✅ DataMigrationManager.swift is being updated"
+            else
+              echo "migration_updated=false" >> $GITHUB_OUTPUT
+              echo "::warning::DataMigrationManager.swift was NOT modified"
+            fi
+
+            # Check if guidelines were updated
+            if echo "$CHANGED_FILES" | grep -q "DATA_STORAGE_GUIDELINES.md"; then
+              echo "guidelines_updated=true" >> $GITHUB_OUTPUT
+              echo "✅ DATA_STORAGE_GUIDELINES.md is being updated"
+            else
+              echo "guidelines_updated=false" >> $GITHUB_OUTPUT
+              echo "::warning::DATA_STORAGE_GUIDELINES.md was NOT updated"
+            fi
+          fi
+
+      - name: Check for migration acknowledgment
+        if: steps.storage-check.outputs.storage_changes_found == 'true'
+        run: |
+          echo "📋 Checking PR description for migration acknowledgment..."
+
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Check for acknowledgment keywords
+          if echo "$PR_BODY" | grep -qiE "(MIGRATION_REVIEWED|migration reviewed|data migration|storage migration)"; then
+            echo "✅ Migration acknowledgment found in PR description"
+          else
+            echo "::error::PR modifies storage-sensitive code but is missing migration acknowledgment."
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "                    STORAGE CHANGE REVIEW REQUIRED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "This PR modifies storage-sensitive files that could cause DATA LOSS."
+            echo ""
+            echo "Before merging, please:"
+            echo "  1. Read docs/DATA_STORAGE_GUIDELINES.md"
+            echo "  2. Verify migration exists for any path/schema changes"
+            echo "  3. Test on physical device with real user data"
+            echo "  4. Add 'MIGRATION_REVIEWED' to your PR description"
+            echo ""
+            echo "See CLAUDE.md 'Dangerous Files Registry' for full requirements."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          fi
+
+      - name: Post review comment
+        if: steps.storage-check.outputs.storage_changes_found == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const migrationUpdated = '${{ steps.storage-check.outputs.migration_updated }}' === 'true';
+            const guidelinesUpdated = '${{ steps.storage-check.outputs.guidelines_updated }}' === 'true';
+
+            let body = `## 🗄️ Storage Change Detected
+
+            This PR modifies storage-sensitive files that could potentially cause **data loss** if not handled correctly.
+
+            ### Checklist Status
+            - ${migrationUpdated ? '✅' : '⚠️'} DataMigrationManager.swift ${migrationUpdated ? 'updated' : 'NOT updated'}
+            - ${guidelinesUpdated ? '✅' : '⚠️'} DATA_STORAGE_GUIDELINES.md ${guidelinesUpdated ? 'updated' : 'NOT updated'}
+
+            ### Required Before Merge
+            1. Read \`docs/DATA_STORAGE_GUIDELINES.md\`
+            2. Verify migration exists for path/schema changes
+            3. Test on **physical device** with real user data
+            4. Verify migration idempotency (run twice)
+            5. Add \`MIGRATION_REVIEWED\` to PR description
+
+            > **Remember the October 2025 Incident**: A storage path change without migration caused complete data loss for all users. Don't let it happen again.
+
+            See \`CLAUDE.md\` "Dangerous Files Registry" for full requirements.`;
+
+            // Check if we already posted this comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('Storage Change Detected')
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
