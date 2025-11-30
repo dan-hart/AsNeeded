@@ -54,7 +54,7 @@ sed -i '' "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD;/CURRENT_PROJECT_VERSION =
 
 # Verify update
 AFTER_COUNT=$(grep -c "CURRENT_PROJECT_VERSION = $NEW_BUILD;" "$PROJECT_FILE")
-REMAINING=$(grep -c "CURRENT_PROJECT_VERSION = $CURRENT_BUILD;" "$PROJECT_FILE" 2>/dev/null || echo "0")
+REMAINING=$(grep -c "CURRENT_PROJECT_VERSION = $CURRENT_BUILD;" "$PROJECT_FILE" 2>/dev/null) || REMAINING=0
 
 if [ "$AFTER_COUNT" -ne "$BEFORE_COUNT" ] || [ "$REMAINING" -ne "0" ]; then
     echo -e "${RED}❌ Error: Version bump incomplete!${NC}"
