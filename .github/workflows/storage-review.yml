@@ -1,12 +1,25 @@
 # Storage Change Detector - Prevents data loss from unreviewed storage changes
-# This workflow flags PRs that modify storage-sensitive files and requires acknowledgment
+# This workflow flags commits that modify storage-sensitive files
 #
-# Triggered on: Pull requests to main branch
+# Triggered on: Every push to every branch + PRs to main
 # Purpose: Server-side safety net for storage changes that could cause data loss
 
 name: Storage Change Detector
 
 on:
+  push:
+    paths:
+      # Storage-sensitive Swift files
+      - '**/StorageConstants.swift'
+      - '**/DataStore.swift'
+      - '**/DataMigrationManager.swift'
+      - '**/StorageHealthChecker.swift'
+      - '**/MigrationCoordinator.swift'
+      # Any file in Persistence directory
+      - '**/Services/Persistence/**'
+      # Database-related changes
+      - '**/*SQLite*'
+      - '**/*Storage*'
   pull_request:
     branches: [main]
     paths:
@@ -49,8 +62,16 @@ jobs:
             "StorageConstants\."
           )
 
-          # Get changed files
-          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          # Get changed files based on event type
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+            CHANGED_FILES=$(git diff --name-only $BASE_REF...HEAD)
+            DIFF_REF="$BASE_REF...HEAD"
+          else
+            # For push events, compare with parent commit
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
+            DIFF_REF="HEAD~1 HEAD"
+          fi
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
@@ -61,7 +82,7 @@ jobs:
           for file in $CHANGED_FILES; do
             if [[ -f "$file" ]]; then
               for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-                if git diff origin/main...HEAD -- "$file" | grep -E "^\+" | grep -qE "$pattern"; then
+                if git diff $DIFF_REF -- "$file" 2>/dev/null | grep -E "^\+" | grep -qE "$pattern"; then
                   STORAGE_CHANGES_FOUND=true
                   FINDINGS="$FINDINGS\n- $file (pattern: $pattern)"
                   break
@@ -115,8 +136,26 @@ jobs:
             fi
           fi
 
-      - name: Check for migration acknowledgment
-        if: steps.storage-check.outputs.storage_changes_found == 'true'
+      - name: Report storage changes (push)
+        if: steps.storage-check.outputs.storage_changes_found == 'true' && github.event_name == 'push'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "              ⚠️  STORAGE-SENSITIVE CHANGES DETECTED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "This commit modifies storage-sensitive files."
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "Please ensure:"
+          echo "  1. Migration exists for any path/schema changes"
+          echo "  2. Changes tested on physical device"
+          echo "  3. DATA_STORAGE_GUIDELINES.md reviewed"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Check for migration acknowledgment (PR only)
+        if: steps.storage-check.outputs.storage_changes_found == 'true' && github.event_name == 'pull_request'
         run: |
           echo "📋 Checking PR description for migration acknowledgment..."
 
