@@ -231,6 +231,7 @@ When `Package.resolved` changes:
 - Commits: Imperative subjects (e.g., "Add ANModelKit")
 - PRs: Clear description, screenshots for UI, link issues
 - Requirements: All tests pass, no formatting churn
+- **NEVER add Claude as co-author** - omit the "Co-Authored-By: Claude" line from commits
 
 ## Security & Configuration
 - No secrets in commits
