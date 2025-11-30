@@ -146,95 +146,85 @@ import DHLoggingKit
 import Foundation
 
 @MainActor
-public final class DataMigrationManager_V2 { // Increment version
+public final class DataMigrationManager {
     private let logger = DHLogger.data
-    private static let migrationKey = UserDefaultsKeys.dataMigrationV2Completed
 
+    /// Data-driven migration: checks for legacy data on every launch
+    /// No UserDefaults flags - migration state is determined purely by data presence
     public func migrateIfNeeded() async {
-        // Check if already migrated
-        guard !UserDefaults.standard.bool(forKey: Self.migrationKey) else {
-            logger.debug("Migration already completed")
+        // 1. Check if legacy data exists (data-driven approach)
+        guard let legacyPaths = findLegacyDatabases() else {
+            logger.debug("No legacy data found - migration not needed")
             return
         }
 
-        logger.info("Starting data migration...")
+        logger.info("Starting data migration from legacy location...")
 
         do {
-            // 1. Determine source and destination paths
-            guard let sourcePaths = getSourcePaths(),
-                  let destinationPaths = getDestinationPaths() else {
-                markMigrationComplete()
+            // 2. Load data from legacy location
+            let legacyData = try await loadLegacyData(legacyPaths)
+            logger.info("Loaded legacy data: \\(legacyData.count) items")
+
+            // Skip if legacy is empty
+            guard !legacyData.isEmpty else {
+                logger.info("Legacy database empty - nothing to migrate")
                 return
             }
 
-            // 2. Check if migration needed
-            guard shouldMigrate(from: sourcePaths, to: destinationPaths) else {
-                markMigrationComplete()
-                return
-            }
+            // 3. Load existing App Group data
+            let currentData = try await loadCurrentData()
+            logger.info("Loaded current data: \\(currentData.count) items")
 
-            // 3. Load data from source
-            let sourceData = try await loadSourceData(sourcePaths)
-            logger.info("Loaded source data: \\(sourceData.count) items")
-
-            // 4. Load existing destination data
-            let destinationData = try await loadDestinationData(destinationPaths)
-            logger.info("Loaded destination data: \\(destinationData.count) items")
-
-            // 5. Merge data (deduplicate by ID)
-            let mergedData = mergeData(source: sourceData, destination: destinationData)
+            // 4. Merge data (deduplicate by ID, legacy takes precedence)
+            let mergedData = mergeByID(legacy: legacyData, current: currentData)
             logger.info("Merged data: \\(mergedData.count) items")
 
-            // 6. Write merged data to destination
-            try await writeMergedData(mergedData, to: destinationPaths)
+            // 5. Write merged data to App Group
+            try await writeMergedData(mergedData)
 
-            // 7. Verify migration succeeded
-            let verifyData = try await loadDestinationData(destinationPaths)
-            guard verifyData.count >= sourceData.count else {
+            // 6. Verify migration succeeded
+            let verifyData = try await loadCurrentData()
+            guard verifyData.count >= legacyData.count else {
                 throw MigrationError.verificationFailed
             }
 
             logger.info("✅ Migration completed successfully")
-            markMigrationComplete()
 
         } catch {
             logger.error("Migration failed: \\(error)")
-            // Don't mark as complete - retry next launch
+            // Will retry on next launch (data-driven, checks for legacy data again)
         }
     }
 
-    private func mergeData<T: Identifiable>(source: [T], destination: [T]) -> [T] {
-        var itemsById = Dictionary(uniqueKeysWithValues: destination.map { ($0.id, $0) })
-        for item in source {
-            itemsById[item.id] = item // Source takes precedence
+    private func mergeByID<T: Identifiable>(legacy: [T], current: [T]) -> [T] {
+        var itemsById = Dictionary(uniqueKeysWithValues: current.map { ($0.id, $0) })
+        for item in legacy {
+            itemsById[item.id] = item // Legacy takes precedence
         }
         return Array(itemsById.values)
-    }
-
-    private func markMigrationComplete() {
-        UserDefaults.standard.set(true, forKey: Self.migrationKey)
-        UserDefaults.standard.synchronize()
     }
 }
 ```
 
+### Data-Driven Migration Benefits
+
+The current migration approach is **data-driven** (no UserDefaults flags):
+
+1. **Self-healing**: If migration fails, it automatically retries on next launch
+2. **Idempotent**: Running multiple times produces the same result (no duplicates)
+3. **Simple**: No flag state to manage or get stuck in wrong state
+4. **Automatic**: Migration runs when legacy data exists, skips when it doesn't
+
 ### Checklist for Implementing Migration
 
-- [ ] Create new `DataMigrationManager_VX` class
-- [ ] Add `dataMigrationVXCompleted` key to `UserDefaultsKeys.swift`
-- [ ] Add key to `allKeys` array
-- [ ] Add key to `keysToSkip` set
-- [ ] Add key to `keysToNeverExport` set
-- [ ] Implement `getSourcePaths()` method
-- [ ] Implement `getDestinationPaths()` method
-- [ ] Implement `shouldMigrate()` check
-- [ ] Implement `loadSourceData()` method
-- [ ] Implement `loadDestinationData()` method
-- [ ] Implement `mergeData()` logic
+- [ ] Implement `findLegacyDatabases()` to detect legacy data locations
+- [ ] Implement `loadLegacyData()` method
+- [ ] Implement `loadCurrentData()` method
+- [ ] Implement `mergeByID()` logic (legacy takes precedence)
 - [ ] Implement `writeMergedData()` method
 - [ ] Add verification step
-- [ ] Call migration from `DataStore.init()` with semaphore
-- [ ] Create unit tests
+- [ ] Call migration from `MigrationCoordinator` before DataStore init
+- [ ] Create unit tests (test data-driven behavior, not flag state)
 - [ ] Test with real data in simulator
 - [ ] Test on physical device
 - [ ] Document in this file
@@ -255,14 +245,9 @@ let oldStore = Store<ANMedicationConcept>(
 try await oldStore.insert(testMedication)
 ```
 
-2. **Reset migration flag:**
-```swift
-UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.dataMigrationCompleted)
-```
+2. **Restart app** and verify data migrated (migration is data-driven, no flag reset needed)
 
-3. **Restart app** and verify data migrated
-
-4. **Verify idempotency**: Restart again and ensure no duplicates
+3. **Verify idempotency**: Restart again and ensure no duplicates
 
 ### Device Testing
 
@@ -396,12 +381,7 @@ let appSupportURL = FileManager.default.urls(
 print("Check: \\(appSupportURL)/medications.sqlite")
 ```
 
-3. **Reset migration flag for testing:**
-```swift
-UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.dataMigrationCompleted)
-```
-
-4. **Manually trigger migration:**
+3. **Manually trigger migration** (data-driven, no flag reset needed):
 ```swift
 await DataMigrationManager().migrateIfNeeded()
 ```

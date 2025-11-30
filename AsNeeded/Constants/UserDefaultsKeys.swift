@@ -51,11 +51,6 @@ public enum UserDefaultsKeys {
     /// Selected font family for app-wide text display
     static let selectedFontFamily = "selectedFontFamily"
 
-    // MARK: - Feature Toggles
-
-    /// Feature toggle for quick note phrases
-    static let featureToggleQuickPhrases = "featureToggle.quickPhrases"
-
     // MARK: - App Review & Analytics
 
     /// Whether the user has opted out of review requests
@@ -147,18 +142,6 @@ public enum UserDefaultsKeys {
     /// Default behavior when importing data that contains settings ("keep" or "import")
     static let importSettingsDefaultBehavior = "importSettings.defaultBehavior"
 
-    // MARK: - Data Migration
-
-    /// Whether the one-time data migration from legacy storage to App Group has completed
-    /// This flag prevents re-running the migration on subsequent app launches
-    /// Should NOT be reset during app resets - this is a one-time version-specific migration
-    static let dataMigrationCompleted = "dataMigration.completed"
-
-    /// Whether a migration attempt has been made (tracks attempts vs completions)
-    /// Used to distinguish between "migration not needed" and "migration failed"
-    /// Should NOT be reset during app resets - used for retry logic
-    static let dataMigrationAttempted = "dataMigration.attempted"
-
     // MARK: - All Keys
 
     /// Array of all UserDefaults keys for iteration/testing
@@ -175,7 +158,6 @@ public enum UserDefaultsKeys {
         hideSupportBanners,
         showMedicationNamesInNotifications,
         selectedFontFamily,
-        featureToggleQuickPhrases,
         hasUserOptedOutOfReviews,
         appLaunchCount,
         medicationEventsCount,
@@ -203,8 +185,6 @@ public enum UserDefaultsKeys {
         automaticBackupRetentionDays,
         automaticBackupIncludeSettings,
         importSettingsDefaultBehavior,
-        dataMigrationCompleted,
-        dataMigrationAttempted,
     ]
 
     // MARK: - Default Values
@@ -220,7 +200,6 @@ public enum UserDefaultsKeys {
         hideSupportBanners: false,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
-        featureToggleQuickPhrases: false, // Feature toggles default to OFF
         hasUserOptedOutOfReviews: false,
         appLaunchCount: 0,
         medicationEventsCount: 0,
@@ -264,8 +243,6 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
-        dataMigrationCompleted, // Never reset migration status - it's a one-time version migration
-        dataMigrationAttempted, // Never reset migration attempts - used for retry logic
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -287,9 +264,6 @@ public enum UserDefaultsKeys {
 
         // Typography Settings
         selectedFontFamily,
-
-        // Feature Toggles
-        featureToggleQuickPhrases,
 
         // Automatic Backup Settings (excluding location bookmark and timestamps)
         automaticBackupEnabled,
@@ -341,9 +315,5 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         hasUserOptedOutOfReviews,
-
-        // Migration state (device/version-specific)
-        dataMigrationCompleted,
-        dataMigrationAttempted,
     ]
 }

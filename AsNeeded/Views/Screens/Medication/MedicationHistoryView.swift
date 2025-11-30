@@ -32,7 +32,6 @@ struct MedicationHistoryView: View {
     @ScaledMetric private var medicationColorCircleSize: CGFloat = 26
     @ScaledMetric private var colorCircleShadowRadius: CGFloat = 3
     @ScaledMetric private var colorCircleStrokeWidth: CGFloat = 0.5
-    @ScaledMetric private var quickPhrasesPaddingV: CGFloat = 8
     @ScaledMetric private var unitPickerItemPaddingH: CGFloat = 12
     @ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
     @ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
@@ -501,19 +500,10 @@ struct MedicationHistoryView: View {
                                 }
 
                                 Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
-                                    // Use enhanced note editor for consistency
-                                    VStack {
-                                        NoteQuickPhrasesComponent(
-                                            noteText: $editingNoteText,
-                                            medicationName: viewModel.selectedMedication?.displayName
-                                        )
-                                        .padding(.vertical, quickPhrasesPaddingV)
-
-                                        TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
-                                            .lineLimit(4 ... 8)
-                                            .font(.customFont(fontFamily, style: .body))
-                                            .focused($isNoteFieldFocused)
-                                    }
+                                    TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
+                                        .lineLimit(4 ... 8)
+                                        .font(.customFont(fontFamily, style: .body))
+                                        .focused($isNoteFieldFocused)
                                 }
                             }
                             .scrollDismissesKeyboard(.interactively)

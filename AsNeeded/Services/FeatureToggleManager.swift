@@ -5,9 +5,6 @@ import SwiftUI
 final class FeatureToggleManager: ObservableObject {
     static let shared = FeatureToggleManager()
 
-    // Feature Toggle for Quick Phrases - OFF by default
-    @AppStorage(UserDefaultsKeys.featureToggleQuickPhrases) public var quickPhrasesEnabled: Bool = false
-
     /// Determines if feature toggles should be available
     /// Available in DEBUG builds and TestFlight builds
     var isFeatureToggleAvailable: Bool {

@@ -2,13 +2,12 @@
 ///
 /// This component provides a sophisticated note-taking experience with two modes:
 /// - Compact mode: Shows a tappable field with placeholder text and visual hints
-/// - Expanded mode: Full-screen editor with keyboard focus, character count, and quick phrases
+/// - Expanded mode: Full-screen editor with keyboard focus and character count
 ///
 /// Key features:
 /// - Smooth animations between compact and expanded states
 /// - Auto-focus keyboard when expanded
 /// - Character counter with limits
-/// - Integration with quick phrase suggestions
 /// - Visual feedback for note presence
 ///
 /// Use cases:
@@ -29,7 +28,6 @@ struct ExpandableNoteEditorComponent: View {
     @State private var isExpanded = false
     @State private var localText: String = ""
     @FocusState private var isTextFieldFocused: Bool
-    @StateObject private var featureToggleManager = FeatureToggleManager.shared
     @Environment(\.fontFamily) private var fontFamily
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
@@ -158,16 +156,6 @@ struct ExpandableNoteEditorComponent: View {
                             .padding(.vertical, verticalPadding)
                         }
 
-                        // Quick phrases (only if enabled)
-                        if featureToggleManager.quickPhrasesEnabled {
-                            NoteQuickPhrasesComponent(
-                                noteText: $localText,
-                                medicationName: medicationName
-                            )
-                            .padding(.horizontal, horizontalPadding)
-                            .padding(.bottom, verticalPadding)
-                        }
-
                         // Text field with vertical axis for multi-line support
                         TextField(placeholder, text: $localText, axis: .vertical)
                             .font(.customFont(fontFamily, style: .body))
@@ -183,7 +171,7 @@ struct ExpandableNoteEditorComponent: View {
                             )
                             .frame(minHeight: expandedMinHeight)
                             .padding(.horizontal, horizontalPadding)
-                            .padding(.top, featureToggleManager.quickPhrasesEnabled ? 0 : horizontalPadding)
+                            .padding(.top, horizontalPadding)
                             .padding(.bottom, horizontalPadding)
                             .onAppear {
                                 // Immediate focus attempt

@@ -34,11 +34,6 @@ struct AppSettings: Codable {
 	/// Selected font family for app-wide text display
 	var selectedFontFamily: String?
 
-	// MARK: - Feature Toggles
-
-	/// Feature toggle for quick note phrases
-	var featureToggleQuickPhrases: Bool?
-
 	// MARK: - Automatic Backup Settings
 
 	/// Whether automatic backup is enabled
@@ -96,9 +91,6 @@ struct AppSettings: Codable {
 		// Typography Settings
 		selectedFontFamily = defaults.string(forKey: UserDefaultsKeys.selectedFontFamily)
 
-		// Feature Toggles
-		featureToggleQuickPhrases = defaults.object(forKey: UserDefaultsKeys.featureToggleQuickPhrases) as? Bool
-
 		// Automatic Backup Settings
 		automaticBackupEnabled = defaults.object(forKey: UserDefaultsKeys.automaticBackupEnabled) as? Bool
 		automaticBackupRedactMedicationNames = defaults.object(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames) as? Bool
@@ -150,11 +142,6 @@ struct AppSettings: Codable {
 		// Typography Settings
 		if let value = selectedFontFamily {
 			defaults.set(value, forKey: UserDefaultsKeys.selectedFontFamily)
-		}
-
-		// Feature Toggles
-		if let value = featureToggleQuickPhrases {
-			defaults.set(value, forKey: UserDefaultsKeys.featureToggleQuickPhrases)
 		}
 
 		// Automatic Backup Settings
@@ -224,9 +211,6 @@ struct AppSettings: Codable {
 		}
 		if selectedFontFamily != nil {
 			categories.append("Typography")
-		}
-		if featureToggleQuickPhrases != nil {
-			categories.append("Feature Toggles")
 		}
 		if automaticBackupEnabled != nil || automaticBackupRedactMedicationNames != nil ||
 			automaticBackupRedactNotes != nil || automaticBackupRetentionDays != nil

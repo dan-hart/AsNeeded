@@ -410,36 +410,6 @@ public final class DataMigrationManager {
 
 		return medicationsOK && eventsOK
 	}
-
-	// MARK: - Debug Support
-
-	/// Returns information about legacy data status (for debug UI)
-	public func getLegacyDataStatus() -> (found: Bool, medicationsPath: String?, eventsPath: String?, medicationsCount: Int, eventsCount: Int) {
-		guard let paths = findLegacyDatabases() else {
-			return (found: false, medicationsPath: nil, eventsPath: nil, medicationsCount: 0, eventsCount: 0)
-		}
-
-		// Count items synchronously for UI display
-		var medicationsCount = 0
-		var eventsCount = 0
-
-		if let medPath = paths.medications, FileManager.default.fileExists(atPath: medPath.path) {
-			// Just check if file exists - actual count requires async
-			medicationsCount = -1 // Indicates "exists but count unknown"
-		}
-
-		if let evtPath = paths.events, FileManager.default.fileExists(atPath: evtPath.path) {
-			eventsCount = -1
-		}
-
-		return (
-			found: true,
-			medicationsPath: paths.medications?.path,
-			eventsPath: paths.events?.path,
-			medicationsCount: medicationsCount,
-			eventsCount: eventsCount
-		)
-	}
 }
 
 // MARK: - Errors

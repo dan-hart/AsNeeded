@@ -1,5 +1,5 @@
 // DataMigrationManagerTests.swift
-// Comprehensive tests for DataMigrationManager operations
+// Tests for DataMigrationManager operations (data-driven migration approach)
 
 import ANModelKit
 @testable import AsNeeded
@@ -21,63 +21,21 @@ struct DataMigrationManagerTests {
 	init() async throws {
 		// Create migration manager instance
 		migrationManager = DataMigrationManager()
-
-		// Reset migration flag for testing
-		migrationManager.resetMigrationFlagForTesting()
-	}
-
-	// MARK: - Migration Flag Tests
-
-	@Test("Migration flag starts as false")
-	func migrationFlagInitialState() async throws {
-		// Given - fresh migration manager
-		migrationManager.resetMigrationFlagForTesting()
-
-		// Then
-		let isCompleted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationCompleted)
-		#expect(isCompleted == false)
-	}
-
-	@Test("Migration flag is set after migration")
-	func migrationFlagSetAfterMigration() async throws {
-		// Given - no legacy data exists
-		migrationManager.resetMigrationFlagForTesting()
-
-		// When
-		await migrationManager.migrateIfNeeded()
-
-		// Then
-		let isCompleted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationCompleted)
-		#expect(isCompleted == true)
-	}
-
-	@Test("Migration skipped when flag is already set")
-	func migrationSkippedWhenAlreadyCompleted() async throws {
-		// Given - migration already completed
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.dataMigrationCompleted)
-
-		// When
-		await migrationManager.migrateIfNeeded()
-
-		// Then - should complete without error
-		let isCompleted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationCompleted)
-		#expect(isCompleted == true)
 	}
 
 	// MARK: - Fresh Install Tests
 
-	@Test("Fresh install with no legacy data")
+	@Test("Fresh install with no legacy data completes without error")
 	func freshInstallNoLegacyData() async throws {
-		// Given - no legacy data, no current data
-		migrationManager.resetMigrationFlagForTesting()
+		// Given - no legacy data
 		cleanupTestDatabases()
 
-		// When
+		// When - migration runs (data-driven, will find no legacy data)
 		await migrationManager.migrateIfNeeded()
 
-		// Then - migration should complete and mark as done
-		let isCompleted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationCompleted)
-		#expect(isCompleted == true)
+		// Then - should complete without error (nothing to migrate)
+		// Data-driven approach: if no legacy data exists, migration is a no-op
+		#expect(true) // If we get here, no error was thrown
 	}
 
 	// MARK: - Data Merge Tests
@@ -85,7 +43,7 @@ struct DataMigrationManagerTests {
 	@Test("Merge data from legacy and current locations")
 	func mergeDataFromBothLocations() async throws {
 		// Given
-		migrationManager.resetMigrationFlagForTesting()
+		cleanupTestDatabases()
 
 		// Create legacy data
 		let legacyStore = createLegacyStore()
@@ -116,7 +74,7 @@ struct DataMigrationManagerTests {
 	@Test("Duplicate medications are handled by merge logic")
 	func duplicateIDsHandledCorrectly() async throws {
 		// Given
-		migrationManager.resetMigrationFlagForTesting()
+		cleanupTestDatabases()
 
 		// Create same medication in both locations
 		let medication = createTestMedication(name: "Test Medication")
@@ -143,7 +101,6 @@ struct DataMigrationManagerTests {
 	@Test("Migration handles legacy .sqlite databases")
 	func migrationHandlesLegacySqliteDatabases() async throws {
 		// Given
-		migrationManager.resetMigrationFlagForTesting()
 		cleanupTestDatabases()
 
 		let medication = createTestMedication(name: "Legacy SQLite Format")
@@ -213,20 +170,17 @@ struct DataMigrationManagerTests {
 
 	// MARK: - Idempotency Tests
 
-	@Test("Running migration multiple times produces same result")
+	@Test("Running migration multiple times produces same result (data-driven idempotency)")
 	func migrationIdempotency() async throws {
 		// Given
-		migrationManager.resetMigrationFlagForTesting()
+		cleanupTestDatabases()
 
 		let legacyStore = createLegacyStore()
 		let medication = createTestMedication(name: "Test Med")
 		try await legacyStore.insert(medication)
 
-		// When - run migration twice
+		// When - run migration twice (data-driven approach will check for legacy data each time)
 		await migrationManager.migrateIfNeeded()
-
-		// Reset flag to force re-run
-		migrationManager.resetMigrationFlagForTesting()
 		await migrationManager.migrateIfNeeded()
 
 		// Then - should have exactly one medication (no duplicates)
@@ -244,7 +198,7 @@ struct DataMigrationManagerTests {
 	@Test("Migration handles large datasets")
 	func migrationHandlesLargeDatasets() async throws {
 		// Given
-		migrationManager.resetMigrationFlagForTesting()
+		cleanupTestDatabases()
 
 		let legacyStore = createLegacyStore()
 
@@ -271,8 +225,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect database with .sqlite3 extension")
 	func detectDatabaseWithSqlite3Extension() async throws {
 		// Given - database file with .sqlite3 extension
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -295,8 +247,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect database with .sqlite extension")
 	func detectDatabaseWithSqliteExtension() async throws {
 		// Given - database file with .sqlite extension
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -319,8 +269,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect database without extension")
 	func detectDatabaseWithoutExtension() async throws {
 		// Given - database file without extension
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -343,8 +291,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect database with .db extension")
 	func detectDatabaseWithDbExtension() async throws {
 		// Given - database file with .db extension
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -369,8 +315,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect WAL file alongside main database")
 	func detectWALFileWithMainDatabase() async throws {
 		// Given - database with WAL file
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -404,8 +348,6 @@ struct DataMigrationManagerTests {
 	@Test("Detect orphaned WAL file without main database")
 	func detectOrphanedWALFile() async throws {
 		// Given - WAL file exists but main database doesn't
-		migrationManager.resetMigrationFlagForTesting()
-
 		guard let appSupportURL = FileManager.default.urls(
 			for: .applicationSupportDirectory,
 			in: .userDomainMask
@@ -428,62 +370,6 @@ struct DataMigrationManagerTests {
 
 		// Cleanup
 		try? FileManager.default.removeItem(at: walPath)
-	}
-
-	// MARK: - Migration Attempt Flag Tests
-
-	@Test("Migration attempted flag is set when migration starts")
-	func migrationAttemptedFlagSet() async throws {
-		// Given
-		migrationManager.resetMigrationFlagForTesting()
-
-		// Ensure attempted flag is initially false
-		let initialAttempted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationAttempted)
-		#expect(initialAttempted == false)
-
-		// When
-		await migrationManager.migrateIfNeeded()
-
-		// Then - attempted flag should be set
-		let finalAttempted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.dataMigrationAttempted)
-		#expect(finalAttempted == true)
-	}
-
-	@Test("Migration attempted key is in allKeys array")
-	func migrationAttemptedKeyInAllKeys() {
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.dataMigrationAttempted))
-	}
-
-	@Test("Migration attempted key is in keysToSkip set")
-	func migrationAttemptedKeyInKeysToSkip() {
-		#expect(UserDefaultsKeys.keysToSkip.contains(UserDefaultsKeys.dataMigrationAttempted))
-	}
-
-	@Test("Migration attempted key is in keysToNeverExport set")
-	func migrationAttemptedKeyInKeysToNeverExport() {
-		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.dataMigrationAttempted))
-	}
-
-	// MARK: - UserDefaults Key Configuration Tests
-
-	@Test("Migration key is in allKeys array")
-	func migrationKeyInAllKeys() {
-		#expect(UserDefaultsKeys.allKeys.contains(UserDefaultsKeys.dataMigrationCompleted))
-	}
-
-	@Test("Migration key is in keysToSkip set")
-	func migrationKeyInKeysToSkip() {
-		#expect(UserDefaultsKeys.keysToSkip.contains(UserDefaultsKeys.dataMigrationCompleted))
-	}
-
-	@Test("Migration key is in keysToNeverExport set")
-	func migrationKeyInKeysToNeverExport() {
-		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.dataMigrationCompleted))
-	}
-
-	@Test("Migration key is NOT in safeToExport set")
-	func migrationKeyNotInSafeToExport() {
-		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.dataMigrationCompleted))
 	}
 
 	// MARK: - Test Coverage Limitations
@@ -516,11 +402,14 @@ struct DataMigrationManagerTests {
 	 - Verify error message is helpful
 	 - Verify retry button works when entitlement is restored
 
-	 This is considered acceptable because:
-	 1. App Group unavailability is extremely rare in production
-	 2. It's always a configuration error (not runtime condition)
-	 3. Multiple defensive layers exist to prevent data loss
-	 4. Manual testing catches the issue before release
+	 Data-Driven Migration Note:
+	 ===========================
+
+	 This test suite validates the data-driven migration approach:
+	 - Migration runs when legacy data exists
+	 - Migration is a no-op when no legacy data exists
+	 - Migration is idempotent (safe to run multiple times)
+	 - No UserDefaults flags are used - migration state is determined by data presence
 	 */
 
 	// MARK: - Helper Methods
