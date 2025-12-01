@@ -190,9 +190,6 @@ struct AppSettings: Codable {
 		if let value = recentMedicationSearches {
 			defaults.set(value, forKey: UserDefaultsKeys.recentMedicationSearches)
 		}
-
-		// Synchronize to ensure changes are persisted
-		defaults.synchronize()
 	}
 
 	/// Get a user-friendly summary of included settings categories

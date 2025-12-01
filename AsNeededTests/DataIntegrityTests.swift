@@ -23,13 +23,15 @@ struct DataIntegrityTests {
 		let original = ANMedicationConcept(
 			id: originalID,
 			clinicalName: "Test Medication",
-			dosageDescription: "500mg twice daily",
-			color: 0xFF5733, // Custom color
-			symbol: "pills",
-			notes: "Important notes about this medication",
-			createdAt: originalDate,
-			archivedAt: nil,
-			rxcui: "12345"
+			nickname: "Test Med",
+			quantity: 30,
+			initialQuantity: 60,
+			displayColorHex: "#FF5733",
+			lastRefillDate: originalDate,
+			nextRefillDate: originalDate.addingTimeInterval(86400 * 30),
+			prescribedUnit: .tablet,
+			prescribedDoseAmount: 500,
+			rxNormCode: "12345"
 		)
 
 		// Create test stores
@@ -45,16 +47,16 @@ struct DataIntegrityTests {
 
 		#expect(medication.id == original.id, "ID should match")
 		#expect(medication.clinicalName == original.clinicalName, "Clinical name should match")
-		#expect(medication.dosageDescription == original.dosageDescription, "Dosage description should match")
-		#expect(medication.color == original.color, "Color should match")
-		#expect(medication.symbol == original.symbol, "Symbol should match")
-		#expect(medication.notes == original.notes, "Notes should match")
-		#expect(medication.rxcui == original.rxcui, "RxCUI should match")
+		#expect(medication.nickname == original.nickname, "Nickname should match")
+		#expect(medication.quantity == original.quantity, "Quantity should match")
+		#expect(medication.displayColorHex == original.displayColorHex, "Color hex should match")
+		#expect(medication.rxNormCode == original.rxNormCode, "RxNorm code should match")
+		#expect(medication.isArchived == original.isArchived, "isArchived should match")
 
 		// Verify date within 1 second tolerance (floating point comparison)
-		if let retrievedDate = medication.createdAt, let originalCreatedAt = original.createdAt {
-			let timeDifference = abs(retrievedDate.timeIntervalSince(originalCreatedAt))
-			#expect(timeDifference < 1.0, "Created date should match within 1 second")
+		if let retrievedDate = medication.lastRefillDate, let originalRefillDate = original.lastRefillDate {
+			let timeDifference = abs(retrievedDate.timeIntervalSince(originalRefillDate))
+			#expect(timeDifference < 1.0, "Last refill date should match within 1 second")
 		}
 
 		// Cleanup
@@ -64,15 +66,21 @@ struct DataIntegrityTests {
 	@Test("Migration preserves all event fields")
 	func migrationPreservesAllEventFields() async throws {
 		// Given - an event with ALL fields populated
-		let medicationID = UUID()
 		let eventID = UUID()
 		let eventDate = Date()
 
+		// Create a medication for the event
+		let medication = ANMedicationConcept(
+			clinicalName: "Test Medication",
+			prescribedUnit: .tablet
+		)
+
 		let original = ANEventConcept(
 			id: eventID,
-			medicationID: medicationID,
-			timestamp: eventDate,
-			notes: "Took with food"
+			eventType: .doseTaken,
+			medication: medication,
+			date: eventDate,
+			note: "Took with food"
 		)
 
 		// Create test stores
@@ -87,12 +95,13 @@ struct DataIntegrityTests {
 		guard let event = retrieved else { return }
 
 		#expect(event.id == original.id, "ID should match")
-		#expect(event.medicationID == original.medicationID, "Medication ID should match")
-		#expect(event.notes == original.notes, "Notes should match")
+		#expect(event.eventType == original.eventType, "Event type should match")
+		#expect(event.medication?.id == original.medication?.id, "Medication ID should match")
+		#expect(event.note == original.note, "Note should match")
 
-		// Verify timestamp within 1 second tolerance
-		let timeDifference = abs(event.timestamp.timeIntervalSince(original.timestamp))
-		#expect(timeDifference < 1.0, "Timestamp should match within 1 second")
+		// Verify date within 1 second tolerance
+		let timeDifference = abs(event.date.timeIntervalSince(original.date))
+		#expect(timeDifference < 1.0, "Date should match within 1 second")
 
 		// Cleanup
 		try await testStore.removeAll()
@@ -120,7 +129,8 @@ struct DataIntegrityTests {
 		let medication = ANMedicationConcept(
 			id: UUID(),
 			clinicalName: "Concurrent Test Med",
-			dosageDescription: "100mg"
+			prescribedUnit: .milligram,
+			prescribedDoseAmount: 100
 		)
 		try await testStore.insert(medication)
 
@@ -151,17 +161,18 @@ struct DataIntegrityTests {
 		let medication = ANMedicationConcept(
 			id: UUID(),
 			clinicalName: "Idempotency Test",
-			dosageDescription: "50mg"
+			prescribedUnit: .milligram,
+			prescribedDoseAmount: 50
 		)
 		try await testStore.insert(medication)
 
 		let countBefore = testStore.items.count
 
 		// When - run migration twice
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 		let countAfterFirst = testStore.items.count
 
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 		let countAfterSecond = testStore.items.count
 
 		// Then - count should remain constant (no duplicates)

@@ -31,7 +31,7 @@ struct DataMigrationManagerTests {
 		cleanupTestDatabases()
 
 		// When - migration runs (data-driven, will find no legacy data)
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then - should complete without error (nothing to migrate)
 		// Data-driven approach: if no legacy data exists, migration is a no-op
@@ -56,7 +56,7 @@ struct DataMigrationManagerTests {
 		try await currentStore.insert(currentMedication)
 
 		// When
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then - both medications should exist in App Group
 		let appGroupStore = createAppGroupStore()
@@ -86,7 +86,7 @@ struct DataMigrationManagerTests {
 		try await currentStore.insert(medication)
 
 		// When
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then - only one instance should exist (deduplicated by ID)
 		let appGroupStore = createAppGroupStore()
@@ -156,7 +156,7 @@ struct DataMigrationManagerTests {
 		try await appGroupStore.removeAll()
 
 		// When
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then
 		let migratedStore = createAppGroupStore()
@@ -180,8 +180,8 @@ struct DataMigrationManagerTests {
 		try await legacyStore.insert(medication)
 
 		// When - run migration twice (data-driven approach will check for legacy data each time)
-		await migrationManager.migrateIfNeeded()
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then - should have exactly one medication (no duplicates)
 		let appGroupStore = createAppGroupStore()
@@ -209,7 +209,7 @@ struct DataMigrationManagerTests {
 		}
 
 		// When
-		await migrationManager.migrateIfNeeded()
+		try await migrationManager.migrateIfNeeded()
 
 		// Then
 		let appGroupStore = createAppGroupStore()
