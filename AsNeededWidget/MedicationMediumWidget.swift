@@ -53,14 +53,14 @@ struct MediumWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (MedicationListEntry) -> Void) {
         Task { @MainActor in
-            let entry = await createEntry()
+            let entry = createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<MedicationListEntry>) -> Void) {
         Task { @MainActor in
-            let entry = await createEntry()
+            let entry = createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(

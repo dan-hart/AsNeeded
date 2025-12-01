@@ -246,7 +246,7 @@ struct MedicationDetailView: View {
                 Button {
                     navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
                 } label: {
-                    Label("View History", systemSymbol: .clockArrowCirclepath)
+                    Label("View History", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
                 }
 
                 Divider()

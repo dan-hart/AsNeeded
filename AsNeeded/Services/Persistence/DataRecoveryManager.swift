@@ -258,7 +258,7 @@ public final class DataRecoveryManager {
 		let filename = url.deletingPathExtension().lastPathComponent
 
 		do {
-			guard let storage = try SQLiteStorageEngine(
+			guard let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: directory),
 				databaseFilename: filename
 			) else {
@@ -270,13 +270,13 @@ public final class DataRecoveryManager {
 					storage: storage,
 					cacheIdentifier: \ANMedicationConcept.id.uuidString
 				)
-				return await store.items.count
+				return store.items.count
 			} else {
 				let store = try await Store<ANEventConcept>(
 					storage: storage,
 					cacheIdentifier: \ANEventConcept.id.uuidString
 				)
-				return await store.items.count
+				return store.items.count
 			}
 		} catch {
 			logger.debug("Could not count items in \(url.path): \(error.localizedDescription)")
@@ -293,7 +293,7 @@ public final class DataRecoveryManager {
 		// Try direct paths first
 		let directMedicationsPath = url.appendingPathComponent("\(StorageConstants.medicationsDBName).sqlite3")
 		if fileManager.fileExists(atPath: directMedicationsPath.path) {
-			if let storage = try? SQLiteStorageEngine(
+			if let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: url),
 				databaseFilename: StorageConstants.medicationsDBName
 			) {
@@ -301,13 +301,13 @@ public final class DataRecoveryManager {
 					storage: storage,
 					cacheIdentifier: \ANMedicationConcept.id.uuidString
 				)
-				medications = await store.items
+				medications = store.items
 			}
 		}
 
 		let directEventsPath = url.appendingPathComponent("\(StorageConstants.eventsDBName).sqlite3")
 		if fileManager.fileExists(atPath: directEventsPath.path) {
-			if let storage = try? SQLiteStorageEngine(
+			if let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: url),
 				databaseFilename: StorageConstants.eventsDBName
 			) {
@@ -315,7 +315,7 @@ public final class DataRecoveryManager {
 					storage: storage,
 					cacheIdentifier: \ANEventConcept.id.uuidString
 				)
-				events = await store.items
+				events = store.items
 			}
 		}
 
@@ -323,7 +323,7 @@ public final class DataRecoveryManager {
 		if medications.isEmpty {
 			let bodegaMedicationsDir = url.appendingPathComponent("\(StorageConstants.Legacy.medicationsDB).sqlite")
 			if fileManager.fileExists(atPath: bodegaMedicationsDir.path) {
-				if let storage = try? SQLiteStorageEngine(
+				if let storage = SQLiteStorageEngine(
 					directory: FileManager.Directory(url: bodegaMedicationsDir),
 					databaseFilename: "data"
 				) {
@@ -331,7 +331,7 @@ public final class DataRecoveryManager {
 						storage: storage,
 						cacheIdentifier: \ANMedicationConcept.id.uuidString
 					)
-					medications = await store.items
+					medications = store.items
 				}
 			}
 		}
@@ -339,7 +339,7 @@ public final class DataRecoveryManager {
 		if events.isEmpty {
 			let bodegaEventsDir = url.appendingPathComponent("\(StorageConstants.Legacy.eventsDB).sqlite")
 			if fileManager.fileExists(atPath: bodegaEventsDir.path) {
-				if let storage = try? SQLiteStorageEngine(
+				if let storage = SQLiteStorageEngine(
 					directory: FileManager.Directory(url: bodegaEventsDir),
 					databaseFilename: "data"
 				) {
@@ -347,7 +347,7 @@ public final class DataRecoveryManager {
 						storage: storage,
 						cacheIdentifier: \ANEventConcept.id.uuidString
 					)
-					events = await store.items
+					events = store.items
 				}
 			}
 		}

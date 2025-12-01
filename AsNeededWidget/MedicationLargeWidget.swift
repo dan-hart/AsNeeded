@@ -55,14 +55,14 @@ struct LargeWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (FullMedicationListEntry) -> Void) {
         Task { @MainActor in
-            let entry = await createEntry()
+            let entry = createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<FullMedicationListEntry>) -> Void) {
         Task { @MainActor in
-            let entry = await createEntry()
+            let entry = createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(

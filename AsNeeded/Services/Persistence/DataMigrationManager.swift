@@ -110,7 +110,8 @@ public final class DataMigrationManager {
 
 	/// Performs data-driven migration from legacy storage to App Group container
 	/// Safe to call on every app launch - only migrates if legacy data exists
-	public func migrateIfNeeded() async {
+	/// - Throws: Migration errors that should be handled by the caller
+	public func migrateIfNeeded() async throws {
 		logger.info("=== Starting Migration Check ===")
 
 		// Step 1: Find legacy data at correct iOS path
@@ -124,35 +125,24 @@ public final class DataMigrationManager {
 		logger.info("  Events: \(legacyPaths.events?.path ?? "none")")
 
 		// Step 2: Load legacy data
-		do {
-			let legacyData = try await loadLegacyData(from: legacyPaths)
+		let legacyData = try await loadLegacyData(from: legacyPaths)
 
-			guard !legacyData.medications.isEmpty || !legacyData.events.isEmpty else {
-				logger.info("✅ Legacy databases exist but are empty - migration not needed")
-				return
-			}
-
-			logger.info("Loaded legacy data: \(legacyData.medications.count) medications, \(legacyData.events.count) events")
-
-			// Step 3: Merge into App Group
-			try await mergeIntoAppGroup(legacyData: legacyData)
-
-			// Step 4: Verify merge
-			let verified = try await verifyMerge(
-				expectedMedicationsCount: legacyData.medications.count,
-				expectedEventsCount: legacyData.events.count
-			)
-
-			if verified {
-				logger.info("✅ Migration complete and verified")
-			} else {
-				logger.error("❌ Migration verification failed - keeping legacy data for retry")
-			}
-
-		} catch {
-			logger.error("Migration failed: \(error.localizedDescription)")
-			logger.error("Will retry on next app launch")
+		guard !legacyData.medications.isEmpty || !legacyData.events.isEmpty else {
+			logger.info("✅ Legacy databases exist but are empty - migration not needed")
+			return
 		}
+
+		logger.info("Loaded legacy data: \(legacyData.medications.count) medications, \(legacyData.events.count) events")
+
+		// Step 3: Merge into App Group
+		try await mergeIntoAppGroup(legacyData: legacyData)
+
+		// Step 4: Verify merge (throws on failure)
+		try await verifyMerge(
+			expectedMedicationsCount: legacyData.medications.count,
+			expectedEventsCount: legacyData.events.count
+		)
+		logger.info("✅ Migration complete and verified")
 	}
 
 	// MARK: - Legacy Database Discovery
@@ -295,7 +285,7 @@ public final class DataMigrationManager {
 				storage: storage,
 				cacheIdentifier: \ANMedicationConcept.id.uuidString
 			)
-			medications = await store.items
+			medications = store.items
 			logger.info("Loaded \(medications.count) medications from legacy database")
 		}
 
@@ -306,7 +296,7 @@ public final class DataMigrationManager {
 				storage: storage,
 				cacheIdentifier: \ANEventConcept.id.uuidString
 			)
-			events = await store.items
+			events = store.items
 			logger.info("Loaded \(events.count) events from legacy database")
 		}
 
@@ -323,7 +313,7 @@ public final class DataMigrationManager {
 			throw MigrationError.invalidPath
 		}
 
-		guard let storage = try SQLiteStorageEngine(
+		guard let storage = SQLiteStorageEngine(
 			directory: FileManager.Directory(url: directoryURL),
 			databaseFilename: baseName
 		) else {
@@ -375,7 +365,7 @@ public final class DataMigrationManager {
 		let eventsPath = containerURL.appendingPathComponent(StorageConstants.eventsDBPath).path
 
 		if fileManager.fileExists(atPath: medicationsPath) {
-			guard let storage = try SQLiteStorageEngine(
+			guard let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: containerURL),
 				databaseFilename: "medications"
 			) else {
@@ -385,11 +375,11 @@ public final class DataMigrationManager {
 				storage: storage,
 				cacheIdentifier: \ANMedicationConcept.id.uuidString
 			)
-			medications = await store.items
+			medications = store.items
 		}
 
 		if fileManager.fileExists(atPath: eventsPath) {
-			guard let storage = try SQLiteStorageEngine(
+			guard let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: containerURL),
 				databaseFilename: "events"
 			) else {
@@ -399,7 +389,7 @@ public final class DataMigrationManager {
 				storage: storage,
 				cacheIdentifier: \ANEventConcept.id.uuidString
 			)
-			events = await store.items
+			events = store.items
 		}
 
 		return (medications: medications, events: events)
@@ -434,7 +424,7 @@ public final class DataMigrationManager {
 		containerURL: URL
 	) async throws {
 		// Write medications
-		guard let medicationsStorage = try SQLiteStorageEngine(
+		guard let medicationsStorage = SQLiteStorageEngine(
 			directory: FileManager.Directory(url: containerURL),
 			databaseFilename: "medications"
 		) else {
@@ -446,7 +436,7 @@ public final class DataMigrationManager {
 		)
 
 		// Write events
-		guard let eventsStorage = try SQLiteStorageEngine(
+		guard let eventsStorage = SQLiteStorageEngine(
 			directory: FileManager.Directory(url: containerURL),
 			databaseFilename: "events"
 		) else {
@@ -458,8 +448,8 @@ public final class DataMigrationManager {
 		)
 
 		// Get current items for update logic
-		let currentMedications = await medicationsStore.items
-		let currentEvents = await eventsStore.items
+		let currentMedications = medicationsStore.items
+		let currentEvents = eventsStore.items
 
 		// Insert/update medications
 		for medication in medications {
@@ -483,7 +473,8 @@ public final class DataMigrationManager {
 	// MARK: - Verification
 
 	/// Verifies that merge completed successfully
-	private func verifyMerge(expectedMedicationsCount: Int, expectedEventsCount: Int) async throws -> Bool {
+	/// - Throws: `MigrationError.verificationFailed` if data counts don't match expectations
+	private func verifyMerge(expectedMedicationsCount: Int, expectedEventsCount: Int) async throws {
 		guard let appGroupURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
 		) else {
@@ -499,7 +490,13 @@ public final class DataMigrationManager {
 		logger.info("  Medications: expected >= \(expectedMedicationsCount), actual = \(currentData.medications.count) [\(medicationsOK ? "✅" : "❌")]")
 		logger.info("  Events: expected >= \(expectedEventsCount), actual = \(currentData.events.count) [\(eventsOK ? "✅" : "❌")]")
 
-		return medicationsOK && eventsOK
+		guard medicationsOK && eventsOK else {
+			throw MigrationError.verificationFailed(
+				expected: expectedMedicationsCount + expectedEventsCount,
+				actual: currentData.medications.count + currentData.events.count,
+				type: "migration"
+			)
+		}
 	}
 }
 

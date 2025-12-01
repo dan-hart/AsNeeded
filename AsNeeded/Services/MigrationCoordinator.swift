@@ -102,9 +102,9 @@ public final class MigrationCoordinator {
 			}
 		}
 
+		// Run the migration
 		do {
-			// Run the migration
-			await DataMigrationManager().migrateIfNeeded()
+			try await DataMigrationManager().migrateIfNeeded()
 
 			// Update schema version after successful migration
 			if currentVersion < targetVersion {
@@ -116,14 +116,9 @@ public final class MigrationCoordinator {
 			logger.info("Migration completed successfully in \(String(format: "%.1f", duration))s")
 			isComplete = true
 			isRunning = false
-
 		} catch {
 			logger.error("Migration failed: \(error.localizedDescription)")
-			logger.error("Migration will be retried on next app launch")
 			self.error = error
-			// CRITICAL: Do NOT mark as complete on error
-			// This ensures migration will retry on next launch
-			// The error will be shown to the user via MigrationErrorView
 			isComplete = false
 			isRunning = false
 		}

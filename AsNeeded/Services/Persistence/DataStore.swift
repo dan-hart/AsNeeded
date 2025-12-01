@@ -60,7 +60,7 @@ public final class DataStore {
 
         // Initialize stores with shared container path using FileManager.Directory
         logger.info("Creating SQLiteStorageEngine for medications database...")
-        guard let medicationsStorage = try? SQLiteStorageEngine(
+        guard let medicationsStorage = SQLiteStorageEngine(
             directory: FileManager.Directory(url: sharedContainerURL),
             databaseFilename: StorageConstants.medicationsDBName
         ) else {
@@ -70,7 +70,7 @@ public final class DataStore {
         logger.info("✅ Medications storage engine created successfully")
 
         logger.info("Creating SQLiteStorageEngine for events database...")
-        guard let eventsStorage = try? SQLiteStorageEngine(
+        guard let eventsStorage = SQLiteStorageEngine(
             directory: FileManager.Directory(url: sharedContainerURL),
             databaseFilename: StorageConstants.eventsDBName
         ) else {

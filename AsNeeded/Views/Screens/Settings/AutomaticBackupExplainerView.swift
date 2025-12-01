@@ -121,7 +121,7 @@ struct AutomaticBackupExplainerView: View {
                 }
 
                 HStack(alignment: .top, spacing: 12) {
-                    Image(systemSymbol: .docText)
+                    Image(systemSymbol: .textDocument)
                         .foregroundStyle(.accent)
                         .font(.customFont(fontFamily, style: .title3))
                         .frame(width: 30, alignment: .leading)

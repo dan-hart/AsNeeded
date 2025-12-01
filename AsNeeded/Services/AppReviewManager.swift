@@ -2,10 +2,6 @@ import Foundation
 import StoreKit
 import SwiftUI
 
-// Import AppStore for iOS 18+ compatibility
-#if canImport(AppStore)
-    import AppStore
-#endif
 
 @MainActor
 final class AppReviewManager: ObservableObject {
@@ -181,11 +177,7 @@ final class AppReviewManager: ObservableObject {
         if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
             if #available(iOS 18.0, *) {
                 // Use new AppStore API for iOS 18+
-                #if canImport(AppStore)
-                    AppStore.requestReview(in: windowScene)
-                #else
-                    SKStoreReviewController.requestReview(in: windowScene)
-                #endif
+                AppStore.requestReview(in: windowScene)
             } else {
                 // Use legacy API for iOS 17 and below
                 SKStoreReviewController.requestReview(in: windowScene)
