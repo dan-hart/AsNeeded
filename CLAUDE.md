@@ -110,6 +110,16 @@ In October 2025, a storage path change (commit `61e6ad5`) caused complete data l
 
 **Lesson**: NEVER change storage paths without implementing data migration.
 
+### The December 2025 Repeated Migration Bug
+In December 2025, users reported medication quantities reverting to old values on every app restart. Root cause: The "data-driven" migration checked for legacy data on every launch, but **never archived/deleted legacy files after migration**. This caused migration to run repeatedly, overwriting user changes with stale legacy data.
+
+**Lessons**:
+1. Data-driven migration MUST archive/rename legacy files after success
+2. Test migrations across MULTIPLE app restarts, not just single launch
+3. Prefer rename over delete for safety (archived files can be recovered)
+4. Track archived paths in UserDefaults for debugging/recovery
+5. Red-team your bug hypotheses - initial assumption (Watch Connectivity) was wrong
+
 ### Mandatory Rules for Storage Changes
 
 1. **NEVER change storage paths without migration**
@@ -120,14 +130,16 @@ In October 2025, a storage path change (commit `61e6ad5`) caused complete data l
 
 2. **Migration Implementation Checklist**
    - [ ] Create migration manager class
-   - [ ] Add migration flag to `UserDefaultsKeys.swift`
    - [ ] Implement data loading from both old and new locations
    - [ ] Implement merge logic (deduplicate by ID)
    - [ ] Add comprehensive logging
-   - [ ] Call migration from `DataStore.init()` with semaphore
+   - [ ] **⚠️ Archive/rename legacy files after successful migration**
+   - [ ] **⚠️ Track archived paths in UserDefaults for recovery**
+   - [ ] Call migration from `MigrationCoordinator` before DataStore init
    - [ ] Create unit tests
    - [ ] Test on simulator AND physical device
    - [ ] Test all scenarios: fresh install, old data only, new data only, both
+   - [ ] **⚠️ Test across MULTIPLE app restarts** (not just single launch)
    - [ ] Verify idempotency (run migration multiple times)
    - [ ] Update `docs/DATA_STORAGE_GUIDELINES.md`
 
@@ -149,8 +161,9 @@ See `docs/DATA_STORAGE_GUIDELINES.md` for complete template and examples.
 
 ### Current Migration Status
 - **DataMigrationManager**: Handles legacy → App Group migration
-- **Status**: Active, runs on every app launch (cached after first run)
-- **Flag**: `UserDefaultsKeys.dataMigrationCompleted`
+- **Status**: Active, archives legacy files after successful migration
+- **Archived paths tracked in**: `UserDefaultsKeys.archivedLegacyMedicationsPath`, `UserDefaultsKeys.archivedLegacyEventsPath`
+- **Recovery helper**: `DataMigrationManager().findArchivedLegacyDatabases()`
 
 ### Dangerous Files Registry (MANDATORY REVIEW)
 

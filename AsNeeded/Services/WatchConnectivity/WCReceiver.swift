@@ -153,16 +153,9 @@ final class WCReceiver: NSObject, ObservableObject {
         if let quantityConsumed = logDoseData.quantityConsumed,
            let currentQuantity = medication.quantity
         {
-            let updatedMedication = ANMedicationConcept(
-                id: medication.id,
-                clinicalName: medication.clinicalName,
-                nickname: medication.nickname,
-                quantity: max(0, currentQuantity - quantityConsumed),
-                lastRefillDate: medication.lastRefillDate,
-                nextRefillDate: medication.nextRefillDate,
-                prescribedUnit: medication.prescribedUnit,
-                prescribedDoseAmount: medication.prescribedDoseAmount
-            )
+            // Use mutation to preserve all medication properties (color, symbol, etc.)
+            var updatedMedication = medication
+            updatedMedication.quantity = max(0, currentQuantity - quantityConsumed)
             try await DataStore.shared.updateMedication(updatedMedication)
         }
 
@@ -187,18 +180,9 @@ final class WCReceiver: NSObject, ObservableObject {
             return
         }
 
-        // Update medication quantity
-        let updatedMedication = ANMedicationConcept(
-            id: medication.id,
-            clinicalName: medication.clinicalName,
-            nickname: medication.nickname,
-            quantity: quantityUpdateData.quantity,
-            lastRefillDate: medication.lastRefillDate,
-            nextRefillDate: medication.nextRefillDate,
-            prescribedUnit: medication.prescribedUnit,
-            prescribedDoseAmount: medication.prescribedDoseAmount
-        )
-
+        // Update medication quantity using mutation to preserve all properties (color, symbol, etc.)
+        var updatedMedication = medication
+        updatedMedication.quantity = quantityUpdateData.quantity
         try await DataStore.shared.updateMedication(updatedMedication)
 
         // Send confirmation back to watch

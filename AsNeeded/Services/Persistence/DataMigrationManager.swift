@@ -142,6 +142,11 @@ public final class DataMigrationManager {
 			expectedMedicationsCount: legacyData.medications.count,
 			expectedEventsCount: legacyData.events.count
 		)
+
+		// Step 5: Archive legacy databases to prevent repeated migration
+		// Only runs after verification succeeds - renames (not deletes) for safety
+		archiveLegacyDatabases(legacyPaths)
+
 		logger.info("✅ Migration complete and verified")
 	}
 
@@ -498,6 +503,83 @@ public final class DataMigrationManager {
 			)
 		}
 	}
+
+	// MARK: - Legacy Database Archival
+
+	/// Archives legacy database folders after successful migration to prevent repeated overwrites
+	/// Renamed folders use `.migrated-YYYYMMDD` suffix so findLegacyDatabases() won't find them
+	/// Paths are stored in UserDefaults for potential future recovery
+	private func archiveLegacyDatabases(_ paths: (medications: URL?, events: URL?)) {
+		let fileManager = FileManager.default
+		let dateSuffix = DateFormatter.migrationDateFormatter.string(from: Date())
+
+		// Archive medications legacy folder
+		if let medicationsURL = paths.medications {
+			let folder = medicationsURL.deletingLastPathComponent()
+			let archivedFolder = folder.deletingLastPathComponent()
+				.appendingPathComponent("medications.sqlite.migrated-\(dateSuffix)")
+			do {
+				try fileManager.moveItem(at: folder, to: archivedFolder)
+				// Store the archived path for potential recovery
+				UserDefaults.standard.set(archivedFolder.path, forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
+				logger.info("✅ Archived legacy medications: \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+			} catch {
+				logger.warning("Could not archive legacy medications: \(error.localizedDescription)")
+			}
+		}
+
+		// Archive events legacy folder
+		if let eventsURL = paths.events {
+			let folder = eventsURL.deletingLastPathComponent()
+			let archivedFolder = folder.deletingLastPathComponent()
+				.appendingPathComponent("events.sqlite.migrated-\(dateSuffix)")
+			do {
+				try fileManager.moveItem(at: folder, to: archivedFolder)
+				// Store the archived path for potential recovery
+				UserDefaults.standard.set(archivedFolder.path, forKey: UserDefaultsKeys.archivedLegacyEventsPath)
+				logger.info("✅ Archived legacy events: \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+			} catch {
+				logger.warning("Could not archive legacy events: \(error.localizedDescription)")
+			}
+		}
+	}
+
+	/// Returns paths to archived legacy databases if they exist
+	/// Use this for debugging or potential data recovery
+	public func findArchivedLegacyDatabases() -> (medications: URL?, events: URL?) {
+		let fileManager = FileManager.default
+
+		var medicationsURL: URL?
+		var eventsURL: URL?
+
+		// Check stored paths
+		if let storedMedicationsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath),
+		   fileManager.fileExists(atPath: storedMedicationsPath)
+		{
+			medicationsURL = URL(fileURLWithPath: storedMedicationsPath)
+			logger.info("Found archived legacy medications at: \(storedMedicationsPath)")
+		}
+
+		if let storedEventsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath),
+		   fileManager.fileExists(atPath: storedEventsPath)
+		{
+			eventsURL = URL(fileURLWithPath: storedEventsPath)
+			logger.info("Found archived legacy events at: \(storedEventsPath)")
+		}
+
+		return (medications: medicationsURL, events: eventsURL)
+	}
+}
+
+// MARK: - DateFormatter Extension
+
+private extension DateFormatter {
+	/// Formatter for migration archive date suffix (YYYYMMDD)
+	static let migrationDateFormatter: DateFormatter = {
+		let formatter = DateFormatter()
+		formatter.dateFormat = "yyyyMMdd"
+		return formatter
+	}()
 }
 
 // MARK: - Errors

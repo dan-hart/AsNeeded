@@ -43,6 +43,97 @@ A `DataMigrationManager` was implemented to:
 
 ---
 
+## The December 2025 Repeated Migration Bug
+
+### What Happened
+
+Users reported that medication quantity kept resetting to an old value (e.g., 192) on every app restart. This affected longtime users who had data from before the October 2025 migration.
+
+### Root Cause Analysis
+
+The `DataMigrationManager` was designed to be "data-driven" (no flags), checking for legacy data on every launch. However, **legacy database files were never deleted or archived after migration**, causing a critical bug:
+
+1. **Legacy files persist forever**: `Documents/medications.sqlite/` was never removed after migration
+2. **Migration runs on every launch**: Because legacy files still exist, `findLegacyDatabases()` always finds them
+3. **Merge logic overwrites current data**: The `mergeByID()` function explicitly states "Legacy items overwrite current items with same ID"
+4. **User data is lost on each restart**: Any changes made by the user get overwritten with stale legacy values
+
+### The Bug Flow
+
+```
+App Launch #1 (after fix was deployed):
+  ├─ User has legacy data in Documents/medications.sqlite/ (quantity=192)
+  ├─ Migration runs, merges legacy → App Group
+  ├─ User updates quantity to 30
+  └─ App works correctly
+
+App Launch #2:
+  ├─ findLegacyDatabases() finds Documents/medications.sqlite/ (still exists!)
+  ├─ Migration runs AGAIN
+  ├─ mergeByID() overwrites current quantity (30) with legacy quantity (192)
+  └─ User sees quantity reverted to 192 ❌
+```
+
+### Why "Data-Driven" Migration Failed
+
+The original design claimed "No flags needed - purely based on presence of data". This was flawed because:
+
+| Assumption | Reality |
+|------------|---------|
+| "If legacy data exists, migrate it" | Legacy data exists forever since it's never cleaned up |
+| "Data-driven is simpler" | Simpler only if you clean up after migration |
+| "Idempotent - running multiple times produces same result" | Running repeatedly **overwrites** user changes |
+
+### Resolution (December 2025)
+
+The fix archives (not deletes) legacy databases after successful migration:
+
+1. **After `verifyMerge()` succeeds**: Call `archiveLegacyDatabases()`
+2. **Rename legacy folders**: `medications.sqlite` → `medications.sqlite.migrated-YYYYMMDD`
+3. **Track archived paths**: Store in UserDefaults for potential recovery
+4. **Subsequent launches**: `findLegacyDatabases()` returns nil (renamed folders don't match)
+
+### Why Rename Instead of Delete?
+
+Given the October 2025 data loss incident, we chose the safest approach:
+
+| Approach | Risk | Chosen |
+|----------|------|--------|
+| Delete legacy files | Irreversible if something goes wrong | ❌ |
+| Rename legacy files | Recoverable, debugging possible | ✅ |
+| Use UserDefaults flag | Flag can get stuck, doesn't fix root cause | ❌ |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `UserDefaultsKeys.swift` | Added `archivedLegacyMedicationsPath`, `archivedLegacyEventsPath` |
+| `DataMigrationManager.swift` | Added `archiveLegacyDatabases()`, `findArchivedLegacyDatabases()` |
+
+### Recovery Helper
+
+If you need to access archived legacy data:
+
+```swift
+let archived = DataMigrationManager().findArchivedLegacyDatabases()
+// archived.medications → URL to Documents/medications.sqlite.migrated-20251203/
+// archived.events → URL to Documents/events.sqlite.migrated-20251203/
+```
+
+Archived paths are also stored in UserDefaults:
+- `UserDefaultsKeys.archivedLegacyMedicationsPath`
+- `UserDefaultsKeys.archivedLegacyEventsPath`
+
+### Lessons Learned
+
+1. **"Data-driven" migration must include cleanup** - Presence of data is not sufficient; you must also clean up after migration
+2. **Test migration across multiple app restarts** - Single-launch testing missed this bug
+3. **Prefer rename over delete** - Data safety trumps disk space
+4. **Track what you change** - Store archived paths for recovery/debugging
+5. **Red-team your hypotheses** - Initial hypothesis (Watch Connectivity) was wrong; thorough analysis found the real cause
+
+---
+
 ## Mandatory Storage Change Procedures
 
 ### RULE #1: Never Change Storage Paths Without Migration
@@ -206,14 +297,16 @@ public final class DataMigrationManager {
 }
 ```
 
-### Data-Driven Migration Benefits
+### Data-Driven Migration: Critical Requirements
 
-The current migration approach is **data-driven** (no UserDefaults flags):
+The migration approach is **data-driven** (no UserDefaults flags), but this requires **cleanup after migration**:
 
 1. **Self-healing**: If migration fails, it automatically retries on next launch
 2. **Idempotent**: Running multiple times produces the same result (no duplicates)
 3. **Simple**: No flag state to manage or get stuck in wrong state
 4. **Automatic**: Migration runs when legacy data exists, skips when it doesn't
+
+**⚠️ CRITICAL**: Data-driven migration MUST archive/rename legacy files after success. Otherwise, migration runs on every launch and overwrites user changes. See "The December 2025 Repeated Migration Bug" section.
 
 ### Checklist for Implementing Migration
 
@@ -223,8 +316,11 @@ The current migration approach is **data-driven** (no UserDefaults flags):
 - [ ] Implement `mergeByID()` logic (legacy takes precedence)
 - [ ] Implement `writeMergedData()` method
 - [ ] Add verification step
+- [ ] **⚠️ Implement `archiveLegacyDatabases()` to rename legacy files after success**
+- [ ] **⚠️ Track archived paths in UserDefaults for potential recovery**
 - [ ] Call migration from `MigrationCoordinator` before DataStore init
 - [ ] Create unit tests (test data-driven behavior, not flag state)
+- [ ] **Test across MULTIPLE app restarts** (not just single launch)
 - [ ] Test with real data in simulator
 - [ ] Test on physical device
 - [ ] Document in this file
@@ -450,9 +546,10 @@ Boutique's `SQLiteStorageEngine` automatically:
 | 1.0 | Pre-Oct 2025 | Default container storage | N/A |
 | 2.0 | Oct 13, 2025 | App Group migration | Yes - `DataMigrationManager` |
 | 2.1 | Oct 28, 2025 | Data merge fix | No - same manager |
+| 2.2 | Dec 3, 2025 | Archive legacy DBs after migration (fixes repeated overwrite bug) | No - same manager, adds cleanup |
 
 ---
 
-**Last Updated**: October 28, 2025
+**Last Updated**: December 3, 2025
 **Maintained By**: Development Team
 **Review Frequency**: After any storage-related changes

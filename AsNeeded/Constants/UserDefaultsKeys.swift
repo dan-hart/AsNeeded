@@ -149,6 +149,16 @@ public enum UserDefaultsKeys {
     /// See StorageConstants.swift for the current version number
     static let storageSchemaVersion = "storage.schemaVersion"
 
+    // MARK: - Legacy Data Migration
+
+    /// Path to archived legacy medications database after migration (for potential recovery)
+    /// Set by DataMigrationManager after successful migration
+    static let archivedLegacyMedicationsPath = "migration.archivedLegacyMedicationsPath"
+
+    /// Path to archived legacy events database after migration (for potential recovery)
+    /// Set by DataMigrationManager after successful migration
+    static let archivedLegacyEventsPath = "migration.archivedLegacyEventsPath"
+
     // MARK: - All Keys
 
     /// Array of all UserDefaults keys for iteration/testing
@@ -193,6 +203,8 @@ public enum UserDefaultsKeys {
         automaticBackupIncludeSettings,
         importSettingsDefaultBehavior,
         storageSchemaVersion,
+        archivedLegacyMedicationsPath,
+        archivedLegacyEventsPath,
     ]
 
     // MARK: - Default Values
@@ -326,5 +338,9 @@ public enum UserDefaultsKeys {
 
         // Storage schema version (device-specific, must not be overwritten)
         storageSchemaVersion,
+
+        // Legacy migration paths (device-specific, must not be overwritten)
+        archivedLegacyMedicationsPath,
+        archivedLegacyEventsPath,
     ]
 }
