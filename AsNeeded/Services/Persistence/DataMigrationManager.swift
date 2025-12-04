@@ -145,7 +145,9 @@ public final class DataMigrationManager {
 
 		// Step 5: Archive legacy databases to prevent repeated migration
 		// Only runs after verification succeeds - renames (not deletes) for safety
-		archiveLegacyDatabases(legacyPaths)
+		// CRITICAL: This must succeed for migration to be complete
+		// If archival fails, migration throws and will retry on next app launch
+		try archiveLegacyDatabases(legacyPaths)
 
 		logger.info("✅ Migration complete and verified")
 	}
@@ -278,34 +280,49 @@ public final class DataMigrationManager {
 
 	// MARK: - Data Loading
 
-	/// Loads data from legacy database files
+	/// Loads data from legacy database files in isolated scope to ensure connections are closed
+	/// This prevents database file locks when archiving legacy folders
 	private func loadLegacyData(from paths: (medications: URL?, events: URL?)) async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {
 		var medications: [ANMedicationConcept] = []
 		var events: [ANEventConcept] = []
 
-		// Load medications
+		// Load medications in isolated scope to ensure connection cleanup
 		if let medicationsURL = paths.medications {
-			let storage = try createStorageEngine(forDatabaseAt: medicationsURL)
-			let store = try await Store<ANMedicationConcept>(
-				storage: storage,
-				cacheIdentifier: \ANMedicationConcept.id.uuidString
-			)
-			medications = store.items
+			logger.info("Loading legacy medications from: \(medicationsURL.path)")
+			medications = try await loadLegacyItems(from: medicationsURL, type: ANMedicationConcept.self)
 			logger.info("Loaded \(medications.count) medications from legacy database")
 		}
 
-		// Load events
+		// Load events in isolated scope to ensure connection cleanup
 		if let eventsURL = paths.events {
-			let storage = try createStorageEngine(forDatabaseAt: eventsURL)
-			let store = try await Store<ANEventConcept>(
-				storage: storage,
-				cacheIdentifier: \ANEventConcept.id.uuidString
-			)
-			events = store.items
+			logger.info("Loading legacy events from: \(eventsURL.path)")
+			events = try await loadLegacyItems(from: eventsURL, type: ANEventConcept.self)
 			logger.info("Loaded \(events.count) events from legacy database")
 		}
 
+		// Brief delay to ensure file handles are fully released after store deallocation
+		// This is critical for archival to succeed
+		try? await Task.sleep(for: .milliseconds(100))
+		logger.info("Legacy data loading complete, file handles released")
+
 		return (medications: medications, events: events)
+	}
+
+	/// Loads items from a legacy database in an isolated scope
+	/// The Store and SQLiteStorageEngine are deallocated when this method returns,
+	/// ensuring database connections are closed before archival
+	private func loadLegacyItems<T: Codable & Identifiable & Sendable>(
+		from databaseURL: URL,
+		type: T.Type
+	) async throws -> [T] where T.ID == UUID {
+		let storage = try createStorageEngine(forDatabaseAt: databaseURL)
+		let store = try await Store<T>(
+			storage: storage,
+			cacheIdentifier: \T.id.uuidString
+		)
+		// Copy items to local array - store will be deallocated after return
+		let items = Array(store.items)
+		return items
 	}
 
 	/// Creates a storage engine for a database at the given URL
@@ -507,41 +524,87 @@ public final class DataMigrationManager {
 	// MARK: - Legacy Database Archival
 
 	/// Archives legacy database folders after successful migration to prevent repeated overwrites
-	/// Renamed folders use `.migrated-YYYYMMDD` suffix so findLegacyDatabases() won't find them
+	/// Renamed folders use `.migrated-YYYYMMDD-HHmmss` suffix so findLegacyDatabases() won't find them
 	/// Paths are stored in UserDefaults for potential future recovery
-	private func archiveLegacyDatabases(_ paths: (medications: URL?, events: URL?)) {
+	/// - Throws: `MigrationError.archivalFailed` if archival fails - migration will retry on next launch
+	private func archiveLegacyDatabases(_ paths: (medications: URL?, events: URL?)) throws {
 		let fileManager = FileManager.default
 		let dateSuffix = DateFormatter.migrationDateFormatter.string(from: Date())
 
+		logger.info("=== Beginning Legacy Database Archival ===")
+		var archivalErrors: [String] = []
+
 		// Archive medications legacy folder
 		if let medicationsURL = paths.medications {
-			let folder = medicationsURL.deletingLastPathComponent()
-			let archivedFolder = folder.deletingLastPathComponent()
-				.appendingPathComponent("medications.sqlite.migrated-\(dateSuffix)")
 			do {
-				try fileManager.moveItem(at: folder, to: archivedFolder)
-				// Store the archived path for potential recovery
-				UserDefaults.standard.set(archivedFolder.path, forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
-				logger.info("✅ Archived legacy medications: \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+				try archiveSingleDatabase(
+					databaseURL: medicationsURL,
+					dateSuffix: dateSuffix,
+					userDefaultsKey: UserDefaultsKeys.archivedLegacyMedicationsPath,
+					name: "medications"
+				)
 			} catch {
-				logger.warning("Could not archive legacy medications: \(error.localizedDescription)")
+				archivalErrors.append("Medications: \(error.localizedDescription)")
 			}
 		}
 
 		// Archive events legacy folder
 		if let eventsURL = paths.events {
-			let folder = eventsURL.deletingLastPathComponent()
-			let archivedFolder = folder.deletingLastPathComponent()
-				.appendingPathComponent("events.sqlite.migrated-\(dateSuffix)")
 			do {
-				try fileManager.moveItem(at: folder, to: archivedFolder)
-				// Store the archived path for potential recovery
-				UserDefaults.standard.set(archivedFolder.path, forKey: UserDefaultsKeys.archivedLegacyEventsPath)
-				logger.info("✅ Archived legacy events: \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+				try archiveSingleDatabase(
+					databaseURL: eventsURL,
+					dateSuffix: dateSuffix,
+					userDefaultsKey: UserDefaultsKeys.archivedLegacyEventsPath,
+					name: "events"
+				)
 			} catch {
-				logger.warning("Could not archive legacy events: \(error.localizedDescription)")
+				archivalErrors.append("Events: \(error.localizedDescription)")
 			}
 		}
+
+		// If any archival failed, throw error to prevent migration from "completing"
+		// This ensures migration will retry on next app launch
+		if !archivalErrors.isEmpty {
+			logger.error("❌ Legacy database archival failed: \(archivalErrors.joined(separator: "; "))")
+			throw MigrationError.archivalFailed(reason: archivalErrors.joined(separator: "; "))
+		}
+
+		logger.info("=== Legacy Database Archival Complete ===")
+	}
+
+	/// Archives a single legacy database folder
+	/// Handles collision by adding UUID suffix if destination already exists
+	private func archiveSingleDatabase(
+		databaseURL: URL,
+		dateSuffix: String,
+		userDefaultsKey: String,
+		name: String
+	) throws {
+		let fileManager = FileManager.default
+		let folder = databaseURL.deletingLastPathComponent()
+		let parentFolder = folder.deletingLastPathComponent()
+
+		// Log pre-archival state
+		logger.info("Archiving \(name):")
+		logger.info("  Source: \(folder.path)")
+		logger.info("  Exists: \(fileManager.fileExists(atPath: folder.path))")
+
+		// Calculate destination path
+		var archivedFolder = parentFolder.appendingPathComponent("\(name).sqlite.migrated-\(dateSuffix)")
+
+		// Handle collision by adding UUID suffix
+		if fileManager.fileExists(atPath: archivedFolder.path) {
+			let uniqueSuffix = UUID().uuidString.prefix(8)
+			archivedFolder = parentFolder.appendingPathComponent("\(name).sqlite.migrated-\(dateSuffix)-\(uniqueSuffix)")
+			logger.warning("Archive destination exists, using unique suffix: \(archivedFolder.lastPathComponent)")
+		}
+
+		// Perform the move
+		try fileManager.moveItem(at: folder, to: archivedFolder)
+
+		// Store the archived path for potential recovery
+		UserDefaults.standard.set(archivedFolder.path, forKey: userDefaultsKey)
+		logger.info("✅ Archived legacy \(name): \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
 	}
 
 	/// Returns paths to archived legacy databases if they exist
@@ -574,10 +637,11 @@ public final class DataMigrationManager {
 // MARK: - DateFormatter Extension
 
 private extension DateFormatter {
-	/// Formatter for migration archive date suffix (YYYYMMDD)
+	/// Formatter for migration archive date suffix (YYYYMMDD-HHmmss)
+	/// Includes time to prevent collisions when app restarts multiple times on same day
 	static let migrationDateFormatter: DateFormatter = {
 		let formatter = DateFormatter()
-		formatter.dateFormat = "yyyyMMdd"
+		formatter.dateFormat = "yyyyMMdd-HHmmss"
 		return formatter
 	}()
 }
@@ -588,6 +652,7 @@ enum MigrationError: LocalizedError {
 	case invalidPath
 	case appGroupUnavailable
 	case verificationFailed(expected: Int, actual: Int, type: String)
+	case archivalFailed(reason: String)
 
 	var errorDescription: String? {
 		switch self {
@@ -597,6 +662,8 @@ enum MigrationError: LocalizedError {
 			return "App Group container is unavailable. Please check app signing."
 		case let .verificationFailed(expected, actual, type):
 			return "Migration verification failed for \(type): expected \(expected) but found \(actual)"
+		case let .archivalFailed(reason):
+			return "Failed to archive legacy databases: \(reason). Migration will retry on next launch."
 		}
 	}
 }

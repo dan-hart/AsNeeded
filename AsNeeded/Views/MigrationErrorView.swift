@@ -86,6 +86,8 @@ struct MigrationErrorView: View {
 				return "Unable to locate your medication data. Please try again or contact support if the problem persists."
 			case let .verificationFailed(expected, actual, type):
 				return "Data verification failed after migration. Expected \(expected) \(type) but found \(actual). Please retry or contact support immediately."
+			case .archivalFailed:
+				return "Your data was migrated successfully, but we couldn't complete the cleanup. The app will retry automatically on next launch. Your data is safe."
 			}
 		}
 		return "An unexpected error occurred while loading your data. Please try again or contact support if the problem persists."
