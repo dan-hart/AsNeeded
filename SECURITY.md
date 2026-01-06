@@ -37,11 +37,12 @@ AsNeeded is designed with privacy and security as core principles:
 
 ## Defense-in-Depth Security
 
-This repository implements 3-layer secret detection:
+This repository implements layered secret detection and safety checks:
 
-1. **Pre-commit hook**: Scans staged files for 17+ provider-specific patterns
-2. **Pre-push hook**: Catches secrets committed with `--no-verify`
-3. **GitHub Actions**: Server-side enforcement with TruffleHog and Gitleaks
+1. **ASP preflight**: Blocks sensitive files, runs git-secrets (if installed), and flags risky change types
+2. **Pre-commit hook**: Scans staged files for 17+ provider-specific patterns
+3. **Pre-push hook**: Catches secrets committed with `--no-verify`
+4. **GitHub Actions**: Server-side enforcement with TruffleHog and Gitleaks
 
 ### Known Limitations
 
@@ -103,6 +104,8 @@ When contributing to this project:
 
 ```bash
 # One-time setup for contributors
+# (Optional but recommended) Install git-secrets for stronger local scanning
+brew install git-secrets
 ./scripts/install-hooks.sh
 
 # Verify hooks are working
@@ -110,6 +113,18 @@ echo "ghp_test123456789012345678901234567890" > test.txt
 git add test.txt
 git commit -m "test"  # Should be blocked
 rm test.txt
+```
+
+### ASP Preflight (AI Safety Policy)
+
+The pre-commit hook runs an ASP preflight check that:
+- Blocks accidental commits of `.env`, keys, and other sensitive files
+- Warns on risky filename keywords (token, secret, password, etc.)
+- Requires explicit acknowledgement for storage or system-level changes
+
+Run manually if needed:
+```bash
+./scripts/utilities/asp-preflight.sh --staged --strict
 ```
 
 ### Scanning for Secrets
@@ -125,4 +140,4 @@ git secrets --scan-history
 
 ---
 
-Last updated: 2025-11-29
+Last updated: 2026-01-05

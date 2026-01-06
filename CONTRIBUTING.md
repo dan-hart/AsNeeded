@@ -51,6 +51,12 @@ cd AsNeeded
 # Add upstream remote
 git remote add upstream git@github.com:dan-hart/AsNeeded.git
 
+# Install security hooks (required)
+./scripts/install-hooks.sh
+
+# Optional but recommended: install git-secrets for extra local scanning
+brew install git-secrets
+
 # Create a feature branch
 git checkout -b feature/your-feature-name
 

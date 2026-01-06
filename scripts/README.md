@@ -6,6 +6,7 @@ Ultra-optimized build, test, and security scripts for high-performance developme
 
 ```bash
 # FIRST: Install security hooks (one-time setup)
+brew install git-secrets
 ./scripts/install-hooks.sh
 
 # Fast development build (incremental, max speed)
@@ -36,6 +37,8 @@ Ultra-optimized build, test, and security scripts for high-performance developme
 **What it does:**
 - Configures `git config core.hooksPath .githooks`
 - Makes hooks executable
+- Ensures ASP preflight is executable
+- Configures git-secrets patterns if installed
 - Runs initial security scan
 - Verifies hook installation
 
@@ -46,6 +49,20 @@ Ultra-optimized build, test, and security scripts for high-performance developme
 ```
 
 **Important:** Run this before making any commits to the repository.
+
+For full local protection, install git-secrets first:
+```bash
+brew install git-secrets
+```
+
+### `utilities/asp-preflight.sh` - AI Safety Policy Guardrail
+
+**Purpose:** Block risky file types and require acknowledgements for high-risk changes.
+
+**Usage:**
+```bash
+./scripts/utilities/asp-preflight.sh --staged --strict
+```
 
 ### `scan-repo.sh` - Repository Security Scanner
 

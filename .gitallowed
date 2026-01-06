@@ -1,0 +1,12 @@
+^\.gitallowed:[0-9]+:.*$
+^\.githooks/pre-commit:[0-9]+:# API KEY PATTERNS - Specific formats for known services$
+^\.githooks/pre-commit:[0-9]+:.*-----BEGIN\[A-Z \]\*PRIVATE KEY-----.*$
+^\.githooks/pre-commit:[0-9]+:.*Private keys \(-----BEGIN\.\.\.PRIVATE KEY-----\).*
+^\.githooks/pre-push:[0-9]+:.*-----BEGIN\[A-Z \]\*PRIVATE KEY-----.*$
+^\.github/workflows/security-scan\.yml:[0-9]+:.*'BEGIN\.\* PRIVATE KEY'.*$
+^\.github/workflows/security-scan\.yml:[0-9]+:.*BEGIN.*PRIVATE KEY.*$
+^\.gitignore:[0-9]+:PRIVATE/$
+^\.gitleaks\.toml:[0-9]+:.*YOUR.*API.*KEY.*$
+^scripts/install-hooks\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
+^scripts/scan-repo\.sh:[0-9]+:.*-----BEGIN\[A-Z \]\*PRIVATE KEY-----.*$
+^scripts/utilities/asp-preflight\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
