@@ -126,6 +126,8 @@ public final class DataMigrationManager {
 
 		// Step 2: Load legacy data
 		let legacyData = try await loadLegacyData(from: legacyPaths)
+		let legacyMedicationIDs = Set(legacyData.medications.map { $0.id })
+		let legacyEventIDs = Set(legacyData.events.map { $0.id })
 
 		guard !legacyData.medications.isEmpty || !legacyData.events.isEmpty else {
 			logger.info("✅ Legacy databases exist but are empty - migration not needed")
@@ -139,8 +141,8 @@ public final class DataMigrationManager {
 
 		// Step 4: Verify merge (throws on failure)
 		try await verifyMerge(
-			expectedMedicationsCount: legacyData.medications.count,
-			expectedEventsCount: legacyData.events.count
+			legacyMedicationIDs: legacyMedicationIDs,
+			legacyEventIDs: legacyEventIDs
 		)
 
 		// Step 5: Archive legacy databases to prevent repeated migration
@@ -496,7 +498,7 @@ public final class DataMigrationManager {
 
 	/// Verifies that merge completed successfully
 	/// - Throws: `MigrationError.verificationFailed` if data counts don't match expectations
-	private func verifyMerge(expectedMedicationsCount: Int, expectedEventsCount: Int) async throws {
+	private func verifyMerge(legacyMedicationIDs: Set<UUID>, legacyEventIDs: Set<UUID>) async throws {
 		guard let appGroupURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
 		) else {
@@ -505,18 +507,30 @@ public final class DataMigrationManager {
 
 		let currentData = try await loadCurrentAppGroupData(containerURL: appGroupURL)
 
-		let medicationsOK = currentData.medications.count >= expectedMedicationsCount
-		let eventsOK = currentData.events.count >= expectedEventsCount
+		let currentMedicationIDs = Set(currentData.medications.map { $0.id })
+		let currentEventIDs = Set(currentData.events.map { $0.id })
+
+		let missingMedications = legacyMedicationIDs.subtracting(currentMedicationIDs)
+		let missingEvents = legacyEventIDs.subtracting(currentEventIDs)
+
+		let medicationsOK = missingMedications.isEmpty
+		let eventsOK = missingEvents.isEmpty
 
 		logger.info("Verification:")
-		logger.info("  Medications: expected >= \(expectedMedicationsCount), actual = \(currentData.medications.count) [\(medicationsOK ? "✅" : "❌")]")
-		logger.info("  Events: expected >= \(expectedEventsCount), actual = \(currentData.events.count) [\(eventsOK ? "✅" : "❌")]")
+		logger.info("  Medications: expected >= \(legacyMedicationIDs.count), actual = \(currentData.medications.count) [\(medicationsOK ? "✅" : "❌")]")
+		logger.info("  Events: expected >= \(legacyEventIDs.count), actual = \(currentData.events.count) [\(eventsOK ? "✅" : "❌")]")
+		if !missingMedications.isEmpty {
+			logger.error("  Missing medications after merge: \(missingMedications.count)")
+		}
+		if !missingEvents.isEmpty {
+			logger.error("  Missing events after merge: \(missingEvents.count)")
+		}
 
 		guard medicationsOK && eventsOK else {
 			throw MigrationError.verificationFailed(
-				expected: expectedMedicationsCount + expectedEventsCount,
-				actual: currentData.medications.count + currentData.events.count,
-				type: "migration"
+				expected: legacyMedicationIDs.count + legacyEventIDs.count,
+				actual: (legacyMedicationIDs.count - missingMedications.count) + (legacyEventIDs.count - missingEvents.count),
+				type: "id-preservation"
 			)
 		}
 	}
@@ -589,6 +603,9 @@ public final class DataMigrationManager {
 		logger.info("  Source: \(folder.path)")
 		logger.info("  Exists: \(fileManager.fileExists(atPath: folder.path))")
 
+		let isBodegaFolder = folder.lastPathComponent == "\(name).sqlite" &&
+			databaseURL.lastPathComponent == StorageConstants.Legacy.bodegaDataFile
+
 		// Calculate destination path
 		var archivedFolder = parentFolder.appendingPathComponent("\(name).sqlite.migrated-\(dateSuffix)")
 
@@ -599,12 +616,37 @@ public final class DataMigrationManager {
 			logger.warning("Archive destination exists, using unique suffix: \(archivedFolder.lastPathComponent)")
 		}
 
-		// Perform the move
-		try fileManager.moveItem(at: folder, to: archivedFolder)
+		if isBodegaFolder {
+			// Bodega folder structure: move the folder
+			try fileManager.moveItem(at: folder, to: archivedFolder)
+			logger.info("✅ Archived legacy \(name): \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+		} else {
+			// Flat file structure: archive only the database file + sidecars
+			try fileManager.createDirectory(at: archivedFolder, withIntermediateDirectories: true)
+
+			let flatParent = databaseURL.deletingLastPathComponent()
+			logger.info("Flat database detected in: \(flatParent.path)")
+
+			let destDB = archivedFolder.appendingPathComponent(databaseURL.lastPathComponent)
+			try fileManager.moveItem(at: databaseURL, to: destDB)
+
+			let walPath = databaseURL.path + "-wal"
+			let shmPath = databaseURL.path + "-shm"
+			let walDest = archivedFolder.appendingPathComponent(databaseURL.lastPathComponent + "-wal")
+			let shmDest = archivedFolder.appendingPathComponent(databaseURL.lastPathComponent + "-shm")
+
+			if fileManager.fileExists(atPath: walPath) {
+				try fileManager.moveItem(atPath: walPath, toPath: walDest.path)
+			}
+			if fileManager.fileExists(atPath: shmPath) {
+				try fileManager.moveItem(atPath: shmPath, toPath: shmDest.path)
+			}
+
+			logger.info("✅ Archived legacy \(name) flat DB → \(archivedFolder.lastPathComponent)")
+		}
 
 		// Store the archived path for potential recovery
 		UserDefaults.standard.set(archivedFolder.path, forKey: userDefaultsKey)
-		logger.info("✅ Archived legacy \(name): \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
 	}
 
 	/// Returns paths to archived legacy databases if they exist

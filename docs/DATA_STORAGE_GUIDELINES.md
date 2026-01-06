@@ -39,7 +39,7 @@ A `DataMigrationManager` was implemented to:
 - Preserve all user data (no data loss)
 - Run automatically on app launch
 
-**Location**: `AsNeeded/Services/Persistence/DataMigrationManager.swift`
+**Location**: `DataMigrationManager.swift` (path: `AsNeeded/Services/Persistence`)
 
 ---
 
@@ -131,6 +131,37 @@ Archived paths are also stored in UserDefaults:
 3. **Prefer rename over delete** - Data safety trumps disk space
 4. **Track what you change** - Store archived paths for recovery/debugging
 5. **Red-team your hypotheses** - Initial hypothesis (Watch Connectivity) was wrong; thorough analysis found the real cause
+
+---
+
+## January 2026 Migration Safety Hardening
+
+### What Changed
+
+Migration verification and archival were tightened to prevent silent data loss during legacy merges:
+
+1. **ID-preservation verification**: `verifyMerge()` now checks that **all legacy IDs** exist post-merge, not just that counts are >= legacy counts.
+2. **Flat legacy DB archival**: Legacy databases stored as flat files are archived by moving only the DB + WAL/SHM into a dedicated archive folder, avoiding accidental parent directory moves.
+3. **Fail-safe on verification errors**: If verification fails, migration throws and **does not archive** legacy DBs so recovery remains possible.
+
+### Why This Matters
+
+Count-based verification can pass even if some legacy IDs are missing (e.g., collisions, overwrite bugs). ID-based verification ensures **no legacy record is lost** in the merge.
+
+Flat legacy databases can live alongside other files. Moving the parent directory risks moving unrelated data. The new approach isolates archival to the DB artifacts only.
+
+### Tests Added
+
+- **Legacy ID preservation** after migration.
+- **Migration failure does not archive** legacy databases.
+- **Flat legacy DB archival** does not move the parent directory.
+- **Backup → migrate → restore** end-to-end test via `BackupManager`.
+
+### Files Updated
+
+- `DataMigrationManager.swift` (path: `AsNeeded/Services/Persistence`)
+- `DataMigrationManagerTests.swift` (path: `AsNeededTests`)
+- `DataIntegrityTests.swift` (path: `AsNeededTests`)
 
 ---
 

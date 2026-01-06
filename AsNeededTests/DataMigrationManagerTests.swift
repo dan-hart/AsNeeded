@@ -220,6 +220,110 @@ struct DataMigrationManagerTests {
 		try await legacyStore.removeAll()
 	}
 
+	@Test("Legacy IDs preserved after migration")
+	func legacyIDsPreservedAfterMigration() async throws {
+		// Given
+		removeLegacyBodegaDatabases()
+		removeAppGroupDatabases()
+
+		let legacyMedicationStore = createLegacyBodegaMedicationStore()
+		let legacyEventStore = createLegacyBodegaEventStore()
+
+		let med1 = createTestMedication(name: "Legacy Med 1")
+		let med2 = createTestMedication(name: "Legacy Med 2")
+		try await legacyMedicationStore.insert(med1)
+		try await legacyMedicationStore.insert(med2)
+
+		let event1 = createTestEvent(medication: med1)
+		let event2 = createTestEvent(medication: med2)
+		try await legacyEventStore.insert(event1)
+		try await legacyEventStore.insert(event2)
+
+		// When
+		try await migrationManager.migrateIfNeeded()
+
+		// Then - every legacy ID should exist in App Group
+		let appGroupMedStore = createAppGroupStore()
+		let appGroupEventStore = createAppGroupEventStore()
+
+		let legacyMedIDs = Set([med1.id, med2.id])
+		let currentMedIDs = Set(appGroupMedStore.items.map { $0.id })
+		#expect(legacyMedIDs.isSubset(of: currentMedIDs))
+
+		let legacyEventIDs = Set([event1.id, event2.id])
+		let currentEventIDs = Set(appGroupEventStore.items.map { $0.id })
+		#expect(legacyEventIDs.isSubset(of: currentEventIDs))
+
+		// Cleanup
+		try await appGroupMedStore.removeAll()
+		try await appGroupEventStore.removeAll()
+		removeLegacyBodegaDatabases()
+		clearArchivedLegacyPaths()
+	}
+
+	@Test("Migration failure does not archive legacy databases")
+	func migrationFailure_doesNotArchiveLegacyDatabases() async throws {
+		// Given
+		removeLegacyBodegaDatabases()
+		removeAppGroupDatabases()
+		clearArchivedLegacyPaths()
+
+		let legacyMedicationStore = createLegacyBodegaMedicationStore()
+		let med = createTestMedication(name: "Legacy Med")
+		try await legacyMedicationStore.insert(med)
+
+		guard let appGroupURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
+		) else {
+			throw TestError.setupFailed
+		}
+
+		let fileManager = FileManager.default
+		let originalPermissions = (try? fileManager.attributesOfItem(atPath: appGroupURL.path)[.posixPermissions]) as? NSNumber
+
+		// Make App Group read-only to force merge failure
+		try fileManager.setAttributes([.posixPermissions: 0o555], ofItemAtPath: appGroupURL.path)
+
+		// When
+		do {
+			try await migrationManager.migrateIfNeeded()
+			#expect(false, "Expected migration to fail due to read-only App Group")
+		} catch {
+			#expect(true)
+		}
+
+		// Then - legacy folder should still exist and no archive folder should be created
+		guard let documentsURL = FileManager.default.urls(
+			for: .documentDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		let legacyFolder = documentsURL.appendingPathComponent("medications.sqlite")
+		#expect(fileManager.fileExists(atPath: legacyFolder.path))
+
+		let archivedPrefix = "medications.sqlite.migrated-"
+		let contents = (try? fileManager.contentsOfDirectory(atPath: documentsURL.path)) ?? []
+		let archivedExists = contents.contains { $0.hasPrefix(archivedPrefix) }
+		#expect(archivedExists == false)
+
+		// Restore permissions and retry migration (simulates crash + retry)
+		if let originalPermissions {
+			try fileManager.setAttributes([.posixPermissions: originalPermissions], ofItemAtPath: appGroupURL.path)
+		}
+		try await migrationManager.migrateIfNeeded()
+
+		let contentsAfterRetry = (try? fileManager.contentsOfDirectory(atPath: documentsURL.path)) ?? []
+		let archivedAfterRetry = contentsAfterRetry.contains { $0.hasPrefix(archivedPrefix) }
+		#expect(archivedAfterRetry == true)
+
+		// Cleanup
+		removeLegacyBodegaDatabases()
+		removeAppGroupDatabases()
+		clearArchivedLegacyPaths()
+	}
+
 	// MARK: - Filename Variation Tests
 
 	@Test("Detect database with .sqlite3 extension")
@@ -372,6 +476,78 @@ struct DataMigrationManagerTests {
 		try? FileManager.default.removeItem(at: walPath)
 	}
 
+	// MARK: - Archival Safety Tests
+
+	@Test("Archiving flat legacy DB does not move parent directory")
+	func archiveFlatDatabaseDoesNotMoveParent() async throws {
+		// Given
+		cleanupTestDatabases()
+
+		guard let appSupportURL = FileManager.default.urls(
+			for: .applicationSupportDirectory,
+			in: .userDomainMask
+		).first else {
+			throw TestError.setupFailed
+		}
+
+		try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+
+		let sentinelURL = appSupportURL.appendingPathComponent("archive_sentinel.txt")
+		try "sentinel".write(to: sentinelURL, atomically: true, encoding: .utf8)
+
+		guard let legacyStorage = SQLiteStorageEngine(
+			directory: FileManager.Directory(url: appSupportURL),
+			databaseFilename: "medications"
+		) else {
+			throw TestError.setupFailed
+		}
+
+		let legacyStore = try await Store<ANMedicationConcept>(
+			storage: legacyStorage,
+			cacheIdentifier: \ANMedicationConcept.id.uuidString
+		)
+		try await legacyStore.insert(createTestMedication(name: "Legacy Flat"))
+
+		// When
+		try await migrationManager.migrateIfNeeded()
+
+		// Then - sentinel should still exist (parent directory not moved)
+		#expect(FileManager.default.fileExists(atPath: sentinelURL.path))
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: sentinelURL)
+
+		if let archivedPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath) {
+			try? FileManager.default.removeItem(atPath: archivedPath)
+			UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
+		}
+
+		let legacyFiles = [
+			appSupportURL.appendingPathComponent("medications.sqlite3"),
+			appSupportURL.appendingPathComponent("medications.sqlite3-wal"),
+			appSupportURL.appendingPathComponent("medications.sqlite3-shm"),
+		]
+		for file in legacyFiles {
+			try? FileManager.default.removeItem(at: file)
+		}
+
+		if let appGroupURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
+		) {
+			let appGroupFiles = [
+				appGroupURL.appendingPathComponent("medications.sqlite3"),
+				appGroupURL.appendingPathComponent("medications.sqlite3-wal"),
+				appGroupURL.appendingPathComponent("medications.sqlite3-shm"),
+				appGroupURL.appendingPathComponent("events.sqlite3"),
+				appGroupURL.appendingPathComponent("events.sqlite3-wal"),
+				appGroupURL.appendingPathComponent("events.sqlite3-shm"),
+			]
+			for file in appGroupFiles {
+				try? FileManager.default.removeItem(at: file)
+			}
+		}
+	}
+
 	// MARK: - Test Coverage Limitations
 
 	/*
@@ -426,6 +602,29 @@ struct DataMigrationManagerTests {
 		)
 	}
 
+	private func createTestEvent(medication: ANMedicationConcept) -> ANEventConcept {
+		ANEventConcept(
+			eventType: .doseTaken,
+			medication: medication,
+			dose: ANDoseConcept(amount: 10.0, unit: .milligram),
+			date: Date()
+		)
+	}
+
+	private func createLegacyBodegaMedicationStore() -> Store<ANMedicationConcept> {
+		Store<ANMedicationConcept>(
+			storage: SQLiteStorageEngine.default(appendingPath: "medications"),
+			cacheIdentifier: \ANMedicationConcept.id.uuidString
+		)
+	}
+
+	private func createLegacyBodegaEventStore() -> Store<ANEventConcept> {
+		Store<ANEventConcept>(
+			storage: SQLiteStorageEngine.default(appendingPath: "events"),
+			cacheIdentifier: \ANEventConcept.id.uuidString
+		)
+	}
+
 	/// Creates a legacy store (default app container)
 	private func createLegacyStore() -> Store<ANMedicationConcept> {
 		Store<ANMedicationConcept>(
@@ -449,6 +648,68 @@ struct DataMigrationManagerTests {
 			)!,
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
+	}
+
+	/// Creates an App Group store for events
+	private func createAppGroupEventStore() -> Store<ANEventConcept> {
+		guard let sharedContainerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
+		) else {
+			fatalError("Unable to access App Group container for testing")
+		}
+
+		return Store<ANEventConcept>(
+			storage: SQLiteStorageEngine(
+				directory: FileManager.Directory(url: sharedContainerURL),
+				databaseFilename: "events"
+			)!,
+			cacheIdentifier: \ANEventConcept.id.uuidString
+		)
+	}
+
+	private func removeLegacyBodegaDatabases() {
+		let fileManager = FileManager.default
+		if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+			let medsFolder = documentsURL.appendingPathComponent("medications.sqlite")
+			let eventsFolder = documentsURL.appendingPathComponent("events.sqlite")
+			try? fileManager.removeItem(at: medsFolder)
+			try? fileManager.removeItem(at: eventsFolder)
+		}
+	}
+
+	private func removeAppGroupDatabases() {
+		let fileManager = FileManager.default
+		if let sharedContainerURL = fileManager.containerURL(
+			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
+		) {
+			let appGroupFiles = [
+				"medications.sqlite3",
+				"medications.sqlite3-wal",
+				"medications.sqlite3-shm",
+				"events.sqlite3",
+				"events.sqlite3-wal",
+				"events.sqlite3-shm",
+			]
+
+			for filename in appGroupFiles {
+				let fileURL = sharedContainerURL.appendingPathComponent(filename)
+				try? fileManager.removeItem(at: fileURL)
+			}
+		}
+	}
+
+	private func clearArchivedLegacyPaths() {
+		let defaults = UserDefaults.standard
+
+		if let medsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath) {
+			try? FileManager.default.removeItem(atPath: medsPath)
+		}
+		if let eventsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath) {
+			try? FileManager.default.removeItem(atPath: eventsPath)
+		}
+
+		defaults.removeObject(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
+		defaults.removeObject(forKey: UserDefaultsKeys.archivedLegacyEventsPath)
 	}
 
 	/// Cleans up all test databases

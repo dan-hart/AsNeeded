@@ -183,6 +183,66 @@ struct DataIntegrityTests {
 		try await testStore.removeAll()
 	}
 
+	// MARK: - Backup and Restore Tests
+
+	@Test("BackupManager restores App Group data end-to-end")
+	func backupRestoreEndToEnd() async throws {
+		// Given - clean App Group databases
+		removeAppGroupDatabases()
+
+		let medicationsStore = createAppGroupMedicationStore()
+		let eventsStore = createAppGroupEventStore()
+
+		let med = ANMedicationConcept(
+			id: UUID(),
+			clinicalName: "Backup Med",
+			prescribedUnit: .milligram,
+			prescribedDoseAmount: 25
+		)
+		let event = ANEventConcept(
+			id: UUID(),
+			eventType: .doseTaken,
+			medication: med,
+			date: Date()
+		)
+
+		try await medicationsStore.insert(med)
+		try await eventsStore.insert(event)
+
+		// When - create backup, mutate data, then restore
+		let backupResult = await BackupManager.shared.createPreMigrationBackup()
+		#expect(backupResult.success == true, "Backup should succeed")
+		guard let backupPath = backupResult.backupPath else {
+			throw DataImportError.invalidFormat
+		}
+
+		try await medicationsStore.removeAll()
+		try await eventsStore.removeAll()
+
+		try await medicationsStore.insert(
+			ANMedicationConcept(
+				id: UUID(),
+				clinicalName: "Post Backup Med",
+				prescribedUnit: .milligram,
+				prescribedDoseAmount: 10
+			)
+		)
+
+		let restoreSuccess = try await BackupManager.shared.restoreFromBackup(at: backupPath)
+		#expect(restoreSuccess == true, "Restore should succeed")
+
+		// Then - original IDs should be present
+		let restoredMedIDs = Set(medicationsStore.items.map { $0.id })
+		let restoredEventIDs = Set(eventsStore.items.map { $0.id })
+
+		#expect(restoredMedIDs.contains(med.id))
+		#expect(restoredEventIDs.contains(event.id))
+
+		// Cleanup
+		try? FileManager.default.removeItem(at: backupPath)
+		removeAppGroupDatabases()
+	}
+
 	// MARK: - StorageConstants Validation
 
 	@Test("StorageConstants has valid schema version")
@@ -360,5 +420,58 @@ struct DataIntegrityTests {
 			storage: storage,
 			cacheIdentifier: \.id.uuidString
 		)
+	}
+
+	private func createAppGroupMedicationStore() -> Store<ANMedicationConcept> {
+		guard let sharedContainerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
+		) else {
+			fatalError("Unable to access App Group container for testing")
+		}
+
+		return Store<ANMedicationConcept>(
+			storage: SQLiteStorageEngine(
+				directory: FileManager.Directory(url: sharedContainerURL),
+				databaseFilename: StorageConstants.medicationsDBName
+			)!,
+			cacheIdentifier: \ANMedicationConcept.id.uuidString
+		)
+	}
+
+	private func createAppGroupEventStore() -> Store<ANEventConcept> {
+		guard let sharedContainerURL = FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
+		) else {
+			fatalError("Unable to access App Group container for testing")
+		}
+
+		return Store<ANEventConcept>(
+			storage: SQLiteStorageEngine(
+				directory: FileManager.Directory(url: sharedContainerURL),
+				databaseFilename: StorageConstants.eventsDBName
+			)!,
+			cacheIdentifier: \ANEventConcept.id.uuidString
+		)
+	}
+
+	private func removeAppGroupDatabases() {
+		let fileManager = FileManager.default
+		if let sharedContainerURL = fileManager.containerURL(
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
+		) {
+			let appGroupFiles = [
+				StorageConstants.medicationsDBPath,
+				StorageConstants.medicationsDBPath + "-wal",
+				StorageConstants.medicationsDBPath + "-shm",
+				StorageConstants.eventsDBPath,
+				StorageConstants.eventsDBPath + "-wal",
+				StorageConstants.eventsDBPath + "-shm",
+			]
+
+			for filename in appGroupFiles {
+				let fileURL = sharedContainerURL.appendingPathComponent(filename)
+				try? fileManager.removeItem(at: fileURL)
+			}
+		}
 	}
 }
