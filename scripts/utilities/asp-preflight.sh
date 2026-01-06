@@ -80,6 +80,13 @@ if [[ "$MODE" == "staged" ]]; then
   NAME_CMD+=(--cached)
 fi
 
+# Exclude this script from risk-category pattern checks to avoid self-triggering.
+EXCLUDE_DIFF_PATHS=("scripts/utilities/asp-preflight.sh")
+DIFF_EXCLUDE_CMD=("${DIFF_CMD[@]}" -- .)
+for p in "${EXCLUDE_DIFF_PATHS[@]}"; do
+  DIFF_EXCLUDE_CMD+=(":(exclude)$p")
+done
+
 CHANGED_FILES=()
 while IFS= read -r line; do
   if [[ -n "$line" ]]; then
@@ -170,19 +177,19 @@ fi
 
 # 4) Data path/storage changes
 DATA_PATH_HIT=false
-if "${DIFF_CMD[@]}" | grep -nE '(DB_PATH|DATA_DIR|STORAGE_PATH|APP_DATA_DIR|Application Support|database\.db|\.db")' >/dev/null; then
+if "${DIFF_EXCLUDE_CMD[@]}" | grep -nE '(DB_PATH|DATA_DIR|STORAGE_PATH|APP_DATA_DIR|Application Support|database\.db|\.db")' >/dev/null; then
   DATA_PATH_HIT=true
 fi
 
 # 5) System/boot changes
 SYSTEM_HIT=false
-if "${DIFF_CMD[@]}" | grep -nE '(GRUB_CMDLINE|/etc/default/grub|grub2-mkconfig|grubby|fstab|initramfs|dracut|mkinitcpio|sysctl|kernel\.|systemctl|dnf |apt |nixos-rebuild)' >/dev/null; then
+if "${DIFF_EXCLUDE_CMD[@]}" | grep -nE '(GRUB_CMDLINE|/etc/default/grub|grub2-mkconfig|grubby|fstab|initramfs|dracut|mkinitcpio|sysctl|kernel\.|systemctl|dnf |apt |nixos-rebuild)' >/dev/null; then
   SYSTEM_HIT=true
 fi
 
 # 6) Display/graphics changes
 DISPLAY_HIT=false
-if "${DIFF_CMD[@]}" | grep -nE '(gdm|sddm|xorg|wayland|nvidia|nouveau|akmod-nvidia|display manager)' >/dev/null; then
+if "${DIFF_EXCLUDE_CMD[@]}" | grep -nE '(gdm|sddm|xorg|wayland|nvidia|nouveau|akmod-nvidia|display manager)' >/dev/null; then
   DISPLAY_HIT=true
 fi
 
