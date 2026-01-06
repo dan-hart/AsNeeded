@@ -1,0 +1,807 @@
+# AsNeeded 1.1.2 Release Notes (Draft)
+
+**Status:** Draft (not tagged)
+**Target:** v1.1.2
+**Scope:** Critical bug fixes only — no new features
+
+## Highlights
+
+- Hardened legacy migration verification to ensure every legacy ID is preserved post-merge.
+- Prevented flat legacy DB archival from moving parent directories.
+- Added safety tests covering migration integrity and backup restore flows.
+
+## Fixes
+
+- **Migration safety:** Verify all legacy IDs are present after merge before archiving.
+- **Archival safety:** Flat legacy databases now archive only DB + WAL/SHM files, not the parent folder.
+- **Failure safety:** Migration failures do not archive legacy data, preserving recovery paths.
+
+## Verification
+
+- Full test suite run via `./scripts/test-parallel.sh`.
+- Data migration and backup integrity tests added and passing.
+
+## Migration Notice
+
+This release hardens legacy data migration checks to prevent silent data loss. Legacy data is only archived after full ID preservation verification succeeds.
+
+## Version Metadata
+
+- **Marketing Version:** 1.1.2
+- **Build Number:** 294 (auto-incremented on push)
+
+
+## Full Commit List (since 1.0.1)
+
+_Previous tagged version: 1.0.1_
+
+- 3904fd7 Build Bump
+- c17fff4 Harden migration safety checks and archival
+- 65e4339 Build Bump
+- c264404 Avoid ASP self-trigger in risk scans
+- 4875928 Build Bump
+- f76ac4f Harden repo safety checks and docs
+- d3815f4 Build Bump
+- ff75986 Fix medication quantity reset after app restart
+- 69924b3 Build Bump
+- 333be5b WIP: Needs Testing
+- a8c3372 Build Bump
+- aa01a50 Add translations for 37 languages
+- dd49e48 Build Bump
+- bdc4a66 Update Localizable.xcstrings
+- 869642c Build Bump
+- 928aa97 Minor Fixes
+- 6ad371f Build Bump
+- b0e36c6 Update Localizable.xcstrings
+- 651981e Build Bump
+- 20efa9f Address Warnings
+- f330525 Build Bump
+- d8265a4 Improve build bumping
+- ab2e68f Update pre-push
+- 549dc22 Build Bump
+- be37ac6 Build Bump
+- bf8111b Build Bump
+- ec7f604 Build Bump
+- 0d5b465 Fix truncation bug
+- e1c8894 Build Bump
+- 6b7b6b0 Build Bump
+- bf921aa Update storage detector to run on all branches
+- df0f511 Build Bump
+- a5cd35a Build Bump
+- f41e15d Data Integrity Protection
+- eb61fb1 Build Bump
+- 8ae4d7c Build Bump
+- 4e831e5 Build Bump
+- c67596d Add note to never include Claude as co-author in commits
+- cfecb48 Remove debug-only features and adopt data-driven migration
+- 4999ede Build Bump
+- a11d5be Build Bump
+- 2ab39ba Update pre-push
+- 544050a Update pre-push
+- 61d050a Delete build-bump.yml
+- bf08ed9 Delete build-bump.yml
+- 023d428 Fix legacy data path for migration
+- e7e48f0 Fix legacy data path for migration
+- fa3130b Merge branch 'main' into wip
+- 0819733 Merge branch 'main' into wip
+- c591c47 Fix security scan workflow failures
+- 062aa02 Fix security scan workflow failures
+- b9bdb6f Tighten Security 'round here
+- ad3b9f1 Tighten Security 'round here
+- 8f47c68 Build Bump
+- bfd696e Build Bump
+- 53c5aea Build Bump
+- b8f57da Build Bump
+- 5cacda5 Build Bump
+- 6ccb6c1 Build Bump
+- 0c4956b refactor: Rename Array+SafeAccess to Array+DoesExistAt
+- 4f60a5c refactor: Rename Array+SafeAccess to Array+DoesExistAt
+- 648d42d Build Bump
+- 8c63d59 Build Bump
+- 98383da refactor: Revert subscript rename to use doesExistAt:
+- 73dffd6 refactor: Revert subscript rename to use doesExistAt:
+- 2dc7dc3 feat: Refactor MedicationList feature and update tests
+- 04ed4f2 feat: Refactor MedicationList feature and update tests
+- 0d6a26f Build Bump
+- 151713b Build Bump
+- 58ec676 Update to look for .sqlite3
+- 53864c6 Update to look for .sqlite3
+- 6bbea7d Build Bump
+- 2caf1b5 Build Bump
+- a351621 Remove extra files
+- 1f0063c Remove extra files
+- 9aeec59 Build Bump
+- aa2996a Build Bump
+- 9ed5814 Improve Export Logging
+- 9909049 Improve Export Logging
+- 3ec5490 Build Bump
+- d1743b3 Build Bump
+- f9b83fe Storage Health Checking
+- 18f5a4a Storage Health Checking
+- 0285630 Build Bump
+- 8742df2 Build Bump
+- 9a7e88f Data Storage Hardening
+- 7f5add8 Data Storage Hardening
+- fc5212e Build Bump
+- b18545e Build Bump
+- b270a64 Add Root Cause Docs
+- 1fa4925 Add Root Cause Docs
+- 2fad13f Build Bump
+- 9a025d2 Build Bump
+- fcf9872 Storage Diagnostics
+- 6b579f0 Storage Diagnostics
+- f5f877e Build Bump
+- bfe49d6 Build Bump
+- 9152276 Implement MigrationCoordinator
+- 768a3cf Implement MigrationCoordinator
+- d8b8afe Build Bump
+- 8c51812 Build Bump
+- 0fceb17 Data migration
+- 2b1a86b Data migration
+- 749fd54 Build Bump
+- a4f24d2 Build Bump
+- bc88bee Improve Med Detail and App Dependencies
+- 5c5079f Improve Med Detail and App Dependencies
+- e8d25b7 Build Bump
+- 3e160bd Build Bump
+- 1f88aab Fix gesture conflict between quick log and clinical name copy
+- 0086e79 Fix gesture conflict between quick log and clinical name copy
+- e591b8c Build Bump
+- 7fbe0a4 Build Bump
+- b661955 Build Bump
+- 44d6fd4 Build Bump
+- 9781b00 New Medication Detail Look
+- 6f57395 New Medication Detail Look
+- 928469e Build Bump
+- 7a5c995 Build Bump
+- 64b11e0 Tap to add clinical name to clipboard
+- 3e69010 Tap to add clinical name to clipboard
+- 64f4935 backlog: Archive task task-0008
+- 4e21a79 backlog: Archive task task-0008
+- a04a58d Build Bump
+- cae288f Build Bump
+- 98f2793 Update MedicationHistoryView.swift
+- eaa71a7 Update MedicationHistoryView.swift
+- dad47a9 Build Bump
+- ff38bb5 Build Bump
+- 02d05b3 Fix Widgets
+- 0fe3d42 Fix Widgets
+- 35a4e79 Build Bump
+- 8d7cc88 Build Bump
+- 6933e20 Misc Fixes
+- d0eeed7 Misc Fixes
+- 70ba04a Build Bump
+- d2c02d2 Build Bump
+- 7af2412 App Preference Backups
+- 4b9798e App Preference Backups
+- b6e0550 Build Bump
+- bd17c5d Build Bump
+- a0be0cb Fix automatic backup file access on physical devices
+- 2aeeec8 Fix automatic backup file access on physical devices
+- 5dbdb46 Build Bump
+- e3a6d96 Build Bump
+- 49753f0 Automatic Backups
+- 6333f1b Automatic Backups
+- 1f79085 Build Bump
+- 56ce05a Build Bump
+- 9c3622e Fix medication ordering bug and add success toast for regular dose logging
+- 8431733 Fix medication ordering bug and add success toast for regular dose logging
+- f8800a4 Build Bump
+- dc9eb75 Build Bump
+- 76b683e Build Bump
+- 88717aa Build Bump
+- 7318c6c Build Bump
+- e86ff52 Build Bump
+- 9e60225 Standardize modal confirmation buttons to use role: .confirm
+- eb806dc Standardize modal confirmation buttons to use role: .confirm
+- eb58f0d Build Bump
+- 7d3969c Build Bump
+- 0f8dcfc Standardize modal close buttons to use role: .close
+- f899142 Standardize modal close buttons to use role: .close
+- 2e9e22e Build Bump
+- 335d50d Build Bump
+- 4d2d140 Code Review Feedback
+- 7509783 Code Review Feedback
+- 937f827 Build Bump
+- b88e764 Build Bump
+- 61e6ad5 WIP Intents
+- 0b31a2a WIP Intents
+- 411766b Build Bump
+- 1075532 Build Bump
+- 65977ce Complete Liquid Glass Phase 5: 100% iOS 26 compliance achieved
+- 45c8b58 Complete Liquid Glass Phase 5: 100% iOS 26 compliance achieved
+- aafaf37 Build Bump
+- 071cd47 Build Bump
+- 51eb5db Complete Liquid Glass Phase 4: Interactive glass and advanced polish
+- 8978439 Complete Liquid Glass Phase 4: Interactive glass and advanced polish
+- a1476e3 Build Bump
+- fc208c0 Build Bump
+- 5dd787d Complete Liquid Glass Phase 3: hero sections and consent dialogs
+- 6f7ff5c Complete Liquid Glass Phase 3: hero sections and consent dialogs
+- c4def21 Build Bump
+- 0b6fbd9 Build Bump
+- 23d5d02 Add iOS 26 Liquid Glass polish: specular highlights and material consistency
+- 35b69e7 Add iOS 26 Liquid Glass polish: specular highlights and material consistency
+- b278903 Build Bump
+- ab15e39 Build Bump
+- cbd20bb Implement iOS 26 Liquid Glass design improvements
+- ce0fd9f Implement iOS 26 Liquid Glass design improvements
+- 9abecb7 Build Bump
+- 56683c7 Build Bump
+- 597489e Add comprehensive iOS 26 Liquid Glass design documentation
+- 051adb1 Add comprehensive iOS 26 Liquid Glass design documentation
+- a965e5f Build Bump
+- 8d8303e Build Bump
+- 64c475d Reduce CLAUDE.md by 115 characters to eliminate context warning
+- 36a869a Reduce CLAUDE.md by 115 characters to eliminate context warning
+- 1a3d73f Build Bump
+- 266d241 Build Bump
+- 7a37391 Fix code quality issues and add automated review requirement
+- cc9dfc4 Fix code quality issues and add automated review requirement
+- 7a1b682 Build Bump
+- fed3b53 Build Bump
+- d987718 Reorder tasks in In Progress
+- 3276da5 Reorder tasks in In Progress
+- 36364ac backlog: Archive task task-0002
+- 1b8bba8 backlog: Archive task task-0002
+- fc4e9fb Build Bump
+- 3e45991 Build Bump
+- c2c7a9d Build Bump
+- c03e0e0 Build Bump
+- 6c698d2 Build Bump
+- 799f845 Build Bump
+- aeda408 Build Bump
+- f5d5168 Build Bump
+- 09f36ef Remove HealthKit
+- 91bc6d2 Remove HealthKit
+- 4d3cb46 Build Bump
+- 9996310 Build Bump
+- 6814630 Improve Performance
+- 91f67cc Improve Performance
+- 1c5e716 Build Bump
+- 0407fa4 Build Bump
+- 0b2b72a Make HealthKit "Not Available" row tappable in DEBUG builds
+- 9bcabfd Make HealthKit "Not Available" row tappable in DEBUG builds
+- f923b77 Add comprehensive HealthKit availability diagnostics
+- 3f48fb4 Add comprehensive HealthKit availability diagnostics
+- 13feda1 Build Bump
+- 93046b5 Build Bump
+- ebd1097 Revert Commit
+- bef82e6 Revert Commit
+- a663d5b Build Bump
+- f91e98c Build Bump
+- 87e7c87 Create AsNeeded-1.1.2-224.ipa
+- a367f1c Create AsNeeded-1.1.2-224.ipa
+- 4e54a97 Build Bump
+- 57a05f8 Build Bump
+- ca76843 Minor updates
+- 9f6164e Minor updates
+- a3821d3 Build Bump
+- 3a22838 Build Bump
+- de50891 Build Bump
+- e68a62f Build Bump
+- 78ca8b9 Hide empty toolbar item when no medications
+- e83c919 Hide empty toolbar item when no medications
+- 7022150 Build Bump
+- 74264d1 Build Bump
+- 652ae05 Improve HealthKit onboarding UX and fix delete button styling
+- 2ab5edb Improve HealthKit onboarding UX and fix delete button styling
+- 3da650a Build Bump
+- c952472 Build Bump
+- 7688446 Minor Code Cleanup
+- 5e0fc40 Minor Code Cleanup
+- a281fc1 Build Bump
+- 82727ee Build Bump
+- 4aa5e4b Alpha HealthKit
+- 942dfce Alpha HealthKit
+- 4b0e3bb Build Bump
+- 8038ff7 Build Bump
+- 15693fe Fix Tests
+- f5030d3 Fix Tests
+- a0da430 Build Bump
+- 240a555 Build Bump
+- 078d1e8 Comprehensive Code Review
+- cf07ec3 Comprehensive Code Review
+- b0ea6dd backlog: Archive task task-0009
+- bda5616 backlog: Archive task task-0009
+- 4b57bc8 backlog: Archive task task-0012
+- fde679c backlog: Archive task task-0012
+- 430682e Reorder tasks in To Do
+- c45dc7e Reorder tasks in To Do
+- ceae3d4 backlog: Archive task task-0005
+- 670123b backlog: Archive task task-0005
+- 13fd6fe Reorder tasks in In Progress
+- 94fbd16 Reorder tasks in In Progress
+- aad8f30 Reorder tasks in Done
+- 9833565 Reorder tasks in Done
+- a287901 Reorder tasks in Done
+- 7621246 Reorder tasks in Done
+- 4ce9e69 Build Bump
+- 15f8a43 Build Bump
+- b689cc9 Update Localizable.xcstrings
+- afcd141 Update Localizable.xcstrings
+- 505631a Build Bump
+- 9a0e255 Build Bump
+- 4a96506 Minor UI Fixes
+- 157958d Minor UI Fixes
+- 5c96171 Build Bump
+- b102692 Build Bump
+- aefb1cc Improve variable naming
+- b8a547e Improve variable naming
+- 0691108 Build Bump
+- 14a1cc8 Build Bump
+- 9d75f7a Add App Dependencies View
+- a1c1142 Add App Dependencies View
+- baf5e5b Build Bump
+- 4d62ef6 Build Bump
+- 01e561e Merge branch 'wip' of https://github.com/dan-hart/AsNeeded into wip
+- ee0d95f Merge branch 'wip' of https://github.com/dan-hart/AsNeeded into wip
+- 8343a19 Build Bump
+- 12e015f Build Bump
+- 61d8149 Build Bump
+- 80afb51 Build Bump
+- 851c20d Minor accent color fixes
+- 63cd9ec Minor accent color fixes
+- 6858470 Build Bump
+- be3407c Build Bump
+- f3e1db0 Add App Review fallback for TF users
+- cbdad19 Add App Review fallback for TF users
+- eb88b03 Build Bump
+- 05dd942 Build Bump
+- 87443a9 Add TestFlight detection
+- 1a03fa1 Add TestFlight detection
+- e9aa5c3 Build Bump
+- dad6774 Build Bump
+- 95f7880 Fix med list custom fonts
+- 2a32f10 Fix med list custom fonts
+- f2f42a6 Build Bump
+- 24e4d98 Build Bump
+- 5530ae9 Persist trends days window selection
+- 2bba088 Persist trends days window selection
+- 29860c5 Build Bump
+- afb0e70 Build Bump
+- c48903f Centralize UserDefaults keys
+- 8413187 Centralize UserDefaults keys
+- 05b70b5 Build Bump
+- 355f2f4 Build Bump
+- bb773d3 Separate review opt-out for alerts only
+- cf4e304 Separate review opt-out for alerts only
+- d0b51b8 Build Bump
+- 678be6e Build Bump
+- 2761608 Add dose editing to history with swipe actions
+- a4bc0a8 Add dose editing to history with swipe actions
+- ebf4104 Build Bump
+- 0dd834d Build Bump
+- 38c292e Move note section below time picker
+- d56c941 Move note section below time picker
+- 98681e6 Build Bump
+- 7248838 Build Bump
+- 42584bf Remove wobble animation from note section
+- cb76497 Remove wobble animation from note section
+- 8389f8e Build Bump
+- c8537b1 Build Bump
+- 1aab101 Improve medication search field positioning
+- ea28541 Improve medication search field positioning
+- a8dff65 Build Bump
+- 87056eb Build Bump
+- 131e4ba Add git hook install script
+- 7f4b463 Add git hook install script
+- badf2ed Build Bump
+- 28488dc Build Bump
+- 0d27462 Add Kevin to special thanks
+- 5515f23 Add Kevin to special thanks
+- 6e76a25 Build Bump
+- ac70b65 Build Bump
+- 64fccde Build Bump
+- 522ad35 Build Bump
+- 36fad50 Build Bump
+- 5dceb15 Build Bump
+- 67ef18f Quick Log + Symbol Improvements
+- 41386c9 Quick Log + Symbol Improvements
+- cf929bc Build Bump
+- 86ef492 Build Bump
+- 95e0a0a Custom Symbol for Medication: Work In Progress
+- 51868f4 Custom Symbol for Medication: Work In Progress
+- cb2ec1f Build Bump
+- ebb8a2f Build Bump
+- 1e66f5e Update sheet checkmarks to use circular backgrounds for prominence
+- f60787e Update sheet checkmarks to use circular backgrounds for prominence
+- 9152099 Build Bump
+- 7958b0f Build Bump
+- e4a5618 iOS 26-style confirmation checkmarks
+- 9fc3849 iOS 26-style confirmation checkmarks
+- 48ddf6f Build Bump
+- 46177e6 Build Bump
+- 0143288 Implement Joining Test Flight from App
+- ca64c3a Implement Joining Test Flight from App
+- 8bcd632 Build Bump
+- 3d1dc76 Build Bump
+- fa172f0 Fix System Font Navigation Title Styling
+- f79d30f Fix System Font Navigation Title Styling
+- 8217e66 Build Bump
+- d4e0057 Build Bump
+- 9bd82da Add Note Improvements
+- d08bbfc Add Note Improvements
+- 27317d9 Build Bump
+- f440c85 Build Bump
+- bfc45c1 Add Initial Quantity Field
+- dad3989 Add Initial Quantity Field
+- 972f47c Build Bump
+- 5c81d2e Build Bump
+- cbb6704 Add Data Integration Test
+- 115e72e Add Data Integration Test
+- 5dbc2e4 Build Bump
+- 5165863 Build Bump
+- 73f3038 Fix a few missed views
+- 6fb3c2a Fix a few missed views
+- 11d54ca Build Bump
+- b6e8abb Build Bump
+- 988c9dc Improve Custom Font Implementation
+- 50dd518 Improve Custom Font Implementation
+- 009e67b Build Bump
+- 5fbe2c2 Build Bump
+- fa8d84f backlog: Archive task task-0007
+- c0457c2 backlog: Archive task task-0007
+- 5287b97 Reorder tasks in In Progress
+- ea53225 Reorder tasks in In Progress
+- 1e07dde Reorder tasks in Done
+- 84e0a7a Reorder tasks in Done
+- d3f3d06 Reorder tasks in Done
+- 75eb7ca Reorder tasks in Done
+- b253206 Reorder tasks in To Do
+- 84b3c47 Reorder tasks in To Do
+- 3d37d86 Reorder tasks in Done
+- 6236177 Reorder tasks in Done
+- 40b7a1f Reorder tasks in Done
+- e7a3cc1 Reorder tasks in Done
+- 400f699 Build Bump
+- d6ac08e Build Bump
+- 10984c6 Build Bump
+- 6435a1a Build Bump
+- 58b070e Implement OpenDyslexic Font
+- 627f288 Implement OpenDyslexic Font
+- 8fdadbe Build Bump
+- ddbe682 Build Bump
+- 568c386 Implement Hyperlegdible font from the Braille Institute
+- b2c48d4 Implement Hyperlegdible font from the Braille Institute
+- 959c60c Build Bump
+- b470846 Build Bump
+- 886d9b2 Build Bump
+- 7024acb Build Bump
+- b92826b Remove extra spacing in color picker layout
+- 9b9992a Remove extra spacing in color picker layout
+- dda87c8 Build Bump
+- cd140f6 Build Bump
+- 16b9307 Remove extra spacing and simplify color picker save button
+- 3d87ffd Remove extra spacing and simplify color picker save button
+- d03bee4 Build Bump
+- 821ae66 Build Bump
+- 40f9d83 Improve color picker UX and reduce medication row padding
+- 9c6c89a Improve color picker UX and reduce medication row padding
+- 835c71f Build Bump
+- f1a4f49 Build Bump
+- 489424a Fix failing tests
+- 263e43d Fix failing tests
+- 43b0fba Build Bump
+- 990f9a3 Build Bump
+- 7991dc2 Apply @ScaledMetric across all views and reorganize Screens folder
+- 4d26bf6 Apply @ScaledMetric across all views and reorganize Screens folder
+- d120b7d Build Bump
+- 0a29e87 Build Bump
+- f687a91 Use ScaledMetric for medication row spacing
+- 282ab94 Use ScaledMetric for medication row spacing
+- ad0c514 Build Bump
+- 24839bf Build Bump
+- 98a912f Improve Feedback Loading States
+- 57ef795 Improve Feedback Loading States
+- dabbe0e Build Bump
+- a253820 Build Bump
+- 25c0cc1 Audit Log Messages
+- 2afadaf Audit Log Messages
+- 4616c64 Build Bump
+- 9b2fd3c Build Bump
+- 42d35eb Remove default refill dates and use large detent for date picker
+- 7dab1fc Remove default refill dates and use large detent for date picker
+- 05ae01b Build Bump
+- 6c044e2 Build Bump
+- 84ef9de Build Bump
+- c98ddc3 Build Bump
+- bd48f82 Build Bump
+- 5ff7996 Build Bump
+- 3904efd Make Log Dose button more prominent
+- f85cc3a Make Log Dose button more prominent
+- 8536987 Improve color selection
+- d1690a9 Improve color selection
+- c8f9c2c Resolve merge conflicts in Localizable.xcstrings
+- f0c7de3 Resolve merge conflicts in Localizable.xcstrings
+- 7d07222 Custom Med Color Improvements
+- 9be2525 Custom Med Color Improvements
+- cd85d41 Update AboutView.swift
+- 88d52b7 Update AboutView.swift
+- c5dde07 Improve Send Feedback
+- 72d6c78 Improve Send Feedback
+- 7b3d12f Fix Icon Bug
+- 0e65437 Fix Icon Bug
+- 11356bb Improve Edit History
+- a5916f2 Improve Edit History
+- c05c80d Add tap-to-edit feature for history entries with time editing and deletion
+- d430083 Add tap-to-edit feature for history entries with time editing and deletion
+- dabcd0a Fix medication color consistency by improving data lookup in History tab
+- 912513d Fix medication color consistency by improving data lookup in History tab
+- f871857 Fix medication dots to use individual medication colors per row
+- cb5322a Fix medication dots to use individual medication colors per row
+- 6c8f121 Move medication color dots to left side of History rows in 'All' view
+- d8666a8 Move medication color dots to left side of History rows in 'All' view
+- c60d58b Enhance picker colors and medication dots visibility across History and Trends tabs
+- 437f8c8 Enhance picker colors and medication dots visibility across History and Trends tabs
+- 06cee37 Apply medication colors to metric card icons in Trends tab
+- 3c8553c Apply medication colors to metric card icons in Trends tab
+- ca13467 Integrate medication colors throughout History tab interface
+- b32afac Integrate medication colors throughout History tab interface
+- 3bac022 Add comprehensive unit tests for medication color functionality
+- 623b7ca Add comprehensive unit tests for medication color functionality
+- f58fd1f Add quick color change feature with tappable medication icons
+- c37b4ac Add quick color change feature with tappable medication icons
+- fa9b8f2 Implement comprehensive color system with all DHFlatUIColors palettes
+- 53ba071 Implement comprehensive color system with all DHFlatUIColors palettes
+- d3a3796 Expand color picker to include all 20 Russian palette colors
+- 39c9cb6 Expand color picker to include all 20 Russian palette colors
+- 793f7cf Integrate DHFlatUIColors with Russian palette
+- ef3d114 Integrate DHFlatUIColors with Russian palette
+- 3997d3f Add medication color customization feature
+- 3fed3f1 Add medication color customization feature
+- c4be88c Bump ANModelKit
+- 21fa33b Bump ANModelKit
+- 0ab5177 Add "All" as an option to History Tab
+- 596454a Add "All" as an option to History Tab
+- f2cf042 Fix Data Management Issue
+- f2c609a Fix Data Management Issue
+- 5b2d9d4 Build Bump
+- f9460ca Build Bump
+- e4ee869 Complete hardcoded font fixes across Views directory
+- 00b29e5 Complete hardcoded font fixes across Views directory
+- 7d42d5f Implement comprehensive performance optimizations
+- 90ba31f Implement comprehensive performance optimizations
+- 72197fc Add comprehensive Intent handler tests and expand unit testing
+- ee69d95 Add comprehensive Intent handler tests and expand unit testing
+- b59de12 Enhance VoiceOver accessibility and fix test references
+- f725718 Enhance VoiceOver accessibility and fix test references
+- 1b7520e Extract reusable components and fix hardcoded fonts
+- b1578bc Extract reusable components and fix hardcoded fonts
+- fc3461b Update task task-0004
+- f3884db Update task task-0004
+- d5f5107 Extract reusable components from MedicationEditView
+- be823a6 Extract reusable components from MedicationEditView
+- d878c6c Phase 2 Code Review
+- 2ba931a Phase 2 Code Review
+- e372771 Critical Code Review Fixes
+- b838644 Critical Code Review Fixes
+- 7b1dcce Reorder tasks in column
+- 4fdbe05 Reorder tasks in column
+- 7893d10 Update task task-0007
+- 98ded65 Update task task-0007
+- 58d1339 Reorder tasks in column
+- 8e66962 Reorder tasks in column
+- 5a896b5 Update task task-0011
+- 267ffc3 Update task task-0011
+- 06494e8 Update task task-0006
+- 9e3d73e Update task task-0006
+- 14f2ecd Reorder tasks in column
+- 9bbcd07 Reorder tasks in column
+- f41ddb8 Update task task-0004
+- ab81a49 Update task task-0004
+- 060415e Update task task-0003
+- 3afab1f Update task task-0003
+- d88703a Update task task-0012
+- 31cc576 Update task task-0012
+- 4e06530 Update task task-0014
+- 2aac60c Update task task-0014
+- 9770bf5 Update task task-0013
+- 36ba7ec Update task task-0013
+- 748cb8b Update task task-0003
+- 296e4c2 Update task task-0003
+- d494cd8 Bump Versions
+- 267a654 Bump Versions
+- e0e38f1 Lower Review Threshold
+- 24e8b0b Fix Support View Spacing Bug
+- 2b54fd1 Add Reset Button to App Prefs
+- f10bcfc Clean up App Preferences
+- 4c3944a Merge branch 'develop' into wip
+- 30e2366 Improve asking for ratings
+- d577612 checkpoint: execution 6
+- e5199a2 checkpoint: execution 5
+- 9e8e941 checkpoint: execution 4
+- 3501709 checkpoint: execution 3
+- f9e1573 Create task task-0014
+- a6e4a4e Run in bg
+- 78a3eaa Add script to open backlog browser
+- db64f16 Add Backlog
+- 834517b Create task task-0013
+- cb5608e Create task task-0012
+- 72f9d84 Create task task-0011
+- eee2297 Create task task-0010
+- 78b59fb Create task task-0009
+- 475d67a Create task task-0008
+- 3520a00 Create task task-0007
+- e0bf68d Create task task-0006
+- 4391590 Create task task-0005
+- dc8a4e0 Create task task-0004
+- 8784bd0 Create task task-0003
+- a0b34ab Update task task-0002
+- 93b344b Create task task-0002
+- 32ca7ae Create task task-001
+- 46cd4af Experimenting with Review Deep Link
+- e8e2443 Bump Versions
+- c83aef0 Fix accent color
+- 4abdb33 Add Citations
+- ce757db Create DISCLAIMER.md
+- cc3bf91 Switch to Apple's EULA
+- e774980 Update Localizable.xcstrings
+- 1009bd1 Fix Apple App Store Review Guidelines 2.1 & 3.1.2 compliance
+- 8aa1da6 Add Terms & Privacy Links
+- ade4052 Update ANStoreKitConfig.storekit
+- 8509fe2 Products Fetching
+- 5f9f387 Update project.pbxproj
+- 11c9091 StoreKit Config Updates
+- f1709b3 More ASC Assets
+- e096a3f Add ASC Design Assets
+- 2918591 Update MedicationViewModelValidationTests.swift
+- bf82052 Add DEBUG views
+- e480c23 Update Localizable.xcstrings
+- 0a10640 Separate Clear Data & Reset Settings Options
+- c7d911b Update project.pbxproj
+- 74a5f12 Update Localizable.xcstrings
+- 7f8541f Update README.md
+- 52185d1 Update Localizable.xcstrings
+- 08fa7f3 Minor UX Improvements
+- 18ffed8 Fix Picker Bug
+- 34d6b3b Minor UX Improvements
+- e0d0276 Improve dupe med checking
+- c059615 Wiring up RC
+- 46f4f3a Minor IAP Updates
+- fd4f872 Update Package.resolved
+- 31dc1ba Remove Duplicate Suggestions
+- 1bcde22 Welcome, About, and Disclaimer View Updates
+- cff2248 Minor Bugfixes
+- 44d1e7f Improve Clearing and Reseting all data
+- 9ad3a5b Hide medication row UI elements in edit mode
+- 324584c Update MedicationListView.swift
+- d724da1 Fix trends tab crash and all failing tests
+- 73743ef Add comprehensive haptics system with settings toggle
+- 4b3f6f9 Fix AppStorage cleanup when clearing all data
+- 1648823 Fix medication ID mismatch crash in trends tab
+- 6eaeef6 Add Easy-to-Use Remove Date Functionality for Refill Dates
+- 30e68a9 Add Comprehensive Tests for Medication Deletion Cleanup
+- a7e5c2c Fix Critical Crash: Clear Invalid Medication IDs on Deletion
+- e840fad Redesign Medication Row with Modern UI and Prominent Log Button
+- 53e5fba Redesign Log Dose Screen with Modern iOS 18+ UI
+- 1b37321 Persist Selected Tab Across App Launches
+- 7047fbd Improve Stability
+- 26b699d Fix Tests
+- 0a32fe3 Update MedicationEditView.swift
+- b563fad Add Ability to Redact Notes from Data Export
+- 29d9026 Improve History View CTAs
+- 024b6ed Option to hide support banners
+- 8283dcb Add ability to take notes about events
+- 33f2869 Redesign Medication Detail View
+- 692aa97 Improve Navigation from Med Details
+- 8e1a1a9 UI/UX Improvements
+- 590806d Settings View Improvements
+- 032a813 Improve visual cohesion of Settings feedback section
+- 5d8f3e9 Add unit tests for security-scoped resource handling in data import
+- bf0dd37 Fix data import permission error
+- 704fcc8 Update AboutView.swift
+- ddd065f Improve watchOS app functionality and UX
+- c6f7bc3 Add text label to log dose toolbar button for clarity
+- bc87046 Improve history view UI with toolbar actions
+- 44e8d1a Add NIH/NLM disclaimer to settings view
+- eb10887 Add Special Thanks section to About view
+- 6c2ef5d Testing Improvements
+- aae35c7 Testing Improvements
+- fb920a7 README + CONTRIBUTE
+- d4aa497 Testing Improvements
+- 6eec939 gitignore and cleanup
+- bcf6cf8 Package Restructuring
+- 3793724 Logo v2
+- 6c1f81a Revert App Logo to v1
+- f02e476 Update MedicationListView.swift
+- c02b9ba Remove Separate Asset
+- 6902264 Update MedicationListViewTests.swift
+- 2082cdb Update MedicationListIntegrationTests.swift
+- 7490ee0 Refine medication list edit mode UI
+- 5da1bba Improve medication list reorder mode UX
+- a7d4a12 Update project.pbxproj
+- 91dac2e Improve edit mode UX with proper visual indicators
+- 91a1436 Fix medication list edit mode visual feedback
+- 11d51de Add visual indicator for reorderable medication rows
+- dd13806 Add medication list reordering functionality
+- 7c4120e Enhance support toast view for better UX
+- ef1f636 Change weekday abbreviations to normal capitalization
+- f62a267 Add interactive navigation from trends to history view
+- 135bea7 Enhance add medication button visibility with accent color
+- 6c6033c Redesign ReminderConfigurationView with improved visual hierarchy
+- 0404280 Add beautiful ThankYouView for tip and subscription purchases
+- 7541f8f Remove RXCUI identifiers from medication search UI
+- 29aa1be Fix all compiler warnings for clean build
+- 11ab548 Improve dose logging toolbar buttons UX
+- 670c0ea Fix Build Errors & Keyboard Dismiss
+- efa1907 Add RevenueCatManager
+- e572469 Fix Scroll Bar Issues
+- 4a081b5 Update project.pbxproj
+- 3ee33fb Code Cleanup
+- c23676c Improve 30 day adjustment buttons
+- 12ffa0d Remove Confusing UI Elements
+- cc7b60a Improve Empty State for Med List
+- 67889ca Add Logo v2 + Design Assets
+- 607b034 Add Privacy & Terms
+- faefa51 Remove Ruby
+- c868def UI Updates & Medication Name Logic Improvements
+- a02b176 Fix test type references and MainActor isolation
+- 7bce4a8 Fix test compilation issues and color API usage
+- 4bd88b3 Replace UI tests with proper Swift Testing unit tests
+- c4bfd39 Add comprehensive tests for medication list UI updates
+- 6b52078 Enhance medication list UI with improved visual appeal
+- 3273a12 Autocomplete improvements
+- c226918 Update attribution to use open source inspired language
+- 6761a5a Revert file header changes while keeping UI team attribution
+- f6ebe7a Remove personal references and use generic team attribution
+- c92e4b1 Enhance medication autocomplete with fuzzy matching and improved UX
+- a5dd837 Code Cleanup and Review
+- 0af25c6 Fix Tests
+- 6d1e8e4 Update README.md
+- aa75335 Implement AppIntents
+- 061efec About, Welcome, and Support
+- 1991543 Improve Trends Chart
+- 0f2b23c Minor UX Improvements
+- 3d40db6 Implement Reminders Feature
+- bb3645f Implement Share Sheet for Data & Log Export
+- a88dc9f Fix Tests
+- 6f55adf Improve Logging
+- 9d44e34 DHLoggingKit Updates
+- 461db29 Add Support Views
+- d8ff178 Add DHLoggingKit
+- ff8e2d0 Improve Testing
+- b3c5fec MVP of Medication Autocomplete
+- 855dae3 Bump Build Number
+- 0cae65c Re-init watchOS app
+- 1647425 Improve Settings
+- 0d5c416 Medication Detail & Edit Screen Improvements
+- 9646920 Improve Date Handling
+- d4c5717 Add Redaction Feature
+- e3b0db6 Add Tests
+- 0d168fd Add Data Import and Export
+- 3219f92 WIP Trends View
+- d4a83d4 UX Improvements
+- db5fe86 Add day total
+- 97a6ff5 Set Time when logging a dose
+- 3e235b5 Medication Feature Improvements
+- e362534 Row Text Color and unit plurals
+- 9264d33 A given medication now has a prescribed dose quantity and unit
+- 9564a6a Refactor DataStore
+- e3ba5f8 Codex View Model Addition
+- 4380be4 Add AGENTS.md
+- 34286b7 Increment Build Number on Actual Build
+- b497a13 Auto-Increment Build Before Archive
+- 06c79c2 Bump Build
+- 0bba7f5     ITSAppUsesNonExemptEncryption
+- 189e489 Update README and Info PLIST
+- d108f48 Minor detail updates
+- 0d58503 Add double formatting
+- 66db254 Add ability to edit medication details
+- 628dfa9 Refactor history view
+- 40c28e8 Improve logging feature
+- 5669e82 Medication Feature
+- 908eade Model Updates
+- dbe5aea Add Units
+- d63b452 Add ANModelKit
+- 9b6e6fe Add SwiftRxNorm Testing
+- 5be124b Add SwiftRxNorm
+- 78bb087 Drop deployment target
+- ea55bef Simplify
+- d192d1a Create LICENSE.txt
+- 85fd30c WIP
+- fdae091 UI POC
+- 04a8fdf Tab Setup
+- 47485e2 Starting Fresh
+- fadf30a Add Tests
+- de768c6 Create README.md
