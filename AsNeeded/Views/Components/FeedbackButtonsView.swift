@@ -1,19 +1,20 @@
-import SwiftUI
 import MessageUI
+import SFSafeSymbols
+import SwiftUI
 
 struct FeedbackButtonsView: View {
-	@Environment(\.fontFamily) private var fontFamily
+    @Environment(\.fontFamily) private var fontFamily
     @StateObject private var feedbackService = FeedbackService.shared
     @State private var showingMailComposer = false
     @State private var currentFeedbackType: FeedbackType = .feedback
-	@ScaledMetric private var containerSpacing: CGFloat = 12
-	@ScaledMetric private var buttonSpacing: CGFloat = 8
-	@ScaledMetric private var containerPadding: CGFloat = 20
-	@ScaledMetric private var containerCornerRadius: CGFloat = 12
-	@ScaledMetric private var buttonVerticalPadding: CGFloat = 12
-	@ScaledMetric private var buttonHorizontalPadding: CGFloat = 16
-	@ScaledMetric private var buttonCornerRadius: CGFloat = 8
-	@ScaledMetric private var loadingSpacing: CGFloat = 12
+    @ScaledMetric private var containerSpacing: CGFloat = 12
+    @ScaledMetric private var buttonSpacing: CGFloat = 8
+    @ScaledMetric private var containerPadding: CGFloat = 20
+    @ScaledMetric private var containerCornerRadius: CGFloat = 12
+    @ScaledMetric private var buttonVerticalPadding: CGFloat = 12
+    @ScaledMetric private var buttonHorizontalPadding: CGFloat = 16
+    @ScaledMetric private var buttonCornerRadius: CGFloat = 8
+    @ScaledMetric private var loadingSpacing: CGFloat = 12
 
     private var isLoading: Bool {
         feedbackService.isCollectingLogs || feedbackService.showingLogConsentDialog
@@ -28,7 +29,7 @@ struct FeedbackButtonsView: View {
             return "Loading..."
         }
     }
-    
+
     var body: some View {
         VStack(spacing: containerSpacing) {
             Text("Help Improve AsNeeded")
@@ -112,7 +113,7 @@ struct FeedbackButtonsView: View {
             Button("Send Without Logs") {
                 feedbackService.proceedWithoutLogs()
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("Would you like to include technical logs to help diagnose issues? No medication names are stored in logs - only technical information like app events, errors, and system information.")
         }
@@ -120,15 +121,15 @@ struct FeedbackButtonsView: View {
 }
 
 struct FeedbackButton: View {
-	@Environment(\.fontFamily) private var fontFamily
+    @Environment(\.fontFamily) private var fontFamily
     let title: String
     let icon: String
     let color: Color
     let isDisabled: Bool
     let action: () -> Void
-	@ScaledMetric private var verticalPadding: CGFloat = 12
-	@ScaledMetric private var horizontalPadding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 8
+    @ScaledMetric private var verticalPadding: CGFloat = 12
+    @ScaledMetric private var horizontalPadding: CGFloat = 16
+    @ScaledMetric private var cornerRadius: CGFloat = 8
 
     init(title: String, icon: String, color: Color, isDisabled: Bool = false, action: @escaping () -> Void) {
         self.title = title
@@ -147,7 +148,7 @@ struct FeedbackButton: View {
                     .font(.customFont(fontFamily, style: .body, weight: .medium))
                     .foregroundColor(isDisabled ? .secondary : .primary)
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemSymbol: .chevronRight)
                     .foregroundColor(.secondary)
                     .font(.customFont(fontFamily, style: .caption))
                     .opacity(isDisabled ? 0.5 : 1.0)
@@ -165,21 +166,21 @@ struct FeedbackButton: View {
 
 struct MailComposeView: UIViewControllerRepresentable {
     typealias UIViewControllerType = MFMailComposeViewController
-    
+
     let feedbackService: FeedbackService
     @Environment(\.dismiss) private var dismiss
-    
-    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+
+    func makeUIViewController(context _: Context) -> MFMailComposeViewController {
         return feedbackService.createMailComposer()
     }
-    
-    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {
+
+    func updateUIViewController(_: MFMailComposeViewController, context _: Context) {
         // No updates needed
     }
 }
 
 #if DEBUG
-#Preview {
-    FeedbackButtonsView()
-}
+    #Preview {
+        FeedbackButtonsView()
+    }
 #endif

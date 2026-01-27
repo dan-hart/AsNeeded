@@ -5,39 +5,45 @@ import Foundation
 
 /// Centralized URL constants for maintainability
 public enum AppURLs {
-	// MARK: - TestFlight
-	/// TestFlight beta program join URL
-	static let testFlightBeta = URL(string: "https://testflight.apple.com/join/ZgW1r5Fd")
+    // MARK: - TestFlight
 
-	// MARK: - App Store
-	/// App Store review page URL (for TestFlight builds)
-	static let appStoreReview = URL(string: "https://apps.apple.com/app/id6714469235?action=write-review")
+    /// TestFlight beta program join URL
+    static let testFlightBeta = URL(string: "https://testflight.apple.com/join/ZgW1r5Fd")
 
-	// MARK: - GitHub
-	/// GitHub repository URL
-	static let githubRepository = URL(string: "https://github.com/dan-hart/AsNeeded")
+    // MARK: - App Store
 
-	/// GitHub issues URL
-	static let githubIssues = URL(string: "https://github.com/dan-hart/AsNeeded/issues/new")
+    /// App Store review page URL (for TestFlight builds)
+    static let appStoreReview = URL(string: "https://apps.apple.com/app/id6714469235?action=write-review")
 
-	/// GitHub developer profile URL
-	static let githubProfile = URL(string: "https://github.com/dan-hart")
+    // MARK: - GitHub
 
-	// MARK: - Social
-	/// Developer's Mastodon profile
-	static let mastodon = URL(string: "https://mas.to/@codedbydan")
+    /// GitHub repository URL
+    static let githubRepository = URL(string: "https://github.com/dan-hart/AsNeeded")
 
-	/// Buy Me a Coffee support page
-	static let buyMeACoffee = URL(string: "https://buymeacoffee.com/codedbydan")
+    /// GitHub issues URL
+    static let githubIssues = URL(string: "https://github.com/dan-hart/AsNeeded/issues/new")
 
-	// MARK: - Contributors
-	/// Christine Wang's portfolio URL
-	static let christineWang = URL(string: "https://christinewang.design/")
+    /// GitHub developer profile URL
+    static let githubProfile = URL(string: "https://github.com/dan-hart")
 
-	// MARK: - Legal
-	/// Apple's standard EULA
-	static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+    // MARK: - Social
 
-	/// Privacy policy on GitHub
-	static let privacyPolicy = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/PRIVACY.md")
+    /// Developer's Mastodon profile
+    static let mastodon = URL(string: "https://mas.to/@codedbydan")
+
+    /// Buy Me a Coffee support page
+    static let buyMeACoffee = URL(string: "https://buymeacoffee.com/codedbydan")
+
+    // MARK: - Contributors
+
+    /// Christine Wang's portfolio URL
+    static let christineWang = URL(string: "https://christinewang.design/")
+
+    // MARK: - Legal
+
+    /// Apple's standard EULA
+    static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")
+
+    /// Privacy policy on GitHub
+    static let privacyPolicy = URL(string: "https://github.com/dan-hart/AsNeeded/blob/develop/PRIVACY.md")
 }

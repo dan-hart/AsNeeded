@@ -4,16 +4,16 @@
 import SwiftUI
 
 struct TrendsView: View {
-	@EnvironmentObject private var navigationManager: NavigationManager
-	
-	var body: some View {
-		MedicationTrendsView()
-			.environmentObject(navigationManager)
-	}
+    @EnvironmentObject private var navigationManager: NavigationManager
+
+    var body: some View {
+        MedicationTrendsView()
+            .environmentObject(navigationManager)
+    }
 }
 
 #if DEBUG
-#Preview {
-	TrendsView()
-}
+    #Preview {
+        TrendsView()
+    }
 #endif

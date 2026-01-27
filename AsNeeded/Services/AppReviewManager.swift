@@ -2,267 +2,261 @@ import Foundation
 import StoreKit
 import SwiftUI
 
-// Import AppStore for iOS 18+ compatibility
-#if canImport(AppStore)
-import AppStore
-#endif
 
 @MainActor
 final class AppReviewManager: ObservableObject {
-	static let shared = AppReviewManager()
+    static let shared = AppReviewManager()
 
+    // MARK: - Constants
 
-	// MARK: - Constants
-	private let minimumLaunchCount = 3
-	private let minimumEventsCount = 2
+    private let minimumLaunchCount = 3
+    private let minimumEventsCount = 2
 
-	private init() {}
+    private init() {}
 
-	// MARK: - User Preferences
-	var hasOptedOutOfReviews: Bool {
-		get { UserDefaults.standard.bool(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews) }
-		set {
-			objectWillChange.send()
-			UserDefaults.standard.set(newValue, forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
-		}
-	}
+    // MARK: - User Preferences
 
-	// MARK: - Engagement Tracking
+    var hasOptedOutOfReviews: Bool {
+        get { UserDefaults.standard.bool(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews) }
+        set {
+            objectWillChange.send()
+            UserDefaults.standard.set(newValue, forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
+        }
+    }
 
-	/// Call this when the app launches
-	func recordAppLaunch() {
-		let currentDate = Date()
-		let calendar = Calendar.current
+    // MARK: - Engagement Tracking
 
-		// Increment launch count
-		let currentLaunchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-		UserDefaults.standard.set(currentLaunchCount + 1, forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+    /// Call this when the app launches
+    func recordAppLaunch() {
+        let currentDate = Date()
+        let calendar = Calendar.current
 
-		// Update consecutive days tracking
-		updateConsecutiveDaysTracking(for: currentDate, calendar: calendar)
+        // Increment launch count
+        let currentLaunchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        UserDefaults.standard.set(currentLaunchCount + 1, forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
 
-		// Update last use date
-		UserDefaults.standard.set(currentDate, forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
-	}
+        // Update consecutive days tracking
+        updateConsecutiveDaysTracking(for: currentDate, calendar: calendar)
 
-	/// Call this when user logs a medication event
-	func recordMedicationEvent() {
-		let currentCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-		UserDefaults.standard.set(currentCount + 1, forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        // Update last use date
+        UserDefaults.standard.set(currentDate, forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
+    }
 
-		// Check if we should request a review after this meaningful interaction
-		Task {
-			await checkAndRequestReviewIfAppropriate(trigger: .medicationLogged)
-		}
-	}
+    /// Call this when user logs a medication event
+    func recordMedicationEvent() {
+        let currentCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        UserDefaults.standard.set(currentCount + 1, forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
 
-	/// Call this when user completes setup of medication routines
-	func recordMedicationSetupCompleted() {
-		Task {
-			await checkAndRequestReviewIfAppropriate(trigger: .medicationSetupCompleted)
-		}
-	}
+        // Check if we should request a review after this meaningful interaction
+        Task {
+            await checkAndRequestReviewIfAppropriate(trigger: .medicationLogged)
+        }
+    }
 
-	/// Call this when user demonstrates consistent usage patterns
-	func recordConsistentUsage() {
-		Task {
-			await checkAndRequestReviewIfAppropriate(trigger: .consistentUsage)
-		}
-	}
+    /// Call this when user completes setup of medication routines
+    func recordMedicationSetupCompleted() {
+        Task {
+            await checkAndRequestReviewIfAppropriate(trigger: .medicationSetupCompleted)
+        }
+    }
 
-	// MARK: - Private Methods
+    /// Call this when user demonstrates consistent usage patterns
+    func recordConsistentUsage() {
+        Task {
+            await checkAndRequestReviewIfAppropriate(trigger: .consistentUsage)
+        }
+    }
 
-	private func updateConsecutiveDaysTracking(for currentDate: Date, calendar: Calendar) {
-		let lastUseDate = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate) as? Date
-		let currentConsecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+    // MARK: - Private Methods
 
-		if let lastUse = lastUseDate {
-			let daysBetween = calendar.dateComponents([.day], from: lastUse, to: currentDate).day ?? 0
+    private func updateConsecutiveDaysTracking(for currentDate: Date, calendar: Calendar) {
+        let lastUseDate = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate) as? Date
+        let currentConsecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
 
-			if daysBetween == 1 {
-				// Consecutive day usage
-				UserDefaults.standard.set(currentConsecutiveDays + 1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-			} else if daysBetween > 1 {
-				// Streak broken, reset to 1
-				UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-			}
-			// If daysBetween == 0, it's the same day, don't change consecutive count
-		} else {
-			// First time using the app
-			UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-		}
-	}
+        if let lastUse = lastUseDate {
+            let daysBetween = calendar.dateComponents([.day], from: lastUse, to: currentDate).day ?? 0
 
-	// MARK: - Review Request Logic
+            if daysBetween == 1 {
+                // Consecutive day usage
+                UserDefaults.standard.set(currentConsecutiveDays + 1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+            } else if daysBetween > 1 {
+                // Streak broken, reset to 1
+                UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+            }
+            // If daysBetween == 0, it's the same day, don't change consecutive count
+        } else {
+            // First time using the app
+            UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        }
+    }
 
-	private enum ReviewTrigger {
-		case medicationLogged
-		case medicationSetupCompleted
-		case consistentUsage
-		case manual
-	}
+    // MARK: - Review Request Logic
 
-	private func checkAndRequestReviewIfAppropriate(trigger: ReviewTrigger) async {
-		// Check if automatic reviews are allowed (includes opt-out check)
-		guard canShowAutomaticReviewRequest() else { return }
+    private enum ReviewTrigger {
+        case medicationLogged
+        case medicationSetupCompleted
+        case consistentUsage
+        case manual
+    }
 
-		// Check engagement criteria
-		guard isEngagementCriteriaMet() else { return }
+    private func checkAndRequestReviewIfAppropriate(trigger _: ReviewTrigger) async {
+        // Check if automatic reviews are allowed (includes opt-out check)
+        guard canShowAutomaticReviewRequest() else { return }
 
-		// Show pre-review alert for automatic requests
-		await requestReviewWithAlert()
-	}
+        // Check engagement criteria
+        guard isEngagementCriteriaMet() else { return }
 
-	private func isEngagementCriteriaMet() -> Bool {
-		let launchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-		let eventsCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        // Show pre-review alert for automatic requests
+        await requestReviewWithAlert()
+    }
 
-		return launchCount >= minimumLaunchCount &&
-			   eventsCount >= minimumEventsCount
-	}
+    private func isEngagementCriteriaMet() -> Bool {
+        let launchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        let eventsCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
 
-	private func showPreReviewAlert() async {
-		let alert = UIAlertController(
-			title: "Enjoying As Needed?",
-			message: "We'd love to know how your experience has been with the app so far.",
-			preferredStyle: .alert
-		)
+        return launchCount >= minimumLaunchCount &&
+            eventsCount >= minimumEventsCount
+    }
 
-		// "Yes, I'm enjoying it" - Show review prompt
-		alert.addAction(UIAlertAction(title: "Yes, I'm enjoying it!", style: .default) { _ in
-			Task { @MainActor in
-				self.recordReviewRequest()
-				self.requestNativeReview()
-			}
-		})
+    private func showPreReviewAlert() async {
+        let alert = UIAlertController(
+            title: "Enjoying As Needed?",
+            message: "We'd love to know how your experience has been with the app so far.",
+            preferredStyle: .alert
+        )
 
-		// "Not really" - Don't show review, but don't opt out permanently
-		alert.addAction(UIAlertAction(title: "Not really", style: .default) { _ in
-			Task { @MainActor in
-				self.recordReviewRequest()
-			}
-		})
+        // "Yes, I'm enjoying it" - Show review prompt
+        alert.addAction(UIAlertAction(title: "Yes, I'm enjoying it!", style: .default) { _ in
+            Task { @MainActor in
+                self.recordReviewRequest()
+                self.requestNativeReview()
+            }
+        })
 
-		// "Don't ask again" - Permanently opt out
-		alert.addAction(UIAlertAction(title: "Don't ask again", style: .destructive) { _ in
-			Task { @MainActor in
-				self.hasOptedOutOfReviews = true
-				self.recordReviewRequest()
-			}
-		})
+        // "Not really" - Don't show review, but don't opt out permanently
+        alert.addAction(UIAlertAction(title: "Not really", style: .default) { _ in
+            Task { @MainActor in
+                self.recordReviewRequest()
+            }
+        })
 
-		// Present the alert on the main thread
-		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-		   let window = windowScene.windows.first {
-			window.rootViewController?.present(alert, animated: true)
-		}
-	}
+        // "Don't ask again" - Permanently opt out
+        alert.addAction(UIAlertAction(title: "Don't ask again", style: .destructive) { _ in
+            Task { @MainActor in
+                self.hasOptedOutOfReviews = true
+                self.recordReviewRequest()
+            }
+        })
 
-	private func recordReviewRequest() {
-		UserDefaults.standard.set(Date(), forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
-	}
+        // Present the alert on the main thread
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first
+        {
+            window.rootViewController?.present(alert, animated: true)
+        }
+    }
 
-	private func requestNativeReview() {
-		// Check if reviews are disabled at the iOS system level
-		guard canRequestReviews() else { return }
+    private func recordReviewRequest() {
+        UserDefaults.standard.set(Date(), forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
+    }
 
-		// For TestFlight builds, open App Store URL directly
-		// Native review prompts don't work in TestFlight
-		if Bundle.main.isTestFlight {
-			if let reviewURL = AppURLs.appStoreReview {
-				UIApplication.shared.open(reviewURL)
-			}
-			return
-		}
+    private func requestNativeReview() {
+        // Check if reviews are disabled at the iOS system level
+        guard canRequestReviews() else { return }
 
-		// For App Store and Debug builds, use native review prompt
-		if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-			if #available(iOS 18.0, *) {
-				// Use new AppStore API for iOS 18+
-				#if canImport(AppStore)
-				AppStore.requestReview(in: windowScene)
-				#else
-				SKStoreReviewController.requestReview(in: windowScene)
-				#endif
-			} else {
-				// Use legacy API for iOS 17 and below
-				SKStoreReviewController.requestReview(in: windowScene)
-			}
-		}
-	}
+        // For TestFlight builds, open App Store URL directly
+        // Native review prompts don't work in TestFlight
+        if Bundle.main.isTestFlight {
+            if let reviewURL = AppURLs.appStoreReview {
+                UIApplication.shared.open(reviewURL)
+            }
+            return
+        }
 
-	/// Checks if review requests are allowed at the iOS system level
-	private func canRequestReviews() -> Bool {
-		// The system automatically limits review requests, but we can add additional checks here
-		// SKStoreReviewController.requestReview already respects system settings, but this provides explicit control
-		return true // SKStoreReviewController.requestReview handles system-level restrictions automatically
-	}
+        // For App Store and Debug builds, use native review prompt
+        if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            if #available(iOS 18.0, *) {
+                // Use new AppStore API for iOS 18+
+                AppStore.requestReview(in: windowScene)
+            } else {
+                // Use legacy API for iOS 17 and below
+                SKStoreReviewController.requestReview(in: windowScene)
+            }
+        }
+    }
 
-	// MARK: - Manual Review Request
+    /// Checks if review requests are allowed at the iOS system level
+    private func canRequestReviews() -> Bool {
+        // The system automatically limits review requests, but we can add additional checks here
+        // SKStoreReviewController.requestReview already respects system settings, but this provides explicit control
+        return true // SKStoreReviewController.requestReview handles system-level restrictions automatically
+    }
 
-	/// For manual review requests from the Support screen - bypasses custom alert
-	func requestManualReview() async {
-		// Check if reviews are allowed (both app-level and system-level)
-		guard canMakeReviewRequest() else { return }
+    // MARK: - Manual Review Request
 
-		// Always record the request
-		recordReviewRequest()
+    /// For manual review requests from the Support screen - bypasses custom alert
+    func requestManualReview() async {
+        // Check if reviews are allowed (both app-level and system-level)
+        guard canMakeReviewRequest() else { return }
 
-		// For manual requests, skip the custom alert and go directly to Apple's review prompt
-		requestNativeReview()
-	}
+        // Always record the request
+        recordReviewRequest()
 
-	/// Shows the custom alert flow (used for automatic review requests)
-	func requestReviewWithAlert() async {
-		// Check if automatic reviews are allowed (includes opt-out check)
-		guard canShowAutomaticReviewRequest() else { return }
+        // For manual requests, skip the custom alert and go directly to Apple's review prompt
+        requestNativeReview()
+    }
 
-		// Always record the request
-		recordReviewRequest()
+    /// Shows the custom alert flow (used for automatic review requests)
+    func requestReviewWithAlert() async {
+        // Check if automatic reviews are allowed (includes opt-out check)
+        guard canShowAutomaticReviewRequest() else { return }
 
-		// Show the pre-review alert for automatic requests
-		await showPreReviewAlert()
-	}
+        // Always record the request
+        recordReviewRequest()
 
-	/// Check for automatic review requests (includes opt-out)
-	private func canShowAutomaticReviewRequest() -> Bool {
-		// Check app-level opt-out first
-		guard !hasOptedOutOfReviews else { return false }
+        // Show the pre-review alert for automatic requests
+        await showPreReviewAlert()
+    }
 
-		// Check system-level settings
-		guard canRequestReviews() else { return false }
+    /// Check for automatic review requests (includes opt-out)
+    private func canShowAutomaticReviewRequest() -> Bool {
+        // Check app-level opt-out first
+        guard !hasOptedOutOfReviews else { return false }
 
-		return true
-	}
+        // Check system-level settings
+        guard canRequestReviews() else { return false }
 
-	/// Check for manual review requests (ignores opt-out, only checks system settings)
-	func canMakeReviewRequest() -> Bool {
-		// Manual requests bypass the opt-out preference
-		// Only check system-level settings
-		return canRequestReviews()
-	}
+        return true
+    }
 
-	// MARK: - Settings and Debug Info
+    /// Check for manual review requests (ignores opt-out, only checks system settings)
+    func canMakeReviewRequest() -> Bool {
+        // Manual requests bypass the opt-out preference
+        // Only check system-level settings
+        return canRequestReviews()
+    }
 
-	func getEngagementStats() -> (launches: Int, events: Int, consecutiveDays: Int, lastRequest: Date?) {
-		let launches = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-		let events = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-		let consecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-		let lastRequest = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate) as? Date
+    // MARK: - Settings and Debug Info
 
-		return (launches, events, consecutiveDays, lastRequest)
-	}
+    func getEngagementStats() -> (launches: Int, events: Int, consecutiveDays: Int, lastRequest: Date?) {
+        let launches = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        let events = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        let consecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        let lastRequest = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate) as? Date
 
-	func resetReviewPreferences() {
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
-		hasOptedOutOfReviews = false
-	}
+        return (launches, events, consecutiveDays, lastRequest)
+    }
 
-	func resetEngagementTracking() {
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-		UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
-	}
+    func resetReviewPreferences() {
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
+        hasOptedOutOfReviews = false
+    }
+
+    func resetEngagementTracking() {
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
+    }
 }

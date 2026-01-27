@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct HistoryView: View {
-	var body: some View {
-		MedicationHistoryView()
-	}
+    var body: some View {
+        MedicationHistoryView()
+    }
 }
 
 #if DEBUG
-#Preview {
-	HistoryView()
-}
+    #Preview {
+        HistoryView()
+    }
 #endif

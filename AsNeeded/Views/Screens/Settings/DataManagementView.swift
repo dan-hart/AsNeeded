@@ -1,20 +1,20 @@
 // DataManagementView.swift
 // UI for data management operations (export, import, clear).
 
+import DHLoggingKit
+import SFSafeSymbols
 import SwiftUI
 import UniformTypeIdentifiers
-import SFSafeSymbols
-import DHLoggingKit
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
+
+    func makeUIViewController(context _: Context) -> UIActivityViewController {
         let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
         return controller
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }
 
 struct DataManagementView: View {
@@ -44,6 +44,10 @@ struct DataManagementView: View {
 
                     Divider()
 
+                    automaticBackupSection
+
+                    Divider()
+
                     dataActionsSection
                 }
                 .padding()
@@ -60,7 +64,10 @@ struct DataManagementView: View {
                                 try? FileManager.default.removeItem(at: url)
                             }
                             viewModel.exportedDataURL = nil
-                            
+
+                            // Handle post-export flow (e.g., clear data if requested)
+                            viewModel.onShareSheetDismissed()
+
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     showSupportToast = true
@@ -80,12 +87,12 @@ struct DataManagementView: View {
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
-                case .success(let urls):
+                case let .success(urls):
                     guard let url = urls.first else { return }
                     Task {
                         await viewModel.importData(from: url)
                     }
-                case .failure(let error):
+                case let .failure(error):
                     viewModel.alertMessage = "Import selection failed: \(error.localizedDescription)"
                     viewModel.showingAlert = true
                 }
@@ -113,16 +120,16 @@ struct DataManagementView: View {
                         Section {
                             Text("Choose what information to include in the export")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
-                        
+
                         Section("Privacy Options") {
                             Toggle(isOn: $redactMedicationNames) {
                                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Redact Medication Names")
                                     Text("Replace medication names with [REDACTED]")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
 
@@ -131,7 +138,18 @@ struct DataManagementView: View {
                                     Text("Redact Notes")
                                     Text("Remove all notes from events")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                        Section("Backup Content") {
+                            Toggle(isOn: $viewModel.includeSettings) {
+                                VStack(alignment: .leading, spacing: toggleLabelSpacing) {
+                                    Text("Include App Settings")
+                                    Text("Include preferences (fonts, haptics, privacy settings)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -172,6 +190,21 @@ struct DataManagementView: View {
                 .dynamicDetent()
             }
             .confirmationDialog(
+                "Export Before Clearing?",
+                isPresented: $viewModel.showingPreClearExportDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Export & Continue") {
+                    viewModel.handlePreClearExportChoice(shouldExport: true)
+                }
+                Button("Clear Without Export", role: .destructive) {
+                    viewModel.handlePreClearExportChoice(shouldExport: false)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Would you like to export your data before permanently deleting it? This ensures you have a backup if needed.")
+            }
+            .confirmationDialog(
                 "Clear All Data",
                 isPresented: $viewModel.showingClearUserDataConfirmation,
                 titleVisibility: .visible
@@ -181,7 +214,7 @@ struct DataManagementView: View {
                         await viewModel.clearUserData()
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This will permanently delete all medications and events. This cannot be undone.")
             }
@@ -195,7 +228,7 @@ struct DataManagementView: View {
                         await viewModel.resetAppSettings()
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This will restore all app preferences to their original defaults. This cannot be undone.")
             }
@@ -209,7 +242,7 @@ struct DataManagementView: View {
                         await viewModel.clearAllData()
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This will permanently delete all medications and events, and restore all app settings to their original defaults. This cannot be undone.")
             }
@@ -233,18 +266,51 @@ struct DataManagementView: View {
                         await viewModel.exportLogs(timeInterval: 86400)
                     }
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Export technical app logs for troubleshooting. No medication names are stored in logs - only technical information like app events, errors, and system data.")
             }
+            .confirmationDialog(
+                "Import Settings",
+                isPresented: $viewModel.showingImportSettingsDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Keep My Settings") {
+                    Task {
+                        await viewModel.proceedWithImport(applySettings: false)
+                    }
+                }
+                Button("Import Settings") {
+                    Task {
+                        await viewModel.proceedWithImport(applySettings: true)
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    viewModel.pendingImportData = nil
+                    viewModel.importContainsSettings = false
+                }
+            } message: {
+                Text("This import contains app settings (fonts, haptics, preferences). Would you like to import these settings or keep your current settings?")
+            }
             .alert("Data Management", isPresented: $viewModel.showingAlert) {
-                Button("OK") { }
+                Button("OK") {}
             } message: {
                 if let message = viewModel.alertMessage {
                     Text(message)
                 }
             }
-            
+            .alert("Automatic Backups Require Reconfiguration", isPresented: $viewModel.showingAutomaticBackupReconfigAlert) {
+                Button("Later", role: .cancel) {}
+                Button("Reconfigure Now") {
+                    viewModel.navigateToAutomaticBackup()
+                }
+            } message: {
+                Text("Automatic backups were enabled before importing, but need to be reconfigured because backup location settings are device-specific.\n\nWould you like to reconfigure automatic backups now?")
+            }
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToAutomaticBackup) {
+                AutomaticBackupView()
+            }
+
             SupportToastView(
                 message: "Data exported successfully",
                 supportMessage: "Support As Needed",
@@ -267,8 +333,11 @@ struct DataManagementView: View {
                 SupportView()
             }
         }
+        .onAppear {
+            viewModel.refreshAutomaticBackupStatus()
+        }
     }
-    
+
     private var dataOverviewSection: some View {
         VStack(alignment: .leading, spacing: actionSpacing) {
             Text("Data Overview")
@@ -279,7 +348,7 @@ struct DataManagementView: View {
                 VStack(alignment: .leading, spacing: statSpacing) {
                     Text("Medications")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Text("\(viewModel.medicationCount)")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -290,7 +359,7 @@ struct DataManagementView: View {
                 VStack(alignment: .center, spacing: statSpacing) {
                     Text("Events")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Text("\(viewModel.eventCount)")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -301,7 +370,7 @@ struct DataManagementView: View {
                 VStack(alignment: .trailing, spacing: statSpacing) {
                     Text("Logs (24h)")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Group {
                         if viewModel.isLoadingLogCount {
                             ProgressView()
@@ -319,7 +388,52 @@ struct DataManagementView: View {
             .cornerRadius(cardCornerRadius)
         }
     }
-    
+
+    private var automaticBackupSection: some View {
+        NavigationLink(destination: AutomaticBackupView()) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Automatic Backup")
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                        .foregroundStyle(.primary)
+
+                    if viewModel.isAutomaticBackupEnabled {
+                        if let lastBackup = viewModel.lastAutomaticBackupDate {
+                            Text("Active • Last: \(lastBackup, style: .relative) ago")
+                                .font(.customFont(fontFamily, style: .caption))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Active")
+                                .font(.customFont(fontFamily, style: .caption))
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Not Configured")
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    if viewModel.isAutomaticBackupEnabled {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                    }
+
+                    Image(systemSymbol: .chevronRight)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(cardPadding)
+            .background(Color(.systemGray6))
+            .cornerRadius(cardCornerRadius)
+        }
+    }
+
     private var dataActionsSection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             Text("Data Actions")
@@ -378,11 +492,10 @@ struct DataManagementView: View {
                         viewModel.confirmResetSettings()
                     }
                 )
-
             }
         }
     }
-    
+
     private func dataActionButton(
         title: String,
         subtitle: String,
@@ -403,17 +516,17 @@ struct DataManagementView: View {
                     }
                 }
                 .frame(width: actionIconSize, height: actionIconSize)
-                .foregroundColor(isDestructive ? .red : .accent)
+                .foregroundStyle(isDestructive ? .red : .accent)
 
                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(isDestructive ? .red : .primary)
+                        .foregroundStyle(isDestructive ? .red : .primary)
 
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -421,7 +534,7 @@ struct DataManagementView: View {
                 if !isLoading {
                     Image(systemSymbol: .chevronRight)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(cardPadding)
@@ -447,21 +560,21 @@ struct DataManagementView: View {
 private struct DataDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.json]
     static let writableContentTypes: [UTType] = [.json]
-    
+
     let data: Data
-    
+
     init(data: Data) {
         self.data = data
     }
-    
+
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
         self.data = data
     }
-    
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+
+    func fileWrapper(configuration _: WriteConfiguration) throws -> FileWrapper {
         return FileWrapper(regularFileWithContents: data)
     }
 }
@@ -470,27 +583,27 @@ private struct DataDocument: FileDocument {
 private struct LogDocument: FileDocument {
     static let readableContentTypes: [UTType] = [.plainText]
     static let writableContentTypes: [UTType] = [.plainText]
-    
+
     let data: Data
-    
+
     init(data: Data) {
         self.data = data
     }
-    
+
     init(configuration: ReadConfiguration) throws {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
         self.data = data
     }
-    
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+
+    func fileWrapper(configuration _: WriteConfiguration) throws -> FileWrapper {
         return FileWrapper(regularFileWithContents: data)
     }
 }
 
 #if DEBUG
-#Preview {
-    DataManagementView()
-}
+    #Preview {
+        DataManagementView()
+    }
 #endif

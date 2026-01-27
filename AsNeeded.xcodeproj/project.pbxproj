@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		52133A022E9DB5B60055E06D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A012E9DB5B60055E06D /* WidgetKit.framework */; };
+		52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A032E9DB5B60055E06D /* SwiftUI.framework */; };
+		52133A0F2E9DB5B60055E06D /* AsNeededWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		52133A292E9DB8D60055E06D /* Boutique in Frameworks */ = {isa = PBXBuildFile; productRef = 52133A282E9DB8D60055E06D /* Boutique */; };
+		52133A2B2E9DBAF00055E06D /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52133A2A2E9DBAF00055E06D /* ANModelKit */; };
 		521B77C92E6B92C5006A7439 /* ReceiptParser in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77C82E6B92C5006A7439 /* ReceiptParser */; };
 		521B77CB2E6B92C5006A7439 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CA2E6B92C5006A7439 /* RevenueCat */; };
 		521B77CD2E6B92C5006A7439 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 521B77CC2E6B92C5006A7439 /* RevenueCatUI */; };
@@ -31,6 +36,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		52133A0D2E9DB5B60055E06D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 527AFA1A28E26B3400BD575D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 521339FF2E9DB5B60055E06D;
+			remoteInfo = AsNeededWidgetExtension;
+		};
 		524942E52CA2C9E5004DB0EC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 527AFA1A28E26B3400BD575D /* Project object */;
@@ -48,6 +60,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		52133A102E9DB5B60055E06D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				52133A0F2E9DB5B60055E06D /* AsNeededWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5263AE312CA2D59F0095D2A0 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -72,6 +95,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AsNeededWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		52133A012E9DB5B60055E06D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
+		52133A032E9DB5B60055E06D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
 		521B77D02E6B92D8006A7439 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		523262702E7849E500047C67 /* ANStoreKitConfig.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = ANStoreKitConfig.storekit; sourceTree = "<group>"; };
 		524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "WristAsNeeded Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,6 +111,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		52133A142E9DB5B60055E06D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 521339FF2E9DB5B60055E06D /* AsNeededWidgetExtension */;
+		};
 		52B378412E4E75C5008EC5F2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -104,12 +137,24 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		52133A052E9DB5B60055E06D /* AsNeededWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (52133A142E9DB5B60055E06D /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AsNeededWidget; sourceTree = "<group>"; };
 		524942DB2CA2C9E4004DB0EC /* WristAsNeeded Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "WristAsNeeded Watch App"; sourceTree = "<group>"; };
 		52B3780C2E4E75C5008EC5F2 /* AsNeeded */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (52B378412E4E75C5008EC5F2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 52B378422E4E75C5008EC5F2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AsNeeded; sourceTree = "<group>"; };
 		52B3784D2E4E77FD008EC5F2 /* AsNeededTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AsNeededTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		521339FD2E9DB5B60055E06D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */,
+				52133A292E9DB8D60055E06D /* Boutique in Frameworks */,
+				52133A2B2E9DBAF00055E06D /* ANModelKit in Frameworks */,
+				52133A022E9DB5B60055E06D /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		524942D72CA2C9E4004DB0EC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -163,6 +208,7 @@
 				52B3780C2E4E75C5008EC5F2 /* AsNeeded */,
 				524942DB2CA2C9E4004DB0EC /* WristAsNeeded Watch App */,
 				52B3784D2E4E77FD008EC5F2 /* AsNeededTests */,
+				52133A052E9DB5B60055E06D /* AsNeededWidget */,
 				527AFA2328E26B3400BD575D /* Products */,
 				52A28DC82A69CE7F008212BC /* Frameworks */,
 				524942CB2CA2C999004DB0EC /* Recovered References */,
@@ -179,6 +225,7 @@
 				527AFA2228E26B3400BD575D /* AsNeeded.app */,
 				524942DA2CA2C9E4004DB0EC /* WristAsNeeded Watch App.app */,
 				52B3784C2E4E77FD008EC5F2 /* AsNeededTests.xctest */,
+				52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -187,6 +234,8 @@
 			isa = PBXGroup;
 			children = (
 				521B77D02E6B92D8006A7439 /* StoreKit.framework */,
+				52133A012E9DB5B60055E06D /* WidgetKit.framework */,
+				52133A032E9DB5B60055E06D /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -194,6 +243,30 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		521339FF2E9DB5B60055E06D /* AsNeededWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52133A132E9DB5B60055E06D /* Build configuration list for PBXNativeTarget "AsNeededWidgetExtension" */;
+			buildPhases = (
+				521339FC2E9DB5B60055E06D /* Sources */,
+				521339FD2E9DB5B60055E06D /* Frameworks */,
+				521339FE2E9DB5B60055E06D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				52133A052E9DB5B60055E06D /* AsNeededWidget */,
+			);
+			name = AsNeededWidgetExtension;
+			packageProductDependencies = (
+				52133A282E9DB8D60055E06D /* Boutique */,
+				52133A2A2E9DBAF00055E06D /* ANModelKit */,
+			);
+			productName = AsNeededWidgetExtension;
+			productReference = 52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 524942E82CA2C9E5004DB0EC /* Build configuration list for PBXNativeTarget "WristAsNeeded Watch App" */;
@@ -225,11 +298,13 @@
 				527AFA2028E26B3400BD575D /* Resources */,
 				5296A1F02CA2A17B00A6E3B6 /* Embed Watch Content */,
 				5263AE312CA2D59F0095D2A0 /* Embed Frameworks */,
+				52133A102E9DB5B60055E06D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				524942E62CA2C9E5004DB0EC /* PBXTargetDependency */,
+				52133A0E2E9DB5B60055E06D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				52B3780C2E4E75C5008EC5F2 /* AsNeeded */,
@@ -287,6 +362,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					521339FF2E9DB5B60055E06D = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
 					524942D92CA2C9E4004DB0EC = {
 						CreatedOnToolsVersion = 16.0;
 					};
@@ -325,11 +403,19 @@
 				527AFA2128E26B3400BD575D /* AsNeeded */,
 				524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */,
 				52B3784B2E4E77FD008EC5F2 /* AsNeededTests */,
+				521339FF2E9DB5B60055E06D /* AsNeededWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		521339FE2E9DB5B60055E06D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		524942D82CA2C9E4004DB0EC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -360,6 +446,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		521339FC2E9DB5B60055E06D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		524942D62CA2C9E4004DB0EC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -384,6 +477,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		52133A0E2E9DB5B60055E06D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 521339FF2E9DB5B60055E06D /* AsNeededWidgetExtension */;
+			targetProxy = 52133A0D2E9DB5B60055E06D /* PBXContainerItemProxy */;
+		};
 		524942E62CA2C9E5004DB0EC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */;
@@ -397,6 +495,97 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		52133A112E9DB5B60055E06D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 297;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AsNeededWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AsNeededWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded.AsNeededWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		52133A122E9DB5B60055E06D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 297;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AsNeededWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AsNeededWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeeded.AsNeededWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 		524942E92CA2C9E5004DB0EC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -405,7 +594,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -444,7 +633,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -526,7 +715,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -584,7 +773,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -603,7 +792,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -613,10 +802,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "As Needed";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -644,7 +836,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -654,10 +846,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "As Needed";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -683,13 +878,13 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeededTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -708,13 +903,13 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 230;
+				CURRENT_PROJECT_VERSION = 297;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.codedbydan.AsNeededTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -730,6 +925,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		52133A132E9DB5B60055E06D /* Build configuration list for PBXNativeTarget "AsNeededWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52133A112E9DB5B60055E06D /* Debug */,
+				52133A122E9DB5B60055E06D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		524942E82CA2C9E5004DB0EC /* Build configuration list for PBXNativeTarget "WristAsNeeded Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -836,6 +1040,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		52133A282E9DB8D60055E06D /* Boutique */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52C349A82E552F980040CEB8 /* XCRemoteSwiftPackageReference "Boutique" */;
+			productName = Boutique;
+		};
+		52133A2A2E9DBAF00055E06D /* ANModelKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 52BD23CA2E6C87CF00985CD3 /* XCRemoteSwiftPackageReference "ANModelKit" */;
+			productName = ANModelKit;
+		};
 		521B77C82E6B92C5006A7439 /* ReceiptParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 521B77C72E6B92C5006A7439 /* XCRemoteSwiftPackageReference "purchases-ios" */;

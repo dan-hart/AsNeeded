@@ -1,13 +1,13 @@
 ---
 id: task-0010
 title: Improve Medication Detail View user experience
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-09-22 12:33'
-updated_date: '2025-09-26 22:37'
+updated_date: '2025-10-09 23:44'
 labels: []
 dependencies: []
-ordinal: 8000
+ordinal: 1000
 ---
 
 ## Description
