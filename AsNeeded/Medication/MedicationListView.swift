@@ -173,7 +173,11 @@ struct MedicationListView: View {
     private var mainContent: some View {
         Group {
             if viewModel.items.isEmpty {
-                emptyStateView
+                if viewModel.isLoading {
+                    loadingStateView
+                } else {
+                    emptyStateView
+                }
             } else {
                 medicationListContent
             }
@@ -307,6 +311,21 @@ struct MedicationListView: View {
                 .padding(.bottom, supportViewBottomPadding)
                 .background(Color(.systemGroupedBackground))
         }
+    }
+
+    @ViewBuilder
+    private var loadingStateView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .tint(.secondary)
+            Text("Loading")
+                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text("Loading"))
     }
 }
 

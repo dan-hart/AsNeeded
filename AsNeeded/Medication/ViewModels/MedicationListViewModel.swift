@@ -30,6 +30,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseAmount: Double = 0
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
+    @Published var isLoading = true
 
     // MARK: - Computed Properties
     var items: [ANMedicationConcept] { dataStore.medications }
@@ -68,6 +69,24 @@ final class MedicationListViewModel: ObservableObject {
     // MARK: - Initialization
     init(dataStore: DataStore = .shared) {
         self.dataStore = dataStore
+
+        if medicationOrder.isEmpty && !items.isEmpty {
+            medicationOrder = items.map { $0.id.uuidString }
+        }
+
+        Task { [weak self] in
+            await self?.finishInitialLoad()
+        }
+    }
+
+    private func finishInitialLoad() async {
+        do {
+            try await dataStore.medicationsStore.itemsHaveLoaded()
+        } catch {
+            logger.error("Failed to load medications store: \(error.localizedDescription)")
+        }
+
+        isLoading = false
 
         if medicationOrder.isEmpty && !items.isEmpty {
             medicationOrder = items.map { $0.id.uuidString }
