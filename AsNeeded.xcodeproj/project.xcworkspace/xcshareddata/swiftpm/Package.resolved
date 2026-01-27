@@ -7,7 +7,7 @@
       "location" : "https://github.com/dan-hart/ANModelKit",
       "state" : {
         "branch" : "main",
-        "revision" : "e8a34d2f66be3bb2f78096de69a6f4e665c5da37"
+        "revision" : "02380bee063a136dd6ed7fce7cee047b4f8d4d6e"
       }
     },
     {
@@ -34,7 +34,7 @@
       "location" : "https://github.com/dan-hart/DHFlatUIColors",
       "state" : {
         "branch" : "main",
-        "revision" : "cae2cbd0a59586a83a89bc52cf18b9419681d863"
+        "revision" : "821b077fc94ba45422ded8f38ee5b532dbabfd3e"
       }
     },
     {
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections",
       "state" : {
-        "revision" : "8c0c0a8b49e080e54e5e328cc552821ff07cd341",
-        "version" : "1.2.1"
+        "revision" : "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e",
+        "version" : "1.3.0"
       }
     },
     {

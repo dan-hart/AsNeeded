@@ -1,14 +1,14 @@
 ---
 id: task-0002
 title: Integrate Apple HealthKit into AsNeeded
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2025-09-22 12:26'
-updated_date: '2025-09-26 22:37'
+updated_date: '2025-10-07 16:31'
 labels: []
 dependencies: []
 priority: medium
-ordinal: 4000
+ordinal: 1000
 ---
 
 ## Description

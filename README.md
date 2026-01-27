@@ -220,5 +220,24 @@ Questions or feedback? Open an issue on GitHub or start a discussion:
 - Issues: https://github.com/dan-hart/AsNeeded/issues
 - Discussions: https://github.com/dan-hart/AsNeeded/discussions
 
-We’d love to hear how you’re using AsNeeded and what would make it more helpful.
+We'd love to hear how you're using AsNeeded and what would make it more helpful.
+
+---
+
+## HealthKit Support
+
+AsNeeded currently does not support HealthKit integration for the following reasons:
+
+### 1. Platform Independence
+AsNeeded is designed to be a standalone medication tracking platform. Adding HealthKit sync would create confusion about where your data lives and fragment the user experience between multiple apps.
+
+### 2. Apple Platform Restrictions
+Apple does not allow third-party apps to write medication data to HealthKit. This would force users to log doses in the Health app but view trends in AsNeeded—a poor and confusing user experience.
+
+### 3. Privacy & Data Control
+Users choose AsNeeded for its simplicity and complete data privacy. Your medication data stays entirely on your device, never touching the cloud or external services. You have full control over your sensitive health information.
+
+---
+
+We're focused on making AsNeeded the best standalone medication tracker, with features like local backups and exports that give you control without compromising privacy or simplicity.
 

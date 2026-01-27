@@ -8,217 +8,379 @@
 - `build/`: Local build artifacts (ignored in VCS).
 
 ## Build, Test, Run
-- Build (CLI): `xcodebuild -project AsNeeded.xcodeproj -scheme AsNeeded -configuration Debug build`.
-- Run (Xcode): Open `AsNeeded.xcodeproj`, select an iOS 18.6+ simulator, press Run (⌘R).
-- Tests (Xcode): Product → Test (⌘U).
-- Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16'`.
+
+### Quick Start (Optimized Scripts)
+**ALWAYS use these optimized scripts for maximum performance:**
+- **Development build**: `./scripts/dev-build.sh` - Ultra-fast incremental builds using all 16 CPU cores
+- **Run tests**: `./scripts/test-parallel.sh` - Parallel test execution (12 parallel workers)
+- **Production build**: `./scripts/prod-build.sh` - Optimized release builds
+- **Weekly cleanup**: `./scripts/clean-deriveddata.sh --asneeded` - Remove ~2.6GB of build cache
+
+See `scripts/README.md` for complete documentation.
+
+### Manual Build Commands (Fallback)
+- **xcsift installation** (required): `brew tap ldomaradzki/xcsift && brew install xcsift`
+- Build (CLI): `xcodebuild -project AsNeeded.xcodeproj -scheme AsNeeded -configuration Debug build -quiet 2>&1 | xcsift`
+- Tests (CLI): `xcodebuild test -project AsNeeded.xcodeproj -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' 2>&1 | xcsift`
 
 ## Coding Style & Naming
-- **Indentation**: Use tabs (not spaces) for indentation; wrap at ~120 cols.
-- **Code Organization**: Use MARK comments to organize code sections (e.g., `// MARK: - Properties`, `// MARK: - View Components`, `// MARK: - Private Methods`). No blank lines should appear directly after MARK comments - code should begin immediately on the next line.
-- **SF Symbols**: ALWAYS use SFSafeSymbols instead of string literals. Import `SFSafeSymbols` and use `systemSymbol:` for both Images AND Labels (e.g., `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`, `Label("Text", systemSymbol: .pills)` not `Label("Text", systemImage: "pills")`). Function parameters should use `SFSymbol` type instead of `String`. Exception: WatchOS targets where SFSafeSymbols is not available - use string literals there.
-- **Colors**: ALWAYS use `.accent` instead of `.blue` for interactive elements and tint colors. This ensures the app respects user's system-wide color preferences and maintains consistency across the UI. Use `.blue` only when specifically required for non-interactive content. For tappable elements like buttons or links, use `.foregroundStyle(.accent)`.
+- **Indentation**: Use tabs (not spaces); wrap at ~120 cols.
+- **Code Organization**: Use MARK comments (e.g., `// MARK: - Properties`). No blank lines after MARK comments.
+- **Semantic Naming**: Name variables by purpose, not value.
+  - ✅ CORRECT: `private var cardSpacing: CGFloat = 24`
+  - ❌ WRONG: `private var spacing24: CGFloat = 24`
+- **Inclusive Terminology**: Use modern, inclusive terminology in all code, comments, and documentation.
+  - ✅ CORRECT: `allowlist`, `blocklist`, `primary/replica`, `main branch`
+  - ❌ WRONG: `whitelist`, `blacklist`, `master/slave`, `master branch`
+- **SF Symbols**: ALWAYS use SFSafeSymbols: `Image(systemSymbol: .pills)` not `Image(systemName: "pills")`. Exception: WatchOS targets.
+- **Colors**:
+  - ALWAYS use `.accent` instead of `.blue` or `Color.accentColor` for interactive elements.
+  - ✅ CORRECT: `.foregroundStyle(.accent)`, `.tint(.accent)`
+  - ❌ WRONG: `.foregroundStyle(Color.accentColor)`
 - **Typography & Custom Fonts**:
-  - NEVER use hardcoded font sizes (e.g., `.font(.system(size: 16))`). Always use semantic font styles to support Dynamic Type accessibility.
-  - **CRITICAL**: ALWAYS use `.customFont()` instead of semantic styles directly to support user-selected accessibility fonts:
-    - ✅ CORRECT: `.font(.customFont(fontFamily, style: .body))`
-    - ✅ CORRECT: `.font(.customFont(fontFamily, style: .headline, weight: .semibold))`
-    - ❌ WRONG: `.font(.body)` or `.font(.headline)`
-  - **Environment Setup**: Add `@Environment(\.fontFamily) private var fontFamily` to ALL views that display text
-  - **Special Cases**:
-    - Pickers: Apply `.font(.customFont(...))` to BOTH the picker AND each picker item
-    - Segmented Controls: Apply fonts to the picker itself AND each option/label
-    - Section Headers: `Section(header: Text("Title").font(.customFont(fontFamily, style: .subheadline)))`
-    - Toolbar Buttons: Always use `.font(.customFont(fontFamily, style: .body, weight: .medium))`
-    - Navigation Titles: Use `.customNavigationTitle("Title")` modifier for inline titles (large titles handled automatically by NavigationBarAppearanceManager)
-  - **Performance**: The app uses `NavigationBarAppearanceManager` for global navigation bar fonts and caches font instances for performance
-- **Component Reusability**: ALWAYS search for existing reusable components in `AsNeeded/Views/Components/` before creating new UI elements. If a similar pattern exists, use or extend the existing component. When creating new views, prioritize making them reusable by extracting common UI patterns into standalone components. Examples: `SettingsRowComponent`, `SupportToastView`, `FeedbackButtonsView`. Create components for any UI pattern used in 2+ places.
+  - **CRITICAL**: ALWAYS use `.customFont()` for all text to support user-selected accessibility fonts.
+  - ✅ CORRECT: `.font(.customFont(fontFamily, style: .body))`
+  - ❌ WRONG: `.font(.body)`
+  - Add `@Environment(\.fontFamily) private var fontFamily` to ALL views displaying text.
+  - Navigation titles: Use `.customNavigationTitle("Title")` for inline titles.
+  - **Text Truncation**: Use `.noTruncate()` for critical text (medication names). Use `.lineLimit(n)` for preview text only.
+- **Component Reusability**: ALWAYS search `AsNeeded/Views/Components/` before creating new UI. Create components for any pattern used 2+ times.
 
 ## UI Patterns
 
 ### Sticky Bottom Buttons
-For important actions (save, submit, log), use a sticky button pattern at the bottom of views instead of toolbar buttons:
-- **Structure**: `VStack(spacing: 0)` containing scrollable content and sticky button container
-- **Button container**: Includes `Divider()` with `.separator.opacity(0.5)` and button with appropriate padding
-- **Background**: `.regularMaterial` for the button container
-- **Examples**: LogDoseView, ColorPickerComponent, ExpandableNoteEditorComponent, MedicationHistoryView note editing
-- **Benefits**: Primary action always visible, better accessibility, consistent across screen sizes
+For important actions, use sticky button at bottom:
+- Structure: `VStack(spacing: 0)` with scrollable content + sticky button container
+- Background: `.regularMaterial` with `Divider()` separator
+- Examples: LogDoseView, ColorPickerComponent
 
 ### Sheet Toolbar Patterns
-All sheets and modal views must follow iOS 26 toolbar conventions for consistency:
-- **Cancel action** (leading): Plain X icon (`Image(systemSymbol: .xmark)`) - no glass backgrounds, no text labels
-- **Confirmation action** (trailing): Large plain checkmark (`Image(systemSymbol: .checkmark)`) with accent/medication color - no circle in the symbol
-- **Font styling**: Cancel uses `.font(.customFont(fontFamily, style: .body, weight: .medium))`, confirmation uses `.font(.customFont(fontFamily, style: .title2, weight: .semibold))` for larger, more prominent appearance
-- **Exception**: Sheets with sticky bottom CTA buttons should have NO top trailing confirmation button (only cancel X on leading side)
-- Examples:
-  ```swift
-  // Standard sheet with both toolbar buttons
-  .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-          Button { dismiss() } label: {
-              Image(systemSymbol: .xmark)
-                  .font(.customFont(fontFamily, style: .body, weight: .medium))
-                  .foregroundStyle(.secondary)
-          }
-      }
-      ToolbarItem(placement: .confirmationAction) {
-          Button { performSave() } label: {
-              Image(systemSymbol: .checkmark)
-                  .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                  .foregroundStyle(.accent)
-          }
-      }
-  }
-
-  // Sheet with sticky bottom CTA (only cancel button)
-  .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-          Button { dismiss() } label: {
-              Image(systemSymbol: .xmark)
-                  .font(.customFont(fontFamily, style: .body, weight: .medium))
-                  .foregroundStyle(.secondary)
-          }
-      }
-  }
-  ```
+- **Cancel** (leading): `Image(systemSymbol: .xmark)` with `.font(.customFont(fontFamily, style: .body, weight: .medium))`
+- **Confirmation** (trailing): `Image(systemSymbol: .checkmark)` with `.font(.customFont(fontFamily, style: .title2, weight: .semibold))` and `.foregroundStyle(.accent)`
+- **Exception**: Sheets with sticky bottom buttons have NO trailing toolbar button.
 
 ### Keyboard Focus in Sheets
-When presenting sheets with text input that should auto-focus:
-- Use `@FocusState` with the text field
-- **Preferred**: Use `TextField` with `.axis(.vertical)` instead of `TextEditor` for better focus reliability
-- Apply focus with 0.3s delay using both approaches for redundancy:
-  - `.onChange(of: isPresented)` in the parent view
-  - `.task` modifier in the sheet content
-- Example:
-  ```swift
-  .onChange(of: isExpanded) { _, newValue in
-      if newValue {
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-              focusState = true
-          }
-      }
-  }
-  ```
-- This minimal delay accounts for sheet presentation animation
+- Use `@FocusState` with 0.3s delay via `.onChange()` and `.task` modifiers
+- Prefer `TextField` with `.axis(.vertical)` over `TextEditor`
+
+### Liquid Glass Design (iOS 26+)
+See complete guide: **[docs/LIQUID_GLASS.md](docs/LIQUID_GLASS.md)**
+- Primary: `.glassEffect(.regular)` replaces `.regularMaterial`
+- Interactive: `.glassEffect(.regular.interactive(true))` for buttons
+- Tinted: `.glassEffect(.regular.tint(.accent.opacity(0.3)))` for CTAs
+- Shapes: `Capsule()` for controls, `RoundedRectangle(cornerRadius:, style: .continuous)` for cards
 
 ## Feature Toggle System
-
-The app includes a feature toggle system for managing experimental or debug features:
-- **FeatureToggleManager**: Centralized manager (`AsNeeded/Services/FeatureToggleManager.swift`)
-- **Debug-only**: Feature toggles are only available in DEBUG builds
-- **Settings UI**: Toggle switches appear in Settings > Debug section
-- **Default OFF**: All experimental features default to OFF
-- **Current toggles**:
-  - `quickPhrasesEnabled`: Shows/hides quick phrase suggestions in note editor
-
-To add a new feature toggle:
-1. Add property to FeatureToggleManager: `@AppStorage("featureToggle.myFeature") var myFeatureEnabled: Bool = false`
-2. Add key to UserDefaultsKeys constants
-3. Add UI toggle in SettingsDebugSectionView
-4. Check toggle in your component: `if featureToggleManager.myFeatureEnabled { ... }`
+- Location: `AsNeeded/Services/FeatureToggleManager.swift`
+- Debug-only, default OFF
+- Adding toggles: Update `UserDefaultsKeys.swift`, `FeatureToggleManager`, and `SettingsDebugSectionView`
 
 ## Code Style
-
 - Swift 6, SwiftUI first; prefer `struct` for models/views; mark `final` for classes.
-- Access control: keep minimal (default `internal`); prefer small, focused extensions in `AsNeeded/Extensions`.
-- Protocol‑oriented services; inject dependencies for testability.
-- Naming: Views end with `View` (e.g., `MedicationDetailView`), tests end with `Tests` (e.g., `AsNeededTests`). Filenames match primary type.
-- **No force unwraps**: Avoid force unwraps (`!`) in both app code AND tests. Use safe unwrapping with `guard let`, `if let`, or optional chaining to prevent runtime crashes.
+- **No force unwraps**: Use `guard let`, `if let`, or optional chaining in app code AND tests.
+
+## UserDefaults & AppStorage
+**ALWAYS use strongly-typed keys from `UserDefaultsKeys.swift`:**
+- ✅ CORRECT: `@AppStorage(UserDefaultsKeys.hapticsEnabled) var hapticsEnabled: Bool = true`
+- ❌ WRONG: `@AppStorage("hapticsEnabled") var hapticsEnabled: Bool = true`
 
 ## Architecture Overview
-- Domain: Pure models and use cases that encode business rules; no UI or persistence code. Keep calculation/validation logic here.
-- Services: Protocol‑backed adapters (e.g., persistence, notifications). Provide swappable implementations and inject into features/tests.
-- Views: Small SwiftUI views composed from domain state; avoid side effects. Prefer unidirectional data flow.
-- Concurrency: Use async/await for I/O and scheduling; keep domain synchronous where possible for testability.
-- Adding features: Create/extend a use case for behavior, add a service protocol if needed, then compose in a new `...View`.
+- Domain: Pure models, business rules, no UI/persistence
+- Services: Protocol-backed adapters (persistence, notifications)
+- Views: Small SwiftUI views, unidirectional data flow
+- Concurrency: async/await for I/O; keep domain synchronous
 
 ## Data Store Usage
-- Centralized store: Use `DataStore.shared` for Boutique access (`medicationsStore`, `eventsStore`).
-- No direct Store in views: Interact via view models that depend on `DataStore` (inject in init for testability).
-- Helpers: Prefer `DataStore` ops (`addMedication`, `updateMedication`, `deleteMedication`, `addEvent`) over raw insert/remove.
-- Tests: Inject `DataStore` and, if needed, adapt it to use in‑memory storage; avoid file‑backed stores in tests.
+- Use `DataStore.shared` for Boutique access
+- Inject DataStore in view models for testability
+- Prefer DataStore helpers over raw insert/remove
+
+## Data Storage & Migration
+
+**CRITICAL**: Read `docs/DATA_STORAGE_GUIDELINES.md` before making ANY storage changes.
+
+### Storage Location
+- **Current**: App Group container `group.com.codedbydan.AsNeeded`
+- **Databases**: `medications.sqlite`, `events.sqlite`
+- **Engine**: Boutique + SQLiteStorageEngine
+- **Location**: `AsNeeded/Services/Persistence/DataStore.swift`
+
+### The October 2025 Data Loss Incident
+In October 2025, a storage path change (commit `61e6ad5`) caused complete data loss for all users. The app was migrated from default app container to App Group container WITHOUT migration logic, leaving all existing data orphaned and inaccessible.
+
+**Lesson**: NEVER change storage paths without implementing data migration.
+
+### The December 2025 Repeated Migration Bug
+In December 2025, users reported medication quantities reverting to old values on every app restart. Root cause: The "data-driven" migration checked for legacy data on every launch, but **never archived/deleted legacy files after migration**. This caused migration to run repeatedly, overwriting user changes with stale legacy data.
+
+**Lessons**:
+1. Data-driven migration MUST archive/rename legacy files after success
+2. Test migrations across MULTIPLE app restarts, not just single launch
+3. Prefer rename over delete for safety (archived files can be recovered)
+4. Track archived paths in UserDefaults for debugging/recovery
+5. Red-team your bug hypotheses - initial assumption (Watch Connectivity) was wrong
+
+### Mandatory Rules for Storage Changes
+
+1. **NEVER change storage paths without migration**
+   - ANY path/filename change REQUIRES `DataMigrationManager`
+   - Migration MUST merge data (not replace)
+   - Migration MUST be non-destructive
+   - Migration MUST be idempotent
+
+2. **Migration Implementation Checklist**
+   - [ ] Create migration manager class
+   - [ ] Implement data loading from both old and new locations
+   - [ ] Implement merge logic (deduplicate by ID)
+   - [ ] Add comprehensive logging
+   - [ ] **⚠️ Archive/rename legacy files after successful migration**
+   - [ ] **⚠️ Track archived paths in UserDefaults for recovery**
+   - [ ] Call migration from `MigrationCoordinator` before DataStore init
+   - [ ] Create unit tests
+   - [ ] Test on simulator AND physical device
+   - [ ] Test all scenarios: fresh install, old data only, new data only, both
+   - [ ] **⚠️ Test across MULTIPLE app restarts** (not just single launch)
+   - [ ] Verify idempotency (run migration multiple times)
+   - [ ] Update `docs/DATA_STORAGE_GUIDELINES.md`
+
+3. **Testing Requirements**
+   - Test with real user data in old location
+   - Test migration idempotency (run twice, verify no duplicates)
+   - Test on physical device (NOT just simulator)
+   - Test with large databases (1000+ items)
+   - Verify old data still exists after migration
+
+4. **Documentation Requirements**
+   - Document all storage paths in `DATA_STORAGE_GUIDELINES.md`
+   - Document migration strategy and rationale
+   - Update version history table
+   - Add migration to troubleshooting guide
+
+### Migration Code Template
+See `docs/DATA_STORAGE_GUIDELINES.md` for complete template and examples.
+
+### Current Migration Status
+- **DataMigrationManager**: Handles legacy → App Group migration
+- **Status**: Active, archives legacy files after successful migration
+- **Archived paths tracked in**: `UserDefaultsKeys.archivedLegacyMedicationsPath`, `UserDefaultsKeys.archivedLegacyEventsPath`
+- **Recovery helper**: `DataMigrationManager().findArchivedLegacyDatabases()`
+
+### Dangerous Files Registry (MANDATORY REVIEW)
+
+The following files require **EXTRA SCRUTINY** before modification. Changes to these files can cause data loss, app rejection, or settings corruption.
+
+| File | Risk Level | Required Actions Before Modifying |
+|------|------------|-----------------------------------|
+| `StorageConstants.swift` | **DATA LOSS** | Central source of truth - ANY change requires migration, update version history |
+| `DataStore.swift` | **DATA LOSS** | Read `DATA_STORAGE_GUIDELINES.md`, verify migration exists, test on physical device |
+| `DataMigrationManager.swift` | **DATA LOSS** | Test with real data in old location, verify idempotency, physical device test |
+| `StorageHealthChecker.swift` | **DATA LOSS** | Ensure health checks don't block legitimate data access |
+| `MigrationCoordinator.swift` | **DATA LOSS** | Verify error handling doesn't mark failed migrations as complete |
+| `UserDefaultsKeys.swift` | **SETTINGS LOSS** | Check for breaking key renames, ensure backward compatibility |
+| `Info.plist` | **APP REJECTION** | Verify entitlements match capabilities, check privacy descriptions |
+
+**MANDATORY**: Before modifying ANY file above, the AI agent MUST:
+1. State which dangerous file is being modified and why
+2. Explain why the change is safe (cite specific safeguards)
+3. List the verification steps that will be taken after the change
+4. Run tests on physical device for any storage-related changes
+
+### Storage Impact Analysis (MANDATORY for Infrastructure Changes)
+
+Before modifying ANY file in `Services/Persistence/`, complete this mental checklist and **output your analysis**:
+
+1. **Path Analysis**: Does this change affect where data is stored?
+   - If YES → STOP. Read `DATA_STORAGE_GUIDELINES.md` first.
+   - Check: containerURL, appGroupIdentifier, database names, file extensions
+
+2. **Schema Analysis**: Does this change affect data structure?
+   - If YES → Verify backward compatibility with existing data.
+   - Check: Model changes, Codable conformance, migration requirements
+
+3. **Migration Analysis**: Will existing users need their data migrated?
+   - If YES → Implement migration BEFORE making the change.
+   - Rule: Data-driven migrations (check if data exists, not flags)
+
+4. **Rollback Analysis**: If this change causes problems, can we rollback?
+   - If NO → Add backup mechanism first.
+   - Consider: What happens if migration fails mid-way?
+
+5. **Test Analysis**: How will we verify this doesn't break existing data?
+   - Document specific test scenarios before implementing.
+   - Required: Fresh install, old data only, new data only, both, idempotency
+
+**Output Required**: Before any storage change, output a brief "Storage Impact Analysis" section in your response explaining your answers to these 5 questions.
+
+## HealthKit Integration
+
+### Overview
+Three sync modes: Bidirectional, HealthKit SOT, AsNeeded SOT. Enables cloud sync without backend.
+
+### Services
+- **HealthKitSyncManager**: `Services/HealthKit/HealthKitSyncManager.swift`
+- **HealthKitMigrationManager**: `Services/HealthKit/HealthKitMigrationManager.swift`
+
+### Key Logic
+DataStore respects sync mode via `shouldWriteToLocalStorage()`:
+- Bidirectional/AsNeeded SOT: Writes to local Boutique store
+- HealthKit SOT: Writes only to HealthKit, NOT local storage
+
+Export availability via `canExportData` property based on sync mode.
+
+### UI Components
+- **HealthKitOnboardingCard**: Empty state or settings
+- **SettingsHealthKitSectionView**: Main settings summary
+- **HealthKitSettingsView**: Full sync configuration
+
+### User Flow
+1. Connect → Authorize → Select mode → Migrate (optional)
+2. Background sync every 5 minutes
+3. Mode changes show warnings and offer migration
+
+### Archived Medications
+- Extension: `ANMedicationConcept.isArchived`
+- UI: Archive toggle in edit view, filter in list view
+- Storage: UserDefaults array of archived IDs
+
+### Testing
+- Unit tests: `HealthKitSyncManagerTests`, `HealthKitMigrationManagerTests`, `DataStoreTests`
+- Pattern: Set sync mode in UserDefaults, verify conditional writes
+
+### Important Notes
+- iOS 26+ only, unavailable on iPad
+- Physical device testing required
+- Per-object permissions supported
+- Uses `ANModelKitHealthKit` module
 
 ## Package Boundaries
-- No SwiftUI in packages: Do not add any SwiftUI code or imports to `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`. These packages must remain UI‑free (domain models, use cases, networking only).
-- UI lives in app targets: Place SwiftUI views and UI helpers under `AsNeeded/` (e.g., `Views/`, `Medication/`). Keep packages platform‑agnostic and testable.
+- No SwiftUI in `AsNeeded/Packages/ANModelKit` or `AsNeeded/Packages/SwiftRxNorm`
+- Keep packages platform-agnostic
+
+## Package Dependencies Management
+**CRITICAL**: Hardcoded in `AsNeeded/Services/PackageDependencyManager.swift` (lines 13-134).
+
+When `Package.resolved` changes:
+1. Open `AsNeeded.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
+2. Copy new `revision` (commit hash) and `version`/`branch` to hardcoded entry
+3. Test in Settings → About → App Dependencies
 
 ## Accessibility Guidelines
-- **VoiceOver Support**: Add `.accessibilityLabel()` to all interactive elements and images. Use `.accessibilityHint()` for complex interactions. Hide decorative elements with `.accessibilityHidden(true)`.
-- **Dynamic Type**: Always use semantic font styles (`.body`, `.headline`, `.caption`) instead of hardcoded sizes. Test with large accessibility font sizes.
-- **Motion Sensitivity**: Import `@Environment(\.accessibilityReduceMotion)` and provide static alternatives when `reduceMotion` is true. Disable animations for users who prefer reduced motion.
-- **Color and Contrast**: Use semantic colors (`.accent`, `.primary`, `.secondary`) that adapt to user preferences. Avoid relying solely on color to convey information.
-- **Touch Targets**: Ensure interactive elements are at least 44x44 points for optimal usability.
-- **Color Contrast**: ALWAYS use the `Color+Contrast` extension for custom colored backgrounds. Use `.contrastingForegroundColor()` for text on custom backgrounds, and `.contrastingSecondaryColor()` for secondary text. Never hardcode `.white` or `.black` text on colored backgrounds. The extension automatically meets WCAG AA standards (4.5:1 contrast ratio for normal text, 3:1 for large text).
+- **VoiceOver**: Add `.accessibilityLabel()` to interactive elements
+- **Dynamic Type**: Use semantic font styles via `.customFont()`
+- **Motion**: Check `@Environment(\.accessibilityReduceMotion)`
+- **Color Contrast**: Use `Color+Contrast` extension (`.contrastingForegroundColor()`) for custom backgrounds
+- **Touch Targets**: Minimum 44x44 points
 
-## Component Reusability Guidelines
-- **Check Before Creating**: Always search for existing components before creating new ones. Look in `AsNeeded/Views/Components/` and examine similar features for reusable patterns.
-- **Documentation Requirements**: All reusable components MUST include comprehensive `///` documentation comments at the top, including:
-  - Brief description of what the component looks like
-  - Key features and capabilities
-  - Visual appearance details
-  - Multiple use cases where the component could be applied
-  - Example: See `HeroSectionComponent`, `GlassCardModifier`, `DateCardComponent` for reference
-- **Design Consistency**: Reusable components should follow the app's design system (glass cards, accent colors, semantic fonts, accessibility support).
-- **Preview Support**: All components should include SwiftUI previews demonstrating different states and configurations.
+## Component Reusability
+- Check `AsNeeded/Views/Components/` before creating
+- Document with `///` comments: description, features, use cases
+- Include SwiftUI previews
 
 ### TestFlight Beta Access
-- **Component**: Use `TestFlightAccessComponent` for linking users to the TestFlight beta program
-- **Location**: `AsNeeded/Views/Components/TestFlightAccessComponent.swift`
-- **URL Constant**: Use `AppURLs.testFlightBeta` from `AsNeeded/Constants/AppURLs.swift`
-- **Usage**: Add to feedback, support, about, and thank-you views to invite users to test beta features
-- **Localization**: Component is fully localized in 37 languages with proper translations
-- **Styling**: Uses airplane icon (`.airplaneCircleFill`) with blue gradient background, follows app design system with custom font support
-- **Example**:
-  ```swift
-  VStack(alignment: .leading, spacing: spacing16) {
-      Text("Beta Testing")
-          .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-
-      TestFlightAccessComponent()
-  }
-  ```
+- Component: `TestFlightAccessComponent`
+- URL: `AppURLs.testFlightBeta`
+- Usage: Feedback, support, about views
 
 ## Testing Guidelines
-- Framework: Swift Testing (`import Testing`, `@Test`, `#expect`).
-- Scope: Unit tests for domain and services ONLY. No UI tests, snapshot tests, or view testing.
-- Conventions: Mirror source folder structure under `AsNeededTests`. Name tests descriptively, one behavior per test.
-- Coverage: Focus exclusively on business logic, calculators, use cases, view models, and services.
-- **NO UI/Snapshot Testing**: Do not create any UI tests, snapshot tests, or view-specific tests. Test view models and business logic only.
+- Framework: Swift Testing (`import Testing`, `@Test`, `#expect`)
+- Scope: Unit tests for domain/services ONLY
+- **NO UI/Snapshot Testing**: Test view models and business logic only
 
 ## Commits & Pull Requests
-- Commits: Imperative, concise subject lines (e.g., "Add ANModelKit", "Refactor history view"). Group related changes.
-- PRs: Clear description, rationale, and screenshots for UI changes. Link issues (e.g., "Closes #123"). Include test plan and notes on risk.
-- Requirements: All tests pass locally; no unrelated formatting churn; update README/docs when behavior changes.
+- Commits: Imperative subjects (e.g., "Add ANModelKit")
+- PRs: Clear description, screenshots for UI, link issues
+- Requirements: All tests pass, no formatting churn
+- **NEVER add Claude as co-author** - omit the "Co-Authored-By: Claude" line from commits
 
 ## Security & Configuration
-- Do not commit signing certs, profiles, or secrets. Keep entitlements as‑is (`AsNeeded.entitlements`, watch entitlements).
-- Verify `Info.plist` changes (e.g., `ITSAppUsesNonExemptEncryption`) are intentional.
-- Local dev: Use a personal team for signing; avoid editing shared project settings unless necessary.
+- No secrets in commits
+- Verify `Info.plist` changes are intentional
+- Use personal team for signing
 
 ## .gitignore Requirements
-- **Build artifacts**: Ensure all build folders (`.build/`, `Build/`, `DerivedData/`) are ignored
-- **Xcode user data**: All user-specific files (`*.xcuserstate`, `xcuserdata/`, `.swiftpm/xcode/`)
-- **macOS system files**: `.DS_Store` files must be ignored and removed from tracking
-- **Swift Package Manager**: Ignore `.swiftpm/configuration/` and generated workspace files
-- **Package dependencies**: Ignore `Packages/` directories and cached builds
-- The main .gitignore should include comprehensive iOS/Swift exclusions for build artifacts, user data, and system files
+Ensure ignored: build artifacts (`build/`, `DerivedData/`), user data (`*.xcuserstate`, `xcuserdata/`), `.DS_Store`, SPM caches
 
 ## Agent-Specific Instructions
-> Take a deep breath, You are an expert in Swift 6, Xcode 26, and iOS 26. Also a skilled designer, you know how to write code that is clean, performant, and provides a good user experience. If there is a README, take a look and make sure all directives are followed. You prioritize architectural best practices by making SwiftUI views easy to re-use, always putting them in their own file according to functionality. Adhering to Apple, SwiftUI, and Swift 6 best practices is of utmost importance.
 
-### Critical Build Verification Requirement
-**ALWAYS verify the app builds successfully after making large changes.** This is mandatory and non-negotiable:
+### Automated Code Review
+**MANDATORY: Run `coderabbit --plain` after completing tasks.**
+1. Complete task
+2. Run code review
+3. Fix issues found
+4. Mark complete
 
-1. **After significant code changes**: Run `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 15' build` to verify the build succeeds.
-2. **Before completing tasks**: Ensure the build is working and all new files are properly added to the Xcode project.
-3. **When adding new files**: Verify files are added to the Xcode project and included in the build phase - files on disk are not automatically included.
-4. **When modifying dependencies**: Test that imports resolve correctly and all required initializers/methods are public.
-5. **Build failure response**: If builds fail, immediately investigate and fix compilation errors before proceeding with other work.
+### Performance Optimization for AI Agents
+**CRITICAL optimizations:**
+- **Exclude**: `build/`, `*.lproj/`, `DerivedData/`, `.swiftpm/` from searches (60-80% faster)
+- **Focus**: `AsNeeded/`, `AsNeededTests/`, `scripts/`
+- **Never read**: Localization files unless explicitly asked
+- **Use Task tool**: For complex multi-file searches
 
-**Build testing commands:**
-- Quick build: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16' build -quiet`
-- Syntax check: `swiftc -parse [file_path]` for individual files
-- Clean build: `xcodebuild -scheme AsNeeded clean build`
-- **IMPORTANT**: Always check available simulators first with `xcodebuild -showdestinations -scheme AsNeeded` if builds fail. Use an available simulator (e.g., iPhone 16, iPhone 16 Pro) instead of wasting time on unavailable ones.
+### Build Verification
+**ALWAYS verify builds after changes:**
 
-**Never leave the project in a broken state.** A working build is the foundation for all development work.
+**Commands (in order):**
+1. **Preferred**: `./scripts/dev-build.sh` (incremental, 16 cores, ~15s)
+2. **Alternative**: `xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' build -quiet 2>&1 | xcsift`
+3. **Tests**: `./scripts/test-parallel.sh` (12 workers, ~35s)
+4. **Clean build**: `./scripts/clean-deriveddata.sh --asneeded && ./scripts/dev-build.sh`
+5. **Nuclear**: `./scripts/clean-all.sh` then rebuild
+
+**Performance expectations:**
+- Incremental: ~15s (vs ~45s standard) = 67% faster
+- Full tests: ~35s (vs ~120s) = 71% faster
+- Clean build: ~120s (vs ~180s) = 33% faster
+
+**Troubleshooting:**
+- Slow builds: Run `./scripts/clean-deriveddata.sh --asneeded`
+- Test timeouts: `killall Simulator` then retry
+- Xcode indexing: Close Xcode, clean DerivedData, reopen
+
+## Performance Optimization & Maintenance
+
+### System Capabilities
+16-core CPU, high RAM, SSD required, maximum parallelization enabled.
+
+### Build Performance Metrics
+| Build Type | Standard | Optimized | Improvement |
+|------------|----------|-----------|-------------|
+| Incremental | ~45s | ~15s | 67% faster |
+| Clean build | ~180s | ~120s | 33% faster |
+| Full tests | ~120s | ~35s | 71% faster |
+
+### Optimization Techniques
+1. **Parallel Compilation**: 16 cores for builds, 12 workers for tests
+2. **Smart Caching**: 2.6GB DerivedData (clean weekly)
+3. **Compilation Modes**: Incremental for dev, whole-module for prod
+4. **Excluded Indexing**: build/, *.lproj/, DerivedData/, .swiftpm/
+
+### Maintenance Schedule
+**Daily**: `./scripts/dev-build.sh`, `./scripts/test-parallel.sh`
+
+**Weekly** (Monday morning):
+```bash
+./scripts/clean-deriveddata.sh --asneeded  # Frees ~2.6GB
+./scripts/dev-build.sh
+./scripts/test-parallel.sh
+```
+Benefits: 20-30% faster builds, fixes cache corruption, ~3min total
+
+**Monthly**: `./scripts/clean-deriveddata.sh --old 30`
+
+**Before major changes**: `./scripts/clean-all.sh`
+
+### Scripts Reference
+| Script | Purpose | Time |
+|--------|---------|------|
+| `dev-build.sh` | Fast incremental builds | ~15s |
+| `test-parallel.sh` | Parallel test execution | ~35s |
+| `prod-build.sh` | Release builds | ~120s |
+| `clean-deriveddata.sh --asneeded` | Weekly cleanup | ~30s |
+| `clean-all.sh` | Nuclear cleanup | ~5min |
+
+### Advanced Optimizations (Optional)
+- Git hooks: Add `./scripts/test-parallel.sh` to `.git/hooks/pre-push`
+- Xcode settings: `COMPILER_INDEX_STORE_ENABLE = NO` for dev
+- Shell aliases: `alias asneeded-build='cd /Users/danhart/Developer/AsNeeded && ./scripts/dev-build.sh'`
+
+**Never leave project in broken state.** Working builds are mandatory.

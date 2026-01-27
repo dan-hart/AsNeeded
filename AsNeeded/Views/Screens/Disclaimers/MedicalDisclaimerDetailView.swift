@@ -1,19 +1,19 @@
-import SwiftUI
 import SFSafeSymbols
+import SwiftUI
 
 struct MedicalDisclaimerDetailView: View {
-	@ScaledMetric private var mainSpacing: CGFloat = 24
-	@ScaledMetric private var sectionSpacing: CGFloat = 16
-	@ScaledMetric private var itemSpacing: CGFloat = 12
-	@ScaledMetric private var smallSpacing: CGFloat = 2
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var verticalPadding: CGFloat = 4
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var iconWidth: CGFloat = 24
-	@ScaledMetric private var lineWidth: CGFloat = 1
+    @ScaledMetric private var mainSpacing: CGFloat = 24
+    @ScaledMetric private var sectionSpacing: CGFloat = 16
+    @ScaledMetric private var itemSpacing: CGFloat = 12
+    @ScaledMetric private var smallSpacing: CGFloat = 2
+    @ScaledMetric private var padding: CGFloat = 16
+    @ScaledMetric private var verticalPadding: CGFloat = 4
+    @ScaledMetric private var cornerRadius: CGFloat = 12
+    @ScaledMetric private var iconWidth: CGFloat = 24
+    @ScaledMetric private var lineWidth: CGFloat = 1
 
-	var body: some View {
-		ScrollView {
+    var body: some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: mainSpacing) {
                 // Warning Section
                 VStack(alignment: .leading, spacing: sectionSpacing) {
@@ -21,16 +21,16 @@ struct MedicalDisclaimerDetailView: View {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
                             .foregroundStyle(.yellow)
                             .font(.title)
-                        
+
                         Text("Important Notice")
                             .font(.title2)
                             .fontWeight(.bold)
                     }
-                    
+
                     Text("This application is not a replacement for professional medical advice.")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    
+
                     Text("Always consult a licensed medical professional before making any changes to your medication regimen.")
                         .font(.body)
                         .foregroundColor(.secondary)
@@ -122,55 +122,55 @@ struct MedicalDisclaimerDetailView: View {
                 )
             }
             .padding(padding)
-		}
-		.navigationTitle("Medical Disclaimer")
-		.navigationBarTitleDisplayMode(.large)
-	}
+        }
+        .navigationTitle("Medical Disclaimer")
+        .navigationBarTitleDisplayMode(.large)
+    }
 
-	// MARK: - Helper Functions
+    // MARK: - Helper Functions
 
-	private func medicalSourceLink(title: String, subtitle: String, url: String) -> some View {
-		Button(action: {
-			if let url = URL(string: url) {
-				UIApplication.shared.open(url)
-			}
-		}) {
-			HStack(spacing: itemSpacing) {
-				Image(systemSymbol: .linkCircle)
-					.font(.subheadline)
-					.foregroundColor(.accentColor)
-					.frame(width: iconWidth)
+    private func medicalSourceLink(title: String, subtitle: String, url: String) -> some View {
+        Button(action: {
+            if let url = URL(string: url) {
+                UIApplication.shared.open(url)
+            }
+        }) {
+            HStack(spacing: itemSpacing) {
+                Image(systemSymbol: .linkCircle)
+                    .font(.subheadline)
+                    .foregroundColor(.accent)
+                    .frame(width: iconWidth)
 
-				VStack(alignment: .leading, spacing: smallSpacing) {
-					Text(title)
-						.font(.body)
-						.fontWeight(.medium)
-						.foregroundColor(.primary)
-						.multilineTextAlignment(.leading)
+                VStack(alignment: .leading, spacing: smallSpacing) {
+                    Text(title)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
 
-					Text(subtitle)
-						.font(.caption)
-						.foregroundColor(.secondary)
-						.multilineTextAlignment(.leading)
-				}
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
 
-				Spacer()
+                Spacer()
 
-				Image(systemSymbol: .arrowUpRightSquare)
-					.font(.caption)
-					.foregroundColor(.secondary)
-			}
-			.padding(.vertical, verticalPadding)
-			.contentShape(Rectangle())
-		}
-		.buttonStyle(.plain)
-	}
+                Image(systemSymbol: .arrowUpRightSquare)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, verticalPadding)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 #if DEBUG
-#Preview {
-	NavigationView {
-		MedicalDisclaimerDetailView()
-	}
-}
+    #Preview {
+        NavigationView {
+            MedicalDisclaimerDetailView()
+        }
+    }
 #endif

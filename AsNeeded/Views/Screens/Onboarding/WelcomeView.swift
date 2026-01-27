@@ -1,149 +1,168 @@
-import SwiftUI
 import SFSafeSymbols
+import SwiftUI
 
 struct WelcomeView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding8: CGFloat = 8
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var iconSize32: CGFloat = 32
+    @ScaledMetric private var sectionSpacing: CGFloat = 24
+    @ScaledMetric private var subsectionSpacing: CGFloat = 16
+    @ScaledMetric private var itemSpacing: CGFloat = 12
+    @ScaledMetric private var textSpacing: CGFloat = 8
+    @ScaledMetric private var tightSpacing: CGFloat = 4
+    @ScaledMetric private var standardPadding: CGFloat = 16
+    @ScaledMetric private var smallPadding: CGFloat = 8
+    @ScaledMetric private var cornerRadius12: CGFloat = 12
+    @ScaledMetric private var iconSize32: CGFloat = 32
 
-  @AppStorage("hasSeenWelcome") private var hasSeenWelcome: Bool = false
-  @Environment(\.dismiss) private var dismiss
-  @State private var showMedicalDisclaimer = false
+    @AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
+    @Environment(\.dismiss) private var dismiss
+    @State private var showMedicalDisclaimer = false
 
-  private var appName: String {
-	Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-	?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
-	?? "AsNeeded"
-  }
-  private var version: String {
-	Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
-  }
+    private var appName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "AsNeeded"
+    }
 
-  var body: some View {
-	ScrollView {
-	  VStack(alignment: .leading, spacing: spacing24) {
-		welcomeSection
+    private var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
 
-		coreValuesSection
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: sectionSpacing) {
+                welcomeSection
 
-		continueSection
-	  }
-	  .padding(.horizontal)
-	  .padding(.vertical)
-	}
-	.navigationBarHidden(true)
-  }
+                coreValuesSection
 
-  private var welcomeSection: some View {
-	VStack(alignment: .center, spacing: spacing16) {
-	  VStack(spacing: spacing8) {
-		Text("Welcome to")
-		  .font(.title2)
-		  .foregroundStyle(.secondary)
+                continueSection
+            }
+            .padding(.horizontal)
+            .padding(.vertical)
+        }
+        .navigationBarHidden(true)
+    }
 
-		Text(appName)
-		  .font(.largeTitle)
-		  .fontWeight(.bold)
-		  .multilineTextAlignment(.center)
+    private var welcomeSection: some View {
+        VStack(alignment: .center, spacing: subsectionSpacing) {
+            VStack(spacing: textSpacing) {
+                Text("Welcome to")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
 
-		Text("Track as-needed medications with privacy and simplicity")
-		  .font(.title3)
-		  .foregroundStyle(.secondary)
-		  .multilineTextAlignment(.center)
-	  }
-	}
-	.frame(maxWidth: .infinity)
-	.padding(.vertical, padding16)
-  }
+                Text(appName)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
 
-  private var coreValuesSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  Text("Built on three core values")
-		.font(.title2)
-		.fontWeight(.semibold)
-		.frame(maxWidth: .infinity)
+                Text("Track as-needed medications with privacy and simplicity")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, standardPadding)
+    }
 
-	  VStack(spacing: spacing12) {
-		valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
-		valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
-		valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
-	  }
-	}
-  }
-  
-  private var continueSection: some View {
-	VStack(spacing: spacing16) {
-	  medicalDisclaimer
+    private var coreValuesSection: some View {
+        VStack(alignment: .leading, spacing: subsectionSpacing) {
+            Text("Built on three core values")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
 
-	  Button {
-		hasSeenWelcome = true
-		dismiss()
-	  } label: {
-		HStack {
-		  Spacer()
-		  Text("Continue")
-			.font(.headline)
-			.fontWeight(.semibold)
-			.foregroundColor(.white)
-		  Spacer()
-		}
-		.padding(.vertical, padding16)
-		.background(Color.accentColor)
-		.cornerRadius(cornerRadius12)
-	  }
-	  .buttonStyle(.plain)
+            VStack(spacing: itemSpacing) {
+                valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
+                valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
+                valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
+            }
+        }
+    }
 
-	  Text("Version \(version)")
-		.font(.caption)
-		.foregroundStyle(.tertiary)
-		.frame(maxWidth: .infinity)
-	}
-	.padding(.top, padding8)
-  }
-  
-  private var medicalDisclaimer: some View {
-      VStack {
-          Text("Medical Disclaimer")
-            .font(.title2)
-            .fontWeight(.semibold)
-            .frame(maxWidth: .infinity)
-          
-          MedicalDisclaimerView()
-      }
-  }
+    private var continueSection: some View {
+        VStack(spacing: subsectionSpacing) {
+            medicalDisclaimer
 
-  private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
-	HStack(spacing: spacing16) {
-	  Image(systemSymbol: icon)
-		.font(.title3.weight(.medium))
-		.frame(width: iconSize32, height: iconSize32)
-		.foregroundColor(.accentColor)
+            Button {
+                hasSeenWelcome = true
+                dismiss()
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("Continue")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+                .padding(.vertical, standardPadding)
+                .background(.accent)
+                .cornerRadius(cornerRadius12)
+            }
+            .buttonStyle(.plain)
 
-	  VStack(alignment: .leading, spacing: spacing4) {
-		Text(title)
-		  .font(.headline)
-		  .fontWeight(.semibold)
-		Text(description)
-		  .font(.subheadline)
-		  .foregroundColor(.secondary)
-	  }
+            Text("Version \(version)")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.top, smallPadding)
+    }
 
-	  Spacer()
-	}
-	.padding(padding16)
-	.background(.regularMaterial)
-	.cornerRadius(cornerRadius12)
-  }
+    private var medicalDisclaimer: some View {
+        VStack {
+            Text("Medical Disclaimer")
+                .font(.title2)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+
+            MedicalDisclaimerView()
+        }
+    }
+
+    private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
+        HStack(spacing: subsectionSpacing) {
+            Image(systemSymbol: icon)
+                .font(.title3.weight(.medium))
+                .frame(width: iconSize32, height: iconSize32)
+                .foregroundColor(.accent)
+
+            VStack(alignment: .leading, spacing: tightSpacing) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(standardPadding)
+        .background {
+            RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+                .fill(.regularMaterial)
+                .overlay(
+                    // Specular highlight for premium glass effect
+                    RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    .white.opacity(0.3),
+                                    .clear,
+                                    .white.opacity(0.1),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .blendMode(.overlay)
+                )
+        }
+    }
 }
 
 #if DEBUG
-#Preview {
-  WelcomeView()
-}
+    #Preview {
+        WelcomeView()
+    }
 #endif

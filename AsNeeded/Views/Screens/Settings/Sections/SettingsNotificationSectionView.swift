@@ -6,7 +6,7 @@ import SFSafeSymbols
 
 struct SettingsNotificationSectionView: View {
 	@StateObject private var notificationManager = NotificationManager.shared
-	@AppStorage("showMedicationNamesInNotifications") private var showMedicationNames: Bool = false
+	@AppStorage(UserDefaultsKeys.showMedicationNamesInNotifications) private var showMedicationNames: Bool = false
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -42,7 +42,7 @@ struct SettingsNotificationSectionView: View {
 			Image(systemSymbol: .pills)
 				.font(.callout.weight(.medium))
 				.frame(width: iconSize, height: iconSize)
-				.foregroundColor(.accentColor)
+				.foregroundColor(.accent)
 
 			VStack(alignment: .leading, spacing: stackItemSpacing) {
 				Text("Show Medication Names")

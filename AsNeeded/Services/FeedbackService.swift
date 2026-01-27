@@ -5,17 +5,17 @@
 //  Centralized feedback service with log collection and email composition
 //
 
+import DHLoggingKit
 import Foundation
 import MessageUI
 import OSLog
 import UIKit
-import DHLoggingKit
 
 enum FeedbackType {
     case bug
     case featureRequest
     case feedback
-    
+
     var subject: String {
         switch self {
         case .bug:
@@ -26,78 +26,81 @@ enum FeedbackType {
             return "[FEEDBACK]"
         }
     }
-    
+
     @MainActor
     var emailBody: String {
         switch self {
         case .bug:
             return """
             Bug Report
-            
+
             Please describe the bug you encountered:
-            
-            
+
+
             Steps to reproduce:
             1. 
             2. 
             3. 
-            
+
             Expected behavior:
-            
-            
+
+
             Actual behavior:
-            
-            
+
+
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached to help diagnose the issue.
             No medication names are stored in logs - only technical information.
             """
         case .featureRequest:
             return """
             Feature Request
-            
+
             Please describe the feature you would like to see:
-            
-            
+
+
             Use case:
-            
-            
+
+
             Additional context:
-            
-            
+
+
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached for context.
             No medication names are stored in logs - only technical information.
             """
         case .feedback:
             return """
             General Feedback
-            
+
             Please share your feedback:
-            
-            
+
+
             What do you like most about the app?
-            
-            
+
+
             What could be improved?
-            
-            
+
+
             Additional comments:
-            
-            
+
+
             Device Information:
             • App Version: \(Bundle.main.appVersionLong)
+            • Distribution: \(Bundle.main.distributionType)
             • iOS Version: \(UIDevice.current.systemVersion)
             • Device Model: \(UIDevice.current.model)
-            
+
             Application logs may be attached for context.
             No medication names are stored in logs - only technical information.
             """
@@ -108,62 +111,62 @@ enum FeedbackType {
 @MainActor
 final class FeedbackService: NSObject, ObservableObject {
     static let shared = FeedbackService()
-    
+
     private let osLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.asneeded", category: "feedback")
-    
+
     private let supportEmail = "asneeded@codedbydan.com"
-    
+
     @Published var isCollectingLogs = false
     @Published var isPreparingFeedback = false
     @Published var showingMailComposer = false
     @Published var showingLogConsentDialog = false
     @Published var showingFeedbackAlternatives = false
-    
+
     private var currentFeedbackType: FeedbackType = .feedback
     private var logsZipData: Data?
     private var pendingFeedbackAction: (() -> Void)?
-    
+
     override init() {
         super.init()
     }
-    
+
     private func logInfo(_ message: String) {
-            osLogger.info("\(message, privacy: .public)")
+        osLogger.info("\(message, privacy: .public)")
     }
-    
+
     private func logWarning(_ message: String) {
-            osLogger.warning("\(message, privacy: .public)")
+        osLogger.warning("\(message, privacy: .public)")
     }
-    
+
     private func logError(_ message: String, error: Error? = nil) {
-            if let error {
-                osLogger.error("\(message, privacy: .public) - Error: \(String(describing: error), privacy: .public)")
-            } else {
-                osLogger.error("\(message, privacy: .public)")
-            }
+        if let error {
+            osLogger.error("\(message, privacy: .public) - Error: \(String(describing: error), privacy: .public)")
+        } else {
+            osLogger.error("\(message, privacy: .public)")
+        }
     }
-    
+
     func submitFeedback(type: FeedbackType) {
         logInfo("Starting feedback submission: \(type.subject)")
         currentFeedbackType = type
-        
+
         guard MFMailComposeViewController.canSendMail() else {
             logWarning("Mail not available on device - showing alternatives")
             showingFeedbackAlternatives = true
             return
         }
-        
+
         // Store the action to perform after user consent
         pendingFeedbackAction = { [weak self] in
             Task { @MainActor in
                 await self?.collectAndAttachLogs()
             }
         }
-        
+
         // Show consent dialog for log sharing
         showingLogConsentDialog = true
     }
-    
+
     func proceedWithLogs() {
         logInfo("User consented to include logs")
         showingLogConsentDialog = false
@@ -171,7 +174,7 @@ final class FeedbackService: NSObject, ObservableObject {
         pendingFeedbackAction?()
         pendingFeedbackAction = nil
     }
-    
+
     func proceedWithoutLogs() {
         logInfo("User declined to include logs")
         showingLogConsentDialog = false
@@ -186,11 +189,11 @@ final class FeedbackService: NSObject, ObservableObject {
         }
         pendingFeedbackAction = nil
     }
-    
+
     private func collectAndAttachLogs() async {
         isCollectingLogs = true // Ensure loading state (also set in proceedWithLogs for immediate feedback)
         logInfo("Collecting application logs")
-        
+
         do {
             if #available(iOS 15.0, *) {
                 let logData = try await DHLoggingKit.exporter.exportLogs(timeInterval: 3600) // Last hour
@@ -207,25 +210,24 @@ final class FeedbackService: NSObject, ObservableObject {
             // Still show mail composer even if log collection fails
             showingMailComposer = true
         }
-        
+
         isCollectingLogs = false
     }
-    
-    
+
     func createMailComposer() -> MFMailComposeViewController {
         let composer = MFMailComposeViewController()
         composer.mailComposeDelegate = self
         composer.setToRecipients([supportEmail])
         composer.setSubject(currentFeedbackType.subject)
         composer.setMessageBody(currentFeedbackType.emailBody, isHTML: false)
-        
+
         // Attach logs if available and user consented
         if let logsData = logsZipData {
             composer.addAttachmentData(logsData,
-                                     mimeType: "text/plain",
-                                     fileName: "AsNeeded_Logs_\(currentFeedbackType.subject).txt")
+                                       mimeType: "text/plain",
+                                       fileName: "AsNeeded_Logs_\(currentFeedbackType.subject).txt")
         }
-        
+
         return composer
     }
 }
@@ -233,9 +235,9 @@ final class FeedbackService: NSObject, ObservableObject {
 extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
     @MainActor
     func mailComposeController(_ controller: MFMailComposeViewController,
-                              didFinishWith result: MFMailComposeResult,
-                              error: Error?) {
-        
+                               didFinishWith result: MFMailComposeResult,
+                               error: Error?)
+    {
         switch result {
         case .sent:
             logInfo("Feedback email sent successfully")
@@ -248,7 +250,7 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
         @unknown default:
             logWarning("Unknown mail compose result")
         }
-        
+
         // Clean up
         logsZipData = nil
         controller.dismiss(animated: true)
@@ -264,6 +266,7 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
 
         Device Information:
         • App Version: \(Bundle.main.appVersionLong)
+        • Distribution: \(Bundle.main.distributionType)
         • iOS Version: \(UIDevice.current.systemVersion)
         • Device Model: \(UIDevice.current.model)
         """
@@ -311,13 +314,14 @@ enum FeedbackError: Error {
 }
 
 // MARK: - Bundle Extensions
+
 extension Bundle {
     var appVersionLong: String {
         let version = infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
         return "\(version) (\(build))"
     }
-    
+
     var buildNumber: String? {
         return infoDictionary?["CFBundleVersion"] as? String
     }

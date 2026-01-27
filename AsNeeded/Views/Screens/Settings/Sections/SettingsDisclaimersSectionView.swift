@@ -60,7 +60,7 @@ struct SettingsDisclaimersSectionView: View {
 						Image(systemSymbol: .buildingColumns)
 							.font(.callout.weight(.medium))
 							.frame(width: iconSize, height: iconSize)
-							.foregroundColor(.accentColor)
+							.foregroundColor(.accent)
 
 						VStack(alignment: .leading, spacing: stackItemSpacing) {
 							Text("Medical Data Sources")

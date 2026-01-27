@@ -1,315 +1,405 @@
-import SwiftUI
 import SFSafeSymbols
+import SwiftUI
 
 struct AboutView: View {
-	@ScaledMetric private var spacing24: CGFloat = 24
-	@ScaledMetric private var spacing16: CGFloat = 16
-	@ScaledMetric private var spacing12: CGFloat = 12
-	@ScaledMetric private var spacing8: CGFloat = 8
-	@ScaledMetric private var spacing6: CGFloat = 6
-	@ScaledMetric private var spacing4: CGFloat = 4
-	@ScaledMetric private var spacing2: CGFloat = 2
-	@ScaledMetric private var padding16: CGFloat = 16
-	@ScaledMetric private var padding4: CGFloat = 4
-	@ScaledMetric private var cornerRadius12: CGFloat = 12
-	@ScaledMetric private var iconSize32: CGFloat = 32
-	@Environment(\.fontFamily) private var fontFamily
+    @ScaledMetric private var sectionSpacing: CGFloat = 24
+    @ScaledMetric private var subsectionSpacing: CGFloat = 16
+    @ScaledMetric private var groupSpacing: CGFloat = 12
+    @ScaledMetric private var itemSpacing: CGFloat = 8
+    @ScaledMetric private var mediumSpacing: CGFloat = 6
+    @ScaledMetric private var tightSpacing: CGFloat = 4
+    @ScaledMetric private var textSpacing: CGFloat = 2
+    @ScaledMetric private var cardPadding: CGFloat = 16
+    @ScaledMetric private var smallPadding: CGFloat = 4
+    @ScaledMetric private var cornerRadius12: CGFloat = 12
+    @ScaledMetric private var iconSize32: CGFloat = 32
+    @Environment(\.fontFamily) private var fontFamily
 
-  private var appName: String {
-	Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-	?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
-	?? "AsNeeded"
-  }
-  private var version: String {
-	Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
-  }
-  private var build: String {
-	Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
-  }
-  private var githubURL: URL? { URL(string: "https://github.com/dan-hart/AsNeeded") }
-  private var githubProfileURL: URL? { URL(string: "https://github.com/dan-hart") }
-  private var mastodonURL: URL? { URL(string: "https://mas.to/@codedbydan") }
-  private var christineWangURL: URL? { URL(string: "https://christinewang.design/") }
+    private var appName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "AsNeeded"
+    }
 
-  var body: some View {
-	ScrollView {
-	  VStack(alignment: .leading, spacing: spacing24) {
-		heroSection
+    private var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
 
-		coreValuesSection
+    private var build: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+    }
 
-		developerAndSupportSection
+    private var githubURL: URL? { URL(string: "https://github.com/dan-hart/AsNeeded") }
+    private var githubProfileURL: URL? { URL(string: "https://github.com/dan-hart") }
+    private var mastodonURL: URL? { URL(string: "https://mas.to/@codedbydan") }
+    private var christineWangURL: URL? { URL(string: "https://christinewang.design/") }
+    private var kevinWangURL: URL? { URL(string: "https://www.linkedin.com/in/kevinwywang/") }
 
-		specialThanksSection
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: sectionSpacing) {
+                heroSection
 
-		technicalInfoSection
+                coreValuesSection
 
-		testFlightSection
-	  }
-	  .padding(.horizontal)
-	  .padding(.vertical)
-	  .navigationTitle("About")
-	}
-  }
+                developerAndSupportSection
 
-  private var heroSection: some View {
-	VStack(alignment: .center, spacing: spacing16) {
-	  VStack(spacing: spacing8) {
-		Text(appName)
-		  .font(.largeTitle)
-		  .fontWeight(.bold)
-		  .multilineTextAlignment(.center)
+                specialThanksSection
 
-		Text("Track as-needed medications with privacy and simplicity")
-		  .font(.title3)
-		  .foregroundStyle(.secondary)
-		  .multilineTextAlignment(.center)
+                technicalInfoSection
 
-		Text("Version \(version)")
-		  .font(.caption)
-		  .foregroundStyle(.tertiary)
-	  }
-	}
-	.frame(maxWidth: .infinity)
-	.padding(.vertical, spacing8)
-  }
+                appDependenciesSection
 
-  private var coreValuesSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  Text("Built on three core values")
-		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-		.frame(maxWidth: .infinity)
+                testFlightSection
+            }
+            .padding(.horizontal)
+            .padding(.vertical)
+            .navigationTitle("About")
+        }
+    }
 
-	  VStack(spacing: spacing12) {
-		valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
-		valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
-		valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
-	  }
-	}
-  }
-  
-  private var developerAndSupportSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  VStack(alignment: .leading, spacing: spacing8) {
-		HStack(spacing: spacing16) {
-		  if let url = mastodonURL {
-			Link(destination: url) {
-			  HStack(spacing: spacing6) {
-				Image(systemSymbol: .atCircle)
-				  .font(.subheadline)
-				Text("Dan Hart on Mastodon")
-				  .font(.subheadline)
-				  .fontWeight(.medium)
-			  }
-			  .foregroundStyle(Color.accentColor)
-			}
-		  }
+    private var heroSection: some View {
+        VStack(alignment: .center, spacing: subsectionSpacing) {
+            VStack(spacing: itemSpacing) {
+                Text(appName)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
 
-		  if let url = githubProfileURL {
-			Link(destination: url) {
-			  HStack(spacing: spacing6) {
-				Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-				  .font(.subheadline)
-				Text("Dan Hart on GitHub")
-				  .font(.subheadline)
-				  .fontWeight(.medium)
-			  }
-			  .foregroundStyle(Color.accentColor)
-			}
-		  }
-		}
-		.padding(.top, padding4)
-	  }
+                Text("Track as-needed medications with privacy and simplicity")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
-	  NavigationLink {
-		SupportView()
-	  } label: {
-		HStack(spacing: spacing12) {
-		  Image(systemSymbol: .heart)
-			.font(.title3)
-			.foregroundColor(.red)
+                Text("Version \(version)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, itemSpacing)
+    }
 
-		  VStack(alignment: .leading, spacing: spacing2) {
-			Text("Support As Needed")
-			  .font(.headline)
-			  .fontWeight(.semibold)
-			  .foregroundColor(.primary)
+    private var coreValuesSection: some View {
+        VStack(alignment: .leading, spacing: subsectionSpacing) {
+            Text("Built on three core values")
+                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                .frame(maxWidth: .infinity)
 
-			Text("Help keep this app free and open source")
-			  .font(.subheadline)
-			  .foregroundColor(.secondary)
-		  }
+            VStack(spacing: groupSpacing) {
+                valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
+                valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
+                valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
+            }
+        }
+    }
 
-		  Spacer()
+    private var developerAndSupportSection: some View {
+        VStack(alignment: .leading, spacing: subsectionSpacing) {
+            VStack(alignment: .leading, spacing: itemSpacing) {
+                HStack(spacing: subsectionSpacing) {
+                    if let url = mastodonURL {
+                        Link(destination: url) {
+                            HStack(spacing: mediumSpacing) {
+                                Image(systemSymbol: .atCircle)
+                                    .font(.subheadline)
+                                Text("Dan Hart on Mastodon")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundStyle(.accent)
+                        }
+                    }
 
-		  Image(systemSymbol: .chevronRight)
-			.font(.caption)
-			.foregroundColor(.secondary)
-		}
-		.padding(padding16)
-		.background(.regularMaterial)
-		.cornerRadius(cornerRadius12)
-	  }
-	  .buttonStyle(.plain)
-	}
-  }
-  
-  private var specialThanksSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  Text("Special Thanks")
-		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                    if let url = githubProfileURL {
+                        Link(destination: url) {
+                            HStack(spacing: mediumSpacing) {
+                                Image(systemSymbol: .chevronLeftForwardslashChevronRight)
+                                    .font(.subheadline)
+                                Text("Dan Hart on GitHub")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundStyle(.accent)
+                        }
+                    }
+                }
+                .padding(.top, smallPadding)
+            }
 
-	  VStack(spacing: spacing12) {
-		if let url = christineWangURL {
-		  Link(destination: url) {
-			HStack(spacing: spacing16) {
-			  Image(systemSymbol: .starFill)
-				.font(.title3.weight(.medium))
-				.frame(width: iconSize32, height: iconSize32)
-				.foregroundColor(.yellow)
+            NavigationLink {
+                SupportView()
+            } label: {
+                HStack(spacing: groupSpacing) {
+                    Image(systemSymbol: .heart)
+                        .font(.title3)
+                        .foregroundColor(.red)
 
-			  VStack(alignment: .leading, spacing: spacing4) {
-				Text("Christine Wang")
-				  .font(.headline)
-				  .fontWeight(.semibold)
-				  .foregroundColor(.primary)
-				Text("Design & Testing")
-				  .font(.subheadline)
-				  .foregroundColor(.secondary)
-			  }
+                    VStack(alignment: .leading, spacing: textSpacing) {
+                        Text("Support As Needed")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
 
-			  Spacer()
+                        Text("Help keep this app free and open source")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
 
-			  Image(systemSymbol: .arrowUpRightSquare)
-				.font(.caption)
-				.foregroundColor(.secondary)
-			}
-			.padding(padding16)
-			.background(.regularMaterial)
-			.cornerRadius(cornerRadius12)
-		  }
-		  .buttonStyle(.plain)
-		} else {
-		  HStack(spacing: spacing16) {
-			Image(systemSymbol: .starFill)
-			  .font(.title3.weight(.medium))
-			  .frame(width: iconSize32, height: iconSize32)
-			  .foregroundColor(.yellow)
+                    Spacer()
 
-			VStack(alignment: .leading, spacing: spacing4) {
-			  Text("Christine Wang")
-				.font(.headline)
-				.fontWeight(.semibold)
-			  Text("Design & Testing")
-				.font(.subheadline)
-				.foregroundColor(.secondary)
-			}
+                    Image(systemSymbol: .chevronRight)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(cardPadding)
+                .background(.regularMaterial)
+                .cornerRadius(cornerRadius12)
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
-			Spacer()
-		  }
-		  .padding(padding16)
-		  .background(.regularMaterial)
-		  .cornerRadius(cornerRadius12)
-		}
+    private var specialThanksSection: some View {
+        VStack(alignment: .leading, spacing: subsectionSpacing) {
+            Text("Special Thanks")
+                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
-		HStack(spacing: spacing16) {
-		  Image(systemSymbol: .heartFill)
-			.font(.title3.weight(.medium))
-			.frame(width: iconSize32, height: iconSize32)
-            .foregroundColor(.pink)
+            VStack(spacing: groupSpacing) {
+                if let url = christineWangURL {
+                    Link(destination: url) {
+                        HStack(spacing: subsectionSpacing) {
+                            Image(systemSymbol: .starFill)
+                                .font(.title3.weight(.medium))
+                                .frame(width: iconSize32, height: iconSize32)
+                                .foregroundColor(.yellow)
 
-		  VStack(alignment: .leading, spacing: spacing4) {
-			Text("My Wife, Jesse")
-			  .font(.headline)
-			  .fontWeight(.semibold)
-			Text("Support & Encouragement")
-			  .font(.subheadline)
-			  .foregroundColor(.secondary)
-		  }
+                            VStack(alignment: .leading, spacing: tightSpacing) {
+                                Text("Christine Wang")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                Text("Design & Testing")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
 
-		  Spacer()
-		}
-		.padding(padding16)
-		.background(.regularMaterial)
-		.cornerRadius(cornerRadius12)
-	  }
-	}
-  }
-  
-  private var technicalInfoSection: some View {
-	VStack(alignment: .leading, spacing: spacing12) {
-	  Text("Technical Information")
-		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                            Spacer()
 
-	  VStack(spacing: spacing8) {
-		HStack {
-		  Text("Version")
-			.foregroundStyle(.secondary)
-		  Spacer()
-		  Text(version)
-			.fontWeight(.medium)
-		}
+                            Image(systemSymbol: .arrowUpRightSquare)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(cardPadding)
+                        .background(.regularMaterial)
+                        .cornerRadius(cornerRadius12)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(spacing: subsectionSpacing) {
+                        Image(systemSymbol: .starFill)
+                            .font(.title3.weight(.medium))
+                            .frame(width: iconSize32, height: iconSize32)
+                            .foregroundColor(.yellow)
 
-		HStack {
-		  Text("Build")
-			.foregroundStyle(.secondary)
-		  Spacer()
-		  Text(build)
-			.fontWeight(.medium)
-		}
+                        VStack(alignment: .leading, spacing: tightSpacing) {
+                            Text("Christine Wang")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            Text("Design & Testing")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
 
-		if let url = githubURL {
-		  HStack {
-			Text("Source Code")
-			  .foregroundStyle(.secondary)
-			Spacer()
-			Link("GitHub", destination: url)
-			  .fontWeight(.medium)
-			  .foregroundStyle(Color.accentColor)
-		  }
-		}
-	  }
-	}
-	.padding(padding16)
-	.background(.regularMaterial)
-	.cornerRadius(cornerRadius12)
-  }
+                        Spacer()
+                    }
+                    .padding(cardPadding)
+                    .background(.regularMaterial)
+                    .cornerRadius(cornerRadius12)
+                }
 
-  private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
-	HStack(spacing: spacing16) {
-	  Image(systemSymbol: icon)
-		.font(.title3.weight(.medium))
-		.frame(width: iconSize32, height: iconSize32)
-		.foregroundColor(.accentColor)
+                if let url = kevinWangURL {
+                    Link(destination: url) {
+                        HStack(spacing: subsectionSpacing) {
+                            Image(systemSymbol: .sparkles)
+                                .font(.title3.weight(.medium))
+                                .frame(width: iconSize32, height: iconSize32)
+                                .foregroundColor(.purple)
 
-	  VStack(alignment: .leading, spacing: spacing4) {
-		Text(title)
-		  .font(.headline)
-		  .fontWeight(.semibold)
-		Text(description)
-		  .font(.subheadline)
-		  .foregroundColor(.secondary)
-	  }
+                            VStack(alignment: .leading, spacing: tightSpacing) {
+                                Text("Kevin Wang")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                                Text("Vision & Details")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
 
-	  Spacer()
-	}
-	.padding(padding16)
-	.background(.regularMaterial)
-	.cornerRadius(cornerRadius12)
-  }
+                            Spacer()
 
-  private var testFlightSection: some View {
-	VStack(alignment: .leading, spacing: spacing16) {
-	  Text("Join the Beta")
-		.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                            Image(systemSymbol: .arrowUpRightSquare)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(cardPadding)
+                        .background(.regularMaterial)
+                        .cornerRadius(cornerRadius12)
+                    }
+                    .buttonStyle(.plain)
+                }
 
-	  TestFlightAccessComponent()
-	}
-  }
+                HStack(spacing: subsectionSpacing) {
+                    Image(systemSymbol: .heartFill)
+                        .font(.title3.weight(.medium))
+                        .frame(width: iconSize32, height: iconSize32)
+                        .foregroundColor(.pink)
+
+                    VStack(alignment: .leading, spacing: tightSpacing) {
+                        Text("My Wife, Jesse")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Text("Support & Encouragement")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(cardPadding)
+                .background(.regularMaterial)
+                .cornerRadius(cornerRadius12)
+            }
+        }
+    }
+
+    private var technicalInfoSection: some View {
+        VStack(alignment: .leading, spacing: groupSpacing) {
+            Text("Technical Information")
+                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+
+            VStack(spacing: itemSpacing) {
+                HStack {
+                    Text("Version")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(version)
+                        .fontWeight(.medium)
+                }
+
+                HStack {
+                    Text("Build")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(build)
+                        .fontWeight(.medium)
+                }
+
+                #if DEBUG
+                    HStack {
+                        Text("Distribution")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(Bundle.main.distributionType)
+                            .fontWeight(.medium)
+                    }
+                #else
+                    if Bundle.main.isTestFlight {
+                        HStack {
+                            Text("Distribution")
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("TestFlight")
+                                .fontWeight(.medium)
+                        }
+                    }
+                #endif
+
+                if let url = githubURL {
+                    HStack {
+                        Text("Source Code")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Link("GitHub", destination: url)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.accent)
+                    }
+                }
+            }
+        }
+        .padding(cardPadding)
+        .background(.regularMaterial)
+        .cornerRadius(cornerRadius12)
+    }
+
+    private var appDependenciesSection: some View {
+        NavigationLink {
+            AppDependenciesView()
+        } label: {
+            HStack(spacing: groupSpacing) {
+                Image(systemSymbol: .shippingboxFill)
+                    .font(.title3)
+                    .foregroundColor(.accent)
+
+                VStack(alignment: .leading, spacing: textSpacing) {
+                    Text("App Dependencies")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+
+                    Text("Third-party libraries used in this app")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemSymbol: .chevronRight)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(cardPadding)
+            .background(.regularMaterial)
+            .cornerRadius(cornerRadius12)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func valueRow(icon: SFSymbol, title: String, description: String) -> some View {
+        HStack(spacing: subsectionSpacing) {
+            Image(systemSymbol: icon)
+                .font(.title3.weight(.medium))
+                .frame(width: iconSize32, height: iconSize32)
+                .foregroundColor(.accent)
+
+            VStack(alignment: .leading, spacing: tightSpacing) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(cardPadding)
+        .background(.regularMaterial)
+        .cornerRadius(cornerRadius12)
+    }
+
+    private var testFlightSection: some View {
+        VStack(alignment: .leading, spacing: subsectionSpacing) {
+            Text("Join the Beta")
+                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+
+            TestFlightAccessComponent()
+        }
+    }
 }
 
 #if DEBUG
-#Preview {
-  NavigationView { AboutView() }
-}
+    #Preview {
+        NavigationView { AboutView() }
+    }
 #endif
