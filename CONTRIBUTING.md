@@ -68,6 +68,12 @@ git commit -m "Add your feature"
 git push origin feature/your-feature-name
 ```
 
+### AI Guidance
+
+- Repository AI guidance is agent-agnostic and lives in `AGENTS.md` plus `ai-rules/`.
+- Optional local tooling notes for maintainers live in `docs/ai/`.
+- Contributors should never need local AI setup to build, test, review, or contribute to the project.
+
 ### Commit Messages
 
 - Use present tense ("Add feature" not "Added feature")
