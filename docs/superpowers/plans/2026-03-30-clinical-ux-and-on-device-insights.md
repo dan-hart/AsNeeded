@@ -143,5 +143,5 @@
 - [ ] Run `./scripts/dev-build.sh`.
 - [ ] Run `./scripts/test-parallel.sh`.
 - [ ] Run any focused test commands needed for the new logic if parallel tests are noisy.
-- [ ] Run `coderabbit --plain` and address actionable issues if the tool completes.
+- [ ] Run any optional external review helper you use locally and address actionable issues if it completes.
 - [ ] Review diffs for user-facing copy and confirm the Trends question feature never uses the word `AI`.

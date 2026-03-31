@@ -51,7 +51,7 @@ Add a focused `ai-rules/` directory with small files for:
 - shell scripts and automation
 - anti-hallucination / evidence-first verification
 
-This follows the same lightweight rule pattern used successfully in `~/2nd-brain`, but the content will be adapted to AsNeeded's existing conventions.
+This follows the same lightweight rule pattern used successfully in prior projects, but the content will be adapted to AsNeeded's existing conventions.
 
 ### 3. Optional Codex adapter
 
@@ -89,4 +89,4 @@ The optional setup script must:
 - Verify the new docs and rule files exist at the expected paths.
 - Run a shell smoke test for the optional setup script.
 - Run script syntax checks.
-- Run `coderabbit --plain` after the implementation work.
+- Run an optional external review pass after the implementation work when that tooling is available.

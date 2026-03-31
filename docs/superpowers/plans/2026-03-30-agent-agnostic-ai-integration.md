@@ -124,5 +124,5 @@ Expected: PASS
 
 - [ ] **Step 2: Run repository code review**
 
-Run: `coderabbit --plain`
-Expected: review output captured; address any actionable issues if found.
+Run: any optional external review helper you use locally
+Expected: if the tool completes, capture the output and address any actionable issues it surfaces.

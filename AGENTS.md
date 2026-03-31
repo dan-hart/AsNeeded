@@ -24,7 +24,7 @@ Optional local enhancements such as Codex superpowers are allowed for maintainer
   - `./scripts/prod-build.sh`
 - Run the smallest relevant verification before claiming a change works.
 - Never leave the repo in a broken state.
-- Run `coderabbit --plain` after completing a task and address any actionable issues you find.
+- Optional external review tools are fine when available, but they must never be required for contributors or CI.
 
 ## High-Signal Project Conventions
 
