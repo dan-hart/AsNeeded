@@ -97,6 +97,7 @@ final class MedicationListViewModel: ObservableObject {
     func add(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.addMedication(med)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.error("Failed to add medication: \(error.localizedDescription)")
@@ -107,6 +108,7 @@ final class MedicationListViewModel: ObservableObject {
     func update(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.updateMedication(med)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.error("Failed to update medication: \(error.localizedDescription)")
@@ -118,6 +120,7 @@ final class MedicationListViewModel: ObservableObject {
         do {
             try await dataStore.deleteMedication(med)
             medicationOrder.removeAll { $0 == med.id.uuidString }
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.error("Failed to delete medication: \(error.localizedDescription)")
@@ -128,6 +131,7 @@ final class MedicationListViewModel: ObservableObject {
     func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async -> Bool {
         do {
             try await dataStore.addEvent(event, shouldRecordForReview: shouldRecordForReview)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.error("Failed to add event: \(error.localizedDescription)")

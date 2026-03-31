@@ -24,6 +24,9 @@ struct AppSettings: Codable {
 	/// Whether to hide support banners
 	var hideSupportBanners: Bool?
 
+	/// Whether private Trends questions are enabled
+	var trendsQuestionsEnabled: Bool?
+
 	// MARK: - Notification Settings
 
 	/// Whether to show medication names in notifications
@@ -68,6 +71,9 @@ struct AppSettings: Codable {
 	/// Recent medication search terms
 	var recentMedicationSearches: [String]?
 
+	/// Per-medication safety and refill guidance
+	var medicationSafetyProfiles: [String: MedicationSafetyProfile]?
+
 	// MARK: - Initialization
 
 	/// Create empty settings (all nil)
@@ -84,6 +90,7 @@ struct AppSettings: Codable {
 		trendsVisualizationType = defaults.object(forKey: UserDefaultsKeys.trendsVisualizationType) as? Int
 		trendsDaysWindow = defaults.object(forKey: UserDefaultsKeys.trendsDaysWindow) as? Int
 		hideSupportBanners = defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) as? Bool
+		trendsQuestionsEnabled = defaults.object(forKey: UserDefaultsKeys.trendsQuestionsEnabled) as? Bool
 
 		// Notification Settings
 		showMedicationNamesInNotifications = defaults.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool
@@ -105,6 +112,10 @@ struct AppSettings: Codable {
 
 		// Search Settings
 		recentMedicationSearches = defaults.array(forKey: UserDefaultsKeys.recentMedicationSearches) as? [String]
+
+		if let data = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) {
+			medicationSafetyProfiles = try? JSONDecoder().decode([String: MedicationSafetyProfile].self, from: data)
+		}
 	}
 
 	// MARK: - Export/Import
@@ -132,6 +143,9 @@ struct AppSettings: Codable {
 		}
 		if let value = hideSupportBanners {
 			defaults.set(value, forKey: UserDefaultsKeys.hideSupportBanners)
+		}
+		if let value = trendsQuestionsEnabled {
+			defaults.set(value, forKey: UserDefaultsKeys.trendsQuestionsEnabled)
 		}
 
 		// Notification Settings
@@ -190,6 +204,22 @@ struct AppSettings: Codable {
 		if let value = recentMedicationSearches {
 			defaults.set(value, forKey: UserDefaultsKeys.recentMedicationSearches)
 		}
+
+		if let profiles = medicationSafetyProfiles {
+			let filteredProfiles = MedicationSafetyProfileStore.filteredProfiles(
+				from: profiles,
+				validMedicationIDs: validMedicationIDs
+			)
+			let sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
+
+			if filteredProfiles.isEmpty {
+				defaults.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+				sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+			} else if let data = try? JSONEncoder().encode(filteredProfiles) {
+				defaults.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+				sharedDefaults?.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+			}
+		}
 	}
 
 	/// Get a user-friendly summary of included settings categories
@@ -202,6 +232,9 @@ struct AppSettings: Codable {
 		}
 		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil {
 			categories.append("Display Settings")
+		}
+		if trendsQuestionsEnabled != nil || medicationSafetyProfiles != nil {
+			categories.append("Clinical Guidance")
 		}
 		if showMedicationNamesInNotifications != nil {
 			categories.append("Notification Settings")

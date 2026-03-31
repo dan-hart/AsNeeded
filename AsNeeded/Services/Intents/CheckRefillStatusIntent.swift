@@ -20,6 +20,9 @@ struct CheckRefillStatusIntent: AppIntent {
         logger.info("Performing CheckRefillStatusIntent")
 
         let medications = DataStore.shared.medications
+        let events = DataStore.shared.events
+        let safetyProfileStore = MedicationSafetyProfileStore.shared
+        let guidanceService = MedicationDoseGuidanceService()
 
         guard !medications.isEmpty else {
             logger.info("No medications found")
@@ -34,33 +37,30 @@ struct CheckRefillStatusIntent: AppIntent {
         var lowQuantity: [RefillInfo] = []
 
         for medication in medications {
-            // Check refill date
-            if let refillDate = medication.nextRefillDate {
-                let daysUntil = Calendar.current.dateComponents(
-                    [.day],
-                    from: Date(),
-                    to: refillDate
-                ).day ?? 0
-
-                if daysUntil <= 7 && daysUntil >= 0 {
-                    needsRefill.append(RefillInfo(
-                        name: medication.displayName,
-                        daysUntil: daysUntil,
-                        quantity: medication.quantity
-                    ))
-                }
+            let profile = safetyProfileStore.profile(for: medication.id)
+            let projection = guidanceService.refillProjection(
+                for: medication,
+                events: events,
+                profile: profile
+            )
+            let daysUntilRefill = medication.nextRefillDate.flatMap {
+                Calendar.current.dateComponents([.day], from: Date(), to: $0).day
             }
 
-            // Check low quantity (< 10)
-            if let quantity = medication.quantity, quantity < 10 {
-                // Only add if not already in refill list
-                if !needsRefill.contains(where: { $0.name == medication.displayName }) {
-                    lowQuantity.append(RefillInfo(
-                        name: medication.displayName,
-                        daysUntil: nil,
-                        quantity: quantity
-                    ))
-                }
+            if projection.refillSoon {
+                needsRefill.append(RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: daysUntilRefill ?? projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                ))
+            }
+
+            if projection.lowStock && !needsRefill.contains(where: { $0.name == medication.displayName }) {
+                lowQuantity.append(RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                ))
             }
         }
 

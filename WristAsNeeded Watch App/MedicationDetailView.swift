@@ -54,6 +54,14 @@ struct MedicationDetailView: View {
                                 .fontWeight(.medium)
                         }
                     }
+
+                    if medication.lowStock || medication.refillSoon || !medication.canTakeNow {
+                        statusBadge
+                    } else if let statusMessage = medication.statusMessage {
+                        Text(statusMessage)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding()
                 .background(Color.gray.opacity(0.2))
@@ -65,37 +73,44 @@ struct MedicationDetailView: View {
                         showingDoseLogger = true
                     }) {
                         HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Log Dose")
+                            Image(systemName: medication.canTakeNow ? "plus.circle.fill" : "clock.fill")
+                            Text(medication.canTakeNow ? "Log Dose" : nextDoseLabel)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accent)
+                        .background(medication.canTakeNow ? Color.accent : Color.orange)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
+                    .disabled(!medication.canTakeNow)
 
                     Button(action: {
                         logQuickDose()
                     }) {
                         HStack {
-                            Image(systemName: "bolt.fill")
-                            Text("Quick Log")
-                            if let amount = medication.prescribedDoseAmount,
-                               let unit = medication.prescribedUnit
-                            {
-                                Text("(\(amount, specifier: "%.1f") \(unit))")
-                                    .font(.caption)
+                            if medication.canTakeNow {
+                                Image(systemName: "bolt.fill")
+                                Text("Quick Log")
+                                if let amount = medication.prescribedDoseAmount,
+                                   let unit = medication.prescribedUnit
+                                {
+                                    Text("(\(amount, specifier: "%.1f") \(unit))")
+                                        .font(.caption)
+                                }
+                            } else {
+                                Image(systemName: "clock.fill")
+                                Text(nextDoseLabel)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
+                        .background(medication.canTakeNow ? Color.green : Color.orange)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
+                    .disabled(!medication.canTakeNow)
                 }
             }
             .padding()
@@ -117,6 +132,11 @@ struct MedicationDetailView: View {
     }
 
     private func logQuickDose() {
+        guard medication.canTakeNow else {
+            WKInterfaceDevice.current().play(.failure)
+            return
+        }
+
         let doseAmount = medication.prescribedDoseAmount ?? 1.0
         let doseUnit = medication.prescribedUnit ?? "dose"
 
@@ -136,6 +156,32 @@ struct MedicationDetailView: View {
 
         // Provide subtle haptic feedback
         WKInterfaceDevice.current().play(.click)
+    }
+
+    private var statusBadge: some View {
+        HStack(spacing: 6) {
+            if medication.lowStock {
+                Label("Low stock", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundColor(.orange)
+            } else if !medication.canTakeNow {
+                Label(nextDoseLabel, systemImage: "clock.fill")
+                    .foregroundColor(.orange)
+            } else if medication.refillSoon {
+                Label("Refill soon", systemImage: "shippingbox.fill")
+                    .foregroundColor(.yellow)
+            }
+        }
+        .font(.caption2)
+    }
+
+    private var nextDoseLabel: String {
+        guard let nextDoseDate = medication.nextDoseDate else {
+            return "Not ready"
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: nextDoseDate, relativeTo: Date())
     }
 }
 

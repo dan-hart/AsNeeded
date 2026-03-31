@@ -28,6 +28,16 @@ struct DoseLoggerView: View {
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 8)
 
+                    if !medication.canTakeNow {
+                        Label(nextDoseLabel, systemImage: "clock.fill")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    } else if medication.lowStock || medication.refillSoon {
+                        Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
+                            .font(.caption)
+                            .foregroundColor(medication.lowStock ? .orange : .yellow)
+                    }
+
                     // Dose amount selector
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -126,10 +136,10 @@ struct DoseLoggerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(isLogging ? Color.gray : Color.accent)
+                    .background((isLogging || !medication.canTakeNow) ? Color.gray : Color.accent)
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(isLogging)
+                    .disabled(isLogging || !medication.canTakeNow)
                 }
                 .padding()
             }
@@ -146,6 +156,11 @@ struct DoseLoggerView: View {
     }
 
     private func logDose() {
+        guard medication.canTakeNow else {
+            WKInterfaceDevice.current().play(.failure)
+            return
+        }
+
         isLogging = true
 
         let eventData: [String: Any] = [
@@ -165,6 +180,16 @@ struct DoseLoggerView: View {
             isLogging = false
             dismiss()
         }
+    }
+
+    private var nextDoseLabel: String {
+        guard let nextDoseDate = medication.nextDoseDate else {
+            return "This medication is not ready yet."
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: Date()))"
     }
 }
 

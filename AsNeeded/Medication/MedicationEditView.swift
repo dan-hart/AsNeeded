@@ -64,6 +64,10 @@ struct MedicationEditView: View {
         case initialQuantity
         case quantity
         case dose
+        case minimumHoursBetweenDoses
+        case cautionHoursBetweenDoses
+        case maxDailyAmount
+        case lowStockThreshold
     }
 
     enum DatePickerType {
@@ -101,6 +105,7 @@ struct MedicationEditView: View {
             hideKeyboard()
         }
         let updated = viewModel.buildMedication()
+        viewModel.saveSafetyProfile(for: updated.id)
         hapticsManager.medicationAdded()
         onSave(updated)
     }
@@ -273,6 +278,181 @@ struct MedicationEditView: View {
         }
         .glassCard()
         .padding(.horizontal)
+    }
+
+    // MARK: - Clinical Guidance Section
+
+    @ViewBuilder
+    private var clinicalGuidanceSection: some View {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
+            HStack(spacing: iconSpacing) {
+                Image(systemSymbol: .crossCaseFill)
+                    .font(.customFont(fontFamily, style: .title2))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.accent, .accent.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                VStack(alignment: .leading, spacing: smallPadding) {
+                    Text("Clinical Guidance")
+                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+
+                    Text("Optional guardrails for timing, duplicates, daily totals, and refill planning.")
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: sectionSpacing) {
+                guidanceField(
+                    title: "Minimum Hours Between Doses",
+                    subtitle: "Warn before logging earlier than your saved interval.",
+                    text: $viewModel.minimumHoursBetweenDosesText,
+                    placeholder: "Example: 4",
+                    field: .minimumHoursBetweenDoses
+                )
+
+                guidanceField(
+                    title: "Caution Window",
+                    subtitle: "Show a gentler reminder when a new dose is still fairly close to the last one.",
+                    text: $viewModel.cautionHoursBetweenDosesText,
+                    placeholder: "Example: 6",
+                    field: .cautionHoursBetweenDoses
+                )
+
+                guidanceField(
+                    title: "Saved Daily Limit",
+                    subtitle: "Compare each log against a daily total for this medication's preferred unit.",
+                    text: $viewModel.maxDailyAmountText,
+                    placeholder: "Example: 6",
+                    field: .maxDailyAmount
+                )
+
+                guidanceField(
+                    title: "Low-Stock Threshold",
+                    subtitle: "Highlight when the remaining quantity falls to this amount.",
+                    text: $viewModel.lowStockThresholdText,
+                    placeholder: "Example: 10",
+                    field: .lowStockThreshold
+                )
+            }
+
+            VStack(spacing: cardSpacing) {
+                counterCard(
+                    title: "Duplicate Log Window",
+                    subtitle: "Treat entries within this many minutes as likely duplicates when the dose matches.",
+                    value: viewModel.duplicateDoseWindowMinutes,
+                    valueLabel: "\(viewModel.duplicateDoseWindowMinutes) min",
+                    step: 5,
+                    range: 5 ... 180,
+                    decrement: { viewModel.duplicateDoseWindowMinutes = max(5, viewModel.duplicateDoseWindowMinutes - 5) },
+                    increment: { viewModel.duplicateDoseWindowMinutes = min(180, viewModel.duplicateDoseWindowMinutes + 5) }
+                )
+
+                counterCard(
+                    title: "Refill Lead Time",
+                    subtitle: "Start refill reminders this many days before the schedule or run-out estimate.",
+                    value: viewModel.refillLeadDays,
+                    valueLabel: "\(viewModel.refillLeadDays) days",
+                    step: 1,
+                    range: 1 ... 30,
+                    decrement: { viewModel.refillLeadDays = max(1, viewModel.refillLeadDays - 1) },
+                    increment: { viewModel.refillLeadDays = min(30, viewModel.refillLeadDays + 1) }
+                )
+            }
+        }
+        .glassCard()
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private func guidanceField(
+        title: String,
+        subtitle: String,
+        text: Binding<String>,
+        placeholder: String,
+        field: Field
+    ) -> some View {
+        VStack(alignment: .leading, spacing: labelSpacing) {
+            Text(title)
+                .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+            Text(subtitle)
+                .font(.customFont(fontFamily, style: .caption))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            TextField(placeholder, text: text)
+                .font(.customFont(fontFamily, style: .body))
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.decimalPad)
+                .focused($focusedField, equals: field)
+                .accessibilityLabel(title)
+        }
+    }
+
+    @ViewBuilder
+    private func counterCard(
+        title: String,
+        subtitle: String,
+        value: Int,
+        valueLabel: String,
+        step: Int,
+        range: ClosedRange<Int>,
+        decrement: @escaping () -> Void,
+        increment: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: labelSpacing) {
+            Text(title)
+                .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+            Text(subtitle)
+                .font(.customFont(fontFamily, style: .caption))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: iconSpacing) {
+                Button {
+                    decrement()
+                    hapticsManager.lightImpact()
+                } label: {
+                    Image(systemSymbol: .minusCircleFill)
+                        .font(.customFont(fontFamily, style: .title3))
+                        .foregroundStyle(value > range.lowerBound ? .accent : .secondary)
+                }
+                .disabled(value <= range.lowerBound)
+                .accessibilityLabel("Decrease \(title.lowercased()) by \(step)")
+
+                Text(valueLabel)
+                    .font(.customFont(fontFamily, style: .body, weight: .semibold))
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, mediumPadding)
+                    .background(
+                        RoundedRectangle(cornerRadius: buttonCornerRadius - 4, style: .continuous)
+                            .fill(Color(.tertiarySystemFill))
+                    )
+
+                Button {
+                    increment()
+                    hapticsManager.lightImpact()
+                } label: {
+                    Image(systemSymbol: .plusCircleFill)
+                        .font(.customFont(fontFamily, style: .title3))
+                        .foregroundStyle(value < range.upperBound ? .accent : .secondary)
+                }
+                .disabled(value >= range.upperBound)
+                .accessibilityLabel("Increase \(title.lowercased()) by \(step)")
+            }
+        }
+        .padding(standardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: buttonCornerRadius - 4, style: .continuous)
+                .fill(Color(.tertiarySystemFill))
+        )
     }
 
     // MARK: - Appearance Section
@@ -644,6 +824,7 @@ struct MedicationEditView: View {
                     medicationInfoSection
                     prescribedDoseSection
                     refillInfoSection
+                    clinicalGuidanceSection
                     appearanceSection
                     archivedStatusSection
                     saveButton

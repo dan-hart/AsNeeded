@@ -104,15 +104,40 @@ final class WCReceiver: NSObject, ObservableObject {
 
     private func sendMedicationsToWatch() async {
         let medications = DataStore.shared.medications
+        let events = DataStore.shared.events
+        let safetyProfileStore = MedicationSafetyProfileStore.shared
+        let guidanceService = MedicationDoseGuidanceService()
 
-        let medicationData = medications.map { medication in
-            [
+        let medicationData = medications.map { medication -> [String: Any] in
+            let profile = safetyProfileStore.profile(for: medication.id)
+            let nextDoseDate = guidanceService.nextEligibleDate(
+                for: medication,
+                events: events,
+                profile: profile
+            )
+            let refillProjection = guidanceService.refillProjection(
+                for: medication,
+                events: events,
+                profile: profile
+            )
+
+            var payload: [String: Any] = [
                 "id": medication.id.uuidString,
                 "displayName": medication.displayName,
                 "quantity": medication.quantity ?? 0.0,
                 "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
                 "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
+                "canTakeNow": nextDoseDate == nil || nextDoseDate ?? .distantPast <= Date(),
+                "lowStock": refillProjection.lowStock,
+                "refillSoon": refillProjection.refillSoon,
+                "statusMessage": refillProjection.statusMessage,
             ]
+
+            if let nextDoseDate {
+                payload["nextDoseDate"] = nextDoseDate
+            }
+
+            return payload
         }
 
         if session.isReachable {
@@ -160,6 +185,8 @@ final class WCReceiver: NSObject, ObservableObject {
         }
 
         // Send confirmation back to watch
+        await MedicationLiveActivityManager.refreshFromDataStore()
+
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
@@ -186,6 +213,8 @@ final class WCReceiver: NSObject, ObservableObject {
         try await DataStore.shared.updateMedication(updatedMedication)
 
         // Send confirmation back to watch
+        await MedicationLiveActivityManager.refreshFromDataStore()
+
         if session.isReachable {
             logger.oslog.debug("Quantity updated successfully: \(quantityUpdateData.quantity, privacy: .public), sending confirmation to watch")
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in

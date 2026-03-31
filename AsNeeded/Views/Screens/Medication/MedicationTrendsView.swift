@@ -28,6 +28,8 @@ struct MedicationTrendsView: View {
     @Environment(\.fontFamily) private var fontFamily
     @AppStorage(UserDefaultsKeys.trendsDaysWindow) private var daysWindow: Int = 14
     @AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
+    @State private var questionText = ""
+    @State private var showingDisclaimer = false
 
     @ScaledMetric private var sectionSpacing: CGFloat = 16
     @ScaledMetric private var controlsSpacing: CGFloat = 12
@@ -50,71 +52,26 @@ struct MedicationTrendsView: View {
     @ScaledMetric private var legendSquareSize: CGFloat = 12
     @ScaledMetric private var chartLineWidth: CGFloat = 2
     @ScaledMetric private var chartSymbolSize: CGFloat = 30
+    @ScaledMetric private var questionPromptSpacing: CGFloat = 8
+    @ScaledMetric private var clinicalCardPadding: CGFloat = 18
+    @ScaledMetric private var promptButtonPaddingH: CGFloat = 10
+    @ScaledMetric private var promptButtonPaddingV: CGFloat = 8
+    @ScaledMetric private var insightBadgePaddingH: CGFloat = 10
+    @ScaledMetric private var insightBadgePaddingV: CGFloat = 6
+    @ScaledMetric private var buttonVerticalPadding: CGFloat = 14
+    @ScaledMetric private var buttonCornerRadius: CGFloat = 14
+    @ScaledMetric private var smallSpacing: CGFloat = 4
+    @ScaledMetric private var mediumSpacing: CGFloat = 8
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
-                    // Picker + context
-                    VStack(spacing: controlsSpacing) {
-                        HStack(alignment: .center) {
-                            Menu {
-                                ForEach(viewModel.medications, id: \.id) { med in
-                                    Button {
-                                        viewModel.selectedMedicationID = med.id
-                                    } label: {
-                                        Text(med.displayName)
-                                            .font(.customFont(fontFamily, style: .body))
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(viewModel.selectedMedication?.displayName ?? "Select")
-                                        .font(.customFont(fontFamily, style: .body))
-                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                                    Image(systemSymbol: .chevronUpChevronDown)
-                                        .font(.customFont(fontFamily, style: .caption2))
-                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                                }
-                            }
-                            Spacer()
-                            Picker("Range", selection: $daysWindow) {
-                                Text("14d")
-                                    .font(.customFont(fontFamily, style: .body))
-                                    .tag(14)
-                                Text("30d")
-                                    .font(.customFont(fontFamily, style: .body))
-                                    .tag(30)
-                            }
-                            .font(.customFont(fontFamily, style: .body))
-                            .pickerStyle(.segmented)
-                            .tint(viewModel.selectedMedication?.displayColor ?? .accent)
-                            .frame(maxWidth: pickerMaxWidth)
-                        }
-
-                        HStack {
-                            Text("View:")
-                                .font(.customFont(fontFamily, style: .subheadline))
-                                .foregroundStyle(.secondary)
-                            Picker("Visualization", selection: $visualizationType) {
-                                ForEach(VisualizationType.allCases, id: \.self) { type in
-                                    Label {
-                                        Text(type.displayName)
-                                            .font(.customFont(fontFamily, style: .body))
-                                    } icon: {
-                                        Image(systemName: type.systemImage)
-                                    }
-                                    .tag(type)
-                                }
-                            }
-                            .font(.customFont(fontFamily, style: .body))
-                            .pickerStyle(.segmented)
-                            .tint(viewModel.selectedMedication?.displayColor ?? .accent)
-                            Spacer()
-                        }
-                    }
+                    controlsSection
 
                     if let med = viewModel.selectedMedication {
+                        summaryCard(for: med)
+
                         metricsView(for: med)
 
                         switch visualizationType {
@@ -123,30 +80,147 @@ struct MedicationTrendsView: View {
                         case .heatmap:
                             calendarHeatmap(for: med)
                         }
+
+                        questionsSection(for: med)
                     } else {
                         Text("Select a medication to see trends.")
+                            .font(.customFont(fontFamily, style: .body))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    // Support link at bottom
-                    VStack(spacing: sectionSpacing) {
-                        Divider()
-                            .padding(.top, chartContainerPadding)
-
-                        SupportSuggestionView()
-                    }
-                    .padding(.bottom, chartContainerPadding)
+                    SupportSuggestionView()
+                        .padding(.bottom, chartContainerPadding)
                 }
                 .padding(.horizontal)
                 .padding(.vertical)
             }
-            .navigationTitle("Trends")
+            .customNavigationTitle("Trends")
             .onAppear {
-                // Ensure we have a valid medication selected
                 viewModel.ensureValidSelection()
             }
+            .sheet(isPresented: $showingDisclaimer) {
+                NavigationStack {
+                    MedicalDisclaimerDetailView()
+                }
+            }
         }
+    }
+
+    private var controlsSection: some View {
+        VStack(alignment: .leading, spacing: controlsSpacing) {
+            Text("Review recent timing, refill pressure, and changes in your logging pattern.")
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(alignment: .center, spacing: controlsSpacing) {
+                Menu {
+                    ForEach(viewModel.medications, id: \.id) { med in
+                        Button {
+                            viewModel.selectedMedicationID = med.id
+                            viewModel.latestQuestionAnswer = nil
+                            viewModel.questionErrorMessage = nil
+                        } label: {
+                            Text(med.displayName)
+                                .font(.customFont(fontFamily, style: .body))
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(viewModel.selectedMedication?.displayName ?? "Select Medication")
+                            .font(.customFont(fontFamily, style: .body, weight: .medium))
+                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                            .noTruncate()
+
+                        Image(systemSymbol: .chevronUpChevronDown)
+                            .font(.customFont(fontFamily, style: .caption2))
+                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Picker("Range", selection: $daysWindow) {
+                    Text("14d")
+                        .font(.customFont(fontFamily, style: .body))
+                        .tag(14)
+                    Text("30d")
+                        .font(.customFont(fontFamily, style: .body))
+                        .tag(30)
+                }
+                .font(.customFont(fontFamily, style: .body))
+                .pickerStyle(.segmented)
+                .tint(viewModel.selectedMedication?.displayColor ?? .accent)
+                .frame(maxWidth: pickerMaxWidth)
+            }
+
+            Picker("Visualization", selection: $visualizationType) {
+                ForEach(VisualizationType.allCases, id: \.self) { type in
+                    Text(type.displayName)
+                        .font(.customFont(fontFamily, style: .body))
+                        .tag(type)
+                }
+            }
+            .font(.customFont(fontFamily, style: .body))
+            .pickerStyle(.segmented)
+            .tint(viewModel.selectedMedication?.displayColor ?? .accent)
+        }
+        .padding(clinicalCardPadding)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func summaryCard(for med: ANMedicationConcept) -> some View {
+        VStack(alignment: .leading, spacing: controlsSpacing) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: metricTitleSpacing) {
+                    Text(med.displayName)
+                        .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .noTruncate()
+
+                    Text(viewModel.patternSummary)
+                        .font(.customFont(fontFamily, style: .subheadline))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                if let nextEligibleDoseDate = viewModel.nextEligibleDoseDate, nextEligibleDoseDate > Date() {
+                    insightBadge(
+                        text: "Next window \(nextEligibleDoseDate.formatted(date: .omitted, time: .shortened))",
+                        tint: .orange
+                    )
+                } else {
+                    insightBadge(text: "Available now", tint: med.displayColor)
+                }
+            }
+
+            if let refillProjection = viewModel.refillProjection {
+                HStack(alignment: .top, spacing: controlsSpacing) {
+                    Image(systemSymbol: refillProjection.urgent ? .exclamationmarkTriangleFill : .shippingboxFill)
+                        .foregroundStyle(refillProjection.urgent ? .orange : med.displayColor)
+                    Text(refillProjection.statusMessage)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(clinicalCardPadding)
+        .background(
+            LinearGradient(
+                colors: [med.displayColor.opacity(0.12), med.displayColor.opacity(0.04)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+                .strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
+        )
     }
 
     @ViewBuilder
@@ -177,24 +251,200 @@ struct MedicationTrendsView: View {
         // Refill cycle status (optional)
         let cycleStatusText: String = viewModel.refillCycleStatusText
 
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: controlsSpacing), GridItem(.flexible(), spacing: controlsSpacing)], spacing: controlsSpacing) {
-            metricCard(title: "Avg (7d)", value: avgText, systemImage: .chartLineUptrendXyaxis)
-            metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
+        VStack(alignment: .leading, spacing: controlsSpacing) {
+            Text("Overview")
+                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
-            // Show usage progress card ONLY if initialQuantity is available
-            if viewModel.usagePercentage != nil {
-                metricCard(title: "Usage", value: usageText, systemImage: .chartPieFill)
-                    .accessibilityLabel("Medication usage progress: \(usageText)")
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: controlsSpacing), GridItem(.flexible(), spacing: controlsSpacing)], spacing: controlsSpacing) {
+                metricCard(title: "Avg (7d)", value: avgText, systemImage: .chartLineUptrendXyaxis)
+                metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
+
+                if viewModel.usagePercentage != nil {
+                    metricCard(title: "Usage", value: usageText, systemImage: .chartPieFill)
+                        .accessibilityLabel("Medication usage progress: \(usageText)")
+                }
+
+                metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
+                metricCard(title: "Run-out ETA", value: etaText, systemImage: .hourglass)
+
+                if viewModel.refillCycleStatus != .unknown {
+                    metricCard(title: "Refill Status", value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
+                        .accessibilityLabel("Refill cycle status: \(cycleStatusText)")
+                }
             }
+        }
+    }
 
-            metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
-            metricCard(title: "Run-out ETA", value: etaText, systemImage: .hourglass)
+    @ViewBuilder
+    private func questionsSection(for med: ANMedicationConcept) -> some View {
+        switch viewModel.questionAvailability {
+        case .unavailable:
+            EmptyView()
+        case .disabled:
+            VStack(alignment: .leading, spacing: controlsSpacing) {
+                HStack {
+                    Text("Private Questions")
+                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                    Spacer()
+                    insightBadge(text: "Opt in", tint: med.displayColor)
+                }
 
-            // Show refill status card ONLY if we have the needed data
-            if viewModel.refillCycleStatus != .unknown {
-                metricCard(title: "Refill Status", value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
-                    .accessibilityLabel("Refill cycle status: \(cycleStatusText)")
+                Text("Turn this on in App Preferences to ask private questions about your trends. Questions stay on this device, and this medication data never leaves the device for processing.")
+                    .font(.customFont(fontFamily, style: .subheadline))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                NavigationLink(destination: AppPreferencesView()) {
+                    Label("Open App Preferences", systemSymbol: .gearshapeFill)
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                        .foregroundStyle(.accent)
+                }
+
+                disclaimerFooter
             }
+            .padding(clinicalCardPadding)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
+        case .available:
+            VStack(alignment: .leading, spacing: controlsSpacing) {
+                HStack {
+                    Text("Private Questions")
+                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                    Spacer()
+                    insightBadge(text: "On device", tint: med.displayColor)
+                }
+
+                Text("Ask about your logged history in plain language. Questions stay on this device, and your medication data never leaves the device for this feature.")
+                    .font(.customFont(fontFamily, style: .subheadline))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                TextField("Ask about timing, consistency, or changes in this medication's pattern", text: $questionText, axis: .vertical)
+                    .font(.customFont(fontFamily, style: .body))
+                    .lineLimit(2 ... 4)
+                    .textFieldStyle(.roundedBorder)
+
+                Button {
+                    Task {
+                        let prompt = questionText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !prompt.isEmpty else { return }
+                        await viewModel.ask(question: prompt, windowDays: daysWindow)
+                    }
+                } label: {
+                    HStack {
+                        if viewModel.isAnsweringQuestion {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemSymbol: .bubbleLeftAndBubbleRightFill)
+                        }
+                        Text(viewModel.isAnsweringQuestion ? "Reviewing your history..." : "Ask About This Data")
+                            .font(.customFont(fontFamily, style: .body, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, buttonVerticalPadding)
+                    .background(med.displayColor, in: RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
+                }
+                .disabled(questionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnsweringQuestion)
+
+                if !viewModel.examplePrompts.isEmpty {
+                    VStack(alignment: .leading, spacing: questionPromptSpacing) {
+                        Text("Try a prompt")
+                            .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                            .foregroundStyle(.secondary)
+
+                        ForEach(viewModel.examplePrompts, id: \.self) { prompt in
+                            Button {
+                                questionText = prompt
+                                Task {
+                                    await viewModel.ask(question: prompt, windowDays: daysWindow)
+                                }
+                            } label: {
+                                HStack(alignment: .top, spacing: mediumSpacing) {
+                                    Image(systemSymbol: .sparkles)
+                                        .foregroundStyle(med.displayColor)
+                                        .padding(.top, smallSpacing)
+
+                                    Text(prompt)
+                                        .font(.customFont(fontFamily, style: .subheadline))
+                                        .foregroundStyle(.primary)
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, promptButtonPaddingH)
+                                .padding(.vertical, promptButtonPaddingV)
+                                .background(
+                                    RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+                                        .fill(Color(.tertiarySystemFill))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                if let errorMessage = viewModel.questionErrorMessage {
+                    Text(errorMessage)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let answer = viewModel.latestQuestionAnswer {
+                    VStack(alignment: .leading, spacing: controlsSpacing) {
+                        Text(answer.answer)
+                            .font(.customFont(fontFamily, style: .body))
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if !answer.highlights.isEmpty {
+                            VStack(alignment: .leading, spacing: smallSpacing) {
+                                Text("What stands out")
+                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                                    .foregroundStyle(.secondary)
+
+                                ForEach(answer.highlights, id: \.self) { highlight in
+                                    HStack(alignment: .top, spacing: smallSpacing) {
+                                        Image(systemSymbol: .circleFill)
+                                            .font(.customFont(fontFamily, style: .caption2))
+                                            .foregroundStyle(med.displayColor)
+                                            .padding(.top, smallSpacing)
+                                        Text(highlight)
+                                            .font(.customFont(fontFamily, style: .caption))
+                                            .foregroundStyle(.secondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
+                        }
+
+                        if !answer.limitations.isEmpty {
+                            VStack(alignment: .leading, spacing: smallSpacing) {
+                                Text("Limitations")
+                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                                    .foregroundStyle(.secondary)
+
+                                ForEach(answer.limitations, id: \.self) { limitation in
+                                    Text(limitation)
+                                        .font(.customFont(fontFamily, style: .caption))
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
+                    .padding(clinicalCardPadding)
+                    .background(
+                        RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+                            .fill(med.displayColor.opacity(0.06))
+                    )
+                }
+
+                disclaimerFooter
+            }
+            .padding(clinicalCardPadding)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
         }
     }
 
@@ -213,6 +463,43 @@ struct MedicationTrendsView: View {
         .padding(metricCardPadding)
         .frame(maxWidth: .infinity, minHeight: metricCardMinHeight, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
+    }
+
+    private func insightBadge(text: String, tint: Color) -> some View {
+        Text(text)
+            .font(.customFont(fontFamily, style: .caption, weight: .medium))
+            .foregroundStyle(tint)
+            .padding(.horizontal, insightBadgePaddingH)
+            .padding(.vertical, insightBadgePaddingV)
+            .background(
+                Capsule()
+                    .fill(tint.opacity(0.12))
+            )
+    }
+
+    private var disclaimerFooter: some View {
+        HStack(alignment: .top, spacing: mediumSpacing) {
+            Image(systemSymbol: .exclamationmarkTriangleFill)
+                .foregroundStyle(.orange)
+                .padding(.top, smallSpacing)
+
+            VStack(alignment: .leading, spacing: smallSpacing) {
+                Text("Responses may be incorrect or incomplete. Review your history directly before making decisions.")
+                    .font(.customFont(fontFamily, style: .caption))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    showingDisclaimer = true
+                } label: {
+                    Text("Medical Disclaimer")
+                        .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                        .foregroundStyle(.accent)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, smallSpacing)
     }
 
     @ViewBuilder

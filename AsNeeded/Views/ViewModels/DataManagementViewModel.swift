@@ -16,6 +16,8 @@ final class DataManagementViewModel: ObservableObject {
     @Published var isClearingUserData = false
     @Published var isResettingSettings = false
     @Published var isExportingLogs = false
+    @Published var isExportingClinicianReport = false
+    @Published var isScanningRecovery = false
     @Published var showingClearConfirmation = false
     @Published var showingClearUserDataConfirmation = false
     @Published var showingPreClearExportDialog = false
@@ -25,13 +27,16 @@ final class DataManagementViewModel: ObservableObject {
     @Published var showingLogExportConfirmation = false
     @Published var showingDataShareSheet = false
     @Published var showingLogShareSheet = false
+    @Published var showingClinicianReportShareSheet = false
     @Published var exportedDataURL: URL?
     @Published var exportedLogsURL: URL?
+    @Published var exportedClinicianReportURL: URL?
     @Published var alertMessage: String?
     @Published var showingAlert = false
     @Published var logCount: Int = 0
     @Published var isLoadingLogCount = false
     @Published var shouldClearAfterExport = false
+    @Published var recoverySummaryText = "Scan recovery sources to check for orphaned data from older storage locations."
 
     // Settings export/import
     @Published var includeSettings = true // Default enabled per requirements
@@ -386,6 +391,54 @@ final class DataManagementViewModel: ObservableObject {
         } catch {
             alertMessage = "Log export failed: \(error.localizedDescription)"
             showingAlert = true
+        }
+    }
+
+    func exportClinicianReport() async {
+        isExportingClinicianReport = true
+        defer { isExportingClinicianReport = false }
+
+        do {
+            let exporter = ClinicianReportExporter()
+            let summary = exporter.buildSummary(
+                medications: dataStore.medications,
+                events: dataStore.events,
+                safetyProfiles: MedicationSafetyProfileStore.shared.allProfiles()
+            )
+            let pdfData = exporter.makePDF(summary: summary)
+
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd-HHmm"
+            let filename = "AsNeeded-Clinician-Summary-\(dateFormatter.string(from: Date())).pdf"
+
+            guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                alertMessage = "Clinician report export failed: Could not access documents directory"
+                showingAlert = true
+                return
+            }
+
+            let tempURL = documentsPath.appendingPathComponent(filename)
+            try pdfData.write(to: tempURL, options: [.atomic])
+            _ = tempURL.startAccessingSecurityScopedResource()
+
+            exportedClinicianReportURL = tempURL
+            showingClinicianReportShareSheet = true
+        } catch {
+            alertMessage = "Clinician report export failed: \(error.localizedDescription)"
+            showingAlert = true
+        }
+    }
+
+    func scanRecoverySources() async {
+        isScanningRecovery = true
+        defer { isScanningRecovery = false }
+
+        let report = await DataRecoveryManager.shared.scanForOrphanedData()
+
+        if report.hasOrphanedData {
+            recoverySummaryText = "Found \(report.totalMedicationsFound) medications and \(report.totalEventsFound) events across historical storage locations."
+        } else {
+            recoverySummaryText = "No orphaned data was found across the scanned storage locations."
         }
     }
 

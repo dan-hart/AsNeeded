@@ -23,6 +23,8 @@ struct GetNextDoseIntent: AppIntent {
         logger.info("Performing GetNextDoseIntent")
 
         let medications = DataStore.shared.medications
+        let safetyProfileStore = MedicationSafetyProfileStore.shared
+        let guidanceService = MedicationDoseGuidanceService()
 
         guard !medications.isEmpty else {
             logger.info("No medications found")
@@ -37,23 +39,14 @@ struct GetNextDoseIntent: AppIntent {
         // If specific medication provided, check that one
         if let providedMedication = medication {
             let med = providedMedication.medication
-            let medicationEvents = events
-                .filter { $0.medication?.id == med.id }
-                .sorted { $0.date > $1.date }
+            let profile = safetyProfileStore.profile(for: med.id)
+            let nextAvailable = guidanceService.nextEligibleDate(
+                for: med,
+                events: events,
+                profile: profile
+            )
 
-            guard let lastEvent = medicationEvents.first else {
-                logger.info("No history for medication: \(med.displayName)")
-                return .result(
-                    dialog: IntentDialog("You haven't taken \(med.displayName) yet. You can take it now."),
-                    view: NextDoseView(medicationName: med.displayName, nextDoseTime: nil, canTakeNow: true)
-                )
-            }
-
-            // Simplified: Use 4-hour default interval since minimumIntervalSeconds doesn't exist yet
-            let minInterval: TimeInterval = 4 * 3600 // 4 hours
-            let nextAvailable = lastEvent.date.addingTimeInterval(minInterval)
-
-            if nextAvailable > Date() {
+            if let nextAvailable, nextAvailable > Date() {
                 let timeRemaining = formatTimeRemaining(until: nextAvailable)
                 logger.info("Next dose of \(med.displayName) in \(timeRemaining)")
                 return .result(
@@ -71,23 +64,15 @@ struct GetNextDoseIntent: AppIntent {
         }
 
         // Otherwise, find the next medication due
-        // Calculate next dose time for each medication
         var medicationTimes: [(medication: ANMedicationConcept, nextTime: Date?)] = []
 
         for medication in medications {
-            let medicationEvents = events
-                .filter { $0.medication?.id == medication.id }
-                .sorted { $0.date > $1.date }
-
-            guard let lastEvent = medicationEvents.first else {
-                // No history, can take now
-                medicationTimes.append((medication, Date()))
-                continue
-            }
-
-            // Simplified: Use 4-hour default interval
-            let minInterval: TimeInterval = 4 * 3600
-            let nextAvailable = lastEvent.date.addingTimeInterval(minInterval)
+            let profile = safetyProfileStore.profile(for: medication.id)
+            let nextAvailable = guidanceService.nextEligibleDate(
+                for: medication,
+                events: events,
+                profile: profile
+            ) ?? Date()
             medicationTimes.append((medication, nextAvailable))
         }
 

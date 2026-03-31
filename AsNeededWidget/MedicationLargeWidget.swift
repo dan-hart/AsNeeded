@@ -36,7 +36,9 @@ struct LargeWidgetProvider: TimelineProvider {
                         prescribedUnit: .tablet
                     ),
                     nextDoseTime: Date().addingTimeInterval(3600),
-                    canTakeNow: false
+                    canTakeNow: false,
+                    lowStock: false,
+                    refillSoon: true
                 ),
                 MedicationInfo(
                     medication: ANMedicationConcept(
@@ -45,7 +47,9 @@ struct LargeWidgetProvider: TimelineProvider {
                         prescribedUnit: .capsule
                     ),
                     nextDoseTime: Date(),
-                    canTakeNow: true
+                    canTakeNow: true,
+                    lowStock: false,
+                    refillSoon: false
                 ),
             ],
             lowQuantityCount: 1,
@@ -85,7 +89,9 @@ struct LargeWidgetProvider: TimelineProvider {
             MedicationInfo(
                 medication: medication,
                 nextDoseTime: provider.nextDoseTime(for: medication),
-                canTakeNow: provider.canTakeNow(medication)
+                canTakeNow: provider.canTakeNow(medication),
+                lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
+                refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
             )
         }
 
@@ -242,6 +248,24 @@ struct LargeWidgetView: View {
                                 .font(.caption2.weight(.medium))
                         }
                         .foregroundStyle(.green)
+                    } else if info.lowStock {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption2)
+
+                            Text("Low stock")
+                                .font(.caption2.weight(.medium))
+                        }
+                        .foregroundStyle(.orange)
+                    } else if info.refillSoon {
+                        HStack(spacing: 4) {
+                            Image(systemName: "shippingbox.fill")
+                                .font(.caption2)
+
+                            Text("Refill soon")
+                                .font(.caption2.weight(.medium))
+                        }
+                        .foregroundStyle(.orange)
                     } else if let nextDoseTime = info.nextDoseTime {
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
@@ -343,7 +367,9 @@ struct FullMedicationListEntry: TimelineEntry {
                     prescribedUnit: .tablet
                 ),
                 nextDoseTime: Date(),
-                canTakeNow: true
+                canTakeNow: true,
+                lowStock: true,
+                refillSoon: true
             ),
             MedicationInfo(
                 medication: ANMedicationConcept(
@@ -352,7 +378,9 @@ struct FullMedicationListEntry: TimelineEntry {
                     prescribedUnit: .tablet
                 ),
                 nextDoseTime: Date().addingTimeInterval(7200),
-                canTakeNow: false
+                canTakeNow: false,
+                lowStock: false,
+                refillSoon: false
             ),
             MedicationInfo(
                 medication: ANMedicationConcept(
@@ -361,7 +389,9 @@ struct FullMedicationListEntry: TimelineEntry {
                     prescribedUnit: .capsule
                 ),
                 nextDoseTime: Date().addingTimeInterval(14400),
-                canTakeNow: false
+                canTakeNow: false,
+                lowStock: false,
+                refillSoon: false
             ),
         ],
         lowQuantityCount: 1,

@@ -41,6 +41,8 @@ struct MedicationHistoryView: View {
     @ScaledMetric private var fabBottomPadding: CGFloat = 20
     @ScaledMetric private var fabShadowRadius: CGFloat = 4
     @ScaledMetric private var datePickerSpacing: CGFloat = 20
+    @ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
+    @ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
 
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
@@ -141,7 +143,7 @@ struct MedicationHistoryView: View {
                                     Spacer()
 
                                     // Show add note button on trailing side if no note exists
-                                    if event.note?.isEmpty != false {
+                                    if displayNote(for: event)?.isEmpty != false {
                                         AddNoteButtonComponent(
                                             medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
                                             onTap: {
@@ -152,14 +154,32 @@ struct MedicationHistoryView: View {
                                     }
                                 }
 
+                                if !reflectionHighlights(for: event).isEmpty {
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: sectionHeaderSpacing) {
+                                            ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+                                                Text(highlight)
+                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                                                    .foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
+                                                    .padding(.horizontal, reflectionBadgePaddingH)
+                                                    .padding(.vertical, reflectionBadgePaddingV)
+                                                    .background(
+                                                        Capsule()
+                                                            .fill((viewModel.isShowingAllMedications ? Color.accent : (viewModel.selectedMedication?.displayColor ?? .accent)).opacity(0.12))
+                                                    )
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Show enhanced note display below if it exists
-                                if let note = event.note, !note.isEmpty {
+                                if let note = displayNote(for: event), !note.isEmpty {
                                     NoteDisplayCardComponent(
                                         noteText: note,
                                         medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
                                         onEdit: {
                                             editingEvent = event
-                                            editingNoteText = event.note ?? ""
+                                            editingNoteText = displayNote(for: event) ?? ""
                                         }
                                     )
                                     .padding(.top, noteTopSpacing)
@@ -277,6 +297,36 @@ struct MedicationHistoryView: View {
         if mins < 60 { return "\(mins)m ago" }
         let hrs = mins / 60
         return "\(hrs)h ago"
+    }
+
+    private func displayNote(for event: ANEventConcept) -> String? {
+        DoseReflectionCodec.displayNote(from: event.note)
+    }
+
+    private func reflectionHighlights(for event: ANEventConcept) -> [String] {
+        guard let reflection = DoseReflectionCodec.reflection(from: event.note) else {
+            return []
+        }
+
+        var highlights: [String] = []
+
+        if let reason = reflection.reason {
+            highlights.append(reason)
+        }
+
+        if let effectiveness = reflection.effectiveness {
+            highlights.append("Effect \(effectiveness)/5")
+        }
+
+        if let before = reflection.symptomSeverityBefore, let after = reflection.symptomSeverityAfter {
+            highlights.append("Before \(before)/5 to \(after)/5")
+        }
+
+        if let sideEffect = reflection.sideEffects.first {
+            highlights.append(sideEffect)
+        }
+
+        return Array(highlights.prefix(3))
     }
 
     @ViewBuilder
@@ -500,6 +550,29 @@ struct MedicationHistoryView: View {
                                 }
 
                                 Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
+                                    if !reflectionHighlights(for: event).isEmpty {
+                                        VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+                                            Text("Saved context from this dose stays attached when you update the note.")
+                                                .font(.customFont(fontFamily, style: .caption))
+                                                .foregroundStyle(.secondary)
+
+                                            HStack(spacing: sectionHeaderSpacing) {
+                                                ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+                                                    Text(highlight)
+                                                        .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+                                                        .padding(.horizontal, reflectionBadgePaddingH)
+                                                        .padding(.vertical, reflectionBadgePaddingV)
+                                                        .background(
+                                                            Capsule()
+                                                                .fill((viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.12))
+                                                        )
+                                                }
+                                            }
+                                        }
+                                        .padding(.bottom, sectionHeaderSpacing)
+                                    }
+
                                     TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
                                         .lineLimit(4 ... 8)
                                         .font(.customFont(fontFamily, style: .body))
@@ -516,9 +589,9 @@ struct MedicationHistoryView: View {
                                 Button(action: {
                                     if let event = editingEvent {
                                         Task {
-                                            let trimmedNote = editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
                                             var updatedEvent = event
-                                            updatedEvent.note = trimmedNote.isEmpty ? nil : trimmedNote
+                                            updatedEvent.note = (try? DoseReflectionCodec.updatingNote(in: event.note, with: editingNoteText)) ??
+                                                editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
                                             await viewModel.updateEventNote(updatedEvent)
                                             editingEvent = nil
                                             editingNoteText = ""
@@ -569,6 +642,7 @@ struct MedicationHistoryView: View {
                     }
                     .presentationDetents([.large])
                     .onAppear {
+                        editingNoteText = displayNote(for: event) ?? ""
                         // Auto-focus the note field when sheet opens - increased delay for reliability
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                             isNoteFieldFocused = true
@@ -744,6 +818,13 @@ struct MedicationHistoryView: View {
                 SupportView()
             }
         }
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

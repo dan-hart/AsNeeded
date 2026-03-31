@@ -48,6 +48,10 @@ struct DataManagementView: View {
 
                     Divider()
 
+                    recoverySection
+
+                    Divider()
+
                     dataActionsSection
                 }
                 .padding()
@@ -111,6 +115,18 @@ struct DataManagementView: View {
                             viewModel.exportedLogsURL = nil
                             viewModel.alertMessage = "Logs exported successfully. No medication names are included - only technical information."
                             viewModel.showingAlert = true
+                        }
+                }
+            }
+            .sheet(isPresented: $viewModel.showingClinicianReportShareSheet) {
+                if let url = viewModel.exportedClinicianReportURL {
+                    ShareSheet(items: [url])
+                        .onDisappear {
+                            url.stopAccessingSecurityScopedResource()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                try? FileManager.default.removeItem(at: url)
+                            }
+                            viewModel.exportedClinicianReportURL = nil
                         }
                 }
             }
@@ -434,6 +450,47 @@ struct DataManagementView: View {
         }
     }
 
+    private var recoverySection: some View {
+        VStack(alignment: .leading, spacing: actionSpacing) {
+            Text("Recovery & Trust")
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            VStack(alignment: .leading, spacing: toggleLabelSpacing) {
+                Text(viewModel.recoverySummaryText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    Task {
+                        await viewModel.scanRecoverySources()
+                    }
+                } label: {
+                    HStack(spacing: actionSpacing) {
+                        if viewModel.isScanningRecovery {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemSymbol: .magnifyingglassCircleFill)
+                                .font(.callout.weight(.medium))
+                        }
+
+                        Text(viewModel.isScanningRecovery ? "Scanning Recovery Sources..." : "Scan Recovery Sources")
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.accent)
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isScanningRecovery)
+            }
+            .padding(cardPadding)
+            .background(Color(.systemGray6))
+            .cornerRadius(cardCornerRadius)
+        }
+    }
+
     private var dataActionsSection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             Text("Data Actions")
@@ -458,6 +515,18 @@ struct DataManagementView: View {
                     isLoading: viewModel.isImporting,
                     action: {
                         viewModel.showingDocumentPicker = true
+                    }
+                )
+
+                dataActionButton(
+                    title: "Export Clinician Report",
+                    subtitle: "Create a shareable PDF summary of medications and recent logs",
+                    systemImage: .textDocument,
+                    isLoading: viewModel.isExportingClinicianReport,
+                    action: {
+                        Task {
+                            await viewModel.exportClinicianReport()
+                        }
                     }
                 )
 
@@ -545,7 +614,7 @@ struct DataManagementView: View {
             )
             .cornerRadius(cardCornerRadius)
         }
-        .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs)
+        .disabled(isLoading || viewModel.isExporting || viewModel.isImporting || viewModel.isClearing || viewModel.isClearingUserData || viewModel.isResettingSettings || viewModel.isExportingLogs || viewModel.isExportingClinicianReport)
         .buttonStyle(.plain)
     }
 
