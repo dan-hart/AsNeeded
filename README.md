@@ -4,9 +4,9 @@
 [![Platform](https://img.shields.io/badge/Platform-iOS%2018.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 
-Track as-needed medications with privacy and simplicity.
+Track as-needed medications with privacy and clarity.
 
-AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with clarity and confidence. It focuses on quick logging and clear insights so you always know what you took, when you took it, and when it's safe to take more.
+AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, saved safety guardrails, refill awareness, and clear insights so you always know what you took, when you took it, when you may be able to take more, and how your patterns are changing over time.
 
 ## Table of Contents
 - [Core Values](#core-values)
@@ -37,13 +37,13 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 ### Key Features
 
-- **Privacy-first**: Local storage, no tracking, full data export/import
-- **Smart medication search**: RxNorm integration with 29+ unit types
-- **Quick logging**: Voice commands via Siri, customizable doses, historical entries
-- **Smart reminders**: Flexible scheduling with privacy-focused notifications
-- **Usage insights**: Visual charts, calendar heatmap, searchable history
-- **Cross-platform**: iOS & watchOS with Handoff support
-- **Accessibility**: Dynamic Type, VoiceOver, Dark Mode
+- **Privacy-first storage and insights**: Local-first data, no tracking, full export/import, and on-device Trends questions that never send your logs off-device for processing
+- **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
+- **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
+- **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
+- **Usage insights**: Visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
+- **Ambient access**: Home Screen widgets, Lock Screen widgets, Live Activities, interactive quick actions, and watchOS support
+- **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
 
 ---
 
@@ -82,8 +82,8 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 5. **First launch**
    - Add your first medication from the Home or Medications screen
-   - Configure its minimum interval and typical dose (optional)
-   - Log your first dose to see the "Next dose available" timer in action
+   - Configure its typical dose, interval, and refill settings (optional)
+   - Log your first dose to see the next-dose guidance and history summaries in action
 
 ---
 
@@ -104,7 +104,7 @@ xcodebuild test -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=
 - Use `// MARK: -` comments for organization
 - Follow Swift API Design Guidelines
 - SF Symbols: Always use SFSafeSymbols (e.g., `Image(systemSymbol: .pills)`)
-- Colors: Use `.accentColor` for interactive elements
+- Colors: Use `.accent` for interactive elements
 
 ---
 
@@ -163,8 +163,8 @@ See implementations in `Medication/` views and `AsNeededTests/ANModelKitTests.sw
 
 ## Design & Accessibility
 
-- **Accessibility**: Dynamic Type, VoiceOver, high contrast, Light/Dark Mode
-- **Design system**: Semantic colors, typography, spacing tokens, reusable components
+- **Accessibility**: Dynamic Type, VoiceOver, high contrast, reduced motion support, Light/Dark Mode
+- **Design system**: Calm clinical presentation, semantic colors, typography, spacing tokens, reusable components
 - **Localization-ready**: Centralized strings
 
 ---
@@ -185,7 +185,7 @@ In Xcode: Product → Test (⌘U). See `AsNeededTests/` for examples.
 ## Troubleshooting
 
 **Build issues**: Clean (⌘⇧K), reset packages, delete DerivedData  
-**Simulator**: Check `xcrun simctl list devices`, download iOS 18+ runtime  
+**Simulator**: Check `xcrun simctl list devices`, download the current supported runtime  
 **Notifications**: Verify permissions in Settings and app Reminders  
 **Tests**: Run `swift package resolve`, check test plan configuration
 
@@ -194,7 +194,7 @@ In Xcode: Product → Test (⌘U). See `AsNeededTests/` for examples.
 ## Contributing
 
 **Issues**: Search existing, include iOS version and repro steps  
-**Pull Requests**: Fork, create feature branch, follow code style (tabs, MARK comments, SFSafeSymbols, `.accentColor`), add tests, submit to `develop`  
+**Pull Requests**: Fork, create feature branch, follow code style (tabs, MARK comments, SFSafeSymbols, `.accent`), add tests, submit to `main`  
 **Guidelines**: No force unwraps, UI-free packages, test business logic
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
@@ -203,7 +203,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Privacy
 
-Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. Your health data belongs to you.
+Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. When supported and enabled, question-based Trends exploration is processed entirely on device. Your health data belongs to you.
 
 ---
 
@@ -240,4 +240,3 @@ Users choose AsNeeded for its simplicity and complete data privacy. Your medicat
 ---
 
 We're focused on making AsNeeded the best standalone medication tracker, with features like local backups and exports that give you control without compromising privacy or simplicity.
-

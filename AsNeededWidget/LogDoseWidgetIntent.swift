@@ -65,6 +65,7 @@ struct LogDoseWidgetIntent: AppIntent {
 
             // Reload all widget timelines to show updated state
             WidgetCenter.shared.reloadAllTimelines()
+            await MedicationLiveActivityBridge.refreshFromSharedStores(provider: provider)
 
             return .result()
 

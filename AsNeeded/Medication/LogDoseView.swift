@@ -15,11 +15,19 @@ struct LogDoseView: View {
     @State private var amount: Double = 1
     @State private var selectedUnit: ANUnitConcept = .unit
     @State private var selectedDate: Date = .now
+    @State private var reason: String = ""
+    @State private var symptomSeverityBefore: Int = 0
+    @State private var symptomSeverityAfter: Int = 0
+    @State private var effectiveness: Int = 0
+    @State private var sideEffectsText: String = ""
     @State private var note: String = ""
     @State private var showingDatePicker = false
     @State private var animateHeader = false
     @State private var selectedQuickOption: String? = "Now"
     private let hapticsManager = HapticsManager.shared
+    private let dataStore = DataStore.shared
+    private let safetyProfileStore = MedicationSafetyProfileStore.shared
+    private let guidanceService = MedicationDoseGuidanceService()
 
     @ScaledMetric private var iconSize: CGFloat = 80
     @ScaledMetric private var iconShadowRadius: CGFloat = 12
@@ -52,6 +60,8 @@ struct LogDoseView: View {
     @ScaledMetric private var noteVerticalPadding: CGFloat = 4
     @ScaledMetric private var noteTextFieldPadding: CGFloat = 12
     @ScaledMetric private var noteTextFieldCornerRadius: CGFloat = 12
+    @ScaledMetric private var labelSpacing: CGFloat = 8
+    @ScaledMetric private var standardPadding: CGFloat = 12
     @ScaledMetric private var buttonHorizontalPadding: CGFloat = 16
     @ScaledMetric private var buttonVerticalPadding: CGFloat = 16
     @ScaledMetric private var buttonCornerRadius: CGFloat = 16
@@ -62,6 +72,35 @@ struct LogDoseView: View {
     @ScaledMetric private var bottomPadding: CGFloat = 20
     @ScaledMetric private var sectionShadowRadius: CGFloat = 8
     @ScaledMetric private var sectionShadowY: CGFloat = 2
+    @ScaledMetric private var guidanceBadgePaddingH: CGFloat = 10
+    @ScaledMetric private var guidanceBadgePaddingV: CGFloat = 6
+    @ScaledMetric private var reflectionGridSpacing: CGFloat = 10
+    @ScaledMetric private var scaleButtonMinWidth: CGFloat = 36
+
+    private var safetyProfile: MedicationSafetyProfile {
+        safetyProfileStore.profile(for: medication.id)
+    }
+
+    private var proposedDose: ANDoseConcept {
+        ANDoseConcept(amount: amount, unit: selectedUnit)
+    }
+
+    private var assessment: MedicationDoseGuidanceService.Assessment {
+        guidanceService.assessment(
+            for: medication,
+            proposedDose: proposedDose,
+            at: selectedDate,
+            events: dataStore.events,
+            profile: safetyProfile
+        )
+    }
+
+    private var parsedSideEffects: [String] {
+        sideEffectsText
+            .components(separatedBy: CharacterSet(charactersIn: ",\n"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
 
     init(
         medication: ANMedicationConcept,
@@ -77,18 +116,41 @@ struct LogDoseView: View {
 
     private func performLogDose() {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            let dose = ANDoseConcept(amount: amount, unit: selectedUnit)
-            let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            let dose = proposedDose
+            let reflection = DoseReflection(
+                reason: reason,
+                symptomSeverityBefore: nilIfZero(symptomSeverityBefore),
+                symptomSeverityAfter: nilIfZero(symptomSeverityAfter),
+                effectiveness: nilIfZero(effectiveness),
+                sideEffects: parsedSideEffects,
+                note: note
+            )
+            let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
             let event = ANEventConcept(
                 eventType: .doseTaken,
                 medication: medication,
                 dose: dose,
                 date: selectedDate,
-                note: trimmedNote.isEmpty ? nil : trimmedNote
+                note: encodedNote
             )
             onLog(dose, event)
             hapticsManager.doseLogged()
             dismiss()
+        }
+    }
+
+    private func nilIfZero(_ value: Int) -> Int? {
+        value == 0 ? nil : value
+    }
+
+    private func tintColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
+        switch severity {
+        case .clear:
+            return medication.displayColor
+        case .caution:
+            return .orange
+        case .warning:
+            return .red
         }
     }
 
@@ -343,6 +405,217 @@ struct LogDoseView: View {
         .padding(.horizontal)
     }
 
+    private var guidanceSection: some View {
+        let tint = tintColor(for: assessment.severity)
+
+        return VStack(alignment: .leading, spacing: sectionSpacing) {
+            HStack {
+                Label("Dose Check", systemSymbol: .crossCaseFill)
+                    .font(.customFont(fontFamily, style: .headline))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Text(assessment.severity == .clear ? "Saved Guidance" : "Review")
+                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, guidanceBadgePaddingH)
+                    .padding(.vertical, guidanceBadgePaddingV)
+                    .background(
+                        Capsule()
+                            .fill(tint.opacity(0.12))
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: mediumSpacing) {
+                Text(assessment.headline)
+                    .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                    .foregroundStyle(.primary)
+
+                Text(assessment.detail)
+                    .font(.customFont(fontFamily, style: .subheadline))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
+                HStack(alignment: .top, spacing: mediumSpacing) {
+                    Image(systemSymbol: .clockBadgeExclamationmark)
+                        .foregroundStyle(tint)
+                        .padding(.top, smallSpacing)
+
+                    Text("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if let maxDailyAmount = assessment.maxDailyAmount {
+                HStack(alignment: .top, spacing: mediumSpacing) {
+                    Image(systemSymbol: .chartBarFill)
+                        .foregroundStyle(tint)
+                        .padding(.top, smallSpacing)
+
+                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if !assessment.reasons.isEmpty {
+                VStack(alignment: .leading, spacing: smallSpacing) {
+                    ForEach(assessment.reasons, id: \.self) { reason in
+                        HStack(alignment: .top, spacing: smallSpacing) {
+                            Image(systemSymbol: .circleFill)
+                                .font(.customFont(fontFamily, style: .caption2))
+                                .foregroundStyle(tint)
+                                .padding(.top, smallSpacing)
+
+                            Text(reason)
+                                .font(.customFont(fontFamily, style: .caption))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(sectionPadding)
+        .background(
+            RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
+                .fill(tint.opacity(colorScheme == .dark ? 0.14 : 0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
+                        .strokeBorder(tint.opacity(0.14), lineWidth: borderWidth)
+                )
+        )
+        .padding(.horizontal)
+    }
+
+    private var reflectionSection: some View {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
+            HStack {
+                Label("How It Went", systemSymbol: .heartTextSquareFill)
+                    .font(.customFont(fontFamily, style: .headline))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Text("Optional")
+                    .font(.customFont(fontFamily, style: .caption))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, noteHorizontalPadding)
+                    .padding(.vertical, noteVerticalPadding)
+                    .background(
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.1))
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: labelSpacing) {
+                Text("Reason")
+                    .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+                TextField("Example: headache, cramps, trouble sleeping", text: $reason)
+                    .font(.customFont(fontFamily, style: .body))
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Reason for taking this dose")
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: reflectionGridSpacing), GridItem(.flexible(), spacing: reflectionGridSpacing)], spacing: reflectionGridSpacing) {
+                scalePickerCard(
+                    title: "Before",
+                    subtitle: "Symptom level before logging",
+                    selection: $symptomSeverityBefore
+                )
+
+                scalePickerCard(
+                    title: "After",
+                    subtitle: "How you feel afterward",
+                    selection: $symptomSeverityAfter
+                )
+
+                scalePickerCard(
+                    title: "Effect",
+                    subtitle: "How helpful this dose feels",
+                    selection: $effectiveness
+                )
+
+                VStack(alignment: .leading, spacing: labelSpacing) {
+                    Text("Side Effects")
+                        .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+                    Text("Separate with commas if needed.")
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+
+                    TextField("Sleepy, dry mouth, nausea", text: $sideEffectsText, axis: .vertical)
+                        .font(.customFont(fontFamily, style: .body))
+                        .lineLimit(2 ... 4)
+                        .textFieldStyle(.roundedBorder)
+                        .accessibilityLabel("Side effects")
+                }
+                .padding(standardPadding)
+                .background(
+                    RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
+                        .fill(Color(.tertiarySystemFill))
+                )
+            }
+        }
+        .padding(sectionPadding)
+        .background(
+            RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
+                .fill(colorScheme == .dark ? Color(uiColor: .secondarySystemBackground) : .white)
+                .shadow(color: Color.black.opacity(0.04), radius: sectionShadowRadius, x: 0, y: sectionShadowY)
+        )
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private func scalePickerCard(title: String, subtitle: String, selection: Binding<Int>) -> some View {
+        VStack(alignment: .leading, spacing: labelSpacing) {
+            Text(title)
+                .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+
+            Text(subtitle)
+                .font(.customFont(fontFamily, style: .caption))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: smallSpacing) {
+                ForEach(0 ... 5, id: \.self) { value in
+                    Button {
+                        selection.wrappedValue = value
+                        hapticsManager.selectionChanged()
+                    } label: {
+                        Text(value == 0 ? "—" : "\(value)")
+                            .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                            .frame(minWidth: scaleButtonMinWidth)
+                            .padding(.vertical, mediumSpacing)
+                            .background(
+                                RoundedRectangle(cornerRadius: noteTextFieldCornerRadius, style: .continuous)
+                                    .fill(selection.wrappedValue == value ? medication.displayColor.opacity(0.14) : Color(.systemBackground))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: noteTextFieldCornerRadius, style: .continuous)
+                                    .strokeBorder(selection.wrappedValue == value ? medication.displayColor.opacity(0.4) : Color(.systemGray4), lineWidth: borderWidth)
+                            )
+                            .foregroundStyle(selection.wrappedValue == value ? medication.displayColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(title) \(value == 0 ? "not set" : "\(value)")")
+                }
+            }
+        }
+        .padding(standardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
+                .fill(Color(.tertiarySystemFill))
+        )
+    }
+
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
@@ -434,6 +707,10 @@ struct LogDoseView: View {
 
                         dateTimeSection
 
+                        guidanceSection
+
+                        reflectionSection
+
                         noteSection
                     }
                     .padding(.bottom, bottomPadding)
@@ -476,3 +753,10 @@ struct LogDoseView: View {
         )
     }
 #endif
+
+private extension String {
+    var nilIfEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+}

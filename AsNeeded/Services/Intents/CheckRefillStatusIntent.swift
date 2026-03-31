@@ -20,6 +20,9 @@ struct CheckRefillStatusIntent: AppIntent {
         logger.info("Performing CheckRefillStatusIntent")
 
         let medications = DataStore.shared.medications
+        let events = DataStore.shared.events
+        let safetyProfileStore = MedicationSafetyProfileStore.shared
+        let guidanceService = MedicationDoseGuidanceService()
 
         guard !medications.isEmpty else {
             logger.info("No medications found")
@@ -34,33 +37,27 @@ struct CheckRefillStatusIntent: AppIntent {
         var lowQuantity: [RefillInfo] = []
 
         for medication in medications {
-            // Check refill date
-            if let refillDate = medication.nextRefillDate {
-                let daysUntil = Calendar.current.dateComponents(
-                    [.day],
-                    from: Date(),
-                    to: refillDate
-                ).day ?? 0
-
-                if daysUntil <= 7 && daysUntil >= 0 {
-                    needsRefill.append(RefillInfo(
-                        name: medication.displayName,
-                        daysUntil: daysUntil,
-                        quantity: medication.quantity
-                    ))
-                }
+            let profile = safetyProfileStore.profile(for: medication.id)
+            let projection = guidanceService.refillProjection(
+                for: medication,
+                events: events,
+                profile: profile
+            )
+            let daysUntilRefill = medication.nextRefillDate.flatMap {
+                Calendar.current.dateComponents([.day], from: Date(), to: $0).day
             }
 
-            // Check low quantity (< 10)
-            if let quantity = medication.quantity, quantity < 10 {
-                // Only add if not already in refill list
-                if !needsRefill.contains(where: { $0.name == medication.displayName }) {
-                    lowQuantity.append(RefillInfo(
-                        name: medication.displayName,
-                        daysUntil: nil,
-                        quantity: quantity
-                    ))
-                }
+            switch Self.refillBucket(
+                for: medication,
+                projection: projection,
+                daysUntilRefill: daysUntilRefill
+            ) {
+            case let .needsRefill(info):
+                needsRefill.append(info)
+            case let .lowQuantity(info):
+                lowQuantity.append(info)
+            case nil:
+                break
             }
         }
 
@@ -94,15 +91,54 @@ struct CheckRefillStatusIntent: AppIntent {
             view: RefillStatusView(needsRefill: needsRefill, lowQuantity: lowQuantity)
         )
     }
+
+    static func refillBucket(
+        for medication: ANMedicationConcept,
+        projection: MedicationDoseGuidanceService.RefillProjection,
+        daysUntilRefill: Int?
+    ) -> RefillBucket? {
+        if projection.lowStock {
+            return .lowQuantity(
+                RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                )
+            )
+        }
+
+        if projection.refillSoon {
+            return .needsRefill(
+                RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: daysUntilRefill ?? projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                )
+            )
+        }
+
+        return nil
+    }
 }
 
 // MARK: - Supporting Types
 
-struct RefillInfo: Identifiable {
+enum RefillBucket: Equatable {
+	case needsRefill(RefillInfo)
+	case lowQuantity(RefillInfo)
+}
+
+struct RefillInfo: Identifiable, Equatable {
     let id = UUID()
     let name: String
     let daysUntil: Int?
     let quantity: Double?
+
+    static func == (lhs: RefillInfo, rhs: RefillInfo) -> Bool {
+        lhs.name == rhs.name &&
+            lhs.daysUntil == rhs.daysUntil &&
+            lhs.quantity == rhs.quantity
+    }
 }
 
 // MARK: - Snippet Views

@@ -11,6 +11,10 @@ import Testing
 struct MedicationHistoryViewModelTests {
     // MARK: - Test Setup Helpers
 
+    private func clearStoredSelection() {
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
+    }
+
     private func createTestMedication(quantity: Double = 10.0) -> ANMedicationConcept {
         ANMedicationConcept(
             clinicalName: "Ibuprofen",
@@ -29,6 +33,67 @@ struct MedicationHistoryViewModelTests {
             dose: dose,
             date: Date()
         )
+    }
+
+    @Test("EnsureValidSelection defaults to all medications")
+    func ensureValidSelectionDefaultsToAll() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication()
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-SelectionAll")
+        try? await dataStore.addMedication(medication)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+
+        #expect(viewModel.selectedMedicationID == "all")
+        #expect(viewModel.isShowingAllMedications)
+    }
+
+    @Test("Selected medication resolves when a medication ID is provided")
+    func selectedMedicationResolvesProvidedID() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication()
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-SelectionSpecific")
+        try? await dataStore.addMedication(medication)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+
+        #expect(viewModel.selectedMedication?.id == medication.id)
+        #expect(viewModel.isShowingAllMedications == false)
+    }
+
+    @Test("Grouped history filters to selected medication and sorts newest day first")
+    func groupedHistoryFiltersAndSorts() async throws {
+        clearStoredSelection()
+        let med1 = createTestMedication(quantity: 8)
+        let med2 = ANMedicationConcept(
+            clinicalName: "Cetirizine",
+            quantity: 20,
+            prescribedUnit: .tablet,
+            prescribedDoseAmount: 1
+        )
+
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-GroupedHistory")
+        try? await dataStore.addMedication(med1)
+        try? await dataStore.addMedication(med2)
+
+        let todayEvent = createTestEvent(medication: med1, amount: 1.0, unit: .tablet)
+        let yesterdayEvent = ANEventConcept(
+            eventType: .doseTaken,
+            medication: med1,
+            dose: ANDoseConcept(amount: 1.0, unit: .tablet),
+            date: Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now
+        )
+        let otherMedicationEvent = createTestEvent(medication: med2, amount: 1.0, unit: .tablet)
+
+        try? await dataStore.addEvent(todayEvent)
+        try? await dataStore.addEvent(yesterdayEvent)
+        try? await dataStore.addEvent(otherMedicationEvent)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: med1.id.uuidString)
+
+        #expect(viewModel.groupedHistory.count == 2)
+        #expect(viewModel.groupedHistory.first?.entries.first?.medication?.id == med1.id)
+        #expect(viewModel.groupedHistory.allSatisfy { $0.entries.allSatisfy { $0.medication?.id == med1.id } })
     }
 
     // MARK: - Dose Increase Tests
@@ -203,5 +268,88 @@ struct MedicationHistoryViewModelTests {
         // Then: medication quantity should decrease by 1.0 (10.5 - 1.0 = 9.5)
         let updatedMedication = dataStore.medications.first { $0.id == medication.id }
         #expect(updatedMedication?.quantity == 9.5, "Quantity should decrease from 10.5 to 9.5 when dose increases from 0.5 to 1.5")
+    }
+
+    @Test("Updating a history note preserves structured reflection data")
+    func updateEventNotePreservesStructuredReflectionData() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication(quantity: 10.0)
+        var event = createTestEvent(medication: medication, amount: 2.0, unit: .tablet)
+        event.note = try DoseReflectionCodec.encode(
+            DoseReflection(
+                reason: "Headache",
+                symptomSeverityBefore: 6,
+                symptomSeverityAfter: 2,
+                effectiveness: 4,
+                sideEffects: ["Sleepy"],
+                note: "Original note"
+            )
+        )
+
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-StructuredNote")
+        try? await dataStore.addMedication(medication)
+        try? await dataStore.addEvent(event)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+        let updatedNote = try DoseReflectionCodec.updatingNote(in: event.note, with: "Updated note")
+        var updatedEvent = event
+        updatedEvent.note = updatedNote
+
+        await viewModel.updateEventNote(updatedEvent)
+
+        let storedEvent = try #require(dataStore.events.first { $0.id == event.id })
+        let reflection = try #require(DoseReflectionCodec.reflection(from: storedEvent.note))
+        #expect(reflection.reason == "Headache")
+        #expect(reflection.effectiveness == 4)
+        #expect(reflection.note == "Updated note")
+    }
+
+    @Test("Deleting an event restores medication quantity")
+    func deleteEventRestoresMedicationQuantity() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication(quantity: 5.0)
+        let event = createTestEvent(medication: medication, amount: 2.0, unit: .tablet)
+
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-DeleteEvent")
+        try? await dataStore.addMedication(medication)
+        try? await dataStore.addEvent(event)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+
+        await viewModel.deleteEvent(event)
+
+        #expect(dataStore.events.isEmpty)
+        #expect(dataStore.medications.first?.quantity == 7.0)
+    }
+
+    @Test("Deleting events by offset restores only the targeted event quantities")
+    func deleteEventsByOffsetRestoresTargetedQuantities() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication(quantity: 10.0)
+        let today = Calendar.current.startOfDay(for: .now)
+        let firstEvent = ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: ANDoseConcept(amount: 1.0, unit: .tablet),
+            date: today.addingTimeInterval(3600)
+        )
+        let secondEvent = ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: ANDoseConcept(amount: 2.0, unit: .tablet),
+            date: today.addingTimeInterval(7200)
+        )
+
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-DeleteOffsets")
+        try? await dataStore.addMedication(medication)
+        try? await dataStore.addEvent(firstEvent)
+        try? await dataStore.addEvent(secondEvent)
+
+        let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+
+        await viewModel.deleteEvents(at: IndexSet(integer: 0), in: today)
+
+        #expect(dataStore.events.count == 1)
+        #expect(dataStore.medications.first?.quantity == 12.0)
     }
 }

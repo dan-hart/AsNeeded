@@ -282,6 +282,56 @@ struct MedicationEditViewModelTests {
         #expect(medication.prescribedUnit == nil) // Unit is ignored when dose is invalid
     }
 
+    @Test("Initialize with stored safety profile populates guidance fields")
+    @MainActor
+    func initWithStoredSafetyProfile() {
+        let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+        let profileStore = MedicationSafetyProfileStore(defaults: defaults)
+        let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
+
+        profileStore.save(
+            MedicationSafetyProfile(
+                minimumHoursBetweenDoses: 4,
+                cautionHoursBetweenDoses: 6,
+                maxDailyAmount: 8,
+                duplicateDoseWindowMinutes: 45,
+                lowStockThreshold: 10,
+                refillLeadDays: 7
+            ),
+            for: medication.id
+        )
+
+        let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profileStore)
+
+        #expect(viewModel.minimumHoursBetweenDosesText == "4.0")
+        #expect(viewModel.cautionHoursBetweenDosesText == "6.0")
+        #expect(viewModel.maxDailyAmountText == "8.0")
+        #expect(viewModel.duplicateDoseWindowMinutes == 45)
+        #expect(viewModel.lowStockThresholdText == "10.0")
+        #expect(viewModel.refillLeadDays == 7)
+    }
+
+    @Test("Build safety profile normalizes empty values")
+    @MainActor
+    func buildSafetyProfileNormalizesEmptyValues() {
+        let viewModel = MedicationEditViewModel(medication: nil)
+        viewModel.minimumHoursBetweenDosesText = " 4 "
+        viewModel.cautionHoursBetweenDosesText = ""
+        viewModel.maxDailyAmountText = "8"
+        viewModel.lowStockThresholdText = " "
+        viewModel.duplicateDoseWindowMinutes = 35
+        viewModel.refillLeadDays = 6
+
+        let profile = viewModel.buildSafetyProfile()
+
+        #expect(profile.minimumHoursBetweenDoses == 4)
+        #expect(profile.cautionHoursBetweenDoses == nil)
+        #expect(profile.maxDailyAmount == 8)
+        #expect(profile.lowStockThreshold == nil)
+        #expect(profile.duplicateDoseWindowMinutes == 35)
+        #expect(profile.refillLeadDays == 6)
+    }
+
     // MARK: - Edge Cases
 
     @Test("Whitespace trimming in all text fields")

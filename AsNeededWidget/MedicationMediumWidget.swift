@@ -36,7 +36,9 @@ struct MediumWidgetProvider: TimelineProvider {
                         prescribedUnit: .tablet
                     ),
                     nextDoseTime: Date().addingTimeInterval(3600),
-                    canTakeNow: false
+                    canTakeNow: false,
+                    lowStock: false,
+                    refillSoon: true
                 ),
                 MedicationInfo(
                     medication: ANMedicationConcept(
@@ -45,7 +47,9 @@ struct MediumWidgetProvider: TimelineProvider {
                         prescribedUnit: .capsule
                     ),
                     nextDoseTime: Date(),
-                    canTakeNow: true
+                    canTakeNow: true,
+                    lowStock: false,
+                    refillSoon: false
                 ),
             ]
         )
@@ -83,7 +87,9 @@ struct MediumWidgetProvider: TimelineProvider {
             MedicationInfo(
                 medication: medication,
                 nextDoseTime: provider.nextDoseTime(for: medication),
-                canTakeNow: provider.canTakeNow(medication)
+                canTakeNow: provider.canTakeNow(medication),
+                lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
+                refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
             )
         }
 
@@ -167,6 +173,14 @@ struct MediumWidgetView: View {
                     Text("Available now")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.green)
+                } else if info.lowStock {
+                    Text("Low stock")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.orange)
+                } else if info.refillSoon {
+                    Text("Refill soon")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.orange)
                 } else if let nextDoseTime = info.nextDoseTime {
                     Text("Next: \(timeRemaining(until: nextDoseTime))")
                         .font(.caption2.weight(.medium))
@@ -238,6 +252,25 @@ struct MedicationInfo {
     let medication: ANMedicationConcept
     let nextDoseTime: Date?
     let canTakeNow: Bool
+    let lowStock: Bool
+    let refillSoon: Bool
+    let statusMessage: String?
+
+    init(
+        medication: ANMedicationConcept,
+        nextDoseTime: Date?,
+        canTakeNow: Bool,
+        lowStock: Bool = false,
+        refillSoon: Bool = false,
+        statusMessage: String? = nil
+    ) {
+        self.medication = medication
+        self.nextDoseTime = nextDoseTime
+        self.canTakeNow = canTakeNow
+        self.lowStock = lowStock
+        self.refillSoon = refillSoon
+        self.statusMessage = statusMessage
+    }
 }
 
 // MARK: - Preview

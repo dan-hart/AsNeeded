@@ -14,7 +14,9 @@ struct ContentView: View {
     @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
     @StateObject private var navigationManager = NavigationManager.shared
     @EnvironmentObject private var quickActionHandler: QuickActionHandler
+    @Environment(\.scenePhase) private var scenePhase
     private let hapticsManager = HapticsManager.shared
+    private let liveActivityRefreshTimer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private var currentFontFamily: FontFamily {
         FontFamily(rawValue: selectedFontFamily) ?? .system
@@ -61,10 +63,28 @@ struct ContentView: View {
                 // Then reset hasSeenWelcome to show the welcome screen
                 hasSeenWelcome = false
             }
+
+            Task {
+                await MedicationLiveActivityManager.refreshFromDataStore()
+            }
         }
         .onChange(of: currentFontFamily) { _, newFamily in
             // Update navigation bar appearance when font family changes
             NavigationBarAppearanceManager.configureAppearance(for: newFamily)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+
+            Task {
+                await MedicationLiveActivityManager.refreshFromDataStore()
+            }
+        }
+        .onReceive(liveActivityRefreshTimer) { _ in
+            guard scenePhase == .active else { return }
+
+            Task {
+                await MedicationLiveActivityManager.refreshFromDataStore()
+            }
         }
         .onQuickAction { action in
             handleQuickAction(action)

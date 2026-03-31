@@ -71,6 +71,7 @@ struct LogMedicationIntent: AppIntent {
 
             // Log the dose
             try await DataStore.shared.addEvent(event)
+            await MedicationLiveActivityManager.refreshFromDataStore()
 
             logger.info("Successfully logged dose: \(doseAmount) \(selectedUnit.displayName) of medication \(targetMedication.id.uuidString)")
 

@@ -20,13 +20,28 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     @Published var medications: [ANMedicationConcept] = []
+    @Published var latestQuestionAnswer: TrendsQuestionAnswer?
+    @Published var isAnsweringQuestion = false
+    @Published var questionErrorMessage: String?
 
     private let dataStore: DataStore
+    private let safetyProfileStore: MedicationSafetyProfileStore
+    private let doseGuidanceService: MedicationDoseGuidanceService
+    private let questionService: MedicationTrendsQuestionService
     private let calendar = Calendar.current
     private var cancellables = Set<AnyCancellable>()
 
-    init(dataStore: DataStore = .shared, selectedMedicationID: UUID? = nil) {
+    init(
+        dataStore: DataStore = .shared,
+        selectedMedicationID: UUID? = nil,
+        safetyProfileStore: MedicationSafetyProfileStore = .shared,
+        doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService(),
+        questionService: MedicationTrendsQuestionService = MedicationTrendsQuestionService()
+    ) {
         self.dataStore = dataStore
+        self.safetyProfileStore = safetyProfileStore
+        self.doseGuidanceService = doseGuidanceService
+        self.questionService = questionService
         if let initialID = selectedMedicationID {
             self.selectedMedicationID = initialID
         }
@@ -84,6 +99,14 @@ final class MedicationTrendsViewModel: ObservableObject {
         return medications.first { $0.id == id }
     }
 
+    var safetyProfile: MedicationSafetyProfile {
+        guard let medication = selectedMedication else {
+            return .empty
+        }
+
+        return safetyProfileStore.profile(for: medication.id)
+    }
+
     var events: [ANEventConcept] {
         guard let id = selectedMedicationID else { return [] }
         // Filter events ensuring medication IDs match exactly
@@ -104,6 +127,42 @@ final class MedicationTrendsViewModel: ObservableObject {
     // Determine a preferred unit for aggregation
     var preferredUnit: ANUnitConcept? {
         selectedMedication?.prescribedUnit ?? events.compactMap { $0.dose?.unit }.first
+    }
+
+    var refillProjection: MedicationDoseGuidanceService.RefillProjection? {
+        guard let medication = selectedMedication else {
+            return nil
+        }
+
+        return doseGuidanceService.refillProjection(
+            for: medication,
+            events: events,
+            profile: safetyProfile
+        )
+    }
+
+    var nextEligibleDoseDate: Date? {
+        guard let medication = selectedMedication else {
+            return nil
+        }
+
+        return doseGuidanceService.nextEligibleDate(
+            for: medication,
+            events: events,
+            profile: safetyProfile
+        )
+    }
+
+    var questionAvailability: TrendsQuestionAvailability {
+        questionService.availability
+    }
+
+    var examplePrompts: [String] {
+        guard let medication = selectedMedication else {
+            return []
+        }
+
+        return questionService.examplePrompts(for: medication)
     }
 
     // Daily totals for the last N days (default 14)
@@ -139,10 +198,7 @@ final class MedicationTrendsViewModel: ObservableObject {
 
     // Estimated days remaining from quantity and avg usage
     var estimatedDaysRemaining: Int? {
-        guard let qty = selectedMedication?.quantity, qty > 0 else { return nil }
-        let avg = averagePerDay(window: 7)
-        guard avg > 0 else { return nil }
-        return Int((qty / avg).rounded())
+        refillProjection?.estimatedDaysRemaining
     }
 
     // MARK: - Usage Progress Metrics
@@ -268,6 +324,127 @@ final class MedicationTrendsViewModel: ObservableObject {
             let intensity = maxTotal > 0 ? total / maxTotal : 0
             return CalendarDay(date: day, total: total, intensity: intensity)
         }
+    }
+
+    var patternSummary: String {
+        guard !events.isEmpty else {
+            return "Log a few doses to see timing patterns."
+        }
+
+        let preferredTimeBucket = mostCommonTimeBucket()
+        let recentAverage = averagePerDay(window: 7)
+        let priorAverage = averagePerDay(daysEnding: 7, window: 7)
+
+        var fragments: [String] = []
+        fragments.append("Use is most often clustered in the \(preferredTimeBucket).")
+
+        if recentAverage > priorAverage * 1.2, priorAverage > 0 {
+            fragments.append("Your recent pace is higher than the week before.")
+        } else if priorAverage > recentAverage * 1.2, recentAverage > 0 {
+            fragments.append("Your recent pace is lighter than the week before.")
+        } else {
+            fragments.append("Your recent pace looks fairly steady.")
+        }
+
+        if let refillProjection {
+            fragments.append(refillProjection.statusMessage)
+        }
+
+        return fragments.joined(separator: " ")
+    }
+
+    func questionContext(windowDays: Int) -> TrendsQuestionContext? {
+        guard let medication = selectedMedication,
+              let unit = preferredUnit
+        else {
+            return nil
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+
+        let dailyTotalsSummary = dailyTotals(last: windowDays).map { item in
+            TrendsQuestionDailyTotal(
+                dayLabel: formatter.string(from: item.day),
+                total: item.total
+            )
+        }
+
+        let refillSummary = refillProjection?.statusMessage ?? "No refill projection available yet."
+        let quantitySummary: String
+        if let quantity = medication.quantity {
+            quantitySummary = "\(quantity.formattedAmount) \(unit.abbreviation)s left."
+        } else {
+            quantitySummary = "Current quantity is not being tracked."
+        }
+
+        return TrendsQuestionContext(
+            medicationName: medication.displayName,
+            unitName: unit.displayName,
+            windowDays: windowDays,
+            dailyTotals: dailyTotalsSummary,
+            patternSummary: patternSummary,
+            refillSummary: refillSummary,
+            quantitySummary: quantitySummary
+        )
+    }
+
+    func ask(question: String, windowDays: Int) async {
+        guard let context = questionContext(windowDays: windowDays) else {
+            questionErrorMessage = "Select a medication with recent dose data first."
+            return
+        }
+
+        isAnsweringQuestion = true
+        questionErrorMessage = nil
+
+        defer {
+            isAnsweringQuestion = false
+        }
+
+        do {
+            latestQuestionAnswer = try await questionService.answer(question: question, context: context)
+        } catch {
+            latestQuestionAnswer = nil
+            questionErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {
+        let totals = dailyTotals(last: endOffset + days)
+        guard totals.count >= days else {
+            return 0
+        }
+
+        let slice = totals.dropLast(endOffset).suffix(days)
+        guard !slice.isEmpty else {
+            return 0
+        }
+
+        let sum = slice.map(\.total).reduce(0, +)
+        return sum / Double(slice.count)
+    }
+
+    private func mostCommonTimeBucket() -> String {
+        let bucketCounts = events.reduce(into: [String: Int]()) { counts, event in
+            let hour = calendar.component(.hour, from: event.date)
+            let bucket: String
+
+            switch hour {
+            case 5 ..< 12:
+                bucket = "morning"
+            case 12 ..< 17:
+                bucket = "afternoon"
+            case 17 ..< 22:
+                bucket = "evening"
+            default:
+                bucket = "night"
+            }
+
+            counts[bucket, default: 0] += 1
+        }
+
+        return bucketCounts.max { $0.value < $1.value }?.key ?? "day"
     }
 }
 

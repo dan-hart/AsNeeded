@@ -7,8 +7,10 @@ This document explains how to integrate the AsNeeded widgets, app icon quick act
 The following features have been implemented:
 - **Home Screen Widgets**: Small, Medium, and Large widgets showing medication status
 - **Lock Screen Widgets**: Circular, Rectangular, and Inline complications for iOS 16+
+- **Live Activities**: Ongoing next-dose status on the Lock Screen and Dynamic Island
 - **App Icon Quick Actions**: 3D Touch/Haptic Touch shortcuts
-- **Deep Linking**: URL scheme support for widget and quick action navigation
+- **Interactive Quick Logging**: Direct logging from supported widgets and intents
+- **Deep Linking**: URL scheme support for widget, Live Activity, and quick action navigation
 - **Shared Data Container**: App Group for data sharing between main app and widgets
 
 ## Architecture
@@ -33,6 +35,10 @@ AsNeeded/
     ├── MedicationMediumWidget.swift (Medium widget)
     ├── MedicationLargeWidget.swift (Large widget)
     ├── MedicationLockScreenWidget.swift (Lock screen widgets)
+    ├── MedicationLiveActivityAttributes.swift (ActivityKit attributes)
+    ├── MedicationLiveActivityBridge.swift (Shared refresh bridge)
+    ├── MedicationLiveActivityWidget.swift (Live Activity UI)
+    ├── LogDoseWidgetIntent.swift (Interactive logging intent)
     ├── Info.plist (Widget extension config)
     └── AsNeededWidget.entitlements (App Group entitlements)
 ```
@@ -171,6 +177,12 @@ Both should print the **same path**, confirming data sharing works.
 2. Go to home screen
 3. Widget should update within 15 minutes (or force-refresh by re-adding widget)
 
+### Verify Live Activities
+
+1. Log a dose for a medication with interval guidance enabled
+2. Confirm the Live Activity appears on the Lock Screen or Dynamic Island
+3. Log another dose or update inventory and verify the Live Activity refreshes to the newest guidance state
+
 ## Architecture Details
 
 ### Data Flow
@@ -180,9 +192,9 @@ Main App → DataStore → Shared Container (App Group)
                               ↓
                       Widget Extension
                               ↓
-                      WidgetDataProvider
+              WidgetDataProvider / Live Activity Bridge
                               ↓
-                      Widget Views
+                  Widget Views / Live Activity UI
 ```
 
 ### URL Scheme Format
@@ -251,13 +263,15 @@ Defined in `Info.plist` under `UIApplicationShortcutItems`:
 ### Immediate (Phase 1)
 - [x] Home screen widgets (Small, Medium, Large)
 - [x] Lock screen widgets (iOS 16+)
+- [x] Live Activities for next-dose status
 - [x] App icon quick actions
 - [x] Deep linking support
 - [x] Shared data container
 
 ### Phase 2
-- [ ] Interactive widgets (iOS 17+) with direct log button
+- [x] Interactive widgets (iOS 17+) with direct log button
 - [ ] Widget customization options
+- [ ] Multiple Live Activity presentation styles for medication-specific pinning
 - [ ] Multiple widget configurations
 - [ ] Smart Stack support
 - [ ] Live Activities for active doses

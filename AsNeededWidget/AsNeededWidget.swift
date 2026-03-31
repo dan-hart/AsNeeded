@@ -16,5 +16,8 @@ struct AsNeededWidgets: WidgetBundle {
         MedicationMediumWidget()
         MedicationLargeWidget()
         MedicationLockScreenWidget()
+        if #available(iOSApplicationExtension 16.2, *) {
+            MedicationLiveActivityWidget()
+        }
     }
 }

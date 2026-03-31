@@ -5,10 +5,12 @@ struct AppPreferencesView: View {
     @StateObject private var notificationManager = NotificationManager.shared
     @StateObject private var hapticsManager = HapticsManager.shared
     @StateObject private var appReviewManager = AppReviewManager.shared
+    @Environment(\.fontFamily) private var fontFamily
     @AppStorage(UserDefaultsKeys.showMedicationNamesInNotifications) private var showMedicationNames: Bool = false
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
     @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
     @AppStorage(UserDefaultsKeys.importSettingsDefaultBehavior) private var importSettingsDefaultBehavior: String = "keep"
+    @AppStorage(UserDefaultsKeys.trendsQuestionsEnabled) private var trendsQuestionsEnabled = false
     @State private var showingResetConfirmation = false
     @ScaledMetric private var sectionSpacing: CGFloat = 32
     @ScaledMetric private var itemSpacing: CGFloat = 16
@@ -44,6 +46,10 @@ struct AppPreferencesView: View {
 
                 privacySection
 
+                if MedicationTrendsQuestionSupport.isSupportedOnDevice {
+                    privateQuestionsSection
+                }
+
                 // MARK: - Data Import
 
                 dataImportSection
@@ -57,8 +63,7 @@ struct AppPreferencesView: View {
             .padding(.horizontal, padding)
             .padding(.vertical, padding)
         }
-        .navigationTitle("App Preferences")
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle("App Preferences")
         .onAppear {
             // Sync the initial value from NotificationManager
             showMedicationNames = notificationManager.showMedicationNames
@@ -82,21 +87,20 @@ struct AppPreferencesView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: headerSpacing) {
             Text("Configure how As Needed behaves and interacts with you. These settings control notifications, haptic feedback, and other app behaviors.")
-                .font(.body)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .body))
+                .foregroundStyle(.secondary)
         }
     }
 
     private var notificationsSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Notifications", systemSymbol: .bell)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.accent)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
 
             Text("Control how medication reminders appear and what information they display.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             // Only show notification toggles if notifications are available
             if notificationManager.authorizationStatus == .authorized ||
@@ -112,13 +116,12 @@ struct AppPreferencesView: View {
     private var feedbackSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Feedback", systemSymbol: .iphoneRadiowavesLeftAndRight)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.accent)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
 
             Text("Control how the app provides tactile feedback for your interactions and actions.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             hapticsToggle
         }
@@ -154,37 +157,35 @@ struct AppPreferencesView: View {
     private var typographyNavigationLink: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Typography", systemSymbol: .textformat)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.accent)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
 
             Text("Choose an accessibility-focused font family to improve readability throughout the app.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             NavigationLink(destination: FontPreferencesView()) {
                 HStack(spacing: headerSpacing) {
                     Image(systemSymbol: .textformat)
-                        .font(.callout.weight(.medium))
+                        .font(.customFont(fontFamily, style: .callout, weight: .medium))
                         .frame(width: iconSize, height: iconSize)
-                        .foregroundColor(.accent)
+                        .foregroundStyle(.accent)
 
                     VStack(alignment: .leading, spacing: stackItemSpacing) {
                         Text("Font Family")
-                            .font(.body)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
+                            .font(.customFont(fontFamily, style: .body, weight: .medium))
+                            .foregroundStyle(.primary)
 
                         Text("Customize typography and readability")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundStyle(.secondary)
                     }
 
                     Spacer()
 
                     Image(systemSymbol: .chevronRight)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(padding)
                 .background(Color(.systemBackground))
@@ -201,13 +202,12 @@ struct AppPreferencesView: View {
     private var privacySection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Privacy & Reviews", systemSymbol: .shieldLefthalfFilled)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.accent)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
 
             Text("Control what information is shared and how the app requests feedback from you.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             VStack(spacing: headerSpacing) {
                 hideSupportBannersToggle
@@ -216,33 +216,80 @@ struct AppPreferencesView: View {
         }
     }
 
+    private var privateQuestionsSection: some View {
+        VStack(alignment: .leading, spacing: itemSpacing) {
+            Label("Private Questions", systemSymbol: .bubbleLeftAndBubbleRightFill)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
+
+            Text("Ask the Trends tab about your own logs using on-device processing that stays private.")
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
+
+            PreferenceRow(
+                icon: .lockFill,
+                title: "Enable On-Device Questions",
+                subtitle: "Opt in before asking about medication patterns",
+                detail: "When enabled, the Trends tab can answer questions about your logged medication history. For this feature, your data stays on this device and never leaves the device for processing.",
+                isOn: $trendsQuestionsEnabled
+            ) { _ in }
+
+            HStack(alignment: .top, spacing: headerSpacing) {
+                Image(systemSymbol: .checkmarkShieldFill)
+                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
+                    .foregroundStyle(.accent)
+                    .frame(width: iconSize, height: iconSize)
+
+                VStack(alignment: .leading, spacing: stackItemSpacing) {
+                    Text("What to expect")
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+                        .foregroundStyle(.primary)
+
+                    Text("Responses can be incorrect or incomplete, and the feature only summarizes the data you’ve already logged.")
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(padding)
+            .background(Color(.systemBackground))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color(.systemGray4), lineWidth: borderWidth)
+            )
+            .cornerRadius(cornerRadius)
+        }
+    }
+
     private var dataImportSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Data Import Behavior", systemSymbol: .squareAndArrowDown)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.accent)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
 
             Text("Choose how to handle app settings when importing data.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: innerSpacing) {
                     Text("When importing settings")
-                        .font(.body)
-                        .fontWeight(.medium)
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
 
                     Picker("Import Behavior", selection: $importSettingsDefaultBehavior) {
-                        Text("Always ask").tag("ask")
-                        Text("Keep my settings by default").tag("keep")
+                        Text("Always ask")
+                            .font(.customFont(fontFamily, style: .body))
+                            .tag("ask")
+                        Text("Keep my settings by default")
+                            .font(.customFont(fontFamily, style: .body))
+                            .tag("keep")
                     }
                     .pickerStyle(.segmented)
                     .padding(.top, 8)
 
                     Text("This controls what happens when you import data that contains app settings. You can always change your choice during import.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 4)
                 }
@@ -277,18 +324,17 @@ struct AppPreferencesView: View {
         VStack(alignment: .leading, spacing: headerSpacing) {
             HStack(spacing: headerSpacing) {
                 Image(systemSymbol: .bellSlash)
-                    .font(.callout.weight(.medium))
+                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
                     .frame(width: iconSize, height: iconSize)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: innerSpacing) {
                     Text("Notifications Disabled")
-                        .font(.body)
-                        .fontWeight(.medium)
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
 
                     Text("Enable notifications in Settings > As Needed > Notifications to configure these preferences")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(padding)
@@ -300,37 +346,35 @@ struct AppPreferencesView: View {
     private var resetSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Reset", systemSymbol: .arrowCounterclockwise)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.red)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.red)
 
             Text("Reset all preferences on this screen to their original default values.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
 
             Button(action: { showingResetConfirmation = true }) {
                 HStack(spacing: headerSpacing) {
                     Image(systemSymbol: .arrowCounterclockwise)
-                        .font(.callout.weight(.medium))
+                        .font(.customFont(fontFamily, style: .callout, weight: .medium))
                         .frame(width: iconSize, height: iconSize)
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
 
                     VStack(alignment: .leading, spacing: stackItemSpacing) {
                         Text("Reset to Defaults")
-                            .font(.body)
-                            .fontWeight(.medium)
-                            .foregroundColor(.red)
+                            .font(.customFont(fontFamily, style: .body, weight: .medium))
+                            .foregroundStyle(.red)
 
                         Text("Restore all preferences to original settings")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundStyle(.secondary)
                     }
 
                     Spacer()
 
                     Image(systemSymbol: .chevronRight)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                 }
                 .padding(padding)
                 .background(Color(.systemBackground))
@@ -359,7 +403,11 @@ struct AppPreferencesView: View {
 
         // Reset privacy preferences
         hideSupportBanners = false
+        trendsQuestionsEnabled = false
         appReviewManager.hasOptedOutOfReviews = false
+
+        // Reset import behavior
+        importSettingsDefaultBehavior = "keep"
 
         // Reset AppReviewManager internal tracking
         appReviewManager.resetReviewPreferences()
@@ -375,6 +423,7 @@ private struct PreferenceRow: View {
     let detail: String
     @Binding var isOn: Bool
     let onChange: (Bool) -> Void
+    @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var itemSpacing: CGFloat = 16
     @ScaledMetric private var headerSpacing: CGFloat = 12
     @ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -388,18 +437,17 @@ private struct PreferenceRow: View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             HStack(spacing: headerSpacing) {
                 Image(systemSymbol: icon)
-                    .font(.callout.weight(.medium))
+                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
                     .frame(width: iconSize, height: iconSize)
-                    .foregroundColor(.accent)
+                    .foregroundStyle(.accent)
 
                 VStack(alignment: .leading, spacing: stackItemSpacing) {
                     Text(title)
-                        .font(.body)
-                        .fontWeight(.medium)
+                        .font(.customFont(fontFamily, style: .body, weight: .medium))
 
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -412,8 +460,8 @@ private struct PreferenceRow: View {
             }
 
             Text(detail)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.customFont(fontFamily, style: .caption))
+                .foregroundStyle(.secondary)
                 .padding(.leading, textLeadingPadding)
         }
         .padding(padding)

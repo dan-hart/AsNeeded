@@ -27,6 +27,7 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.updateMedication(medication)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.info("Successfully saved medication: \(medication.displayName)")
         } catch {
             logger.error("Failed to save medication: \(error.localizedDescription)")
@@ -43,6 +44,7 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.deleteMedication(medication)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.info("Successfully deleted medication: \(medication.displayName)")
         } catch {
             logger.error("Failed to delete medication: \(error.localizedDescription)")
@@ -59,6 +61,7 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.addEvent(event)
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.info("Successfully logged event: \(event.id)")
         } catch {
             logger.error("Failed to log event: \(error.localizedDescription)")
