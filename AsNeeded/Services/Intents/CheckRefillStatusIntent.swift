@@ -47,20 +47,17 @@ struct CheckRefillStatusIntent: AppIntent {
                 Calendar.current.dateComponents([.day], from: Date(), to: $0).day
             }
 
-            if projection.refillSoon {
-                needsRefill.append(RefillInfo(
-                    name: medication.displayName,
-                    daysUntil: daysUntilRefill ?? projection.estimatedDaysRemaining,
-                    quantity: medication.quantity
-                ))
-            }
-
-            if projection.lowStock && !needsRefill.contains(where: { $0.name == medication.displayName }) {
-                lowQuantity.append(RefillInfo(
-                    name: medication.displayName,
-                    daysUntil: projection.estimatedDaysRemaining,
-                    quantity: medication.quantity
-                ))
+            switch Self.refillBucket(
+                for: medication,
+                projection: projection,
+                daysUntilRefill: daysUntilRefill
+            ) {
+            case let .needsRefill(info):
+                needsRefill.append(info)
+            case let .lowQuantity(info):
+                lowQuantity.append(info)
+            case nil:
+                break
             }
         }
 
@@ -94,15 +91,54 @@ struct CheckRefillStatusIntent: AppIntent {
             view: RefillStatusView(needsRefill: needsRefill, lowQuantity: lowQuantity)
         )
     }
+
+    static func refillBucket(
+        for medication: ANMedicationConcept,
+        projection: MedicationDoseGuidanceService.RefillProjection,
+        daysUntilRefill: Int?
+    ) -> RefillBucket? {
+        if projection.lowStock {
+            return .lowQuantity(
+                RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                )
+            )
+        }
+
+        if projection.refillSoon {
+            return .needsRefill(
+                RefillInfo(
+                    name: medication.displayName,
+                    daysUntil: daysUntilRefill ?? projection.estimatedDaysRemaining,
+                    quantity: medication.quantity
+                )
+            )
+        }
+
+        return nil
+    }
 }
 
 // MARK: - Supporting Types
 
-struct RefillInfo: Identifiable {
+enum RefillBucket: Equatable {
+	case needsRefill(RefillInfo)
+	case lowQuantity(RefillInfo)
+}
+
+struct RefillInfo: Identifiable, Equatable {
     let id = UUID()
     let name: String
     let daysUntil: Int?
     let quantity: Double?
+
+    static func == (lhs: RefillInfo, rhs: RefillInfo) -> Bool {
+        lhs.name == rhs.name &&
+            lhs.daysUntil == rhs.daysUntil &&
+            lhs.quantity == rhs.quantity
+    }
 }
 
 // MARK: - Snippet Views

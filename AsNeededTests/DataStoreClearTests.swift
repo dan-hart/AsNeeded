@@ -8,6 +8,42 @@ import Testing
 
 @MainActor
 struct DataStoreClearTests {
+	private func makeDefaults(suiteName: String) -> UserDefaults {
+		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+		defaults.removePersistentDomain(forName: suiteName)
+		return defaults
+	}
+
+	@Test("resetAppSettings clears mirrored safety profiles from shared defaults")
+	func resetAppSettingsClearsMirroredSafetyProfiles() {
+		let defaultsSuite = "DataStoreClearTests.defaults.\(UUID().uuidString)"
+		let sharedSuite = "DataStoreClearTests.shared.\(UUID().uuidString)"
+		let defaults = makeDefaults(suiteName: defaultsSuite)
+		let sharedDefaults = makeDefaults(suiteName: sharedSuite)
+		defer {
+			defaults.removePersistentDomain(forName: defaultsSuite)
+			sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		}
+
+		let profile = MedicationSafetyProfile(
+			minimumHoursBetweenDoses: 4,
+			cautionHoursBetweenDoses: 6,
+			maxDailyAmount: 8,
+			duplicateDoseWindowMinutes: 30,
+			lowStockThreshold: 10,
+			refillLeadDays: 5
+		)
+		let encoded = try? JSONEncoder().encode([UUID().uuidString: profile])
+		defaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		sharedDefaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+
+		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.trendsQuestionsEnabled) == false)
+	}
+
     @Test("clearAllData removes all AppStorage medication selections")
     func clearAllDataRemovesAppStorageSelections() async throws {
         // Given: Create test store

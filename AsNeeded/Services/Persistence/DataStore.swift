@@ -462,29 +462,35 @@ public final class DataStore {
         }
     }
 
-    /// Reset only app settings and user preferences to defaults
-    public func resetAppSettings() async {
-        logger.warning("Resetting app settings to defaults")
-        await MainActor.run {
-            // Remove keys that should have no value
-            for key in UserDefaultsKeys.keysToRemove {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
+	@MainActor
+	static func resetAppSettings(
+		defaults: UserDefaults = .standard,
+		sharedDefaults: UserDefaults? = UserDefaults(suiteName: StorageConstants.appGroupIdentifier),
+		navigationManager: NavigationManager = .shared
+	) {
+		for key in UserDefaultsKeys.keysToRemove {
+			defaults.removeObject(forKey: key)
+		}
 
-            // Set keys to their default values
-            for (key, value) in UserDefaultsKeys.defaultValues {
-                UserDefaults.standard.set(value, forKey: key)
-            }
+		for (key, value) in UserDefaultsKeys.defaultValues {
+			defaults.set(value, forKey: key)
+		}
 
-            // Clear navigation targets
-            NavigationManager.shared.clearHistoryNavigation()
+		// Medication safety profiles are mirrored for widget access, so reset must
+		// clear the shared copy as well or the value will rehydrate on next read.
+		sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
 
-            // Synchronize to ensure changes are persisted
+		navigationManager.clearHistoryNavigation()
+	}
 
-
-            logger.info("Successfully reset all app settings to defaults")
-        }
-    }
+	/// Reset only app settings and user preferences to defaults
+	public func resetAppSettings() async {
+		logger.warning("Resetting app settings to defaults")
+		await MainActor.run {
+			Self.resetAppSettings()
+			logger.info("Successfully reset all app settings to defaults")
+		}
+	}
 
     /// Clear all data from both stores and reset all user preferences
     public func clearAllData() async throws {
