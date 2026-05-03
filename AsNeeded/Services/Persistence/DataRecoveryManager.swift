@@ -126,11 +126,11 @@ public final class DataRecoveryManager {
 						)
 						report.scannedLocations.append(backupResult)
 					}
-				} catch {
-					logger.error("Failed to scan backup directory: \(error.localizedDescription)")
+					} catch {
+						logger.logPrivacySafeError("Failed to scan backup directory", error: error)
+					}
 				}
 			}
-		}
 
 		logger.info("=== Data Recovery Scan Complete ===")
 		logger.info("Found \(report.totalMedicationsFound) medications, \(report.totalEventsFound) events across \(report.scannedLocations.count) locations")
@@ -142,7 +142,7 @@ public final class DataRecoveryManager {
 	/// - Parameter location: The location to recover from
 	/// - Returns: Number of items recovered
 	public func recoverFromLocation(_ locationPath: String) async throws -> (medications: Int, events: Int) {
-		logger.info("Recovering data from: \(locationPath)")
+		logger.info("Recovering data from selected location")
 
 		let locationURL = URL(fileURLWithPath: locationPath)
 
@@ -201,7 +201,7 @@ public final class DataRecoveryManager {
 			)
 		}
 
-		logger.info("Scanning: \(url.path) (type: \(type.rawValue))")
+		logger.info("Scanning recovery location: type=\(type.rawValue)")
 
 		var medicationsCount = 0
 		var eventsCount = 0
@@ -278,10 +278,10 @@ public final class DataRecoveryManager {
 				)
 				return store.items.count
 			}
-		} catch {
-			logger.debug("Could not count items in \(url.path): \(error.localizedDescription)")
-			return nil
-		}
+			} catch {
+				logger.logPrivacySafeDebug("Could not count recovered items", error: error)
+				return nil
+			}
 	}
 
 	private func loadDataFromLocation(_ url: URL) async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {

@@ -53,7 +53,7 @@ struct AsNeededApp: App {
                             }
                         }
                         .onOpenURL { url in
-                            logger.info("Received URL with scheme: \(url.scheme ?? "unknown")")
+                            logger.info("Received URL")
                             quickActionHandler.handleURL(url)
                         }
                 } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {

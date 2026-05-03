@@ -77,7 +77,7 @@ enum FeedbackType {
             • Device Model: \(UIDevice.current.model)
 
             Application logs may be attached for context.
-            No medication names are stored in logs - only technical information.
+            Medication details are not stored in logs - only technical information.
             """
         case .feedback:
             return """
@@ -140,7 +140,7 @@ final class FeedbackService: NSObject, ObservableObject {
 
     private func logError(_ message: String, error: Error? = nil) {
         if let error {
-            osLogger.error("\(message, privacy: .public) - Error: \(String(describing: error), privacy: .public)")
+            osLogger.error("\(message, privacy: .public): errorType=\(DHLogger.privacySafeErrorType(error), privacy: .public)")
         } else {
             osLogger.error("\(message, privacy: .public)")
         }

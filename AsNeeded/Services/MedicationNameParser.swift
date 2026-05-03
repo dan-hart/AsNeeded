@@ -176,7 +176,7 @@ enum MedicationNameSimplifierEnhanced {
                 return try await MedicationNameParser.shared.simplifyName(name)
             } catch {
                 // Fall back to regex if AI parsing fails
-                DHLogger.data.error("AI parsing failed, using regex: \(error.localizedDescription)")
+                DHLogger.data.logPrivacySafeError("AI parsing failed, using regex fallback", error: error)
             }
         }
 
@@ -192,7 +192,7 @@ enum MedicationNameSimplifierEnhanced {
                 return try await MedicationNameParser.shared.extractBrandName(from: name)
             } catch {
                 // Fall back to regex if AI extraction fails
-                DHLogger.data.error("AI brand extraction failed, using regex: \(error.localizedDescription)")
+                DHLogger.data.logPrivacySafeError("AI brand extraction failed, using regex fallback", error: error)
             }
         }
 

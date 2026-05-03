@@ -108,7 +108,7 @@ public final class StorageHealthChecker {
 		}
 
 		appGroupAccessible = true
-		logger.info("✅ App Group accessible: \(appGroupURL.path)")
+		logger.info("✅ App Group accessible")
 
 		// Check 2: App Group Writability (CRITICAL - blocking)
 		let testFile = appGroupURL.appendingPathComponent(".health_check_write_test")
@@ -118,7 +118,7 @@ public final class StorageHealthChecker {
 			appGroupWritable = true
 			logger.info("✅ App Group is writable")
 		} catch {
-			let issue = "App Group is not writable: \(error.localizedDescription)"
+			let issue = "App Group is not writable: errorType=\(DHLogger.privacySafeErrorType(error))"
 			issues.append(HealthIssue(message: issue, severity: .error))
 			logger.error("❌ \(issue)")
 		}
@@ -288,10 +288,10 @@ public final class StorageHealthChecker {
 				let result = String(cString: resultPointer)
 				if result != "ok" {
 					isIntact = false
-					logger.error("❌ \(name) database integrity issue: \(result)")
+						logger.error("❌ \(name) database integrity issue")
+					}
 				}
 			}
-		}
 
 		if isIntact {
 			logger.info("✅ \(name) database passed integrity check")

@@ -100,7 +100,7 @@ public final class DataMigrationManager {
 
 			report.status = .dryRunComplete
 		} catch {
-			logger.error("DRY RUN failed: \(error.localizedDescription)")
+			logger.logPrivacySafeError("DRY RUN failed", error: error)
 			report.status = .migrationFailed(error)
 		}
 
@@ -121,8 +121,8 @@ public final class DataMigrationManager {
 		}
 
 		logger.info("Found legacy data:")
-		logger.info("  Medications: \(legacyPaths.medications?.path ?? "none")")
-		logger.info("  Events: \(legacyPaths.events?.path ?? "none")")
+		logger.info("  Medications database found: \(legacyPaths.medications != nil)")
+		logger.info("  Events database found: \(legacyPaths.events != nil)")
 
 		// Step 2: Load legacy data
 		let legacyData = try await loadLegacyData(from: legacyPaths)
@@ -167,7 +167,7 @@ public final class DataMigrationManager {
 		// On iOS, Bodega's SQLiteStorageEngine.default() uses Documents directory
 		// Structure: Documents/<name>.sqlite/data.sqlite3 (folder with default filename)
 		if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-			logger.info("Searching Documents directory: \(documentsURL.path)")
+			logger.info("Searching Documents directory")
 
 			// Check Bodega folder structure
 			let medicationsFolder = documentsURL.appendingPathComponent("medications.sqlite")
@@ -177,12 +177,12 @@ public final class DataMigrationManager {
 			let eventsDB = eventsFolder.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
 
 			if fileManager.fileExists(atPath: medicationsDB.path) {
-				logger.info("✅ Found medications at: \(medicationsDB.path)")
+				logger.info("✅ Found medications database")
 				medicationsURL = medicationsDB
 			}
 
 			if fileManager.fileExists(atPath: eventsDB.path) {
-				logger.info("✅ Found events at: \(eventsDB.path)")
+				logger.info("✅ Found events database")
 				eventsURL = eventsDB
 			}
 
@@ -194,7 +194,7 @@ public final class DataMigrationManager {
 		// Also check Application Support (macOS compatibility / edge cases)
 		if medicationsURL == nil || eventsURL == nil {
 			if let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-				logger.info("Searching Application Support: \(appSupportURL.path)")
+				logger.info("Searching Application Support")
 
 				// Check direct paths
 				if medicationsURL == nil {
@@ -208,7 +208,7 @@ public final class DataMigrationManager {
 				let bundleID = Bundle.main.bundleIdentifier ?? "com.codedbydan.AsNeeded"
 				let bundleSubdir = appSupportURL.appendingPathComponent(bundleID)
 				if fileManager.fileExists(atPath: bundleSubdir.path) {
-					logger.info("Searching bundle subdirectory: \(bundleSubdir.path)")
+					logger.info("Searching bundle subdirectory")
 					if medicationsURL == nil {
 						medicationsURL = findDatabaseInDirectory(bundleSubdir, baseName: "medications")
 					}
@@ -235,7 +235,7 @@ public final class DataMigrationManager {
 		let bodegaFolder = directory.appendingPathComponent("\(baseName).sqlite")
 		let bodegaDataFile = bodegaFolder.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
 		if fileManager.fileExists(atPath: bodegaDataFile.path) {
-			logger.info("Found Bodega-style database: \(bodegaDataFile.path)")
+			logger.info("Found Bodega-style database")
 			return bodegaDataFile
 		}
 
@@ -250,7 +250,7 @@ public final class DataMigrationManager {
 		for variation in flatVariations {
 			let path = directory.appendingPathComponent(variation)
 			if fileManager.fileExists(atPath: path.path) {
-				logger.info("Found flat database file: \(path.path)")
+				logger.info("Found flat database file")
 				return path
 			}
 		}
@@ -268,7 +268,7 @@ public final class DataMigrationManager {
 		let shmExists = fileManager.fileExists(atPath: shmPath)
 
 		if walExists || shmExists {
-			logger.info("SQLite WAL files detected at \(URL(fileURLWithPath: databasePath).lastPathComponent):")
+			logger.info("SQLite WAL files detected")
 			if walExists {
 				if let walSize = try? fileManager.attributesOfItem(atPath: walPath)[.size] as? Int64 {
 					logger.info("  WAL: \(walSize) bytes")
@@ -290,14 +290,14 @@ public final class DataMigrationManager {
 
 		// Load medications in isolated scope to ensure connection cleanup
 		if let medicationsURL = paths.medications {
-			logger.info("Loading legacy medications from: \(medicationsURL.path)")
+			logger.info("Loading legacy medications")
 			medications = try await loadLegacyItems(from: medicationsURL, type: ANMedicationConcept.self)
 			logger.info("Loaded \(medications.count) medications from legacy database")
 		}
 
 		// Load events in isolated scope to ensure connection cleanup
 		if let eventsURL = paths.events {
-			logger.info("Loading legacy events from: \(eventsURL.path)")
+			logger.info("Loading legacy events")
 			events = try await loadLegacyItems(from: eventsURL, type: ANEventConcept.self)
 			logger.info("Loaded \(events.count) events from legacy database")
 		}
@@ -333,7 +333,7 @@ public final class DataMigrationManager {
 		let baseName = databaseURL.deletingPathExtension().lastPathComponent
 
 		guard !baseName.isEmpty else {
-			logger.error("Invalid database filename: \(databaseURL.path)")
+			logger.error("Invalid database filename")
 			throw MigrationError.invalidPath
 		}
 
@@ -341,7 +341,7 @@ public final class DataMigrationManager {
 			directory: FileManager.Directory(url: directoryURL),
 			databaseFilename: baseName
 		) else {
-			logger.error("Failed to create storage engine for: \(databaseURL.path)")
+			logger.error("Failed to create storage engine")
 			throw MigrationError.invalidPath
 		}
 
@@ -359,7 +359,7 @@ public final class DataMigrationManager {
 			throw MigrationError.appGroupUnavailable
 		}
 
-		logger.info("Merging data into App Group: \(appGroupURL.path)")
+		logger.info("Merging data into App Group")
 
 		// Load current App Group data
 		let currentData = try await loadCurrentAppGroupData(containerURL: appGroupURL)
@@ -557,10 +557,10 @@ public final class DataMigrationManager {
 					userDefaultsKey: UserDefaultsKeys.archivedLegacyMedicationsPath,
 					name: "medications"
 				)
-			} catch {
-				archivalErrors.append("Medications: \(error.localizedDescription)")
+				} catch {
+					archivalErrors.append("medicationsErrorType=\(DHLogger.privacySafeErrorType(error))")
+				}
 			}
-		}
 
 		// Archive events legacy folder
 		if let eventsURL = paths.events {
@@ -571,17 +571,17 @@ public final class DataMigrationManager {
 					userDefaultsKey: UserDefaultsKeys.archivedLegacyEventsPath,
 					name: "events"
 				)
-			} catch {
-				archivalErrors.append("Events: \(error.localizedDescription)")
+				} catch {
+					archivalErrors.append("eventsErrorType=\(DHLogger.privacySafeErrorType(error))")
+				}
 			}
-		}
 
-		// If any archival failed, throw error to prevent migration from "completing"
-		// This ensures migration will retry on next app launch
-		if !archivalErrors.isEmpty {
-			logger.error("❌ Legacy database archival failed: \(archivalErrors.joined(separator: "; "))")
-			throw MigrationError.archivalFailed(reason: archivalErrors.joined(separator: "; "))
-		}
+			// If any archival failed, throw error to prevent migration from "completing"
+			// This ensures migration will retry on next app launch
+			if !archivalErrors.isEmpty {
+				logger.error("❌ Legacy database archival failed: failureCount=\(archivalErrors.count), \(archivalErrors.joined(separator: ", "))")
+				throw MigrationError.archivalFailed(reason: archivalErrors.joined(separator: "; "))
+			}
 
 		logger.info("=== Legacy Database Archival Complete ===")
 	}
@@ -597,11 +597,11 @@ public final class DataMigrationManager {
 		let fileManager = FileManager.default
 		let folder = databaseURL.deletingLastPathComponent()
 		let parentFolder = folder.deletingLastPathComponent()
+		let sourceExists = fileManager.fileExists(atPath: folder.path)
 
 		// Log pre-archival state
 		logger.info("Archiving \(name):")
-		logger.info("  Source: \(folder.path)")
-		logger.info("  Exists: \(fileManager.fileExists(atPath: folder.path))")
+		logger.info("  Source exists: \(sourceExists)")
 
 		let isBodegaFolder = folder.lastPathComponent == "\(name).sqlite" &&
 			databaseURL.lastPathComponent == StorageConstants.Legacy.bodegaDataFile
@@ -613,19 +613,18 @@ public final class DataMigrationManager {
 		if fileManager.fileExists(atPath: archivedFolder.path) {
 			let uniqueSuffix = UUID().uuidString.prefix(8)
 			archivedFolder = parentFolder.appendingPathComponent("\(name).sqlite.migrated-\(dateSuffix)-\(uniqueSuffix)")
-			logger.warning("Archive destination exists, using unique suffix: \(archivedFolder.lastPathComponent)")
+			logger.warning("Archive destination exists, using unique suffix")
 		}
 
 		if isBodegaFolder {
 			// Bodega folder structure: move the folder
 			try fileManager.moveItem(at: folder, to: archivedFolder)
-			logger.info("✅ Archived legacy \(name): \(folder.lastPathComponent) → \(archivedFolder.lastPathComponent)")
+			logger.info("✅ Archived legacy \(name)")
 		} else {
 			// Flat file structure: archive only the database file + sidecars
 			try fileManager.createDirectory(at: archivedFolder, withIntermediateDirectories: true)
 
-			let flatParent = databaseURL.deletingLastPathComponent()
-			logger.info("Flat database detected in: \(flatParent.path)")
+			logger.info("Flat database detected")
 
 			let destDB = archivedFolder.appendingPathComponent(databaseURL.lastPathComponent)
 			try fileManager.moveItem(at: databaseURL, to: destDB)
@@ -642,7 +641,7 @@ public final class DataMigrationManager {
 				try fileManager.moveItem(atPath: shmPath, toPath: shmDest.path)
 			}
 
-			logger.info("✅ Archived legacy \(name) flat DB → \(archivedFolder.lastPathComponent)")
+			logger.info("✅ Archived legacy \(name) flat DB")
 		}
 
 		// Store the archived path for potential recovery
@@ -658,19 +657,19 @@ public final class DataMigrationManager {
 		var eventsURL: URL?
 
 		// Check stored paths
-		if let storedMedicationsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath),
-		   fileManager.fileExists(atPath: storedMedicationsPath)
-		{
-			medicationsURL = URL(fileURLWithPath: storedMedicationsPath)
-			logger.info("Found archived legacy medications at: \(storedMedicationsPath)")
-		}
+			if let storedMedicationsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath),
+			   fileManager.fileExists(atPath: storedMedicationsPath)
+			{
+				medicationsURL = URL(fileURLWithPath: storedMedicationsPath)
+				logger.info("Found archived legacy medications")
+			}
 
-		if let storedEventsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath),
-		   fileManager.fileExists(atPath: storedEventsPath)
-		{
-			eventsURL = URL(fileURLWithPath: storedEventsPath)
-			logger.info("Found archived legacy events at: \(storedEventsPath)")
-		}
+			if let storedEventsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath),
+			   fileManager.fileExists(atPath: storedEventsPath)
+			{
+				eventsURL = URL(fileURLWithPath: storedEventsPath)
+				logger.info("Found archived legacy events")
+			}
 
 		return (medications: medicationsURL, events: eventsURL)
 	}

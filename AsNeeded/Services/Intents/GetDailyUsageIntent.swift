@@ -27,11 +27,11 @@ struct GetDailyUsageIntent: AppIntent {
 
         if let providedMedication = medication {
             targetMedication = providedMedication.medication
-            logger.info("Using entity medication for daily usage: \(targetMedication.id.uuidString)")
+            logger.info("Using entity medication for daily usage")
         } else if let name = medicationName, !name.isEmpty {
-            logger.info("Searching for medication by name for daily usage: \(name)")
+            logger.info("Searching for medication by provided name for daily usage")
             guard let foundMedication = findBestMatch(for: name) else {
-                logger.warning("No medication found matching: \(name)")
+                logger.warning("No medication found for provided name")
                 return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
             }
             targetMedication = foundMedication
@@ -49,7 +49,7 @@ struct GetDailyUsageIntent: AppIntent {
         }
 
         if todayUsage.totalAmount == 0 {
-            logger.info("No usage found today for \(targetMedication.displayName)")
+            logger.info("No daily usage found")
             return .result(dialog: IntentDialog("You haven't taken any \(medicationDisplayName) today."))
         }
 
@@ -68,7 +68,7 @@ struct GetDailyUsageIntent: AppIntent {
             responseText = "You've taken \(amountText) \(unitText) of \(medicationDisplayName) today across \(doseCount) doses."
         }
 
-        logger.info("Daily usage for medication \(targetMedication.id.uuidString): \(amount) \(unit.displayName) in \(doseCount) doses")
+        logger.info("Daily usage calculated")
         return .result(dialog: IntentDialog(stringLiteral: responseText))
     }
 

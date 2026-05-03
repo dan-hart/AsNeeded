@@ -90,7 +90,7 @@ final class NotificationManager: ObservableObject {
             logger.info("Notification authorization requested - granted: \(granted)")
             return granted
         } catch {
-            logger.error("Failed to request notification authorization", error: error)
+            logger.logPrivacySafeError("Failed to request notification authorization", error: error)
             return false
         }
     }
@@ -101,7 +101,7 @@ final class NotificationManager: ObservableObject {
         isRecurring: Bool,
         repeatInterval: DateComponents? = nil
     ) async throws {
-        logger.info("Scheduling reminder for medication: \(medication.id)")
+        logger.info("Scheduling medication reminder")
 
         // Create notification content
         let content = UNMutableNotificationContent()
@@ -133,11 +133,11 @@ final class NotificationManager: ObservableObject {
 
         // Schedule notification
         try await notificationCenter.add(request)
-        logger.info("Reminder scheduled successfully with ID: \(requestId)")
+        logger.info("Reminder scheduled successfully")
     }
 
     func cancelReminder(for medication: ANMedicationConcept) async {
-        logger.info("Cancelling reminders for medication: \(medication.id)")
+        logger.info("Cancelling medication reminders")
 
         let pendingRequests = await notificationCenter.pendingNotificationRequests()
         let requestsToCancel = pendingRequests
@@ -164,7 +164,7 @@ final class NotificationManager: ObservableObject {
 
     func cancelSpecificReminder(withIdentifier identifier: String) async {
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
-        logger.info("Cancelled specific reminder: \(identifier)")
+        logger.info("Cancelled specific reminder")
     }
 
     func cancelAllReminders() async {

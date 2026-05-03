@@ -30,11 +30,11 @@ struct GetMedicationInfoIntent: AppIntent {
 
         if let providedMedication = medication {
             targetMedication = providedMedication.medication
-            logger.info("Using entity medication: \(targetMedication.id.uuidString)")
+            logger.info("Using entity medication")
         } else if let name = medicationName, !name.isEmpty {
-            logger.info("Searching for medication by name: \(name)")
+            logger.info("Searching for medication by provided name")
             guard let foundMedication = MedicationSearchUtility.findBestMatch(for: name) else {
-                logger.warning("No medication found matching: \(name)")
+                logger.warning("No medication found for provided name")
                 return .result(
                     dialog: IntentDialog("I couldn't find a medication named \(name)."),
                     view: EmptyMedicationInfoView()
@@ -79,7 +79,7 @@ struct GetMedicationInfoIntent: AppIntent {
 
         let dialog = dialogParts.joined(separator: ". ") + "."
 
-        logger.info("Retrieved info for medication: \(targetMedication.displayName)")
+        logger.info("Retrieved medication info")
 
         return .result(
             dialog: IntentDialog(stringLiteral: dialog),

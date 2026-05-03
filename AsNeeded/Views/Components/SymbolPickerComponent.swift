@@ -270,7 +270,7 @@ struct SymbolPickerComponent: View {
             selectedSymbol = symbolName
             onSymbolSelected(symbolName)
             hapticsManager.lightImpact()
-            logger.info("Symbol selected: \(symbolName)")
+            logger.info("Symbol selected")
         } label: {
             VStack(spacing: 4) {
                 ZStack {
@@ -329,7 +329,7 @@ struct SymbolPickerComponent: View {
         Button {
             hapticsManager.mediumImpact()
             onSave()
-            logger.info("Symbol saved: \(selectedSymbol ?? "none")")
+            logger.info("Symbol saved")
         } label: {
             HStack(spacing: headerSpacing) {
                 Spacer()

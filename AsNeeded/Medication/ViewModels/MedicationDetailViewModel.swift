@@ -31,7 +31,7 @@ final class MedicationDetailViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully saved", id: medication.id)
         } catch {
-            logger.error("Failed to save medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to save medication", error: error)
             errorMessage = "Failed to save medication: \(error.localizedDescription)"
         }
     }
@@ -48,7 +48,7 @@ final class MedicationDetailViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully deleted", id: medication.id)
         } catch {
-            logger.error("Failed to delete medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to delete medication", error: error)
             errorMessage = "Failed to delete medication: \(error.localizedDescription)"
         }
     }
@@ -61,7 +61,7 @@ final class MedicationDetailViewModel: ObservableObject {
         operationID: UUID = UUID()
     ) async -> Bool {
         guard activeDoseLogOperationID == nil else {
-            logger.warning("Ignored dose log while another operation is in flight: activeOperationID=\(activeDoseLogOperationID?.uuidString ?? "unknown"), newOperationID=\(operationID.uuidString), medicationID=\(medication.id.uuidString)")
+            logger.warning("Ignored dose log while another operation is in flight: activeOperationID=\(activeDoseLogOperationID?.uuidString ?? "unknown"), newOperationID=\(operationID.uuidString)")
             return false
         }
 
@@ -80,7 +80,7 @@ final class MedicationDetailViewModel: ObservableObject {
 
         var eventToSave = event
         if eventToSave.medication?.id != medication.id {
-            logger.warning("Correcting mismatched dose log medication: source=\(source), operationID=\(operationID.uuidString), selectedMedicationID=\(medication.id.uuidString), eventMedicationID=\(eventToSave.medication?.id.uuidString ?? "nil")")
+            logger.warning("Correcting mismatched dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
         }
         eventToSave.medication = medication
 
@@ -88,12 +88,8 @@ final class MedicationDetailViewModel: ObservableObject {
             "Starting",
             source: source,
             operationID: operationID,
-            medicationID: medication.id,
-            eventID: eventToSave.id,
-            doseAmount: dose.amount,
-            doseUnit: dose.unit.abbreviation,
             eventCountBefore: eventCountBefore,
-            details: quantityDetails(before: medication.quantity, after: updatedMedication.quantity)
+            details: quantityDetails(quantityWasPresent: medication.quantity != nil)
         )
 
         do {
@@ -104,16 +100,12 @@ final class MedicationDetailViewModel: ObservableObject {
                 "Succeeded",
                 source: source,
                 operationID: operationID,
-                medicationID: medication.id,
-                eventID: eventToSave.id,
-                doseAmount: dose.amount,
-                doseUnit: dose.unit.abbreviation,
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
             return true
         } catch {
-            logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), medicationID=\(medication.id.uuidString), eventID=\(eventToSave.id.uuidString), error=\(error.localizedDescription)")
+            logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), errorType=\(DHLogger.privacySafeErrorType(error))")
             errorMessage = "Failed to log dose: \(error.localizedDescription)"
             return false
         }
@@ -129,18 +121,14 @@ final class MedicationDetailViewModel: ObservableObject {
         do {
             try await dataStore.addEvent(event)
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
-            logger.info("Successfully logged event: \(event.id)")
+            logger.info("Successfully logged event record")
         } catch {
-            logger.error("Failed to log event: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to log event", error: error)
             errorMessage = "Failed to log event: \(error.localizedDescription)"
         }
     }
 
-    private func quantityDetails(before: Double?, after: Double?) -> String {
-        guard let before, let after else {
-            return "quantityUpdated=false"
-        }
-
-        return "quantityUpdated=true, quantityBefore=\(before), quantityAfter=\(after)"
+    private func quantityDetails(quantityWasPresent: Bool) -> String {
+        "quantityUpdated=\(quantityWasPresent)"
     }
 }

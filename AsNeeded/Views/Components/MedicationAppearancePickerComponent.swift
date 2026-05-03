@@ -134,7 +134,7 @@ struct MedicationAppearancePickerComponent: View {
         .onAppear {
             tempColorHex = selectedColorHex ?? medication.displayColorHex
             tempSymbol = selectedSymbol ?? medication.symbolInfo?.name
-            logger.info("Appearance picker opened for medication: \(medication.displayName)")
+            logger.info("Appearance picker opened")
         }
     }
 
@@ -243,7 +243,7 @@ struct MedicationAppearancePickerComponent: View {
         selectedColorHex = tempColorHex
         selectedSymbol = tempSymbol
         hapticsManager.mediumImpact()
-        logger.info("Appearance saved - Color: \(tempColorHex ?? "default"), Symbol: \(tempSymbol ?? "default")")
+        logger.info("Appearance saved")
         onSave()
         dismiss()
     }

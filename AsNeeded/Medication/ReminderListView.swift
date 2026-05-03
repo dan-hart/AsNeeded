@@ -119,7 +119,7 @@ struct ReminderListView: View {
     }
 
     private func loadReminders() async {
-        logger.debug("Loading reminders for medication: \(medication.displayName)")
+        logger.debug("Loading medication reminders")
         isLoading = true
 
         let reminderDetails = await notificationManager.getReminderDetails(for: medication)
@@ -131,7 +131,7 @@ struct ReminderListView: View {
     }
 
     private func deleteReminder(_ reminder: ReminderDetail) async {
-        logger.info("Deleting reminder: \(reminder.id)")
+        logger.info("Deleting reminder")
 
         await notificationManager.cancelSpecificReminder(withIdentifier: reminder.id)
         await loadReminders()
@@ -140,7 +140,7 @@ struct ReminderListView: View {
     }
 
     private func clearAllReminders() async {
-        logger.info("Clearing all reminders for medication: \(medication.displayName)")
+        logger.info("Clearing all medication reminders")
 
         await notificationManager.cancelReminder(for: medication)
         await loadReminders()

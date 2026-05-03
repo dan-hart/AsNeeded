@@ -123,7 +123,7 @@ struct LogDoseView: View {
 	@MainActor
 	private func performLogDose() async {
         guard !isLogging else {
-            logger.warning("Ignored duplicate dose log tap while request is in flight: source=\(source), medicationID=\(medication.id.uuidString)")
+            logger.warning("Ignored duplicate dose log tap while request is in flight: source=\(source)")
             return
         }
 
@@ -150,11 +150,7 @@ struct LogDoseView: View {
         logger.logDoseOperation(
             "Submitting",
             source: source,
-            operationID: operationID,
-            medicationID: medication.id,
-            eventID: event.id,
-            doseAmount: dose.amount,
-            doseUnit: dose.unit.abbreviation
+            operationID: operationID
         )
 
         let success = await onLog(dose, event, operationID)
@@ -162,16 +158,12 @@ struct LogDoseView: View {
             logger.logDoseOperation(
                 "Completed",
                 source: source,
-                operationID: operationID,
-                medicationID: medication.id,
-                eventID: event.id,
-                doseAmount: dose.amount,
-                doseUnit: dose.unit.abbreviation
+                operationID: operationID
             )
             hapticsManager.doseLogged()
             dismiss()
         } else {
-            logger.error("Dose log failed: source=\(source), operationID=\(operationID.uuidString), medicationID=\(medication.id.uuidString), eventID=\(event.id.uuidString)")
+            logger.error("Dose log failed: source=\(source), operationID=\(operationID.uuidString)")
             isLogging = false
         }
     }

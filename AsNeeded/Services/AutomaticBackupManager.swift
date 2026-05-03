@@ -164,7 +164,7 @@ final class AutomaticBackupManager: ObservableObject {
     ///   - mergeExisting: If true, merge with existing data; if false, replace all data
     /// - Throws: BackupError if restore fails
     func restoreFromBackup(url: URL, mergeExisting: Bool = false) async throws {
-        logger.info("Restoring from backup: \(url.lastPathComponent), merge: \(mergeExisting)")
+        logger.info("Restoring from backup, merge: \(mergeExisting)")
 
         guard url.startAccessingSecurityScopedResource() else {
             throw BackupError.accessDenied
@@ -182,9 +182,9 @@ final class AutomaticBackupManager: ObservableObject {
             // Use existing DataStore import method (DRY!)
             try await DataStore.shared.importDataFromJSON(data, mergeExisting: mergeExisting)
 
-            logger.info("Successfully restored from backup: \(url.lastPathComponent)")
+            logger.info("Successfully restored from backup")
         } catch {
-            logger.error("Restore failed: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Restore failed", error: error)
             throw BackupError.exportFailed(error.localizedDescription)
         }
     }
@@ -224,7 +224,7 @@ final class AutomaticBackupManager: ObservableObject {
             for fileURL in backupFiles {
                 try fileManager.removeItem(at: fileURL)
                 deletedCount += 1
-                logger.debug("Deleted backup: \(fileURL.lastPathComponent)")
+                logger.debug("Deleted backup")
             }
 
             logger.info("Cleared \(deletedCount) backup file(s)")
@@ -233,7 +233,7 @@ final class AutomaticBackupManager: ObservableObject {
             UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
             lastBackupDate = nil
         } catch {
-            logger.error("Failed to clear backups: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to clear backups", error: error)
             throw BackupError.writeFailed(error.localizedDescription)
         }
     }
@@ -278,7 +278,7 @@ final class AutomaticBackupManager: ObservableObject {
 
         guard let bookmark = bookmarkData else {
             let error = "No backup location configured"
-            logger.error("\(error)")
+            logger.error("No backup location configured")
             lastError = error
             lastBackupStatus = .failed(error)
             return
@@ -288,7 +288,7 @@ final class AutomaticBackupManager: ObservableObject {
         var isStale = false
         guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale) else {
             let error = "Failed to access backup location"
-            logger.error("\(error)")
+            logger.error("Failed to access backup location")
             lastError = error
             lastBackupStatus = .accessDenied
             return
@@ -297,7 +297,7 @@ final class AutomaticBackupManager: ObservableObject {
         // ✅ Check bookmark staleness
         if isStale {
             let error = "Backup location is no longer accessible (bookmark stale)"
-            logger.warning("\(error)")
+            logger.warning("Backup location is no longer accessible (bookmark stale)")
             lastError = error
             lastBackupStatus = .bookmarkStale
             return
@@ -306,7 +306,7 @@ final class AutomaticBackupManager: ObservableObject {
         // Start accessing security-scoped resource
         guard backupDirectory.startAccessingSecurityScopedResource() else {
             let error = "Permission denied to access backup location"
-            logger.error("\(error)")
+            logger.error("Permission denied to access backup location")
             lastError = error
             lastBackupStatus = .accessDenied
             return
@@ -361,7 +361,7 @@ final class AutomaticBackupManager: ObservableObject {
                 logger.info("Backup retry successful")
             }
 
-            logger.info("Automatic backup saved and validated successfully to \(fileURL.path)")
+            logger.info("Automatic backup saved and validated successfully")
 
             // Update last backup date and status
             let now = Date()
@@ -372,7 +372,7 @@ final class AutomaticBackupManager: ObservableObject {
 
         } catch let error as BackupError {
             let errorMessage = error.errorDescription ?? "Backup failed"
-            logger.error("\(errorMessage)")
+            logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
 
             switch error {
@@ -387,7 +387,7 @@ final class AutomaticBackupManager: ObservableObject {
             }
         } catch {
             let errorMessage = "Backup failed: \(error.localizedDescription)"
-            logger.error("\(errorMessage)")
+            logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
             lastBackupStatus = .failed(errorMessage)
         }
@@ -458,7 +458,7 @@ final class AutomaticBackupManager: ObservableObject {
                 guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
                       let creationDate = values.creationDate
                 else {
-                    logger.warning("Could not get creation date for \(fileURL.lastPathComponent), skipping")
+                    logger.warning("Could not get backup creation date, skipping")
                     continue
                 }
 
@@ -466,14 +466,14 @@ final class AutomaticBackupManager: ObservableObject {
                 if creationDate < cutoffDate {
                     try fileManager.removeItem(at: fileURL)
                     deletedCount += 1
-                    logger.debug("Deleted old backup: \(fileURL.lastPathComponent) (created: \(creationDate))")
+                    logger.debug("Deleted old backup")
                 }
             }
 
             logger.info("Cleanup complete: deleted \(deletedCount) old backup file(s), retention policy: \(retention) days")
 
         } catch {
-            logger.error("Cleanup failed: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Cleanup failed", error: error)
         }
     }
 
@@ -492,7 +492,7 @@ final class AutomaticBackupManager: ObservableObject {
 
             return url
         } catch {
-            logger.error("Failed to resolve bookmark: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to resolve bookmark", error: error)
             return nil
         }
     }
@@ -526,7 +526,7 @@ final class AutomaticBackupManager: ObservableObject {
         } catch let error as BackupError {
             throw error
         } catch {
-            logger.warning("Storage check failed with error: \(error.localizedDescription), proceeding anyway")
+            logger.logPrivacySafeWarning("Storage check failed, proceeding anyway", error: error)
         }
     }
 
@@ -566,7 +566,7 @@ final class AutomaticBackupManager: ObservableObject {
                 return Int64(size)
             }
         } catch {
-            logger.debug("Could not estimate backup size: \(error.localizedDescription)")
+            logger.logPrivacySafeDebug("Could not estimate backup size", error: error)
         }
 
         return 10_485_760 // Default 10MB
@@ -637,7 +637,7 @@ final class AutomaticBackupManager: ObservableObject {
             logger.debug("Found \(backupFiles.count) backup files")
             return backupFiles
         } catch {
-            logger.error("Failed to get backup history: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to get backup history", error: error)
             return []
         }
     }
@@ -670,7 +670,7 @@ final class AutomaticBackupManager: ObservableObject {
 
             return isValid
         } catch {
-            logger.error("Backup validation failed: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Backup validation failed", error: error)
             return false
         }
     }

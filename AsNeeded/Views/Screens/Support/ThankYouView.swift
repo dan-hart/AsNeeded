@@ -121,7 +121,7 @@ struct ThankYouView: View {
                     buttonsOpacity = 1.0
                 }
             }
-            DHLogger.ui.info("ThankYouView appeared for \(String(describing: purchaseType))")
+            DHLogger.ui.info("ThankYouView appeared")
         }
     }
 

@@ -83,7 +83,7 @@ final class MedicationListViewModel: ObservableObject {
         do {
             try await dataStore.medicationsStore.itemsHaveLoaded()
         } catch {
-            logger.error("Failed to load medications store: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to load medications store", error: error)
         }
 
         isLoading = false
@@ -100,7 +100,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to add medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add medication", error: error)
             return false
         }
     }
@@ -111,7 +111,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to update medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to update medication", error: error)
             return false
         }
     }
@@ -123,7 +123,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to delete medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to delete medication", error: error)
             return false
         }
     }
@@ -134,7 +134,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to add event: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add event", error: error)
             return false
         }
     }
@@ -182,7 +182,7 @@ final class MedicationListViewModel: ObservableObject {
 
         var eventToSave = event
         if eventToSave.medication?.id != med.id {
-            logger.warning("Correcting mismatched list dose log medication: source=\(source), operationID=\(operationID.uuidString), selectedMedicationID=\(med.id.uuidString), eventMedicationID=\(eventToSave.medication?.id.uuidString ?? "nil")")
+            logger.warning("Correcting mismatched list dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
         }
         eventToSave.medication = med
 
@@ -190,12 +190,8 @@ final class MedicationListViewModel: ObservableObject {
             "Starting",
             source: source,
             operationID: operationID,
-            medicationID: med.id,
-            eventID: eventToSave.id,
-            doseAmount: dose.amount,
-            doseUnit: dose.unit.abbreviation,
             eventCountBefore: eventCountBefore,
-            details: quantityDetails(before: med.quantity, after: updated.quantity)
+            details: quantityDetails(quantityWasPresent: med.quantity != nil)
         )
 
         async let updateResult = update(updated)
@@ -209,10 +205,6 @@ final class MedicationListViewModel: ObservableObject {
                 "Succeeded",
                 source: source,
                 operationID: operationID,
-                medicationID: med.id,
-                eventID: eventToSave.id,
-                doseAmount: dose.amount,
-                doseUnit: dose.unit.abbreviation,
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
@@ -224,7 +216,7 @@ final class MedicationListViewModel: ObservableObject {
             return true
         }
 
-        logger.error("Failed list dose log: source=\(source), operationID=\(operationID.uuidString), medicationID=\(med.id.uuidString), eventID=\(eventToSave.id.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+        logger.error("Failed list dose log: source=\(source), operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
         return false
     }
 
@@ -253,12 +245,8 @@ final class MedicationListViewModel: ObservableObject {
             "Starting",
             source: "list_quick_log",
             operationID: operationID,
-            medicationID: medication.id,
-            eventID: event.id,
-            doseAmount: dose.amount,
-            doseUnit: dose.unit.abbreviation,
             eventCountBefore: eventCountBefore,
-            details: quantityDetails(before: medication.quantity, after: updatedMed.quantity)
+            details: quantityDetails(quantityWasPresent: medication.quantity != nil)
         )
 
         async let updateResult = update(updatedMed)
@@ -273,15 +261,11 @@ final class MedicationListViewModel: ObservableObject {
                 "Succeeded",
                 source: "list_quick_log",
                 operationID: operationID,
-                medicationID: medication.id,
-                eventID: event.id,
-                doseAmount: dose.amount,
-                doseUnit: dose.unit.abbreviation,
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
         } else {
-            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), medicationID=\(medication.id.uuidString), eventID=\(event.id.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
         }
         
         return updateSuccess && eventSuccess
@@ -321,11 +305,7 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-    private func quantityDetails(before: Double?, after: Double?) -> String {
-        guard let before, let after else {
-            return "quantityUpdated=false"
-        }
-
-        return "quantityUpdated=true, quantityBefore=\(before), quantityAfter=\(after)"
+    private func quantityDetails(quantityWasPresent: Bool) -> String {
+        "quantityUpdated=\(quantityWasPresent)"
     }
 }
