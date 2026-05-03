@@ -505,14 +505,15 @@ struct MedicationHistoryView: View {
                     .dynamicDetent()
                 }
                 .sheet(item: $logMedication) { med in
-                    LogDoseView(medication: med) { dose, event in
-                        Task {
-                            var updated = med
-                            if let quantity = updated.quantity, dose.amount > 0 {
-                                updated.quantity = quantity - dose.amount
-                            }
-                            try? await DataStore.shared.updateMedication(updated)
-                            try? await DataStore.shared.addEvent(event)
+                    LogDoseView(medication: med, source: "history_sheet") { dose, event, _ in
+                        var updated = med
+                        if let quantity = updated.quantity, dose.amount > 0 {
+                            updated.quantity = quantity - dose.amount
+                        }
+
+                        do {
+                            try await DataStore.shared.updateMedication(updated)
+                            try await DataStore.shared.addEvent(event)
                             logMedication = nil
 
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -525,6 +526,10 @@ struct MedicationHistoryView: View {
                                     }
                                 }
                             }
+
+                            return true
+                        } catch {
+                            return false
                         }
                     }
                 }

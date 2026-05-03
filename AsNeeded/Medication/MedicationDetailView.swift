@@ -87,16 +87,20 @@ struct MedicationDetailView: View {
             Text("This action cannot be undone. All history and reminders for this medication will be deleted.")
         }
         .sheet(isPresented: $showLogDose) {
-            LogDoseView(medication: medication) { dose, event in
-                Task {
-                    var medicationToUpdate = medication
-                    if let quantity = medication.quantity, dose.amount > 0 {
-                        medicationToUpdate.quantity = quantity - dose.amount
-                    }
-                    await viewModel.save(updated: medicationToUpdate)
-                    await viewModel.log(event: event)
-                    medication = medicationToUpdate
+            LogDoseView(medication: medication, source: "detail_sheet") { dose, event, operationID in
+                let success = await viewModel.logDose(
+                    medication: medication,
+                    dose: dose,
+                    event: event,
+                    source: "detail_sheet",
+                    operationID: operationID
+                )
+
+                if success {
+                    await refreshMedication()
                 }
+
+                return success
             }
         }
         .sheet(isPresented: $showEditSheet) {

@@ -167,33 +167,75 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-    func logDose(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept) async {
+    func logDose(
+        med: ANMedicationConcept,
+        dose: ANDoseConcept,
+        event: ANEventConcept,
+        source: String = "list_sheet",
+        operationID: UUID = UUID()
+    ) async -> Bool {
+        let eventCountBefore = dataStore.events.count
         var updated = med
         if let quantity = updated.quantity, dose.amount > 0 {
             updated.quantity = quantity - dose.amount
         }
 
+        var eventToSave = event
+        if eventToSave.medication?.id != med.id {
+            logger.warning("Correcting mismatched list dose log medication: source=\(source), operationID=\(operationID.uuidString), selectedMedicationID=\(med.id.uuidString), eventMedicationID=\(eventToSave.medication?.id.uuidString ?? "nil")")
+        }
+        eventToSave.medication = med
+
+        logger.logDoseOperation(
+            "Starting",
+            source: source,
+            operationID: operationID,
+            medicationID: med.id,
+            eventID: eventToSave.id,
+            doseAmount: dose.amount,
+            doseUnit: dose.unit.abbreviation,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(before: med.quantity, after: updated.quantity)
+        )
+
         async let updateResult = update(updated)
-        async let eventResult = addEvent(event)
+        async let eventResult = addEvent(eventToSave)
 
         let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
 
         if updateSuccess && eventSuccess {
             logMedication = nil
+            logger.logDoseOperation(
+                "Succeeded",
+                source: source,
+                operationID: operationID,
+                medicationID: med.id,
+                eventID: eventToSave.id,
+                doseAmount: dose.amount,
+                doseUnit: dose.unit.abbreviation,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
             if hideSupportBanners {
                 showQuickLogToast(med: med, dose: dose)
             } else {
                 triggerSupportToast()
             }
+            return true
         }
+
+        logger.error("Failed list dose log: source=\(source), operationID=\(operationID.uuidString), medicationID=\(med.id.uuidString), eventID=\(eventToSave.id.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+        return false
     }
 
     func quickLog(medication: ANMedicationConcept) async -> Bool {
+        let operationID = UUID()
         let dose = ANDoseConcept(
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
         )
 
+        let eventCountBefore = dataStore.events.count
         var updatedMed = medication
         if let quantity = updatedMed.quantity, dose.amount > 0 {
             updatedMed.quantity = quantity - dose.amount
@@ -207,6 +249,18 @@ final class MedicationListViewModel: ObservableObject {
             note: nil
         )
 
+        logger.logDoseOperation(
+            "Starting",
+            source: "list_quick_log",
+            operationID: operationID,
+            medicationID: medication.id,
+            eventID: event.id,
+            doseAmount: dose.amount,
+            doseUnit: dose.unit.abbreviation,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(before: medication.quantity, after: updatedMed.quantity)
+        )
+
         async let updateResult = update(updatedMed)
         async let eventResult = addEvent(event, shouldRecordForReview: false)
 
@@ -215,6 +269,19 @@ final class MedicationListViewModel: ObservableObject {
         if updateSuccess, eventSuccess {
             hapticsManager.doseLogged()
             showQuickLogToast(med: medication, dose: dose)
+            logger.logDoseOperation(
+                "Succeeded",
+                source: "list_quick_log",
+                operationID: operationID,
+                medicationID: medication.id,
+                eventID: event.id,
+                doseAmount: dose.amount,
+                doseUnit: dose.unit.abbreviation,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
+        } else {
+            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), medicationID=\(medication.id.uuidString), eventID=\(event.id.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
         }
         
         return updateSuccess && eventSuccess
@@ -252,5 +319,13 @@ final class MedicationListViewModel: ObservableObject {
                 self.showSupportToast = false
             }
         }
+    }
+
+    private func quantityDetails(before: Double?, after: Double?) -> String {
+        guard let before, let after else {
+            return "quantityUpdated=false"
+        }
+
+        return "quantityUpdated=true, quantityBefore=\(before), quantityAfter=\(after)"
     }
 }

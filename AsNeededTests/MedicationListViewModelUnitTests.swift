@@ -207,7 +207,8 @@ struct MedicationListViewModelUnitTests {
 
         // Then: A, C
         #expect(viewModel.sortedMedications.map { $0.clinicalName } == ["A", "C"])
-        #expect(!UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder)!.contains(where: { $0 as? String == med2.id.uuidString }))
+        let medicationOrder = UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder) ?? []
+        #expect(!medicationOrder.contains(where: { $0 as? String == med2.id.uuidString }))
     }
 
     @Test("toggleEditMode changes editMode and triggers haptics")
@@ -258,9 +259,10 @@ struct MedicationListViewModelUnitTests {
         let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: Date())
 
         // When
-        await viewModel.logDose(med: medication, dose: dose, event: event)
+        let success = await viewModel.logDose(med: medication, dose: dose, event: event)
 
         // Then
+        #expect(success)
         #expect(dataStore.events.count == 1)
         guard let updatedMed = dataStore.medications.first(where: { $0.id == medication.id }) else {
             #expect(false, "Updated medication not found in data store.") // Replaced #fail with #expect(false, ...)

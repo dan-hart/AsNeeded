@@ -150,6 +150,44 @@ struct MedicationDetailViewModelTests {
         #expect(savedMedication?.quantity == 75.0)
     }
 
+    @Test("Log dose records only the detail medication when another medication is last")
+    func logDoseRecordsOnlyDetailMedicationWhenAnotherMedicationIsLast() async throws {
+        let dataStore = DataStore(testIdentifier: "DetailVM-LogDoseSelectedOnly")
+        let viewModel = MedicationDetailViewModel(dataStore: dataStore)
+
+        let detailMedication = createTestMedication(name: "Detail Medication", quantity: 10.0)
+        let lastMedication = createTestMedication(name: "Last Medication", quantity: 20.0)
+        try await dataStore.addMedication(detailMedication)
+        try await dataStore.addMedication(lastMedication)
+
+        let dose = ANDoseConcept(amount: 2.0, unit: .tablet)
+		let event = ANEventConcept(
+			eventType: .doseTaken,
+			medication: lastMedication,
+			dose: dose,
+			date: Date()
+		)
+		guard let operationID = UUID(uuidString: "00000000-0000-0000-0000-000000000001") else {
+			#expect(false, "Expected fixed operation ID to be valid")
+			return
+		}
+
+		let success = await viewModel.logDose(
+			medication: detailMedication,
+			dose: dose,
+			event: event,
+			source: "detail_sheet",
+			operationID: operationID
+		)
+
+        #expect(success)
+        #expect(dataStore.events.count == 1)
+        #expect(dataStore.events.first?.medication?.id == detailMedication.id)
+        #expect(dataStore.events.contains { $0.medication?.id == lastMedication.id } == false)
+        #expect(dataStore.medications.first { $0.id == detailMedication.id }?.quantity == 8.0)
+        #expect(dataStore.medications.first { $0.id == lastMedication.id }?.quantity == 20.0)
+    }
+
     @Test("Save medication with unit change")
     func saveMedicationUnitChange() async throws {
         let dataStore = DataStore(testIdentifier: "DetailVM-SaveUnitChange")

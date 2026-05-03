@@ -192,10 +192,12 @@ public final class DataStore {
     // MARK: - Events
 
     public func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
+        let eventCountBefore = events.count
         logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
+        logger.info("Adding event details: eventID=\(event.id.uuidString), medicationID=\(event.medication?.id.uuidString ?? "nil"), eventCountBefore=\(eventCountBefore), shouldRecordForReview=\(shouldRecordForReview)")
         do {
             try await eventsStore.insert(event)
-            logger.info("Successfully added event to local storage: \(event.id)")
+            logger.info("Successfully added event to local storage: eventID=\(event.id.uuidString), medicationID=\(event.medication?.id.uuidString ?? "nil"), eventCountBefore=\(eventCountBefore), eventCountAfter=\(events.count)")
 
             // Track medication event for review eligibility (skip for quick log)
             if shouldRecordForReview {

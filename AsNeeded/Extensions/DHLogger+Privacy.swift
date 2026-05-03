@@ -31,6 +31,51 @@ extension DHLogger {
         }
     }
 
+    /// Logs a dose logging operation without exposing medication names or notes.
+    /// - Parameters:
+    ///   - phase: The lifecycle phase being logged.
+    ///   - source: The UI or integration source for the log request.
+    ///   - operationID: Correlation ID shared across the UI, view model, and persistence logs.
+    ///   - medicationID: Selected medication UUID.
+    ///   - eventID: Event UUID when one exists.
+    ///   - doseAmount: Dose amount.
+    ///   - doseUnit: Dose unit abbreviation or identifier.
+    ///   - eventCountBefore: Optional event count before the operation.
+    ///   - eventCountAfter: Optional event count after the operation.
+    ///   - details: Optional non-sensitive diagnostic details.
+    func logDoseOperation(
+        _ phase: String,
+        source: String,
+        operationID: UUID,
+        medicationID: UUID,
+        eventID: UUID? = nil,
+        doseAmount: Double,
+        doseUnit: String,
+        eventCountBefore: Int? = nil,
+        eventCountAfter: Int? = nil,
+        details: String? = nil
+    ) {
+        var message = "\(phase) dose log: source=\(source), operationID=\(operationID.uuidString), medicationID=\(medicationID.uuidString), dose=\(doseAmount) \(doseUnit)"
+
+        if let eventID {
+            message += ", eventID=\(eventID.uuidString)"
+        }
+
+        if let eventCountBefore {
+            message += ", eventCountBefore=\(eventCountBefore)"
+        }
+
+        if let eventCountAfter {
+            message += ", eventCountAfter=\(eventCountAfter)"
+        }
+
+        if let details {
+            message += ", \(details)"
+        }
+
+        info(message)
+    }
+
     /// Logs a successful operation with a medication count
     /// - Parameters:
     ///   - operation: The operation that succeeded
