@@ -33,7 +33,7 @@ final class QuickActionHandler: ObservableObject {
 
     /// Handle UIApplicationShortcutItem from app icon 3D touch
     func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) {
-        logger.info("Handling shortcut item: \(shortcutItem.type)")
+        logger.info("Handling shortcut item")
 
         let action = parseShortcutItemType(shortcutItem.type)
         pendingAction = action
@@ -44,7 +44,7 @@ final class QuickActionHandler: ObservableObject {
         let components = type.components(separatedBy: ".")
 
         guard let actionType = components.last else {
-            logger.warning("Invalid shortcut type: \(type)")
+            logger.warning("Invalid shortcut type")
             return .viewHistory
         }
 
@@ -58,7 +58,7 @@ final class QuickActionHandler: ObservableObject {
         case "trends":
             return .viewTrends
         default:
-            logger.warning("Unknown shortcut action: \(actionType)")
+            logger.warning("Unknown shortcut action")
             return .viewHistory
         }
     }
@@ -70,10 +70,10 @@ final class QuickActionHandler: ObservableObject {
     /// Format: asneeded://history
     /// Format: asneeded://trends
     func handleURL(_ url: URL) {
-        logger.info("Handling URL: \(url.absoluteString)")
+        logger.info("Handling deep link")
 
         guard url.scheme == "asneeded" else {
-            logger.warning("Invalid URL scheme: \(url.scheme ?? "nil")")
+            logger.warning("Invalid URL scheme")
             return
         }
 
@@ -86,7 +86,7 @@ final class QuickActionHandler: ObservableObject {
             if let medicationIDString = pathComponents.first,
                let medicationID = UUID(uuidString: medicationIDString)
             {
-                logger.info("Deep link to log medication: \(medicationID)")
+                logger.info("Deep link to log medication")
                 pendingAction = .logDose(medicationID: medicationID)
             } else {
                 // No specific medication, show medication list
@@ -107,7 +107,7 @@ final class QuickActionHandler: ObservableObject {
             pendingAction = .addMedication
 
         default:
-            logger.warning("Unknown URL host: \(host ?? "nil")")
+            logger.warning("Unknown URL host")
         }
     }
 
@@ -141,7 +141,7 @@ final class QuickActionHandler: ObservableObject {
         if let medicationID = medicationID {
             // Navigate to log dose for specific medication
             // This will be handled by the UI layer setting up state
-            logger.info("Navigate to log dose for medication: \(medicationID)")
+            logger.info("Navigate to log dose for medication")
         } else {
             // Navigate to medication list (default tab)
             logger.info("Navigate to medication list")

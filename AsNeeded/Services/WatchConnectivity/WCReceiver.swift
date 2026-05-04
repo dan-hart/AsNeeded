@@ -96,7 +96,7 @@ final class WCReceiver: NSObject, ObservableObject {
                 try await handleQuantityUpdate(quantityUpdateData)
             }
         } catch {
-            logger.error("Error handling watch message", error: error)
+            logger.logPrivacySafeError("Error handling watch message", error: error)
         }
     }
 
@@ -143,7 +143,7 @@ final class WCReceiver: NSObject, ObservableObject {
         if session.isReachable {
             logger.debug("Sending medications to watch: \(medications.count) medications")
             session.sendMessage(["medications": medicationData], replyHandler: nil) { [weak self] error in
-                self?.logger.error("Error sending medications to watch", error: error)
+                self?.logger.logPrivacySafeError("Error sending medications to watch", error: error)
             }
         }
     }
@@ -152,13 +152,13 @@ final class WCReceiver: NSObject, ObservableObject {
         guard let medicationId = UUID(uuidString: logDoseData.medicationId),
               let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit)
         else {
-            logger.oslog.warning("Invalid dose logging data from watch: medicationId=\(logDoseData.medicationId, privacy: .private) doseUnit=\(logDoseData.doseUnit, privacy: .public)")
+            logger.warning("Invalid dose logging data from watch")
             return
         }
 
         // Find the medication
         guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-            logger.oslog.warning("Medication not found for dose logging: medicationId=\(medicationId, privacy: .private)")
+            logger.warning("Medication not found for dose logging")
             return
         }
 
@@ -190,20 +190,20 @@ final class WCReceiver: NSObject, ObservableObject {
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
-                self?.logger.error("Error sending dose confirmation to watch", error: error)
+                self?.logger.logPrivacySafeError("Error sending dose confirmation to watch", error: error)
             }
         }
     }
 
     private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
         guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
-            logger.oslog.warning("Invalid quantity update data from watch: medicationId=\(quantityUpdateData.medicationId, privacy: .private)")
+            logger.warning("Invalid quantity update data from watch")
             return
         }
 
         // Find the medication
         guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-            logger.oslog.warning("Medication not found for quantity update: medicationId=\(medicationId, privacy: .private)")
+            logger.warning("Medication not found for quantity update")
             return
         }
 
@@ -216,9 +216,9 @@ final class WCReceiver: NSObject, ObservableObject {
         await MedicationLiveActivityManager.refreshFromDataStore()
 
         if session.isReachable {
-            logger.oslog.debug("Quantity updated successfully: \(quantityUpdateData.quantity, privacy: .public), sending confirmation to watch")
+            logger.debug("Quantity updated successfully, sending confirmation to watch")
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in
-                self?.logger.error("Error sending quantity update confirmation to watch", error: error)
+                self?.logger.logPrivacySafeError("Error sending quantity update confirmation to watch", error: error)
             }
         }
     }
@@ -231,7 +231,7 @@ extension WCReceiver: WCSessionDelegate {
         Task { @MainActor in
             if let error = error {
                 self.isConnected = false
-                self.logger.error("WC Session activation failed", error: error)
+                self.logger.logPrivacySafeError("WC Session activation failed", error: error)
             } else {
                 self.isConnected = (activationState == .activated)
                 self.logger.oslog.info("WC Session activated: \(String(describing: activationState), privacy: .public)")

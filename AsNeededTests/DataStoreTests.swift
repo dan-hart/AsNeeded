@@ -60,6 +60,23 @@ struct DataStoreTests {
         #expect(dataStore.medications.first?.nickname == "Updated Nickname")
     }
 
+    @Test("Update medication preserves existing medication order")
+    func updateMedicationPreservesExistingOrder() async throws {
+        // Given
+        let firstMedication = createTestMedication(name: "First Med")
+        let secondMedication = createTestMedication(name: "Second Med")
+        try await dataStore.addMedication(firstMedication)
+        try await dataStore.addMedication(secondMedication)
+
+        // When
+        var updatedFirstMedication = firstMedication
+        updatedFirstMedication.quantity = 5.0
+        try await dataStore.updateMedication(updatedFirstMedication)
+
+        // Then
+        #expect(dataStore.medications.map(\.id) == [firstMedication.id, secondMedication.id])
+    }
+
     @Test("Delete medication from data store")
     func deleteMedication() async throws {
         // Given

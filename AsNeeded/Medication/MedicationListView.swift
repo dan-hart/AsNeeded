@@ -100,10 +100,14 @@ struct MedicationListView: View {
                     )
                 }
                 .sheet(item: $viewModel.logMedication) { med in
-                    LogDoseView(medication: med) { dose, event in
-                        Task {
-                            await viewModel.logDose(med: med, dose: dose, event: event)
-                        }
+                    LogDoseView(medication: med, source: "list_sheet") { dose, event, operationID in
+                        await viewModel.logDose(
+                            med: med,
+                            dose: dose,
+                            event: event,
+                            source: "list_sheet",
+                            operationID: operationID
+                        )
                     }
                 }
                 .alert("Delete Medication?", isPresented: Binding(get: { viewModel.pendingDelete != nil }, set: { if !$0 { viewModel.pendingDelete = nil } })) {

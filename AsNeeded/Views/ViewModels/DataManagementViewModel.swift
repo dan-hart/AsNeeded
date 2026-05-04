@@ -116,7 +116,7 @@ final class DataManagementViewModel: ObservableObject {
 
             // Write with proper attributes
             try data.write(to: tempURL, options: [.atomic])
-            logger.debug("Wrote export data to file: \(tempURL.lastPathComponent)")
+            logger.debug("Wrote export data to temporary file")
 
             // Ensure file is accessible
             _ = tempURL.startAccessingSecurityScopedResource()
@@ -131,7 +131,7 @@ final class DataManagementViewModel: ObservableObject {
                 // The clear confirmation will be shown after user dismisses the share sheet
             }
         } catch {
-            logger.error("Export failed", error: error)
+            logger.logPrivacySafeError("Export failed", error: error)
             alertMessage = "Export failed: \(error.localizedDescription)"
             showingAlert = true
             shouldClearAfterExport = false // Reset flag on error
@@ -147,7 +147,7 @@ final class DataManagementViewModel: ObservableObject {
     }
 
     func importData(from url: URL) async {
-        logger.info("Starting data import from: \(url.lastPathComponent)")
+        logger.info("Starting data import from selected file")
         isImporting = true
         defer {
             isImporting = false
@@ -207,7 +207,7 @@ final class DataManagementViewModel: ObservableObject {
                 showingAlert = true
             }
         } catch {
-            logger.error("Import failed", error: error)
+            logger.logPrivacySafeError("Import failed", error: error)
             alertMessage = "Import failed: \(error.localizedDescription)"
             showingAlert = true
         }
@@ -253,7 +253,7 @@ final class DataManagementViewModel: ObservableObject {
             alertMessage = "\(baseMessage)\n\(medicationCount) medications, \(eventCount) events"
             showingAlert = true
         } catch {
-            logger.error("Import failed", error: error)
+            logger.logPrivacySafeError("Import failed", error: error)
             alertMessage = "Import failed: \(error.localizedDescription)"
             showingAlert = true
         }
@@ -279,7 +279,7 @@ final class DataManagementViewModel: ObservableObject {
             alertMessage = "All user data (medications and events) cleared successfully"
             showingAlert = true
         } catch {
-            logger.error("Clear user data failed", error: error)
+            logger.logPrivacySafeError("Clear user data failed", error: error)
             alertMessage = "Clear data failed: \(error.localizedDescription)"
             showingAlert = true
         }
@@ -313,7 +313,7 @@ final class DataManagementViewModel: ObservableObject {
             alertMessage = "All data cleared and settings restored to defaults"
             showingAlert = true
         } catch {
-            logger.error("Reset and clear data failed", error: error)
+            logger.logPrivacySafeError("Reset and clear data failed", error: error)
             alertMessage = "Reset failed: \(error.localizedDescription)"
             showingAlert = true
         }
@@ -380,7 +380,7 @@ final class DataManagementViewModel: ObservableObject {
 
             // Write with proper attributes
             try logData.write(to: tempURL, options: [.atomic])
-            logger.debug("Wrote log data to file: \(tempURL.lastPathComponent)")
+            logger.debug("Wrote log data to temporary file")
 
             // Ensure file is accessible
             _ = tempURL.startAccessingSecurityScopedResource()

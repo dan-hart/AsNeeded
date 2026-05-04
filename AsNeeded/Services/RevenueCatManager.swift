@@ -73,9 +73,8 @@ class RevenueCatManager: NSObject, ObservableObject {
         isLoadingProducts = true
         defer { isLoadingProducts = false }
 
-        // Get all product identifiers
         let productIdentifiers = ProductIdentifier.allCases.map { $0.rawValue }
-        DHLogger.data.info("Fetching products: \(productIdentifiers)")
+        DHLogger.data.info("Fetching products: expectedCount=\(productIdentifiers.count)")
 
         // Retry logic for reliability
         var retryCount = 0
@@ -91,14 +90,10 @@ class RevenueCatManager: NSObject, ObservableObject {
                 // Success or final attempt
                 availableProducts = products
 
-                for product in products {
-                    DHLogger.data.info("Product: \(product.productIdentifier) - \(product.localizedTitle) - \(product.localizedPriceString)")
-                }
-
                 if products.count != productIdentifiers.count {
                     let foundIds = products.map { $0.productIdentifier }
                     let missingIds = productIdentifiers.filter { !foundIds.contains($0) }
-                    DHLogger.data.warning("Missing products: \(missingIds)")
+                    DHLogger.data.warning("Missing products: count=\(missingIds.count)")
 
                     // Set error message for missing products
                     if products.isEmpty {
@@ -126,7 +121,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             self.offerings = offerings
             DHLogger.data.debug("Fetched RevenueCat offerings: \(offerings.current?.identifier ?? "none")")
         } catch {
-            DHLogger.data.error("Failed to fetch offerings", error: error)
+            DHLogger.data.logPrivacySafeError("Failed to fetch offerings", error: error)
         }
     }
 
@@ -137,14 +132,14 @@ class RevenueCatManager: NSObject, ObservableObject {
             self.customerInfo = customerInfo
             DHLogger.data.debug("Fetched customer info")
         } catch {
-            DHLogger.data.error("Failed to fetch customer info", error: error)
+            DHLogger.data.logPrivacySafeError("Failed to fetch customer info", error: error)
         }
     }
 
     @MainActor
     func purchaseTip(_ productId: ProductIdentifier) async -> Bool {
         guard productId.isTip else {
-            DHLogger.data.error("Attempted to purchase non-tip product as tip: \(productId.rawValue)")
+            DHLogger.data.error("Attempted to purchase non-tip product as tip")
             return false
         }
 
@@ -154,7 +149,7 @@ class RevenueCatManager: NSObject, ObservableObject {
     @MainActor
     func purchaseSubscription(_ productId: ProductIdentifier) async -> Bool {
         guard !productId.isTip else {
-            DHLogger.data.error("Attempted to purchase tip product as subscription: \(productId.rawValue)")
+            DHLogger.data.error("Attempted to purchase tip product as subscription")
             return false
         }
 
@@ -173,14 +168,14 @@ class RevenueCatManager: NSObject, ObservableObject {
 
         // Find the product directly
         guard let product = availableProducts.first(where: { $0.productIdentifier == productId.rawValue }) else {
-            DHLogger.data.error("Product not found: \(productId.rawValue)")
-            DHLogger.data.error("Available products: \(availableProducts.map { $0.productIdentifier })")
+            DHLogger.data.error("Product not found")
+            DHLogger.data.error("Available products count: \(availableProducts.count)")
             purchaseError = "Product not available. Please check your App Store Connect configuration."
             return false
         }
 
         do {
-            DHLogger.ui.info("Starting purchase for: \(productId.rawValue)")
+            DHLogger.ui.info("Starting purchase")
 
             // Purchase directly using the StoreProduct
             let (_, customerInfo, userCancelled) = try await Purchases.shared.purchase(product: product)
@@ -192,7 +187,7 @@ class RevenueCatManager: NSObject, ObservableObject {
 
             self.customerInfo = customerInfo
 
-            DHLogger.ui.info("Purchase successful: \(productId.rawValue)")
+            DHLogger.ui.info("Purchase successful")
 
             // Show success feedback
             await showSuccessFeedback(for: productId)
@@ -202,7 +197,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             handlePurchaseError(error)
             return false
         } catch {
-            DHLogger.data.error("Purchase failed", error: error)
+            DHLogger.data.logPrivacySafeError("Purchase failed", error: error)
             purchaseError = "Purchase failed. Please try again."
             return false
         }
@@ -231,10 +226,10 @@ class RevenueCatManager: NSObject, ObservableObject {
     }
 
     @MainActor
-    private func showSuccessFeedback(for productId: ProductIdentifier) async {
+    private func showSuccessFeedback(for _: ProductIdentifier) async {
         // This could trigger a success animation or thank you message
         // For now, we'll just log it
-        DHLogger.ui.info("Thank you for your support with: \(productId.rawValue)")
+        DHLogger.ui.info("Thank you view requested")
     }
 
     func restorePurchases() async -> Bool {
@@ -244,7 +239,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             DHLogger.ui.info("Purchases restored successfully")
             return true
         } catch {
-            DHLogger.data.error("Failed to restore purchases", error: error)
+            DHLogger.data.logPrivacySafeError("Failed to restore purchases", error: error)
             purchaseError = "Failed to restore purchases. Please try again."
             return false
         }
@@ -286,10 +281,10 @@ extension RevenueCatManager: PurchasesDelegate {
         }
     }
 
-    nonisolated func purchases(_: Purchases, readyForPromotedProduct product: StoreProduct, purchase makeDeferredPurchase: @escaping StartPurchaseBlock) {
+    nonisolated func purchases(_: Purchases, readyForPromotedProduct _: StoreProduct, purchase makeDeferredPurchase: @escaping StartPurchaseBlock) {
         // Handle promoted purchases from the App Store
         Task { @MainActor in
-            DHLogger.ui.info("Ready for promoted product: \(product.productIdentifier)")
+            DHLogger.ui.info("Ready for promoted product")
         }
         // Call makeDeferredPurchase outside of MainActor context to avoid race condition
         makeDeferredPurchase { _, _, _, _ in }

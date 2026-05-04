@@ -56,7 +56,7 @@ public final class DataStore {
                 """)
         }
 
-        logger.info("Using shared container at: \(sharedContainerURL.path)")
+        logger.info("Using shared App Group container")
 
         // Initialize stores with shared container path using FileManager.Directory
         logger.info("Creating SQLiteStorageEngine for medications database...")
@@ -120,7 +120,7 @@ public final class DataStore {
             try await medicationsStore.insert(med)
             logger.logMedicationOperation("Successfully added to local storage", id: med.id)
         } catch {
-            logger.error("Failed to add medication \(med.id.uuidString): \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add medication record", error: error)
             throw error
         }
     }
@@ -128,12 +128,11 @@ public final class DataStore {
     public func updateMedication(_ med: ANMedicationConcept) async throws {
         logger.logMedicationOperation("Updating", id: med.id)
         do {
-            // Boutique has no explicit update; remove + insert to replace by id.
-            try await medicationsStore.remove(med)
+            // Boutique replaces items with matching cache identifiers in place.
             try await medicationsStore.insert(med)
             logger.logMedicationOperation("Successfully updated in local storage", id: med.id)
         } catch {
-            logger.error("Failed to update medication \(med.id.uuidString): \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to update medication record", error: error)
             throw error
         }
     }
@@ -184,7 +183,7 @@ public final class DataStore {
 
             logger.logMedicationOperation("Successfully deleted", id: med.id, details: "\(associatedEvents.count) associated events")
         } catch {
-            logger.error("Failed to delete medication \(med.id.uuidString): \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to delete medication record", error: error)
             throw error
         }
     }
@@ -192,10 +191,12 @@ public final class DataStore {
     // MARK: - Events
 
     public func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
+        let eventCountBefore = events.count
         logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
+        logger.info("Adding event details: eventCountBefore=\(eventCountBefore), shouldRecordForReview=\(shouldRecordForReview)")
         do {
             try await eventsStore.insert(event)
-            logger.info("Successfully added event to local storage: \(event.id)")
+            logger.info("Successfully added event to local storage: eventCountBefore=\(eventCountBefore), eventCountAfter=\(events.count)")
 
             // Track medication event for review eligibility (skip for quick log)
             if shouldRecordForReview {
@@ -209,7 +210,7 @@ public final class DataStore {
                 AutomaticBackupManager.shared.triggerBackup()
             }
         } catch {
-            logger.error("Failed to add event: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add event record", error: error)
             throw error
         }
     }
@@ -302,7 +303,7 @@ public final class DataStore {
             logger.info(String(format: "Export completed in %.2fs", duration))
             return data
         } catch {
-            logger.error("Failed to export data: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to export data", error: error)
             throw error
         }
     }
@@ -341,13 +342,13 @@ public final class DataStore {
             importedData = try decoder.decode(DataExport.self, from: data)
             logger.info("Decoded import data: \(importedData.medications.count) medications, \(importedData.events.count) events")
         } catch {
-            logger.error("Failed to decode import data: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to decode import data", error: error)
             throw DataImportError.invalidFormat
         }
 
         // Validate data version
         if let dataVersion = importedData.dataVersion, dataVersion != "1.0" {
-            logger.warning("Import data version mismatch: expected 1.0, got \(dataVersion)")
+            logger.warning("Import data version mismatch: expectedSupportedVersion=false")
         }
 
         // Clear existing data if not merging
@@ -363,14 +364,14 @@ public final class DataStore {
         for medication in importedData.medications {
             do {
                 if mergeExisting, medications.contains(where: { $0.id == medication.id }) {
-                    logger.debug("Skipping duplicate medication: \(medication.id.uuidString)")
+                    logger.debug("Skipping duplicate medication record")
                     medicationDuplicateCount += 1
                     continue
                 }
                 try await medicationsStore.insert(medication)
                 medicationImportCount += 1
             } catch {
-                logger.error("Failed to import medication \(medication.id.uuidString): \(error.localizedDescription)")
+                logger.logPrivacySafeError("Failed to import medication record", error: error)
                 medicationFailureCount += 1
                 // Continue with other medications
             }
@@ -384,7 +385,7 @@ public final class DataStore {
         for var event in importedData.events {
             do {
                 if mergeExisting, events.contains(where: { $0.id == event.id }) {
-                    logger.debug("Skipping duplicate event: \(event.id)")
+                    logger.debug("Skipping duplicate event record")
                     eventDuplicateCount += 1
                     continue
                 }
@@ -400,10 +401,10 @@ public final class DataStore {
                     }) {
                         // Update the event's medication reference to use the correct medication
                         event.medication = correctMedication
-                        logger.debug("Validated medication reference for event \(event.id)")
+                        logger.debug("Validated medication reference for event record")
                     } else {
                         // Medication not found, skip this event
-                        logger.warning("Skipping event \(event.id): medication \(eventMedication.id.uuidString) not found")
+                        logger.warning("Skipping event record: medication reference not found")
                         eventValidationFailureCount += 1
                         continue
                     }
@@ -412,7 +413,7 @@ public final class DataStore {
                 try await eventsStore.insert(event)
                 eventImportCount += 1
             } catch {
-                logger.error("Failed to import event \(event.id): \(error.localizedDescription)")
+                logger.logPrivacySafeError("Failed to import event record", error: error)
                 eventFailureCount += 1
                 // Continue with other events
             }
@@ -457,7 +458,7 @@ public final class DataStore {
             try await eventsStore.removeAll()
             logger.info("Successfully cleared all user data")
         } catch {
-            logger.error("Failed to clear user data: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to clear user data", error: error)
             throw error
         }
     }
@@ -500,7 +501,7 @@ public final class DataStore {
             await resetAppSettings()
             logger.info("Successfully cleared all data and reset preferences")
         } catch {
-            logger.error("Failed to clear data: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to clear data", error: error)
             throw error
         }
     }
@@ -517,9 +518,7 @@ public final class DataStore {
         let medicationsDBPath = containerURL.appendingPathComponent(StorageConstants.medicationsDBPath)
         let eventsDBPath = containerURL.appendingPathComponent(StorageConstants.eventsDBPath)
 
-        logger.info("Database paths:")
-        logger.info("  Medications: \(medicationsDBPath.path)")
-        logger.info("  Events: \(eventsDBPath.path)")
+        logger.info("Database paths resolved")
 
         // Check file existence and sizes
         logFileInfo(at: medicationsDBPath, name: "Medications DB")
@@ -554,12 +553,12 @@ public final class DataStore {
             try? fileManager.removeItem(at: testFile)
             logger.info("✅ App Group container is writable")
         } catch {
-            logger.error("❌ App Group container is NOT writable: \(error.localizedDescription)")
+            logger.logPrivacySafeError("❌ App Group container is NOT writable", error: error)
         }
 
         // List directory contents
         if let contents = try? fileManager.contentsOfDirectory(atPath: containerURL.path) {
-            logger.info("App Group contents (\(contents.count) items): \(contents.joined(separator: ", "))")
+            logger.info("App Group contents count: \(contents.count) item(s)")
         }
 
         logger.info("=== End Initialization Diagnostics ===")

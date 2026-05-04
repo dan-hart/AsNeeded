@@ -83,7 +83,7 @@ final class MedicationListViewModel: ObservableObject {
         do {
             try await dataStore.medicationsStore.itemsHaveLoaded()
         } catch {
-            logger.error("Failed to load medications store: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to load medications store", error: error)
         }
 
         isLoading = false
@@ -97,10 +97,11 @@ final class MedicationListViewModel: ObservableObject {
     func add(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.addMedication(med)
+            appendToMedicationOrderIfNeeded(med)
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to add medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add medication", error: error)
             return false
         }
     }
@@ -111,7 +112,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to update medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to update medication", error: error)
             return false
         }
     }
@@ -119,11 +120,13 @@ final class MedicationListViewModel: ObservableObject {
     func delete(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.deleteMedication(med)
-            medicationOrder.removeAll { $0 == med.id.uuidString }
+            var order = medicationOrder
+            order.removeAll { $0 == med.id.uuidString }
+            medicationOrder = order
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to delete medication: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to delete medication", error: error)
             return false
         }
     }
@@ -134,7 +137,7 @@ final class MedicationListViewModel: ObservableObject {
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
-            logger.error("Failed to add event: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to add event", error: error)
             return false
         }
     }
@@ -167,33 +170,67 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-    func logDose(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept) async {
+    func logDose(
+        med: ANMedicationConcept,
+        dose: ANDoseConcept,
+        event: ANEventConcept,
+        source: String = "list_sheet",
+        operationID: UUID = UUID()
+    ) async -> Bool {
+        let eventCountBefore = dataStore.events.count
         var updated = med
         if let quantity = updated.quantity, dose.amount > 0 {
             updated.quantity = quantity - dose.amount
         }
 
+        var eventToSave = event
+        if eventToSave.medication?.id != med.id {
+            logger.warning("Correcting mismatched list dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
+        }
+        eventToSave.medication = med
+
+        logger.logDoseOperation(
+            "Starting",
+            source: source,
+            operationID: operationID,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(quantityWasPresent: med.quantity != nil)
+        )
+
         async let updateResult = update(updated)
-        async let eventResult = addEvent(event)
+        async let eventResult = addEvent(eventToSave)
 
         let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
 
         if updateSuccess && eventSuccess {
             logMedication = nil
+            logger.logDoseOperation(
+                "Succeeded",
+                source: source,
+                operationID: operationID,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
             if hideSupportBanners {
                 showQuickLogToast(med: med, dose: dose)
             } else {
                 triggerSupportToast()
             }
+            return true
         }
+
+        logger.error("Failed list dose log: source=\(source), operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+        return false
     }
 
     func quickLog(medication: ANMedicationConcept) async -> Bool {
+        let operationID = UUID()
         let dose = ANDoseConcept(
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
         )
 
+        let eventCountBefore = dataStore.events.count
         var updatedMed = medication
         if let quantity = updatedMed.quantity, dose.amount > 0 {
             updatedMed.quantity = quantity - dose.amount
@@ -207,6 +244,14 @@ final class MedicationListViewModel: ObservableObject {
             note: nil
         )
 
+        logger.logDoseOperation(
+            "Starting",
+            source: "list_quick_log",
+            operationID: operationID,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(quantityWasPresent: medication.quantity != nil)
+        )
+
         async let updateResult = update(updatedMed)
         async let eventResult = addEvent(event, shouldRecordForReview: false)
 
@@ -215,6 +260,15 @@ final class MedicationListViewModel: ObservableObject {
         if updateSuccess, eventSuccess {
             hapticsManager.doseLogged()
             showQuickLogToast(med: medication, dose: dose)
+            logger.logDoseOperation(
+                "Succeeded",
+                source: "list_quick_log",
+                operationID: operationID,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
+        } else {
+            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
         }
         
         return updateSuccess && eventSuccess
@@ -251,6 +305,19 @@ final class MedicationListViewModel: ObservableObject {
             withAnimation(.easeInOut(duration: 0.3)) {
                 self.showSupportToast = false
             }
+        }
+    }
+
+    private func quantityDetails(quantityWasPresent: Bool) -> String {
+        "quantityUpdated=\(quantityWasPresent)"
+    }
+
+    private func appendToMedicationOrderIfNeeded(_ medication: ANMedicationConcept) {
+        let id = medication.id.uuidString
+        var order = medicationOrder
+        if !order.contains(id) {
+            order.append(id)
+            medicationOrder = order
         }
     }
 }

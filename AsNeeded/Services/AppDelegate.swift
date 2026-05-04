@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 		performActionFor shortcutItem: UIApplicationShortcutItem,
 		completionHandler: @escaping (Bool) -> Void
 	) {
-		logger.info("Handling quick action: \(shortcutItem.type)")
+		logger.info("Handling quick action")
 		Task { @MainActor in
 			QuickActionHandler.shared.handleShortcutItem(shortcutItem)
 			completionHandler(true)
@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 	) -> UISceneConfiguration {
 		// Check if launched from quick action
 		if let shortcutItem = options.shortcutItem {
-			logger.info("App launched from quick action: \(shortcutItem.type)")
+			logger.info("App launched from quick action")
 			// Handle the shortcut item on main actor
 			Task { @MainActor in
 				QuickActionHandler.shared.handleShortcutItem(shortcutItem)

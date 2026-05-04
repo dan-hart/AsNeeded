@@ -33,11 +33,11 @@ struct LogMedicationIntent: AppIntent {
 
         if let providedMedication = medication {
             targetMedication = providedMedication.medication
-            logger.info("Using entity medication: \(targetMedication.id.uuidString)")
+            logger.info("Using entity medication")
         } else if let name = medicationName, !name.isEmpty {
-            logger.info("Searching for medication by name: \(name)")
+            logger.info("Searching for medication by provided name")
             guard let foundMedication = findBestMatch(for: name) else {
-                logger.warning("No medication found matching: \(name)")
+                logger.warning("No medication found for provided name")
                 return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
             }
             targetMedication = foundMedication
@@ -73,7 +73,7 @@ struct LogMedicationIntent: AppIntent {
             try await DataStore.shared.addEvent(event)
             await MedicationLiveActivityManager.refreshFromDataStore()
 
-            logger.info("Successfully logged dose: \(doseAmount) \(selectedUnit.displayName) of medication \(targetMedication.id.uuidString)")
+            logger.info("Successfully logged medication dose from intent")
 
             // Format response message
             let amountText = doseAmount == 1.0 ? "1" : String(format: "%.1f", doseAmount)
@@ -87,7 +87,7 @@ struct LogMedicationIntent: AppIntent {
             return .result(dialog: IntentDialog("Logged \(amountText) \(unitText) of \(medicationText)"))
 
         } catch {
-            logger.error("Failed to log medication dose: \(error.localizedDescription)")
+            logger.logPrivacySafeError("Failed to log medication dose", error: error)
             return .result(dialog: IntentDialog("Sorry, I couldn't log your medication. Please try again or open AsNeeded manually."))
         }
     }

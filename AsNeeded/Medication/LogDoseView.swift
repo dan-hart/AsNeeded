@@ -2,12 +2,14 @@
 // SwiftUI view for logging a dose taken for a medication, using ANModelKit concepts.
 
 import ANModelKit
+import DHLoggingKit
 import SFSafeSymbols
 import SwiftUI
 
 struct LogDoseView: View {
     let medication: ANMedicationConcept
-    var onLog: (ANDoseConcept, ANEventConcept) -> Void
+    let source: String
+    var onLog: (ANDoseConcept, ANEventConcept, UUID) async -> Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
@@ -24,6 +26,8 @@ struct LogDoseView: View {
     @State private var showingDatePicker = false
     @State private var animateHeader = false
     @State private var selectedQuickOption: String? = "Now"
+    @State private var isLogging = false
+    private let logger = DHLogger(category: "DoseLogView")
     private let hapticsManager = HapticsManager.shared
     private let dataStore = DataStore.shared
     private let safetyProfileStore = MedicationSafetyProfileStore.shared
@@ -104,9 +108,11 @@ struct LogDoseView: View {
 
     init(
         medication: ANMedicationConcept,
-        onLog: @escaping (ANDoseConcept, ANEventConcept) -> Void
+        source: String = "unknown",
+        onLog: @escaping (ANDoseConcept, ANEventConcept, UUID) async -> Bool
     ) {
         self.medication = medication
+        self.source = source
         self.onLog = onLog
         _amount = State(initialValue: medication.prescribedDoseAmount ?? 1)
         _selectedUnit = State(initialValue: medication.prescribedUnit ?? .unit)
@@ -114,28 +120,51 @@ struct LogDoseView: View {
 
     // MARK: - Private Methods
 
-    private func performLogDose() {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            let dose = proposedDose
-            let reflection = DoseReflection(
-                reason: reason,
-                symptomSeverityBefore: nilIfZero(symptomSeverityBefore),
-                symptomSeverityAfter: nilIfZero(symptomSeverityAfter),
-                effectiveness: nilIfZero(effectiveness),
-                sideEffects: parsedSideEffects,
-                note: note
+	@MainActor
+	private func performLogDose() async {
+        guard !isLogging else {
+            logger.warning("Ignored duplicate dose log tap while request is in flight: source=\(source)")
+            return
+        }
+
+        let operationID = UUID()
+        let dose = proposedDose
+        let reflection = DoseReflection(
+            reason: reason,
+            symptomSeverityBefore: nilIfZero(symptomSeverityBefore),
+            symptomSeverityAfter: nilIfZero(symptomSeverityAfter),
+            effectiveness: nilIfZero(effectiveness),
+            sideEffects: parsedSideEffects,
+            note: note
+        )
+        let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        let event = ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: dose,
+            date: selectedDate,
+            note: encodedNote
+        )
+
+        isLogging = true
+        logger.logDoseOperation(
+            "Submitting",
+            source: source,
+            operationID: operationID
+        )
+
+        let success = await onLog(dose, event, operationID)
+        if success {
+            logger.logDoseOperation(
+                "Completed",
+                source: source,
+                operationID: operationID
             )
-            let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-            let event = ANEventConcept(
-                eventType: .doseTaken,
-                medication: medication,
-                dose: dose,
-                date: selectedDate,
-                note: encodedNote
-            )
-            onLog(dose, event)
             hapticsManager.doseLogged()
             dismiss()
+        } else {
+            logger.error("Dose log failed: source=\(source), operationID=\(operationID.uuidString)")
+            isLogging = false
         }
     }
 
@@ -657,12 +686,21 @@ struct LogDoseView: View {
     }
 
     private var logButton: some View {
-        Button(action: performLogDose) {
+        Button {
+            Task {
+                await performLogDose()
+            }
+        } label: {
             HStack(spacing: quickButtonSpacing) {
-                Image(systemSymbol: .checkmarkCircleFill)
-                    .font(.title3)
+                if isLogging {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemSymbol: .checkmarkCircleFill)
+                        .font(.title3)
+                }
 
-                Text("Log Dose")
+                Text(isLogging ? "Logging" : "Log Dose")
                     .font(.headline)
             }
             .foregroundStyle(.white)
@@ -691,8 +729,8 @@ struct LogDoseView: View {
                     )
             )
         }
-        .disabled(amount <= 0)
-        .opacity(amount <= 0 ? 0.6 : 1.0)
+        .disabled(amount <= 0 || isLogging)
+        .opacity(amount <= 0 || isLogging ? 0.6 : 1.0)
     }
 
     var body: some View {
@@ -749,7 +787,7 @@ struct LogDoseView: View {
     #Preview {
         LogDoseView(
             medication: ANMedicationConcept(clinicalName: "Ibuprofen", nickname: "Pain Relief"),
-            onLog: { _, _ in }
+            onLog: { _, _, _ in true }
         )
     }
 #endif

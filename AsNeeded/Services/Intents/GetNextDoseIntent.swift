@@ -48,7 +48,7 @@ struct GetNextDoseIntent: AppIntent {
 
             if let nextAvailable, nextAvailable > Date() {
                 let timeRemaining = formatTimeRemaining(until: nextAvailable)
-                logger.info("Next dose of \(med.displayName) in \(timeRemaining)")
+                logger.info("Requested medication has a future next dose")
                 return .result(
                     dialog: IntentDialog("You can take \(med.displayName) in \(timeRemaining)."),
                     view: NextDoseView(medicationName: med.displayName, nextDoseTime: nextAvailable, canTakeNow: false)
@@ -56,7 +56,7 @@ struct GetNextDoseIntent: AppIntent {
             }
 
             // Can take now
-            logger.info("\(med.displayName) can be taken now")
+            logger.info("Requested medication can be taken now")
             return .result(
                 dialog: IntentDialog("You can take \(med.displayName) now."),
                 view: NextDoseView(medicationName: med.displayName, nextDoseTime: nil, canTakeNow: true)

@@ -151,9 +151,8 @@ struct MedicationListViewModelUnitTests {
         _ = await viewModel.add(med3)
 
         // Set a custom order (e.g., med3, med1, med2)
-        // Resetting the ViewModel to pick up the new UserDefaults
+        UserDefaults.standard.set([med3.id.uuidString, med1.id.uuidString].rawValue, forKey: UserDefaultsKeys.medicationOrder)
         viewModel = MedicationListViewModel(dataStore: dataStore)
-        UserDefaults.standard.set([med3.id.uuidString, med1.id.uuidString], forKey: UserDefaultsKeys.medicationOrder)
         
         // When
         let sorted = viewModel.sortedMedications
@@ -207,7 +206,8 @@ struct MedicationListViewModelUnitTests {
 
         // Then: A, C
         #expect(viewModel.sortedMedications.map { $0.clinicalName } == ["A", "C"])
-        #expect(!UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder)!.contains(where: { $0 as? String == med2.id.uuidString }))
+        let medicationOrder = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:)) ?? []
+        #expect(!medicationOrder.contains(med2.id.uuidString))
     }
 
     @Test("toggleEditMode changes editMode and triggers haptics")
@@ -248,6 +248,27 @@ struct MedicationListViewModelUnitTests {
         #expect(!viewModel.showQuickLogToast)
     }
 
+    @Test("Quick log preserves medication order")
+    func quickLogPreservesMedicationOrder() async throws {
+        // Given
+        let firstMedication = createTestMedication(name: "A", quantity: 10.0)
+        let secondMedication = createTestMedication(name: "B", quantity: 10.0)
+        _ = await viewModel.add(firstMedication)
+        _ = await viewModel.add(secondMedication)
+        let originalOrder = viewModel.sortedMedications.map(\.id)
+        let storedOrderBeforeQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+
+        // When
+        let success = await viewModel.quickLog(medication: firstMedication)
+        let storedOrderAfterQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+
+        // Then
+        #expect(success)
+        #expect(storedOrderBeforeQuickLog == originalOrder.map(\.uuidString))
+        #expect(storedOrderAfterQuickLog == storedOrderBeforeQuickLog)
+        #expect(viewModel.sortedMedications.map(\.id) == originalOrder)
+    }
+
     @Test("logDose correctly logs dose and updates state")
     func logDoseCorrectlyLogsDose() async throws {
         // Given
@@ -258,9 +279,10 @@ struct MedicationListViewModelUnitTests {
         let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: Date())
 
         // When
-        await viewModel.logDose(med: medication, dose: dose, event: event)
+        let success = await viewModel.logDose(med: medication, dose: dose, event: event)
 
         // Then
+        #expect(success)
         #expect(dataStore.events.count == 1)
         guard let updatedMed = dataStore.medications.first(where: { $0.id == medication.id }) else {
             #expect(false, "Updated medication not found in data store.") // Replaced #fail with #expect(false, ...)
@@ -270,6 +292,7 @@ struct MedicationListViewModelUnitTests {
         
         // Depending on hideSupportBanners, either quickLogToast or supportToast will show
         // For this test, we ensure hideSupportBanners is false in init
+        try await Task.sleep(nanoseconds: 600_000_000)
         #expect(viewModel.showSupportToast)
     }
 

@@ -59,7 +59,7 @@ public final class BackupManager {
 		do {
 			// Create backup directory
 			try FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: true)
-			logger.info("Created backup directory: \(backupDir.path)")
+			logger.info("Created backup directory")
 
 			var medicationsBackedUp = false
 			var eventsBackedUp = false
@@ -91,7 +91,7 @@ public final class BackupManager {
 			// Clean up old backups
 			await cleanupOldBackups(in: appGroupURL.appendingPathComponent(StorageConstants.backupDirectoryName))
 
-			logger.info("Pre-migration backup complete at: \(backupDir.path)")
+			logger.info("Pre-migration backup complete")
 			return BackupResult(
 				success: true,
 				backupPath: backupDir,
@@ -102,7 +102,7 @@ public final class BackupManager {
 			)
 
 		} catch {
-			logger.error("❌ Backup failed: \(error.localizedDescription)")
+			logger.logPrivacySafeError("❌ Backup failed", error: error)
 			return BackupResult(
 				success: false,
 				backupPath: nil,
@@ -143,7 +143,7 @@ public final class BackupManager {
 				return date1 > date2
 			}
 		} catch {
-			logger.error("Failed to list backups: \(error.localizedDescription)")
+			logger.logPrivacySafeError("Failed to list backups", error: error)
 			return []
 		}
 	}
@@ -152,7 +152,7 @@ public final class BackupManager {
 	/// - Parameter backupURL: URL to the backup directory
 	/// - Returns: True if restore succeeded
 	public func restoreFromBackup(at backupURL: URL) async throws -> Bool {
-		logger.info("Restoring from backup: \(backupURL.path)")
+		logger.info("Restoring from backup")
 
 		guard let appGroupURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
@@ -195,7 +195,7 @@ public final class BackupManager {
 			try restoreWALFiles(from: backupURL, to: appGroupURL, baseName: StorageConstants.eventsDBName)
 		}
 
-		logger.info("Restore complete from: \(backupURL.path)")
+		logger.info("Restore complete")
 		return true
 	}
 
@@ -293,9 +293,9 @@ public final class BackupManager {
 		for backup in backups.dropFirst(maxBackups) {
 			do {
 				try FileManager.default.removeItem(at: backup)
-				logger.info("Removed old backup: \(backup.lastPathComponent)")
+				logger.info("Removed old backup")
 			} catch {
-				logger.error("Failed to remove old backup: \(error.localizedDescription)")
+				logger.logPrivacySafeError("Failed to remove old backup", error: error)
 			}
 		}
 	}

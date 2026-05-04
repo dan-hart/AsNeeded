@@ -528,7 +528,7 @@ struct ReminderConfigurationView: View {
         isScheduling = true
         defer { isScheduling = false }
 
-        logger.info("Scheduling reminder for medication: \(medication.clinicalName)")
+        logger.info("Scheduling medication reminder")
 
         do {
             switch reminderType {
@@ -584,7 +584,7 @@ struct ReminderConfigurationView: View {
             dismiss()
 
         } catch {
-            logger.error("Failed to schedule reminder", error: error)
+            logger.logPrivacySafeError("Failed to schedule reminder", error: error)
             errorMessage = "Failed to schedule reminder: \(error.localizedDescription)"
             showingError = true
         }

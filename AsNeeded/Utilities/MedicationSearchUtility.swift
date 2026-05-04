@@ -34,7 +34,7 @@ public enum MedicationSearchUtility {
             medication.clinicalName.lowercased() == searchName ||
                 (medication.nickname?.lowercased() == searchName)
         }) {
-            logger.info("Found exact match for medication ID: \(exactMatch.id)")
+            logger.info("Found exact medication match")
             return exactMatch
         }
 
@@ -43,7 +43,7 @@ public enum MedicationSearchUtility {
             medication.clinicalName.lowercased().contains(searchName) ||
                 (medication.nickname?.lowercased().contains(searchName) == true)
         }) {
-            logger.info("Found partial match for medication ID: \(partialMatch.id)")
+            logger.info("Found partial medication match")
             return partialMatch
         }
 
@@ -60,7 +60,7 @@ public enum MedicationSearchUtility {
         }
 
         if let fuzzyMatch = fuzzyMatch {
-            logger.info("Found fuzzy match for medication ID: \(fuzzyMatch.id)")
+            logger.info("Found fuzzy medication match")
         } else {
             logger.warning("No match found for search query")
         }
@@ -87,7 +87,7 @@ public enum MedicationSearchUtility {
             return []
         }
 
-        logger.debug("Searching medications with query: '\(searchTerm)'")
+        logger.debug("Searching medications with non-empty query")
 
         var exactMatches: [ANMedicationConcept] = []
         var prefixMatches: [ANMedicationConcept] = []
@@ -120,7 +120,7 @@ public enum MedicationSearchUtility {
         let uniqueResults = Array(Set(results))
         let limitedResults = Array(uniqueResults.prefix(limit))
 
-        logger.info("Found \(limitedResults.count) matches for '\(searchTerm)'")
+        logger.info("Found \(limitedResults.count) medication matches")
         return limitedResults
     }
 

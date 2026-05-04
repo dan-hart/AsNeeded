@@ -35,7 +35,7 @@ public final class MigrationCoordinator {
 
 	/// Logs current migration state (for diagnostics)
 	public func logCurrentState() {
-		logger.info("Migration State - isComplete: \(isComplete), isRunning: \(isRunning), error: \(String(describing: error))")
+		logger.info("Migration State - isComplete: \(isComplete), isRunning: \(isRunning), errorType: \(DHLogger.privacySafeErrorType(error))")
 		if let startTime = migrationStartTime {
 			let elapsed = Date().timeIntervalSince(startTime)
 			logger.info("Migration elapsed time: \(String(format: "%.1f", elapsed))s")
@@ -81,10 +81,10 @@ public final class MigrationCoordinator {
 			logger.info("Creating pre-migration backup...")
 			let backupResult = await BackupManager.shared.createPreMigrationBackup()
 			if backupResult.success {
-				logger.info("✅ Pre-migration backup created at: \(backupResult.backupPath?.path ?? "unknown")")
+				logger.info("✅ Pre-migration backup created")
 			} else {
 				// CRITICAL: Backup failure is now blocking to prevent unrecoverable data loss
-				logger.error("❌ Pre-migration backup failed: \(backupResult.error?.localizedDescription ?? "unknown error")")
+				logger.error("❌ Pre-migration backup failed: errorType=\(DHLogger.privacySafeErrorType(backupResult.error))")
 				logger.error("Migration aborted - cannot proceed without backup protection")
 				self.error = MigrationBackupFailure(underlyingError: backupResult.error)
 				isComplete = false
@@ -117,7 +117,7 @@ public final class MigrationCoordinator {
 			isComplete = true
 			isRunning = false
 		} catch {
-			logger.error("Migration failed: \(error.localizedDescription)")
+			logger.logPrivacySafeError("Migration failed", error: error)
 			self.error = error
 			isComplete = false
 			isRunning = false

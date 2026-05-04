@@ -44,11 +44,11 @@ public final class AnalyticsService {
         if let lastActiveDate = lastActiveDate {
             if !Calendar.current.isDate(lastActiveDate, inSameDayAs: today) {
                 userDefaults.set(today, forKey: UserDefaultsKeys.analyticsDailyActiveUse)
-                logger.info("Daily active use recorded for \(today)")
+                logger.info("Daily active use recorded")
             }
         } else {
             userDefaults.set(today, forKey: UserDefaultsKeys.analyticsDailyActiveUse)
-            logger.info("Daily active use recorded for \(today)")
+            logger.info("Daily active use recorded")
         }
     }
 
