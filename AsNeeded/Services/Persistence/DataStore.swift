@@ -128,8 +128,7 @@ public final class DataStore {
     public func updateMedication(_ med: ANMedicationConcept) async throws {
         logger.logMedicationOperation("Updating", id: med.id)
         do {
-            // Boutique has no explicit update; remove + insert to replace by id.
-            try await medicationsStore.remove(med)
+            // Boutique replaces items with matching cache identifiers in place.
             try await medicationsStore.insert(med)
             logger.logMedicationOperation("Successfully updated in local storage", id: med.id)
         } catch {
