@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import WatchKit
 
@@ -8,8 +9,10 @@ struct DoseLoggerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedUnit: String
     @State private var isLogging = false
+    @State private var now = Date()
 
     private let availableUnits = ["tablet", "capsule", "mg", "mL", "puff", "dose", "unit"]
+    private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     init(medication: WatchMedication, doseAmount: Binding<Double>) {
         self.medication = medication
@@ -19,6 +22,8 @@ struct DoseLoggerView: View {
     }
 
     var body: some View {
+        let canTakeNow = medication.canTake(at: now)
+
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
@@ -28,7 +33,7 @@ struct DoseLoggerView: View {
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 8)
 
-                    if !medication.canTakeNow {
+                    if !canTakeNow {
                         Label(nextDoseLabel, systemImage: "clock.fill")
                             .font(.caption)
                             .foregroundColor(.orange)
@@ -136,10 +141,10 @@ struct DoseLoggerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background((isLogging || !medication.canTakeNow) ? Color.gray : Color.accent)
+                    .background((isLogging || !canTakeNow) ? Color.gray : Color.accent)
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(isLogging || !medication.canTakeNow)
+                    .disabled(isLogging || !canTakeNow)
                 }
                 .padding()
             }
@@ -153,10 +158,11 @@ struct DoseLoggerView: View {
                 }
             }
         }
+        .onReceive(eligibilityTimer) { now = $0 }
     }
 
     private func logDose() {
-        guard medication.canTakeNow else {
+        guard medication.canTake(at: Date()) else {
             WKInterfaceDevice.current().play(.failure)
             return
         }
@@ -189,7 +195,7 @@ struct DoseLoggerView: View {
 
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .short
-        return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: Date()))"
+        return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
     }
 }
 
