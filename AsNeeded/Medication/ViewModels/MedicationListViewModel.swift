@@ -97,6 +97,7 @@ final class MedicationListViewModel: ObservableObject {
     func add(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.addMedication(med)
+            appendToMedicationOrderIfNeeded(med)
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
@@ -119,7 +120,9 @@ final class MedicationListViewModel: ObservableObject {
     func delete(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.deleteMedication(med)
-            medicationOrder.removeAll { $0 == med.id.uuidString }
+            var order = medicationOrder
+            order.removeAll { $0 == med.id.uuidString }
+            medicationOrder = order
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
@@ -307,5 +310,14 @@ final class MedicationListViewModel: ObservableObject {
 
     private func quantityDetails(quantityWasPresent: Bool) -> String {
         "quantityUpdated=\(quantityWasPresent)"
+    }
+
+    private func appendToMedicationOrderIfNeeded(_ medication: ANMedicationConcept) {
+        let id = medication.id.uuidString
+        var order = medicationOrder
+        if !order.contains(id) {
+            order.append(id)
+            medicationOrder = order
+        }
     }
 }
