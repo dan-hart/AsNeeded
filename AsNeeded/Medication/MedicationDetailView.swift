@@ -12,6 +12,8 @@ struct MedicationDetailView: View {
     @StateObject private var viewModel = MedicationDetailViewModel()
     @StateObject private var notificationManager = NotificationManager.shared
     @StateObject private var navigationManager = NavigationManager.shared
+    private let statusSummaryService = MedicationStatusSummaryService()
+    private let safetyProfileStore = MedicationSafetyProfileStore.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
@@ -209,6 +211,8 @@ struct MedicationDetailView: View {
 
     private var detailsCardsSection: some View {
         VStack(spacing: cardSpacing) {
+            confidenceCard
+
             medicationInfoCard
 
             if medication.quantity != nil || medication.lastRefillDate != nil || medication.nextRefillDate != nil {
@@ -223,6 +227,70 @@ struct MedicationDetailView: View {
         }
         .frame(maxWidth: cardMaxWidth)
         .padding(.horizontal, isRegularWidth ? 32 : 20)
+    }
+
+    private var confidenceSummary: MedicationStatusSummaryService.Summary {
+        statusSummaryService.summary(
+            for: medication,
+            events: DataStore.shared.events,
+            profile: safetyProfileStore.profile(for: medication.id)
+        )
+    }
+
+    private var confidenceCard: some View {
+        let summary = confidenceSummary
+
+        return VStack(alignment: .leading, spacing: sectionSpacing) {
+            HStack(alignment: .top, spacing: rowSpacing) {
+                Image(systemSymbol: summaryIcon(for: summary.severity))
+                    .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Confidence Check")
+                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                        .accessibilityAddTraits(.isHeader)
+
+                    Text(summary.headline)
+                        .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+                        .foregroundStyle(summaryColor(for: summary.severity))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Text(summary.badgeText)
+                    .font(.customFont(fontFamily, style: .caption, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(summaryColor(for: summary.severity).opacity(0.12))
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: detailSpacing) {
+                confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
+
+                if let nextWindowText = summary.nextWindowText {
+                    confidenceRow(icon: .calendarBadgeClock, text: nextWindowText, color: summaryColor(for: summary.severity))
+                }
+
+                if let dailyText = summary.dailyText {
+                    confidenceRow(icon: .chartLineUptrendXyaxis, text: dailyText, color: .secondary)
+                }
+
+                confidenceRow(icon: .shippingboxFill, text: summary.refillText, color: .secondary)
+            }
+        }
+        .padding(adaptiveCardPadding)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(summary.accessibilityLabel)
     }
 
     @ToolbarContentBuilder
@@ -647,6 +715,42 @@ struct MedicationDetailView: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundStyle(valueColor)
+        }
+    }
+
+    private func confidenceRow(icon: SFSymbol, text: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: rowSpacing) {
+            Image(systemSymbol: icon)
+                .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                .foregroundStyle(color)
+                .accessibilityHidden(true)
+
+            Text(text)
+                .font(.customFont(fontFamily, style: .caption))
+                .foregroundStyle(color)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
+        switch severity {
+        case .clear:
+            return medication.displayColor
+        case .caution:
+            return .orange
+        case .warning:
+            return .red
+        }
+    }
+
+    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
+        switch severity {
+        case .clear:
+            return .checkmarkCircleFill
+        case .caution:
+            return .exclamationmarkTriangleFill
+        case .warning:
+            return .exclamationmarkTriangleFill
         }
     }
 

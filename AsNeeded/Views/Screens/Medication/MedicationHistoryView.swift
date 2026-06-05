@@ -72,10 +72,10 @@ struct MedicationHistoryView: View {
                             VStack(alignment: .leading, spacing: entrySpacing) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
-                                    if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
+                                    if viewModel.isShowingAllMedications, let eventMedication = event.medication {
                                         // Look up current medication from viewModel to ensure we have the latest data
-                                        let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
-                                        let rowMedication = currentMedication ?? event.medication!
+                                        let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+                                        let rowMedication = currentMedication ?? eventMedication
 
                                         let medicationColor: Color = {
                                             // First try the medication's custom color
@@ -97,11 +97,8 @@ struct MedicationHistoryView: View {
                                                 )
 
                                             // Add medication symbol
-                                            if viewModel.isShowingAllMedications,
-                                               let eventMedicationID = event.medication?.id,
-                                               let currentMedication = viewModel.medications.first(where: { $0.id == eventMedicationID })
-                                            {
-                                                Image(systemName: currentMedication.effectiveDisplaySymbol)
+                                            if viewModel.isShowingAllMedications {
+                                                Image(systemName: rowMedication.effectiveDisplaySymbol)
                                                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                                     .symbolRenderingMode(.hierarchical)
                                                     .foregroundStyle(medicationColor)
@@ -118,9 +115,9 @@ struct MedicationHistoryView: View {
 
                                     VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
                                         // Show medication name when viewing all medications
-                                        if viewModel.isShowingAllMedications, let eventMedicationID = event.medication?.id {
-                                            let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
-                                            let rowMedication = currentMedication ?? event.medication!
+                                        if viewModel.isShowingAllMedications, let eventMedication = event.medication {
+                                            let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+                                            let rowMedication = currentMedication ?? eventMedication
                                             Text(rowMedication.displayName)
                                                 .font(.headline)
                                                 .foregroundStyle(.primary)
@@ -186,6 +183,19 @@ struct MedicationHistoryView: View {
                                 }
                             }
                             .contentShape(Rectangle())
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(historyAccessibilityLabel(for: event))
+                            .accessibilityHint("Tap to edit this dose entry")
+                            .accessibilityAction(named: "Edit entry") {
+                                editingEntryEvent = event
+                                editingEntryDate = event.date
+                                editingEntryAmount = event.dose?.amount ?? 1.0
+                                editingEntryUnit = event.dose?.unit ?? .unit
+                            }
+                            .accessibilityAction(named: "Edit note") {
+                                editingEvent = event
+                                editingNoteText = displayNote(for: event) ?? ""
+                            }
                             .onTapGesture {
                                 editingEntryEvent = event
                                 editingEntryDate = event.date
@@ -327,6 +337,39 @@ struct MedicationHistoryView: View {
         }
 
         return Array(highlights.prefix(3))
+    }
+
+    private func historyAccessibilityLabel(for event: ANEventConcept) -> String {
+        let medicationText = eventMedicationName(for: event)
+        let doseText: String = {
+            guard let dose = event.dose else {
+                return "dose amount not recorded"
+            }
+
+            return "\(dose.amount.formattedAmount) \(dose.unit.abbreviation)"
+        }()
+        let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
+        let noteText: String = {
+            guard let note = displayNote(for: event), !note.isEmpty else {
+                return "No note"
+            }
+
+            return "Has note"
+        }()
+
+        return "\(medicationText), \(doseText), logged \(timeText). \(noteText)."
+    }
+
+    private func eventMedicationName(for event: ANEventConcept) -> String {
+        guard let medicationID = event.medication?.id else {
+            return "Medication"
+        }
+
+        if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
+            return currentMedication.displayName
+        }
+
+        return event.medication?.displayName ?? "Medication"
     }
 
     @ViewBuilder
@@ -685,9 +728,9 @@ struct MedicationHistoryView: View {
                         HStack {
                             Text("Medication")
                             Spacer()
-                            if let eventMedicationID = event.medication?.id {
-                                let currentMedication = viewModel.medications.first { $0.id == eventMedicationID }
-                                let medication = currentMedication ?? event.medication!
+                            if let eventMedication = event.medication {
+                                let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+                                let medication = currentMedication ?? eventMedication
                                 Text(medication.displayName)
                                     .foregroundStyle(.secondary)
                             }

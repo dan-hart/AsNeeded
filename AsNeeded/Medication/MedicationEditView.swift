@@ -117,6 +117,29 @@ struct MedicationEditView: View {
         HeroSectionComponent(isEditing: medication != nil)
     }
 
+    @ViewBuilder
+    private func progressiveSectionHeader(title: String, subtitle: String, systemSymbol: SFSymbol) -> some View {
+        HStack(alignment: .top, spacing: iconSpacing) {
+            Image(systemSymbol: systemSymbol)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: smallPadding) {
+                Text(title)
+                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+
+                Text(subtitle)
+                    .font(.customFont(fontFamily, style: .caption))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+    }
+
     // MARK: - Medication Info Section
 
     @ViewBuilder
@@ -167,9 +190,9 @@ struct MedicationEditView: View {
                         )
                     )
 
-                Text("Refill Information")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                Text("Track Supply")
+                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
             }
 
             // Initial Quantity
@@ -297,10 +320,10 @@ struct MedicationEditView: View {
                     )
 
                 VStack(alignment: .leading, spacing: smallPadding) {
-                    Text("Clinical Guidance")
+                    Text("Safety Guardrails")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
-                    Text("Optional guardrails for timing, duplicates, daily totals, and refill planning.")
+                    Text("Optional timing, duplicate, daily total, and refill checks.")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -472,8 +495,9 @@ struct MedicationEditView: View {
                         )
                     )
 
-                Text("Medication Appearance")
+                Text("Personalize Appearance")
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
             }
 
             // Appearance preview button
@@ -821,10 +845,30 @@ struct MedicationEditView: View {
             ScrollView {
                 VStack(spacing: mainContentSpacing) {
                     heroSection
+                    progressiveSectionHeader(
+                        title: "Essentials",
+                        subtitle: "Add the medication name and the default dose used for fast logging.",
+                        systemSymbol: .checkmarkCircleFill
+                    )
                     medicationInfoSection
                     prescribedDoseSection
-                    refillInfoSection
+                    progressiveSectionHeader(
+                        title: "Make Quick Logs Safer",
+                        subtitle: "Optional guardrails turn the list and quick-log toast into a confidence check.",
+                        systemSymbol: .crossCaseFill
+                    )
                     clinicalGuidanceSection
+                    progressiveSectionHeader(
+                        title: "Track Supply",
+                        subtitle: "Optional quantity and refill details help the app highlight low stock.",
+                        systemSymbol: .shippingboxFill
+                    )
+                    refillInfoSection
+                    progressiveSectionHeader(
+                        title: "Personalize",
+                        subtitle: "Optional color, symbol, and status choices make this medication easier to scan.",
+                        systemSymbol: .paintbrushPointedFill
+                    )
                     appearanceSection
                     archivedStatusSection
                     saveButton

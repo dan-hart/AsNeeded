@@ -12,6 +12,10 @@ final class MedicationListViewModel: ObservableObject {
     private let dataStore: DataStore
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
+    private let safetyProfileStore = MedicationSafetyProfileStore.shared
+    private let guidanceService = MedicationDoseGuidanceService()
+    private let feedbackService = QuickLogFeedbackService()
+    private let statusSummaryService = MedicationStatusSummaryService()
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
@@ -30,6 +34,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseAmount: Double = 0
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
+    @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
     @Published var isLoading = true
 
     // MARK: - Computed Properties
@@ -225,9 +230,17 @@ final class MedicationListViewModel: ObservableObject {
 
     func quickLog(medication: ANMedicationConcept) async -> Bool {
         let operationID = UUID()
+        let loggedAt = Date()
         let dose = ANDoseConcept(
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
+        )
+        let assessment = guidanceService.assessment(
+            for: medication,
+            proposedDose: dose,
+            at: loggedAt,
+            events: dataStore.events,
+            profile: safetyProfileStore.profile(for: medication.id)
         )
 
         let eventCountBefore = dataStore.events.count
@@ -238,9 +251,9 @@ final class MedicationListViewModel: ObservableObject {
 
         let event = ANEventConcept(
             eventType: .doseTaken,
-            medication: updatedMed,
+            medication: medication,
             dose: dose,
-            date: Date(),
+            date: loggedAt,
             note: nil
         )
 
@@ -259,7 +272,14 @@ final class MedicationListViewModel: ObservableObject {
 
         if updateSuccess, eventSuccess {
             hapticsManager.doseLogged()
-            showQuickLogToast(med: medication, dose: dose)
+            let feedback = feedbackService.feedback(
+                medication: medication,
+                dose: dose,
+                loggedEvent: event,
+                assessment: assessment,
+                at: loggedAt
+            )
+            showQuickLogToast(med: medication, dose: dose, feedback: feedback)
             logger.logDoseOperation(
                 "Succeeded",
                 source: "list_quick_log",
@@ -274,19 +294,78 @@ final class MedicationListViewModel: ObservableObject {
         return updateSuccess && eventSuccess
     }
 
-    private func showQuickLogToast(med: ANMedicationConcept, dose: ANDoseConcept) {
+    func undoLastQuickLog() async -> Bool {
+        guard let feedback = quickLogFeedback,
+              let undoEventID = feedback.undoEventID,
+              let event = dataStore.events.first(where: { $0.id == undoEventID })
+        else {
+            return false
+        }
+
+        do {
+            try await dataStore.eventsStore.remove(event)
+
+            if let dose = event.dose,
+               let medicationID = event.medication?.id,
+               let medication = dataStore.medications.first(where: { $0.id == medicationID })
+            {
+                var updated = medication
+                if let quantity = updated.quantity {
+                    updated.quantity = quantity + dose.amount
+                }
+                try await dataStore.updateMedication(updated)
+            }
+
+            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
+            quickLogFeedback = nil
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showQuickLogToast = false
+            }
+            return true
+        } catch {
+            logger.logPrivacySafeError("Failed to undo quick log", error: error)
+            return false
+        }
+    }
+
+    func dismissQuickLogToast() {
+        quickLogFeedback = nil
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showQuickLogToast = false
+        }
+    }
+
+    func statusSummary(for medication: ANMedicationConcept) -> MedicationStatusSummaryService.Summary {
+        statusSummaryService.summary(
+            for: medication,
+            events: dataStore.events,
+            profile: safetyProfileStore.profile(for: medication.id)
+        )
+    }
+
+    private func showQuickLogToast(
+        med: ANMedicationConcept,
+        dose: ANDoseConcept,
+        feedback: QuickLogFeedbackService.Feedback? = nil
+    ) {
         quickLogMedicationName = med.displayName
         quickLogDoseAmount = dose.amount
         quickLogDoseUnit = dose.unit.abbreviation
         quickLogAccentColor = med.displayColor
+        quickLogFeedback = feedback
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickLogToast = true
         }
 
         Task {
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            let toastDuration: UInt64 = feedback?.tone == .caution || feedback?.tone == .warning ? 5_000_000_000 : 3_000_000_000
+            try? await Task.sleep(nanoseconds: toastDuration)
             await MainActor.run {
+                guard self.quickLogFeedback?.undoEventID == feedback?.undoEventID else {
+                    return
+                }
+                self.quickLogFeedback = nil
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     self.showQuickLogToast = false
                 }
