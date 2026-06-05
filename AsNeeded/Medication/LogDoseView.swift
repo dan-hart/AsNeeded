@@ -183,6 +183,21 @@ struct LogDoseView: View {
         }
     }
 
+    private var guidanceAccessibilityLabel: String {
+        var parts = [assessment.headline, assessment.detail]
+
+        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
+            parts.append("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
+        }
+
+        if let maxDailyAmount = assessment.maxDailyAmount {
+            parts.append("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
+        }
+
+        parts.append(contentsOf: assessment.reasons)
+        return parts.joined(separator: " ")
+    }
+
     // MARK: - View Components
 
     private var headerCard: some View {
@@ -211,13 +226,13 @@ struct LogDoseView: View {
             // Medication Name
             VStack(spacing: smallSpacing) {
                 Text(medication.displayName)
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.customFont(fontFamily, style: .title2, weight: .bold))
                     .multilineTextAlignment(.center)
+                    .noTruncate()
 
                 if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
                     Text(medication.clinicalName)
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
@@ -241,7 +256,7 @@ struct LogDoseView: View {
     private var doseSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             Label("Dose Amount", systemSymbol: .pills)
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .foregroundStyle(.primary)
 
             VStack(spacing: doseSpacing) {
@@ -259,14 +274,16 @@ struct LogDoseView: View {
                             .scaleEffect(amount > 0.5 ? 1.0 : 0.9)
                     }
                     .disabled(amount <= 0.5)
+                    .accessibilityLabel("Decrease dose amount")
+                    .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
 
                     VStack(spacing: smallSpacing) {
                         Text("\(amount, specifier: "%.1f")")
-                            .font(.title.weight(.semibold))
+                            .font(.customFont(fontFamily, style: .title, weight: .semibold))
                             .contentTransition(.numericText())
 
                         Text(selectedUnit.displayName)
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
                     }
@@ -290,7 +307,10 @@ struct LogDoseView: View {
                             .scaleEffect(amount < 100 ? 1.0 : 0.9)
                     }
                     .disabled(amount >= 100)
+                    .accessibilityLabel("Increase dose amount")
+                    .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
                 }
+                .accessibilityElement(children: .contain)
 
                 // Unit Selector
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -303,8 +323,7 @@ struct LogDoseView: View {
                                 }
                             }) {
                                 Text(unit.displayName)
-                                    .font(.subheadline)
-                                    .fontWeight(selectedUnit == unit ? .semibold : .regular)
+                                    .font(.customFont(fontFamily, style: .subheadline, weight: selectedUnit == unit ? .semibold : .regular))
                                     .padding(.horizontal, unitHorizontalPadding)
                                     .padding(.vertical, unitVerticalPadding)
                                     .background {
@@ -318,6 +337,8 @@ struct LogDoseView: View {
                                     }
                                     .foregroundStyle(selectedUnit == unit ? .white : .primary)
                             }
+                            .accessibilityLabel(unit.displayName)
+                            .accessibilityValue(selectedUnit == unit ? "Selected" : "Not selected")
                         }
                     }
                     .padding(.horizontal, unitScrollPadding)
@@ -336,7 +357,7 @@ struct LogDoseView: View {
     private var dateTimeSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             Label("When", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .foregroundStyle(.primary)
 
             VStack(spacing: quickButtonSpacing) {
@@ -372,6 +393,9 @@ struct LogDoseView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Dose time")
+                .accessibilityValue(selectedDate.formatted(date: .abbreviated, time: .shortened))
+                .accessibilityHint("Tap to show or hide the date picker")
 
                 if showingDatePicker {
                     DatePicker(
@@ -406,8 +430,7 @@ struct LogDoseView: View {
                             }
                         }) {
                             Text(label)
-                                .font(.caption)
-                                .fontWeight(.medium)
+                                .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                 .padding(.horizontal, quickButtonHorizontalPadding)
                                 .padding(.vertical, quickButtonVerticalPadding)
                                 .background {
@@ -421,6 +444,8 @@ struct LogDoseView: View {
                                 }
                                 .foregroundStyle(selectedQuickOption == label ? .white : .primary)
                         }
+                        .accessibilityLabel(label)
+                        .accessibilityValue(selectedQuickOption == label ? "Selected" : "Not selected")
                     }
                 }
             }
@@ -521,6 +546,8 @@ struct LogDoseView: View {
                 )
         )
         .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(guidanceAccessibilityLabel)
     }
 
     private var reflectionSection: some View {
@@ -701,7 +728,7 @@ struct LogDoseView: View {
                 }
 
                 Text(isLogging ? "Logging" : "Log Dose")
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -731,6 +758,9 @@ struct LogDoseView: View {
         }
         .disabled(amount <= 0 || isLogging)
         .opacity(amount <= 0 || isLogging ? 0.6 : 1.0)
+        .accessibilityLabel(isLogging ? "Logging dose" : "Log dose")
+        .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
+        .accessibilityHint(assessment.severity == .clear ? "Saves this dose entry" : "Saves this dose entry with the shown guidance warning")
     }
 
     var body: some View {

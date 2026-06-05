@@ -20,7 +20,9 @@ struct QuickLogToastView: View {
     let doseUnit: String
     let accentColor: Color
     let isVisible: Bool
+    var feedback: QuickLogFeedbackService.Feedback?
     let onDismiss: () -> Void
+    var onUndo: (() -> Void)?
 
     @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var toastPadding: CGFloat = 16
@@ -33,42 +35,67 @@ struct QuickLogToastView: View {
     var body: some View {
         if isVisible {
             VStack {
-                HStack(spacing: contentSpacing) {
-                    // Success checkmark
-                    Image(systemSymbol: .checkmarkCircleFill)
-                        .font(.customFont(fontFamily, style: .title3))
-                        .foregroundStyle(accentColor)
-                        .symbolEffect(.bounce, value: isVisible)
+                VStack(alignment: .leading, spacing: contentSpacing) {
+                    HStack(alignment: .top, spacing: contentSpacing) {
+                        Image(systemSymbol: toneIcon)
+                            .font(.customFont(fontFamily, style: .title3))
+                            .foregroundStyle(toneColor)
+                            .symbolEffect(.bounce, value: isVisible)
+                            .accessibilityHidden(true)
 
-                    // Message content
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Logged")
-                            .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(titleText)
+                                .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                                .foregroundStyle(toneColor)
 
-                        Text(formattedDose)
-                            .font(.customFont(fontFamily, style: .subheadline, weight: .bold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
+                            Text(messageText)
+                                .font(.customFont(fontFamily, style: .subheadline, weight: .bold))
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
 
-                        Text(medicationName)
-                            .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            Text(detailText)
+                                .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            if let nextWindowText = feedback?.nextWindowText {
+                                Text(nextWindowText)
+                                    .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                                    .foregroundStyle(toneColor)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Button(action: onDismiss) {
+                            Image(systemSymbol: .xmark)
+                                .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: dismissButtonSize, height: dismissButtonSize)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Dismiss")
                     }
 
-                    Spacer(minLength: 8)
-
-                    // Dismiss button
-                    Button(action: onDismiss) {
-                        Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .frame(width: dismissButtonSize, height: dismissButtonSize)
-                            .contentShape(Circle())
+                    if feedback?.undoEventID != nil, let onUndo {
+                        Button {
+                            onUndo()
+                        } label: {
+                            Label("Undo log", systemSymbol: .arrowCounterclockwise)
+                                .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                                .foregroundStyle(toneColor)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(toneColor.opacity(0.12))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Removes the dose event and restores the medication quantity")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Dismiss")
                 }
                 .padding(toastPadding)
                 .background(
@@ -95,6 +122,7 @@ struct QuickLogToastView: View {
             .transition(.move(edge: .top).combined(with: .opacity))
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isVisible)
             .zIndex(1000)
+            .accessibilityElement(children: .contain)
         }
     }
 
@@ -103,6 +131,48 @@ struct QuickLogToastView: View {
     private var formattedDose: String {
         let amountStr = doseAmount.formattedAmount
         return "\(amountStr) \(doseUnit)"
+    }
+
+    private var titleText: String {
+        feedback?.title ?? "Logged"
+    }
+
+    private var messageText: String {
+        feedback?.message ?? formattedDose
+    }
+
+    private var detailText: String {
+        if let feedback {
+            return feedback.detail
+        }
+
+        return medicationName
+    }
+
+    private var toneColor: Color {
+        guard let feedback else { return accentColor }
+
+        switch feedback.tone {
+        case .success:
+            return accentColor
+        case .caution:
+            return .orange
+        case .warning:
+            return .red
+        }
+    }
+
+    private var toneIcon: SFSymbol {
+        guard let feedback else { return .checkmarkCircleFill }
+
+        switch feedback.tone {
+        case .success:
+            return .checkmarkCircleFill
+        case .caution:
+            return .exclamationmarkTriangleFill
+        case .warning:
+            return .exclamationmarkTriangleFill
+        }
     }
 }
 

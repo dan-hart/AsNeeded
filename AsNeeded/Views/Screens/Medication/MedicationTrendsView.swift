@@ -221,6 +221,8 @@ struct MedicationTrendsView: View {
             RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
                 .strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(med.displayName). \(viewModel.patternSummary)")
     }
 
     @ViewBuilder
@@ -463,6 +465,8 @@ struct MedicationTrendsView: View {
         .padding(metricCardPadding)
         .frame(maxWidth: .infinity, minHeight: metricCardMinHeight, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
 
     private func insightBadge(text: String, tint: Color) -> some View {
@@ -568,6 +572,8 @@ struct MedicationTrendsView: View {
                 }
                 .frame(height: chartHeight)
                 .padding(.horizontal, chartPaddingH)
+                .accessibilityLabel("Daily usage chart for \(med.displayName)")
+                .accessibilityHint("Tap to open history for this medication")
                 .onTapGesture {
                     // Navigate to history with the selected medication
                     if let medicationID = viewModel.selectedMedicationID {
@@ -597,6 +603,7 @@ struct MedicationTrendsView: View {
                     data: data,
                     daysWindow: daysWindow,
                     medicationColor: med.displayColor,
+                    medicationName: med.displayName,
                     onDateTapped: { date in
                         // Navigate to history with selected date and medication
                         if let medicationID = viewModel.selectedMedicationID {
@@ -615,6 +622,7 @@ struct CalendarHeatmapGrid: View {
     let data: [CalendarDay]
     let daysWindow: Int
     let medicationColor: Color
+    let medicationName: String
     let onDateTapped: (Date) -> Void
     private let calendar = Calendar.current
 
@@ -662,6 +670,8 @@ struct CalendarHeatmapGrid: View {
                                 onDateTapped(day.date)
                             }
                         }
+                        .accessibilityLabel(accessibilityLabel(for: day))
+                        .accessibilityAddTraits(day.intensity >= 0 ? .isButton : AccessibilityTraits())
                         .help(day.total > 0 ?
                             "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" :
                             "\(calendar.component(.day, from: day.date)): No doses")
@@ -693,6 +703,7 @@ struct CalendarHeatmapGrid: View {
                 Spacer()
             }
         }
+        .accessibilityElement(children: .contain)
     }
 
     // Pad data to fill grid properly
@@ -727,6 +738,19 @@ struct CalendarHeatmapGrid: View {
             // Usage days with intensity scaling
             return medicationColor.opacity(0.2 + (intensity * 0.8))
         }
+    }
+
+    private func accessibilityLabel(for day: CalendarDay) -> String {
+        let dateText = day.date.formatted(date: .abbreviated, time: .omitted)
+        guard day.intensity >= 0 else {
+            return "Empty calendar cell"
+        }
+
+        if day.total > 0 {
+            return "\(dateText), \(medicationName), \(day.total.formattedAmount) logged"
+        }
+
+        return "\(dateText), \(medicationName), no doses logged"
     }
 }
 

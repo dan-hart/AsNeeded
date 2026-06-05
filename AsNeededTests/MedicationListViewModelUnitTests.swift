@@ -5,7 +5,7 @@ import Testing
 import SwiftUI
 
 @MainActor
-@Suite("MedicationListViewModel Unit Tests", .tags(.viewModel, .medication, .unit))
+@Suite("MedicationListViewModel Unit Tests", .tags(.viewModel, .medication, .unit), .serialized)
 struct MedicationListViewModelUnitTests {
     private var viewModel: MedicationListViewModel
     private var dataStore: DataStore
@@ -268,6 +268,29 @@ struct MedicationListViewModelUnitTests {
         #expect(storedOrderAfterQuickLog == storedOrderBeforeQuickLog)
         #expect(viewModel.sortedMedications.map(\.id) == originalOrder)
     }
+
+	@Test("quickLog stores undo feedback and undo restores event and quantity")
+	func quickLogStoresUndoFeedbackAndUndoRestoresEventAndQuantity() async throws {
+		// Given
+		let medication = createTestMedication(name: "Undo Med", quantity: 20.0)
+		_ = await viewModel.add(medication)
+
+		// When
+		let success = await viewModel.quickLog(medication: medication)
+
+		// Then
+		#expect(success)
+		#expect(dataStore.events.count == 1)
+		#expect(viewModel.quickLogFeedback?.undoEventID == dataStore.events.first?.id)
+
+		let undoSuccess = await viewModel.undoLastQuickLog()
+
+		#expect(undoSuccess)
+		#expect(dataStore.events.isEmpty)
+		#expect(dataStore.medications.first?.quantity == 20.0)
+		#expect(viewModel.quickLogFeedback == nil)
+		#expect(viewModel.showQuickLogToast == false)
+	}
 
     @Test("logDose correctly logs dose and updates state")
     func logDoseCorrectlyLogsDose() async throws {

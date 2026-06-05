@@ -28,6 +28,7 @@ import SwiftUI
 /// - Any interface displaying medication information with interaction capabilities
 struct MedicationRowComponent: View {
     let medication: ANMedicationConcept
+    var statusSummary: MedicationStatusSummaryService.Summary?
     var onLogTapped: () -> Void = {}
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
@@ -122,8 +123,22 @@ struct MedicationRowComponent: View {
         .padding(.horizontal, 4)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Medication: \(medication.displayName)")
+        .accessibilityLabel(statusSummary?.accessibilityLabel ?? "Medication: \(medication.displayName)")
         .accessibilityHint("Tap to view details or log dose")
+        .accessibilityAction(named: "Log custom dose") {
+            onLogTapped()
+        }
+        .accessibilityAction(named: "Quick log default dose") {
+            guard let onQuickLog else { return }
+            Task {
+                let success = await onQuickLog()
+                if success {
+                    await MainActor.run {
+                        onQuickLogSuccess?()
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - View Components
@@ -222,7 +237,53 @@ struct MedicationRowComponent: View {
                     }
                 }
             }
+
+            if let statusSummary {
+                statusSummaryView(statusSummary)
+            }
         }
+    }
+
+    @ViewBuilder
+    private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Image(systemSymbol: summaryIcon(for: summary.severity))
+                    .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
+                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .accessibilityHidden(true)
+
+                Text(summary.badgeText)
+                    .font(.customFont(fontFamily, style: .caption2, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(summaryColor(for: summary.severity))
+
+                Text(summary.headline)
+                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(summaryColor(for: summary.severity).opacity(0.12))
+            )
+
+            Text(summary.timingText)
+                .font(.customFont(fontFamily, style: .caption2))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            if let nextWindowText = summary.nextWindowText {
+                Text(nextWindowText)
+                    .font(.customFont(fontFamily, style: .caption2))
+                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .lineLimit(1)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(summary.accessibilityLabel)
     }
 
     private var enhancedLogButton: some View {
@@ -426,6 +487,28 @@ struct MedicationRowComponent: View {
             return "\(quantityStr) \(unit.abbreviation) left"
         } else {
             return "\(quantityStr) left"
+        }
+    }
+
+    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
+        switch severity {
+        case .clear:
+            return medication.displayColor
+        case .caution:
+            return .orange
+        case .warning:
+            return .red
+        }
+    }
+
+    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
+        switch severity {
+        case .clear:
+            return .checkmarkCircleFill
+        case .caution:
+            return .exclamationmarkTriangleFill
+        case .warning:
+            return .exclamationmarkTriangleFill
         }
     }
 

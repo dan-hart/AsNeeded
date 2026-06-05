@@ -139,9 +139,13 @@ struct MedicationListView: View {
                             doseUnit: viewModel.quickLogDoseUnit,
                             accentColor: viewModel.quickLogAccentColor,
                             isVisible: viewModel.showQuickLogToast,
+                            feedback: viewModel.quickLogFeedback,
                             onDismiss: {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    viewModel.showQuickLogToast = false
+                                viewModel.dismissQuickLogToast()
+                            },
+                            onUndo: {
+                                Task {
+                                    _ = await viewModel.undoLastQuickLog()
                                 }
                             }
                         )
@@ -247,15 +251,12 @@ struct MedicationListView: View {
                     HStack {
                         MedicationRowComponent(
                             medication: med,
+                            statusSummary: viewModel.statusSummary(for: med),
                             onLogTapped: {
                                 viewModel.logMedication = med
                             },
                             onQuickLog: {
-                                Task {
-                                    // Pass through to view model
-                                    _ = await viewModel.quickLog(medication: med)
-                                }
-                                return true // Assume success for now, actual result handled by VM
+                                await viewModel.quickLog(medication: med)
                             },
                             onQuickLogSuccess: {
                                 // Handled by view model
