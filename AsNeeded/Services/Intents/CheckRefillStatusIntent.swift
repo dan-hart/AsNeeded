@@ -21,8 +21,8 @@ struct CheckRefillStatusIntent: AppIntent {
 
         let medications = DataStore.shared.medications
         let events = DataStore.shared.events
-        let safetyProfileStore = MedicationSafetyProfileStore.shared
-        let guidanceService = MedicationDoseGuidanceService()
+        let refillProfileStore = MedicationRefillProfileStore.shared
+        let refillProjectionService = MedicationRefillProjectionService()
 
         guard !medications.isEmpty else {
             logger.info("No medications found")
@@ -37,8 +37,8 @@ struct CheckRefillStatusIntent: AppIntent {
         var lowQuantity: [RefillInfo] = []
 
         for medication in medications {
-            let profile = safetyProfileStore.profile(for: medication.id)
-            let projection = guidanceService.refillProjection(
+            let profile = refillProfileStore.profile(for: medication.id)
+            let projection = refillProjectionService.projection(
                 for: medication,
                 events: events,
                 profile: profile
@@ -94,7 +94,7 @@ struct CheckRefillStatusIntent: AppIntent {
 
     static func refillBucket(
         for medication: ANMedicationConcept,
-        projection: MedicationDoseGuidanceService.RefillProjection,
+        projection: MedicationRefillProjectionService.RefillProjection,
         daysUntilRefill: Int?
     ) -> RefillBucket? {
         if projection.lowStock {

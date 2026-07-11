@@ -8,7 +8,7 @@ struct CheckRefillStatusIntentTests {
 	@Test("Low-stock medications stay in the low-quantity bucket")
 	func lowStockMedicationUsesLowQuantityBucket() {
 		let medication = ANMedicationConcept(clinicalName: "Ibuprofen")
-		let projection = MedicationDoseGuidanceService.RefillProjection(
+		let projection = MedicationRefillProjectionService.RefillProjection(
 			estimatedDaysRemaining: 2,
 			projectedRunOutDate: nil,
 			averageDailyUsage: 1.5,
