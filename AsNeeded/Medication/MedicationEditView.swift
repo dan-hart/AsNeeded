@@ -301,7 +301,6 @@ struct MedicationEditView: View {
     }
 
     // MARK: - Refill Alert Section
-
     @ViewBuilder
 	private var refillAlertSection: some View {
 		VStack(alignment: .leading, spacing: sectionSpacing) {
