@@ -342,9 +342,11 @@ struct DataStoreTests {
 		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.legacyMedicationProfiles))
 		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.archivedMedicationProfiles))
 		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.importSettingsDefaultBehavior))
 		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.legacyMedicationProfiles))
 		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.archivedMedicationProfiles))
 		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.importSettingsDefaultBehavior))
 		#expect(UserDefaultsKeys.safeToExportKeys.isDisjoint(with: UserDefaultsKeys.keysToNeverExport))
 		#expect(
 			UserDefaultsKeys.safeToExportKeys.union(UserDefaultsKeys.keysToNeverExport) == Set(allKeys),

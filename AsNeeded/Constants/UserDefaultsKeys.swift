@@ -332,9 +332,6 @@ public enum UserDefaultsKeys {
 
         // Search Settings
         recentMedicationSearches,
-
-		// Import Settings
-		importSettingsDefaultBehavior,
     ]
 
     /// Keys that should NEVER be exported (blocklist for security/privacy)
@@ -381,5 +378,6 @@ public enum UserDefaultsKeys {
         archivedMedicationProfiles,
         medicationProfilesMigrationCompleted,
         legacyMedicationProfiles,
+        importSettingsDefaultBehavior,
     ]
 }

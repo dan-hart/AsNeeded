@@ -3,6 +3,14 @@
 
 import Foundation
 
+enum AppSettingsError: LocalizedError {
+	case refillProfilePersistenceFailed
+
+	var errorDescription: String? {
+		"Refill preferences could not be saved safely. No other settings were changed."
+	}
+}
+
 /// Represents exportable app settings that can be included in data exports and backups
 struct AppSettings: Codable {
 	// MARK: - App Preferences
@@ -247,8 +255,25 @@ struct AppSettings: Codable {
 	/// Apply these settings to UserDefaults
 	/// - Parameter defaults: UserDefaults instance to write to (default: .standard)
 	/// - Parameter validateMedicationIDs: Closure to validate medication IDs exist, returns set of valid IDs
-	func apply(to defaults: UserDefaults = .standard, validateMedicationIDs: () -> Set<String>) {
+	func apply(
+		to defaults: UserDefaults = .standard,
+		validateMedicationIDs: () -> Set<String>,
+		profileStore: MedicationRefillProfileStore? = nil
+	) throws {
 		let validMedicationIDs = validateMedicationIDs()
+
+		// Persist and verify the mirrored profile payload before changing any other
+		// setting so a profile failure cannot produce a partial settings import.
+		if let profiles = medicationRefillProfiles {
+			let filteredProfiles = MedicationRefillProfileStore.filteredProfiles(
+				from: profiles,
+				validMedicationIDs: validMedicationIDs
+			)
+			let store = profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+			guard store.replaceAll(with: filteredProfiles) else {
+				throw AppSettingsError.refillProfilePersistenceFailed
+			}
+		}
 
 		// App Preferences
 		if let value = hapticsEnabled {
@@ -329,13 +354,6 @@ struct AppSettings: Codable {
 			defaults.set(value, forKey: UserDefaultsKeys.recentMedicationSearches)
 		}
 
-		if let profiles = medicationRefillProfiles {
-			let filteredProfiles = MedicationRefillProfileStore.filteredProfiles(
-				from: profiles,
-				validMedicationIDs: validMedicationIDs
-			)
-			_ = MedicationRefillProfileStore(defaults: defaults).replaceAll(with: filteredProfiles)
-		}
 	}
 
 	/// Get a user-friendly summary of included settings categories

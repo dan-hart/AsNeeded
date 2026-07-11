@@ -10,6 +10,8 @@ import Foundation
 public final class DataStore {
     public static let shared = DataStore()
     private let logger = DHLogger.data
+	private let settingsDefaults: UserDefaults
+	private let refillProfileStore: MedicationRefillProfileStore
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
@@ -19,6 +21,8 @@ public final class DataStore {
     public var events: [ANEventConcept] { eventsStore.items }
 
     private init() {
+		settingsDefaults = .standard
+		refillProfileStore = MedicationRefillProfileStore()
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -100,7 +104,21 @@ public final class DataStore {
     }
 
     // Test initializer using isolated test storage
-    public init(testIdentifier: String) {
+	public convenience init(testIdentifier: String) {
+		self.init(
+			testIdentifier: testIdentifier,
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore()
+		)
+	}
+
+	init(
+		testIdentifier: String,
+		settingsDefaults: UserDefaults,
+		refillProfileStore: MedicationRefillProfileStore
+	) {
+		self.settingsDefaults = settingsDefaults
+		self.refillProfileStore = refillProfileStore
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
             storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
@@ -311,14 +329,18 @@ public final class DataStore {
     /// Import app settings to UserDefaults
     /// - Parameter settings: AppSettings to apply
     /// - Parameter defaults: UserDefaults instance to write to
-    private func importSettings(_ settings: AppSettings, to defaults: UserDefaults = .standard) {
+	private func importSettings(
+		_ settings: AppSettings,
+		validMedicationIDs: Set<String>
+	) throws {
         logger.info("Importing app settings: \(settings.settingsCategories.joined(separator: ", "))")
 
-        // Get valid medication IDs after import
-        let validMedicationIDs = Set(medications.map { $0.id.uuidString })
-
         // Apply settings with validation
-        settings.apply(to: defaults, validateMedicationIDs: { validMedicationIDs })
+		try settings.apply(
+			to: settingsDefaults,
+			validateMedicationIDs: { validMedicationIDs },
+			profileStore: refillProfileStore
+		)
 
         logger.info("App settings imported successfully")
     }
@@ -350,6 +372,19 @@ public final class DataStore {
         if let dataVersion = importedData.dataVersion, dataVersion != "1.0" {
             logger.warning("Import data version mismatch: expectedSupportedVersion=false")
         }
+
+		// Apply settings before replacing any medication or event data. The valid
+		// IDs are computed from the prospective post-import medication set.
+		if applySettings, let settings = importedData.settings {
+			let importedMedicationIDs = Set(importedData.medications.map { $0.id.uuidString })
+			let validMedicationIDs = mergeExisting ?
+				importedMedicationIDs.union(medications.map { $0.id.uuidString }) :
+				importedMedicationIDs
+			logger.info("Applying imported settings")
+			try importSettings(settings, validMedicationIDs: validMedicationIDs)
+		} else if importedData.settings != nil {
+			logger.info("Settings present in import but not applying (applySettings: \(applySettings))")
+		}
 
         // Clear existing data if not merging
         if !mergeExisting {
@@ -441,13 +476,6 @@ public final class DataStore {
             duration: duration
         )
 
-        // Import settings if present and requested
-        if applySettings, let settings = importedData.settings {
-            logger.info("Applying imported settings")
-            importSettings(settings)
-        } else if importedData.settings != nil {
-            logger.info("Settings present in import but not applying (applySettings: \(applySettings))")
-        }
     }
 
     /// Clear only user data (medications and events)
@@ -467,9 +495,22 @@ public final class DataStore {
 	static func resetAppSettings(
 		defaults: UserDefaults = .standard,
 		sharedDefaults: UserDefaults? = UserDefaults(suiteName: StorageConstants.appGroupIdentifier),
+		profileStore: MedicationRefillProfileStore? = nil,
 		navigationManager: NavigationManager = .shared
-	) {
-		for key in UserDefaultsKeys.keysToRemove {
+	) -> Bool {
+		let store = profileStore ?? MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults
+		)
+		guard store.resetProfiles() else {
+			return false
+		}
+
+		let verifiedProfileKeys: Set<String> = [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+		]
+		for key in UserDefaultsKeys.keysToRemove.subtracting(verifiedProfileKeys) {
 			defaults.removeObject(forKey: key)
 		}
 
@@ -477,45 +518,32 @@ public final class DataStore {
 			defaults.set(value, forKey: key)
 		}
 
-		// Active refill preferences and legacy active payloads are mirrored for
-		// extension access. Clear both domains while preserving recovery archives
-		// and the completed marker during an ordinary settings reset.
-		for key in [
-			UserDefaultsKeys.medicationRefillProfiles,
-			UserDefaultsKeys.legacyMedicationProfiles,
-		] {
-			sharedDefaults?.removeObject(forKey: key)
-		}
-
 		navigationManager.clearHistoryNavigation()
+		return true
 	}
 
 	/// Reset only app settings and user preferences to defaults
-	public func resetAppSettings() async {
+	public func resetAppSettings() async throws {
 		logger.warning("Resetting app settings to defaults")
-		await MainActor.run {
-			Self.resetAppSettings()
-			logger.info("Successfully reset all app settings to defaults")
+		guard Self.resetAppSettings(
+			defaults: settingsDefaults,
+			sharedDefaults: nil,
+			profileStore: refillProfileStore
+		) else {
+			throw AppSettingsError.refillProfilePersistenceFailed
 		}
+		logger.info("Successfully reset all app settings to defaults")
 	}
 
     /// Clear all data from both stores and reset all user preferences
     public func clearAllData() async throws {
         logger.warning("Clearing all data and resetting user preferences")
         do {
-            try await clearUserData()
-            await resetAppSettings()
-			await MainActor.run {
-				let sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
-				for key in [
-					UserDefaultsKeys.medicationRefillProfiles,
-					UserDefaultsKeys.legacyMedicationProfiles,
-					UserDefaultsKeys.medicationProfilesMigrationCompleted,
-				] {
-					UserDefaults.standard.removeObject(forKey: key)
-					sharedDefaults?.removeObject(forKey: key)
-				}
+			guard refillProfileStore.eraseAllProfileData() else {
+				throw AppSettingsError.refillProfilePersistenceFailed
 			}
+            try await clearUserData()
+			try await resetAppSettings()
             logger.info("Successfully cleared all data and reset preferences")
         } catch {
             logger.logPrivacySafeError("Failed to clear data", error: error)

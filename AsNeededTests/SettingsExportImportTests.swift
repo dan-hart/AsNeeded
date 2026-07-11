@@ -13,6 +13,10 @@ import Testing
 @MainActor
 @Suite(.serialized, .tags(.dataManagement, .unit))
 struct SettingsExportImportTests {
+	private enum TestFailure: Error {
+		case intentional
+	}
+
 	// MARK: - Test Helpers
 
 	func createTestDataStore() -> DataStore {
@@ -320,6 +324,208 @@ struct SettingsExportImportTests {
 		#expect(profile["lowStockThreshold"] as? Double == 7)
 	}
 
+	@Test("A null current refill property suppresses legacy fallback")
+	func nullCurrentRefillPropertySuppressesLegacyFallback() throws {
+		let medicationID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"medicationRefillProfiles": null,
+			"medicationSafetyProfiles": {"\(medicationID)": {"lowStockThreshold": 99}}
+		}
+		""")
+		let encoded = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+
+		#expect(json["medicationRefillProfiles"] == nil)
+		#expect(json["medicationSafetyProfiles"] == nil)
+	}
+
+	@Test("An absent current refill property uses legacy fallback")
+	func absentCurrentRefillPropertyUsesLegacyFallback() throws {
+		let medicationID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{"medicationSafetyProfiles": {"\(medicationID)": {"lowStockThreshold": 13}}}
+		""")
+		let encoded = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+		let profiles = try #require(json["medicationRefillProfiles"] as? [String: Any])
+
+		#expect(profiles[medicationID] != nil)
+	}
+
+	@Test("A malformed current refill property fails instead of using valid legacy data")
+	func malformedCurrentRefillPropertyFailsWithoutLegacyFallback() {
+		let medicationID = UUID().uuidString
+		#expect(throws: DecodingError.self) {
+			try decodeSettings("""
+			{
+				"medicationRefillProfiles": "malformed",
+				"medicationSafetyProfiles": {"\(medicationID)": {"lowStockThreshold": 13}}
+			}
+			""")
+		}
+	}
+
+	@Test("An empty current refill dictionary remains explicitly empty")
+	func emptyCurrentRefillDictionaryRemainsExplicitlyEmpty() throws {
+		let settings = try decodeSettings("{\"medicationRefillProfiles\": {}}")
+		let encoded = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+		let profiles = try #require(json["medicationRefillProfiles"] as? [String: Any])
+
+		#expect(profiles.isEmpty)
+	}
+
+	@Test("An empty current refill dictionary removes existing active profiles")
+	func emptyCurrentRefillDictionaryRemovesExistingProfiles() throws {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.emptyProfiles.\(UUID().uuidString)") ?? .standard
+		let sharedDefaults = UserDefaults(suiteName: "SettingsExportImportTests.sharedEmptyProfiles.\(UUID().uuidString)") ?? .standard
+		let existingData = try JSONEncoder().encode([
+			UUID().uuidString: MedicationRefillProfile(lowStockThreshold: 5),
+		])
+		defaults.set(existingData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(existingData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let settings = try decodeSettings("{\"medicationRefillProfiles\": {}}")
+
+		try settings.apply(
+			to: defaults,
+			validateMedicationIDs: { [] },
+			profileStore: MedicationRefillProfileStore(
+				defaults: defaults,
+				sharedDefaults: sharedDefaults
+			)
+		)
+
+		#expect(defaults.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(sharedDefaults.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+	}
+
+	@Test("Profile persistence failure leaves unrelated settings untouched")
+	func profilePersistenceFailureLeavesUnrelatedSettingsUntouched() throws {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.failure.\(UUID().uuidString)") ?? .standard
+		let sharedDefaults = UserDefaults(suiteName: "SettingsExportImportTests.sharedFailure.\(UUID().uuidString)") ?? .standard
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		let medicationID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"hapticsEnabled": false,
+			"medicationRefillProfiles": {"\(medicationID)": {"lowStockThreshold": 7}}
+		}
+		""")
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			profileEncoder: { _ in throw TestFailure.intentional }
+		)
+
+		#expect(throws: AppSettingsError.self) {
+			try settings.apply(
+				to: defaults,
+				validateMedicationIDs: { [medicationID] },
+				profileStore: store
+			)
+		}
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+		#expect(defaults.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+	}
+
+	@Test("Empty filtered profile removal failure leaves unrelated settings untouched")
+	func emptyFilteredProfileRemovalFailureLeavesUnrelatedSettingsUntouched() throws {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.removeFailure.\(UUID().uuidString)") ?? .standard
+		let sharedDefaults = UserDefaults(suiteName: "SettingsExportImportTests.sharedRemoveFailure.\(UUID().uuidString)") ?? .standard
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		let existingData = try JSONEncoder().encode([
+			UUID().uuidString: MedicationRefillProfile(lowStockThreshold: 5),
+		])
+		defaults.set(existingData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(existingData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let invalidID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"hapticsEnabled": false,
+			"medicationRefillProfiles": {"\(invalidID)": {"lowStockThreshold": 7}}
+		}
+		""")
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeRemover: { destination, key in
+				guard destination !== sharedDefaults else { return }
+				destination.removeObject(forKey: key)
+			}
+		)
+
+		#expect(throws: AppSettingsError.self) {
+			try settings.apply(
+				to: defaults,
+				validateMedicationIDs: { [] },
+				profileStore: store
+			)
+		}
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == existingData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == existingData)
+	}
+
+	@Test("Import without refill profiles preserves existing profiles")
+	func importWithoutRefillProfilesPreservesExistingProfiles() throws {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.noProfiles.\(UUID().uuidString)") ?? .standard
+		let medicationID = UUID().uuidString
+		let existingProfiles = [medicationID: MedicationRefillProfile(lowStockThreshold: 5)]
+		let existingData = try JSONEncoder().encode(existingProfiles)
+		defaults.set(existingData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let settings = try decodeSettings("{\"hapticsEnabled\": false}")
+
+		try settings.apply(to: defaults, validateMedicationIDs: { [medicationID] })
+
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == existingData)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+	}
+
+	@Test("Settings persistence failure aborts data import before replacing existing data")
+	func settingsPersistenceFailureAbortsBeforeDataReplacement() async throws {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.dataStoreFailure.\(UUID().uuidString)") ?? .standard
+		let sharedDefaults = UserDefaults(suiteName: "SettingsExportImportTests.dataStoreSharedFailure.\(UUID().uuidString)") ?? .standard
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		let profileStore = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeWriter: { data, destination, key in
+				guard destination !== sharedDefaults else { return }
+				destination.set(data, forKey: key)
+			}
+		)
+		let dataStore = DataStore(
+			testIdentifier: "settings-import-failure",
+			settingsDefaults: defaults,
+			refillProfileStore: profileStore
+		)
+		let existingMedication = createTestMedication()
+		try await dataStore.addMedication(existingMedication)
+		let importedMedication = createTestMedication()
+		var settings = AppSettings()
+		settings.hapticsEnabled = false
+		settings.medicationRefillProfiles = [
+			importedMedication.id.uuidString: MedicationRefillProfile(lowStockThreshold: 9),
+		]
+		let export = DataExport(
+			medications: [importedMedication],
+			events: [],
+			exportDate: Date(),
+			appVersion: "1.0",
+			dataVersion: "1.0",
+			settings: settings
+		)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+
+		await #expect(throws: AppSettingsError.self) {
+			try await dataStore.importDataFromJSON(encoder.encode(export), applySettings: true)
+		}
+		#expect(dataStore.medications.map(\.id) == [existingMedication.id])
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+	}
+
 	@Test("Imported refill profiles filter invalid medication IDs and mirror active data")
 	func importedRefillProfilesFilterInvalidIDsAndMirrorActiveData() throws {
 		let sharedDefaults = try #require(UserDefaults(suiteName: StorageConstants.appGroupIdentifier))
@@ -350,7 +556,7 @@ struct SettingsExportImportTests {
 		}
 		""")
 
-		settings.apply(to: .standard, validateMedicationIDs: { [validID] })
+		try settings.apply(to: .standard, validateMedicationIDs: { [validID] })
 
 		let standardData = try #require(UserDefaults.standard.data(forKey: UserDefaultsKeys.medicationRefillProfiles))
 		let sharedData = try #require(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles))

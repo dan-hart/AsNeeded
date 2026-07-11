@@ -263,16 +263,16 @@ The refill-only preference payload is separate from the Boutique databases. This
 | --- | --- | --- | --- |
 | Active refill profiles | `medicationRefillProfiles` | Yes | Removed by settings reset and clear-all |
 | Legacy active safety profiles | `medicationSafetyProfiles` | No | Removed after verified migration, settings reset, and clear-all |
-| Raw legacy recovery archive | `migration.archivedMedicationProfiles` | No | Preserved by settings reset and clear-all |
+| Raw legacy recovery archive | `migration.archivedMedicationProfiles` | No | Preserved by settings reset; erased by clear-all |
 | Migration completion marker | `migration.medicationProfilesCompleted` | No | Preserved by settings reset; removed by clear-all |
 
 `UserDefaults.standard` is authoritative for active refill profiles. The App Group defaults domain is a verified mirror for widgets and extensions. Writes and removals must go through `MedicationRefillProfileStore` where practical so both domains are updated and read back before the operation succeeds. If only the App Group active value exists, the store may recover it into standard defaults; if both exist, the standard value wins and is mirrored.
 
 Legacy migration decodes only `lowStockThreshold` from each old safety profile. Removed dose limits, timing windows, and other safety fields are ignored. Before the legacy active payload is removed, its raw bytes are written to the recovery archive in both defaults domains and verified. The completion marker is then mirrored to prevent archive or stale legacy data from replaying on later launches. Migration failures retain the legacy active payload and do not claim completion.
 
-Settings exports encode only `medicationRefillProfiles`. They never include the legacy active property, raw recovery archive, or migration marker. Imports prefer `medicationRefillProfiles` when both current and legacy JSON properties exist. Legacy exports containing `medicationSafetyProfiles` remain decodable through the minimal low-stock-only shape. Imported profile dictionaries are filtered to medication IDs that exist after import, then persisted through the verified store.
+Settings exports encode only `medicationRefillProfiles`. They never include the legacy active property, raw recovery archive, or migration marker. Imports prefer `medicationRefillProfiles` when both current and legacy JSON properties exist; a present current property, including `null` or malformed data, never falls back to legacy. Legacy exports containing `medicationSafetyProfiles` remain decodable through the minimal low-stock-only shape only when the current property is absent. Imported profile dictionaries are filtered to medication IDs that will exist after import, then persisted and verified before any unrelated setting or medication/event data is changed. A profile persistence failure aborts the import and is surfaced to the caller.
 
-An ordinary settings reset removes active current and legacy refill preferences from standard and App Group defaults, but deliberately preserves verified recovery archives and the completion marker. Clear-all additionally removes the completion marker from both domains. The raw archive remains deliberately preserved as recovery evidence; it is never treated as an active preference and cannot migrate by itself. Removing the active legacy key and marker together during clear-all ensures a newly created profile store cannot resurrect a removed profile.
+An ordinary settings reset removes active current and legacy refill preferences from standard and App Group defaults, but deliberately preserves verified recovery archives and the completion marker. Explicit clear-all is a privacy erasure: it removes active current data, legacy active data, the completion marker, and raw recovery archives from both domains. Both operations snapshot the affected keys, remove them, read back every destination, and roll back on failure. A failed verified profile reset leaves unrelated settings untouched; a failed clear-all profile erasure is surfaced before medication or event data is deleted.
 
 Required refill-profile storage scenarios are:
 
@@ -280,7 +280,7 @@ Required refill-profile storage scenarios are:
 - Legacy-only: decode only low-stock thresholds, verify active writes and archive bytes, remove legacy active data, and mark completion.
 - Current-only: preserve the current payload and verify standard/App Group mirroring.
 - Both current and legacy: current active data wins; legacy bytes are archived and removed without overwriting current data.
-- Restart: completed migration does not replay or resurrect removed profiles.
+- Restart: completed migration does not replay or resurrect removed profiles; failed mirrored removal rolls back to a consistent state.
 - Failure: encoding, mirroring, archive verification, or removal failure must not silently discard the last recoverable payload.
 - Settings lifecycle: current export/import, legacy exported JSON decoding, invalid-ID filtering, reset, clear-all, archive exclusion, and key-registry classification remain covered by focused tests.
 

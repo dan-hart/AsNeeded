@@ -184,6 +184,70 @@ struct MedicationRefillProfileStoreTests {
 		#expect(filtered == [validID.uuidString: MedicationRefillProfile(lowStockThreshold: 5)])
 	}
 
+	@Test("Verified profile reset rolls both domains back when shared removal fails")
+	func verifiedResetRollsBackWhenSharedRemovalFails() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let activeData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 8),
+		])
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 5),
+		])
+		for destination in [defaults, sharedDefaults] {
+			destination.set(activeData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+			destination.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+			destination.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.archivedMedicationProfiles)
+			destination.set(true, forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted)
+		}
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeRemover: { destination, key in
+				guard destination !== sharedDefaults else { return }
+				destination.removeObject(forKey: key)
+			}
+		)
+
+		#expect(!store.resetProfiles())
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == activeData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == activeData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+
+		let recreatedStore = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults
+		)
+		#expect(recreatedStore.profile(for: medicationID).lowStockThreshold == 8)
+	}
+
+	@Test("Full profile erasure removes active migration and recovery data")
+	func fullProfileErasureRemovesAllProfileData() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let activeData = try activePayload([
+			UUID().uuidString: MedicationRefillProfile(lowStockThreshold: 8),
+		])
+		for destination in [defaults, sharedDefaults] {
+			destination.set(activeData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+			destination.set(activeData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+			destination.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.archivedMedicationProfiles)
+			destination.set(true, forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted)
+		}
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(store.eraseAllProfileData())
+
+		for destination in [defaults, sharedDefaults] {
+			#expect(destination.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+			#expect(destination.object(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+			#expect(destination.object(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+			#expect(destination.object(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted) == nil)
+		}
+	}
+
 	@Test("Repeated store creation does not replay migration")
 	func repeatedStoreCreationIsIdempotent() throws {
 		let defaults = makeDefaults()

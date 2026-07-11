@@ -293,10 +293,16 @@ final class DataManagementViewModel: ObservableObject {
             logger.debug("Reset app settings process completed")
         }
 
-        await dataStore.resetAppSettings()
-        logger.info("App settings reset successfully")
-        alertMessage = "App settings restored to defaults successfully"
-        showingAlert = true
+		do {
+			try await dataStore.resetAppSettings()
+			logger.info("App settings reset successfully")
+			alertMessage = "App settings restored to defaults successfully"
+			showingAlert = true
+		} catch {
+			logger.logPrivacySafeError("Reset app settings failed", error: error)
+			alertMessage = "Reset failed: \(error.localizedDescription)"
+			showingAlert = true
+		}
     }
 
     func clearAllData() async {

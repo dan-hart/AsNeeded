@@ -12,6 +12,12 @@ final class MedicationRefillProfileStore {
 		let data: Data?
 	}
 
+	private struct KeySnapshot {
+		let destination: UserDefaults
+		let key: String
+		let value: Any?
+	}
+
 	private struct LegacyPayloads {
 		let standard: Data?
 		let shared: Data?
@@ -117,6 +123,24 @@ final class MedicationRefillProfileStore {
 			return false
 		}
 		return persistVerified(profiles)
+	}
+
+	@discardableResult
+	func resetProfiles() -> Bool {
+		removeVerified(keys: [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+		])
+	}
+
+	@discardableResult
+	func eraseAllProfileData() -> Bool {
+		removeVerified(keys: [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+			UserDefaultsKeys.medicationProfilesMigrationCompleted,
+			UserDefaultsKeys.archivedMedicationProfiles,
+		])
 	}
 
 	static func filteredProfiles(
@@ -433,6 +457,52 @@ final class MedicationRefillProfileStore {
 				) == data
 			}
 			return snapshot.destination.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil
+		}
+	}
+
+	private func removeVerified(keys: [String]) -> Bool {
+		let snapshots = activeDestinations.flatMap { destination in
+			keys.map { key in
+				KeySnapshot(
+					destination: destination,
+					key: key,
+					value: destination.object(forKey: key)
+				)
+			}
+		}
+
+		for destination in activeDestinations {
+			for key in keys {
+				activeRemover(destination, key)
+				guard destination.object(forKey: key) == nil else {
+					_ = restoreKeySnapshots(snapshots)
+					return false
+				}
+			}
+		}
+
+		return true
+	}
+
+	private func restoreKeySnapshots(_ snapshots: [KeySnapshot]) -> Bool {
+		for snapshot in snapshots {
+			if let value = snapshot.value {
+				snapshot.destination.set(value, forKey: snapshot.key)
+			} else {
+				snapshot.destination.removeObject(forKey: snapshot.key)
+			}
+		}
+
+		return snapshots.allSatisfy { snapshot in
+			let restoredValue = snapshot.destination.object(forKey: snapshot.key)
+			switch (snapshot.value, restoredValue) {
+			case (nil, nil):
+				return true
+			case let (expected as NSObject, restored as NSObject):
+				return expected.isEqual(restored)
+			default:
+				return false
+			}
 		}
 	}
 
