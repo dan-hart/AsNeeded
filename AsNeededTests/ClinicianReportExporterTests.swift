@@ -1,6 +1,7 @@
 import ANModelKit
 @testable import AsNeeded
 import Foundation
+import PDFKit
 import Testing
 
 @Suite("ClinicianReportExporter Tests")
@@ -212,5 +213,69 @@ struct ClinicianReportExporterTests {
 
 		#expect(pdf.count > 500)
 		#expect(String(data: pdf.prefix(4), encoding: .utf8) == "%PDF")
+	}
+
+	@Test("PDF content matches the clinician summary")
+	func pdfContentMatchesSummary() throws {
+		let generatedAt = Date(timeIntervalSince1970: 1_800_000_000)
+		let disclaimer = "This report summarizes self-logged medication history. It may be incomplete or incorrect and should not replace clinical judgment."
+		let summary = ClinicianReportSummary(
+			generatedAt: generatedAt,
+			medicationCount: 2,
+			eventCount: 7,
+			medications: [
+				ClinicianMedicationSummary(
+					name: "Alpha",
+					prescribedDose: "1 tab",
+					quantityStatus: "12 tab remaining",
+					lastLogged: "Jan 10, 2027 at 9:30 AM",
+					logsInLast30Days: 4,
+					averageDailyUsage: "2 tab/day",
+					refillStatus: "Refill prep would be timely."
+				),
+				ClinicianMedicationSummary(
+					name: "Zeta",
+					prescribedDose: "5 mg",
+					quantityStatus: "20 mg remaining",
+					lastLogged: "Jan 9, 2027 at 8:15 PM",
+					logsInLast30Days: 3,
+					averageDailyUsage: "5 mg/day",
+					refillStatus: "About 4d of supply at your recent pace."
+				),
+			],
+			disclaimer: disclaimer
+		)
+		let pdf = ClinicianReportExporter().makePDF(summary: summary)
+		let document = try #require(PDFDocument(data: pdf))
+		let extractedText = (0 ..< document.pageCount)
+			.compactMap { document.page(at: $0)?.string }
+			.joined(separator: "\n")
+		func normalized(_ value: String) -> String {
+			value.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+		}
+		let text = normalized(extractedText)
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+		let alphaRange = try #require(text.range(of: "Alpha"))
+		let zetaRange = try #require(text.range(of: "Zeta"))
+
+		#expect(text.contains(normalized("Generated \(formatter.string(from: generatedAt))")))
+		#expect(text.contains("Medications: 2"))
+		#expect(text.contains("Dose logs: 7"))
+		#expect(alphaRange.lowerBound < zetaRange.lowerBound)
+		#expect(text.contains("Prescribed dose: 1 tab"))
+		#expect(text.contains("Quantity: 12 tab remaining"))
+		#expect(text.contains("Last logged: Jan 10, 2027 at 9:30 AM"))
+		#expect(text.contains("Logs in last 30 days: 4"))
+		#expect(text.contains("Average daily usage: 2 tab/day"))
+		#expect(text.contains("Refill status: Refill prep would be timely."))
+		#expect(text.contains("Prescribed dose: 5 mg"))
+		#expect(text.contains("Quantity: 20 mg remaining"))
+		#expect(text.contains("Last logged: Jan 9, 2027 at 8:15 PM"))
+		#expect(text.contains("Logs in last 30 days: 3"))
+		#expect(text.contains("Average daily usage: 5 mg/day"))
+		#expect(text.contains("Refill status: About 4d of supply at your recent pace."))
+		#expect(text.contains(normalized(disclaimer)))
 	}
 }
