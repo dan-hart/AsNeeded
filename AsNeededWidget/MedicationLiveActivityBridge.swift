@@ -7,7 +7,7 @@ import Foundation
 
 @MainActor
 enum MedicationLiveActivityBridge {
-	static func refreshFromSharedStores(provider: WidgetDataProvider = .shared) async {
+	static func refreshFromSharedStores(provider: WidgetDataProvider) async {
 		guard #available(iOSApplicationExtension 16.2, *) else {
 			return
 		}

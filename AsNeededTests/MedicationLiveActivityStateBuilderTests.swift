@@ -183,6 +183,23 @@ struct MedicationLiveActivityStateBuilderTests {
 			let stateLabels = Set(Mirror(reflecting: state).children.compactMap(\.label))
 			#expect(!stateLabels.contains("nextDoseDate"))
 			#expect(!stateLabels.contains("canTakeNow"))
+			#expect(state.medicationURL == URL(string: "asneeded://log/\(medication.id.uuidString)"))
+			#expect(state.compactStatusAccessibilityLabel == "Low stock for Ibuprofen")
+
+			let refillState = MedicationLiveActivityAttributes.ContentState(
+				medicationID: medication.id.uuidString,
+				medicationName: medication.displayName,
+				symbolName: "pills.fill",
+				statusText: "Refill soon",
+				detailText: "You’re approaching your refill window.",
+				lowStock: false,
+				refillSoon: true
+			)
+			#expect(refillState.compactStatusAccessibilityLabel == "Refill soon for Ibuprofen")
+
+			var normalState = refillState
+			normalState.refillSoon = false
+			#expect(normalState.compactStatusAccessibilityLabel == "Refill status for Ibuprofen")
 		#endif
 	}
 
@@ -200,6 +217,19 @@ struct MedicationLiveActivityStateBuilderTests {
 
 		#expect(client.requestedContents.count == 1)
 		#expect(client.requestedContents.first?.medicationName == "Ibuprofen")
+	}
+
+	@MainActor
+	@Test("Live Activity medication URL routes to the featured medication log surface")
+	func medicationURLRoutesToMedicationLog() throws {
+		let medicationID = try #require(UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"))
+		let handler = QuickActionHandler.shared
+		handler.pendingAction = nil
+
+		handler.handleURL(try #require(URL(string: "asneeded://log/\(medicationID.uuidString)")))
+
+		#expect(handler.pendingAction == .logDose(medicationID: medicationID))
+		handler.pendingAction = nil
 	}
 
 	@Test("Refresh swallows request failures from the live activity client")

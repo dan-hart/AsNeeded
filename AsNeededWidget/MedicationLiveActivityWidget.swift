@@ -19,6 +19,7 @@ struct MedicationLiveActivityWidget: Widget {
 			LiveActivityLockScreenView(state: context.state)
 				.activityBackgroundTint(Color(.systemBackground))
 				.activitySystemActionForegroundColor(widgetAccent)
+				.widgetURL(context.state.medicationURL)
 		} dynamicIsland: { context in
 			DynamicIsland {
 				DynamicIslandExpandedRegion(.leading) {
@@ -40,10 +41,12 @@ struct MedicationLiveActivityWidget: Widget {
 			} compactTrailing: {
 				Image(systemName: context.state.lowStock ? "exclamationmark.circle.fill" : "calendar")
 					.foregroundStyle(context.state.lowStock ? .orange : widgetAccent)
+					.accessibilityLabel(context.state.compactStatusAccessibilityLabel)
 			} minimal: {
 				Image(systemName: context.state.symbolName)
 					.foregroundStyle(widgetAccent)
 			}
+			.widgetURL(context.state.medicationURL)
 		}
 	}
 
@@ -118,7 +121,7 @@ private struct LiveActivityLockScreenView: View {
 	}
 
 	private func logIntent(for medicationID: String) -> LogDoseWidgetIntent {
-		var intent = LogDoseWidgetIntent()
+		let intent = LogDoseWidgetIntent()
 		intent.medicationID = medicationID
 		return intent
 	}

@@ -31,12 +31,6 @@ struct LogDoseWidgetIntent: AppIntent {
             return .result()
         }
 
-        // Check if can take now (simplified 4-hour interval check)
-        guard provider.canTakeNow(medication) else {
-            // Cannot take yet - interval not elapsed
-            return .result()
-        }
-
         // Determine dose amount and unit
         let doseAmount = medication.prescribedDoseAmount ?? 1.0
         let selectedUnit = medication.prescribedUnit ?? .unit
