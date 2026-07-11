@@ -35,8 +35,6 @@ struct MediumWidgetProvider: TimelineProvider {
                         quantity: 30,
                         prescribedUnit: .tablet
                     ),
-                    nextDoseTime: Date().addingTimeInterval(3600),
-                    canTakeNow: false,
                     lowStock: false,
                     refillSoon: true
                 ),
@@ -46,8 +44,6 @@ struct MediumWidgetProvider: TimelineProvider {
                         quantity: 15,
                         prescribedUnit: .capsule
                     ),
-                    nextDoseTime: Date(),
-                    canTakeNow: true,
                     lowStock: false,
                     refillSoon: false
                 ),
@@ -82,14 +78,15 @@ struct MediumWidgetProvider: TimelineProvider {
     private func createEntry() -> MedicationListEntry {
         let provider = WidgetDataProvider.shared
 
-        // Get top 3 medications by next dose time
-        let medications = Array(provider.medicationsByName.prefix(3)).map { medication in
+        let lowStockIDs = Set(provider.lowQuantityMedications.map(\.id))
+        let refillSoonIDs = Set(provider.refillDueSoon.map(\.id))
+
+        let medications = Array(provider.medicationsByRefillPriority.prefix(3)).map { medication in
             MedicationInfo(
                 medication: medication,
-                nextDoseTime: provider.nextDoseTime(for: medication),
-                canTakeNow: provider.canTakeNow(medication),
-                lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
-                refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
+                lowStock: lowStockIDs.contains(medication.id),
+                refillSoon: refillSoonIDs.contains(medication.id),
+                statusMessage: provider.refillStatusMessage(for: medication)
             )
         }
 
@@ -169,11 +166,7 @@ struct MediumWidgetView: View {
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
 
-                if info.canTakeNow {
-                    Text("Available now")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.green)
-                } else if info.lowStock {
+                if info.lowStock {
                     Text("Low stock")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.orange)
@@ -181,17 +174,18 @@ struct MediumWidgetView: View {
                     Text("Refill soon")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.orange)
-                } else if let nextDoseTime = info.nextDoseTime {
-                    Text("Next: \(timeRemaining(until: nextDoseTime))")
-                        .font(.caption2.weight(.medium))
+                } else if let statusMessage = info.statusMessage {
+                    Text(statusMessage)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
             Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
-            if #available(iOS 17.0, *), info.canTakeNow {
+            if #available(iOS 17.0, *) {
                 LogDoseIconButton(medicationID: info.medication.id.uuidString, color: info.medication.displayColor)
             } else {
                 Image(systemName: "plus.circle.fill")
@@ -220,25 +214,6 @@ struct MediumWidgetView: View {
         .padding()
     }
 
-    private func timeRemaining(until date: Date) -> String {
-        let interval = date.timeIntervalSince(Date())
-
-        if interval <= 0 {
-            return "now"
-        }
-
-        let hours = Int(interval) / 3600
-        let minutes = (Int(interval) % 3600) / 60
-
-        if hours > 24 {
-            let days = hours / 24
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
-    }
 }
 
 // MARK: - Timeline Entry
@@ -250,23 +225,17 @@ struct MedicationListEntry: TimelineEntry {
 
 struct MedicationInfo {
     let medication: ANMedicationConcept
-    let nextDoseTime: Date?
-    let canTakeNow: Bool
     let lowStock: Bool
     let refillSoon: Bool
     let statusMessage: String?
 
     init(
         medication: ANMedicationConcept,
-        nextDoseTime: Date?,
-        canTakeNow: Bool,
         lowStock: Bool = false,
         refillSoon: Bool = false,
         statusMessage: String? = nil
     ) {
         self.medication = medication
-        self.nextDoseTime = nextDoseTime
-        self.canTakeNow = canTakeNow
         self.lowStock = lowStock
         self.refillSoon = refillSoon
         self.statusMessage = statusMessage
@@ -286,18 +255,14 @@ struct MedicationInfo {
                     clinicalName: "Lisinopril",
                     quantity: 28,
                     prescribedUnit: .tablet
-                ),
-                nextDoseTime: Date(),
-                canTakeNow: true
+                )
             ),
             MedicationInfo(
                 medication: ANMedicationConcept(
                     clinicalName: "Metformin",
                     quantity: 45,
                     prescribedUnit: .tablet
-                ),
-                nextDoseTime: Date().addingTimeInterval(7200),
-                canTakeNow: false
+                )
             ),
         ]
     )

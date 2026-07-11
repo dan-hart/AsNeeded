@@ -15,7 +15,6 @@ final class WidgetDataProvider {
     let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
     private let decoder = JSONDecoder()
     private let refillProjectionService = WidgetMedicationRefillProjectionService()
-    private let eligibilityService = WidgetMedicationEligibilityService()
 
     // Boutique stores using shared App Group container - made internal for widget intent access
     let medicationsStore: Store<ANMedicationConcept>
@@ -92,64 +91,34 @@ final class WidgetDataProvider {
         return profiles
     }
 
-    private var legacyEligibilityProfiles: [String: WidgetMedicationEligibilityProfile] {
-        guard
-            let defaults = UserDefaults(suiteName: appGroupIdentifier),
-            let data = defaults.data(forKey: WidgetUserDefaultsKeys.legacyMedicationSafetyProfiles),
-            let profiles = try? decoder.decode([String: WidgetMedicationEligibilityProfile].self, from: data)
-        else {
-            return [:]
-        }
-        return profiles
-    }
-
     private func refillProfile(for medication: ANMedicationConcept) -> WidgetMedicationRefillProfile {
         refillProfiles[medication.id.uuidString] ?? .empty
     }
 
-    private func eligibilityProfile(for medication: ANMedicationConcept) -> WidgetMedicationEligibilityProfile {
-        legacyEligibilityProfiles[medication.id.uuidString] ?? .empty
-    }
+    /// Sort low-stock medications first, then refill-soon medications, then alphabetically.
+    var medicationsByRefillPriority: [ANMedicationConcept] {
+        let lowStockIDs = Set(lowQuantityMedications.map(\.id))
+        let refillSoonIDs = Set(refillDueSoon.map(\.id))
 
-    /// Get the next medication due to be taken
-    var nextMedicationDue: ANMedicationConcept? {
-        medications.min { left, right in
-            let leftDate = nextDoseTime(for: left) ?? .distantPast
-            let rightDate = nextDoseTime(for: right) ?? .distantPast
+        return medications.sorted { left, right in
+            let leftPriority = lowStockIDs.contains(left.id) ? 0 : refillSoonIDs.contains(left.id) ? 1 : 2
+            let rightPriority = lowStockIDs.contains(right.id) ? 0 : refillSoonIDs.contains(right.id) ? 1 : 2
 
-            if leftDate == rightDate {
-                return left.displayName.localizedCaseInsensitiveCompare(right.displayName) == .orderedAscending
+            if leftPriority == rightPriority {
+                let nameComparison = left.displayName.localizedCaseInsensitiveCompare(right.displayName)
+                if nameComparison == .orderedSame {
+                    return left.id.uuidString < right.id.uuidString
+                }
+                return nameComparison == .orderedAscending
             }
 
-            return leftDate < rightDate
+            return leftPriority < rightPriority
         }
     }
 
-    /// Temporary compatibility for widgets that still display legacy eligibility state.
-    func nextDoseTime(for medication: ANMedicationConcept) -> Date? {
-        eligibilityService.nextEligibleDate(
-            for: medication,
-            events: events,
-            profile: eligibilityProfile(for: medication)
-        )
-    }
-
-    /// Check if medication can be taken now
-    func canTakeNow(_ medication: ANMedicationConcept) -> Bool {
-        guard let nextTime = nextDoseTime(for: medication) else {
-            return true
-        }
-        return nextTime <= Date()
-    }
-
-    /// Get time remaining until next dose
-    func timeUntilNextDose(for medication: ANMedicationConcept) -> TimeInterval? {
-        guard let nextTime = nextDoseTime(for: medication) else {
-            return nil
-        }
-
-        let interval = nextTime.timeIntervalSince(Date())
-        return max(0, interval)
+    /// Feature the highest-priority medication for compact widgets.
+    var featuredMedication: ANMedicationConcept? {
+        medicationsByRefillPriority.first
     }
 
     /// Get medications at or below their saved low-stock threshold.
@@ -277,12 +246,6 @@ private struct WidgetMedicationRefillProfile: Codable {
     var lowStockThreshold: Double?
 }
 
-private struct WidgetMedicationEligibilityProfile: Codable {
-    static let empty = WidgetMedicationEligibilityProfile()
-
-    var minimumHoursBetweenDoses: Double?
-}
-
 private struct WidgetMedicationRefillProjectionService {
     struct RefillProjection {
         let lowStock: Bool
@@ -313,21 +276,18 @@ private struct WidgetMedicationRefillProjectionService {
         let refillSoon = lowStock ||
             (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 5) ||
             (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 5)
-        let urgent = lowStock ||
-            (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 2) ||
-            (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 2)
         let statusMessage: String
 
         if medication.quantity == nil {
-            statusMessage = "Add or update the quantity to see refill estimates."
-        } else if urgent {
-            statusMessage = "Refill prep would be timely."
-        } else if refillSoon {
-            statusMessage = "You’re approaching your refill window."
+            statusMessage = "Quantity is unavailable for refill estimates."
+        } else if lowStock {
+            statusMessage = "Quantity is at or below the low-stock threshold."
+        } else if daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 5 {
+            statusMessage = "The next refill date is within 5 days."
         } else if let estimatedDaysRemaining {
             statusMessage = "About \(estimatedDaysRemaining)d of supply at your recent pace."
         } else {
-            statusMessage = "Log more doses to estimate your run-out date."
+            statusMessage = "More dose history is needed for a run-out estimate."
         }
 
         return RefillProjection(
@@ -353,28 +313,5 @@ private struct WidgetMedicationRefillProjectionService {
         }
         let total = relevantEvents.compactMap { $0.dose?.amount }.reduce(0, +)
         return total / Double(max(1, grouped.count))
-    }
-}
-
-private struct WidgetMedicationEligibilityService {
-    func nextEligibleDate(
-        for medication: ANMedicationConcept,
-        events: [ANEventConcept],
-        profile: WidgetMedicationEligibilityProfile
-    ) -> Date? {
-        guard let minimumHoursBetweenDoses = profile.minimumHoursBetweenDoses else {
-            return nil
-        }
-
-        let lastEvent = events
-            .filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
-            .sorted { $0.date > $1.date }
-            .first
-
-        guard let lastEvent else {
-            return nil
-        }
-
-        return lastEvent.date.addingTimeInterval(minimumHoursBetweenDoses * 3600)
     }
 }

@@ -105,39 +105,27 @@ final class WCReceiver: NSObject, ObservableObject {
     private func sendMedicationsToWatch() async {
         let medications = DataStore.shared.medications
         let events = DataStore.shared.events
-        let safetyProfileStore = MedicationSafetyProfileStore.shared
-        let guidanceService = MedicationDoseGuidanceService()
+        let refillProfileStore = MedicationRefillProfileStore.shared
+        let refillProjectionService = MedicationRefillProjectionService()
 
         let medicationData = medications.map { medication -> [String: Any] in
-            let profile = safetyProfileStore.profile(for: medication.id)
-            let nextDoseDate = guidanceService.nextEligibleDate(
-                for: medication,
-                events: events,
-                profile: profile
-            )
-            let refillProjection = guidanceService.refillProjection(
+            let profile = refillProfileStore.profile(for: medication.id)
+            let refillProjection = refillProjectionService.projection(
                 for: medication,
                 events: events,
                 profile: profile
             )
 
-            var payload: [String: Any] = [
+            return [
                 "id": medication.id.uuidString,
                 "displayName": medication.displayName,
                 "quantity": medication.quantity ?? 0.0,
                 "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
                 "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
-                "canTakeNow": nextDoseDate == nil || nextDoseDate ?? .distantPast <= Date(),
                 "lowStock": refillProjection.lowStock,
                 "refillSoon": refillProjection.refillSoon,
                 "statusMessage": refillProjection.statusMessage,
             ]
-
-            if let nextDoseDate {
-                payload["nextDoseDate"] = nextDoseDate
-            }
-
-            return payload
         }
 
         if session.isReachable {

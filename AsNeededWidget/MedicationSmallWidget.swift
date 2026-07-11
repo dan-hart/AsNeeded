@@ -1,5 +1,5 @@
 // MedicationSmallWidget.swift
-// Small widget showing next medication due with countdown timer
+// Small widget showing a featured medication and refill status
 
 import ANModelKit
 import AppIntents
@@ -14,8 +14,8 @@ struct MedicationSmallWidget: Widget {
             SmallWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Next Medication")
-        .description("Shows your next medication due with countdown timer")
+        .configurationDisplayName("Featured Medication")
+        .description("Shows a medication with refill and quantity status")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -33,8 +33,8 @@ struct SmallWidgetProvider: TimelineProvider {
                 quantity: 30,
                 prescribedUnit: .tablet
             ),
-            nextDoseTime: Date().addingTimeInterval(3600),
-            canTakeNow: false
+            lowStock: false,
+            refillSoon: true
         )
     }
 
@@ -65,18 +65,15 @@ struct SmallWidgetProvider: TimelineProvider {
     private func createEntry() -> MedicationEntry {
         let provider = WidgetDataProvider.shared
 
-        guard let medication = provider.nextMedicationDue else {
-            return MedicationEntry(date: Date(), medication: nil, nextDoseTime: nil, canTakeNow: false)
+        guard let medication = provider.featuredMedication else {
+            return MedicationEntry(date: Date(), medication: nil, lowStock: false, refillSoon: false)
         }
-
-        let nextDoseTime = provider.nextDoseTime(for: medication)
-        let canTakeNow = provider.canTakeNow(medication)
 
         return MedicationEntry(
             date: Date(),
             medication: medication,
-            nextDoseTime: nextDoseTime,
-            canTakeNow: canTakeNow
+            lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
+            refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
         )
     }
 }
@@ -105,33 +102,26 @@ struct SmallWidgetView: View {
 
                 Spacer()
 
-                // Status and countdown
-                if entry.canTakeNow {
-                    if #available(iOS 17.0, *) {
-                        // Interactive button for iOS 17+
-                        LogDoseButton(medicationID: medication.id.uuidString)
-                    } else {
-                        // Fallback for iOS 16
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Available Now")
-                                .font(.caption2.weight(.medium))
-                                .foregroundStyle(.green)
+                if entry.lowStock {
+                    Text("Low stock")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.orange)
+                } else if entry.refillSoon {
+                    Text("Refill soon")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.orange)
+                }
 
-                            Text("Tap to log dose")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } else if let nextDoseTime = entry.nextDoseTime {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Next Dose")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-
-                        Text(timeRemaining(until: nextDoseTime))
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(medication.displayColor)
-                    }
+                if #available(iOS 17.0, *) {
+                    LogDoseButton(medicationID: medication.id.uuidString)
+                } else if let quantity = medication.quantity {
+                    Text("Qty: \(quantity, specifier: "%.0f")")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Tap to log dose")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding()
@@ -156,25 +146,6 @@ struct SmallWidgetView: View {
         }
     }
 
-    private func timeRemaining(until date: Date) -> String {
-        let interval = date.timeIntervalSince(Date())
-
-        if interval <= 0 {
-            return "Now"
-        }
-
-        let hours = Int(interval) / 3600
-        let minutes = (Int(interval) % 3600) / 60
-
-        if hours > 24 {
-            let days = hours / 24
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
-    }
 }
 
 // MARK: - Timeline Entry
@@ -182,8 +153,8 @@ struct SmallWidgetView: View {
 struct MedicationEntry: TimelineEntry {
     let date: Date
     let medication: ANMedicationConcept?
-    let nextDoseTime: Date?
-    let canTakeNow: Bool
+    let lowStock: Bool
+    let refillSoon: Bool
 }
 
 // MARK: - Preview
@@ -198,8 +169,8 @@ struct MedicationEntry: TimelineEntry {
             quantity: 28,
             prescribedUnit: .tablet
         ),
-        nextDoseTime: Date().addingTimeInterval(3600),
-        canTakeNow: false
+        lowStock: false,
+        refillSoon: true
     )
 
     MedicationEntry(
@@ -209,8 +180,8 @@ struct MedicationEntry: TimelineEntry {
             quantity: 45,
             prescribedUnit: .tablet
         ),
-        nextDoseTime: Date(),
-        canTakeNow: true
+        lowStock: true,
+        refillSoon: true
     )
 }
 

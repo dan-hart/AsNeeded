@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import WatchKit
 
@@ -10,9 +9,6 @@ struct MedicationDetailView: View {
     @State private var showingQuantityEditor = false
     @State private var newQuantity: Double
     @State private var currentQuantity: Double
-    @State private var now = Date()
-
-    private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     init(medication: WatchMedication) {
         self.medication = medication
@@ -22,8 +18,6 @@ struct MedicationDetailView: View {
     }
 
     var body: some View {
-        let canTakeNow = medication.canTake(at: now)
-
         ScrollView {
             VStack(spacing: 16) {
                 // Medication Info
@@ -61,7 +55,7 @@ struct MedicationDetailView: View {
                         }
                     }
 
-                    if medication.lowStock || medication.refillSoon || !canTakeNow {
+                    if medication.lowStock || medication.refillSoon {
                         statusBadge
                     } else if let statusMessage = medication.statusMessage {
                         Text(statusMessage)
@@ -79,44 +73,37 @@ struct MedicationDetailView: View {
                         showingDoseLogger = true
                     }) {
                         HStack {
-                            Image(systemName: canTakeNow ? "plus.circle.fill" : "clock.fill")
-                            Text(canTakeNow ? "Log Dose" : nextDoseLabel)
+                            Image(systemName: "plus.circle.fill")
+                            Text("Log Dose")
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(canTakeNow ? Color.accent : Color.orange)
+                        .background(Color.accent)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!canTakeNow)
 
                     Button(action: {
                         logQuickDose()
                     }) {
                         HStack {
-                            if canTakeNow {
-                                Image(systemName: "bolt.fill")
-                                Text("Quick Log")
-                                if let amount = medication.prescribedDoseAmount,
-                                   let unit = medication.prescribedUnit
-                                {
-                                    Text("(\(amount, specifier: "%.1f") \(unit))")
-                                        .font(.caption)
-                                }
-                            } else {
-                                Image(systemName: "clock.fill")
-                                Text(nextDoseLabel)
+                            Image(systemName: "bolt.fill")
+                            Text("Quick Log")
+                            if let amount = medication.prescribedDoseAmount,
+                               let unit = medication.prescribedUnit
+                            {
+                                Text("(\(amount, specifier: "%.1f") \(unit))")
+                                    .font(.caption)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(canTakeNow ? Color.green : Color.orange)
+                        .background(Color.green)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!canTakeNow)
                 }
             }
             .padding()
@@ -135,15 +122,9 @@ struct MedicationDetailView: View {
         .sheet(isPresented: $showingQuantityEditor) {
             QuantityEditorView(medication: medication, quantity: $newQuantity)
         }
-        .onReceive(eligibilityTimer) { now = $0 }
     }
 
     private func logQuickDose() {
-        guard medication.canTake(at: Date()) else {
-            WKInterfaceDevice.current().play(.failure)
-            return
-        }
-
         let doseAmount = medication.prescribedDoseAmount ?? 1.0
         let doseUnit = medication.prescribedUnit ?? "dose"
 
@@ -170,9 +151,6 @@ struct MedicationDetailView: View {
             if medication.lowStock {
                 Label("Low stock", systemImage: "exclamationmark.triangle.fill")
                     .foregroundColor(.orange)
-            } else if !medication.canTake(at: now) {
-                Label(nextDoseLabel, systemImage: "clock.fill")
-                    .foregroundColor(.orange)
             } else if medication.refillSoon {
                 Label("Refill soon", systemImage: "shippingbox.fill")
                     .foregroundColor(.yellow)
@@ -181,15 +159,6 @@ struct MedicationDetailView: View {
         .font(.caption2)
     }
 
-    private var nextDoseLabel: String {
-        guard let nextDoseDate = medication.nextDoseDate else {
-            return "Not ready"
-        }
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
-        return formatter.localizedString(for: nextDoseDate, relativeTo: now)
-    }
 }
 
 #if DEBUG
