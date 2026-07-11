@@ -1,0 +1,282 @@
+@testable import AsNeeded
+import Foundation
+import Testing
+
+@Suite("MedicationRefillProfileStore Tests", .tags(.unit))
+struct MedicationRefillProfileStoreTests {
+	private struct LegacyProfile: Codable {
+		var minimumHoursBetweenDoses: Double?
+		var lowStockThreshold: Double?
+		var refillLeadDays: Int = 5
+	}
+
+	private func makeDefaults(_ label: String = "defaults") -> UserDefaults {
+		let suiteName = "MedicationRefillProfileStoreTests.\(label).\(UUID().uuidString)"
+		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+		defaults.removePersistentDomain(forName: suiteName)
+		return defaults
+	}
+
+	private func legacyPayload(_ profiles: [String: LegacyProfile]) throws -> Data {
+		try JSONEncoder().encode(profiles)
+	}
+
+	private func activePayload(_ profiles: [String: MedicationRefillProfile]) throws -> Data {
+		try JSONEncoder().encode(profiles)
+	}
+
+	@Test("Store saves only custom low-stock thresholds")
+	func savesOnlyCustomThresholds() {
+		let defaults = makeDefaults()
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		let medicationID = UUID()
+
+		store.save(MedicationRefillProfile(lowStockThreshold: 7), for: medicationID)
+
+		#expect(store.profile(for: medicationID) == MedicationRefillProfile(lowStockThreshold: 7))
+		#expect(store.allProfiles() == [medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 7)])
+	}
+
+	@Test("Legacy-only profiles migrate low-stock thresholds")
+	func migratesLegacyOnlyProfiles() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(minimumHoursBetweenDoses: 4, lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 6)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == legacyData)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles))
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == legacyData)
+		#expect(sharedDefaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("New-only active profiles load without legacy migration")
+	func loadsNewOnlyActiveProfiles() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let data = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 8),
+		])
+		defaults.set(data, forKey: UserDefaultsKeys.medicationRefillProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 8)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("New active data wins when both active and legacy keys exist")
+	func newDataWinsOverLegacyData() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let activeData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 9),
+		])
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 3),
+		])
+		defaults.set(activeData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 9)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == activeData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Legacy profiles without thresholds archive without an active payload")
+	func archivesLegacyProfilesWithoutThresholds() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(minimumHoursBetweenDoses: 4, lowStockThreshold: nil),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(store.profile(for: medicationID) == .empty)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Invalid legacy data remains active and unmarked")
+	func leavesInvalidLegacyDataUntouched() {
+		let defaults = makeDefaults()
+		let invalidData = Data("not-json".utf8)
+		defaults.set(invalidData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(store.allProfiles().isEmpty)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == invalidData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Valid standard active data wins over shared active data")
+	func standardActiveDataWinsOverShared() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let standardData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 11),
+		])
+		let sharedData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 4),
+		])
+		defaults.set(standardData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(sharedData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 11)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == standardData)
+	}
+
+	@Test("Valid shared fallback mirrors into standard defaults")
+	func sharedFallbackMirrorsIntoStandard() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let sharedData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 12),
+		])
+		sharedDefaults.set(sharedData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 12)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == sharedData)
+	}
+
+	@Test("Profiles are filtered to valid medication IDs")
+	func filtersInvalidMedicationIDs() {
+		let validID = UUID()
+		let invalidID = UUID()
+		let profiles = [
+			validID.uuidString: MedicationRefillProfile(lowStockThreshold: 5),
+			invalidID.uuidString: MedicationRefillProfile(lowStockThreshold: 8),
+		]
+
+		let filtered = MedicationRefillProfileStore.filteredProfiles(
+			from: profiles,
+			validMedicationIDs: [validID.uuidString]
+		)
+
+		#expect(filtered == [validID.uuidString: MedicationRefillProfile(lowStockThreshold: 5)])
+	}
+
+	@Test("Repeated store creation does not replay migration")
+	func repeatedStoreCreationIsIdempotent() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let firstStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		#expect(firstStore.profile(for: medicationID).lowStockThreshold == 6)
+
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let secondStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(secondStore.profile(for: medicationID).lowStockThreshold == 6)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+	}
+
+	@Test("Removing the final threshold does not resurrect legacy data")
+	func removingFinalThresholdDoesNotResurrectLegacyData() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		#expect(store.profile(for: medicationID).lowStockThreshold == 6)
+
+		store.save(.empty, for: medicationID)
+		let recreatedStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(recreatedStore.profile(for: medicationID) == .empty)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Active-payload verification failure leaves legacy data untouched")
+	func activePayloadVerificationFailureIsNonDestructive() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: nil,
+			profileEncoder: { _ in Data("invalid-active-payload".utf8) }
+		)
+
+		#expect(store.allProfiles().isEmpty)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Archive write failure leaves legacy data untouched")
+	func archiveWriteFailureIsNonDestructive() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: nil,
+			legacyArchiver: { _, _, _ in }
+		)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 6)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Archive verification failure leaves legacy data untouched")
+	func archiveVerificationFailureIsNonDestructive() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: nil,
+			legacyArchiver: { _, destination, key in
+				destination.set(Data("corrupt-archive".utf8), forKey: key)
+			}
+		)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 6)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) != legacyData)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+}

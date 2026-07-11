@@ -44,8 +44,20 @@ public enum UserDefaultsKeys {
     /// Whether private on-device Trends questions are enabled
     static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
 
-    /// Stored medication safety and refill profiles keyed by medication ID
-    static let medicationSafetyProfiles = "medicationSafetyProfiles"
+    /// Stored refill profiles keyed by medication ID
+    static let medicationRefillProfiles = "medicationRefillProfiles"
+
+    /// Legacy medication safety profiles retained until migration completes
+    static let legacyMedicationProfiles = "medicationSafetyProfiles"
+
+    /// Compatibility alias for callers that still use the legacy safety profile store
+    static let medicationSafetyProfiles = legacyMedicationProfiles
+
+    /// Recovery copy of the raw legacy medication profile payload
+    static let archivedMedicationProfiles = "migration.archivedMedicationProfiles"
+
+    /// Whether legacy medication profiles have been safely archived
+    static let medicationProfilesMigrationCompleted = "migration.medicationProfilesCompleted"
 
     // MARK: - Notification Settings
 
@@ -180,7 +192,10 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
+        medicationRefillProfiles,
         medicationSafetyProfiles,
+        archivedMedicationProfiles,
+        medicationProfilesMigrationCompleted,
         showMedicationNamesInNotifications,
         selectedFontFamily,
         hasUserOptedOutOfReviews,
@@ -262,7 +277,9 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         recentMedicationSearches,
+        medicationRefillProfiles,
         medicationSafetyProfiles,
+        medicationProfilesMigrationCompleted,
         automaticBackupLocationBookmark,
         automaticBackupLastBackupDate,
         automaticBackupLastCleanupDate,
@@ -289,6 +306,7 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
+        medicationRefillProfiles,
         medicationSafetyProfiles,
 
         // Notification Settings
@@ -354,5 +372,7 @@ public enum UserDefaultsKeys {
         // Legacy migration paths (device-specific, must not be overwritten)
         archivedLegacyMedicationsPath,
         archivedLegacyEventsPath,
+        archivedMedicationProfiles,
+        medicationProfilesMigrationCompleted,
     ]
 }
