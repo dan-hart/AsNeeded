@@ -38,6 +38,8 @@ Replace `MedicationSafetyProfile` with `MedicationRefillProfile`. The new profil
 
 `MedicationRefillProfileStore` becomes the single owner of refill profile persistence. Callers use typed APIs rather than reading raw `UserDefaults` values.
 
+Settings export/import, app reset, clear-all-data behavior, and UserDefaults key allowlists are updated to use the refill-only keys. Archived legacy payloads are excluded from normal settings export because they are recovery data, not active preferences.
+
 ### Refill Projection
 
 Replace the mixed-purpose `MedicationDoseGuidanceService` with `MedicationRefillProjectionService`. It retains only the calculations needed for:
@@ -85,6 +87,8 @@ Migration behavior:
 7. Mirror the same result to standard and App Group defaults so app and extensions agree.
 
 The archive prevents destructive loss while removing the active legacy key prevents migration from replaying. When both active keys exist, the new refill profile wins and the legacy payload is archived without overwriting the new value.
+
+If standard and App Group defaults contain different active refill profiles, standard defaults are authoritative. The store mirrors that authoritative payload to the App Group after decoding it successfully.
 
 Deleting the last custom threshold removes the new active payload. A separate migration-completed marker prevents the archived legacy value from being restored on a later launch.
 
