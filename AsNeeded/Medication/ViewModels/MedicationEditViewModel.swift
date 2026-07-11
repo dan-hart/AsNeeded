@@ -21,22 +21,17 @@ final class MedicationEditViewModel: ObservableObject {
     @Published var displayColorHex: String?
     @Published var displaySymbol: String?
     @Published var isArchived: Bool
-    @Published var minimumHoursBetweenDosesText: String
-    @Published var cautionHoursBetweenDosesText: String
-    @Published var maxDailyAmountText: String
-    @Published var lowStockThresholdText: String
-    @Published var duplicateDoseWindowMinutes: Int
-    @Published var refillLeadDays: Int
+	@Published var lowStockThresholdText: String
 
     // Editing existing or adding new
     private let existingID: UUID?
-    private let safetyProfileStore: MedicationSafetyProfileStore
+	private let refillProfileStore: MedicationRefillProfileStore
 
     init(
         medication: ANMedicationConcept?,
-        safetyProfileStore: MedicationSafetyProfileStore = .shared
+		refillProfileStore: MedicationRefillProfileStore = .shared
     ) {
-        self.safetyProfileStore = safetyProfileStore
+		self.refillProfileStore = refillProfileStore
         existingID = medication?.id
         clinicalName = medication?.clinicalName ?? ""
         nickname = medication?.nickname ?? ""
@@ -56,13 +51,8 @@ final class MedicationEditViewModel: ObservableObject {
         displaySymbol = medication?.symbolInfo?.name
         isArchived = medication?.isArchived ?? false
 
-        let safetyProfile = medication.map { safetyProfileStore.profile(for: $0.id) } ?? .empty
-        minimumHoursBetweenDosesText = safetyProfile.minimumHoursBetweenDoses.map { String(describing: $0) } ?? ""
-        cautionHoursBetweenDosesText = safetyProfile.cautionHoursBetweenDoses.map { String(describing: $0) } ?? ""
-        maxDailyAmountText = safetyProfile.maxDailyAmount.map { String(describing: $0) } ?? ""
-        lowStockThresholdText = safetyProfile.lowStockThreshold.map { String(describing: $0) } ?? ""
-        duplicateDoseWindowMinutes = safetyProfile.duplicateDoseWindowMinutes
-        refillLeadDays = safetyProfile.refillLeadDays
+		let refillProfile = medication.map { refillProfileStore.profile(for: $0.id) } ?? .empty
+		lowStockThresholdText = refillProfile.lowStockThreshold.map { String(describing: $0) } ?? ""
     }
 
     // Computed property for display color
@@ -113,20 +103,13 @@ final class MedicationEditViewModel: ObservableObject {
         return medication
     }
 
-    func buildSafetyProfile() -> MedicationSafetyProfile {
-        MedicationSafetyProfile(
-            minimumHoursBetweenDoses: normalizedNumber(from: minimumHoursBetweenDosesText),
-            cautionHoursBetweenDoses: normalizedNumber(from: cautionHoursBetweenDosesText),
-            maxDailyAmount: normalizedNumber(from: maxDailyAmountText),
-            duplicateDoseWindowMinutes: max(5, duplicateDoseWindowMinutes),
-            lowStockThreshold: normalizedNumber(from: lowStockThresholdText),
-            refillLeadDays: max(1, refillLeadDays)
-        )
-    }
+	func buildRefillProfile() -> MedicationRefillProfile {
+		MedicationRefillProfile(lowStockThreshold: normalizedNumber(from: lowStockThresholdText))
+	}
 
-    func saveSafetyProfile(for medicationID: UUID) {
-        safetyProfileStore.save(buildSafetyProfile(), for: medicationID)
-    }
+	func saveRefillProfile(for medicationID: UUID) {
+		refillProfileStore.save(buildRefillProfile(), for: medicationID)
+	}
 
     private func normalizedNumber(from text: String) -> Double? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

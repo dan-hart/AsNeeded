@@ -282,55 +282,59 @@ struct MedicationEditViewModelTests {
         #expect(medication.prescribedUnit == nil) // Unit is ignored when dose is invalid
     }
 
-    @Test("Initialize with stored safety profile populates guidance fields")
-    @MainActor
-    func initWithStoredSafetyProfile() {
-        let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
-        let profileStore = MedicationSafetyProfileStore(defaults: defaults)
-        let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
+	@Test("Initialize with stored refill profile populates low-stock threshold")
+	@MainActor
+	func initWithStoredRefillProfile() {
+		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
+		profileStore.save(MedicationRefillProfile(lowStockThreshold: 12), for: medication.id)
 
-        profileStore.save(
-            MedicationSafetyProfile(
-                minimumHoursBetweenDoses: 4,
-                cautionHoursBetweenDoses: 6,
-                maxDailyAmount: 8,
-                duplicateDoseWindowMinutes: 45,
-                lowStockThreshold: 10,
-                refillLeadDays: 7
-            ),
-            for: medication.id
-        )
+		let viewModel = MedicationEditViewModel(medication: medication, refillProfileStore: profileStore)
 
-        let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profileStore)
+		#expect(viewModel.lowStockThresholdText == "12.0")
+	}
 
-        #expect(viewModel.minimumHoursBetweenDosesText == "4.0")
-        #expect(viewModel.cautionHoursBetweenDosesText == "6.0")
-        #expect(viewModel.maxDailyAmountText == "8.0")
-        #expect(viewModel.duplicateDoseWindowMinutes == 45)
-        #expect(viewModel.lowStockThresholdText == "10.0")
-        #expect(viewModel.refillLeadDays == 7)
-    }
+	@Test(
+		"Build refill profile normalizes non-positive thresholds",
+		arguments: ["", "   ", "invalid", "0", "-3"]
+	)
+	@MainActor
+	func buildRefillProfileNormalizesInvalidThresholds(threshold: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.lowStockThresholdText = threshold
 
-    @Test("Build safety profile normalizes empty values")
-    @MainActor
-    func buildSafetyProfileNormalizesEmptyValues() {
-        let viewModel = MedicationEditViewModel(medication: nil)
-        viewModel.minimumHoursBetweenDosesText = " 4 "
-        viewModel.cautionHoursBetweenDosesText = ""
-        viewModel.maxDailyAmountText = "8"
-        viewModel.lowStockThresholdText = " "
-        viewModel.duplicateDoseWindowMinutes = 35
-        viewModel.refillLeadDays = 6
+		#expect(viewModel.buildRefillProfile() == .empty)
+	}
 
-        let profile = viewModel.buildSafetyProfile()
+	@Test("Build refill profile preserves a positive threshold as its only state")
+	@MainActor
+	func buildRefillProfilePreservesPositiveThreshold() throws {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.lowStockThresholdText = " 7.5 "
 
-        #expect(profile.minimumHoursBetweenDoses == 4)
-        #expect(profile.cautionHoursBetweenDoses == nil)
-        #expect(profile.maxDailyAmount == 8)
-        #expect(profile.lowStockThreshold == nil)
-        #expect(profile.duplicateDoseWindowMinutes == 35)
-        #expect(profile.refillLeadDays == 6)
-    }
+		let profile = viewModel.buildRefillProfile()
+		let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(profile)) as? [String: Any]
+
+		#expect(profile.lowStockThreshold == 7.5)
+		#expect(Set(encoded?.keys.map { $0 } ?? []) == ["lowStockThreshold"])
+	}
+
+	@Test("Save refill profile uses the medication ID and refill profile store")
+	@MainActor
+	func saveRefillProfileUsesMedicationID() {
+		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		let medicationID = UUID()
+		let otherMedicationID = UUID()
+		let viewModel = MedicationEditViewModel(medication: nil, refillProfileStore: profileStore)
+		viewModel.lowStockThresholdText = "9"
+
+		viewModel.saveRefillProfile(for: medicationID)
+
+		#expect(profileStore.profile(for: medicationID).lowStockThreshold == 9)
+		#expect(profileStore.profile(for: otherMedicationID) == .empty)
+	}
 
     // MARK: - Edge Cases
 
