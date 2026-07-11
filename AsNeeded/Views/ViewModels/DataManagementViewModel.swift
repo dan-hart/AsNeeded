@@ -403,7 +403,7 @@ final class DataManagementViewModel: ObservableObject {
             let summary = exporter.buildSummary(
                 medications: dataStore.medications,
                 events: dataStore.events,
-                safetyProfiles: MedicationSafetyProfileStore.shared.allProfiles()
+                refillProfiles: MedicationRefillProfileStore.shared.allProfiles()
             )
             let pdfData = exporter.makePDF(summary: summary)
 

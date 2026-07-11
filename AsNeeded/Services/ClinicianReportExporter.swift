@@ -22,20 +22,20 @@ struct ClinicianReportSummary: Equatable {
 
 struct ClinicianReportExporter {
 	private let calendar: Calendar
-	private let doseGuidanceService: MedicationDoseGuidanceService
+	private let refillProjectionService: MedicationRefillProjectionService
 
 	init(
 		calendar: Calendar = .current,
-		doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
+		refillProjectionService: MedicationRefillProjectionService = MedicationRefillProjectionService()
 	) {
 		self.calendar = calendar
-		self.doseGuidanceService = doseGuidanceService
+		self.refillProjectionService = refillProjectionService
 	}
 
 	func buildSummary(
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile] = [:],
+		refillProfiles: [String: MedicationRefillProfile] = [:],
 		generatedAt: Date = .now
 	) -> ClinicianReportSummary {
 		let formatter = DateFormatter()
@@ -48,8 +48,8 @@ struct ClinicianReportExporter {
 				let medicationEvents = events
 					.filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
 					.sorted { $0.date > $1.date }
-				let profile = safetyProfiles[medication.id.uuidString] ?? .empty
-				let projection = doseGuidanceService.refillProjection(
+				let profile = refillProfiles[medication.id.uuidString] ?? .empty
+				let projection = refillProjectionService.projection(
 					for: medication,
 					at: generatedAt,
 					events: events,

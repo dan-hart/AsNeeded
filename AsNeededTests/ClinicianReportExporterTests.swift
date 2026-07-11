@@ -33,24 +33,45 @@ struct ClinicianReportExporterTests {
 
 	@Test("Build summary captures medication and refill details")
 	func buildSummaryCapturesMedicationDetails() {
-		let medication = makeMedication(nextRefillDate: Calendar.current.date(byAdding: .day, value: 2, to: .now))
+		let generatedAt = Date(timeIntervalSince1970: 1_800_000_000)
+		let medication = makeMedication(
+			quantity: 24,
+			nextRefillDate: Calendar.current.date(byAdding: .day, value: 8, to: generatedAt)
+		)
 		let events = [
-			makeEvent(medication: medication, daysAgo: 1),
-			makeEvent(medication: medication, daysAgo: 3),
-			makeEvent(medication: medication, daysAgo: 8),
+			ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: 2, unit: .tablet),
+				date: Calendar.current.date(byAdding: .day, value: -1, to: generatedAt) ?? generatedAt
+			),
+			ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: 2, unit: .tablet),
+				date: Calendar.current.date(byAdding: .day, value: -3, to: generatedAt) ?? generatedAt
+			),
+			ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: 2, unit: .tablet),
+				date: Calendar.current.date(byAdding: .day, value: -8, to: generatedAt) ?? generatedAt
+			),
 		]
 		let exporter = ClinicianReportExporter()
 
 		let summary = exporter.buildSummary(
 			medications: [medication],
 			events: events,
-			safetyProfiles: [
-				medication.id.uuidString: MedicationSafetyProfile(
-					lowStockThreshold: 10,
-					refillLeadDays: 5
-				),
-			]
+			refillProfiles: [
+				medication.id.uuidString: MedicationRefillProfile(lowStockThreshold: 25),
+			],
+			generatedAt: generatedAt
 		)
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+		let expectedLastLogged = formatter.string(from: events[0].date)
 
 		#expect(summary.medicationCount == 1)
 		#expect(summary.eventCount == 3)
@@ -58,6 +79,10 @@ struct ClinicianReportExporterTests {
 		#expect(summary.medications.first?.logsInLast30Days == 3)
 		#expect(summary.medications.first?.prescribedDose.contains("2") == true)
 		#expect(summary.medications.first?.prescribedDose.contains("tab") == true)
+		#expect(summary.medications.first?.quantityStatus == "24 tab remaining")
+		#expect(summary.medications.first?.lastLogged == expectedLastLogged)
+		#expect(summary.medications.first?.averageDailyUsage == "2 tab/day")
+		#expect(summary.medications.first?.refillStatus.contains("Refill prep would be timely.") == true)
 		#expect(summary.medications.first?.refillStatus.contains("Next refill") == true)
 	}
 
