@@ -140,17 +140,6 @@ struct AsNeededShortcuts: AppShortcutsProvider {
             systemImageName: "chart.bar.fill"
         )
         AppShortcut(
-            intent: GetNextDoseIntent(),
-            phrases: [
-                "When can I take my medication in \(.applicationName)",
-                "When is my next dose in \(.applicationName)",
-                "When do I need to take \(\.$medication) in \(.applicationName)",
-                "Check my next dose in \(.applicationName)",
-            ],
-            shortTitle: "Check Next Dose",
-            systemImageName: "clock.fill"
-        )
-        AppShortcut(
             intent: CheckRefillStatusIntent(),
             phrases: [
                 "What medications need refills in \(.applicationName)",

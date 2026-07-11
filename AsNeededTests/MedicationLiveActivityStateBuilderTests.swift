@@ -44,32 +44,22 @@ struct MedicationLiveActivityStateBuilderTests {
 	}
 
 	private func medication(
+		id: UUID = UUID(),
 		name: String,
 		quantity: Double? = 30,
+		nextRefillDate: Date? = nil,
 		unit: ANUnitConcept = .tablet
 	) -> ANMedicationConcept {
 		ANMedicationConcept(
+			id: id,
 			clinicalName: name,
 			nickname: nil,
 			quantity: quantity,
 			initialQuantity: quantity,
-			lastRefillDate: Date().addingTimeInterval(-7 * 86_400),
-			nextRefillDate: Date().addingTimeInterval(5 * 86_400),
+			lastRefillDate: nil,
+			nextRefillDate: nextRefillDate,
 			prescribedUnit: unit,
 			prescribedDoseAmount: 1
-		)
-	}
-
-	private func event(
-		for medication: ANMedicationConcept,
-		hoursAgo: Double,
-		amount: Double = 1
-	) -> ANEventConcept {
-		ANEventConcept(
-			eventType: .doseTaken,
-			medication: medication,
-			dose: ANDoseConcept(amount: amount, unit: medication.prescribedUnit ?? .tablet),
-			date: Date().addingTimeInterval(-(hoursAgo * 3600))
 		)
 	}
 
@@ -81,56 +71,119 @@ struct MedicationLiveActivityStateBuilderTests {
 			builder.snapshot(
 				medications: [],
 				events: [],
-				safetyProfiles: [:]
+				refillProfiles: [:]
 			) == nil
 		)
 	}
 
-	@Test("Snapshot prefers a medication that can be taken now")
-	func snapshotPrefersAvailableMedication() {
+	@Test("Snapshot prioritizes low stock before refill soon and alphabetical medications")
+	func snapshotPrioritizesLowStock() {
 		let builder = MedicationLiveActivityStateBuilder()
-		let availableMedication = medication(name: "Ibuprofen", quantity: 4)
-		let delayedMedication = medication(name: "Naproxen", quantity: 12)
+		let date = Date(timeIntervalSince1970: 1_735_689_600)
+		let alphabeticalMedication = medication(name: "Acetaminophen", quantity: 30)
+		let refillSoonMedication = medication(
+			name: "Ibuprofen",
+			quantity: 30,
+			nextRefillDate: date.addingTimeInterval(3 * 86_400)
+		)
+		let lowStockMedication = medication(name: "Naproxen", quantity: 4)
 		let profiles = [
-			delayedMedication.id.uuidString: MedicationSafetyProfile(
-				minimumHoursBetweenDoses: 4,
-				lowStockThreshold: 6
-			),
-			availableMedication.id.uuidString: MedicationSafetyProfile(
-				lowStockThreshold: 6
-			),
+			lowStockMedication.id.uuidString: MedicationRefillProfile(lowStockThreshold: 6),
 		]
 
 		let snapshot = builder.snapshot(
-			medications: [delayedMedication, availableMedication],
-			events: [event(for: delayedMedication, hoursAgo: 1)],
-			safetyProfiles: profiles
+			at: date,
+			medications: [alphabeticalMedication, refillSoonMedication, lowStockMedication],
+			events: [],
+			refillProfiles: profiles
 		)
 
-		#expect(snapshot?.medicationID == availableMedication.id.uuidString)
-		#expect(snapshot?.canTakeNow == true)
-		#expect(snapshot?.statusText == "Available now")
+		#expect(snapshot?.medicationID == lowStockMedication.id.uuidString)
+		#expect(snapshot?.statusText == "Low stock")
 		#expect(snapshot?.lowStock == true)
-		#expect(snapshot?.detailText.contains("Low stock") == true)
+		#expect(snapshot?.detailText == "Refill prep would be timely.")
+		#expect(snapshot?.staleDate == date.addingTimeInterval(30 * 60))
 	}
 
-	@Test("Snapshot formats the next-dose state when a medication is not yet available")
-	func snapshotFormatsUpcomingDoseState() {
+	@Test("Snapshot prioritizes refill soon before alphabetical medications")
+	func snapshotPrioritizesRefillSoon() {
 		let builder = MedicationLiveActivityStateBuilder()
-		let delayedMedication = medication(name: "Naproxen", quantity: 12)
-		let profiles = [
-			delayedMedication.id.uuidString: MedicationSafetyProfile(minimumHoursBetweenDoses: 4),
-		]
-
-		let snapshot = builder.snapshot(
-			medications: [delayedMedication],
-			events: [event(for: delayedMedication, hoursAgo: 1)],
-			safetyProfiles: profiles
+		let date = Date(timeIntervalSince1970: 1_735_689_600)
+		let alphabeticalMedication = medication(name: "Acetaminophen", quantity: 30)
+		let refillSoonMedication = medication(
+			name: "Naproxen",
+			quantity: 30,
+			nextRefillDate: date.addingTimeInterval(3 * 86_400)
 		)
 
-		#expect(snapshot?.canTakeNow == false)
-		#expect(snapshot?.statusText.contains("Next dose") == true)
-		#expect(snapshot?.detailText.isEmpty == false)
+		let snapshot = builder.snapshot(
+			at: date,
+			medications: [alphabeticalMedication, refillSoonMedication],
+			events: [],
+			refillProfiles: [:]
+		)
+
+		#expect(snapshot?.medicationID == refillSoonMedication.id.uuidString)
+		#expect(snapshot?.statusText == "Refill soon")
+		#expect(snapshot?.detailText == "You’re approaching your refill window.")
+	}
+
+	@Test("Snapshot uses deterministic alphabetical and identifier tie breaking")
+	func snapshotUsesDeterministicTieBreaking() {
+		let builder = MedicationLiveActivityStateBuilder()
+		let laterID = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb") ?? UUID()
+		let earlierID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") ?? UUID()
+		let naproxen = medication(name: "Naproxen", quantity: 30)
+		let laterIbuprofen = medication(id: laterID, name: "ibuprofen", quantity: 30)
+		let earlierIbuprofen = medication(id: earlierID, name: "Ibuprofen", quantity: 30)
+
+		let snapshot = builder.snapshot(
+			medications: [naproxen, laterIbuprofen, earlierIbuprofen],
+			events: [],
+			refillProfiles: [:]
+		)
+
+		#expect(snapshot?.medicationID == earlierIbuprofen.id.uuidString)
+		#expect(snapshot?.statusText == "Refill status")
+		#expect(snapshot?.detailText == "Log more doses to estimate your run-out date.")
+	}
+
+	@Test("Live Activity snapshot, content, and ActivityKit state omit dose eligibility")
+	func liveActivityStateOmitsDoseEligibility() {
+		let medication = medication(name: "Ibuprofen", quantity: 4)
+		let snapshot = MedicationLiveActivityStateBuilder().snapshot(
+			medications: [medication],
+			events: [],
+			refillProfiles: [:]
+		)
+		let snapshotLabelValues: [String] = snapshot.map {
+			Mirror(reflecting: $0).children.compactMap(\.label)
+		} ?? []
+		let snapshotLabels = Set(snapshotLabelValues)
+		let contentLabelValues: [String] = snapshot.map {
+			Mirror(reflecting: MedicationLiveActivityContent(snapshot: $0)).children.compactMap(\.label)
+		} ?? []
+		let contentLabels = Set(contentLabelValues)
+
+		#expect(!snapshotLabels.contains("nextDoseDate"))
+		#expect(!snapshotLabels.contains("canTakeNow"))
+		#expect(!contentLabels.contains("nextDoseDate"))
+		#expect(!contentLabels.contains("canTakeNow"))
+
+		#if canImport(ActivityKit)
+			let state = MedicationLiveActivityAttributes.ContentState(
+				medicationID: medication.id.uuidString,
+				medicationName: medication.displayName,
+				symbolName: "pills.fill",
+				statusText: "Low stock",
+				detailText: "Refill prep would be timely.",
+				lowStock: true,
+				refillSoon: true
+			)
+			let stateLabels = Set(Mirror(reflecting: state).children.compactMap(\.label))
+			#expect(!stateLabels.contains("nextDoseDate"))
+			#expect(!stateLabels.contains("canTakeNow"))
+		#endif
 	}
 
 	@Test("Refresh requests a live activity when enabled and none exist")
@@ -141,7 +194,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		await MedicationLiveActivityManager.refresh(
 			medications: [medication],
 			events: [],
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 
@@ -158,7 +211,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		await MedicationLiveActivityManager.refresh(
 			medications: [medication],
 			events: [],
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 
@@ -178,7 +231,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		await MedicationLiveActivityManager.refresh(
 			medications: [medication],
 			events: [],
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 
@@ -199,7 +252,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		await MedicationLiveActivityManager.refresh(
 			medications: [medication],
 			events: [],
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 
@@ -218,7 +271,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		await MedicationLiveActivityManager.refresh(
 			medications: [],
 			events: [],
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 
@@ -236,7 +289,7 @@ struct MedicationLiveActivityStateBuilderTests {
 
 		await MedicationLiveActivityManager.refreshFromDataStore(
 			dataStore: dataStore,
-			safetyProfiles: [:],
+			refillProfiles: [:],
 			liveActivityClient: client
 		)
 

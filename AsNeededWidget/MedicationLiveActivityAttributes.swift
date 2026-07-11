@@ -12,8 +12,6 @@ struct MedicationLiveActivityAttributes: ActivityAttributes {
 		var symbolName: String
 		var statusText: String
 		var detailText: String
-		var nextDoseDate: Date?
-		var canTakeNow: Bool
 		var lowStock: Bool
 		var refillSoon: Bool
 	}

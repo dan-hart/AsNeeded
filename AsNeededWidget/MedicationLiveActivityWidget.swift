@@ -38,14 +38,8 @@ struct MedicationLiveActivityWidget: Widget {
 				Image(systemName: context.state.symbolName)
 					.foregroundStyle(widgetAccent)
 			} compactTrailing: {
-				if context.state.canTakeNow {
-					Text("Now")
-						.font(.caption2.weight(.semibold))
-				} else if let nextDoseDate = context.state.nextDoseDate {
-					Text(nextDoseDate, style: .timer)
-						.font(.caption2.weight(.semibold))
-						.monospacedDigit()
-				}
+				Image(systemName: context.state.lowStock ? "exclamationmark.circle.fill" : "calendar")
+					.foregroundStyle(context.state.lowStock ? .orange : widgetAccent)
 			} minimal: {
 				Image(systemName: context.state.symbolName)
 					.foregroundStyle(widgetAccent)
@@ -55,7 +49,7 @@ struct MedicationLiveActivityWidget: Widget {
 
 	@ViewBuilder
 	private func liveStatusBadge(for state: MedicationLiveActivityAttributes.ContentState) -> some View {
-		Text(state.lowStock ? "Low stock" : state.canTakeNow ? "Ready" : "Later")
+		Text(state.lowStock ? "Low stock" : state.refillSoon ? "Refill soon" : "Refill status")
 			.font(.caption2.weight(.semibold))
 			.foregroundStyle(state.lowStock ? .orange : widgetAccent)
 			.padding(.horizontal, 10)
@@ -84,7 +78,7 @@ private struct LiveActivityLockScreenView: View {
 					)
 
 				VStack(alignment: .leading, spacing: 4) {
-					Text("Next dose")
+					Text("Refill status")
 						.font(.caption.weight(.medium))
 						.foregroundStyle(.secondary)
 
@@ -104,17 +98,10 @@ private struct LiveActivityLockScreenView: View {
 					Text(state.statusText)
 						.font(.subheadline.weight(.semibold))
 						.multilineTextAlignment(.trailing)
-
-					if !state.canTakeNow, let nextDoseDate = state.nextDoseDate {
-						Text(nextDoseDate, style: .timer)
-							.font(.caption.weight(.medium))
-							.monospacedDigit()
-							.foregroundStyle(.secondary)
-					}
 				}
 			}
 
-			if #available(iOSApplicationExtension 17.0, *), state.canTakeNow {
+			if #available(iOSApplicationExtension 17.0, *) {
 				let intent = logIntent(for: state.medicationID)
 
 				Button(intent: intent) {

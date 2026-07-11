@@ -18,38 +18,46 @@ enum MedicationLiveActivityBridge {
 				return
 			}
 
-			guard let medication = provider.nextMedicationDue else {
+			let lowStockIDs = Set(provider.lowQuantityMedications.map(\.id))
+			let refillSoonIDs = Set(provider.refillDueSoon.map(\.id))
+			guard let medication = provider.medications.min(by: { left, right in
+				let leftPriority = priority(
+					for: left,
+					lowStockIDs: lowStockIDs,
+					refillSoonIDs: refillSoonIDs
+				)
+				let rightPriority = priority(
+					for: right,
+					lowStockIDs: lowStockIDs,
+					refillSoonIDs: refillSoonIDs
+				)
+
+				if leftPriority != rightPriority {
+					return leftPriority < rightPriority
+				}
+
+				let nameOrder = left.displayName.localizedCaseInsensitiveCompare(right.displayName)
+				if nameOrder != .orderedSame {
+					return nameOrder == .orderedAscending
+				}
+
+				return left.id.uuidString < right.id.uuidString
+			}) else {
 				for activity in activities {
 					await activity.end(nil, dismissalPolicy: .immediate)
 				}
 				return
 			}
 
-			let nextDoseDate = provider.nextDoseTime(for: medication)
-			let canTakeNow = provider.canTakeNow(medication)
-			let lowStock = provider.lowQuantityMedications.contains { $0.id == medication.id }
-			let refillSoon = provider.refillDueSoon.contains { $0.id == medication.id }
-			let statusText = {
-				if canTakeNow {
-					return "Available now"
-				}
-
-				guard let nextDoseDate else {
-					return "Check in the app"
-				}
-
-				return "Next dose \(nextDoseDate.formatted(date: .omitted, time: .shortened))"
-			}()
-			let detailText = {
-				var parts: [String] = []
-				if lowStock {
-					parts.append("Low stock")
-				} else if refillSoon {
-					parts.append("Refill soon")
-				}
-				parts.append(provider.refillStatusMessage(for: medication))
-				return parts.joined(separator: " • ")
-			}()
+			let lowStock = lowStockIDs.contains(medication.id)
+			let refillSoon = refillSoonIDs.contains(medication.id)
+			let statusText = if lowStock {
+				"Low stock"
+			} else if refillSoon {
+				"Refill soon"
+			} else {
+				"Refill status"
+			}
 
 			let content = ActivityContent(
 				state: MedicationLiveActivityAttributes.ContentState(
@@ -57,18 +65,30 @@ enum MedicationLiveActivityBridge {
 					medicationName: medication.displayName,
 					symbolName: medication.effectiveDisplaySymbol,
 					statusText: statusText,
-					detailText: detailText,
-					nextDoseDate: nextDoseDate,
-					canTakeNow: canTakeNow,
+					detailText: provider.refillStatusMessage(for: medication),
 					lowStock: lowStock,
 					refillSoon: refillSoon
 				),
-				staleDate: nextDoseDate?.addingTimeInterval(300) ?? Date().addingTimeInterval(1800)
+				staleDate: Date().addingTimeInterval(30 * 60)
 			)
 
 			for activity in activities {
 				await activity.update(content)
 			}
 		#endif
+	}
+
+	private static func priority(
+		for medication: ANMedicationConcept,
+		lowStockIDs: Set<UUID>,
+		refillSoonIDs: Set<UUID>
+	) -> Int {
+		if lowStockIDs.contains(medication.id) {
+			return 0
+		}
+		if refillSoonIDs.contains(medication.id) {
+			return 1
+		}
+		return 2
 	}
 }

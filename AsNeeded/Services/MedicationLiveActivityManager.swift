@@ -11,8 +11,6 @@ struct MedicationLiveActivitySnapshot: Equatable {
 	let symbolName: String
 	let statusText: String
 	let detailText: String
-	let nextDoseDate: Date?
-	let canTakeNow: Bool
 	let lowStock: Bool
 	let refillSoon: Bool
 	let staleDate: Date?
@@ -24,8 +22,6 @@ struct MedicationLiveActivityContent: Equatable {
 	let symbolName: String
 	let statusText: String
 	let detailText: String
-	let nextDoseDate: Date?
-	let canTakeNow: Bool
 	let lowStock: Bool
 	let refillSoon: Bool
 	let staleDate: Date?
@@ -36,8 +32,6 @@ struct MedicationLiveActivityContent: Equatable {
 		symbolName = snapshot.symbolName
 		statusText = snapshot.statusText
 		detailText = snapshot.detailText
-		nextDoseDate = snapshot.nextDoseDate
-		canTakeNow = snapshot.canTakeNow
 		lowStock = snapshot.lowStock
 		refillSoon = snapshot.refillSoon
 		staleDate = snapshot.staleDate
@@ -56,77 +50,55 @@ protocol MedicationLiveActivityClient: Sendable {
 }
 
 struct MedicationLiveActivityStateBuilder {
-	private let calendar: Calendar
-	private let guidanceService: MedicationDoseGuidanceService
+	private let refillProjectionService: MedicationRefillProjectionService
 
 	init(
 		calendar: Calendar = .current,
-		guidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
+		refillProjectionService: MedicationRefillProjectionService? = nil
 	) {
-		self.calendar = calendar
-		self.guidanceService = guidanceService
+		self.refillProjectionService = refillProjectionService ?? MedicationRefillProjectionService(calendar: calendar)
 	}
 
 	func snapshot(
 		at date: Date = .now,
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile]
+		refillProfiles: [String: MedicationRefillProfile]
 	) -> MedicationLiveActivitySnapshot? {
 		let activeMedications = medications.filter { !$0.isArchived }
 		guard let medication = featuredMedication(
 			at: date,
 			medications: activeMedications,
 			events: events,
-			safetyProfiles: safetyProfiles
+			refillProfiles: refillProfiles
 		) else {
 			return nil
 		}
 
-		let profile = safetyProfiles[medication.id.uuidString] ?? .empty
-		let nextDoseDate = guidanceService.nextEligibleDate(
+		let profile = refillProfiles[medication.id.uuidString] ?? .empty
+		let refillProjection = refillProjectionService.projection(
 			for: medication,
 			at: date,
 			events: events,
 			profile: profile
 		)
-		let refillProjection = guidanceService.refillProjection(
-			for: medication,
-			at: date,
-			events: events,
-			profile: profile
-		)
-		let canTakeNow = nextDoseDate == nil || nextDoseDate ?? .distantPast <= date
-			let statusText = {
-				if canTakeNow {
-					return "Available now"
-				}
-
-				return "Next dose \(formattedTime(nextDoseDate ?? date))"
-			}()
-
-		var detailFragments: [String] = []
-		if refillProjection.lowStock {
-			detailFragments.append("Low stock")
+		let statusText = if refillProjection.lowStock {
+			"Low stock"
 		} else if refillProjection.refillSoon {
-			detailFragments.append("Refill soon")
+			"Refill soon"
+		} else {
+			"Refill status"
 		}
-		detailFragments.append(refillProjection.statusMessage)
-
-		let staleDate = nextDoseDate?.addingTimeInterval(300) ??
-			calendar.date(byAdding: .minute, value: 30, to: date)
 
 		return MedicationLiveActivitySnapshot(
 			medicationID: medication.id.uuidString,
 			medicationName: medication.displayName,
 			symbolName: medication.symbolInfo?.name ?? "pills.fill",
 			statusText: statusText,
-			detailText: detailFragments.joined(separator: " • "),
-			nextDoseDate: nextDoseDate,
-			canTakeNow: canTakeNow,
+			detailText: refillProjection.statusMessage,
 			lowStock: refillProjection.lowStock,
 			refillSoon: refillProjection.refillSoon,
-			staleDate: staleDate
+			staleDate: date.addingTimeInterval(30 * 60)
 		)
 	}
 
@@ -134,40 +106,46 @@ struct MedicationLiveActivityStateBuilder {
 		at date: Date,
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile]
+		refillProfiles: [String: MedicationRefillProfile]
 	) -> ANMedicationConcept? {
 		medications.min { left, right in
-			let leftDate = dueDate(for: left, at: date, events: events, safetyProfiles: safetyProfiles)
-			let rightDate = dueDate(for: right, at: date, events: events, safetyProfiles: safetyProfiles)
+			let leftPriority = priority(for: left, at: date, events: events, refillProfiles: refillProfiles)
+			let rightPriority = priority(for: right, at: date, events: events, refillProfiles: refillProfiles)
 
-			if leftDate == rightDate {
-				return left.displayName.localizedCaseInsensitiveCompare(right.displayName) == .orderedAscending
+			if leftPriority != rightPriority {
+				return leftPriority < rightPriority
 			}
 
-			return leftDate < rightDate
+			let nameOrder = left.displayName.localizedCaseInsensitiveCompare(right.displayName)
+			if nameOrder != .orderedSame {
+				return nameOrder == .orderedAscending
+			}
+
+			return left.id.uuidString < right.id.uuidString
 		}
 	}
 
-	private func dueDate(
+	private func priority(
 		for medication: ANMedicationConcept,
 		at date: Date,
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile]
-	) -> Date {
-		let profile = safetyProfiles[medication.id.uuidString] ?? .empty
-		return guidanceService.nextEligibleDate(
+		refillProfiles: [String: MedicationRefillProfile]
+	) -> Int {
+		let profile = refillProfiles[medication.id.uuidString] ?? .empty
+		let projection = refillProjectionService.projection(
 			for: medication,
 			at: date,
 			events: events,
 			profile: profile
-		) ?? .distantPast
-	}
+		)
 
-	private func formattedTime(_ date: Date) -> String {
-		let formatter = DateFormatter()
-		formatter.timeStyle = .short
-		formatter.dateStyle = .none
-		return formatter.string(from: date)
+		if projection.lowStock {
+			return 0
+		}
+		if projection.refillSoon {
+			return 1
+		}
+		return 2
 	}
 }
 
@@ -179,8 +157,6 @@ struct MedicationLiveActivityAttributes: ActivityAttributes {
 		var symbolName: String
 		var statusText: String
 		var detailText: String
-		var nextDoseDate: Date?
-		var canTakeNow: Bool
 		var lowStock: Bool
 		var refillSoon: Bool
 	}
@@ -226,8 +202,6 @@ private func activityContent(from content: MedicationLiveActivityContent) -> Act
 			symbolName: content.symbolName,
 			statusText: content.statusText,
 			detailText: content.detailText,
-			nextDoseDate: content.nextDoseDate,
-			canTakeNow: content.canTakeNow,
 			lowStock: content.lowStock,
 			refillSoon: content.refillSoon
 		),
@@ -239,13 +213,13 @@ enum MedicationLiveActivityManager {
 	@MainActor
 	static func refreshFromDataStore(
 		dataStore: DataStore = .shared,
-		safetyProfiles: [String: MedicationSafetyProfile]? = nil,
+		refillProfiles: [String: MedicationRefillProfile]? = nil,
 		liveActivityClient: any MedicationLiveActivityClient = SystemMedicationLiveActivityClient()
 	) async {
 		await refresh(
 			medications: dataStore.medications,
 			events: dataStore.events,
-			safetyProfiles: safetyProfiles ?? MedicationSafetyProfileStore.shared.allProfiles(),
+			refillProfiles: refillProfiles ?? MedicationRefillProfileStore.shared.allProfiles(),
 			liveActivityClient: liveActivityClient
 		)
 	}
@@ -253,7 +227,7 @@ enum MedicationLiveActivityManager {
 	static func refresh(
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile],
+		refillProfiles: [String: MedicationRefillProfile],
 		liveActivityClient: any MedicationLiveActivityClient
 	) async {
 		guard #available(iOS 16.2, *) else {
@@ -272,7 +246,7 @@ enum MedicationLiveActivityManager {
 		guard let snapshot = stateBuilder.snapshot(
 			medications: medications,
 			events: events,
-			safetyProfiles: safetyProfiles
+			refillProfiles: refillProfiles
 		) else {
 			await end(sessions)
 			return
