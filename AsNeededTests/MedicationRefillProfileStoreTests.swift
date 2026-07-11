@@ -4,6 +4,10 @@ import Testing
 
 @Suite("MedicationRefillProfileStore Tests", .tags(.unit))
 struct MedicationRefillProfileStoreTests {
+	private enum EncodingFailure: Error {
+		case intentional
+	}
+
 	private struct LegacyProfile: Codable {
 		var minimumHoursBetweenDoses: Double?
 		var lowStockThreshold: Double?
@@ -229,6 +233,27 @@ struct MedicationRefillProfileStoreTests {
 			defaults: defaults,
 			sharedDefaults: nil,
 			profileEncoder: { _ in Data("invalid-active-payload".utf8) }
+		)
+
+		#expect(store.allProfiles().isEmpty)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Active-payload encoding failure leaves legacy data untouched")
+	func activePayloadEncodingFailureIsNonDestructive() throws {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: nil,
+			profileEncoder: { _ in throw EncodingFailure.intentional }
 		)
 
 		#expect(store.allProfiles().isEmpty)

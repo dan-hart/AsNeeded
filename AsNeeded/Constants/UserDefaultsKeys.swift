@@ -290,6 +290,10 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
+        storageSchemaVersion,
+        archivedLegacyMedicationsPath,
+        archivedLegacyEventsPath,
+        archivedMedicationProfiles,
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
