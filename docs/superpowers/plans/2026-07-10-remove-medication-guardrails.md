@@ -94,6 +94,8 @@ struct MedicationRefillProfile: Codable, Equatable, Sendable {
 
 Add typed keys for the active refill payload, legacy payload, archived raw payload, and migration-completed marker. Keep the literal legacy key equal to `"medicationSafetyProfiles"` only for migration. Add active and marker keys to `allKeys`/reset handling; exclude the archive from normal export allowlists.
 
+Preserve the typed legacy-key alias until Task 8 deletes the compatibility store; removing it earlier would break whole-target compilation.
+
 - [ ] **Step 4: Implement migration and persistence**
 
 `MedicationRefillProfileStore` must:
@@ -321,7 +323,7 @@ Run both suites and `git diff --check`, then commit as `Preserve refill insights
 
 - [ ] **Step 1: Write failing settings lifecycle tests**
 
-Test active refill profile export/import with invalid medication IDs filtered, decoding legacy exported `medicationSafetyProfiles` into refill profiles, clear-all removal from standard/shared defaults, reset behavior, and key-list completeness. Assert archive recovery data is not exported.
+Test active refill profile export/import with invalid medication IDs filtered, decoding legacy exported `medicationSafetyProfiles` into refill profiles, clear-all removal from standard/shared defaults, reset behavior, and key-list completeness. Assert archive recovery data is not exported. After clear-all, recreate the refill store and assert legacy active data cannot migrate back or resurrect a removed profile.
 
 - [ ] **Step 2: Run the focused settings suites and verify RED**
 
