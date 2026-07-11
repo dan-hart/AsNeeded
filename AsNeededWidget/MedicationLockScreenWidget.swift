@@ -96,16 +96,19 @@ struct LockScreenWidgetView: View {
     let entry: LockScreenEntry
 
     var body: some View {
-        switch family {
-        case .accessoryCircular:
-            circularView
-        case .accessoryRectangular:
-            rectangularView
-        case .accessoryInline:
-            inlineView
-        default:
-            Text("Unsupported")
+        Group {
+            switch family {
+            case .accessoryCircular:
+                circularView
+            case .accessoryRectangular:
+                rectangularView
+            case .accessoryInline:
+                inlineView
+            default:
+                Text("Unsupported")
+            }
         }
+        .widgetURL(entry.medicationURL)
     }
 
     // MARK: - Circular (Watch-style complication)
@@ -211,6 +214,12 @@ struct LockScreenEntry: TimelineEntry {
     let featuredMedication: ANMedicationConcept?
     let lowQuantityCount: Int
     let refillDueCount: Int
+
+    var medicationURL: URL? {
+        featuredMedication.flatMap { medication in
+            URL(string: "asneeded://log/\(medication.id.uuidString)")
+        }
+    }
 }
 
 // MARK: - Previews
