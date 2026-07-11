@@ -39,9 +39,6 @@ The Xcode project uses file-system-synchronized groups, so these file additions,
 - Create: `AsNeeded/Services/MedicationRefillProfileStore.swift`
 - Create: `AsNeededTests/MedicationRefillProfileStoreTests.swift`
 - Modify: `AsNeeded/Constants/UserDefaultsKeys.swift`
-- Delete: `AsNeeded/Models/MedicationSafetyProfile.swift`
-- Delete: `AsNeeded/Services/MedicationSafetyProfileStore.swift`
-- Delete: `AsNeededTests/MedicationSafetyProfileStoreTests.swift`
 
 - [ ] **Step 1: Write failing profile and migration tests**
 
@@ -70,7 +67,7 @@ func migratesLegacyProfilesOnce() throws {
 }
 ```
 
-Also test new-only data, both keys with new data winning, legacy data without a threshold, invalid legacy data remaining untouched, standard defaults winning over App Group data, verified mirroring, filtering invalid medication IDs, and repeated store creation.
+Also test new-only data, both keys with new data winning, legacy data without a threshold, invalid legacy data remaining untouched, standard defaults winning over App Group data, verified mirroring, filtering invalid medication IDs, repeated store creation, active-payload verification failure, and archive-write/verification failure. Inject internal profile encoding and legacy archiving closures into the store initializer so those two failure paths are deterministic without relying on a real `UserDefaults` I/O failure.
 
 - [ ] **Step 2: Run the store suite and verify RED**
 
@@ -108,8 +105,10 @@ Add typed keys for the active refill payload, legacy payload, archived raw paylo
 - Copy and byte-verify the archive before removing the active legacy key.
 - Set the migration marker only after archival succeeds.
 - Keep invalid or unverifiable legacy data untouched.
+- Leave the active legacy key and migration marker unchanged when active-payload verification or archive verification fails.
 - Never migrate again after the marker is set, including after the final custom threshold is removed.
 - Provide `profile(for:)`, `save(_:for:)`, `allProfiles()`, `replaceAll(with:)`, and `filteredProfiles(from:validMedicationIDs:)`.
+- Keep the old safety profile/store files temporarily so downstream targets continue compiling until Task 8 completes their migration.
 
 - [ ] **Step 5: Run the store suite and verify GREEN**
 
@@ -118,7 +117,7 @@ Run `./scripts/test-parallel.sh MedicationRefillProfileStoreTests` and inspect t
 - [ ] **Step 6: Commit the storage boundary**
 
 ```bash
-git add AsNeeded/Models AsNeeded/Services/MedicationRefillProfileStore.swift AsNeeded/Constants/UserDefaultsKeys.swift AsNeededTests/MedicationRefillProfileStoreTests.swift
+git add AsNeeded/Models/MedicationRefillProfile.swift AsNeeded/Services/MedicationRefillProfileStore.swift AsNeeded/Constants/UserDefaultsKeys.swift AsNeededTests/MedicationRefillProfileStoreTests.swift
 git commit -m "Replace guardrails with refill profiles"
 ```
 
@@ -130,8 +129,6 @@ git commit -m "Replace guardrails with refill profiles"
 - Create: `AsNeededTests/MedicationRefillProjectionServiceTests.swift`
 - Modify: `AsNeeded/Services/Intents/CheckRefillStatusIntent.swift`
 - Modify: `AsNeededTests/CheckRefillStatusIntentTests.swift`
-- Delete: `AsNeeded/Services/MedicationDoseGuidanceService.swift`
-- Delete: `AsNeededTests/MedicationDoseGuidanceServiceTests.swift`
 
 - [ ] **Step 1: Write failing refill projection tests**
 
@@ -160,7 +157,7 @@ Move `RefillProjection`, event filtering, unit-aware average usage, run-out proj
 
 Inject/use `MedicationRefillProfileStore` and `MedicationRefillProjectionService` in `CheckRefillStatusIntent`. Update its tests to construct `MedicationRefillProjectionService.RefillProjection`.
 
-- [ ] **Step 5: Delete the old service and run both focused suites**
+- [ ] **Step 5: Run both focused suites while retaining the compatibility service**
 
 Run:
 
@@ -170,6 +167,8 @@ Run:
 ```
 
 Expected: both pass with zero failures in their `.xcresult` summaries.
+
+Keep `MedicationDoseGuidanceService.swift` and its tests until Task 8 has migrated the final widget/watch consumer. This preserves whole-target compilation at every checkpoint.
 
 - [ ] **Step 6: Commit the service split**
 
@@ -352,6 +351,7 @@ Expected: all settings lifecycle suites pass. Commit as `Migrate refill profile 
 - Modify: `AsNeededWidget/MedicationLiveActivityAttributes.swift`
 - Modify: `AsNeededWidget/MedicationLiveActivityBridge.swift`
 - Modify: `AsNeededWidget/MedicationLiveActivityWidget.swift`
+- Modify: `AsNeeded/Services/Intents/LogMedicationIntent.swift`
 - Delete: `AsNeeded/Services/Intents/GetNextDoseIntent.swift`
 - Modify: `AsNeededTests/MedicationLiveActivityStateBuilderTests.swift`
 
@@ -369,7 +369,7 @@ Remove `nextDoseDate` and `canTakeNow` from snapshot, content, ActivityKit state
 
 - [ ] **Step 4: Remove the unsupported intent**
 
-Delete `GetNextDoseIntent.swift`. Confirm no app shortcut registration or tests reference it. Retain `CheckRefillStatusIntent`.
+Delete `GetNextDoseIntent.swift` and remove `GetNextDoseIntent()` from the `AppShortcutsProvider` registration in `LogMedicationIntent.swift`. Confirm no remaining shortcut registration or tests reference it. Retain `CheckRefillStatusIntent`.
 
 - [ ] **Step 5: Run focused tests and build**
 
@@ -394,6 +394,11 @@ Commit as `Remove dose eligibility from live surfaces`.
 - Modify: `WristAsNeeded Watch App/MedicationListView.swift`
 - Modify: `WristAsNeeded Watch App/MedicationDetailView.swift`
 - Modify: `WristAsNeeded Watch App/DoseLoggerView.swift`
+- Delete: `AsNeeded/Models/MedicationSafetyProfile.swift`
+- Delete: `AsNeeded/Services/MedicationSafetyProfileStore.swift`
+- Delete: `AsNeeded/Services/MedicationDoseGuidanceService.swift`
+- Delete: `AsNeededTests/MedicationSafetyProfileStoreTests.swift`
+- Delete: `AsNeededTests/MedicationDoseGuidanceServiceTests.swift`
 
 - [ ] **Step 1: Refactor widget data to refill-only state**
 
@@ -411,7 +416,11 @@ Send only refill state, medication identity, quantity, and prescribed dose field
 
 Remove disabled states, clock icons, countdown copy, and `canTake(at:)` checks from watch list, detail, and logger views. Preserve low-stock/refill banners and successful quantity/log updates.
 
-- [ ] **Step 5: Build all targets and inspect active references**
+- [ ] **Step 5: Delete the now-unused compatibility types**
+
+After app, intent, Live Activity, widget, and watch callers all compile against refill-only APIs, delete the old safety profile, safety store, dose-guidance service, and their obsolete tests. Confirm `rg` finds no consumers before deletion.
+
+- [ ] **Step 6: Build all targets and inspect active references**
 
 Run:
 
@@ -422,7 +431,7 @@ rg -n "canTakeNow|nextDoseDate|nextEligible|guardrail|saved guidance" AsNeeded A
 
 Expected: build succeeds; remaining matches are limited to explicit legacy migration identifiers or unrelated generic language, with no active eligibility UI/logic.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 Commit as `Remove guardrails from widget and watch`.
 
