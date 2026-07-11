@@ -12,8 +12,7 @@ final class MedicationListViewModel: ObservableObject {
     private let dataStore: DataStore
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
-    private let safetyProfileStore = MedicationSafetyProfileStore.shared
-    private let guidanceService = MedicationDoseGuidanceService()
+    private let refillProfileStore = MedicationRefillProfileStore.shared
     private let feedbackService = QuickLogFeedbackService()
     private let statusSummaryService = MedicationStatusSummaryService()
 
@@ -235,14 +234,6 @@ final class MedicationListViewModel: ObservableObject {
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
         )
-        let assessment = guidanceService.assessment(
-            for: medication,
-            proposedDose: dose,
-            at: loggedAt,
-            events: dataStore.events,
-            profile: safetyProfileStore.profile(for: medication.id)
-        )
-
         let eventCountBefore = dataStore.events.count
         var updatedMed = medication
         if let quantity = updatedMed.quantity, dose.amount > 0 {
@@ -275,9 +266,7 @@ final class MedicationListViewModel: ObservableObject {
             let feedback = feedbackService.feedback(
                 medication: medication,
                 dose: dose,
-                loggedEvent: event,
-                assessment: assessment,
-                at: loggedAt
+                loggedEvent: event
             )
             showQuickLogToast(med: medication, dose: dose, feedback: feedback)
             logger.logDoseOperation(
@@ -339,7 +328,7 @@ final class MedicationListViewModel: ObservableObject {
         statusSummaryService.summary(
             for: medication,
             events: dataStore.events,
-            profile: safetyProfileStore.profile(for: medication.id)
+            profile: refillProfileStore.profile(for: medication.id)
         )
     }
 
@@ -359,7 +348,7 @@ final class MedicationListViewModel: ObservableObject {
         }
 
         Task {
-            let toastDuration: UInt64 = feedback?.tone == .caution || feedback?.tone == .warning ? 5_000_000_000 : 3_000_000_000
+            let toastDuration: UInt64 = 3_000_000_000
             try? await Task.sleep(nanoseconds: toastDuration)
             await MainActor.run {
                 guard self.quickLogFeedback?.undoEventID == feedback?.undoEventID else {

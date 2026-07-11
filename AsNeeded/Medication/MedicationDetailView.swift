@@ -13,7 +13,7 @@ struct MedicationDetailView: View {
     @StateObject private var notificationManager = NotificationManager.shared
     @StateObject private var navigationManager = NavigationManager.shared
     private let statusSummaryService = MedicationStatusSummaryService()
-    private let safetyProfileStore = MedicationSafetyProfileStore.shared
+    private let refillProfileStore = MedicationRefillProfileStore.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
@@ -233,7 +233,7 @@ struct MedicationDetailView: View {
         statusSummaryService.summary(
             for: medication,
             events: DataStore.shared.events,
-            profile: safetyProfileStore.profile(for: medication.id)
+            profile: refillProfileStore.profile(for: medication.id)
         )
     }
 
@@ -242,48 +242,29 @@ struct MedicationDetailView: View {
 
         return VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack(alignment: .top, spacing: rowSpacing) {
-                Image(systemSymbol: summaryIcon(for: summary.severity))
+                Image(systemSymbol: .shippingboxFill)
                     .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .foregroundStyle(summaryColor(for: summary))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Confidence Check")
+                    Text("Medication Status")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
 
                     Text(summary.headline)
                         .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-                        .foregroundStyle(summaryColor(for: summary.severity))
+                        .foregroundStyle(summaryColor(for: summary))
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
-
-                Text(summary.badgeText)
-                    .font(.customFont(fontFamily, style: .caption, weight: .bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(summaryColor(for: summary.severity).opacity(0.12))
-                    )
             }
 
             VStack(alignment: .leading, spacing: detailSpacing) {
                 confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
 
-                if let nextWindowText = summary.nextWindowText {
-                    confidenceRow(icon: .calendarBadgeClock, text: nextWindowText, color: summaryColor(for: summary.severity))
-                }
-
-                if let dailyText = summary.dailyText {
-                    confidenceRow(icon: .chartLineUptrendXyaxis, text: dailyText, color: .secondary)
-                }
-
-                confidenceRow(icon: .shippingboxFill, text: summary.refillText, color: .secondary)
+                confidenceRow(icon: .shippingboxFill, text: summary.refillText, color: summaryColor(for: summary))
             }
         }
         .padding(adaptiveCardPadding)
@@ -732,26 +713,12 @@ struct MedicationDetailView: View {
         }
     }
 
-    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
-        switch severity {
-        case .clear:
-            return medication.displayColor
-        case .caution:
+    private func summaryColor(for summary: MedicationStatusSummaryService.Summary) -> Color {
+        if summary.isLowStock {
             return .orange
-        case .warning:
-            return .red
         }
-    }
 
-    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
-        switch severity {
-        case .clear:
-            return .checkmarkCircleFill
-        case .caution:
-            return .exclamationmarkTriangleFill
-        case .warning:
-            return .exclamationmarkTriangleFill
-        }
+        return summary.refillSoon ? medication.displayColor : .secondary
     }
 
     private func isRefillSoon(_ date: Date) -> Bool {

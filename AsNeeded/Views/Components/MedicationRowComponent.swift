@@ -248,26 +248,21 @@ struct MedicationRowComponent: View {
     private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Image(systemSymbol: summaryIcon(for: summary.severity))
+                Image(systemSymbol: .shippingboxFill)
                     .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
+                    .foregroundStyle(summaryColor(for: summary))
                     .accessibilityHidden(true)
-
-                Text(summary.badgeText)
-                    .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(summaryColor(for: summary.severity))
 
                 Text(summary.headline)
                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(summaryColor(for: summary))
                     .lineLimit(1)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill(summaryColor(for: summary.severity).opacity(0.12))
+                    .fill(summaryColor(for: summary).opacity(0.12))
             )
 
             Text(summary.timingText)
@@ -275,12 +270,10 @@ struct MedicationRowComponent: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            if let nextWindowText = summary.nextWindowText {
-                Text(nextWindowText)
-                    .font(.customFont(fontFamily, style: .caption2))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .lineLimit(1)
-            }
+            Text(summary.refillText)
+                .font(.customFont(fontFamily, style: .caption2))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(summary.accessibilityLabel)
@@ -490,26 +483,12 @@ struct MedicationRowComponent: View {
         }
     }
 
-    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
-        switch severity {
-        case .clear:
-            return medication.displayColor
-        case .caution:
+    private func summaryColor(for summary: MedicationStatusSummaryService.Summary) -> Color {
+        if summary.isLowStock {
             return .orange
-        case .warning:
-            return .red
         }
-    }
 
-    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
-        switch severity {
-        case .clear:
-            return .checkmarkCircleFill
-        case .caution:
-            return .exclamationmarkTriangleFill
-        case .warning:
-            return .exclamationmarkTriangleFill
-        }
+        return summary.refillSoon ? medication.displayColor : .secondary
     }
 
     // MARK: - Medication Appearance Sheet

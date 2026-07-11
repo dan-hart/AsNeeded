@@ -29,9 +29,6 @@ struct LogDoseView: View {
     @State private var isLogging = false
     private let logger = DHLogger(category: "DoseLogView")
     private let hapticsManager = HapticsManager.shared
-    private let dataStore = DataStore.shared
-    private let safetyProfileStore = MedicationSafetyProfileStore.shared
-    private let guidanceService = MedicationDoseGuidanceService()
 
     @ScaledMetric private var iconSize: CGFloat = 80
     @ScaledMetric private var iconShadowRadius: CGFloat = 12
@@ -76,27 +73,11 @@ struct LogDoseView: View {
     @ScaledMetric private var bottomPadding: CGFloat = 20
     @ScaledMetric private var sectionShadowRadius: CGFloat = 8
     @ScaledMetric private var sectionShadowY: CGFloat = 2
-    @ScaledMetric private var guidanceBadgePaddingH: CGFloat = 10
-    @ScaledMetric private var guidanceBadgePaddingV: CGFloat = 6
     @ScaledMetric private var reflectionGridSpacing: CGFloat = 10
     @ScaledMetric private var scaleButtonMinWidth: CGFloat = 36
 
-    private var safetyProfile: MedicationSafetyProfile {
-        safetyProfileStore.profile(for: medication.id)
-    }
-
     private var proposedDose: ANDoseConcept {
         ANDoseConcept(amount: amount, unit: selectedUnit)
-    }
-
-    private var assessment: MedicationDoseGuidanceService.Assessment {
-        guidanceService.assessment(
-            for: medication,
-            proposedDose: proposedDose,
-            at: selectedDate,
-            events: dataStore.events,
-            profile: safetyProfile
-        )
     }
 
     private var parsedSideEffects: [String] {
@@ -170,32 +151,6 @@ struct LogDoseView: View {
 
     private func nilIfZero(_ value: Int) -> Int? {
         value == 0 ? nil : value
-    }
-
-    private func tintColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
-        switch severity {
-        case .clear:
-            return medication.displayColor
-        case .caution:
-            return .orange
-        case .warning:
-            return .red
-        }
-    }
-
-    private var guidanceAccessibilityLabel: String {
-        var parts = [assessment.headline, assessment.detail]
-
-        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
-            parts.append("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
-        }
-
-        if let maxDailyAmount = assessment.maxDailyAmount {
-            parts.append("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
-        }
-
-        parts.append(contentsOf: assessment.reasons)
-        return parts.joined(separator: " ")
     }
 
     // MARK: - View Components
@@ -459,97 +414,6 @@ struct LogDoseView: View {
         .padding(.horizontal)
     }
 
-    private var guidanceSection: some View {
-        let tint = tintColor(for: assessment.severity)
-
-        return VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack {
-                Label("Dose Check", systemSymbol: .crossCaseFill)
-                    .font(.customFont(fontFamily, style: .headline))
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Text(assessment.severity == .clear ? "Saved Guidance" : "Review")
-                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                    .foregroundStyle(tint)
-                    .padding(.horizontal, guidanceBadgePaddingH)
-                    .padding(.vertical, guidanceBadgePaddingV)
-                    .background(
-                        Capsule()
-                            .fill(tint.opacity(0.12))
-                    )
-            }
-
-            VStack(alignment: .leading, spacing: mediumSpacing) {
-                Text(assessment.headline)
-                    .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                    .foregroundStyle(.primary)
-
-                Text(assessment.detail)
-                    .font(.customFont(fontFamily, style: .subheadline))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
-                HStack(alignment: .top, spacing: mediumSpacing) {
-                    Image(systemSymbol: .clockBadgeExclamationmark)
-                        .foregroundStyle(tint)
-                        .padding(.top, smallSpacing)
-
-                    Text("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            if let maxDailyAmount = assessment.maxDailyAmount {
-                HStack(alignment: .top, spacing: mediumSpacing) {
-                    Image(systemSymbol: .chartBarFill)
-                        .foregroundStyle(tint)
-                        .padding(.top, smallSpacing)
-
-                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            if !assessment.reasons.isEmpty {
-                VStack(alignment: .leading, spacing: smallSpacing) {
-                    ForEach(assessment.reasons, id: \.self) { reason in
-                        HStack(alignment: .top, spacing: smallSpacing) {
-                            Image(systemSymbol: .circleFill)
-                                .font(.customFont(fontFamily, style: .caption2))
-                                .foregroundStyle(tint)
-                                .padding(.top, smallSpacing)
-
-                            Text(reason)
-                                .font(.customFont(fontFamily, style: .caption))
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-            }
-        }
-        .padding(sectionPadding)
-        .background(
-            RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
-                .fill(tint.opacity(colorScheme == .dark ? 0.14 : 0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: sectionCornerRadius, style: .continuous)
-                        .strokeBorder(tint.opacity(0.14), lineWidth: borderWidth)
-                )
-        )
-        .padding(.horizontal)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(guidanceAccessibilityLabel)
-    }
-
     private var reflectionSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
@@ -760,7 +624,7 @@ struct LogDoseView: View {
         .opacity(amount <= 0 || isLogging ? 0.6 : 1.0)
         .accessibilityLabel(isLogging ? "Logging dose" : "Log dose")
         .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
-        .accessibilityHint(assessment.severity == .clear ? "Saves this dose entry" : "Saves this dose entry with the shown guidance warning")
+        .accessibilityHint("Saves this dose entry")
     }
 
     var body: some View {
@@ -774,8 +638,6 @@ struct LogDoseView: View {
                         doseSection
 
                         dateTimeSection
-
-                        guidanceSection
 
                         reflectionSection
 

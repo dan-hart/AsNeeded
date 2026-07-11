@@ -282,6 +282,9 @@ struct MedicationListViewModelUnitTests {
 		#expect(success)
 		#expect(dataStore.events.count == 1)
 		#expect(viewModel.quickLogFeedback?.undoEventID == dataStore.events.first?.id)
+		#expect(viewModel.quickLogFeedback?.title == "Dose logged")
+		#expect(viewModel.quickLogFeedback?.detail == medication.displayName)
+		#expect(viewModel.quickLogFeedback?.message.localizedCaseInsensitiveContains("guidance") == false)
 
 		let undoSuccess = await viewModel.undoLastQuickLog()
 
