@@ -236,8 +236,8 @@ struct MedicationRefillProjectionServiceTests {
 		#expect(projection.projectedRunOutDate == expectedDate)
 	}
 
-	@Test("Nil quantity declines a run-out projection")
-	func nilQuantityDeclinesRunOutProjection() {
+	@Test("Nil quantity without calendar refill status requests quantity")
+	func nilQuantityWithoutCalendarRefillStatusRequestsQuantity() {
 		let medication = medication(quantity: nil)
 		let events = [event(medication: medication, daysAgo: 1, amount: 2)]
 
@@ -252,6 +252,34 @@ struct MedicationRefillProjectionServiceTests {
 		#expect(projection.projectedRunOutDate == nil)
 		#expect(!projection.lowStock)
 		#expect(projection.statusMessage == "Add or update the quantity to see refill estimates.")
+	}
+
+	@Test("Nil quantity preserves urgent calendar refill status")
+	func nilQuantityPreservesUrgentCalendarRefillStatus() {
+		let refillDate = calendar.date(byAdding: .day, value: 1, to: now)
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication(quantity: nil, nextRefillDate: refillDate),
+			at: now,
+			events: []
+		)
+
+		#expect(projection.urgent)
+		#expect(projection.refillSoon)
+		#expect(projection.statusMessage == "Refill prep would be timely.")
+	}
+
+	@Test("Nil quantity preserves refill-soon calendar status")
+	func nilQuantityPreservesRefillSoonCalendarStatus() {
+		let refillDate = calendar.date(byAdding: .day, value: 5, to: now)
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication(quantity: nil, nextRefillDate: refillDate),
+			at: now,
+			events: []
+		)
+
+		#expect(!projection.urgent)
+		#expect(projection.refillSoon)
+		#expect(projection.statusMessage == "You’re approaching your refill window.")
 	}
 
 	@Test("Tracked quantity without usage history requests more dose logs")

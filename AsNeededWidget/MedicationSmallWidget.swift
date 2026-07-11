@@ -15,7 +15,7 @@ struct MedicationSmallWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Featured Medication")
-        .description("Shows a medication with refill and quantity status")
+        .description("Shows refill status and lets you quickly log a dose")
         .supportedFamilies([.systemSmall])
     }
 }
