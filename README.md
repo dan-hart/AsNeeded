@@ -39,7 +39,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 - **Privacy-first storage and insights**: Local-first data, no tracking, full export/import, and on-device Trends questions that never send your logs off-device for processing
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
-- **Refill awareness**: Inventory tracking, configurable low-stock warnings, refill reminders, and projected run-out dates
+- **Refill awareness**: Inventory tracking, configurable low-stock warnings, refill status, and projected run-out dates
 - **History and insights**: Last-dose summaries, visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
 - **Ambient access**: Home Screen widgets, Lock Screen widgets, Live Activities, interactive quick actions, and watchOS support
 - **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
