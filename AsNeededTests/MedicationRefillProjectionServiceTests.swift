@@ -78,6 +78,130 @@ struct MedicationRefillProjectionServiceTests {
 		#expect(projection.averageDailyUsage == 2)
 	}
 
+	@Test("Average daily usage accepts one consistent unit without a prescribed unit")
+	func averageDailyUsageAcceptsConsistentUnitWithoutPrescription() {
+		let medication = medication(quantity: 12, unit: nil)
+		let events = [
+			event(medication: medication, daysAgo: 2, amount: 2),
+			event(medication: medication, daysAgo: 1, amount: 4),
+		]
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: events
+		)
+
+		#expect(projection.averageDailyUsage == 3)
+		#expect(projection.estimatedDaysRemaining == 4)
+	}
+
+	@Test("Average daily usage declines mixed units without a prescribed unit")
+	func averageDailyUsageDeclinesMixedUnitsWithoutPrescription() {
+		let medication = medication(unit: nil)
+		let events = [
+			event(medication: medication, daysAgo: 1, amount: 2),
+			event(medication: medication, daysAgo: 1, amount: 500, unit: .milligram),
+		]
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: events
+		)
+
+		#expect(projection.averageDailyUsage == 0)
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+	}
+
+	@Test("Average daily usage excludes future dose events")
+	func averageDailyUsageExcludesFutureEvents() {
+		let medication = medication()
+		let futureEvent = event(medication: medication, daysAgo: -1, amount: 20)
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: [futureEvent]
+		)
+
+		#expect(projection.averageDailyUsage == 0)
+		#expect(projection.estimatedDaysRemaining == nil)
+	}
+
+	@Test("Average daily usage excludes doses for other medications")
+	func averageDailyUsageExcludesOtherMedications() {
+		let medication = medication()
+		let otherMedication = ANMedicationConcept(clinicalName: "Acetaminophen")
+		let otherEvent = event(medication: otherMedication, daysAgo: 1, amount: 20)
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: [otherEvent]
+		)
+
+		#expect(projection.averageDailyUsage == 0)
+		#expect(projection.estimatedDaysRemaining == nil)
+	}
+
+	@Test("Average daily usage excludes non-dose events")
+	func averageDailyUsageExcludesNonDoseEvents() {
+		let medication = medication()
+		let reconcileEvent = event(
+			medication: medication,
+			daysAgo: 1,
+			amount: 20,
+			eventType: .reconcile
+		)
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: [reconcileEvent]
+		)
+
+		#expect(projection.averageDailyUsage == 0)
+		#expect(projection.estimatedDaysRemaining == nil)
+	}
+
+	@Test("Average daily usage groups doses by injected calendar day")
+	func averageDailyUsageUsesCalendarDayBoundaries() {
+		let medication = medication()
+		let projectionDate = calendar.date(
+			from: DateComponents(year: 2025, month: 1, day: 2, hour: 12)
+		) ?? now
+		let firstDate = calendar.date(
+			from: DateComponents(year: 2025, month: 1, day: 1, hour: 23)
+		) ?? now
+		let secondDate = calendar.date(
+			from: DateComponents(year: 2025, month: 1, day: 2, hour: 1)
+		) ?? now
+		let events = [
+			ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: 2, unit: .tablet),
+				date: firstDate
+			),
+			ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: 4, unit: .tablet),
+				date: secondDate
+			),
+		]
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: projectionDate,
+			events: events
+		)
+
+		#expect(projection.averageDailyUsage == 3)
+	}
+
 	@Test("Estimated days remaining uses current quantity and recent pace")
 	func estimatesDaysRemaining() {
 		let medication = medication(quantity: 11)
@@ -108,6 +232,40 @@ struct MedicationRefillProjectionServiceTests {
 		)
 
 		#expect(projection.projectedRunOutDate == expectedDate)
+	}
+
+	@Test("Nil quantity declines a run-out projection")
+	func nilQuantityDeclinesRunOutProjection() {
+		let medication = medication(quantity: nil)
+		let events = [event(medication: medication, daysAgo: 1, amount: 2)]
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: events
+		)
+
+		#expect(projection.averageDailyUsage == 2)
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+		#expect(!projection.lowStock)
+	}
+
+	@Test("Zero quantity declines a run-out projection and is low stock")
+	func zeroQuantityDeclinesRunOutProjection() {
+		let medication = medication(quantity: 0)
+		let events = [event(medication: medication, daysAgo: 1, amount: 2)]
+
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication,
+			at: now,
+			events: events
+		)
+
+		#expect(projection.averageDailyUsage == 2)
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+		#expect(projection.lowStock)
 	}
 
 	@Test("A next-refill date inside the lead window is refill soon")

@@ -117,6 +117,14 @@ struct MedicationRefillProjectionService {
 			return 0
 		}
 
+		if preferredUnit == nil {
+			guard let eventUnit = relevantEvents.first?.dose?.unit,
+			      relevantEvents.allSatisfy({ $0.dose?.unit == eventUnit })
+			else {
+				return 0
+			}
+		}
+
 		let grouped = Dictionary(grouping: relevantEvents) { event in
 			calendar.startOfDay(for: event.date)
 		}
