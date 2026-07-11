@@ -3,6 +3,10 @@ import Foundation
 final class MedicationRefillProfileStore {
 	@MainActor static let shared = MedicationRefillProfileStore()
 
+	struct ProfileDataSnapshot {
+		fileprivate let values: [KeySnapshot]
+	}
+
 	private struct LegacyMedicationProfile: Codable {
 		var lowStockThreshold: Double?
 	}
@@ -12,7 +16,7 @@ final class MedicationRefillProfileStore {
 		let data: Data?
 	}
 
-	private struct KeySnapshot {
+	fileprivate struct KeySnapshot {
 		let destination: UserDefaults
 		let key: String
 		let value: Any?
@@ -143,6 +147,14 @@ final class MedicationRefillProfileStore {
 		])
 	}
 
+	func snapshotProfileData() -> ProfileDataSnapshot {
+		ProfileDataSnapshot(values: snapshots(for: profileDataKeys))
+	}
+
+	func restoreProfileData(_ snapshot: ProfileDataSnapshot) -> Bool {
+		restoreKeySnapshots(snapshot.values)
+	}
+
 	static func filteredProfiles(
 		from profiles: [String: MedicationRefillProfile],
 		validMedicationIDs: some Sequence<String>
@@ -156,6 +168,15 @@ final class MedicationRefillProfileStore {
 			return [defaults]
 		}
 		return [defaults, sharedDefaults]
+	}
+
+	private var profileDataKeys: [String] {
+		[
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+			UserDefaultsKeys.medicationProfilesMigrationCompleted,
+			UserDefaultsKeys.archivedMedicationProfiles,
+		]
 	}
 
 	private var hasInvalidAuthoritativeActivePayload: Bool {
@@ -461,15 +482,7 @@ final class MedicationRefillProfileStore {
 	}
 
 	private func removeVerified(keys: [String]) -> Bool {
-		let snapshots = activeDestinations.flatMap { destination in
-			keys.map { key in
-				KeySnapshot(
-					destination: destination,
-					key: key,
-					value: destination.object(forKey: key)
-				)
-			}
-		}
+		let snapshots = snapshots(for: keys)
 
 		for destination in activeDestinations {
 			for key in keys {
@@ -482,6 +495,18 @@ final class MedicationRefillProfileStore {
 		}
 
 		return true
+	}
+
+	private func snapshots(for keys: [String]) -> [KeySnapshot] {
+		activeDestinations.flatMap { destination in
+			keys.map { key in
+				KeySnapshot(
+					destination: destination,
+					key: key,
+					value: destination.object(forKey: key)
+				)
+			}
+		}
 	}
 
 	private func restoreKeySnapshots(_ snapshots: [KeySnapshot]) -> Bool {

@@ -171,6 +171,44 @@ struct DataStoreClearTests {
 		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == Data([1, 2, 3]))
 	}
 
+	@Test("clearAllData surfaces Boutique clear failure after destructive privacy erasure")
+	func clearAllDataSurfacesDatabaseFailureAfterPrivacyErasure() async throws {
+		let defaults = makeDefaults(suiteName: "DataStoreClearTests.databaseFailure.\(UUID().uuidString)")
+		let sharedDefaults = makeDefaults(suiteName: "DataStoreClearTests.sharedDatabaseFailure.\(UUID().uuidString)")
+		let medicationID = UUID()
+		let profileData = try JSONEncoder().encode([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 10),
+		])
+		for destination in [defaults, sharedDefaults] {
+			destination.set(profileData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+			destination.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.archivedMedicationProfiles)
+		}
+		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+		let dataStore = DataStore(
+			testIdentifier: "clear-database-failure",
+			settingsDefaults: defaults,
+			refillProfileStore: profileStore,
+			importFailureInjection: .init(
+				beforeExplicitClearUserData: { throw ClearFailure.intentional }
+			)
+		)
+		let medication = ANMedicationConcept(id: medicationID, clinicalName: "Still Stored")
+		try await dataStore.addMedication(medication)
+
+		await #expect(throws: ClearFailure.self) {
+			try await dataStore.clearAllData()
+		}
+		#expect(dataStore.medications.map(\.id) == [medicationID])
+		for destination in [defaults, sharedDefaults] {
+			#expect(destination.object(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+			#expect(destination.object(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		}
+	}
+
+	private enum ClearFailure: Error {
+		case intentional
+	}
+
     @Test("clearAllData removes all AppStorage medication selections")
     func clearAllDataRemovesAppStorageSelections() async throws {
         // Given: Create test store

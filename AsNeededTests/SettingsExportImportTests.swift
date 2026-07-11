@@ -526,6 +526,212 @@ struct SettingsExportImportTests {
 		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
 	}
 
+	@Test("Database clear failure restores settings profiles and existing data")
+	func databaseClearFailureRestoresEntireImportSnapshot() async throws {
+		let context = try await makeImportTransactionContext(
+			failureInjection: .init(beforeClearMedications: { throw TestFailure.intentional })
+		)
+		let importedMedication = createTestMedication()
+		let data = try makeTransactionalExport(medication: importedMedication)
+
+		await #expect(throws: TestFailure.self) {
+			try await context.dataStore.importDataFromJSON(data, applySettings: true)
+		}
+		try expectOriginalImportState(context)
+	}
+
+	@Test("Medication insertion failure restores settings profiles and existing data")
+	func medicationInsertionFailureRestoresEntireImportSnapshot() async throws {
+		let importedMedication = createTestMedication()
+		let context = try await makeImportTransactionContext(
+			failureInjection: .init(beforeMedicationInsert: { medication in
+				guard medication.id != importedMedication.id else { throw TestFailure.intentional }
+			})
+		)
+		let data = try makeTransactionalExport(medication: importedMedication)
+
+		await #expect(throws: TestFailure.self) {
+			try await context.dataStore.importDataFromJSON(data, applySettings: true)
+		}
+		try expectOriginalImportState(context)
+		#expect(context.profileStore.profile(for: importedMedication.id) == .empty)
+	}
+
+	@Test("Event insertion failure restores settings profiles and existing data")
+	func eventInsertionFailureRestoresEntireImportSnapshot() async throws {
+		let context = try await makeImportTransactionContext(
+			failureInjection: .init(beforeEventInsert: { _ in throw TestFailure.intentional })
+		)
+		let importedMedication = createTestMedication()
+		let importedEvent = ANEventConcept(
+			eventType: .doseTaken,
+			medication: importedMedication,
+			dose: ANDoseConcept(amount: 1, unit: .unit),
+			date: Date(timeIntervalSince1970: 1_700_000_000)
+		)
+		let data = try makeTransactionalExport(
+			medication: importedMedication,
+			events: [importedEvent]
+		)
+
+		await #expect(throws: TestFailure.self) {
+			try await context.dataStore.importDataFromJSON(data, applySettings: true)
+		}
+		try expectOriginalImportState(context)
+	}
+
+	@Test("Merge insertion failure rolls back earlier merged records and settings")
+	func mergeInsertionFailureRollsBackPartialMerge() async throws {
+		let firstImportedMedication = createTestMedication()
+		let failingMedication = createTestMedication()
+		let context = try await makeImportTransactionContext(
+			failureInjection: .init(beforeMedicationInsert: { medication in
+				guard medication.id != failingMedication.id else { throw TestFailure.intentional }
+			})
+		)
+		let settings = try decodeSettings("""
+		{
+			"hapticsEnabled": false,
+			"selectedFontFamily": "OpenDyslexic",
+			"medicationRefillProfiles": {
+				"\(firstImportedMedication.id.uuidString)": {"lowStockThreshold": 4},
+				"\(failingMedication.id.uuidString)": {"lowStockThreshold": 9}
+			}
+		}
+		""")
+		let export = DataExport(
+			medications: [firstImportedMedication, failingMedication],
+			events: [],
+			exportDate: Date(),
+			appVersion: "1.0",
+			dataVersion: "1.0",
+			settings: settings
+		)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+
+		await #expect(throws: TestFailure.self) {
+			try await context.dataStore.importDataFromJSON(
+				encoder.encode(export),
+				mergeExisting: true,
+				applySettings: true
+			)
+		}
+		try expectOriginalImportState(context)
+	}
+
+	@Test("Import and rollback failure surfaces an explicit compound error")
+	func importAndRollbackFailureSurfacesCompoundError() async throws {
+		let context = try await makeImportTransactionContext(
+			failureInjection: .init(
+				beforeEventInsert: { _ in throw TestFailure.intentional },
+				beforeRollbackMedications: { throw TestFailure.intentional }
+			)
+		)
+		let medication = createTestMedication()
+		let event = ANEventConcept(
+			eventType: .doseTaken,
+			medication: medication,
+			dose: ANDoseConcept(amount: 1, unit: .unit),
+			date: Date(timeIntervalSince1970: 1_700_000_000)
+		)
+		let data = try makeTransactionalExport(medication: medication, events: [event])
+
+		do {
+			try await context.dataStore.importDataFromJSON(data, applySettings: true)
+			Issue.record("Expected compound rollback failure")
+		} catch let DataImportError.transactionRollbackFailed(_, rollbackFailures) {
+			#expect(rollbackFailures.contains("medications"))
+		} catch {
+			Issue.record("Expected compound rollback failure, got \(error)")
+		}
+	}
+
+	private struct ImportTransactionContext {
+		let defaults: UserDefaults
+		let sharedDefaults: UserDefaults
+		let profileStore: MedicationRefillProfileStore
+		let dataStore: DataStore
+		let existingMedication: ANMedicationConcept
+		let existingEvent: ANEventConcept
+		let existingProfileData: Data
+	}
+
+	private func makeImportTransactionContext(
+		failureInjection: DataStore.ImportFailureInjection
+	) async throws -> ImportTransactionContext {
+		let defaults = UserDefaults(suiteName: "SettingsExportImportTests.transaction.\(UUID().uuidString)") ?? .standard
+		let sharedDefaults = UserDefaults(suiteName: "SettingsExportImportTests.sharedTransaction.\(UUID().uuidString)") ?? .standard
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.removeObject(forKey: UserDefaultsKeys.selectedFontFamily)
+		let existingMedication = createTestMedication()
+		let existingProfileData = try JSONEncoder().encode([
+			existingMedication.id.uuidString: MedicationRefillProfile(lowStockThreshold: 12),
+		])
+		defaults.set(existingProfileData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(existingProfileData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let profileStore = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults
+		)
+		let dataStore = DataStore(
+			testIdentifier: "transaction",
+			settingsDefaults: defaults,
+			refillProfileStore: profileStore,
+			importFailureInjection: failureInjection
+		)
+		let existingEvent = ANEventConcept(
+			eventType: .doseTaken,
+			medication: existingMedication,
+			dose: ANDoseConcept(amount: 1, unit: .unit),
+			date: Date(timeIntervalSince1970: 1_600_000_000)
+		)
+		try await dataStore.addMedication(existingMedication)
+		try await dataStore.addEvent(existingEvent)
+
+		return ImportTransactionContext(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			profileStore: profileStore,
+			dataStore: dataStore,
+			existingMedication: existingMedication,
+			existingEvent: existingEvent,
+			existingProfileData: existingProfileData
+		)
+	}
+
+	private func makeTransactionalExport(
+		medication: ANMedicationConcept,
+		events: [ANEventConcept] = []
+	) throws -> Data {
+		var settings = AppSettings()
+		settings.hapticsEnabled = false
+		settings.selectedFontFamily = "OpenDyslexic"
+		settings.medicationRefillProfiles = [
+			medication.id.uuidString: MedicationRefillProfile(lowStockThreshold: 9),
+		]
+		let export = DataExport(
+			medications: [medication],
+			events: events,
+			exportDate: Date(),
+			appVersion: "1.0",
+			dataVersion: "1.0",
+			settings: settings
+		)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		return try encoder.encode(export)
+	}
+
+	private func expectOriginalImportState(_ context: ImportTransactionContext) throws {
+		#expect(context.defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+		#expect(context.defaults.object(forKey: UserDefaultsKeys.selectedFontFamily) == nil)
+		#expect(context.defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == context.existingProfileData)
+		#expect(context.sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == context.existingProfileData)
+		#expect(context.dataStore.medications == [context.existingMedication])
+		#expect(context.dataStore.events == [context.existingEvent])
+	}
+
 	@Test("Imported refill profiles filter invalid medication IDs and mirror active data")
 	func importedRefillProfilesFilterInvalidIDsAndMirrorActiveData() throws {
 		let sharedDefaults = try #require(UserDefaults(suiteName: StorageConstants.appGroupIdentifier))

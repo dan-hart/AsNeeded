@@ -8,10 +8,33 @@ import Foundation
 
 @MainActor
 public final class DataStore {
+	struct ImportFailureInjection {
+		var beforeClearMedications: () throws -> Void = {}
+		var beforeClearEvents: () throws -> Void = {}
+		var beforeMedicationInsert: (ANMedicationConcept) throws -> Void = { _ in }
+		var beforeEventInsert: (ANEventConcept) throws -> Void = { _ in }
+		var beforeRollbackMedications: () throws -> Void = {}
+		var beforeExplicitClearUserData: () throws -> Void = {}
+
+		static var none: ImportFailureInjection { ImportFailureInjection() }
+	}
+
+	private struct DefaultsSnapshot {
+		let values: [(key: String, value: Any?)]
+	}
+
+	private struct ImportTransactionSnapshot {
+		let defaults: DefaultsSnapshot
+		let profiles: MedicationRefillProfileStore.ProfileDataSnapshot
+		let medications: [ANMedicationConcept]
+		let events: [ANEventConcept]
+	}
+
     public static let shared = DataStore()
     private let logger = DHLogger.data
 	private let settingsDefaults: UserDefaults
 	private let refillProfileStore: MedicationRefillProfileStore
+	private let importFailureInjection: ImportFailureInjection
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
@@ -23,6 +46,7 @@ public final class DataStore {
     private init() {
 		settingsDefaults = .standard
 		refillProfileStore = MedicationRefillProfileStore()
+		importFailureInjection = .none
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -108,17 +132,20 @@ public final class DataStore {
 		self.init(
 			testIdentifier: testIdentifier,
 			settingsDefaults: .standard,
-			refillProfileStore: MedicationRefillProfileStore()
+			refillProfileStore: MedicationRefillProfileStore(),
+			importFailureInjection: .none
 		)
 	}
 
 	init(
 		testIdentifier: String,
 		settingsDefaults: UserDefaults,
-		refillProfileStore: MedicationRefillProfileStore
+		refillProfileStore: MedicationRefillProfileStore,
+		importFailureInjection: ImportFailureInjection = .none
 	) {
 		self.settingsDefaults = settingsDefaults
 		self.refillProfileStore = refillProfileStore
+		self.importFailureInjection = importFailureInjection
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
             storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
@@ -373,97 +400,104 @@ public final class DataStore {
             logger.warning("Import data version mismatch: expectedSupportedVersion=false")
         }
 
-		// Apply settings before replacing any medication or event data. The valid
-		// IDs are computed from the prospective post-import medication set.
-		if applySettings, let settings = importedData.settings {
-			let importedMedicationIDs = Set(importedData.medications.map { $0.id.uuidString })
-			let validMedicationIDs = mergeExisting ?
-				importedMedicationIDs.union(medications.map { $0.id.uuidString }) :
-				importedMedicationIDs
-			logger.info("Applying imported settings")
-			try importSettings(settings, validMedicationIDs: validMedicationIDs)
-		} else if importedData.settings != nil {
-			logger.info("Settings present in import but not applying (applySettings: \(applySettings))")
+		let snapshot = makeImportTransactionSnapshot()
+		let importedMedicationIDs = Set(importedData.medications.map { $0.id.uuidString })
+		let prospectiveMedicationIDs = mergeExisting ?
+			importedMedicationIDs.union(medications.map { $0.id.uuidString }) :
+			importedMedicationIDs
+		let importedEventIDs = Set(importedData.events.map(\.id))
+		let expectedEventIDs = mergeExisting ?
+			importedEventIDs.union(snapshot.events.map(\.id)) :
+			importedEventIDs
+
+		do {
+			// Settings are a verified preflight, but remain part of this transaction
+			// and are rolled back if any later database operation fails.
+			if applySettings, let settings = importedData.settings {
+				logger.info("Applying imported settings")
+				try importSettings(settings, validMedicationIDs: prospectiveMedicationIDs)
+			} else if importedData.settings != nil {
+				logger.info("Settings present in import but not applying (applySettings: \(applySettings))")
+			}
+
+			if !mergeExisting {
+				logger.info("Clearing existing data before import")
+				try importFailureInjection.beforeClearMedications()
+				try await medicationsStore.removeAll()
+				try importFailureInjection.beforeClearEvents()
+				try await eventsStore.removeAll()
+			}
+
+			var medicationImportCount = 0
+			var medicationDuplicateCount = 0
+			for medication in importedData.medications {
+				if mergeExisting, medications.contains(where: { $0.id == medication.id }) {
+					logger.debug("Skipping duplicate medication record")
+					medicationDuplicateCount += 1
+					continue
+				}
+				try importFailureInjection.beforeMedicationInsert(medication)
+				try await medicationsStore.insert(medication)
+				medicationImportCount += 1
+			}
+
+			var eventImportCount = 0
+			var eventDuplicateCount = 0
+			for var event in importedData.events {
+				if mergeExisting, events.contains(where: { $0.id == event.id }) {
+					logger.debug("Skipping duplicate event record")
+					eventDuplicateCount += 1
+					continue
+				}
+
+				if let eventMedication = event.medication {
+					guard let correctMedication = medications.first(where: {
+						$0.id == eventMedication.id ||
+							($0.clinicalName == eventMedication.clinicalName &&
+								$0.nickname == eventMedication.nickname)
+					}) else {
+						throw DataImportError.invalidMedicationReference
+					}
+					event.medication = correctMedication
+				}
+
+				try importFailureInjection.beforeEventInsert(event)
+				try await eventsStore.insert(event)
+				eventImportCount += 1
+			}
+
+			let actualMedicationIDs = Set(medications.map { $0.id.uuidString })
+			let actualEventIDs = Set(events.map(\.id))
+			guard actualMedicationIDs == prospectiveMedicationIDs,
+				actualEventIDs == expectedEventIDs
+			else {
+				throw DataImportError.finalValidationFailed
+			}
+
+			if applySettings, let settings = importedData.settings {
+				try settings.persistRefillProfiles(
+					validMedicationIDs: actualMedicationIDs,
+					profileStore: refillProfileStore
+				)
+			}
+
+			logger.info("Import statistics: Medications: \(medicationImportCount) imported, \(medicationDuplicateCount) duplicates")
+			logger.info("Import statistics: Events: \(eventImportCount) imported, \(eventDuplicateCount) duplicates")
+		} catch {
+			let rollbackFailures = await rollbackImport(to: snapshot)
+			guard rollbackFailures.isEmpty else {
+				throw DataImportError.transactionRollbackFailed(
+					importError: String(describing: error),
+					rollbackFailures: rollbackFailures
+				)
+			}
+			throw error
 		}
 
-        // Clear existing data if not merging
-        if !mergeExisting {
-            logger.info("Clearing existing data before import")
-			try await clearUserData()
-        }
-
-        // Import medications
-        var medicationImportCount = 0
-        var medicationFailureCount = 0
-        var medicationDuplicateCount = 0
-        for medication in importedData.medications {
-            do {
-                if mergeExisting, medications.contains(where: { $0.id == medication.id }) {
-                    logger.debug("Skipping duplicate medication record")
-                    medicationDuplicateCount += 1
-                    continue
-                }
-                try await medicationsStore.insert(medication)
-                medicationImportCount += 1
-            } catch {
-                logger.logPrivacySafeError("Failed to import medication record", error: error)
-                medicationFailureCount += 1
-                // Continue with other medications
-            }
-        }
-
-        // Import events with medication reference validation
-        var eventImportCount = 0
-        var eventFailureCount = 0
-        var eventDuplicateCount = 0
-        var eventValidationFailureCount = 0
-        for var event in importedData.events {
-            do {
-                if mergeExisting, events.contains(where: { $0.id == event.id }) {
-                    logger.debug("Skipping duplicate event record")
-                    eventDuplicateCount += 1
-                    continue
-                }
-
-                // Validate and fix medication reference
-                if let eventMedication = event.medication {
-                    // Check if the medication ID exists in our imported medications
-                    if let correctMedication = importedData.medications.first(where: {
-                        // Match by clinical name and nickname as fallback if ID doesn't match
-                        $0.id == eventMedication.id ||
-                            ($0.clinicalName == eventMedication.clinicalName &&
-                                $0.nickname == eventMedication.nickname)
-                    }) {
-                        // Update the event's medication reference to use the correct medication
-                        event.medication = correctMedication
-                        logger.debug("Validated medication reference for event record")
-                    } else {
-                        // Medication not found, skip this event
-                        logger.warning("Skipping event record: medication reference not found")
-                        eventValidationFailureCount += 1
-                        continue
-                    }
-                }
-
-                try await eventsStore.insert(event)
-                eventImportCount += 1
-            } catch {
-                logger.logPrivacySafeError("Failed to import event record", error: error)
-                eventFailureCount += 1
-                // Continue with other events
-            }
-        }
-
-        // Capture after counts
         let afterMedicationCount = medications.count
         let afterEventCount = events.count
 
-        // Log detailed statistics
-        logger.info("Import statistics: Medications: \(medicationImportCount) imported, \(medicationDuplicateCount) duplicates, \(medicationFailureCount) failures")
-        logger.info("Import statistics: Events: \(eventImportCount) imported, \(eventDuplicateCount) duplicates, \(eventValidationFailureCount) validation failures, \(eventFailureCount) other failures")
-
         let duration = Date().timeIntervalSince(startTime)
-        let totalValidationFailures = eventValidationFailureCount + medicationFailureCount + eventFailureCount
 
         // Use enhanced privacy-safe logging
         logger.logImportOperation(
@@ -472,11 +506,86 @@ public final class DataStore {
             includeSettings: applySettings && importedData.settings != nil,
             beforeMedicationCount: beforeMedicationCount,
             beforeEventCount: beforeEventCount,
-            validationFailures: totalValidationFailures,
+			validationFailures: 0,
             duration: duration
         )
 
     }
+
+	private func makeImportTransactionSnapshot() -> ImportTransactionSnapshot {
+		ImportTransactionSnapshot(
+			defaults: DefaultsSnapshot(values: AppSettings.appliedDefaultsKeys.map { key in
+				(key: key, value: settingsDefaults.object(forKey: key))
+			}),
+			profiles: refillProfileStore.snapshotProfileData(),
+			medications: medications,
+			events: events
+		)
+	}
+
+	private func rollbackImport(to snapshot: ImportTransactionSnapshot) async -> [String] {
+		var failures: [String] = []
+
+		do {
+			if medications != snapshot.medications {
+				try importFailureInjection.beforeRollbackMedications()
+				try await medicationsStore.removeAll()
+				if !snapshot.medications.isEmpty {
+					try await medicationsStore.insert(snapshot.medications)
+				}
+			}
+			guard medications == snapshot.medications else {
+				throw DataImportError.finalValidationFailed
+			}
+		} catch {
+			failures.append("medications")
+		}
+
+		do {
+			if events != snapshot.events {
+				try await eventsStore.removeAll()
+				if !snapshot.events.isEmpty {
+					try await eventsStore.insert(snapshot.events)
+				}
+			}
+			guard events == snapshot.events else {
+				throw DataImportError.finalValidationFailed
+			}
+		} catch {
+			failures.append("events")
+		}
+
+		for entry in snapshot.defaults.values {
+			if let value = entry.value {
+				settingsDefaults.set(value, forKey: entry.key)
+			} else {
+				settingsDefaults.removeObject(forKey: entry.key)
+			}
+		}
+		if !defaultsMatch(snapshot.defaults) {
+			failures.append("settings")
+		}
+
+		if !refillProfileStore.restoreProfileData(snapshot.profiles) {
+			failures.append("refill profiles")
+		}
+
+		return failures
+	}
+
+	private func defaultsMatch(_ snapshot: DefaultsSnapshot) -> Bool {
+		snapshot.values.allSatisfy { entry in
+			let currentValue = settingsDefaults.object(forKey: entry.key)
+			switch (entry.value, currentValue) {
+			case (nil, nil):
+				return true
+			case let (expected as NSObject, current as NSObject):
+				return expected.isEqual(current)
+			default:
+				return false
+			}
+		}
+	}
 
     /// Clear only user data (medications and events)
     public func clearUserData() async throws {
@@ -542,6 +651,7 @@ public final class DataStore {
 			guard refillProfileStore.eraseAllProfileData() else {
 				throw AppSettingsError.refillProfilePersistenceFailed
 			}
+			try importFailureInjection.beforeExplicitClearUserData()
             try await clearUserData()
 			try await resetAppSettings()
             logger.info("Successfully cleared all data and reset preferences")
@@ -666,6 +776,9 @@ public enum DataImportError: LocalizedError {
     case invalidFormat
     case versionMismatch(expected: String, actual: String)
     case partialImport(imported: Int, failed: Int)
+	case invalidMedicationReference
+	case finalValidationFailed
+	case transactionRollbackFailed(importError: String, rollbackFailures: [String])
 
     public var errorDescription: String? {
         switch self {
@@ -675,6 +788,12 @@ public enum DataImportError: LocalizedError {
             return "Data version mismatch: expected \(expected), got \(actual)"
         case let .partialImport(imported, failed):
             return "Partial import: \(imported) items imported, \(failed) failed"
+		case .invalidMedicationReference:
+			return "An imported event references a medication that was not imported"
+		case .finalValidationFailed:
+			return "Imported data could not be verified"
+		case let .transactionRollbackFailed(importError, rollbackFailures):
+			return "Import failed (\(importError)) and rollback could not restore: \(rollbackFailures.joined(separator: ", "))"
         }
     }
 }

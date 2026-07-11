@@ -13,6 +13,26 @@ enum AppSettingsError: LocalizedError {
 
 /// Represents exportable app settings that can be included in data exports and backups
 struct AppSettings: Codable {
+	static let appliedDefaultsKeys: [String] = [
+		UserDefaultsKeys.hapticsEnabled,
+		UserDefaultsKeys.selectedTab,
+		UserDefaultsKeys.trendsVisualizationType,
+		UserDefaultsKeys.trendsDaysWindow,
+		UserDefaultsKeys.hideSupportBanners,
+		UserDefaultsKeys.trendsQuestionsEnabled,
+		UserDefaultsKeys.showMedicationNamesInNotifications,
+		UserDefaultsKeys.selectedFontFamily,
+		UserDefaultsKeys.automaticBackupEnabled,
+		UserDefaultsKeys.automaticBackupRedactMedicationNames,
+		UserDefaultsKeys.automaticBackupRedactNotes,
+		UserDefaultsKeys.automaticBackupRetentionDays,
+		UserDefaultsKeys.automaticBackupIncludeSettings,
+		UserDefaultsKeys.historySelectedMedicationID,
+		UserDefaultsKeys.trendsSelectedMedicationID,
+		UserDefaultsKeys.medicationOrder,
+		UserDefaultsKeys.recentMedicationSearches,
+	]
+
 	// MARK: - App Preferences
 
 	/// Whether haptic feedback is enabled
@@ -264,16 +284,10 @@ struct AppSettings: Codable {
 
 		// Persist and verify the mirrored profile payload before changing any other
 		// setting so a profile failure cannot produce a partial settings import.
-		if let profiles = medicationRefillProfiles {
-			let filteredProfiles = MedicationRefillProfileStore.filteredProfiles(
-				from: profiles,
-				validMedicationIDs: validMedicationIDs
-			)
-			let store = profileStore ?? MedicationRefillProfileStore(defaults: defaults)
-			guard store.replaceAll(with: filteredProfiles) else {
-				throw AppSettingsError.refillProfilePersistenceFailed
-			}
-		}
+		try persistRefillProfiles(
+			validMedicationIDs: validMedicationIDs,
+			profileStore: profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+		)
 
 		// App Preferences
 		if let value = hapticsEnabled {
@@ -354,6 +368,22 @@ struct AppSettings: Codable {
 			defaults.set(value, forKey: UserDefaultsKeys.recentMedicationSearches)
 		}
 
+	}
+
+	func persistRefillProfiles(
+		validMedicationIDs: Set<String>,
+		profileStore: MedicationRefillProfileStore
+	) throws {
+		guard let profiles = medicationRefillProfiles else {
+			return
+		}
+		let filteredProfiles = MedicationRefillProfileStore.filteredProfiles(
+			from: profiles,
+			validMedicationIDs: validMedicationIDs
+		)
+		guard profileStore.replaceAll(with: filteredProfiles) else {
+			throw AppSettingsError.refillProfilePersistenceFailed
+		}
 	}
 
 	/// Get a user-friendly summary of included settings categories
