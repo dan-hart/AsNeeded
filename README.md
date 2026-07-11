@@ -6,7 +6,7 @@
 
 Track as-needed medications with privacy and clarity.
 
-AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, saved safety guardrails, refill awareness, and clear insights so you always know what you took, when you took it, when you may be able to take more, and how your patterns are changing over time.
+AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, configurable low-stock and refill awareness, last-dose history, and clear insights into how medication use changes over time.
 
 ## Table of Contents
 - [Core Values](#core-values)
@@ -38,10 +38,9 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 ### Key Features
 
 - **Privacy-first storage and insights**: Local-first data, no tracking, full export/import, and on-device Trends questions that never send your logs off-device for processing
-- **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
-- **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
-- **Usage insights**: Visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
+- **Refill awareness**: Inventory tracking, configurable low-stock warnings, refill reminders, and projected run-out dates
+- **History and insights**: Last-dose summaries, visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
 - **Ambient access**: Home Screen widgets, Lock Screen widgets, Live Activities, interactive quick actions, and watchOS support
 - **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
 
@@ -82,8 +81,8 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 5. **First launch**
    - Add your first medication from the Home or Medications screen
-   - Configure its typical dose, interval, and refill settings (optional)
-   - Log your first dose to see the next-dose guidance and history summaries in action
+   - Configure its typical dose and low-stock threshold (optional)
+   - Log your first dose to see last-dose history and usage insights in action
 
 ---
 

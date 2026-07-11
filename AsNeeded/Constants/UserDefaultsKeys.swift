@@ -50,9 +50,6 @@ public enum UserDefaultsKeys {
     /// Legacy medication safety profiles retained until migration completes
     static let legacyMedicationProfiles = "medicationSafetyProfiles"
 
-    /// Compatibility alias for callers that still use the legacy safety profile store
-    static let medicationSafetyProfiles = legacyMedicationProfiles
-
     /// Recovery copy of the raw legacy medication profile payload
     static let archivedMedicationProfiles = "migration.archivedMedicationProfiles"
 
