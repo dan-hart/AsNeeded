@@ -15,6 +15,7 @@ final class MedicationListViewModel: ObservableObject {
     private let refillProfileStore = MedicationRefillProfileStore.shared
     private let feedbackService = QuickLogFeedbackService()
     private let statusSummaryService = MedicationStatusSummaryService()
+    private let scheduleQuickLogToastDismissal: (@escaping @MainActor @Sendable () -> Void) -> Void
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
@@ -34,6 +35,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
     @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
+    @Published private(set) var quickLogToastGeneration: UUID?
     @Published var isLoading = true
 
     // MARK: - Computed Properties
@@ -71,8 +73,17 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(dataStore: DataStore = .shared) {
+    init(
+        dataStore: DataStore = .shared,
+        scheduleQuickLogToastDismissal: @escaping (@escaping @MainActor @Sendable () -> Void) -> Void = { action in
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                action()
+            }
+        }
+    ) {
         self.dataStore = dataStore
+        self.scheduleQuickLogToastDismissal = scheduleQuickLogToastDismissal
 
         if medicationOrder.isEmpty && !items.isEmpty {
             medicationOrder = items.map { $0.id.uuidString }
@@ -285,6 +296,7 @@ final class MedicationListViewModel: ObservableObject {
 
     func undoLastQuickLog() async -> Bool {
         guard let feedback = quickLogFeedback,
+              let toastGeneration = quickLogToastGeneration,
               let undoEventID = feedback.undoEventID,
               let event = dataStore.events.first(where: { $0.id == undoEventID })
         else {
@@ -306,10 +318,7 @@ final class MedicationListViewModel: ObservableObject {
             }
 
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
-            quickLogFeedback = nil
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                showQuickLogToast = false
-            }
+            dismissQuickLogToast(generation: toastGeneration)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to undo quick log", error: error)
@@ -318,6 +327,19 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     func dismissQuickLogToast() {
+        guard let generation = quickLogToastGeneration else {
+            return
+        }
+
+        dismissQuickLogToast(generation: generation)
+    }
+
+    private func dismissQuickLogToast(generation: UUID) {
+        guard quickLogToastGeneration == generation else {
+            return
+        }
+
+        quickLogToastGeneration = nil
         quickLogFeedback = nil
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showQuickLogToast = false
@@ -337,28 +359,20 @@ final class MedicationListViewModel: ObservableObject {
         dose: ANDoseConcept,
         feedback: QuickLogFeedbackService.Feedback? = nil
     ) {
+        let generation = UUID()
         quickLogMedicationName = med.displayName
         quickLogDoseAmount = dose.amount
         quickLogDoseUnit = dose.unit.abbreviation
         quickLogAccentColor = med.displayColor
         quickLogFeedback = feedback
+        quickLogToastGeneration = generation
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickLogToast = true
         }
 
-        Task {
-            let toastDuration: UInt64 = 3_000_000_000
-            try? await Task.sleep(nanoseconds: toastDuration)
-            await MainActor.run {
-                guard self.quickLogFeedback?.undoEventID == feedback?.undoEventID else {
-                    return
-                }
-                self.quickLogFeedback = nil
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    self.showQuickLogToast = false
-                }
-            }
+        scheduleQuickLogToastDismissal { [weak self] in
+            self?.dismissQuickLogToast(generation: generation)
         }
     }
 

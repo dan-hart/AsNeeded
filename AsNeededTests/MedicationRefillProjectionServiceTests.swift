@@ -249,6 +249,18 @@ struct MedicationRefillProjectionServiceTests {
 		#expect(projection.estimatedDaysRemaining == nil)
 		#expect(projection.projectedRunOutDate == nil)
 		#expect(!projection.lowStock)
+		#expect(projection.statusMessage == "Add or update the quantity to see refill estimates.")
+	}
+
+	@Test("Tracked quantity without usage history requests more dose logs")
+	func trackedQuantityWithoutUsageHistoryRequestsDoseLogs() {
+		let projection = MedicationRefillProjectionService(calendar: calendar).projection(
+			for: medication(quantity: 30),
+			at: now,
+			events: []
+		)
+
+		#expect(projection.statusMessage == "Log more doses to estimate your run-out date.")
 	}
 
 	@Test("Zero quantity declines a run-out projection and is low stock")

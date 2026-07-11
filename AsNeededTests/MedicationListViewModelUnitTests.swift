@@ -7,13 +7,27 @@ import SwiftUI
 @MainActor
 @Suite("MedicationListViewModel Unit Tests", .tags(.viewModel, .medication, .unit), .serialized)
 struct MedicationListViewModelUnitTests {
+    @MainActor
+    private final class TestToastScheduler {
+        private(set) var actions: [@MainActor @Sendable () -> Void] = []
+
+        func schedule(_ action: @escaping @MainActor @Sendable () -> Void) {
+            actions.append(action)
+        }
+    }
+
     private var viewModel: MedicationListViewModel
     private var dataStore: DataStore
+    private var toastScheduler: TestToastScheduler
 
     init() async throws {
         // Create test instance with isolated storage
         dataStore = DataStore(testIdentifier: "MedicationListViewModelUnitTests")
-        viewModel = MedicationListViewModel(dataStore: dataStore)
+        toastScheduler = TestToastScheduler()
+        viewModel = MedicationListViewModel(
+            dataStore: dataStore,
+            scheduleQuickLogToastDismissal: toastScheduler.schedule
+        )
         // Clear any existing test data
         try await dataStore.clearAllData()
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.medicationOrder)
@@ -243,10 +257,53 @@ struct MedicationListViewModelUnitTests {
         #expect(viewModel.showQuickLogToast) // Verify toast state change
         #expect(viewModel.quickLogMedicationName == medication.displayName)
 
-        // Simulate toast dismissal after delay
-        try await Task.sleep(nanoseconds: 3_100_000_000) // Slightly longer than toast duration
+        #expect(toastScheduler.actions.count == 1)
+        toastScheduler.actions[0]()
         #expect(!viewModel.showQuickLogToast)
     }
+
+	@Test("Replacement toast ignores stale auto-dismissal")
+	func replacementToastIgnoresStaleAutoDismissal() async throws {
+		let firstMedication = createTestMedication(name: "First", quantity: 20)
+		let secondMedication = createTestMedication(name: "Second", quantity: 20)
+		_ = await viewModel.add(firstMedication)
+		_ = await viewModel.add(secondMedication)
+
+		#expect(await viewModel.quickLog(medication: firstMedication))
+		let firstGeneration = viewModel.quickLogToastGeneration
+		#expect(await viewModel.quickLog(medication: secondMedication))
+		let secondGeneration = viewModel.quickLogToastGeneration
+
+		#expect(firstGeneration != secondGeneration)
+		#expect(toastScheduler.actions.count == 2)
+		toastScheduler.actions[0]()
+		#expect(viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogMedicationName == "Second")
+		#expect(viewModel.quickLogToastGeneration == secondGeneration)
+
+		toastScheduler.actions[1]()
+		#expect(!viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogToastGeneration == nil)
+	}
+
+	@Test("Manual dismissal cannot dismiss a subsequent toast")
+	func manualDismissalCannotDismissSubsequentToast() async throws {
+		let firstMedication = createTestMedication(name: "First", quantity: 20)
+		let secondMedication = createTestMedication(name: "Second", quantity: 20)
+		_ = await viewModel.add(firstMedication)
+		_ = await viewModel.add(secondMedication)
+
+		#expect(await viewModel.quickLog(medication: firstMedication))
+		let firstGeneration = viewModel.quickLogToastGeneration
+		viewModel.dismissQuickLogToast()
+		#expect(!viewModel.showQuickLogToast)
+
+		#expect(await viewModel.quickLog(medication: secondMedication))
+		toastScheduler.actions[0]()
+		#expect(viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogToastGeneration != firstGeneration)
+		#expect(viewModel.quickLogMedicationName == "Second")
+	}
 
     @Test("Quick log preserves medication order")
     func quickLogPreservesMedicationOrder() async throws {
@@ -293,6 +350,12 @@ struct MedicationListViewModelUnitTests {
 		#expect(dataStore.medications.first?.quantity == 20.0)
 		#expect(viewModel.quickLogFeedback == nil)
 		#expect(viewModel.showQuickLogToast == false)
+
+		#expect(await viewModel.quickLog(medication: medication))
+		let subsequentGeneration = viewModel.quickLogToastGeneration
+		toastScheduler.actions[0]()
+		#expect(viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogToastGeneration == subsequentGeneration)
 	}
 
     @Test("logDose correctly logs dose and updates state")

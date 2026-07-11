@@ -62,7 +62,9 @@ struct MedicationRefillProjectionService {
 			(estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 2)
 
 		let statusMessage: String
-		if urgent {
+		if medication.quantity == nil {
+			statusMessage = "Add or update the quantity to see refill estimates."
+		} else if urgent {
 			statusMessage = "Refill prep would be timely."
 		} else if refillSoon {
 			statusMessage = "You’re approaching your refill window."

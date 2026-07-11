@@ -256,7 +256,6 @@ struct MedicationRowComponent: View {
                 Text(summary.headline)
                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
                     .foregroundStyle(summaryColor(for: summary))
-                    .lineLimit(1)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -268,12 +267,10 @@ struct MedicationRowComponent: View {
             Text(summary.timingText)
                 .font(.customFont(fontFamily, style: .caption2))
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
 
             Text(summary.refillText)
                 .font(.customFont(fontFamily, style: .caption2))
                 .foregroundStyle(.secondary)
-                .lineLimit(2)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(summary.accessibilityLabel)

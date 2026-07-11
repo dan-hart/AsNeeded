@@ -35,7 +35,7 @@ struct MedicationStatusSummaryService {
 			profile: profile
 		)
 		let timingText = lastDoseText(for: medication, at: date, events: events)
-		let refillText = projection.lowStock ? "Low stock: \(projection.statusMessage)" : projection.statusMessage
+		let refillText = projection.statusMessage
 		let headline: String
 		if projection.lowStock {
 			headline = "Low stock"

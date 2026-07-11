@@ -27,7 +27,6 @@ struct QuickLogToastView: View {
     @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var toastPadding: CGFloat = 16
     @ScaledMetric private var contentSpacing: CGFloat = 12
-    @ScaledMetric private var iconSize: CGFloat = 24
     @ScaledMetric private var dismissButtonSize: CGFloat = 28
     @ScaledMetric private var toastCornerRadius: CGFloat = 16
     @ScaledMetric private var topPadding: CGFloat = 60

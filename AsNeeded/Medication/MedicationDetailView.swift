@@ -211,7 +211,7 @@ struct MedicationDetailView: View {
 
     private var detailsCardsSection: some View {
         VStack(spacing: cardSpacing) {
-            confidenceCard
+            statusCard
 
             medicationInfoCard
 
@@ -229,7 +229,7 @@ struct MedicationDetailView: View {
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }
 
-    private var confidenceSummary: MedicationStatusSummaryService.Summary {
+    private var statusSummary: MedicationStatusSummaryService.Summary {
         statusSummaryService.summary(
             for: medication,
             events: DataStore.shared.events,
@@ -237,8 +237,8 @@ struct MedicationDetailView: View {
         )
     }
 
-    private var confidenceCard: some View {
-        let summary = confidenceSummary
+    private var statusCard: some View {
+        let summary = statusSummary
 
         return VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack(alignment: .top, spacing: rowSpacing) {
@@ -262,9 +262,9 @@ struct MedicationDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: detailSpacing) {
-                confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
+                statusRow(icon: .clock, text: summary.timingText, color: .secondary)
 
-                confidenceRow(icon: .shippingboxFill, text: summary.refillText, color: summaryColor(for: summary))
+                statusRow(icon: .shippingboxFill, text: summary.refillText, color: summaryColor(for: summary))
             }
         }
         .padding(adaptiveCardPadding)
@@ -699,7 +699,7 @@ struct MedicationDetailView: View {
         }
     }
 
-    private func confidenceRow(icon: SFSymbol, text: String, color: Color) -> some View {
+    private func statusRow(icon: SFSymbol, text: String, color: Color) -> some View {
         HStack(alignment: .top, spacing: rowSpacing) {
             Image(systemSymbol: icon)
                 .font(.customFont(fontFamily, style: .caption, weight: .medium))

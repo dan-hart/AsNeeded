@@ -11,14 +11,17 @@ struct MedicationStatusSummaryServiceTests {
 		DateComponents(calendar: calendar, year: 2026, month: 6, day: 5, hour: 12).date ?? Date(timeIntervalSince1970: 1_780_685_200)
 	}
 
-	private func medication(quantity: Double? = 12) -> ANMedicationConcept {
+	private func medication(
+		quantity: Double? = 12,
+		nextRefillDate: Date? = nil
+	) -> ANMedicationConcept {
 		ANMedicationConcept(
 			clinicalName: "Ibuprofen",
 			nickname: "Pain Relief",
 			quantity: quantity,
 			initialQuantity: 30,
 			lastRefillDate: calendar.date(byAdding: .day, value: -10, to: referenceDate),
-			nextRefillDate: calendar.date(byAdding: .day, value: 10, to: referenceDate),
+			nextRefillDate: nextRefillDate ?? calendar.date(byAdding: .day, value: 10, to: referenceDate),
 			prescribedUnit: .tablet,
 			prescribedDoseAmount: 2
 		)
@@ -58,7 +61,40 @@ struct MedicationStatusSummaryServiceTests {
 		#expect(older.timingText.contains("10:00 AM"))
 	}
 
-	@Test("Custom low-stock profile drives refill status")
+	@Test("Normal stock summary has neutral refill status")
+	func normalStockSummary() {
+		let medication = medication(quantity: 30)
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication,
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+
+		#expect(summary.headline == "Refill status")
+		#expect(summary.refillText == "Log more doses to estimate your run-out date.")
+		#expect(!summary.isLowStock)
+		#expect(!summary.refillSoon)
+	}
+
+	@Test("Upcoming refill date creates refill-soon-only summary")
+	func refillSoonOnlySummary() {
+		let refillDate = calendar.date(byAdding: .day, value: 4, to: referenceDate)
+		let medication = medication(quantity: 30, nextRefillDate: refillDate)
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication,
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+
+		#expect(summary.headline == "Refill soon")
+		#expect(summary.refillText == "You’re approaching your refill window.")
+		#expect(!summary.isLowStock)
+		#expect(summary.refillSoon)
+	}
+
+	@Test("Custom low-stock profile creates low-stock summary without duplicate wording")
 	func customLowStockProfileDrivesRefillStatus() {
 		let medication = medication(quantity: 12)
 		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
@@ -69,10 +105,22 @@ struct MedicationStatusSummaryServiceTests {
 		)
 
 		#expect(summary.headline == "Low stock")
-		#expect(summary.refillText.contains("Low stock"))
-		#expect(summary.refillText.contains("Refill prep"))
+		#expect(summary.refillText == "Refill prep would be timely.")
+		#expect(summary.accessibilityLabel.components(separatedBy: "Low stock").count - 1 == 1)
 		#expect(summary.isLowStock)
 		#expect(summary.refillSoon)
+	}
+
+	@Test("Missing quantity prompts quantity tracking")
+	func missingQuantityPromptsQuantityTracking() {
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication(quantity: nil),
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+
+		#expect(summary.refillText == "Add or update the quantity to see refill estimates.")
 	}
 
 	@Test("Summary strings contain refill and history facts only")
