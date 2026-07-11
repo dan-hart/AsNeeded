@@ -15,6 +15,7 @@ import Testing
 struct SettingsExportImportTests {
 	private enum TestFailure: Error {
 		case intentional
+		case sensitive(String)
 	}
 
 	// MARK: - Test Helpers
@@ -622,9 +623,10 @@ struct SettingsExportImportTests {
 
 	@Test("Import and rollback failure surfaces an explicit compound error")
 	func importAndRollbackFailureSurfacesCompoundError() async throws {
+		let sensitiveErrorText = "/Users/private/medications-backup.json"
 		let context = try await makeImportTransactionContext(
 			failureInjection: .init(
-				beforeEventInsert: { _ in throw TestFailure.intentional },
+				beforeEventInsert: { _ in throw TestFailure.sensitive(sensitiveErrorText) },
 				beforeRollbackMedications: { throw TestFailure.intentional }
 			)
 		)
@@ -640,8 +642,17 @@ struct SettingsExportImportTests {
 		do {
 			try await context.dataStore.importDataFromJSON(data, applySettings: true)
 			Issue.record("Expected compound rollback failure")
-		} catch let DataImportError.transactionRollbackFailed(_, rollbackFailures) {
+		} catch let error as DataImportError {
+			guard case let .transactionRollbackFailed(_, rollbackFailures) = error else {
+				Issue.record("Expected compound rollback failure, got \(error)")
+				return
+			}
+			let description = error.errorDescription ?? ""
 			#expect(rollbackFailures.contains("medications"))
+			#expect(description.contains("medications"))
+			#expect(description.localizedCaseInsensitiveContains("retry"))
+			#expect(description.localizedCaseInsensitiveContains("contact support"))
+			#expect(!description.contains(sensitiveErrorText))
 		} catch {
 			Issue.record("Expected compound rollback failure, got \(error)")
 		}

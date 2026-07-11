@@ -484,10 +484,12 @@ public final class DataStore {
 			logger.info("Import statistics: Medications: \(medicationImportCount) imported, \(medicationDuplicateCount) duplicates")
 			logger.info("Import statistics: Events: \(eventImportCount) imported, \(eventDuplicateCount) duplicates")
 		} catch {
+			logger.logPrivacySafeError("Import failed; attempting transaction rollback", error: error)
 			let rollbackFailures = await rollbackImport(to: snapshot)
 			guard rollbackFailures.isEmpty else {
+				logger.error("Import rollback incomplete: components=\(rollbackFailures.joined(separator: ", "))")
 				throw DataImportError.transactionRollbackFailed(
-					importError: String(describing: error),
+					importError: DHLogger.privacySafeErrorType(error),
 					rollbackFailures: rollbackFailures
 				)
 			}
@@ -538,6 +540,7 @@ public final class DataStore {
 				throw DataImportError.finalValidationFailed
 			}
 		} catch {
+			logger.logPrivacySafeError("Import rollback failed: component=medications", error: error)
 			failures.append("medications")
 		}
 
@@ -552,6 +555,7 @@ public final class DataStore {
 				throw DataImportError.finalValidationFailed
 			}
 		} catch {
+			logger.logPrivacySafeError("Import rollback failed: component=events", error: error)
 			failures.append("events")
 		}
 
@@ -563,10 +567,12 @@ public final class DataStore {
 			}
 		}
 		if !defaultsMatch(snapshot.defaults) {
+			logger.error("Import rollback failed: component=settings")
 			failures.append("settings")
 		}
 
 		if !refillProfileStore.restoreProfileData(snapshot.profiles) {
+			logger.error("Import rollback failed: component=refill profiles")
 			failures.append("refill profiles")
 		}
 
@@ -792,8 +798,8 @@ public enum DataImportError: LocalizedError {
 			return "An imported event references a medication that was not imported"
 		case .finalValidationFailed:
 			return "Imported data could not be verified"
-		case let .transactionRollbackFailed(importError, rollbackFailures):
-			return "Import failed (\(importError)) and rollback could not restore: \(rollbackFailures.joined(separator: ", "))"
+		case let .transactionRollbackFailed(_, rollbackFailures):
+			return "The import failed, and the app could not restore \(rollbackFailures.joined(separator: ", ")). Please retry. If the problem continues, contact support."
         }
     }
 }
