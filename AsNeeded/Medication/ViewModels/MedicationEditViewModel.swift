@@ -107,13 +107,13 @@ final class MedicationEditViewModel: ObservableObject {
 		MedicationRefillProfile(lowStockThreshold: normalizedNumber(from: lowStockThresholdText))
 	}
 
-	func saveRefillProfile(for medicationID: UUID) {
+	func saveRefillProfile(for medicationID: UUID) -> Bool {
 		refillProfileStore.save(buildRefillProfile(), for: medicationID)
 	}
 
     private func normalizedNumber(from text: String) -> Double? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let value = Double(trimmed), value > 0 else {
+        guard let value = Double(trimmed), value.isFinite, value > 0 else {
             return nil
         }
 

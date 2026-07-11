@@ -8,6 +8,8 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
+	private struct PersistenceFailure: Error {}
+
     // MARK: - Initialization Tests
 
     @Test("Initialize with nil medication creates new medication")
@@ -296,8 +298,12 @@ struct MedicationEditViewModelTests {
 	}
 
 	@Test(
-		"Build refill profile normalizes non-positive thresholds",
-		arguments: ["", "   ", "invalid", "0", "-3"]
+		"Build refill profile normalizes invalid thresholds",
+		arguments: [
+			"", "   ", "invalid", "0", "-3",
+			"inf", "Inf", "INF", "+inf", "+Inf", "+INF", "-inf",
+			"infinity", "Infinity", "INFINITY", "nan", "NaN", "NAN", "1e309",
+		]
 	)
 	@MainActor
 	func buildRefillProfileNormalizesInvalidThresholds(threshold: String) {
@@ -330,10 +336,46 @@ struct MedicationEditViewModelTests {
 		let viewModel = MedicationEditViewModel(medication: nil, refillProfileStore: profileStore)
 		viewModel.lowStockThresholdText = "9"
 
-		viewModel.saveRefillProfile(for: medicationID)
+		let saved = viewModel.saveRefillProfile(for: medicationID)
 
+		#expect(saved)
 		#expect(profileStore.profile(for: medicationID).lowStockThreshold == 9)
 		#expect(profileStore.profile(for: otherMedicationID) == .empty)
+	}
+
+	@Test("Save refill profile removes an existing threshold when blank")
+	@MainActor
+	func saveRefillProfileRemovesExistingThresholdWhenBlank() {
+		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+		let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
+		profileStore.save(MedicationRefillProfile(lowStockThreshold: 8), for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, refillProfileStore: profileStore)
+		viewModel.lowStockThresholdText = " "
+
+		let saved = viewModel.saveRefillProfile(for: medication.id)
+
+		#expect(saved)
+		#expect(profileStore.profile(for: medication.id) == .empty)
+	}
+
+	@Test("Save refill profile reports deterministic persistence failure")
+	@MainActor
+	func saveRefillProfileReportsPersistenceFailure() {
+		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+		let profileStore = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: nil,
+			profileEncoder: { _ in throw PersistenceFailure() }
+		)
+		let medicationID = UUID()
+		let viewModel = MedicationEditViewModel(medication: nil, refillProfileStore: profileStore)
+		viewModel.lowStockThresholdText = "9"
+
+		let saved = viewModel.saveRefillProfile(for: medicationID)
+
+		#expect(!saved)
+		#expect(profileStore.profile(for: medicationID) == .empty)
 	}
 
     // MARK: - Edge Cases

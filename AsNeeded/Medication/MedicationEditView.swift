@@ -30,6 +30,7 @@ struct MedicationEditView: View {
     @State private var showingDatePicker = false
     @State private var datePickerType: DatePickerType = .lastRefill
     @State private var showingAppearancePicker = false
+	@State private var showingRefillSaveError = false
     @FocusState private var focusedField: Field?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
@@ -102,7 +103,10 @@ struct MedicationEditView: View {
             hideKeyboard()
         }
         let updated = viewModel.buildMedication()
-		viewModel.saveRefillProfile(for: updated.id)
+		guard viewModel.saveRefillProfile(for: updated.id) else {
+			showingRefillSaveError = true
+			return
+		}
         hapticsManager.medicationAdded()
         onSave(updated)
     }
@@ -314,6 +318,7 @@ struct MedicationEditView: View {
 							endPoint: .bottomTrailing
 						)
 					)
+					.accessibilityHidden(true)
 
 				Text("Refill Alert")
 					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
@@ -788,6 +793,11 @@ struct MedicationEditView: View {
                 .sheet(isPresented: $showingDatePicker) {
                     datePickerSheet
                 }
+				.alert("Low-Stock Threshold Not Saved", isPresented: $showingRefillSaveError) {
+					Button("OK", role: .cancel) {}
+				} message: {
+					Text("The low-stock threshold could not be saved. Try again.")
+				}
         }
     }
 }
