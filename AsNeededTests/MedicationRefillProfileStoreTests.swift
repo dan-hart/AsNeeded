@@ -304,4 +304,157 @@ struct MedicationRefillProfileStoreTests {
 		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) != legacyData)
 		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
 	}
+
+	@Test("Active profiles do not retire legacy data when shared mirroring fails")
+	func activeProfilesRequireVerifiedSharedMirroringBeforeArchival() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let activeData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 9),
+		])
+		let legacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 3),
+		])
+		defaults.set(activeData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		defaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		sharedDefaults.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeWriter: { data, destination, key in
+				guard destination !== sharedDefaults else {
+					return
+				}
+				destination.set(data, forKey: key)
+			}
+		)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 9)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == legacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == nil)
+		#expect(!defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(!sharedDefaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Failed shared save rolls both domains back before recreation")
+	func failedSharedSaveRollsBack() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let originalProfiles = [
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 5),
+		]
+		let originalData = try activePayload(originalProfiles)
+		defaults.set(originalData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(originalData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeWriter: { data, destination, key in
+				guard destination !== sharedDefaults else {
+					return
+				}
+				destination.set(data, forKey: key)
+			}
+		)
+
+		let saved = store.save(MedicationRefillProfile(lowStockThreshold: 7), for: medicationID)
+		let recreated = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(!saved)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == originalData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == originalData)
+		#expect(recreated.profile(for: medicationID).lowStockThreshold == 5)
+	}
+
+	@Test("Failed shared final removal rolls both domains back before recreation")
+	func failedSharedRemovalRollsBack() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let originalData = try activePayload([
+			medicationID.uuidString: MedicationRefillProfile(lowStockThreshold: 5),
+		])
+		defaults.set(originalData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		sharedDefaults.set(originalData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			activeRemover: { destination, key in
+				guard destination !== sharedDefaults else {
+					return
+				}
+				destination.removeObject(forKey: key)
+			}
+		)
+
+		let removed = store.save(.empty, for: medicationID)
+		let recreated = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(!removed)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == originalData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == originalData)
+		#expect(recreated.profile(for: medicationID).lowStockThreshold == 5)
+	}
+
+	@Test("Invalid active bytes refuse save and remain recoverable")
+	func invalidActivePayloadRefusesSave() {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		let invalidData = Data("invalid-active".utf8)
+		defaults.set(invalidData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+
+		let saved = store.save(MedicationRefillProfile(lowStockThreshold: 7), for: medicationID)
+
+		#expect(!saved)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == invalidData)
+		#expect(store.profile(for: medicationID) == .empty)
+	}
+
+	@Test("Divergent legacy payloads archive each domain's original bytes")
+	func divergentLegacyPayloadsArchiveIndependently() throws {
+		let defaults = makeDefaults()
+		let sharedDefaults = makeDefaults("shared")
+		let medicationID = UUID()
+		let standardLegacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 6),
+		])
+		let sharedLegacyData = try legacyPayload([
+			medicationID.uuidString: LegacyProfile(lowStockThreshold: 8),
+		])
+		defaults.set(standardLegacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		sharedDefaults.set(sharedLegacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+		let store = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
+
+		#expect(store.profile(for: medicationID).lowStockThreshold == 6)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == standardLegacyData)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == sharedLegacyData)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(sharedDefaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+	}
+
+	@Test("Custom defaults do not automatically attach the App Group")
+	func customDefaultsDoNotAutomaticallyMirror() {
+		let defaults = makeDefaults()
+		let medicationID = UUID()
+		var writeDestinations: [ObjectIdentifier] = []
+		let store = MedicationRefillProfileStore(
+			defaults: defaults,
+			activeWriter: { data, destination, key in
+				writeDestinations.append(ObjectIdentifier(destination))
+				destination.set(data, forKey: key)
+			}
+		)
+
+		let saved = store.save(MedicationRefillProfile(lowStockThreshold: 7), for: medicationID)
+
+		#expect(saved)
+		#expect(writeDestinations == [ObjectIdentifier(defaults)])
+	}
 }
