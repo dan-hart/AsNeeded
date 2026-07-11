@@ -7,6 +7,7 @@ import Foundation
 import Testing
 
 @MainActor
+@Suite(.serialized)
 struct DataStoreClearTests {
 	private func makeDefaults(suiteName: String) -> UserDefaults {
 		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
@@ -14,8 +15,8 @@ struct DataStoreClearTests {
 		return defaults
 	}
 
-	@Test("resetAppSettings clears mirrored safety profiles from shared defaults")
-	func resetAppSettingsClearsMirroredSafetyProfiles() {
+	@Test("resetAppSettings clears active refill preferences and preserves recovery state")
+	func resetAppSettingsClearsActiveRefillPreferencesAndPreservesRecoveryState() throws {
 		let defaultsSuite = "DataStoreClearTests.defaults.\(UUID().uuidString)"
 		let sharedSuite = "DataStoreClearTests.shared.\(UUID().uuidString)"
 		let defaults = makeDefaults(suiteName: defaultsSuite)
@@ -25,23 +26,75 @@ struct DataStoreClearTests {
 			sharedDefaults.removePersistentDomain(forName: sharedSuite)
 		}
 
-		let profile = MedicationSafetyProfile(
-			minimumHoursBetweenDoses: 4,
-			cautionHoursBetweenDoses: 6,
-			maxDailyAmount: 8,
-			duplicateDoseWindowMinutes: 30,
-			lowStockThreshold: 10,
-			refillLeadDays: 5
-		)
-		let encoded = try? JSONEncoder().encode([UUID().uuidString: profile])
-		defaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
-		sharedDefaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		let profile = MedicationRefillProfile(lowStockThreshold: 10)
+		let encoded = try JSONEncoder().encode([UUID().uuidString: profile])
+		let archive = Data([1, 2, 3])
+		for destination in [defaults, sharedDefaults] {
+			destination.set(encoded, forKey: UserDefaultsKeys.medicationRefillProfiles)
+			destination.set(encoded, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+			destination.set(archive, forKey: UserDefaultsKeys.archivedMedicationProfiles)
+			destination.set(true, forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted)
+		}
 
 		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults)
 
-		#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
-		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+		#expect(defaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == archive)
+		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == archive)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(sharedDefaults.bool(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted))
 		#expect(defaults.bool(forKey: UserDefaultsKeys.trendsQuestionsEnabled) == false)
+	}
+
+	@Test("clearAllData removes refill migration state without deleting recovery archives")
+	func clearAllDataRemovesRefillMigrationStateWithoutDeletingRecoveryArchives() async throws {
+		let sharedDefaults = try #require(UserDefaults(suiteName: StorageConstants.appGroupIdentifier))
+		let activeData = try JSONEncoder().encode([
+			UUID().uuidString: MedicationRefillProfile(lowStockThreshold: 8),
+		])
+		let legacyMedicationID = UUID()
+		let legacyData = try JSONSerialization.data(withJSONObject: [
+			legacyMedicationID.uuidString: ["lowStockThreshold": 14],
+		])
+		let archive = Data([9, 8, 7])
+		let keys = [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+			UserDefaultsKeys.archivedMedicationProfiles,
+			UserDefaultsKeys.medicationProfilesMigrationCompleted,
+		]
+		defer {
+			for key in keys {
+				UserDefaults.standard.removeObject(forKey: key)
+				sharedDefaults.removeObject(forKey: key)
+			}
+		}
+
+		for destination in [UserDefaults.standard, sharedDefaults] {
+			destination.set(activeData, forKey: UserDefaultsKeys.medicationRefillProfiles)
+			destination.set(legacyData, forKey: UserDefaultsKeys.legacyMedicationProfiles)
+			destination.set(archive, forKey: UserDefaultsKeys.archivedMedicationProfiles)
+			destination.set(true, forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted)
+		}
+
+		let store = DataStore(testIdentifier: "clear-refill-state-\(UUID().uuidString)")
+		try await store.clearAllData()
+
+		for destination in [UserDefaults.standard, sharedDefaults] {
+			#expect(destination.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == nil)
+			#expect(destination.data(forKey: UserDefaultsKeys.legacyMedicationProfiles) == nil)
+			#expect(destination.object(forKey: UserDefaultsKeys.medicationProfilesMigrationCompleted) == nil)
+			#expect(destination.data(forKey: UserDefaultsKeys.archivedMedicationProfiles) == archive)
+		}
+
+		let restartedStore = MedicationRefillProfileStore(
+			defaults: .standard,
+			sharedDefaults: sharedDefaults
+		)
+		#expect(restartedStore.profile(for: legacyMedicationID) == .empty)
 	}
 
     @Test("clearAllData removes all AppStorage medication selections")

@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 @MainActor
-@Suite(.tags(.dataManagement, .unit))
+@Suite(.serialized, .tags(.dataManagement, .unit))
 struct SettingsExportImportTests {
 	// MARK: - Test Helpers
 
@@ -43,6 +43,10 @@ struct SettingsExportImportTests {
 			prescribedUnit: ANUnitConcept.milligram,
 			prescribedDoseAmount: 500.0
 		)
+	}
+
+	func decodeSettings(_ json: String) throws -> AppSettings {
+		try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
 	}
 
 	// MARK: - Export Tests
@@ -106,6 +110,27 @@ struct SettingsExportImportTests {
 
 		// Verify safe fields are exported
 		#expect(settings.hapticsEnabled != nil || settings.selectedFontFamily != nil || settings.trendsVisualizationType != nil)
+	}
+
+	@Test("Current refill profiles export without legacy or recovery properties")
+	func currentRefillProfilesExportWithoutLegacyOrRecoveryProperties() throws {
+		let suiteName = "SettingsExportImportTests.export.\(UUID().uuidString)"
+		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let medicationID = UUID().uuidString
+		let profiles = [medicationID: MedicationRefillProfile(lowStockThreshold: 12)]
+		defaults.set(try JSONEncoder().encode(profiles), forKey: UserDefaultsKeys.medicationRefillProfiles)
+		defaults.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.archivedMedicationProfiles)
+		defaults.set(Data([4, 5, 6]), forKey: UserDefaultsKeys.legacyMedicationProfiles)
+
+		let data = try JSONEncoder().encode(AppSettings(from: defaults))
+		let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+		let exportedProfiles = try #require(json["medicationRefillProfiles"] as? [String: Any])
+
+		#expect(exportedProfiles[medicationID] != nil)
+		#expect(json["medicationSafetyProfiles"] == nil)
+		#expect(json[UserDefaultsKeys.archivedMedicationProfiles] == nil)
 	}
 
 	// MARK: - Import Tests
@@ -250,6 +275,92 @@ struct SettingsExportImportTests {
 
 	// MARK: - Backward Compatibility Tests
 
+	@Test("Legacy safety profile exports decode only low stock thresholds")
+	func legacySafetyProfileExportsDecodeOnlyLowStockThresholds() throws {
+		let medicationID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"medicationSafetyProfiles": {
+				"\(medicationID)": {
+					"minimumHoursBetweenDoses": 4,
+					"maxDailyAmount": 8,
+					"lowStockThreshold": 9,
+					"refillLeadDays": 5
+				}
+			}
+		}
+		""")
+
+		let encoded = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+		let profiles = try #require(json["medicationRefillProfiles"] as? [String: Any])
+		let profile = try #require(profiles[medicationID] as? [String: Any])
+
+		#expect(profile["lowStockThreshold"] as? Double == 9)
+		#expect(profile["minimumHoursBetweenDoses"] == nil)
+		#expect(profile["maxDailyAmount"] == nil)
+		#expect(profile["refillLeadDays"] == nil)
+		#expect(json["medicationSafetyProfiles"] == nil)
+	}
+
+	@Test("Current refill profile property wins over legacy property")
+	func currentRefillProfilePropertyWinsOverLegacyProperty() throws {
+		let medicationID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"medicationRefillProfiles": {"\(medicationID)": {"lowStockThreshold": 7}},
+			"medicationSafetyProfiles": {"\(medicationID)": {"lowStockThreshold": 99}}
+		}
+		""")
+		let encoded = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+		let profiles = try #require(json["medicationRefillProfiles"] as? [String: Any])
+		let profile = try #require(profiles[medicationID] as? [String: Any])
+
+		#expect(profile["lowStockThreshold"] as? Double == 7)
+	}
+
+	@Test("Imported refill profiles filter invalid medication IDs and mirror active data")
+	func importedRefillProfilesFilterInvalidIDsAndMirrorActiveData() throws {
+		let sharedDefaults = try #require(UserDefaults(suiteName: StorageConstants.appGroupIdentifier))
+		let keys = [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+			UserDefaultsKeys.medicationProfilesMigrationCompleted,
+		]
+		defer {
+			for key in keys {
+				UserDefaults.standard.removeObject(forKey: key)
+				sharedDefaults.removeObject(forKey: key)
+			}
+		}
+		for key in keys {
+			UserDefaults.standard.removeObject(forKey: key)
+			sharedDefaults.removeObject(forKey: key)
+		}
+
+		let validID = UUID().uuidString
+		let invalidID = UUID().uuidString
+		let settings = try decodeSettings("""
+		{
+			"medicationRefillProfiles": {
+				"\(validID)": {"lowStockThreshold": 6},
+				"\(invalidID)": {"lowStockThreshold": 30}
+			}
+		}
+		""")
+
+		settings.apply(to: .standard, validateMedicationIDs: { [validID] })
+
+		let standardData = try #require(UserDefaults.standard.data(forKey: UserDefaultsKeys.medicationRefillProfiles))
+		let sharedData = try #require(sharedDefaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles))
+		let standardProfiles = try JSONDecoder().decode([String: MedicationRefillProfile].self, from: standardData)
+		let sharedProfiles = try JSONDecoder().decode([String: MedicationRefillProfile].self, from: sharedData)
+
+		#expect(standardProfiles == [validID: MedicationRefillProfile(lowStockThreshold: 6)])
+		#expect(sharedProfiles == standardProfiles)
+	}
+
 	@Test("Import of data without settings field should work (backward compatibility)")
 	func importWithoutSettingsFieldShouldWork() async throws {
 		let dataStore = createTestDataStore()
@@ -281,7 +392,7 @@ struct SettingsExportImportTests {
 	// MARK: - AppSettings Tests
 
 	@Test("AppSettings should correctly identify settings categories")
-	func appSettingsShouldIdentifyCategories() {
+	func appSettingsShouldIdentifyCategories() throws {
 		var settings = AppSettings()
 		#expect(settings.settingsCategories.isEmpty)
 
@@ -293,6 +404,12 @@ struct SettingsExportImportTests {
 
 		settings.automaticBackupEnabled = true
 		#expect(settings.settingsCategories.contains("Automatic Backup Settings"))
+
+		let refillSettings = try decodeSettings("""
+		{"medicationRefillProfiles": {"\(UUID().uuidString)": {"lowStockThreshold": 10}}}
+		""")
+		#expect(refillSettings.settingsCategories.contains("Refill Preferences"))
+		#expect(!refillSettings.settingsCategories.contains("Clinical Guidance"))
 	}
 
 	// MARK: - Automatic Backup Alert Tests

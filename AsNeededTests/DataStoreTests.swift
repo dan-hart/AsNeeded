@@ -6,7 +6,7 @@ import ANModelKit
 import Foundation
 import Testing
 
-@Suite("DataStore Tests", .tags(.dataStore, .persistence, .unit))
+@Suite("DataStore Tests", .serialized, .tags(.dataStore, .persistence, .unit))
 @MainActor
 struct DataStoreTests {
     private var dataStore: DataStore
@@ -333,6 +333,23 @@ struct DataStoreTests {
         #expect(allKeys.contains(UserDefaultsKeys.hapticsEnabled))
         #expect(allKeys.contains(UserDefaultsKeys.medicationOrder))
         #expect(allKeys.contains(UserDefaultsKeys.selectedTab))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationRefillProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+
+		#expect(UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationRefillProfiles))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(UserDefaultsKeys.safeToExportKeys.isDisjoint(with: UserDefaultsKeys.keysToNeverExport))
+		#expect(
+			UserDefaultsKeys.safeToExportKeys.union(UserDefaultsKeys.keysToNeverExport) == Set(allKeys),
+			"Every registered key must be classified as safe or forbidden for export"
+		)
     }
 
     // MARK: - Performance Tests

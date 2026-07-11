@@ -354,7 +354,7 @@ public final class DataStore {
         // Clear existing data if not merging
         if !mergeExisting {
             logger.info("Clearing existing data before import")
-            try await clearAllData()
+			try await clearUserData()
         }
 
         // Import medications
@@ -477,9 +477,15 @@ public final class DataStore {
 			defaults.set(value, forKey: key)
 		}
 
-		// Medication safety profiles are mirrored for widget access, so reset must
-		// clear the shared copy as well or the value will rehydrate on next read.
-		sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		// Active refill preferences and legacy active payloads are mirrored for
+		// extension access. Clear both domains while preserving recovery archives
+		// and the completed marker during an ordinary settings reset.
+		for key in [
+			UserDefaultsKeys.medicationRefillProfiles,
+			UserDefaultsKeys.legacyMedicationProfiles,
+		] {
+			sharedDefaults?.removeObject(forKey: key)
+		}
 
 		navigationManager.clearHistoryNavigation()
 	}
@@ -499,6 +505,17 @@ public final class DataStore {
         do {
             try await clearUserData()
             await resetAppSettings()
+			await MainActor.run {
+				let sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
+				for key in [
+					UserDefaultsKeys.medicationRefillProfiles,
+					UserDefaultsKeys.legacyMedicationProfiles,
+					UserDefaultsKeys.medicationProfilesMigrationCompleted,
+				] {
+					UserDefaults.standard.removeObject(forKey: key)
+					sharedDefaults?.removeObject(forKey: key)
+				}
+			}
             logger.info("Successfully cleared all data and reset preferences")
         } catch {
             logger.logPrivacySafeError("Failed to clear data", error: error)
