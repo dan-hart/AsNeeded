@@ -141,6 +141,21 @@ final class MedicationTrendsViewModel: ObservableObject {
         )
     }
 
+    var summaryAccessibilityLabel: String {
+        guard let medication = selectedMedication else {
+            return ""
+        }
+
+        var components = ["\(medication.displayName).", patternSummary]
+        if let refillProjection {
+            components.append(refillProjection.urgent ? "Urgent refill status." : "Refill status.")
+            if !patternSummary.contains(refillProjection.statusMessage) {
+                components.append(refillProjection.statusMessage)
+            }
+        }
+        return components.joined(separator: " ")
+    }
+
     var questionAvailability: TrendsQuestionAvailability {
         questionService.availability
     }

@@ -779,6 +779,9 @@ struct MedicationTrendsViewModelTests {
         #expect(viewModel.refillProfile == profile)
         #expect(viewModel.refillProjection?.lowStock == true)
         #expect(viewModel.refillProjection?.urgent == true)
+        #expect(viewModel.summaryAccessibilityLabel.contains("Log a few doses to see timing patterns."))
+        #expect(viewModel.summaryAccessibilityLabel.contains("Urgent refill status"))
+        #expect(viewModel.summaryAccessibilityLabel.contains("Refill prep would be timely."))
     }
 
     @Test("Question availability reflects injected question service state")

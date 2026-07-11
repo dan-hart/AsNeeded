@@ -211,7 +211,7 @@ struct MedicationTrendsView: View {
                 .strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(med.displayName). \(viewModel.patternSummary)")
+        .accessibilityLabel(viewModel.summaryAccessibilityLabel)
     }
 
     @ViewBuilder

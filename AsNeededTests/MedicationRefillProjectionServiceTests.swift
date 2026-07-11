@@ -94,6 +94,7 @@ struct MedicationRefillProjectionServiceTests {
 
 		#expect(projection.averageDailyUsage == 3)
 		#expect(projection.estimatedDaysRemaining == 4)
+		#expect(projection.aggregationUnit == .tablet)
 	}
 
 	@Test("Average daily usage declines mixed units without a prescribed unit")
@@ -111,6 +112,7 @@ struct MedicationRefillProjectionServiceTests {
 		)
 
 		#expect(projection.averageDailyUsage == 0)
+		#expect(projection.aggregationUnit == nil)
 		#expect(projection.estimatedDaysRemaining == nil)
 		#expect(projection.projectedRunOutDate == nil)
 	}

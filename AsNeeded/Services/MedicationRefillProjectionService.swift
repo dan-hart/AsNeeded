@@ -6,10 +6,31 @@ struct MedicationRefillProjectionService {
 		let estimatedDaysRemaining: Int?
 		let projectedRunOutDate: Date?
 		let averageDailyUsage: Double
+		let aggregationUnit: ANUnitConcept?
 		let lowStock: Bool
 		let refillSoon: Bool
 		let urgent: Bool
 		let statusMessage: String
+
+		init(
+			estimatedDaysRemaining: Int?,
+			projectedRunOutDate: Date?,
+			averageDailyUsage: Double,
+			aggregationUnit: ANUnitConcept? = nil,
+			lowStock: Bool,
+			refillSoon: Bool,
+			urgent: Bool,
+			statusMessage: String
+		) {
+			self.estimatedDaysRemaining = estimatedDaysRemaining
+			self.projectedRunOutDate = projectedRunOutDate
+			self.averageDailyUsage = averageDailyUsage
+			self.aggregationUnit = aggregationUnit
+			self.lowStock = lowStock
+			self.refillSoon = refillSoon
+			self.urgent = urgent
+			self.statusMessage = statusMessage
+		}
 	}
 
 	static let defaultLowStockThreshold: Double = 10
@@ -28,7 +49,8 @@ struct MedicationRefillProjectionService {
 		profile: MedicationRefillProfile = .empty
 	) -> RefillProjection {
 		let filteredEvents = filteredDoseEvents(for: medication, events: events, through: date)
-		let averageDailyUsage = averageDailyUsage(for: filteredEvents, preferredUnit: medication.prescribedUnit)
+		let usage = averageDailyUsage(for: filteredEvents, preferredUnit: medication.prescribedUnit)
+		let averageDailyUsage = usage.average
 		let estimatedDaysRemaining: Int?
 		let projectedRunOutDate: Date?
 
@@ -78,6 +100,7 @@ struct MedicationRefillProjectionService {
 			estimatedDaysRemaining: estimatedDaysRemaining,
 			projectedRunOutDate: projectedRunOutDate,
 			averageDailyUsage: averageDailyUsage,
+			aggregationUnit: usage.unit,
 			lowStock: lowStock,
 			refillSoon: refillSoon,
 			urgent: urgent,
@@ -102,7 +125,7 @@ struct MedicationRefillProjectionService {
 	private func averageDailyUsage(
 		for events: [ANEventConcept],
 		preferredUnit: ANUnitConcept?
-	) -> Double {
+	) -> (average: Double, unit: ANUnitConcept?) {
 		let relevantEvents = events.filter { event in
 			guard let dose = event.dose else {
 				return false
@@ -116,15 +139,18 @@ struct MedicationRefillProjectionService {
 		}
 
 		guard !relevantEvents.isEmpty else {
-			return 0
+			return (0, nil)
 		}
 
-		if preferredUnit == nil {
-			guard let eventUnit = relevantEvents.first?.dose?.unit,
-			      relevantEvents.allSatisfy({ $0.dose?.unit == eventUnit })
-			else {
-				return 0
-			}
+		let aggregationUnit: ANUnitConcept
+		if let preferredUnit {
+			aggregationUnit = preferredUnit
+		} else if let eventUnit = relevantEvents.first?.dose?.unit,
+		          relevantEvents.allSatisfy({ $0.dose?.unit == eventUnit })
+		{
+			aggregationUnit = eventUnit
+		} else {
+			return (0, nil)
 		}
 
 		let grouped = Dictionary(grouping: relevantEvents) { event in
@@ -132,6 +158,6 @@ struct MedicationRefillProjectionService {
 		}
 		let activeDays = max(1, grouped.count)
 		let total = relevantEvents.compactMap { $0.dose?.amount }.reduce(0, +)
-		return total / Double(activeDays)
+		return (total / Double(activeDays), aggregationUnit)
 	}
 }
