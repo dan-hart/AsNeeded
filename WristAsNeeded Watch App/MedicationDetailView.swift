@@ -8,12 +8,12 @@ struct MedicationDetailView: View {
     @State private var showingDoseLogger = false
     @State private var showingQuantityEditor = false
     @State private var newQuantity: Double
-    @State private var currentQuantity: Double
+    @State private var currentQuantity: Double?
 
     init(medication: WatchMedication) {
         self.medication = medication
         _doseAmount = State(initialValue: medication.prescribedDoseAmount ?? 1.0)
-        _newQuantity = State(initialValue: medication.quantity)
+        _newQuantity = State(initialValue: medication.quantity ?? 0)
         _currentQuantity = State(initialValue: medication.quantity)
     }
 
@@ -31,9 +31,15 @@ struct MedicationDetailView: View {
                         Text("Quantity:")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("\(currentQuantity, specifier: "%.0f")")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                        if let currentQuantity {
+                            Text("\(currentQuantity, specifier: "%.0f")")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        } else {
+                            Text("Not tracked")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                         Spacer()
                         Button("Edit") {
                             showingQuantityEditor = true
@@ -114,8 +120,8 @@ struct MedicationDetailView: View {
             DoseLoggerView(medication: medication, doseAmount: $doseAmount)
                 .onDisappear {
                     // Update quantity after logging dose
-                    if currentQuantity > 0 {
-                        currentQuantity = max(0, currentQuantity - doseAmount)
+                    if let quantity = currentQuantity, quantity > 0 {
+                        currentQuantity = max(0, quantity - doseAmount)
                     }
                 }
         }
@@ -138,8 +144,8 @@ struct MedicationDetailView: View {
         sender.sendMessage(key: "logDose", value: eventData)
 
         // Update local quantity immediately for better UX
-        if currentQuantity > 0 {
-            currentQuantity = max(0, currentQuantity - doseAmount)
+        if let quantity = currentQuantity, quantity > 0 {
+            currentQuantity = max(0, quantity - doseAmount)
         }
 
         // Provide subtle haptic feedback

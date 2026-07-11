@@ -103,7 +103,7 @@ final class WCReceiver: NSObject, ObservableObject {
     // MARK: - Private Methods
 
     private func sendMedicationsToWatch() async {
-        let medications = DataStore.shared.medications
+        let medications = DataStore.shared.medications.filter { !$0.isArchived }
         let events = DataStore.shared.events
         let refillProfileStore = MedicationRefillProfileStore.shared
         let refillProjectionService = MedicationRefillProjectionService()
@@ -116,16 +116,21 @@ final class WCReceiver: NSObject, ObservableObject {
                 profile: profile
             )
 
-            return [
+            var payload: [String: Any] = [
                 "id": medication.id.uuidString,
                 "displayName": medication.displayName,
-                "quantity": medication.quantity ?? 0.0,
                 "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
                 "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
                 "lowStock": refillProjection.lowStock,
                 "refillSoon": refillProjection.refillSoon,
                 "statusMessage": refillProjection.statusMessage,
             ]
+
+            if let quantity = medication.quantity {
+                payload["quantity"] = quantity
+            }
+
+            return payload
         }
 
         if session.isReachable {

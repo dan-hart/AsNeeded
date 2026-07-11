@@ -257,12 +257,21 @@ private struct WidgetMedicationRefillProjectionService {
 
     func projection(
         for medication: ANMedicationConcept,
+        at date: Date = .now,
         events: [ANEventConcept],
         profile: WidgetMedicationRefillProfile
     ) -> RefillProjection {
-        let threshold = profile.lowStockThreshold ?? 10
-        let lowStock = medication.quantity != nil && (medication.quantity ?? 0) <= threshold
-        let averageDailyUsage = averageDailyUsage(for: medication, events: events)
+        let filteredEvents = events
+            .filter { event in
+                event.eventType == .doseTaken &&
+                    event.medication?.id == medication.id &&
+                    event.date <= date
+            }
+            .sorted { $0.date < $1.date }
+        let averageDailyUsage = averageDailyUsage(
+            for: filteredEvents,
+            preferredUnit: medication.prescribedUnit
+        )
         let estimatedDaysRemaining: Int? = {
             guard let quantity = medication.quantity, quantity > 0, averageDailyUsage > 0 else {
                 return nil
@@ -270,24 +279,33 @@ private struct WidgetMedicationRefillProjectionService {
 
             return max(0, Int((quantity / averageDailyUsage).rounded(.down)))
         }()
+        let threshold = profile.lowStockThreshold ?? 10
+        let lowStock = medication.quantity != nil && (medication.quantity ?? 0) <= threshold
         let daysUntilRefill = medication.nextRefillDate.flatMap {
-            calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()), to: calendar.startOfDay(for: $0)).day
+            calendar.dateComponents(
+                [.day],
+                from: calendar.startOfDay(for: date),
+                to: calendar.startOfDay(for: $0)
+            ).day
         }
         let refillSoon = lowStock ||
             (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 5) ||
             (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 5)
+        let urgent = lowStock ||
+            (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 2) ||
+            (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 2)
         let statusMessage: String
 
         if medication.quantity == nil {
-            statusMessage = "Quantity is unavailable for refill estimates."
-        } else if lowStock {
-            statusMessage = "Quantity is at or below the low-stock threshold."
-        } else if daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 5 {
-            statusMessage = "The next refill date is within 5 days."
+            statusMessage = "Add or update the quantity to see refill estimates."
+        } else if urgent {
+            statusMessage = "Refill prep would be timely."
+        } else if refillSoon {
+            statusMessage = "You’re approaching your refill window."
         } else if let estimatedDaysRemaining {
             statusMessage = "About \(estimatedDaysRemaining)d of supply at your recent pace."
         } else {
-            statusMessage = "More dose history is needed for a run-out estimate."
+            statusMessage = "Log more doses to estimate your run-out date."
         }
 
         return RefillProjection(
@@ -297,15 +315,32 @@ private struct WidgetMedicationRefillProjectionService {
         )
     }
 
-    private func averageDailyUsage(for medication: ANMedicationConcept, events: [ANEventConcept]) -> Double {
+    private func averageDailyUsage(
+        for events: [ANEventConcept],
+        preferredUnit: ANUnitConcept?
+    ) -> Double {
         let relevantEvents = events.filter { event in
-            event.eventType == .doseTaken &&
-                event.medication?.id == medication.id &&
-                (medication.prescribedUnit == nil || event.dose?.unit == medication.prescribedUnit)
+            guard let dose = event.dose else {
+                return false
+            }
+
+            if let preferredUnit {
+                return dose.unit == preferredUnit
+            }
+
+            return true
         }
 
         guard !relevantEvents.isEmpty else {
             return 0
+        }
+
+        if preferredUnit == nil {
+            guard let eventUnit = relevantEvents.first?.dose?.unit,
+                  relevantEvents.allSatisfy({ $0.dose?.unit == eventUnit })
+            else {
+                return 0
+            }
         }
 
         let grouped = Dictionary(grouping: relevantEvents) { event in

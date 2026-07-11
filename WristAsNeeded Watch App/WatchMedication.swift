@@ -3,7 +3,7 @@ import Foundation
 struct WatchMedication: Identifiable, Codable {
     let id: UUID
     let displayName: String
-    let quantity: Double
+    let quantity: Double?
     let prescribedDoseAmount: Double?
     let prescribedUnit: String?
     let lowStock: Bool
@@ -13,7 +13,7 @@ struct WatchMedication: Identifiable, Codable {
     init(
         id: UUID,
         displayName: String,
-        quantity: Double,
+        quantity: Double? = nil,
         prescribedDoseAmount: Double? = nil,
         prescribedUnit: String? = nil,
         lowStock: Bool = false,
@@ -33,7 +33,7 @@ struct WatchMedication: Identifiable, Codable {
     init(from dict: [String: Any]) {
         id = UUID(uuidString: dict["id"] as? String ?? "") ?? UUID()
         displayName = dict["displayName"] as? String ?? "Unknown"
-        quantity = dict["quantity"] as? Double ?? 0.0
+        quantity = dict["quantity"] as? Double
         prescribedDoseAmount = dict["prescribedDoseAmount"] as? Double
         prescribedUnit = dict["prescribedUnit"] as? String
         lowStock = dict["lowStock"] as? Bool ?? false

@@ -186,7 +186,11 @@ struct MediumWidgetView: View {
 
             // Quick log button - interactive on iOS 17+
             if #available(iOS 17.0, *) {
-                LogDoseIconButton(medicationID: info.medication.id.uuidString, color: info.medication.displayColor)
+                LogDoseIconButton(
+                    medicationID: info.medication.id.uuidString,
+                    medicationName: info.medication.displayName,
+                    color: info.medication.displayColor
+                )
             } else {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
@@ -273,6 +277,7 @@ struct MedicationInfo {
 @available(iOS 17.0, *)
 struct LogDoseIconButton: View {
     let medicationID: String
+    let medicationName: String
     let color: Color
 
     var body: some View {
@@ -286,5 +291,7 @@ struct LogDoseIconButton: View {
                 .foregroundStyle(color)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Log dose for \(medicationName)")
+        .accessibilityHint("Logs the prescribed dose")
     }
 }

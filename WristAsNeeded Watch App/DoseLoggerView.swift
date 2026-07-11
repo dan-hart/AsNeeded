@@ -28,6 +28,16 @@ struct DoseLoggerView: View {
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 8)
 
+                    if let quantity = medication.quantity {
+                        Text("Quantity: \(quantity, specifier: "%.0f")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("Quantity not tracked")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
                     if medication.lowStock || medication.refillSoon {
                         Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
                             .font(.caption)

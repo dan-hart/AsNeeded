@@ -51,9 +51,15 @@ struct MedicationListView: View {
                                     .multilineTextAlignment(.center)
 
                                 HStack {
-                                    Text("Qty: \(medication.quantity, specifier: "%.0f")")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    if let quantity = medication.quantity {
+                                        Text("Qty: \(quantity, specifier: "%.0f")")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        Text("Quantity not tracked")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
 
                                     if let prescribedDoseAmount = medication.prescribedDoseAmount,
                                        let prescribedUnit = medication.prescribedUnit
@@ -182,7 +188,7 @@ struct MedicationListView: View {
 struct MedicationRowView: View {
     let medication: WatchMedication
     @EnvironmentObject var sender: WCSender
-    @State private var currentQuantity: Double
+    @State private var currentQuantity: Double?
 
     init(medication: WatchMedication) {
         self.medication = medication
@@ -197,9 +203,15 @@ struct MedicationRowView: View {
                     .lineLimit(2)
 
                 HStack {
-                    Text("Qty: \(currentQuantity, specifier: "%.0f")")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    if let currentQuantity {
+                        Text("Qty: \(currentQuantity, specifier: "%.0f")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("Quantity not tracked")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
 
                     Spacer()
 
@@ -225,6 +237,8 @@ struct MedicationRowView: View {
             }
             .buttonStyle(.plain)
             .frame(width: 30, height: 30)
+            .accessibilityLabel("Quick log dose for \(medication.displayName)")
+            .accessibilityHint("Logs the prescribed dose")
         }
         .padding(.vertical, 2)
     }
@@ -243,8 +257,8 @@ struct MedicationRowView: View {
         sender.sendMessage(key: "logDose", value: eventData)
 
         // Update local quantity immediately for better UX
-        if currentQuantity > 0 {
-            currentQuantity = max(0, currentQuantity - doseAmount)
+        if let quantity = currentQuantity, quantity > 0 {
+            currentQuantity = max(0, quantity - doseAmount)
         }
 
         // Provide subtle haptic feedback
