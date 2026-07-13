@@ -17,6 +17,10 @@ enum MedicationRowLayoutStyle: Equatable {
 		}
 	}
 
+	var clinicalNameLineLimit: Int? {
+		self == .compact ? 1 : nil
+	}
+
 	func quantityText(for quantity: Double, unitAbbreviation: String?) -> String {
 		let quantityText = [quantity.formattedAmount, unitAbbreviation]
 			.compactMap { $0 }
@@ -231,7 +235,7 @@ struct MedicationRowComponent: View {
     }
 
     private var compactMedicationHeader: some View {
-        medicationHeader(showClinicalName: false)
+		medicationHeader(showClinicalName: true)
     }
 
     private func medicationHeader(showClinicalName: Bool) -> some View {
@@ -255,7 +259,8 @@ struct MedicationRowComponent: View {
                 CopyableText(
                     medication.clinicalName,
                     font: .customFont(fontFamily, style: .caption),
-                    color: .secondary
+					color: .secondary,
+					lineLimit: layoutStyle.clinicalNameLineLimit
                 )
             }
         }

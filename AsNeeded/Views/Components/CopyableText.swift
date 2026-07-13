@@ -27,6 +27,7 @@ struct CopyableText: View {
 	let font: Font
 	let weight: Font.Weight?
 	let color: Color
+	let lineLimit: Int?
 	var onCopied: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
@@ -39,13 +40,19 @@ struct CopyableText: View {
 		font: Font,
 		weight: Font.Weight? = nil,
 		color: Color = .secondary,
+		lineLimit: Int? = nil,
 		onCopied: (() -> Void)? = nil
 	) {
 		self.text = text
 		self.font = font
 		self.weight = weight
 		self.color = color
+		self.lineLimit = lineLimit
 		self.onCopied = onCopied
+	}
+
+	static func accessibilityCopyActionName(for text: String) -> String {
+		"Copy clinical name: \(text)"
 	}
 
 	var body: some View {
@@ -53,7 +60,9 @@ struct CopyableText: View {
 			.font(font)
 			.fontWeight(weight)
 			.foregroundStyle(showCopiedMessage ? .accent : color)
-			.noTruncate()
+			.lineLimit(lineLimit)
+			.truncationMode(.tail)
+			.fixedSize(horizontal: false, vertical: lineLimit == nil)
 			.scaleEffect(isPressed ? 0.98 : 1.0)
 			.animation(.easeInOut(duration: 0.1), value: isPressed)
 			.animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedMessage)
@@ -64,6 +73,9 @@ struct CopyableText: View {
 			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
 			.accessibilityHint("Tap to copy clinical name to clipboard")
 			.accessibilityAddTraits(.isButton)
+			.accessibilityAction(named: Self.accessibilityCopyActionName(for: text)) {
+				copyToClipboard()
+			}
 	}
 
 	// MARK: - Private Methods

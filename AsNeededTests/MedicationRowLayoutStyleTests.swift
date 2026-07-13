@@ -21,6 +21,13 @@ struct MedicationRowLayoutStyleTests {
 		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .accessibility5) == .accessibility)
 	}
 
+	@Test("Limits only compact clinical subtitles to one line")
+	func clinicalNameLineLimit() {
+		#expect(MedicationRowLayoutStyle.compact.clinicalNameLineLimit == 1)
+		#expect(MedicationRowLayoutStyle.standard.clinicalNameLineLimit == nil)
+		#expect(MedicationRowLayoutStyle.accessibility.clinicalNameLineLimit == nil)
+	}
+
 	@Test("Compact quantity omits the remaining qualifier")
 	func compactQuantityText() {
 		#expect(MedicationRowLayoutStyle.compact.quantityText(for: 100, unitAbbreviation: "mg") == "100 mg")
