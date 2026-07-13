@@ -1,6 +1,22 @@
 import SFSafeSymbols
 import SwiftUI
 
+enum SupportSuggestionLayoutStyle: Equatable {
+	case detailed
+	case hidden
+	case compact
+
+	init(dynamicTypeSize: DynamicTypeSize) {
+		if dynamicTypeSize.isAccessibilitySize {
+			self = .compact
+		} else if dynamicTypeSize == .xxxLarge {
+			self = .hidden
+		} else {
+			self = .detailed
+		}
+	}
+}
+
 struct SupportSuggestionView: View {
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -17,13 +33,18 @@ struct SupportSuggestionView: View {
 
     var body: some View {
         if !hideSupportBanners {
-            if SubtleSupportLayoutStyle(dynamicTypeSize: dynamicTypeSize) == .compact {
-                SubtleSupportView(message: "Consider supporting continued development")
-                    .padding(.horizontal, cardPadding)
-                    .padding(.top, containerSpacing)
-            } else {
-                detailedSuggestion
-            }
+			switch SupportSuggestionLayoutStyle(dynamicTypeSize: dynamicTypeSize) {
+			case .detailed:
+				detailedSuggestion
+
+			case .hidden:
+				EmptyView()
+
+			case .compact:
+				SubtleSupportView(message: "Consider supporting continued development")
+					.padding(.horizontal, cardPadding)
+					.padding(.top, containerSpacing)
+			}
         }
     }
 

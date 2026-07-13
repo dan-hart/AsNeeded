@@ -16,3 +16,21 @@ struct SubtleSupportLayoutStyleTests {
 		#expect(SubtleSupportLayoutStyle(dynamicTypeSize: .accessibility1) == .compact)
 	}
 }
+
+@Suite("Support Suggestion Layout Style Tests", .tags(Tag.unit))
+struct SupportSuggestionLayoutStyleTests {
+	@Test("Uses detailed support content below 135 percent text size")
+	func detailedLayout() {
+		#expect(SupportSuggestionLayoutStyle(dynamicTypeSize: .xxLarge) == .detailed)
+	}
+
+	@Test("Hides support content at 135 percent text size")
+	func hiddenLayout() {
+		#expect(SupportSuggestionLayoutStyle(dynamicTypeSize: .xxxLarge) == .hidden)
+	}
+
+	@Test("Uses compact support content at accessibility text sizes")
+	func compactLayout() {
+		#expect(SupportSuggestionLayoutStyle(dynamicTypeSize: .accessibility1) == .compact)
+	}
+}

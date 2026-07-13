@@ -16,6 +16,14 @@ enum MedicationRowLayoutStyle: Equatable {
 			self = .standard
 		}
 	}
+
+	func quantityText(for quantity: Double, unitAbbreviation: String?) -> String {
+		let quantityText = [quantity.formattedAmount, unitAbbreviation]
+			.compactMap { $0 }
+			.joined(separator: " ")
+
+		return self == .compact ? quantityText : "\(quantityText) left"
+	}
 }
 
 /// A comprehensive medication row component with adaptive layout and interactive logging
@@ -84,7 +92,7 @@ struct MedicationRowComponent: View {
                 .padding(rowPadding)
 
             case .compact:
-                VStack(alignment: .leading, spacing: 10) {
+				VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .center, spacing: 12) {
                         compactMedicationHeader
 
@@ -100,7 +108,7 @@ struct MedicationRowComponent: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
+				.padding(12)
 
             case .standard:
                 HStack(alignment: .center, spacing: 16) {
@@ -369,23 +377,16 @@ struct MedicationRowComponent: View {
                         )
                 )
             } else if layoutStyle == .compact {
-                HStack(spacing: 6) {
-                    Image(systemSymbol: .plusCircleFill)
-                        .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                        .accessibilityHidden(true)
-
-                    Text("Log")
-                        .font(.customFont(fontFamily, style: .caption, weight: .bold))
-                        .textCase(.uppercase)
-                }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor())
-                .frame(minHeight: 44)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(medication.displayColor)
-                )
-                .scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
+				Image(systemSymbol: .plusCircleFill)
+					.font(.customFont(fontFamily, style: .body, weight: .semibold))
+					.accessibilityHidden(true)
+					.foregroundStyle(medication.displayColor.contrastingForegroundColor())
+					.frame(width: 44, height: 44)
+					.background(
+						RoundedRectangle(cornerRadius: 12, style: .continuous)
+							.fill(medication.displayColor)
+					)
+					.scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
             } else {
                 // Compact button with icon and text
                 VStack(spacing: 4) {
@@ -558,12 +559,10 @@ struct MedicationRowComponent: View {
     }
 
     private func quantityText(for quantity: Double) -> String {
-        let quantityStr = quantity.formattedAmount
-        if let unit = medication.prescribedUnit {
-            return "\(quantityStr) \(unit.abbreviation) left"
-        } else {
-            return "\(quantityStr) left"
-        }
+		layoutStyle.quantityText(
+			for: quantity,
+			unitAbbreviation: medication.prescribedUnit?.abbreviation
+		)
     }
 
     private func summaryColor(for summary: MedicationStatusSummaryService.Summary) -> Color {

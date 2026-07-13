@@ -20,4 +20,16 @@ struct MedicationRowLayoutStyleTests {
 		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .accessibility1) == .accessibility)
 		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .accessibility5) == .accessibility)
 	}
+
+	@Test("Compact quantity omits the remaining qualifier")
+	func compactQuantityText() {
+		#expect(MedicationRowLayoutStyle.compact.quantityText(for: 100, unitAbbreviation: "mg") == "100 mg")
+		#expect(MedicationRowLayoutStyle.compact.quantityText(for: 24, unitAbbreviation: nil) == "24")
+	}
+
+	@Test("Standard and accessibility quantities retain the remaining qualifier")
+	func remainingQuantityText() {
+		#expect(MedicationRowLayoutStyle.standard.quantityText(for: 100, unitAbbreviation: "mg") == "100 mg left")
+		#expect(MedicationRowLayoutStyle.accessibility.quantityText(for: 24, unitAbbreviation: nil) == "24 left")
+	}
 }
