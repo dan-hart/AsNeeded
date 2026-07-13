@@ -1,0 +1,23 @@
+@testable import AsNeeded
+import SwiftUI
+import Testing
+
+@Suite("Medication Row Layout Style Tests", .tags(Tag.medication, Tag.unit))
+struct MedicationRowLayoutStyleTests {
+	@Test("Uses standard layout below 135 percent text size")
+	func standardLayout() {
+		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .large) == .standard)
+		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .xxLarge) == .standard)
+	}
+
+	@Test("Uses compact layout at 135 percent text size")
+	func compactLayout() {
+		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .xxxLarge) == .compact)
+	}
+
+	@Test("Uses stacked layout at accessibility text sizes")
+	func accessibilityLayout() {
+		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .accessibility1) == .accessibility)
+		#expect(MedicationRowLayoutStyle(dynamicTypeSize: .accessibility5) == .accessibility)
+	}
+}

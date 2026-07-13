@@ -3,6 +3,8 @@ import SwiftUI
 
 struct SupportSuggestionView: View {
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var containerSpacing: CGFloat = 8
     @ScaledMetric private var contentSpacing: CGFloat = 14
     @ScaledMetric private var iconSize: CGFloat = 36
@@ -15,99 +17,108 @@ struct SupportSuggestionView: View {
 
     var body: some View {
         if !hideSupportBanners {
-            VStack(spacing: containerSpacing) {
-                NavigationLink {
-                    SupportView()
-                } label: {
-                    HStack(spacing: contentSpacing) {
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.red.opacity(0.1), Color.pink.opacity(0.15)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: iconSize, height: iconSize)
+            if SubtleSupportLayoutStyle(dynamicTypeSize: dynamicTypeSize) == .compact {
+                SubtleSupportView(message: "Consider supporting continued development")
+                    .padding(.horizontal, cardPadding)
+                    .padding(.top, containerSpacing)
+            } else {
+                detailedSuggestion
+            }
+        }
+    }
 
-                            Image(systemSymbol: .heart)
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.red, Color.pink],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                        }
-
-                        VStack(alignment: .leading, spacing: labelSpacing) {
-                            Text("Enjoying As Needed?")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                            Text("Consider supporting continued development")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemSymbol: .chevronRight)
-                            .font(.caption)
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }
-                    .padding(cardPadding)
-                    .background(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    private var detailedSuggestion: some View {
+        VStack(spacing: containerSpacing) {
+            NavigationLink {
+                SupportView()
+            } label: {
+                HStack(spacing: contentSpacing) {
+                    ZStack {
+                        Circle()
                             .fill(
                                 LinearGradient(
-                                    colors: [
-                                        Color(.systemBackground),
-                                        Color(.secondarySystemBackground).opacity(0.5),
-                                    ],
+                                    colors: [Color.red.opacity(0.1), Color.pink.opacity(0.15)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(
+                            .frame(width: iconSize, height: iconSize)
+
+                        Image(systemSymbol: .heart)
+                            .font(.customFont(fontFamily, style: .callout, weight: .semibold))
+                            .foregroundStyle(
                                 LinearGradient(
-                                    colors: [
-                                        Color.red.opacity(0.2),
-                                        Color.pink.opacity(0.1),
-                                    ],
+                                    colors: [Color.red, Color.pink],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
-                                ),
-                                lineWidth: borderWidth
+                                )
                             )
-                    )
-                }
-                .buttonStyle(.plain)
+                    }
 
-                Button {
-                    hideSupportBanners = true
-                } label: {
-                    Text("Don't Show Again")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, buttonVerticalPadding)
-                        .background {
-                            RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                                .fill(.regularMaterial)
-                        }
+                    VStack(alignment: .leading, spacing: labelSpacing) {
+                        Text("Enjoying As Needed?")
+                            .font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+                            .foregroundColor(.primary)
+                        Text("Consider supporting continued development")
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemSymbol: .chevronRight)
+                        .font(.customFont(fontFamily, style: .caption))
+                        .foregroundColor(.secondary.opacity(0.5))
                 }
-                .buttonStyle(.plain)
+                .padding(cardPadding)
+                .background(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(.systemBackground),
+                                    Color(.secondarySystemBackground).opacity(0.5),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.red.opacity(0.2),
+                                    Color.pink.opacity(0.1),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: borderWidth
+                        )
+                )
             }
-            .padding(.horizontal, cardPadding)
-            .padding(.top, containerSpacing)
+            .buttonStyle(.plain)
+
+            Button {
+                hideSupportBanners = true
+            } label: {
+                Text("Don't Show Again")
+                    .font(.customFont(fontFamily, style: .caption))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, buttonVerticalPadding)
+                    .background {
+                        RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
+                            .fill(.regularMaterial)
+                    }
+            }
+            .buttonStyle(.plain)
         }
+        .padding(.horizontal, cardPadding)
+        .padding(.top, containerSpacing)
     }
 }
 
