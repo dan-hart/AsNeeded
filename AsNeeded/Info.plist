@@ -71,8 +71,6 @@
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER).quickaction.trends</string>
 		</dict>
 	</array>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

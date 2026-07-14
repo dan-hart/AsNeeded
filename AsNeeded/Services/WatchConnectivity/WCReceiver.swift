@@ -178,8 +178,6 @@ final class WCReceiver: NSObject, ObservableObject {
         }
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
@@ -206,8 +204,6 @@ final class WCReceiver: NSObject, ObservableObject {
         try await DataStore.shared.updateMedication(updatedMedication)
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Quantity updated successfully, sending confirmation to watch")
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in

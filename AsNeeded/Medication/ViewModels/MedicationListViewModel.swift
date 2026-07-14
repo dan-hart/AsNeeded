@@ -113,7 +113,6 @@ final class MedicationListViewModel: ObservableObject {
         do {
             try await dataStore.addMedication(med)
             appendToMedicationOrderIfNeeded(med)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to add medication", error: error)
@@ -124,7 +123,6 @@ final class MedicationListViewModel: ObservableObject {
     func update(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.updateMedication(med)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to update medication", error: error)
@@ -138,7 +136,6 @@ final class MedicationListViewModel: ObservableObject {
             var order = medicationOrder
             order.removeAll { $0 == med.id.uuidString }
             medicationOrder = order
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
@@ -149,7 +146,6 @@ final class MedicationListViewModel: ObservableObject {
     func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async -> Bool {
         do {
             try await dataStore.addEvent(event, shouldRecordForReview: shouldRecordForReview)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to add event", error: error)
@@ -317,7 +313,6 @@ final class MedicationListViewModel: ObservableObject {
                 try await dataStore.updateMedication(updated)
             }
 
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             dismissQuickLogToast(generation: toastGeneration)
             return true
         } catch {

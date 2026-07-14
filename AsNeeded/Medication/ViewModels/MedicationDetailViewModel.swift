@@ -28,7 +28,6 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.updateMedication(medication)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully saved", id: medication.id)
         } catch {
             logger.logPrivacySafeError("Failed to save medication", error: error)
@@ -45,7 +44,6 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.deleteMedication(medication)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully deleted", id: medication.id)
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
@@ -95,7 +93,6 @@ final class MedicationDetailViewModel: ObservableObject {
         do {
             try await dataStore.updateMedication(updatedMedication)
             try await dataStore.addEvent(eventToSave)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logDoseOperation(
                 "Succeeded",
                 source: source,
@@ -120,7 +117,6 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.addEvent(event)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.info("Successfully logged event record")
         } catch {
             logger.logPrivacySafeError("Failed to log event", error: error)
