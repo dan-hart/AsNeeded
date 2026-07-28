@@ -22,6 +22,9 @@ struct AsNeededApp: App {
     private let logger = DHLogger.general
 
     init() {
+		// Start legacy reminder reconciliation even if notification UI is never opened.
+		_ = NotificationManager.shared
+
         // Configure RevenueCat on app launch
         RevenueCatManager.shared.configure()
 
