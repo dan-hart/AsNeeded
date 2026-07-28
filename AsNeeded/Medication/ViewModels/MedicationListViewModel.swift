@@ -6,6 +6,11 @@ import DHLoggingKit
 import Foundation
 import SwiftUI
 
+typealias QuickLogPersistence = @MainActor (
+	_ updatedMedication: ANMedicationConcept,
+	_ event: ANEventConcept
+) async -> (updateSuccess: Bool, eventSuccess: Bool)
+
 @MainActor
 final class MedicationListViewModel: ObservableObject {
     // MARK: - Properties
@@ -16,6 +21,8 @@ final class MedicationListViewModel: ObservableObject {
     private let feedbackService = QuickLogFeedbackService()
     private let statusSummaryService = MedicationStatusSummaryService()
     private let scheduleQuickLogToastDismissal: (@escaping @MainActor @Sendable () -> Void) -> Void
+	private let quickLogPersistence: QuickLogPersistence
+	private let acknowledgeDeliveredReminders: @MainActor (UUID) async -> Void
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
@@ -80,10 +87,37 @@ final class MedicationListViewModel: ObservableObject {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
                 action()
             }
-        }
+        },
+		quickLogPersistence: QuickLogPersistence? = nil,
+		acknowledgeDeliveredReminders: @escaping @MainActor (UUID) async -> Void = { medicationID in
+			await NotificationManager.shared.acknowledgeDeliveredReminders(for: medicationID)
+		}
     ) {
         self.dataStore = dataStore
         self.scheduleQuickLogToastDismissal = scheduleQuickLogToastDismissal
+		let logger = DHLogger.ui
+		self.quickLogPersistence = quickLogPersistence ?? { updatedMedication, event in
+			async let updateSuccess: Bool = {
+				do {
+					try await dataStore.updateMedication(updatedMedication)
+					return true
+				} catch {
+					logger.logPrivacySafeError("Failed to update medication", error: error)
+					return false
+				}
+			}()
+			async let eventSuccess: Bool = {
+				do {
+					try await dataStore.addEvent(event, shouldRecordForReview: false)
+					return true
+				} catch {
+					logger.logPrivacySafeError("Failed to add event", error: error)
+					return false
+				}
+			}()
+			return await (updateSuccess, eventSuccess)
+		}
+		self.acknowledgeDeliveredReminders = acknowledgeDeliveredReminders
 
         if medicationOrder.isEmpty && !items.isEmpty {
             medicationOrder = items.map { $0.id.uuidString }
@@ -263,12 +297,10 @@ final class MedicationListViewModel: ObservableObject {
             details: quantityDetails(quantityWasPresent: medication.quantity != nil)
         )
 
-        async let updateResult = update(updatedMed)
-        async let eventResult = addEvent(event, shouldRecordForReview: false)
-
-        let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
+		let (updateSuccess, eventSuccess) = await quickLogPersistence(updatedMed, event)
 
         if updateSuccess, eventSuccess {
+			await acknowledgeDeliveredReminders(medication.id)
             hapticsManager.doseLogged()
             let feedback = feedbackService.feedback(
                 medication: medication,
