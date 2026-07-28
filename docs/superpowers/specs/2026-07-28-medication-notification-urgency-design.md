@@ -45,6 +45,8 @@ The store exposes operations to:
 - Return and replace the complete dictionary for migration and settings import/export.
 - Filter entries against a set of valid medication IDs.
 
+Add a separate device-local migration-completed marker. The marker is not exported, imported, or cleared by an ordinary settings reset. It prevents future normal reminders from being mistaken for reminders that predate this feature.
+
 The preference is an AsNeeded delivery setting, not medication-domain data. `ANMedicationConcept` and ANModelKit remain unchanged. If reminders later become shared cross-platform records, they should receive a separate reminder model instead of adding notification behavior to the medication concept.
 
 ### Notification Request Construction
@@ -62,7 +64,7 @@ Reconciliation receives the desired urgency for each medication and canonicalize
 
 `NotificationManager` owns an injected urgency store and uses it for scheduling, migration, reconciliation, and preference changes.
 
-Scheduling reads the medication's resolved preference before constructing a request. Existing serialization through the reminder mutation queue remains the only path for pending-reminder mutations.
+Scheduling reads the medication's resolved preference before constructing a request. If the medication has no stored entry, scheduling first establishes an explicit `false` preference. Existing serialization through the reminder mutation queue remains the only path for pending-reminder mutations.
 
 Add an asynchronous operation that changes urgency for a medication:
 
@@ -77,20 +79,26 @@ Changing urgency affects pending and future reminders. Already delivered notific
 
 ## Migration and Reconciliation
 
-Startup reconciliation groups pending medication reminders by medication ID.
+Before normal startup reconciliation, run a one-time migration when the migration-completed marker is absent:
 
-- If a medication has pending reminders and no stored entry, assign and persist `true`.
+- Read the current medication IDs from an injected provider.
+- Group pending medication reminders belonging to those current medication IDs.
+- If a current medication has pending reminders and no stored entry, assign and persist `true`.
 - If a stored entry exists, preserve it, including explicit `false`.
-- Medications without pending reminders and without a stored entry remain absent and resolve to normal.
-- Rebuild pending requests to match the resolved preference while preserving PR #4's add-before-remove ordering, deterministic identifiers, and duplicate cleanup.
+- Exclude stale reminder requests whose medication ID is no longer present.
+- Mark migration complete only after the updated preference dictionary is verified.
 
-If migration persistence fails, use urgent as the effective value for that reconciliation pass so an existing reminder is not silently downgraded. Log the failure and retry migration at the next launch.
+After migration, and on every later launch, reconcile current medications' pending requests against stored preferences. Missing entries resolve to normal. Rebuild requests while preserving PR #4's add-before-remove ordering, deterministic identifiers, and duplicate cleanup.
+
+If migration persistence fails, leave the marker unset and use urgent as the effective value for eligible existing reminders during that reconciliation pass so they are not silently downgraded. Log the failure and retry migration at the next launch.
+
+An ordinary settings reset clears the preference dictionary but preserves the migration marker. Consequently, pending reminders resolve to the normal default during the next reconciliation instead of being re-migrated to urgent. The marker is device-local and is never restored from an export.
 
 Invalid or unrelated notification requests remain untouched.
 
 ## User Interface
 
-Add an `Urgent Notifications` toggle to the Reminders card on `MedicationDetailView`. It appears with the existing reminder controls when notification access is available.
+Add an `Urgent Notifications` toggle to the Reminders card on `MedicationDetailView`. It appears with the existing reminder controls when authorization is `.authorized`, `.provisional`, or `.ephemeral`. The existing permission-request presentation remains responsible for `.notDetermined`, and the disabled-notification presentation remains responsible for `.denied` or unknown states.
 
 Supporting text:
 
@@ -116,7 +124,7 @@ When ordinary notifications are denied, preserve the existing disabled-notificat
 
 Deleting a medication removes its urgency preference. Cleanup failure is logged but does not restore a medication that was otherwise deleted successfully.
 
-Classify the new UserDefaults key in the repository's key registry and reset behavior. Include the preference dictionary in settings export/import because it is a user-authored setting. Import must discard entries whose medication IDs do not exist in the imported or current medication set.
+Classify the preference key and migration marker in the repository's key registry. An ordinary reset clears the preference dictionary but skips the migration marker. Include the preference dictionary in settings export/import because it is a user-authored setting. Import must discard entries whose medication IDs do not exist in the imported or current medication set. The migration marker is device-local and must never be exported or imported.
 
 ## Error Handling
 
@@ -144,7 +152,11 @@ Use Swift Testing and focused suites.
 - Normal requests are active.
 - Urgency changes do not change identifiers or triggers.
 - Existing requests without preferences migrate to urgent.
+- The one-time marker prevents migration from running again.
+- Migration considers current medication IDs only.
+- Scheduling establishes explicit normal state before adding a first reminder.
 - Explicitly normal requests remain active after reconciliation.
+- A settings reset preserves the migration marker and makes missing preferences resolve to normal.
 - Duplicate and legacy request cleanup still uses canonical identifiers and add-before-remove ordering.
 
 ### Notification Manager
@@ -158,8 +170,9 @@ Use Swift Testing and focused suites.
 ### Settings
 
 - The new key is covered by the key-completeness test.
-- Reset removes urgency preferences.
+- Reset removes urgency preferences without removing the migration marker.
 - Export/import preserves valid preferences and filters unknown medication IDs.
+- Export/import never transfers the migration marker.
 
 No ViewInspector, snapshot, or UI test dependency is added. The UI is covered through the tested store and manager boundaries plus build verification.
 
