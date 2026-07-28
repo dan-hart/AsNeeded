@@ -75,6 +75,10 @@ struct NotificationManagerTests {
     @Test("RequestAuthorization returns bool")
     func requestAuthorizationReturns() async {
         let manager = NotificationManager.shared
+		let settings = await UNUserNotificationCenter.current().notificationSettings()
+		guard settings.authorizationStatus != .notDetermined else {
+			return
+		}
 
         let result = await manager.requestAuthorization()
 
@@ -204,6 +208,270 @@ struct NotificationManagerTests {
             #expect(true)
         }
     }
+
+	@Test("Scheduling adds the canonical request before removing matching legacy requests")
+	func schedulingAddsCanonicalRequestBeforeRemovingLegacyRequests() async throws {
+		let medication = createTestMedication()
+		let date = Date(timeIntervalSince1970: 1_800_000_000)
+		let repeatInterval = DateComponents(hour: 8, minute: 30)
+		let canonical = MedicationReminderRequest.make(
+			medication: medication,
+			date: date,
+			isRecurring: true,
+			repeatInterval: repeatInterval,
+			showMedicationNames: false
+		)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		try await manager.scheduleReminder(
+			for: medication,
+			date: date,
+			isRecurring: true,
+			repeatInterval: repeatInterval
+		)
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+		#expect(fake.addedRequests.first?.identifier == canonical.identifier)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
+	}
+
+	@Test("A failed schedule preserves matching legacy requests")
+	func failedSchedulePreservesMatchingLegacyRequests() async {
+		let medication = createTestMedication()
+		let date = Date(timeIntervalSince1970: 1_800_000_000)
+		let repeatInterval = DateComponents(hour: 8, minute: 30)
+		let canonical = MedicationReminderRequest.make(
+			medication: medication,
+			date: date,
+			isRecurring: true,
+			repeatInterval: repeatInterval,
+			showMedicationNames: false
+		)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		fake.addError = NotificationManagerTestError.addFailed
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		await #expect(throws: NotificationManagerTestError.self) {
+			try await manager.scheduleReminder(
+				for: medication,
+				date: date,
+				isRecurring: true,
+				repeatInterval: repeatInterval
+			)
+		}
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier)
+		])
+		#expect(fake.removedPendingIdentifiers.isEmpty)
+	}
+
+	// MARK: - Reconciliation Tests
+	@Test("Reconciliation migrates one legacy request and leaves unrelated reminders untouched")
+	func reconciliationMigratesOneLegacyRequestAndLeavesUnrelatedRemindersUntouched() async {
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let unrelated = recurringRequest(for: createTestMedication(name: "Unrelated"))
+		let fake = FakeMedicationNotificationClient(pendingRequests: [unrelated, legacy])
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		await manager.reconcilePendingReminders()
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+		#expect(fake.addedRequests.count == 1)
+		#expect(fake.addedRequests.first?.identifier == canonical.identifier)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
+		#expect(fake.removedPendingIdentifiers == [[legacy.identifier]])
+	}
+
+	@Test("A failed reconciliation add preserves the legacy request")
+	func failedReconciliationAddPreservesLegacyRequest() async {
+		let canonical = recurringRequest(for: createTestMedication())
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		fake.addError = NotificationManagerTestError.addFailed
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		await manager.reconcilePendingReminders()
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier)
+		])
+		#expect(fake.removedPendingIdentifiers.isEmpty)
+	}
+
+	@Test("A later cancellation waits for reconciliation and wins", .timeLimit(.minutes(1)))
+	func laterCancellationWaitsForReconciliationAndWins() async {
+		let canonical = recurringRequest(for: createTestMedication())
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		fake.addGate = addGate
+		let manager = NotificationManager(notificationClient: fake.client)
+		let reconciliation = Task {
+			await manager.reconcilePendingReminders()
+		}
+
+		await addGate.waitUntilSuspended()
+		defer {
+			addGate.resume()
+		}
+		let cancellationStarted = TestAsyncSignal()
+		let cancellation = Task {
+			cancellationStarted.signal()
+			await manager.cancelSpecificReminder(withIdentifier: canonical.identifier)
+		}
+		await cancellationStarted.wait()
+
+		addGate.resume()
+		await reconciliation.value
+		await cancellation.value
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.finishAdd(canonical.identifier),
+			.removePending([legacy.identifier]),
+			.removePending([canonical.identifier])
+		])
+		#expect(fake.pendingRequests.isEmpty)
+	}
+
+	@Test("A failed queued operation does not block a later cancellation", .timeLimit(.minutes(1)))
+	func failedQueuedOperationDoesNotBlockLaterCancellation() async {
+		let medication = createTestMedication()
+		let date = Date(timeIntervalSince1970: 1_800_000_000)
+		let repeatInterval = DateComponents(hour: 8, minute: 30)
+		let canonical = MedicationReminderRequest.make(
+			medication: medication,
+			date: date,
+			isRecurring: true,
+			repeatInterval: repeatInterval,
+			showMedicationNames: false
+		)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		fake.addGate = addGate
+		fake.addError = NotificationManagerTestError.addFailed
+		let manager = NotificationManager(notificationClient: fake.client)
+		let scheduling = Task {
+			do {
+				try await manager.scheduleReminder(
+					for: medication,
+					date: date,
+					isRecurring: true,
+					repeatInterval: repeatInterval
+				)
+				return false
+			} catch {
+				return true
+			}
+		}
+
+		await addGate.waitUntilSuspended()
+		defer {
+			addGate.resume()
+		}
+		let cancellationStarted = TestAsyncSignal()
+		let cancellation = Task {
+			cancellationStarted.signal()
+			await manager.cancelSpecificReminder(withIdentifier: legacy.identifier)
+		}
+		await cancellationStarted.wait()
+
+		addGate.resume()
+		let scheduleFailed = await scheduling.value
+		await cancellation.value
+
+		#expect(scheduleFailed)
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.finishAdd(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+		#expect(fake.pendingRequests.isEmpty)
+	}
+
+	@Test("Automatic startup schedules exactly one reconciliation action")
+	func automaticStartupSchedulesExactlyOneReconciliationAction() async {
+		let canonical = recurringRequest(for: createTestMedication())
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		var startupActions: [@MainActor () async -> Void] = []
+
+		_ = NotificationManager(
+			notificationClient: fake.client,
+			startsAutomatically: true,
+			performsSystemSetup: false,
+			scheduleStartup: { action in
+				startupActions.append(action)
+			}
+		)
+
+		#expect(startupActions.count == 1)
+		#expect(fake.operations.isEmpty)
+		guard let startupAction = startupActions.first else {
+			Issue.record("Expected one startup action")
+			return
+		}
+
+		await startupAction()
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
+	}
+
+	// MARK: - Delivered Reminder Tests
+	@Test("Acknowledging delivered reminders preserves pending recurrence")
+	func acknowledgingDeliveredRemindersPreservesPendingRecurrence() async {
+		let medication = createTestMedication()
+		let otherMedication = createTestMedication(name: "Other")
+		let pending = recurringRequest(for: medication)
+		let targetDelivered = deliveredRequest(from: pending, identifier: "target-delivered")
+		let otherMedicationDelivered = deliveredRequest(
+			from: recurringRequest(for: otherMedication),
+			identifier: "other-medication"
+		)
+		let otherCategoryDelivered = deliveredRequest(
+			from: pending,
+			identifier: "other-category",
+			categoryIdentifier: "OTHER"
+		)
+		let fake = FakeMedicationNotificationClient(
+			pendingRequests: [pending],
+			deliveredRequests: [otherMedicationDelivered, otherCategoryDelivered, targetDelivered]
+		)
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		await manager.acknowledgeDeliveredReminders(for: medication.id)
+
+		#expect(fake.operations == [
+			.deliveredRequests,
+			.removeDelivered([targetDelivered.identifier])
+		])
+		#expect(fake.removedPendingIdentifiers.isEmpty)
+		#expect(fake.pendingRequests == [pending])
+	}
 
     // MARK: - Cancel Reminder Tests
 
@@ -497,4 +765,137 @@ struct NotificationManagerTests {
 
         #expect(defaultValue == false)
     }
+
+	private func recurringRequest(for medication: ANMedicationConcept) -> UNNotificationRequest {
+		MedicationReminderRequest.make(
+			medication: medication,
+			date: Date(timeIntervalSince1970: 1_800_000_000),
+			isRecurring: true,
+			repeatInterval: DateComponents(hour: 8, minute: 30),
+			showMedicationNames: false
+		)
+	}
+
+	private func legacyRequest(from canonical: UNNotificationRequest, identifier: String) -> UNNotificationRequest {
+		deliveredRequest(from: canonical, identifier: identifier)
+	}
+
+	private func deliveredRequest(
+		from source: UNNotificationRequest,
+		identifier: String,
+		categoryIdentifier: String = MedicationReminderRequest.categoryIdentifier
+	) -> UNNotificationRequest {
+		let content = source.content.mutableCopy() as? UNMutableNotificationContent ?? UNMutableNotificationContent()
+		content.categoryIdentifier = categoryIdentifier
+		return UNNotificationRequest(identifier: identifier, content: content, trigger: source.trigger)
+	}
+}
+
+@MainActor
+private final class FakeMedicationNotificationClient {
+	enum Operation: Equatable {
+		case pendingRequests
+		case deliveredRequests
+		case add(String)
+		case finishAdd(String)
+		case removePending([String])
+		case removeDelivered([String])
+	}
+
+	var pendingRequests: [UNNotificationRequest]
+	var deliveredRequests: [UNNotificationRequest]
+	var addedRequests: [UNNotificationRequest] = []
+	var removedPendingIdentifiers: [[String]] = []
+	var removedDeliveredIdentifiers: [[String]] = []
+	var operations: [Operation] = []
+	var addError: (any Error)?
+	var addGate: TestAsyncGate?
+
+	init(
+		pendingRequests: [UNNotificationRequest] = [],
+		deliveredRequests: [UNNotificationRequest] = []
+	) {
+		self.pendingRequests = pendingRequests
+		self.deliveredRequests = deliveredRequests
+	}
+
+	var client: MedicationNotificationClient {
+		MedicationNotificationClient(
+			pendingRequests: {
+				self.operations.append(.pendingRequests)
+				return self.pendingRequests
+			},
+			deliveredRequests: {
+				self.operations.append(.deliveredRequests)
+				return self.deliveredRequests
+			},
+			add: { request in
+				self.operations.append(.add(request.identifier))
+				if let addGate = self.addGate {
+					await addGate.suspend()
+					self.operations.append(.finishAdd(request.identifier))
+				}
+				if let addError = self.addError {
+					throw addError
+				}
+				self.addedRequests.append(request)
+				self.pendingRequests.removeAll { $0.identifier == request.identifier }
+				self.pendingRequests.append(request)
+			},
+			removePending: { identifiers in
+				self.operations.append(.removePending(identifiers))
+				self.removedPendingIdentifiers.append(identifiers)
+				self.pendingRequests.removeAll { identifiers.contains($0.identifier) }
+			},
+			removeDelivered: { identifiers in
+				self.operations.append(.removeDelivered(identifiers))
+				self.removedDeliveredIdentifiers.append(identifiers)
+				self.deliveredRequests.removeAll { identifiers.contains($0.identifier) }
+			}
+		)
+	}
+}
+
+@MainActor
+private final class TestAsyncGate {
+	private let arrived = TestAsyncSignal()
+	private let released = TestAsyncSignal()
+
+	func suspend() async {
+		arrived.signal()
+		await released.wait()
+	}
+
+	func waitUntilSuspended() async {
+		await arrived.wait()
+	}
+
+	func resume() {
+		released.signal()
+	}
+}
+
+@MainActor
+private final class TestAsyncSignal {
+	private let stream: AsyncStream<Void>
+	private let continuation: AsyncStream<Void>.Continuation
+
+	init() {
+		(stream, continuation) = AsyncStream.makeStream()
+	}
+
+	func signal() {
+		continuation.yield()
+		continuation.finish()
+	}
+
+	func wait() async {
+		for await _ in stream {
+			return
+		}
+	}
+}
+
+private enum NotificationManagerTestError: Error {
+	case addFailed
 }

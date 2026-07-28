@@ -7,8 +7,45 @@ import Foundation
 import UserNotifications
 
 @MainActor
+struct MedicationNotificationClient {
+	let pendingRequests: @MainActor () async -> [UNNotificationRequest]
+	let deliveredRequests: @MainActor () async -> [UNNotificationRequest]
+	let add: @MainActor (UNNotificationRequest) async throws -> Void
+	let removePending: @MainActor ([String]) -> Void
+	let removeDelivered: @MainActor ([String]) -> Void
+
+	static func live(notificationCenter: UNUserNotificationCenter) -> Self {
+		Self(
+			pendingRequests: {
+				await notificationCenter.pendingNotificationRequests()
+			},
+			deliveredRequests: {
+				await notificationCenter.deliveredNotifications().map(\.request)
+			},
+			add: { request in
+				try await notificationCenter.add(request)
+			},
+			removePending: { identifiers in
+				notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
+			},
+			removeDelivered: { identifiers in
+				notificationCenter.removeDeliveredNotifications(withIdentifiers: identifiers)
+			}
+		)
+	}
+}
+
+@MainActor
 final class NotificationManager: ObservableObject {
-    static let shared = NotificationManager()
+	static let shared: NotificationManager = {
+		let notificationCenter = UNUserNotificationCenter.current()
+		return NotificationManager(
+			notificationCenter: notificationCenter,
+			notificationClient: .live(notificationCenter: notificationCenter),
+			startsAutomatically: true,
+			performsSystemSetup: true
+		)
+	}()
     private let logger = DHLogger(category: "NotificationManager")
 
     enum AuthorizationStatus {
@@ -27,15 +64,51 @@ final class NotificationManager: ObservableObject {
         }
     }
 
-    private let notificationCenter = UNUserNotificationCenter.current()
+	private let notificationCenter: UNUserNotificationCenter
+	private let notificationClient: MedicationNotificationClient
+	private var reminderMutationTail: Task<Void, Never>?
 
-    private init() {
-        showMedicationNames = UserDefaults.standard.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
-        Task {
-            await checkAuthorizationStatus()
-            await setupNotificationCategories()
-        }
-    }
+	init(
+		notificationCenter: UNUserNotificationCenter = .current(),
+		notificationClient: MedicationNotificationClient,
+		startsAutomatically: Bool = false,
+		performsSystemSetup: Bool = false,
+		scheduleStartup: (@escaping @MainActor () async -> Void) -> Void = { action in
+			Task {
+				await action()
+			}
+		}
+	) {
+		self.notificationCenter = notificationCenter
+		self.notificationClient = notificationClient
+		showMedicationNames = UserDefaults.standard.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
+
+		if startsAutomatically {
+			scheduleStartup {
+				if performsSystemSetup {
+					await self.checkAuthorizationStatus()
+					await self.setupNotificationCategories()
+				}
+				await self.reconcilePendingReminders()
+			}
+		}
+	}
+
+	private func enqueueReminderMutation<Output>(
+		_ operation: @escaping @MainActor () async throws -> Output
+	) async -> Result<Output, Error> {
+		let previous = reminderMutationTail
+		return await withCheckedContinuation { continuation in
+			reminderMutationTail = Task {
+				await previous?.value
+				do {
+					continuation.resume(returning: .success(try await operation()))
+				} catch {
+					continuation.resume(returning: .failure(error))
+				}
+			}
+		}
+	}
 
     private func setupNotificationCategories() async {
         let takenAction = UNNotificationAction(
@@ -51,7 +124,7 @@ final class NotificationManager: ObservableObject {
         )
 
         let medicationCategory = UNNotificationCategory(
-            identifier: "MEDICATION_REMINDER",
+			identifier: MedicationReminderRequest.categoryIdentifier,
             actions: [takenAction, skipAction],
             intentIdentifiers: [],
             hiddenPreviewsBodyPlaceholder: "Medication reminder",
@@ -102,52 +175,72 @@ final class NotificationManager: ObservableObject {
         repeatInterval: DateComponents? = nil
     ) async throws {
         logger.info("Scheduling medication reminder")
+		let request = MedicationReminderRequest.make(
+			medication: medication,
+			date: date,
+			isRecurring: isRecurring,
+			repeatInterval: repeatInterval,
+			showMedicationNames: showMedicationNames
+		)
+		let result = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			let legacyIdentifiers = MedicationReminderRequest.legacyIdentifiers(
+				matching: request,
+				in: pendingRequests
+			)
 
-        // Create notification content
-        let content = UNMutableNotificationContent()
-
-        if showMedicationNames {
-            content.title = medication.displayName
-            content.body = "It's time to take \(medication.displayName)"
-        } else {
-            content.title = "Medication Reminder"
-            content.body = "It's time to take your medication"
-        }
-
-        content.sound = .default
-        content.categoryIdentifier = "MEDICATION_REMINDER"
-        content.userInfo = ["medicationId": medication.id.uuidString]
-
-        // Create trigger
-        let trigger: UNNotificationTrigger
-        if isRecurring, let repeatInterval = repeatInterval {
-            trigger = UNCalendarNotificationTrigger(dateMatching: repeatInterval, repeats: true)
-        } else {
-            let dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-            trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
-        }
-
-        // Create request
-        let requestId = "\(medication.id.uuidString)-\(date.timeIntervalSince1970)"
-        let request = UNNotificationRequest(identifier: requestId, content: content, trigger: trigger)
-
-        // Schedule notification
-        try await notificationCenter.add(request)
+			try await self.notificationClient.add(request)
+			if !legacyIdentifiers.isEmpty {
+				self.notificationClient.removePending(legacyIdentifiers)
+			}
+		}
+		try result.get()
         logger.info("Reminder scheduled successfully")
     }
+
+	func reconcilePendingReminders() async {
+		_ = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			for plan in MedicationReminderRequest.reconciliationPlans(in: pendingRequests) {
+				do {
+					try await self.notificationClient.add(plan.requestToAdd)
+					if !plan.identifiersToRemove.isEmpty {
+						self.notificationClient.removePending(plan.identifiersToRemove)
+					}
+				} catch {
+					self.logger.logPrivacySafeError("Failed to reconcile medication reminder", error: error)
+				}
+			}
+		}
+	}
+
+	func acknowledgeDeliveredReminders(for medicationID: UUID) async {
+		_ = await enqueueReminderMutation {
+			let deliveredRequests = await self.notificationClient.deliveredRequests()
+			let identifiers = MedicationReminderRequest.deliveredIdentifiers(
+				for: medicationID,
+				in: deliveredRequests
+			)
+			if !identifiers.isEmpty {
+				self.notificationClient.removeDelivered(identifiers)
+			}
+		}
+	}
 
     func cancelReminder(for medication: ANMedicationConcept) async {
         logger.info("Cancelling medication reminders")
 
-        let pendingRequests = await notificationCenter.pendingNotificationRequests()
-        let requestsToCancel = pendingRequests
-            .filter { $0.identifier.contains(medication.id.uuidString) }
-            .map { $0.identifier }
+		_ = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			let requestsToCancel = pendingRequests
+				.filter { $0.identifier.contains(medication.id.uuidString) }
+				.map { $0.identifier }
 
-        if !requestsToCancel.isEmpty {
-            notificationCenter.removePendingNotificationRequests(withIdentifiers: requestsToCancel)
-            logger.info("Cancelled \(requestsToCancel.count) reminders")
-        }
+			if !requestsToCancel.isEmpty {
+				self.notificationClient.removePending(requestsToCancel)
+				self.logger.info("Cancelled \(requestsToCancel.count) reminders")
+			}
+		}
     }
 
     func getPendingReminders(for medication: ANMedicationConcept) async -> [UNNotificationRequest] {
@@ -163,12 +256,19 @@ final class NotificationManager: ObservableObject {
     }
 
     func cancelSpecificReminder(withIdentifier identifier: String) async {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
+		_ = await enqueueReminderMutation {
+			self.notificationClient.removePending([identifier])
+		}
         logger.info("Cancelled specific reminder")
     }
 
     func cancelAllReminders() async {
-        notificationCenter.removeAllPendingNotificationRequests()
+		_ = await enqueueReminderMutation {
+			let identifiers = await self.notificationClient.pendingRequests().map(\.identifier)
+			if !identifiers.isEmpty {
+				self.notificationClient.removePending(identifiers)
+			}
+		}
         logger.info("All reminders cancelled")
     }
 }
