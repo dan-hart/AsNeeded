@@ -64,6 +64,10 @@ Reconciliation receives the desired urgency for each medication and canonicalize
 
 `NotificationManager` owns an injected urgency store and uses it for scheduling, migration, reconciliation, and preference changes.
 
+Replace automatic reconciliation launched directly from `AsNeededApp.init()` with an idempotent startup operation invoked from the app root after `MigrationCoordinator` reports completion. Constructing `NotificationManager.shared` may still configure the singleton early, but it must not finalize urgency migration before application persistence is ready.
+
+The startup operation receives an asynchronous, throwing medication-inventory provider. A successful return means persistence loading is complete and the returned ID set is authoritative, including when it is empty for a new user. A thrown error means readiness or loading could not be established; in that case, log the failure, leave the urgency migration marker unset, and do not run medication-scoped reconciliation. Repeated app-root tasks may call startup safely, but only one startup pass runs at a time.
+
 Scheduling reads the medication's resolved preference before constructing a request. If the medication has no stored entry, scheduling first establishes an explicit `false` preference. Existing serialization through the reminder mutation queue remains the only path for pending-reminder mutations.
 
 Add an asynchronous operation that changes urgency for a medication:
@@ -81,7 +85,8 @@ Changing urgency affects pending and future reminders. Already delivered notific
 
 Before normal startup reconciliation, run a one-time migration when the migration-completed marker is absent:
 
-- Read the current medication IDs from an injected provider.
+- Await the readiness-gated medication-inventory provider.
+- Treat its successfully returned medication IDs as the current authoritative inventory.
 - Group pending medication reminders belonging to those current medication IDs.
 - If a current medication has pending reminders and no stored entry, assign and persist `true`.
 - If a stored entry exists, preserve it, including explicit `false`.
@@ -90,7 +95,7 @@ Before normal startup reconciliation, run a one-time migration when the migratio
 
 After migration, and on every later launch, reconcile current medications' pending requests against stored preferences. Missing entries resolve to normal. Rebuild requests while preserving PR #4's add-before-remove ordering, deterministic identifiers, and duplicate cleanup.
 
-If migration persistence fails, leave the marker unset and use urgent as the effective value for eligible existing reminders during that reconciliation pass so they are not silently downgraded. Log the failure and retry migration at the next launch.
+If the inventory provider or migration persistence fails, leave the marker unset. A provider failure stops medication-scoped reconciliation because an empty-but-not-loaded inventory must not be treated as authoritative. A preference-persistence failure uses urgent as the effective value for eligible existing reminders during that reconciliation pass so they are not silently downgraded. Log either failure and retry at the next startup.
 
 An ordinary settings reset clears the preference dictionary but preserves the migration marker. Consequently, pending reminders resolve to the normal default during the next reconciliation instead of being re-migrated to urgent. The marker is device-local and is never restored from an export.
 
@@ -161,6 +166,10 @@ Use Swift Testing and focused suites.
 
 ### Notification Manager
 
+- Startup waits for the medication-inventory provider before migration or reconciliation.
+- A provider failure leaves the completion marker unset and schedules no medication-scoped reconciliation work.
+- An authoritative empty inventory may complete migration for a new user.
+- Repeated startup calls are idempotent and serialized.
 - New schedules use the stored preference.
 - Changing urgency updates every pending reminder for the selected medication and no others.
 - Successful updates persist the preference.
