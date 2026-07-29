@@ -19,6 +19,7 @@ public final class DataStore {
 		var beforeEventInsert: (ANEventConcept) throws -> Void = { _ in }
 		var beforeRollbackMedications: () throws -> Void = {}
 		var beforeExplicitClearUserData: () throws -> Void = {}
+		var beforeExplicitClearEvents: () throws -> Void = {}
 
 		static var none: ImportFailureInjection { ImportFailureInjection() }
 	}
@@ -648,17 +649,28 @@ public final class DataStore {
     /// Clear only user data (medications and events)
     public func clearUserData() async throws {
         logger.warning("Clearing user data (medications and events)")
-		let medicationIDs = Set(medications.map(\.id))
+		let priorMedicationIDs = Set(medications.map(\.id))
         do {
             try await medicationsStore.removeAll()
+			try importFailureInjection.beforeExplicitClearEvents()
             try await eventsStore.removeAll()
-			await cleanNotificationArtifacts(for: medicationIDs)
+			await cleanRemovedNotificationArtifacts(from: priorMedicationIDs)
             logger.info("Successfully cleared all user data")
         } catch {
+			await cleanRemovedNotificationArtifacts(from: priorMedicationIDs)
             logger.logPrivacySafeError("Failed to clear user data", error: error)
             throw error
         }
     }
+
+	private func cleanRemovedNotificationArtifacts(
+		from priorMedicationIDs: Set<UUID>
+	) async {
+		let currentMedicationIDs = Set(medications.map(\.id))
+		await cleanNotificationArtifacts(
+			for: priorMedicationIDs.subtracting(currentMedicationIDs)
+		)
+	}
 
 	private func cleanNotificationArtifacts(for medicationIDs: Set<UUID>) async {
 		guard !medicationIDs.isEmpty else {

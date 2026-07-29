@@ -1371,6 +1371,208 @@ struct NotificationManagerTests {
 		#expect(fixture.store.preference(for: medication.id) == nil)
 	}
 
+	@Test("Queued medication cleanup wins after an in-flight schedule", .timeLimit(.minutes(1)))
+	func queuedMedicationCleanupWinsAfterSchedule() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let date = Date(timeIntervalSince1970: 1_900_000_000)
+		let request = MedicationReminderRequest.make(
+			medication: medication,
+			date: date,
+			isRecurring: false,
+			isUrgent: false,
+			showMedicationNames: false
+		)
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient()
+		fake.addGate = addGate
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		let scheduling = Task {
+			try await manager.scheduleReminder(
+				for: medication,
+				date: date,
+				isRecurring: false
+			)
+		}
+
+		await addGate.waitUntilSuspended()
+		let cleanupStarted = TestAsyncSignal()
+		let cleanup = Task {
+			cleanupStarted.signal()
+			await manager.removeMedicationNotificationArtifacts(for: [medication.id])
+		}
+		await cleanupStarted.wait()
+
+		addGate.resume()
+		fake.addGate = nil
+		try await scheduling.value
+		await cleanup.value
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(request.identifier),
+			.finishAdd(request.identifier),
+			.pendingRequests,
+			.deliveredRequests,
+			.removePending([request.identifier]),
+		])
+		#expect(fake.pendingRequests.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+	}
+
+	@Test("Urgency update after cleanup cannot recreate removed medication state")
+	func urgencyUpdateAfterCleanupFailsMedicationExistenceCheck() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(false, for: medication.id))
+		let pending = recurringRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [pending])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store,
+			medicationExists: { _ in false }
+		)
+
+		await manager.removeMedicationNotificationArtifacts(for: [medication.id])
+		let operationsAfterCleanup = fake.operations
+
+		do {
+			try await manager.setUrgent(true, for: medication.id)
+			Issue.record("Expected urgency update for removed medication to fail")
+		} catch let error as NotificationManager.OperationError {
+			#expect(error == .medicationNotFound)
+		} catch {
+			Issue.record("Expected medication-not-found error, received \(error)")
+		}
+
+		#expect(fake.operations == operationsAfterCleanup)
+		#expect(fake.pendingRequests.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+	}
+
+	@Test("Schedule after cleanup cannot recreate removed medication state")
+	func scheduleAfterCleanupFailsMedicationExistenceCheck() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(true, for: medication.id))
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store,
+			medicationExists: { _ in false }
+		)
+
+		await manager.removeMedicationNotificationArtifacts(for: [medication.id])
+		let operationsAfterCleanup = fake.operations
+
+		do {
+			try await manager.scheduleReminder(
+				for: medication,
+				date: Date(timeIntervalSince1970: 1_900_000_000),
+				isRecurring: false
+			)
+			Issue.record("Expected schedule for removed medication to fail")
+		} catch let error as NotificationManager.OperationError {
+			#expect(error == .medicationNotFound)
+		} catch {
+			Issue.record("Expected medication-not-found error, received \(error)")
+		}
+
+		#expect(fake.operations == operationsAfterCleanup)
+		#expect(fake.pendingRequests.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+	}
+
+	@Test("Medication existence provider failure propagates before schedule mutation")
+	func medicationExistenceProviderFailurePreventsScheduleMutation() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store,
+			medicationExists: { _ in
+				throw NotificationManagerTestError.providerFailed
+			}
+		)
+
+		do {
+			try await manager.scheduleReminder(
+				for: medication,
+				date: Date(timeIntervalSince1970: 1_900_000_000),
+				isRecurring: false
+			)
+			Issue.record("Expected medication existence provider to fail")
+		} catch let error as NotificationManagerTestError {
+			#expect(error == .providerFailed)
+		} catch {
+			Issue.record("Expected provider error, received \(error)")
+		}
+
+		#expect(fake.operations.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+	}
+
+	@Test("Failed atomic multi-medication preference cleanup preserves every preference")
+	func failedAtomicPreferenceCleanupPreservesAllPreferences() async throws {
+		var writerCalls = 0
+		let fixture = try makeUrgencyStore(
+			writer: { _, _, _ in
+				writerCalls += 1
+			}
+		)
+		defer {
+			fixture.cleanUp()
+		}
+		let firstTarget = createTestMedication(name: "First")
+		let secondTarget = createTestMedication(name: "Second")
+		let retainedMedication = createTestMedication(name: "Retained")
+		let priorPreferences = [
+			firstTarget.id.uuidString: true,
+			secondTarget.id.uuidString: false,
+			retainedMedication.id.uuidString: true,
+		]
+		let priorData = try JSONEncoder().encode(priorPreferences)
+		fixture.defaults.set(
+			priorData,
+			forKey: UserDefaultsKeys.medicationNotificationUrgency
+		)
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.removeMedicationNotificationArtifacts(
+			for: [firstTarget.id, secondTarget.id]
+		)
+
+		#expect(writerCalls == 1)
+		#expect(
+			fixture.defaults.data(
+				forKey: UserDefaultsKeys.medicationNotificationUrgency
+			) == priorData
+		)
+		#expect(fixture.store.preference(for: firstTarget.id) == true)
+		#expect(fixture.store.preference(for: secondTarget.id) == false)
+		#expect(fixture.store.preference(for: retainedMedication.id) == true)
+	}
+
 	// MARK: - Delivered Reminder Tests
 	@Test("Acknowledging delivered reminders preserves pending recurrence")
 	func acknowledgingDeliveredRemindersPreservesPendingRecurrence() async throws {

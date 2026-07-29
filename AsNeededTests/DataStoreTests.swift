@@ -266,6 +266,44 @@ struct DataStoreTests {
 		#expect(storesWereEmptyAtCleanup)
 	}
 
+	@Test("Clear failure after medication removal cleans absent medication artifacts and preserves the error")
+	func clearFailureAfterMedicationRemovalCleansAbsentMedicationArtifacts() async throws {
+		let firstMedication = createTestMedication(name: "First")
+		let secondMedication = createTestMedication(name: "Second")
+		var cleanedMedicationIDs: Set<UUID>?
+		var stateAtCleanup: (medications: Int, events: Int)?
+		var store: DataStore?
+		let createdStore = DataStore(
+			testIdentifier: "partial-clear-notification-cleanup",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			importFailureInjection: .init(
+				beforeExplicitClearEvents: { throw DataStoreTestError.clearFailed }
+			),
+			notificationArtifactCleanup: { medicationIDs in
+				cleanedMedicationIDs = medicationIDs
+				stateAtCleanup = (
+					medications: store?.medications.count ?? -1,
+					events: store?.events.count ?? -1
+				)
+			}
+		)
+		store = createdStore
+		try await createdStore.addMedication(firstMedication)
+		try await createdStore.addMedication(secondMedication)
+		try await createdStore.addEvent(createTestEvent(medication: firstMedication))
+
+		await #expect(throws: DataStoreTestError.self) {
+			try await createdStore.clearUserData()
+		}
+
+		#expect(createdStore.medications.isEmpty)
+		#expect(createdStore.events.count == 1)
+		#expect(cleanedMedicationIDs == [firstMedication.id, secondMedication.id])
+		#expect(stateAtCleanup?.medications == 0)
+		#expect(stateAtCleanup?.events == 1)
+	}
+
     @Test("Delete medication with associated events removes all related data")
     func deleteMedicationWithAssociatedEvents() async throws {
         // Given
@@ -718,6 +756,7 @@ private final class DataStoreTestAsyncSignal {
 }
 
 private enum DataStoreTestError: Error, Equatable {
+	case clearFailed
 	case importFailed
 	case medicationInventoryUnavailable
 }

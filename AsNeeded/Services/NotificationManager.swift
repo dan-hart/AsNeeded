@@ -50,12 +50,19 @@ struct MedicationNotificationClient {
 
 @MainActor
 final class NotificationManager: ObservableObject {
+	typealias MedicationExistenceProvider = @MainActor (UUID) async throws -> Bool
+
 	static let shared: NotificationManager = {
 		let notificationCenter = UNUserNotificationCenter.current()
 		return NotificationManager(
 			notificationCenter: notificationCenter,
 			notificationClient: .live(notificationCenter: notificationCenter),
 			urgencyStore: .shared,
+			medicationExists: { medicationID in
+				let currentMedicationIDs =
+					try await DataStore.shared.currentMedicationIDsWhenReady()
+				return currentMedicationIDs.contains(medicationID)
+			},
 			performsSystemSetup: true
 		)
 	}()
@@ -78,6 +85,7 @@ final class NotificationManager: ObservableObject {
 	}
 
 	enum OperationError: Error, Equatable {
+		case medicationNotFound
 		case preferencePersistenceFailed
 		case urgencyRequestCreationFailed
 	}
@@ -93,6 +101,7 @@ final class NotificationManager: ObservableObject {
 	private let notificationCenter: UNUserNotificationCenter
 	private let notificationClient: MedicationNotificationClient
 	private let urgencyStore: MedicationNotificationUrgencyStore
+	private let medicationExists: MedicationExistenceProvider
 	private let performsSystemSetup: Bool
 	private var reminderMutationTail: Task<Void, Never>?
 	private var startupTask: Task<Bool, Never>?
@@ -102,11 +111,13 @@ final class NotificationManager: ObservableObject {
 		notificationCenter: UNUserNotificationCenter = .current(),
 		notificationClient: MedicationNotificationClient,
 		urgencyStore: MedicationNotificationUrgencyStore = .shared,
+		medicationExists: @escaping MedicationExistenceProvider = { _ in true },
 		performsSystemSetup: Bool = false
 	) {
 		self.notificationCenter = notificationCenter
 		self.notificationClient = notificationClient
 		self.urgencyStore = urgencyStore
+		self.medicationExists = medicationExists
 		self.performsSystemSetup = performsSystemSetup
 		showMedicationNames = UserDefaults.standard.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
 	}
@@ -312,6 +323,9 @@ final class NotificationManager: ObservableObject {
     ) async throws {
         logger.info("Scheduling medication reminder")
 		let result = await enqueueReminderMutation {
+			guard try await self.medicationExists(medication.id) else {
+				throw OperationError.medicationNotFound
+			}
 			let isUrgent: Bool
 			if let preference = self.urgencyStore.preference(for: medication.id) {
 				isUrgent = preference
@@ -350,6 +364,9 @@ final class NotificationManager: ObservableObject {
 
 	func setUrgent(_ isUrgent: Bool, for medicationID: UUID) async throws {
 		let result = await enqueueReminderMutation {
+			guard try await self.medicationExists(medicationID) else {
+				throw OperationError.medicationNotFound
+			}
 			let pendingRequests = await self.notificationClient.pendingRequests()
 			let originalRequests = pendingRequests.filter {
 				Self.medicationID(for: $0) == medicationID
@@ -456,14 +473,19 @@ final class NotificationManager: ObservableObject {
 				self.notificationClient.removeDelivered(deliveredIdentifiers)
 			}
 
-			for medicationID in medicationIDs.sorted(by: {
-				$0.uuidString < $1.uuidString
-			}) {
-				if !self.urgencyStore.removePreference(for: medicationID) {
-					self.logger.error(
-						"Removed medication notification requests, but its urgency preference could not be removed safely"
-					)
-				}
+			guard var preferences = self.urgencyStore.allPreferences() else {
+				self.logger.error(
+					"Removed medication notification requests, but urgency preferences are corrupt"
+				)
+				return
+			}
+			for medicationID in medicationIDs {
+				preferences.removeValue(forKey: medicationID.uuidString)
+			}
+			if !self.urgencyStore.replaceAll(with: preferences) {
+				self.logger.error(
+					"Removed medication notification requests, but urgency preferences could not be removed safely"
+				)
 			}
 		}
 	}
