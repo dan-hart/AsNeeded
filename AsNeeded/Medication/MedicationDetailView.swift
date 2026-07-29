@@ -18,12 +18,16 @@ struct MedicationDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+	@Environment(\.scenePhase) private var scenePhase
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
     @State private var showEditSheet = false
     @State private var showReminderSheet = false
     @State private var showReminderList = false
     @State private var reminderCount = 0
+	@State private var urgentNotificationsEnabled = false
+	@State private var isUpdatingNotificationUrgency = false
+	@State private var notificationUrgencyError: String?
     @State private var showAppearancePicker = false
     @State private var heroIconScale: CGFloat = 1.0
     @State private var selectedColorHex: String?
@@ -62,6 +66,15 @@ struct MedicationDetailView: View {
     private var cardMaxWidth: CGFloat? {
         isRegularWidth ? 600 : nil
     }
+
+	private var hasUsableNotificationAuthorization: Bool {
+		switch notificationManager.authorizationStatus {
+		case .authorized, .provisional, .ephemeral:
+			true
+		case .notDetermined, .denied, .unknown:
+			false
+		}
+	}
 
     init(medication: ANMedicationConcept) {
         medicationId = medication.id
@@ -122,7 +135,7 @@ struct MedicationDetailView: View {
         }
         .sheet(isPresented: $showReminderSheet) {
             Group {
-                if notificationManager.authorizationStatus == .authorized {
+                if hasUsableNotificationAuthorization {
                     ReminderConfigurationView(medication: medication)
                         .onDisappear {
                             Task {
@@ -173,7 +186,8 @@ struct MedicationDetailView: View {
         }
         .task {
             await refreshMedication()
-            if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
+			urgentNotificationsEnabled = notificationManager.isUrgent(for: medication.id)
+            if hasUsableNotificationAuthorization || notificationManager.authorizationStatus == .notDetermined {
                 await loadReminderCount()
             }
             // Initialize selected color and symbol
@@ -185,6 +199,31 @@ struct MedicationDetailView: View {
                 await refreshMedication()
             }
         }
+		.onChange(of: scenePhase) { _, phase in
+			guard phase == .active else { return }
+			Task {
+				await notificationManager.checkAuthorizationStatus()
+			}
+		}
+		.alert(
+			"Urgent Notifications",
+			isPresented: Binding(
+				get: { notificationUrgencyError != nil },
+				set: { isPresented in
+					if !isPresented {
+						notificationUrgencyError = nil
+					}
+				}
+			)
+		) {
+			Button("OK") {
+				notificationUrgencyError = nil
+			}
+		} message: {
+			if let notificationUrgencyError {
+				Text(notificationUrgencyError)
+			}
+		}
     }
 
     // MARK: - Main Content
@@ -588,8 +627,40 @@ struct MedicationDetailView: View {
                 }
             }
 
-            if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
+            if hasUsableNotificationAuthorization || notificationManager.authorizationStatus == .notDetermined {
                 VStack(spacing: rowSpacing) {
+					if hasUsableNotificationAuthorization {
+						VStack(alignment: .leading, spacing: rowSpacing) {
+							Toggle(isOn: Binding(
+								get: { urgentNotificationsEnabled },
+								set: { requestedValue in
+									guard !isUpdatingNotificationUrgency else { return }
+									Task {
+										await updateNotificationUrgency(to: requestedValue)
+									}
+								}
+							)) {
+								VStack(alignment: .leading, spacing: 4) {
+									Text("Urgent Notifications")
+										.font(.customFont(fontFamily, style: .body, weight: .medium))
+									Text("Can notify you through Focus and Scheduled Summary.")
+										.font(.customFont(fontFamily, style: .caption))
+										.foregroundStyle(.secondary)
+								}
+							}
+							.tint(.accent)
+							.disabled(isUpdatingNotificationUrgency)
+
+							if urgentNotificationsEnabled {
+								notificationUrgencyStatus
+							}
+						}
+						.padding(.vertical, rowSpacing)
+						.padding(.horizontal, detailSpacing)
+						.background(Color(.tertiarySystemGroupedBackground))
+						.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
+					}
+
                     if reminderCount > 0 {
                         Button {
                             showReminderList = true
@@ -627,7 +698,8 @@ struct MedicationDetailView: View {
                     }
                     .buttonStyle(.plain)
                 }
-            } else if notificationManager.authorizationStatus == .denied {
+            } else if notificationManager.authorizationStatus == .denied ||
+						notificationManager.authorizationStatus == .unknown {
                 VStack(spacing: rowSpacing) {
                     HStack(spacing: contentSpacing) {
                         Image(systemSymbol: .bellSlash)
@@ -686,6 +758,37 @@ struct MedicationDetailView: View {
 
     // MARK: - Helper Views
 
+	@ViewBuilder
+	private var notificationUrgencyStatus: some View {
+		switch notificationManager.timeSensitiveStatus {
+		case .enabled:
+			EmptyView()
+		case .disabled:
+			VStack(alignment: .leading, spacing: 4) {
+				Text("Time Sensitive alerts are disabled in iOS Settings.")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
+
+				Button("Open Settings") {
+					if let url = URL(string: UIApplication.openSettingsURLString) {
+						UIApplication.shared.open(url)
+					}
+				}
+				.font(.customFont(fontFamily, style: .caption, weight: .medium))
+				.foregroundStyle(.accent)
+				.buttonStyle(.plain)
+			}
+		case .notSupported:
+			Text("Urgent delivery is unavailable for this build or device.")
+				.font(.customFont(fontFamily, style: .caption))
+				.foregroundStyle(.secondary)
+		case .unknown:
+			Text("Urgent delivery status is unavailable.")
+				.font(.customFont(fontFamily, style: .caption))
+				.foregroundStyle(.secondary)
+		}
+	}
+
     private func detailRow(label: String, value: String, valueColor: Color = .secondary) -> some View {
         HStack {
             Text(label)
@@ -740,6 +843,21 @@ struct MedicationDetailView: View {
             reminderCount = reminders.count
         }
     }
+
+	private func updateNotificationUrgency(to requestedValue: Bool) async {
+		guard !isUpdatingNotificationUrgency else { return }
+		let previousValue = urgentNotificationsEnabled
+		urgentNotificationsEnabled = requestedValue
+		isUpdatingNotificationUrgency = true
+		defer { isUpdatingNotificationUrgency = false }
+
+		do {
+			try await notificationManager.setUrgent(requestedValue, for: medication.id)
+		} catch {
+			urgentNotificationsEnabled = previousValue
+			notificationUrgencyError = "Urgent notification settings could not be updated. Please try again."
+		}
+	}
 
     private func lastDoseDate() -> Date? {
         let events = DataStore.shared.events
