@@ -219,6 +219,7 @@ struct NotificationManagerTests {
 			date: date,
 			isRecurring: true,
 			repeatInterval: repeatInterval,
+			isUrgent: true,
 			showMedicationNames: false
 		)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
@@ -251,6 +252,7 @@ struct NotificationManagerTests {
 			date: date,
 			isRecurring: true,
 			repeatInterval: repeatInterval,
+			isUrgent: true,
 			showMedicationNames: false
 		)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
@@ -361,6 +363,7 @@ struct NotificationManagerTests {
 			date: date,
 			isRecurring: true,
 			repeatInterval: repeatInterval,
+			isUrgent: true,
 			showMedicationNames: false
 		)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
@@ -772,6 +775,7 @@ struct NotificationManagerTests {
 			date: Date(timeIntervalSince1970: 1_800_000_000),
 			isRecurring: true,
 			repeatInterval: DateComponents(hour: 8, minute: 30),
+			isUrgent: true,
 			showMedicationNames: false
 		)
 	}

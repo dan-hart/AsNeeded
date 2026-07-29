@@ -12,15 +12,35 @@ struct MedicationReminderRequestTests {
 		return calendar
 	}()
 
-	@Test("Request is time sensitive")
-	func requestIsTimeSensitive() {
+	@Test("Urgent request is time sensitive")
+	func urgentRequestIsTimeSensitive() {
 		let medication = makeMedication()
-		let request = makeRequest(for: medication)
+		let request = makeRequest(for: medication, isUrgent: true)
 
 		#expect(request.content.interruptionLevel == .timeSensitive)
 		#expect(request.content.categoryIdentifier == MedicationReminderRequest.categoryIdentifier)
 		#expect(request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String == medication.id.uuidString)
 		#expect(request.content.sound == .default)
+	}
+
+	@Test("Normal request is active")
+	func normalRequestIsActive() {
+		let request = makeRequest(isUrgent: false)
+
+		#expect(request.content.interruptionLevel == .active)
+	}
+
+	@Test("Urgency does not change request identity or trigger")
+	func urgencyDoesNotChangeIdentityOrTrigger() {
+		let medication = makeMedication()
+		let urgent = makeRequest(for: medication, isUrgent: true)
+		let normal = makeRequest(for: medication, isUrgent: false)
+		let urgentTrigger = urgent.trigger as? UNCalendarNotificationTrigger
+		let normalTrigger = normal.trigger as? UNCalendarNotificationTrigger
+
+		#expect(urgent.identifier == normal.identifier)
+		#expect(urgentTrigger?.dateComponents == normalTrigger?.dateComponents)
+		#expect(urgentTrigger?.repeats == normalTrigger?.repeats)
 	}
 
 	@Test("Request shows medication names when enabled")
@@ -30,6 +50,7 @@ struct MedicationReminderRequestTests {
 			medication: medication,
 			date: Date(timeIntervalSince1970: 1_800_000_000),
 			isRecurring: false,
+			isUrgent: false,
 			showMedicationNames: true,
 			calendar: calendar
 		)
@@ -40,7 +61,7 @@ struct MedicationReminderRequestTests {
 
 	@Test("Request hides medication names when disabled")
 	func requestHidesMedicationNamesWhenDisabled() {
-		let request = makeRequest(showMedicationNames: false)
+		let request = makeRequest(isUrgent: false, showMedicationNames: false)
 
 		#expect(request.content.title == "Medication Reminder")
 		#expect(request.content.body == "It's time to take your medication")
@@ -50,8 +71,8 @@ struct MedicationReminderRequestTests {
 	func equivalentDailyRemindersHaveStableIdentifiers() {
 		let medication = makeMedication()
 		let interval = DateComponents(year: 2030, month: 4, day: 2, hour: 8, minute: 30, second: 45)
-		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_000), isRecurring: true, repeatInterval: interval, showMedicationNames: false, calendar: calendar)
-		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_900_000_000), isRecurring: true, repeatInterval: interval, showMedicationNames: false, calendar: calendar)
+		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_000), isRecurring: true, repeatInterval: interval, isUrgent: false, showMedicationNames: false, calendar: calendar)
+		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_900_000_000), isRecurring: true, repeatInterval: interval, isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(first.identifier == second.identifier)
 	}
@@ -59,8 +80,8 @@ struct MedicationReminderRequestTests {
 	@Test("Different recurring times have different identifiers")
 	func differentRecurringTimesHaveDifferentIdentifiers() {
 		let medication = makeMedication()
-		let first = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 8, minute: 30), showMedicationNames: false, calendar: calendar)
-		let second = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 9, minute: 30), showMedicationNames: false, calendar: calendar)
+		let first = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 8, minute: 30), isUrgent: false, showMedicationNames: false, calendar: calendar)
+		let second = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 9, minute: 30), isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(first.identifier != second.identifier)
 	}
@@ -74,6 +95,7 @@ struct MedicationReminderRequestTests {
 			date: Date(),
 			isRecurring: true,
 			repeatInterval: interval,
+			isUrgent: false,
 			showMedicationNames: false,
 			calendar: calendar
 		)
@@ -95,8 +117,8 @@ struct MedicationReminderRequestTests {
 		monday.weekday = 2
 		var tuesday = DateComponents(hour: 8, minute: 30)
 		tuesday.weekday = 3
-		let first = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: monday, showMedicationNames: false, calendar: calendar)
-		let second = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: tuesday, showMedicationNames: false, calendar: calendar)
+		let first = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: monday, isUrgent: false, showMedicationNames: false, calendar: calendar)
+		let second = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: tuesday, isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(first.identifier != second.identifier)
 	}
@@ -104,8 +126,8 @@ struct MedicationReminderRequestTests {
 	@Test("One-time reminders in the same minute have stable identifiers")
 	func oneTimeRemindersInSameMinuteHaveStableIdentifiers() {
 		let medication = makeMedication()
-		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_001), isRecurring: false, showMedicationNames: false, calendar: calendar)
-		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_059), isRecurring: false, showMedicationNames: false, calendar: calendar)
+		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_001), isRecurring: false, isUrgent: false, showMedicationNames: false, calendar: calendar)
+		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_059), isRecurring: false, isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(first.identifier == second.identifier)
 	}
@@ -113,8 +135,8 @@ struct MedicationReminderRequestTests {
 	@Test("One-time reminders in different minutes have different identifiers")
 	func oneTimeRemindersInDifferentMinutesHaveDifferentIdentifiers() {
 		let medication = makeMedication()
-		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_000), isRecurring: false, showMedicationNames: false, calendar: calendar)
-		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_060), isRecurring: false, showMedicationNames: false, calendar: calendar)
+		let first = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_000), isRecurring: false, isUrgent: false, showMedicationNames: false, calendar: calendar)
+		let second = MedicationReminderRequest.make(medication: medication, date: Date(timeIntervalSince1970: 1_800_000_060), isRecurring: false, isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(first.identifier != second.identifier)
 	}
@@ -122,7 +144,7 @@ struct MedicationReminderRequestTests {
 	@Test("Duplicate filtering retains the canonical identifier")
 	func duplicateFilteringRetainsCanonicalIdentifier() {
 		let medication = makeMedication()
-		let canonical = recurringRequest(for: medication)
+		let canonical = recurringRequest(for: medication, isUrgent: false)
 		let legacy = legacyRequest(from: canonical, identifier: "\(medication.id.uuidString)-1800000000.0")
 
 		#expect(MedicationReminderRequest.duplicateIdentifiers(in: [canonical, legacy]) == [legacy.identifier])
@@ -130,7 +152,7 @@ struct MedicationReminderRequestTests {
 
 	@Test("Duplicate filtering retains the smallest legacy identifier")
 	func duplicateFilteringRetainsSmallestLegacyIdentifier() {
-		let canonical = recurringRequest(for: makeMedication())
+		let canonical = recurringRequest(for: makeMedication(), isUrgent: false)
 		let firstLegacy = legacyRequest(from: canonical, identifier: "legacy-100")
 		let secondLegacy = legacyRequest(from: canonical, identifier: "legacy-200")
 		let thirdLegacy = legacyRequest(from: canonical, identifier: "legacy-300")
@@ -140,12 +162,12 @@ struct MedicationReminderRequestTests {
 
 	@Test("A single request has no duplicates")
 	func singleRequestHasNoDuplicates() {
-		#expect(MedicationReminderRequest.duplicateIdentifiers(in: [makeRequest()]).isEmpty)
+		#expect(MedicationReminderRequest.duplicateIdentifiers(in: [makeRequest(isUrgent: false)]).isEmpty)
 	}
 
 	@Test("Duplicate filtering ignores other categories")
 	func duplicateFilteringIgnoresOtherCategories() {
-		let canonical = recurringRequest(for: makeMedication())
+		let canonical = recurringRequest(for: makeMedication(), isUrgent: false)
 		let otherCategory = request(from: canonical, identifier: "other-category", categoryIdentifier: "OTHER")
 
 		#expect(MedicationReminderRequest.duplicateIdentifiers(in: [canonical, otherCategory]).isEmpty)
@@ -154,10 +176,10 @@ struct MedicationReminderRequestTests {
 	@Test("Legacy matching excludes the incoming and deterministic identifiers")
 	func legacyMatchingExcludesIncomingAndDeterministicIdentifiers() {
 		let medication = makeMedication()
-		let canonical = recurringRequest(for: medication)
+		let canonical = recurringRequest(for: medication, isUrgent: false)
 		let legacy = legacyRequest(from: canonical, identifier: "\(medication.id.uuidString)-1800000000.0")
 		let anotherLegacy = legacyRequest(from: canonical, identifier: "\(medication.id.uuidString)-1800000001.0")
-		let other = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 9, minute: 30), showMedicationNames: false, calendar: calendar)
+		let other = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: DateComponents(hour: 9, minute: 30), isUrgent: false, showMedicationNames: false, calendar: calendar)
 
 		#expect(MedicationReminderRequest.legacyIdentifiers(matching: legacy, in: [canonical, legacy, anotherLegacy, other]) == [anotherLegacy.identifier])
 	}
@@ -166,8 +188,8 @@ struct MedicationReminderRequestTests {
 	func deliveredMatchingOnlyReturnsTargetMedicationCategory() {
 		let medication = makeMedication()
 		let otherMedication = makeMedication()
-		let target = makeRequest(for: medication)
-		let otherMedicationRequest = makeRequest(for: otherMedication)
+		let target = makeRequest(for: medication, isUrgent: false)
+		let otherMedicationRequest = makeRequest(for: otherMedication, isUrgent: false)
 		let otherCategory = request(from: target, identifier: "other-category", categoryIdentifier: "OTHER")
 
 		#expect(MedicationReminderRequest.deliveredIdentifiers(for: medication.id, in: [otherMedicationRequest, otherCategory, target]) == [target.identifier])
@@ -176,7 +198,7 @@ struct MedicationReminderRequestTests {
 	@Test("Delivered matching accepts requests without a trigger")
 	func deliveredMatchingAcceptsRequestsWithoutATrigger() {
 		let medication = makeMedication()
-		let source = makeRequest(for: medication)
+		let source = makeRequest(for: medication, isUrgent: false)
 		let delivered = UNNotificationRequest(identifier: "delivered", content: source.content, trigger: nil)
 
 		#expect(MedicationReminderRequest.deliveredIdentifiers(for: medication.id, in: [delivered]) == ["delivered"])
@@ -184,10 +206,14 @@ struct MedicationReminderRequestTests {
 
 	@Test("A single legacy request gets a canonical migration plan")
 	func singleLegacyRequestGetsCanonicalMigrationPlan() {
-		let canonical = recurringRequest(for: makeMedication())
+		let medication = makeMedication()
+		let canonical = recurringRequest(for: medication, isUrgent: true)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-100")
 
-		let plans = MedicationReminderRequest.reconciliationPlans(in: [legacy])
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [legacy],
+			urgencyByMedicationID: [medication.id: true]
+		)
 
 		#expect(plans.count == 1)
 		#expect(plans.first?.requestToAdd.identifier == canonical.identifier)
@@ -198,11 +224,15 @@ struct MedicationReminderRequestTests {
 
 	@Test("Legacy-only duplicates use the lexicographically first source")
 	func legacyOnlyDuplicatesUseLexicographicallyFirstSource() {
-		let canonical = recurringRequest(for: makeMedication())
+		let medication = makeMedication()
+		let canonical = recurringRequest(for: medication, isUrgent: true)
 		let later = request(from: canonical, identifier: "legacy-200", categoryIdentifier: MedicationReminderRequest.categoryIdentifier, title: "Later")
 		let first = request(from: canonical, identifier: "legacy-100", categoryIdentifier: MedicationReminderRequest.categoryIdentifier, title: "First")
 
-		let plans = MedicationReminderRequest.reconciliationPlans(in: [later, first])
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [later, first],
+			urgencyByMedicationID: [medication.id: true]
+		)
 
 		#expect(plans.count == 1)
 		#expect(plans.first?.requestToAdd.identifier == canonical.identifier)
@@ -212,10 +242,14 @@ struct MedicationReminderRequestTests {
 
 	@Test("Canonical and legacy requests clean up only the legacy identifier")
 	func canonicalAndLegacyRequestsCleanUpOnlyLegacyIdentifier() {
-		let canonical = recurringRequest(for: makeMedication())
+		let medication = makeMedication()
+		let canonical = recurringRequest(for: medication, isUrgent: true)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-100")
 
-		let plans = MedicationReminderRequest.reconciliationPlans(in: [legacy, canonical])
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [legacy, canonical],
+			urgencyByMedicationID: [medication.id: true]
+		)
 
 		#expect(plans.count == 1)
 		#expect(plans.first?.requestToAdd.identifier == canonical.identifier)
@@ -224,15 +258,27 @@ struct MedicationReminderRequestTests {
 
 	@Test("A current canonical request needs no reconciliation")
 	func currentCanonicalRequestNeedsNoReconciliation() {
-		#expect(MedicationReminderRequest.reconciliationPlans(in: [recurringRequest(for: makeMedication())]).isEmpty)
+		let medication = makeMedication()
+		let request = recurringRequest(for: medication, isUrgent: false)
+
+		#expect(
+			MedicationReminderRequest.reconciliationPlans(
+				in: [request],
+				urgencyByMedicationID: [medication.id: false]
+			).isEmpty
+		)
 	}
 
-	@Test("A non-time-sensitive canonical request gets a replacement plan")
-	func nonTimeSensitiveCanonicalRequestGetsReplacementPlan() {
-		let canonical = recurringRequest(for: makeMedication())
+	@Test("An active canonical request gets a time-sensitive replacement plan")
+	func activeCanonicalRequestGetsTimeSensitiveReplacementPlan() {
+		let medication = makeMedication()
+		let canonical = recurringRequest(for: medication, isUrgent: true)
 		let outdated = request(from: canonical, identifier: canonical.identifier, categoryIdentifier: MedicationReminderRequest.categoryIdentifier, interruptionLevel: .active)
 
-		let plans = MedicationReminderRequest.reconciliationPlans(in: [outdated])
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [outdated],
+			urgencyByMedicationID: [medication.id: true]
+		)
 
 		#expect(plans.count == 1)
 		#expect(plans.first?.requestToAdd.identifier == canonical.identifier)
@@ -240,12 +286,52 @@ struct MedicationReminderRequestTests {
 		#expect(plans.first?.identifiersToRemove.isEmpty == true)
 	}
 
+	@Test("A time-sensitive canonical request gets an active replacement plan")
+	func timeSensitiveCanonicalRequestGetsActiveReplacementPlan() {
+		let medication = makeMedication()
+		let canonical = recurringRequest(for: medication, isUrgent: true)
+
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [canonical],
+			urgencyByMedicationID: [medication.id: false]
+		)
+
+		#expect(plans.count == 1)
+		#expect(plans.first?.requestToAdd.identifier == canonical.identifier)
+		#expect(plans.first?.requestToAdd.content.interruptionLevel == .active)
+		#expect(plans.first?.identifiersToRemove.isEmpty == true)
+	}
+
+	@Test("Reconciliation ignores medication IDs absent from the urgency map")
+	func reconciliationIgnoresMedicationIDsAbsentFromUrgencyMap() {
+		let medication = makeMedication()
+		let legacy = legacyRequest(
+			from: recurringRequest(for: medication, isUrgent: true),
+			identifier: "legacy-100"
+		)
+
+		#expect(
+			MedicationReminderRequest.reconciliationPlans(
+				in: [legacy],
+				urgencyByMedicationID: [:]
+			).isEmpty
+		)
+	}
+
 	@Test("Reconciliation plans are sorted by canonical identifier")
 	func reconciliationPlansAreSortedByCanonicalIdentifier() {
-		let first = legacyRequest(from: recurringRequest(for: makeMedication()), identifier: "legacy-z")
-		let second = legacyRequest(from: recurringRequest(for: makeMedication()), identifier: "legacy-a")
+		let firstMedication = makeMedication()
+		let secondMedication = makeMedication()
+		let first = legacyRequest(from: recurringRequest(for: firstMedication, isUrgent: true), identifier: "legacy-z")
+		let second = legacyRequest(from: recurringRequest(for: secondMedication, isUrgent: false), identifier: "legacy-a")
 
-		let plans = MedicationReminderRequest.reconciliationPlans(in: [first, second])
+		let plans = MedicationReminderRequest.reconciliationPlans(
+			in: [first, second],
+			urgencyByMedicationID: [
+				firstMedication.id: true,
+				secondMedication.id: false
+			]
+		)
 
 		#expect(plans.map(\.requestToAdd.identifier) == plans.map(\.requestToAdd.identifier).sorted())
 	}
@@ -255,7 +341,7 @@ struct MedicationReminderRequestTests {
 		let medication = makeMedication()
 		var weekly = DateComponents(hour: 8, minute: 30)
 		weekly.weekday = 3
-		let canonical = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: weekly, showMedicationNames: false, calendar: calendar)
+		let canonical = MedicationReminderRequest.make(medication: medication, date: Date(), isRecurring: true, repeatInterval: weekly, isUrgent: true, showMedicationNames: false, calendar: calendar)
 		let content = canonical.content.mutableCopy() as? UNMutableNotificationContent
 		#expect(content != nil)
 		guard let content else {
@@ -271,7 +357,10 @@ struct MedicationReminderRequestTests {
 			trigger: UNCalendarNotificationTrigger(dateMatching: legacyComponents, repeats: true)
 		)
 
-		let plan = MedicationReminderRequest.reconciliationPlans(in: [legacy]).first
+		let plan = MedicationReminderRequest.reconciliationPlans(
+			in: [legacy],
+			urgencyByMedicationID: [medication.id: true]
+		).first
 		let trigger = plan?.requestToAdd.trigger as? UNCalendarNotificationTrigger
 
 		#expect(plan?.requestToAdd.content.title == legacy.content.title)
@@ -288,26 +377,61 @@ struct MedicationReminderRequestTests {
 		#expect(trigger?.dateComponents.second == nil)
 	}
 
-	private func makeRequest(showMedicationNames: Bool = false) -> UNNotificationRequest {
-		makeRequest(for: makeMedication(), showMedicationNames: showMedicationNames)
+	@Test("Updating urgency makes a request time sensitive")
+	func updatingUrgencyMakesRequestTimeSensitive() {
+		let source = makeRequest(isUrgent: false)
+
+		let updated = MedicationReminderRequest.updatingUrgency(of: source, isUrgent: true)
+
+		#expect(updated?.content.interruptionLevel == .timeSensitive)
 	}
 
-	private func makeRequest(for medication: ANMedicationConcept, showMedicationNames: Bool = false) -> UNNotificationRequest {
+	@Test("Updating urgency makes a request active and preserves its request")
+	func updatingUrgencyMakesRequestActiveAndPreservesItsRequest() {
+		let source = makeRequest(isUrgent: true, showMedicationNames: true)
+		let sourceTrigger = source.trigger as? UNCalendarNotificationTrigger
+
+		let updated = MedicationReminderRequest.updatingUrgency(of: source, isUrgent: false)
+		let updatedTrigger = updated?.trigger as? UNCalendarNotificationTrigger
+
+		#expect(updated?.content.interruptionLevel == .active)
+		#expect(updated?.identifier == source.identifier)
+		#expect(updatedTrigger?.dateComponents == sourceTrigger?.dateComponents)
+		#expect(updatedTrigger?.repeats == sourceTrigger?.repeats)
+		#expect(updated?.content.title == source.content.title)
+		#expect(updated?.content.body == source.content.body)
+		#expect(updated?.content.sound == source.content.sound)
+		#expect(updated?.content.categoryIdentifier == source.content.categoryIdentifier)
+		#expect(updated?.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String ==
+			source.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String)
+	}
+
+	private func makeRequest(isUrgent: Bool, showMedicationNames: Bool = false) -> UNNotificationRequest {
+		makeRequest(for: makeMedication(), isUrgent: isUrgent, showMedicationNames: showMedicationNames)
+	}
+
+	private func makeRequest(
+		for medication: ANMedicationConcept,
+		isUrgent: Bool,
+		showMedicationNames: Bool = false
+	) -> UNNotificationRequest {
 		MedicationReminderRequest.make(
 			medication: medication,
 			date: Date(timeIntervalSince1970: 1_800_000_000),
 			isRecurring: false,
+			isUrgent: isUrgent,
 			showMedicationNames: showMedicationNames,
 			calendar: calendar
 		)
 	}
 
-	private func recurringRequest(for medication: ANMedicationConcept) -> UNNotificationRequest {
+	private func recurringRequest(for medication: ANMedicationConcept, isUrgent: Bool) -> UNNotificationRequest {
 		MedicationReminderRequest.make(
 			medication: medication,
 			date: Date(timeIntervalSince1970: 1_800_000_000),
 			isRecurring: true,
 			repeatInterval: DateComponents(hour: 8, minute: 30),
+			isUrgent: isUrgent,
 			showMedicationNames: false,
 			calendar: calendar
 		)

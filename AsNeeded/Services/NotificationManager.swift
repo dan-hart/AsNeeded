@@ -180,6 +180,7 @@ final class NotificationManager: ObservableObject {
 			date: date,
 			isRecurring: isRecurring,
 			repeatInterval: repeatInterval,
+			isUrgent: true,
 			showMedicationNames: showMedicationNames
 		)
 		let result = await enqueueReminderMutation {
@@ -201,7 +202,16 @@ final class NotificationManager: ObservableObject {
 	func reconcilePendingReminders() async {
 		_ = await enqueueReminderMutation {
 			let pendingRequests = await self.notificationClient.pendingRequests()
-			for plan in MedicationReminderRequest.reconciliationPlans(in: pendingRequests) {
+			let urgencyByMedicationID = pendingRequests.reduce(into: [UUID: Bool]()) { result, request in
+				guard let medicationID = MedicationReminderRequest.identity(for: request)?.medicationID else {
+					return
+				}
+				result[medicationID] = true
+			}
+			for plan in MedicationReminderRequest.reconciliationPlans(
+				in: pendingRequests,
+				urgencyByMedicationID: urgencyByMedicationID
+			) {
 				do {
 					try await self.notificationClient.add(plan.requestToAdd)
 					if !plan.identifiersToRemove.isEmpty {
