@@ -42,7 +42,7 @@ final class NotificationManager: ObservableObject {
 		return NotificationManager(
 			notificationCenter: notificationCenter,
 			notificationClient: .live(notificationCenter: notificationCenter),
-			startsAutomatically: true,
+			urgencyStore: .shared,
 			performsSystemSetup: true
 		)
 	}()
@@ -57,6 +57,10 @@ final class NotificationManager: ObservableObject {
         case unknown
     }
 
+	enum OperationError: Error {
+		case preferencePersistenceFailed
+	}
+
     @Published var authorizationStatus: AuthorizationStatus = .notDetermined
     @Published var showMedicationNames: Bool = false {
         didSet {
@@ -66,32 +70,23 @@ final class NotificationManager: ObservableObject {
 
 	private let notificationCenter: UNUserNotificationCenter
 	private let notificationClient: MedicationNotificationClient
+	private let urgencyStore: MedicationNotificationUrgencyStore
+	private let performsSystemSetup: Bool
 	private var reminderMutationTail: Task<Void, Never>?
+	private var startupTask: Task<Bool, Never>?
+	private var startupCompleted = false
 
 	init(
 		notificationCenter: UNUserNotificationCenter = .current(),
 		notificationClient: MedicationNotificationClient,
-		startsAutomatically: Bool = false,
-		performsSystemSetup: Bool = false,
-		scheduleStartup: (@escaping @MainActor () async -> Void) -> Void = { action in
-			Task {
-				await action()
-			}
-		}
+		urgencyStore: MedicationNotificationUrgencyStore = .shared,
+		performsSystemSetup: Bool = false
 	) {
 		self.notificationCenter = notificationCenter
 		self.notificationClient = notificationClient
+		self.urgencyStore = urgencyStore
+		self.performsSystemSetup = performsSystemSetup
 		showMedicationNames = UserDefaults.standard.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
-
-		if startsAutomatically {
-			scheduleStartup {
-				if performsSystemSetup {
-					await self.checkAuthorizationStatus()
-					await self.setupNotificationCategories()
-				}
-				await self.reconcilePendingReminders()
-			}
-		}
 	}
 
 	private func enqueueReminderMutation<Output>(
@@ -107,6 +102,111 @@ final class NotificationManager: ObservableObject {
 					continuation.resume(returning: .failure(error))
 				}
 			}
+		}
+	}
+
+	func start(
+		currentMedicationIDs: @escaping @MainActor () async throws -> Set<UUID>
+	) async {
+		guard !startupCompleted else {
+			return
+		}
+		if let startupTask {
+			await startupTask.value
+			return
+		}
+
+		let task = Task {
+			await performStartup(currentMedicationIDs: currentMedicationIDs)
+		}
+		startupTask = task
+		let completed = await task.value
+		startupTask = nil
+		startupCompleted = completed
+	}
+
+	private func performStartup(
+		currentMedicationIDs: @escaping @MainActor () async throws -> Set<UUID>
+	) async -> Bool {
+		let medicationIDs: Set<UUID>
+		do {
+			medicationIDs = try await currentMedicationIDs()
+		} catch {
+			logger.logPrivacySafeError("Failed to load medication inventory for notification startup", error: error)
+			return false
+		}
+
+		if performsSystemSetup {
+			await checkAuthorizationStatus()
+			await setupNotificationCategories()
+		}
+		return await migrateAndReconcilePendingReminders(currentMedicationIDs: medicationIDs)
+	}
+
+	private func migrateAndReconcilePendingReminders(
+		currentMedicationIDs: Set<UUID>
+	) async -> Bool {
+		let result = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			guard var preferences = self.urgencyStore.allPreferences() else {
+				self.logger.error("Notification urgency preferences are corrupt; startup reconciliation aborted")
+				return false
+			}
+
+			var effectivePreferences = preferences
+			var migrationCompleted = self.urgencyStore.migrationCompleted
+			if !migrationCompleted {
+				let pendingMedicationIDs = Set(
+					pendingRequests.compactMap {
+						MedicationReminderRequest.identity(for: $0)?.medicationID
+					}
+				).intersection(currentMedicationIDs)
+				let legacyMedicationIDs = pendingMedicationIDs.filter {
+					preferences[$0.uuidString] == nil
+				}
+
+				for medicationID in legacyMedicationIDs {
+					preferences[medicationID.uuidString] = true
+					effectivePreferences[medicationID.uuidString] = true
+				}
+
+				if self.urgencyStore.replaceAll(with: preferences) {
+					if self.urgencyStore.markMigrationCompleted() {
+						migrationCompleted = true
+						effectivePreferences = preferences
+					} else {
+						self.logger.error("Failed to persist notification urgency migration marker")
+					}
+				} else {
+					self.logger.error("Failed to persist migrated notification urgency preferences")
+				}
+			}
+
+			let urgencyByMedicationID = currentMedicationIDs.reduce(into: [UUID: Bool]()) {
+				$0[$1] = effectivePreferences[$1.uuidString] ?? false
+			}
+			for plan in MedicationReminderRequest.reconciliationPlans(
+				in: pendingRequests,
+				urgencyByMedicationID: urgencyByMedicationID
+			) {
+				do {
+					try await self.notificationClient.add(plan.requestToAdd)
+					if !plan.identifiersToRemove.isEmpty {
+						self.notificationClient.removePending(plan.identifiersToRemove)
+					}
+				} catch {
+					self.logger.logPrivacySafeError("Failed to reconcile medication reminder", error: error)
+				}
+			}
+			return migrationCompleted
+		}
+
+		switch result {
+		case let .success(migrationCompleted):
+			return migrationCompleted
+		case let .failure(error):
+			logger.logPrivacySafeError("Notification startup reconciliation failed", error: error)
+			return false
 		}
 	}
 
@@ -175,15 +275,24 @@ final class NotificationManager: ObservableObject {
         repeatInterval: DateComponents? = nil
     ) async throws {
         logger.info("Scheduling medication reminder")
-		let request = MedicationReminderRequest.make(
-			medication: medication,
-			date: date,
-			isRecurring: isRecurring,
-			repeatInterval: repeatInterval,
-			isUrgent: true,
-			showMedicationNames: showMedicationNames
-		)
 		let result = await enqueueReminderMutation {
+			let isUrgent: Bool
+			if let preference = self.urgencyStore.preference(for: medication.id) {
+				isUrgent = preference
+			} else {
+				guard self.urgencyStore.save(false, for: medication.id) else {
+					throw OperationError.preferencePersistenceFailed
+				}
+				isUrgent = false
+			}
+			let request = MedicationReminderRequest.make(
+				medication: medication,
+				date: date,
+				isRecurring: isRecurring,
+				repeatInterval: repeatInterval,
+				isUrgent: isUrgent,
+				showMedicationNames: self.showMedicationNames
+			)
 			let pendingRequests = await self.notificationClient.pendingRequests()
 			let legacyIdentifiers = MedicationReminderRequest.legacyIdentifiers(
 				matching: request,
@@ -198,31 +307,6 @@ final class NotificationManager: ObservableObject {
 		try result.get()
         logger.info("Reminder scheduled successfully")
     }
-
-	func reconcilePendingReminders() async {
-		_ = await enqueueReminderMutation {
-			let pendingRequests = await self.notificationClient.pendingRequests()
-			let urgencyByMedicationID = pendingRequests.reduce(into: [UUID: Bool]()) { result, request in
-				guard let medicationID = MedicationReminderRequest.identity(for: request)?.medicationID else {
-					return
-				}
-				result[medicationID] = true
-			}
-			for plan in MedicationReminderRequest.reconciliationPlans(
-				in: pendingRequests,
-				urgencyByMedicationID: urgencyByMedicationID
-			) {
-				do {
-					try await self.notificationClient.add(plan.requestToAdd)
-					if !plan.identifiersToRemove.isEmpty {
-						self.notificationClient.removePending(plan.identifiersToRemove)
-					}
-				} catch {
-					self.logger.logPrivacySafeError("Failed to reconcile medication reminder", error: error)
-				}
-			}
-		}
-	}
 
 	func acknowledgeDeliveredReminders(for medicationID: UUID) async {
 		_ = await enqueueReminderMutation {

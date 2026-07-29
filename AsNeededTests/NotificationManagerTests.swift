@@ -209,9 +209,40 @@ struct NotificationManagerTests {
         }
     }
 
-	@Test("Scheduling adds the canonical request before removing matching legacy requests")
-	func schedulingAddsCanonicalRequestBeforeRemovingLegacyRequests() async throws {
+	@Test("First schedule persists normal and creates an active request")
+	func firstSchedulePersistsNormal() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
 		let medication = createTestMedication()
+		let date = Date(timeIntervalSince1970: 1_800_000_000)
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		try await manager.scheduleReminder(
+			for: medication,
+			date: date,
+			isRecurring: false
+		)
+
+		#expect(fixture.store.preference(for: medication.id) == false)
+		#expect(fake.operations.count == 2)
+		#expect(fake.operations.first == .pendingRequests)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .active)
+	}
+
+	@Test("Stored urgent preference creates a time sensitive request before removing legacy requests")
+	func storedUrgentPreferenceSchedulesTimeSensitive() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(true, for: medication.id))
 		let date = Date(timeIntervalSince1970: 1_800_000_000)
 		let repeatInterval = DateComponents(hour: 8, minute: 30)
 		let canonical = MedicationReminderRequest.make(
@@ -224,7 +255,10 @@ struct NotificationManagerTests {
 		)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
-		let manager = NotificationManager(notificationClient: fake.client)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
 
 		try await manager.scheduleReminder(
 			for: medication,
@@ -243,8 +277,13 @@ struct NotificationManagerTests {
 	}
 
 	@Test("A failed schedule preserves matching legacy requests")
-	func failedSchedulePreservesMatchingLegacyRequests() async {
+	func failedSchedulePreservesMatchingLegacyRequests() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
 		let medication = createTestMedication()
+		#expect(fixture.store.save(true, for: medication.id))
 		let date = Date(timeIntervalSince1970: 1_800_000_000)
 		let repeatInterval = DateComponents(hour: 8, minute: 30)
 		let canonical = MedicationReminderRequest.make(
@@ -258,7 +297,10 @@ struct NotificationManagerTests {
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addError = NotificationManagerTestError.addFailed
-		let manager = NotificationManager(notificationClient: fake.client)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
 
 		await #expect(throws: NotificationManagerTestError.self) {
 			try await manager.scheduleReminder(
@@ -276,38 +318,344 @@ struct NotificationManagerTests {
 		#expect(fake.removedPendingIdentifiers.isEmpty)
 	}
 
-	// MARK: - Reconciliation Tests
-	@Test("Reconciliation migrates one legacy request and leaves unrelated reminders untouched")
-	func reconciliationMigratesOneLegacyRequestAndLeavesUnrelatedRemindersUntouched() async {
+	@Test("A first schedule aborts when normal preference persistence fails")
+	func firstScheduleAbortsWhenPreferencePersistenceFails() async throws {
+		let fixture = try makeUrgencyStore(writer: { _, _, _ in })
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await #expect(throws: NotificationManager.OperationError.self) {
+			try await manager.scheduleReminder(
+				for: medication,
+				date: Date(timeIntervalSince1970: 1_800_000_000),
+				isRecurring: false
+			)
+		}
+
+		#expect(fixture.store.preference(for: medication.id) == nil)
+		#expect(fake.operations.isEmpty)
+	}
+
+	// MARK: - Startup Migration Tests
+	@Test("Startup waits for authoritative inventory readiness")
+	func startupWaitsForInventoryReadiness() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
-		let unrelated = recurringRequest(for: createTestMedication(name: "Unrelated"))
-		let fake = FakeMedicationNotificationClient(pendingRequests: [unrelated, legacy])
-		let manager = NotificationManager(notificationClient: fake.client)
+		let inventoryGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		let startup = Task {
+			await manager.start {
+				await inventoryGate.suspend()
+				return [medication.id]
+			}
+		}
 
-		await manager.reconcilePendingReminders()
+		await inventoryGate.waitUntilSuspended()
+		#expect(fake.operations.isEmpty)
+		#expect(!fixture.store.migrationCompleted)
+
+		inventoryGate.resume()
+		await startup.value
 
 		#expect(fake.operations == [
 			.pendingRequests,
 			.add(canonical.identifier),
 			.removePending([legacy.identifier])
 		])
-		#expect(fake.addedRequests.count == 1)
-		#expect(fake.addedRequests.first?.identifier == canonical.identifier)
+		#expect(fixture.store.migrationCompleted)
+	}
+
+	@Test("Provider failure leaves migration incomplete and a later retry succeeds")
+	func providerFailureLeavesMigrationIncomplete() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			throw NotificationManagerTestError.providerFailed
+		}
+
+		#expect(fake.operations.isEmpty)
+		#expect(!fixture.store.migrationCompleted)
+
+		await manager.start {
+			[medication.id]
+		}
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+		#expect(fixture.store.migrationCompleted)
+	}
+
+	@Test("Authoritative empty inventory completes migration without touching pending requests")
+	func emptyInventoryCompletesMigration() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let stale = recurringRequest(for: createTestMedication(name: "Stale"))
+		let fake = FakeMedicationNotificationClient(pendingRequests: [stale])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			[]
+		}
+
+		#expect(fake.operations == [.pendingRequests])
+		#expect(fake.pendingRequests == [stale])
+		#expect(fixture.store.migrationCompleted)
+	}
+
+	@Test("Existing current medication reminder migrates to urgent exactly once")
+	func existingReminderMigratesToUrgentOnce() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let existing = recurringRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [existing])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			[medication.id]
+		}
+		let operationsAfterFirstStartup = fake.operations
+		await manager.start {
+			Issue.record("Completed startup must not request inventory again")
+			return [medication.id]
+		}
+
+		#expect(fixture.store.preference(for: medication.id) == true)
+		#expect(fixture.store.migrationCompleted)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
+		#expect(fake.operations == operationsAfterFirstStartup)
+	}
+
+	@Test("Existing explicit false survives startup and reconciles to active")
+	func explicitFalseSurvivesStartup() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(false, for: medication.id))
+		let existing = recurringRequest(for: medication, isUrgent: true)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [existing])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			[medication.id]
+		}
+
+		#expect(fixture.store.preference(for: medication.id) == false)
+		#expect(fixture.store.migrationCompleted)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .active)
+	}
+
+	@Test("Stale medication reminders are excluded from migration and reconciliation")
+	func staleReminderIsIgnored() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let currentMedication = createTestMedication(name: "Current")
+		let staleMedication = createTestMedication(name: "Stale")
+		let staleCanonical = recurringRequest(for: staleMedication)
+		let staleLegacy = legacyRequest(from: staleCanonical, identifier: "stale-legacy")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [staleLegacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			[currentMedication.id]
+		}
+
+		#expect(fake.operations == [.pendingRequests])
+		#expect(fake.pendingRequests == [staleLegacy])
+		#expect(fixture.store.preference(for: staleMedication.id) == nil)
+		#expect(fixture.store.preference(for: currentMedication.id) == nil)
+		#expect(fixture.store.migrationCompleted)
+	}
+
+	@Test("Concurrent startup calls share one in-flight pass and remain idempotent", .timeLimit(.minutes(1)))
+	func concurrentStartupCallsAreIdempotent() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let inventoryGate = TestAsyncGate()
+		let secondStarted = TestAsyncSignal()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		var providerCalls = 0
+		let first = Task {
+			await manager.start {
+				providerCalls += 1
+				await inventoryGate.suspend()
+				return [medication.id]
+			}
+		}
+
+		await inventoryGate.waitUntilSuspended()
+		let second = Task {
+			secondStarted.signal()
+			await manager.start {
+				providerCalls += 100
+				return [medication.id]
+			}
+		}
+		await secondStarted.wait()
+		inventoryGate.resume()
+		await first.value
+		await second.value
+
+		await manager.start {
+			providerCalls += 1_000
+			return [medication.id]
+		}
+
+		#expect(providerCalls == 1)
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(canonical.identifier),
+			.removePending([legacy.identifier])
+		])
+	}
+
+	@Test("Migration persistence failure keeps the marker unset and uses urgent for the pass")
+	func migrationPersistenceFailureFallsBackToUrgent() async throws {
+		let fixture = try makeUrgencyStore(writer: { _, _, _ in })
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
+		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		var providerCalls = 0
+
+		await manager.start {
+			providerCalls += 1
+			return [medication.id]
+		}
+		await manager.start {
+			providerCalls += 1
+			return [medication.id]
+		}
+
+		#expect(providerCalls == 2)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+		#expect(!fixture.store.migrationCompleted)
 		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
 		#expect(fake.removedPendingIdentifiers == [[legacy.identifier]])
 	}
 
-	@Test("A failed reconciliation add preserves the legacy request")
-	func failedReconciliationAddPreservesLegacyRequest() async {
-		let canonical = recurringRequest(for: createTestMedication())
+	@Test("Corrupt urgency preferences abort startup and allow a later retry")
+	func corruptPreferencesAbortStartup() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let legacy = legacyRequest(
+			from: recurringRequest(for: medication),
+			identifier: "legacy-reminder"
+		)
+		fixture.defaults.set(
+			Data("not-json".utf8),
+			forKey: UserDefaultsKeys.medicationNotificationUrgency
+		)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.start {
+			[medication.id]
+		}
+
+		#expect(fake.operations == [.pendingRequests])
+		#expect(!fixture.store.migrationCompleted)
+
+		fixture.defaults.removeObject(forKey: UserDefaultsKeys.medicationNotificationUrgency)
+		await manager.start {
+			[medication.id]
+		}
+
+		#expect(fixture.store.migrationCompleted)
+		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
+	}
+
+	@Test("A failed startup reconciliation add preserves the legacy request")
+	func failedReconciliationAddPreservesLegacyRequest() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addError = NotificationManagerTestError.addFailed
-		let manager = NotificationManager(notificationClient: fake.client)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
 
-		await manager.reconcilePendingReminders()
+		await manager.start {
+			[medication.id]
+		}
 
 		#expect(fake.operations == [
 			.pendingRequests,
@@ -316,16 +664,26 @@ struct NotificationManagerTests {
 		#expect(fake.removedPendingIdentifiers.isEmpty)
 	}
 
-	@Test("A later cancellation waits for reconciliation and wins", .timeLimit(.minutes(1)))
-	func laterCancellationWaitsForReconciliationAndWins() async {
-		let canonical = recurringRequest(for: createTestMedication())
+	@Test("A later cancellation waits for startup reconciliation and wins", .timeLimit(.minutes(1)))
+	func laterCancellationWaitsForReconciliationAndWins() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let canonical = recurringRequest(for: medication)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let addGate = TestAsyncGate()
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addGate = addGate
-		let manager = NotificationManager(notificationClient: fake.client)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
 		let reconciliation = Task {
-			await manager.reconcilePendingReminders()
+			await manager.start {
+				[medication.id]
+			}
 		}
 
 		await addGate.waitUntilSuspended()
@@ -354,7 +712,11 @@ struct NotificationManagerTests {
 	}
 
 	@Test("A failed queued operation does not block a later cancellation", .timeLimit(.minutes(1)))
-	func failedQueuedOperationDoesNotBlockLaterCancellation() async {
+	func failedQueuedOperationDoesNotBlockLaterCancellation() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
 		let medication = createTestMedication()
 		let date = Date(timeIntervalSince1970: 1_800_000_000)
 		let repeatInterval = DateComponents(hour: 8, minute: 30)
@@ -363,7 +725,7 @@ struct NotificationManagerTests {
 			date: date,
 			isRecurring: true,
 			repeatInterval: repeatInterval,
-			isUrgent: true,
+			isUrgent: false,
 			showMedicationNames: false
 		)
 		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
@@ -371,7 +733,10 @@ struct NotificationManagerTests {
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addGate = addGate
 		fake.addError = NotificationManagerTestError.addFailed
-		let manager = NotificationManager(notificationClient: fake.client)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
 		let scheduling = Task {
 			do {
 				try await manager.scheduleReminder(
@@ -409,39 +774,6 @@ struct NotificationManagerTests {
 			.removePending([legacy.identifier])
 		])
 		#expect(fake.pendingRequests.isEmpty)
-	}
-
-	@Test("Automatic startup schedules exactly one reconciliation action")
-	func automaticStartupSchedulesExactlyOneReconciliationAction() async {
-		let canonical = recurringRequest(for: createTestMedication())
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
-		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
-		var startupActions: [@MainActor () async -> Void] = []
-
-		_ = NotificationManager(
-			notificationClient: fake.client,
-			startsAutomatically: true,
-			performsSystemSetup: false,
-			scheduleStartup: { action in
-				startupActions.append(action)
-			}
-		)
-
-		#expect(startupActions.count == 1)
-		#expect(fake.operations.isEmpty)
-		guard let startupAction = startupActions.first else {
-			Issue.record("Expected one startup action")
-			return
-		}
-
-		await startupAction()
-
-		#expect(fake.operations == [
-			.pendingRequests,
-			.add(canonical.identifier),
-			.removePending([legacy.identifier])
-		])
-		#expect(fake.addedRequests.first?.content.interruptionLevel == .timeSensitive)
 	}
 
 	// MARK: - Delivered Reminder Tests
@@ -769,14 +1101,36 @@ struct NotificationManagerTests {
         #expect(defaultValue == false)
     }
 
-	private func recurringRequest(for medication: ANMedicationConcept) -> UNNotificationRequest {
+	private func recurringRequest(
+		for medication: ANMedicationConcept,
+		isUrgent: Bool = true
+	) -> UNNotificationRequest {
 		MedicationReminderRequest.make(
 			medication: medication,
 			date: Date(timeIntervalSince1970: 1_800_000_000),
 			isRecurring: true,
 			repeatInterval: DateComponents(hour: 8, minute: 30),
-			isUrgent: true,
+			isUrgent: isUrgent,
 			showMedicationNames: false
+		)
+	}
+
+	private func makeUrgencyStore(
+		writer: MedicationNotificationUrgencyStore.Writer? = nil
+	) throws -> UrgencyStoreFixture {
+		let suiteName = "NotificationManagerTests.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		let store: MedicationNotificationUrgencyStore
+		if let writer {
+			store = MedicationNotificationUrgencyStore(defaults: defaults, writer: writer)
+		} else {
+			store = MedicationNotificationUrgencyStore(defaults: defaults)
+		}
+		return UrgencyStoreFixture(
+			suiteName: suiteName,
+			defaults: defaults,
+			store: store
 		)
 	}
 
@@ -792,6 +1146,17 @@ struct NotificationManagerTests {
 		let content = source.content.mutableCopy() as? UNMutableNotificationContent ?? UNMutableNotificationContent()
 		content.categoryIdentifier = categoryIdentifier
 		return UNNotificationRequest(identifier: identifier, content: content, trigger: source.trigger)
+	}
+}
+
+@MainActor
+private struct UrgencyStoreFixture {
+	let suiteName: String
+	let defaults: UserDefaults
+	let store: MedicationNotificationUrgencyStore
+
+	func cleanUp() {
+		defaults.removePersistentDomain(forName: suiteName)
 	}
 }
 
@@ -902,4 +1267,5 @@ private final class TestAsyncSignal {
 
 private enum NotificationManagerTestError: Error {
 	case addFailed
+	case providerFailed
 }

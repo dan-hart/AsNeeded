@@ -22,9 +22,6 @@ struct AsNeededApp: App {
     private let logger = DHLogger.general
 
     init() {
-		// Start legacy reminder reconciliation even if notification UI is never opened.
-		_ = NotificationManager.shared
-
         // Configure RevenueCat on app launch
         RevenueCatManager.shared.configure()
 
@@ -59,6 +56,11 @@ struct AsNeededApp: App {
                             logger.info("Received URL")
                             quickActionHandler.handleURL(url)
                         }
+						.task {
+							await NotificationManager.shared.start {
+								Set(DataStore.shared.medications.map(\.id))
+							}
+						}
                 } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {
                     // Migration failed - show error screen with retry option
                     MigrationErrorView(error: error) {
