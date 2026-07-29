@@ -3,6 +3,7 @@
 
 import ANModelKit
 @testable import AsNeeded
+import Boutique
 import Foundation
 import Testing
 
@@ -27,6 +28,60 @@ struct DataStoreTests {
     }
 
     // MARK: - Medication Tests
+
+	@Test("Current medication IDs wait for inventory readiness")
+	func currentMedicationIDsWaitForInventoryReadiness() async throws {
+		let medication = createTestMedication(name: "Loaded Medication")
+		let readinessGate = DataStoreTestAsyncGate()
+		var receivedStore: Store<ANMedicationConcept>?
+		let store = DataStore(
+			testIdentifier: "medication-inventory-readiness",
+			medicationInventoryReadiness: { medicationsStore in
+				receivedStore = medicationsStore
+				await readinessGate.suspend()
+			}
+		)
+		try await store.addMedication(medication)
+		var returnedIDs: Set<UUID>?
+		let inventoryTask = Task {
+			returnedIDs = try await store.currentMedicationIDsWhenReady()
+		}
+
+		await readinessGate.waitUntilSuspended()
+
+		#expect(receivedStore === store.medicationsStore)
+		#expect(returnedIDs == nil)
+
+		readinessGate.resume()
+		try await inventoryTask.value
+
+		#expect(returnedIDs == [medication.id])
+	}
+
+	@Test("Medication inventory readiness failure returns no IDs")
+	func medicationInventoryReadinessFailurePropagates() async throws {
+		let medication = createTestMedication(name: "Unavailable Medication")
+		var receivedStore: Store<ANMedicationConcept>?
+		let store = DataStore(
+			testIdentifier: "medication-inventory-readiness-failure",
+			medicationInventoryReadiness: { medicationsStore in
+				receivedStore = medicationsStore
+				throw DataStoreTestError.medicationInventoryUnavailable
+			}
+		)
+		try await store.addMedication(medication)
+		var returnedIDs: Set<UUID>?
+
+		do {
+			returnedIDs = try await store.currentMedicationIDsWhenReady()
+			Issue.record("Expected medication inventory readiness to fail")
+		} catch {
+			#expect(error as? DataStoreTestError == .medicationInventoryUnavailable)
+		}
+
+		#expect(receivedStore === store.medicationsStore)
+		#expect(returnedIDs == nil)
+	}
 
     @Test("Add medication to data store")
     func addMedication() async throws {
@@ -471,4 +526,48 @@ struct DataStoreTests {
             date: Date()
         )
     }
+}
+
+@MainActor
+private final class DataStoreTestAsyncGate {
+	private let arrived = DataStoreTestAsyncSignal()
+	private let released = DataStoreTestAsyncSignal()
+
+	func suspend() async {
+		arrived.signal()
+		await released.wait()
+	}
+
+	func waitUntilSuspended() async {
+		await arrived.wait()
+	}
+
+	func resume() {
+		released.signal()
+	}
+}
+
+@MainActor
+private final class DataStoreTestAsyncSignal {
+	private let stream: AsyncStream<Void>
+	private let continuation: AsyncStream<Void>.Continuation
+
+	init() {
+		(stream, continuation) = AsyncStream.makeStream()
+	}
+
+	func signal() {
+		continuation.yield()
+		continuation.finish()
+	}
+
+	func wait() async {
+		for await _ in stream {
+			return
+		}
+	}
+}
+
+private enum DataStoreTestError: Error, Equatable {
+	case medicationInventoryUnavailable
 }

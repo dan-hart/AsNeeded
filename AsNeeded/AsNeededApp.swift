@@ -58,7 +58,7 @@ struct AsNeededApp: App {
                         }
 						.task {
 							await NotificationManager.shared.start {
-								Set(DataStore.shared.medications.map(\.id))
+								try await DataStore.shared.currentMedicationIDsWhenReady()
 							}
 						}
                 } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {

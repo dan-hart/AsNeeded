@@ -185,9 +185,9 @@ struct MedicationDetailView: View {
             )
         }
         .task(id: medicationId) {
-            await refreshMedication()
+			await refreshMedication()
 			await notificationManager.start {
-				Set(DataStore.shared.medications.map(\.id))
+				try await DataStore.shared.currentMedicationIDsWhenReady()
 			}
 			if !isUpdatingNotificationUrgency {
 				urgentNotificationsEnabled = notificationManager.isUrgent(for: medicationId)

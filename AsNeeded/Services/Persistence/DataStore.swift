@@ -9,6 +9,7 @@ import Foundation
 @MainActor
 public final class DataStore {
 	typealias UrgencyStoreFactory = @MainActor (UserDefaults) -> MedicationNotificationUrgencyStore
+	typealias MedicationInventoryReadiness = @MainActor (Store<ANMedicationConcept>) async throws -> Void
 
 	struct ImportFailureInjection {
 		var beforeClearMedications: () throws -> Void = {}
@@ -38,6 +39,7 @@ public final class DataStore {
 	private let refillProfileStore: MedicationRefillProfileStore
 	private let urgencyStore: MedicationNotificationUrgencyStore
 	private let importFailureInjection: ImportFailureInjection
+	private let medicationInventoryReadiness: MedicationInventoryReadiness
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
@@ -52,6 +54,7 @@ public final class DataStore {
 		refillProfileStore = MedicationRefillProfileStore()
 		urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
 		importFailureInjection = .none
+		medicationInventoryReadiness = { try await $0.itemsHaveLoaded() }
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -142,6 +145,19 @@ public final class DataStore {
 		)
 	}
 
+	convenience init(
+		testIdentifier: String,
+		medicationInventoryReadiness: @escaping MedicationInventoryReadiness
+	) {
+		self.init(
+			testIdentifier: testIdentifier,
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			medicationInventoryReadiness: medicationInventoryReadiness,
+			importFailureInjection: .none
+		)
+	}
+
 	init(
 		testIdentifier: String,
 		settingsDefaults: UserDefaults,
@@ -149,12 +165,16 @@ public final class DataStore {
 		urgencyStoreFactory: UrgencyStoreFactory = {
 			MedicationNotificationUrgencyStore(defaults: $0)
 		},
+		medicationInventoryReadiness: @escaping MedicationInventoryReadiness = {
+			try await $0.itemsHaveLoaded()
+		},
 		importFailureInjection: ImportFailureInjection = .none
 	) {
 		self.settingsDefaults = settingsDefaults
 		self.refillProfileStore = refillProfileStore
 		self.urgencyStore = urgencyStoreFactory(settingsDefaults)
 		self.importFailureInjection = importFailureInjection
+		self.medicationInventoryReadiness = medicationInventoryReadiness
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
             storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
@@ -167,6 +187,11 @@ public final class DataStore {
     }
 
     // MARK: - Medication Operations
+
+	func currentMedicationIDsWhenReady() async throws -> Set<UUID> {
+		try await medicationInventoryReadiness(medicationsStore)
+		return Set(medications.map(\.id))
+	}
 
     public func addMedication(_ med: ANMedicationConcept) async throws {
         logger.logMedicationOperation("Adding", id: med.id)
