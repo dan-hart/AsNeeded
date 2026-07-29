@@ -184,9 +184,14 @@ struct MedicationDetailView: View {
                 }
             )
         }
-        .task {
+        .task(id: medicationId) {
             await refreshMedication()
-			urgentNotificationsEnabled = notificationManager.isUrgent(for: medication.id)
+			await notificationManager.start {
+				Set(DataStore.shared.medications.map(\.id))
+			}
+			if !isUpdatingNotificationUrgency {
+				urgentNotificationsEnabled = notificationManager.isUrgent(for: medicationId)
+			}
             if hasUsableNotificationAuthorization || notificationManager.authorizationStatus == .notDetermined {
                 await loadReminderCount()
             }
@@ -635,8 +640,14 @@ struct MedicationDetailView: View {
 								get: { urgentNotificationsEnabled },
 								set: { requestedValue in
 									guard !isUpdatingNotificationUrgency else { return }
+									let previousValue = urgentNotificationsEnabled
+									urgentNotificationsEnabled = requestedValue
+									isUpdatingNotificationUrgency = true
 									Task {
-										await updateNotificationUrgency(to: requestedValue)
+										await updateNotificationUrgency(
+											to: requestedValue,
+											previousValue: previousValue
+										)
 									}
 								}
 							)) {
@@ -844,15 +855,15 @@ struct MedicationDetailView: View {
         }
     }
 
-	private func updateNotificationUrgency(to requestedValue: Bool) async {
-		guard !isUpdatingNotificationUrgency else { return }
-		let previousValue = urgentNotificationsEnabled
-		urgentNotificationsEnabled = requestedValue
-		isUpdatingNotificationUrgency = true
+	private func updateNotificationUrgency(
+		to requestedValue: Bool,
+		previousValue: Bool
+	) async {
 		defer { isUpdatingNotificationUrgency = false }
 
 		do {
-			try await notificationManager.setUrgent(requestedValue, for: medication.id)
+			try await notificationManager.setUrgent(requestedValue, for: medicationId)
+			urgentNotificationsEnabled = notificationManager.isUrgent(for: medicationId)
 		} catch {
 			urgentNotificationsEnabled = previousValue
 			notificationUrgencyError = "Urgent notification settings could not be updated. Please try again."
