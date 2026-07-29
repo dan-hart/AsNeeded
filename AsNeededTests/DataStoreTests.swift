@@ -58,7 +58,7 @@ struct DataStoreTests {
 		#expect(returnedIDs == [medication.id])
 	}
 
-	@Test("Medication inventory readiness failure returns no IDs")
+	@Test("Medication inventory readiness failure propagates without returning IDs")
 	func medicationInventoryReadinessFailurePropagates() async throws {
 		let medication = createTestMedication(name: "Unavailable Medication")
 		var receivedStore: Store<ANMedicationConcept>?
