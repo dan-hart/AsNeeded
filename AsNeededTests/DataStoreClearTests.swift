@@ -50,6 +50,37 @@ struct DataStoreClearTests {
 		#expect(defaults.bool(forKey: UserDefaultsKeys.trendsQuestionsEnabled) == false)
 	}
 
+	@Test("resetAppSettings clears urgency preferences and preserves migration marker")
+	func resetAppSettingsClearsUrgencyPreferencesAndPreservesMigrationMarker() throws {
+		let defaultsSuite = "DataStoreClearTests.urgencyDefaults.\(UUID().uuidString)"
+		let sharedSuite = "DataStoreClearTests.urgencyShared.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: defaultsSuite))
+		let sharedDefaults = try #require(UserDefaults(suiteName: sharedSuite))
+		defaults.removePersistentDomain(forName: defaultsSuite)
+		sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		defer {
+			defaults.removePersistentDomain(forName: defaultsSuite)
+			sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		}
+
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		#expect(urgencyStore.save(true, for: UUID()))
+		#expect(urgencyStore.markMigrationCompleted())
+
+		let resetSucceeded = DataStore.resetAppSettings(
+			defaults: defaults,
+			sharedDefaults: sharedDefaults,
+			profileStore: MedicationRefillProfileStore(
+				defaults: defaults,
+				sharedDefaults: sharedDefaults
+			)
+		)
+
+		#expect(resetSucceeded)
+		#expect(defaults.object(forKey: UserDefaultsKeys.medicationNotificationUrgency) == nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted))
+	}
+
 	@Test("clearAllData erases refill migration state and recovery archives")
 	func clearAllDataErasesRefillMigrationStateAndRecoveryArchives() async throws {
 		let sharedDefaults = try #require(UserDefaults(suiteName: StorageConstants.appGroupIdentifier))

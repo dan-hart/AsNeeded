@@ -138,6 +138,33 @@ struct SettingsExportImportTests {
 		#expect(json[UserDefaultsKeys.archivedMedicationProfiles] == nil)
 	}
 
+	@Test("Notification urgency export includes explicit values without migration state")
+	func notificationUrgencyExportIncludesExplicitValuesWithoutMigrationState() throws {
+		let suiteName = "SettingsExportImportTests.urgencyExport.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let urgentMedicationID = UUID()
+		let normalMedicationID = UUID()
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		#expect(urgencyStore.save(true, for: urgentMedicationID))
+		#expect(urgencyStore.save(false, for: normalMedicationID))
+		#expect(urgencyStore.markMigrationCompleted())
+
+		let settings = AppSettings(from: defaults)
+		let data = try JSONEncoder().encode(settings)
+		let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+		let exportedUrgency = try #require(json["medicationNotificationUrgency"] as? [String: Bool])
+
+		#expect(exportedUrgency[urgentMedicationID.uuidString] == true)
+		#expect(exportedUrgency[normalMedicationID.uuidString] == false)
+		#expect(json[UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted] == nil)
+		#expect(!String(decoding: data, as: UTF8.self).contains(
+			UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted
+		))
+	}
+
 	// MARK: - Import Tests
 
 	@Test("Import without settings should not modify user defaults")
@@ -481,6 +508,161 @@ struct SettingsExportImportTests {
 
 		#expect(defaults.data(forKey: UserDefaultsKeys.medicationRefillProfiles) == existingData)
 		#expect(!defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+	}
+
+	@Test("Imported urgency preferences retain valid IDs and drop unknown or malformed IDs")
+	func importedUrgencyPreferencesRetainValidIDsOnly() throws {
+		let defaultsSuite = "SettingsExportImportTests.urgencyImport.\(UUID().uuidString)"
+		let sharedSuite = "SettingsExportImportTests.urgencyImportShared.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: defaultsSuite))
+		let sharedDefaults = try #require(UserDefaults(suiteName: sharedSuite))
+		defaults.removePersistentDomain(forName: defaultsSuite)
+		sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		defer {
+			defaults.removePersistentDomain(forName: defaultsSuite)
+			sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		}
+
+		let urgentID = UUID()
+		let normalID = UUID()
+		let unknownID = UUID()
+		let settings = try decodeSettings("""
+		{
+			"medicationNotificationUrgency": {
+				"\(urgentID.uuidString)": true,
+				"\(urgentID.uuidString.lowercased())": false,
+				"\(normalID.uuidString.lowercased())": false,
+				"\(unknownID.uuidString)": true,
+				"not-a-uuid": true
+			}
+		}
+		""")
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+
+		try settings.apply(
+			to: defaults,
+			validateMedicationIDs: { [urgentID.uuidString, normalID.uuidString] },
+			profileStore: MedicationRefillProfileStore(
+				defaults: defaults,
+				sharedDefaults: sharedDefaults
+			),
+			urgencyStore: urgencyStore
+		)
+
+		#expect(urgencyStore.allPreferences() == [
+			urgentID.uuidString: true,
+			normalID.uuidString: false,
+		])
+	}
+
+	@Test("Urgency persistence failure throws the specific settings error")
+	func urgencyPersistenceFailureThrowsSpecificSettingsError() throws {
+		let defaultsSuite = "SettingsExportImportTests.urgencyFailure.\(UUID().uuidString)"
+		let sharedSuite = "SettingsExportImportTests.urgencyFailureShared.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: defaultsSuite))
+		let sharedDefaults = try #require(UserDefaults(suiteName: sharedSuite))
+		defaults.removePersistentDomain(forName: defaultsSuite)
+		sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		defer {
+			defaults.removePersistentDomain(forName: defaultsSuite)
+			sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		}
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		let medicationID = UUID()
+		let settings = try decodeSettings("""
+		{
+			"hapticsEnabled": false,
+			"medicationNotificationUrgency": {"\(medicationID.uuidString)": true}
+		}
+		""")
+		let urgencyStore = MedicationNotificationUrgencyStore(
+			defaults: defaults,
+			writer: { _, _, _ in }
+		)
+
+		do {
+			try settings.apply(
+				to: defaults,
+				validateMedicationIDs: { [medicationID.uuidString] },
+				profileStore: MedicationRefillProfileStore(
+					defaults: defaults,
+					sharedDefaults: sharedDefaults
+				),
+				urgencyStore: urgencyStore
+			)
+			Issue.record("Expected notification urgency persistence failure")
+		} catch let error as AppSettingsError {
+			guard case .notificationUrgencyPersistenceFailed = error else {
+				Issue.record("Expected notificationUrgencyPersistenceFailed, got \(error)")
+				return
+			}
+		} catch {
+			Issue.record("Expected AppSettingsError, got \(error)")
+		}
+
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled))
+		#expect(defaults.object(forKey: UserDefaultsKeys.medicationNotificationUrgency) == nil)
+	}
+
+	@Test("Later import failure restores byte-exact urgency payload")
+	func laterImportFailureRestoresByteExactUrgencyPayload() async throws {
+		let defaultsSuite = "SettingsExportImportTests.urgencyRollback.\(UUID().uuidString)"
+		let sharedSuite = "SettingsExportImportTests.urgencyRollbackShared.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: defaultsSuite))
+		let sharedDefaults = try #require(UserDefaults(suiteName: sharedSuite))
+		defaults.removePersistentDomain(forName: defaultsSuite)
+		sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		defer {
+			defaults.removePersistentDomain(forName: defaultsSuite)
+			sharedDefaults.removePersistentDomain(forName: sharedSuite)
+		}
+
+		let existingMedication = createTestMedication()
+		let priorRawData = Data("""
+		{
+			"\(existingMedication.id.uuidString)" : false
+		}
+		""".utf8)
+		defaults.set(priorRawData, forKey: UserDefaultsKeys.medicationNotificationUrgency)
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		let dataStore = DataStore(
+			testIdentifier: "urgency-rollback",
+			settingsDefaults: defaults,
+			refillProfileStore: MedicationRefillProfileStore(
+				defaults: defaults,
+				sharedDefaults: sharedDefaults
+			),
+			urgencyStore: urgencyStore,
+			importFailureInjection: .init(
+				beforeClearMedications: { throw TestFailure.intentional }
+			)
+		)
+		try await dataStore.addMedication(existingMedication)
+		let importedMedication = createTestMedication()
+		var importedSettings = AppSettings()
+		importedSettings.medicationNotificationUrgency = [
+			importedMedication.id.uuidString: true,
+		]
+		let export = DataExport(
+			medications: [importedMedication],
+			events: [],
+			exportDate: Date(),
+			appVersion: "1.0",
+			dataVersion: "1.0",
+			settings: importedSettings
+		)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+
+		await #expect(throws: TestFailure.self) {
+			try await dataStore.importDataFromJSON(
+				encoder.encode(export),
+				applySettings: true
+			)
+		}
+
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == priorRawData)
+		#expect(dataStore.medications.map(\.id) == [existingMedication.id])
 	}
 
 	@Test("Settings persistence failure aborts data import before replacing existing data")

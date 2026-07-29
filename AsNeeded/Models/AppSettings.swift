@@ -5,9 +5,15 @@ import Foundation
 
 enum AppSettingsError: LocalizedError {
 	case refillProfilePersistenceFailed
+	case notificationUrgencyPersistenceFailed
 
 	var errorDescription: String? {
-		"Refill preferences could not be saved safely. No other settings were changed."
+		switch self {
+		case .refillProfilePersistenceFailed:
+			"Refill preferences could not be saved safely. No other settings were changed."
+		case .notificationUrgencyPersistenceFailed:
+			"Notification urgency preferences could not be saved safely."
+		}
 	}
 }
 
@@ -21,6 +27,7 @@ struct AppSettings: Codable {
 		UserDefaultsKeys.hideSupportBanners,
 		UserDefaultsKeys.trendsQuestionsEnabled,
 		UserDefaultsKeys.showMedicationNamesInNotifications,
+		UserDefaultsKeys.medicationNotificationUrgency,
 		UserDefaultsKeys.selectedFontFamily,
 		UserDefaultsKeys.automaticBackupEnabled,
 		UserDefaultsKeys.automaticBackupRedactMedicationNames,
@@ -59,6 +66,9 @@ struct AppSettings: Codable {
 
 	/// Whether to show medication names in notifications
 	var showMedicationNamesInNotifications: Bool?
+
+	/// Per-medication notification urgency preferences
+	var medicationNotificationUrgency: [String: Bool]?
 
 	// MARK: - Typography Settings
 
@@ -114,6 +124,7 @@ struct AppSettings: Codable {
 		case hideSupportBanners
 		case trendsQuestionsEnabled
 		case showMedicationNamesInNotifications
+		case medicationNotificationUrgency
 		case selectedFontFamily
 		case automaticBackupEnabled
 		case automaticBackupRedactMedicationNames
@@ -144,6 +155,10 @@ struct AppSettings: Codable {
 		showMedicationNamesInNotifications = try container.decodeIfPresent(
 			Bool.self,
 			forKey: .showMedicationNamesInNotifications
+		)
+		medicationNotificationUrgency = try container.decodeIfPresent(
+			[String: Bool].self,
+			forKey: .medicationNotificationUrgency
 		)
 		selectedFontFamily = try container.decodeIfPresent(String.self, forKey: .selectedFontFamily)
 		automaticBackupEnabled = try container.decodeIfPresent(Bool.self, forKey: .automaticBackupEnabled)
@@ -207,6 +222,10 @@ struct AppSettings: Codable {
 			showMedicationNamesInNotifications,
 			forKey: .showMedicationNamesInNotifications
 		)
+		try container.encodeIfPresent(
+			medicationNotificationUrgency,
+			forKey: .medicationNotificationUrgency
+		)
 		try container.encodeIfPresent(selectedFontFamily, forKey: .selectedFontFamily)
 		try container.encodeIfPresent(automaticBackupEnabled, forKey: .automaticBackupEnabled)
 		try container.encodeIfPresent(
@@ -234,6 +253,7 @@ struct AppSettings: Codable {
 
 	/// Create settings from UserDefaults
 	/// - Parameter defaults: UserDefaults instance to read from (default: .standard)
+	@MainActor
 	init(from defaults: UserDefaults = .standard) {
 		// App Preferences
 		hapticsEnabled = defaults.object(forKey: UserDefaultsKeys.hapticsEnabled) as? Bool
@@ -247,6 +267,8 @@ struct AppSettings: Codable {
 
 		// Notification Settings
 		showMedicationNamesInNotifications = defaults.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool
+		let urgencyPreferences = MedicationNotificationUrgencyStore(defaults: defaults).allPreferences()
+		medicationNotificationUrgency = urgencyPreferences?.isEmpty == false ? urgencyPreferences : nil
 
 		// Typography Settings
 		selectedFontFamily = defaults.string(forKey: UserDefaultsKeys.selectedFontFamily)
@@ -275,10 +297,12 @@ struct AppSettings: Codable {
 	/// Apply these settings to UserDefaults
 	/// - Parameter defaults: UserDefaults instance to write to (default: .standard)
 	/// - Parameter validateMedicationIDs: Closure to validate medication IDs exist, returns set of valid IDs
+	@MainActor
 	func apply(
 		to defaults: UserDefaults = .standard,
 		validateMedicationIDs: () -> Set<String>,
-		profileStore: MedicationRefillProfileStore? = nil
+		profileStore: MedicationRefillProfileStore? = nil,
+		urgencyStore: MedicationNotificationUrgencyStore? = nil
 	) throws {
 		let validMedicationIDs = validateMedicationIDs()
 
@@ -287,6 +311,10 @@ struct AppSettings: Codable {
 		try persistRefillProfiles(
 			validMedicationIDs: validMedicationIDs,
 			profileStore: profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+		)
+		try persistNotificationUrgency(
+			validMedicationIDs: validMedicationIDs,
+			urgencyStore: urgencyStore ?? MedicationNotificationUrgencyStore(defaults: defaults)
 		)
 
 		// App Preferences
@@ -386,6 +414,23 @@ struct AppSettings: Codable {
 		}
 	}
 
+	@MainActor
+	func persistNotificationUrgency(
+		validMedicationIDs: Set<String>,
+		urgencyStore: MedicationNotificationUrgencyStore
+	) throws {
+		guard let preferences = medicationNotificationUrgency else {
+			return
+		}
+		let filteredPreferences = MedicationNotificationUrgencyStore.filteredPreferences(
+			preferences,
+			validMedicationIDs: validMedicationIDs.compactMap(UUID.init(uuidString:))
+		)
+		guard urgencyStore.replaceAll(with: filteredPreferences) else {
+			throw AppSettingsError.notificationUrgencyPersistenceFailed
+		}
+	}
+
 	/// Get a user-friendly summary of included settings categories
 	var settingsCategories: [String] {
 		var categories: [String] = []
@@ -400,7 +445,7 @@ struct AppSettings: Codable {
 		if trendsQuestionsEnabled != nil || medicationRefillProfiles != nil {
 			categories.append("Refill Preferences")
 		}
-		if showMedicationNamesInNotifications != nil {
+		if showMedicationNamesInNotifications != nil || medicationNotificationUrgency != nil {
 			categories.append("Notification Settings")
 		}
 		if selectedFontFamily != nil {

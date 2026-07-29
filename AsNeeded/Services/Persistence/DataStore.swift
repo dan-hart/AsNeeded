@@ -31,9 +31,10 @@ public final class DataStore {
 	}
 
     public static let shared = DataStore()
-    private let logger = DHLogger.data
+	private let logger = DHLogger.data
 	private let settingsDefaults: UserDefaults
 	private let refillProfileStore: MedicationRefillProfileStore
+	private let urgencyStore: MedicationNotificationUrgencyStore
 	private let importFailureInjection: ImportFailureInjection
 
     // Underlying Boutique stores
@@ -46,6 +47,7 @@ public final class DataStore {
     private init() {
 		settingsDefaults = .standard
 		refillProfileStore = MedicationRefillProfileStore()
+		urgencyStore = .shared
 		importFailureInjection = .none
         logger.info("Initializing DataStore with persistent storage in App Group")
 
@@ -133,6 +135,7 @@ public final class DataStore {
 			testIdentifier: testIdentifier,
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
+			urgencyStore: MedicationNotificationUrgencyStore(),
 			importFailureInjection: .none
 		)
 	}
@@ -141,10 +144,12 @@ public final class DataStore {
 		testIdentifier: String,
 		settingsDefaults: UserDefaults,
 		refillProfileStore: MedicationRefillProfileStore,
+		urgencyStore: MedicationNotificationUrgencyStore? = nil,
 		importFailureInjection: ImportFailureInjection = .none
 	) {
 		self.settingsDefaults = settingsDefaults
 		self.refillProfileStore = refillProfileStore
+		self.urgencyStore = urgencyStore ?? MedicationNotificationUrgencyStore(defaults: settingsDefaults)
 		self.importFailureInjection = importFailureInjection
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
@@ -197,6 +202,9 @@ public final class DataStore {
 
             // Clear the deleted medication ID from AppStorage selections to prevent crashes
             let deletedIDString = med.id.uuidString
+			if !urgencyStore.removePreference(for: med.id) {
+				logger.error("Deleted medication, but its notification urgency preference could not be removed safely")
+			}
 
             // Clear from history view selection
             if UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == deletedIDString {
@@ -266,7 +274,7 @@ public final class DataStore {
     /// - Returns: AppSettings object with current settings
     private func exportSettings() -> AppSettings {
         logger.debug("Exporting app settings")
-        return AppSettings(from: .standard)
+        return AppSettings(from: settingsDefaults)
     }
 
     /// Export all data as JSON
@@ -366,7 +374,8 @@ public final class DataStore {
 		try settings.apply(
 			to: settingsDefaults,
 			validateMedicationIDs: { validMedicationIDs },
-			profileStore: refillProfileStore
+			profileStore: refillProfileStore,
+			urgencyStore: urgencyStore
 		)
 
         logger.info("App settings imported successfully")

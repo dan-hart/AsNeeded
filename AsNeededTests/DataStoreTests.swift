@@ -91,6 +91,68 @@ struct DataStoreTests {
         #expect(dataStore.medications.count == 0)
     }
 
+	@Test("Deleting medication removes only its urgency preference")
+	func deletingMedicationRemovesOnlyItsUrgencyPreference() async throws {
+		let suiteName = "DataStoreTests.deleteUrgency.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		let deletedMedication = createTestMedication(name: "Urgent")
+		let retainedMedication = createTestMedication(name: "Normal")
+		#expect(urgencyStore.save(true, for: deletedMedication.id))
+		#expect(urgencyStore.save(false, for: retainedMedication.id))
+		let store = DataStore(
+			testIdentifier: "delete-urgency",
+			settingsDefaults: defaults,
+			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
+			urgencyStore: urgencyStore
+		)
+		try await store.addMedication(deletedMedication)
+		try await store.addMedication(retainedMedication)
+
+		try await store.deleteMedication(deletedMedication)
+
+		#expect(store.medications.map(\.id) == [retainedMedication.id])
+		#expect(urgencyStore.preference(for: deletedMedication.id) == nil)
+		#expect(urgencyStore.preference(for: retainedMedication.id) == false)
+	}
+
+	@Test("Urgency cleanup failure does not restore medication or mutate preferences")
+	func urgencyCleanupFailureDoesNotRestoreMedicationOrMutatePreferences() async throws {
+		let suiteName = "DataStoreTests.deleteUrgencyFailure.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let deletedMedication = createTestMedication(name: "Deleted")
+		let retainedMedication = createTestMedication(name: "Retained")
+		let writableStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		#expect(writableStore.save(true, for: deletedMedication.id))
+		#expect(writableStore.save(false, for: retainedMedication.id))
+		let priorData = try #require(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency))
+		let failingStore = MedicationNotificationUrgencyStore(
+			defaults: defaults,
+			writer: { _, _, _ in }
+		)
+		let store = DataStore(
+			testIdentifier: "delete-urgency-failure",
+			settingsDefaults: defaults,
+			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
+			urgencyStore: failingStore
+		)
+		try await store.addMedication(deletedMedication)
+		try await store.addMedication(retainedMedication)
+
+		try await store.deleteMedication(deletedMedication)
+
+		#expect(store.medications.map(\.id) == [retainedMedication.id])
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == priorData)
+		#expect(writableStore.preference(for: deletedMedication.id) == true)
+		#expect(writableStore.preference(for: retainedMedication.id) == false)
+	}
+
     @Test("Delete medication with associated events removes all related data")
     func deleteMedicationWithAssociatedEvents() async throws {
         // Given
