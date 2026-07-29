@@ -281,7 +281,7 @@ struct NotificationManagerTests {
 			isUrgent: true,
 			showMedicationNames: false
 		)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		let manager = NotificationManager(
 			notificationClient: fake.client,
@@ -322,7 +322,7 @@ struct NotificationManagerTests {
 			isUrgent: true,
 			showMedicationNames: false
 		)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addError = NotificationManagerTestError.addFailed
 		let manager = NotificationManager(
@@ -423,11 +423,11 @@ struct NotificationManagerTests {
 		let otherMedication = createTestMedication(name: "Other")
 		let target = recurringRequest(for: medication, isUrgent: false)
 		let other = recurringRequest(for: otherMedication, isUrgent: false)
-		let misleadingIdentifier = deliveredRequest(
+		let misleadingIdentifier = try deliveredRequest(
 			from: other,
 			identifier: "\(medication.id.uuidString)-misleading"
 		)
-		let wrongCategory = deliveredRequest(
+		let wrongCategory = try deliveredRequest(
 			from: target,
 			identifier: "wrong-category",
 			categoryIdentifier: "OTHER"
@@ -566,6 +566,64 @@ struct NotificationManagerTests {
 		#expect(fake.pendingRequests.allSatisfy { $0.content.interruptionLevel == .active })
 		#expect(fixture.store.preference(for: medication.id) == false)
 		#expect(fixture.defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == priorData)
+	}
+
+	@Test("Manager does not semantically rewrite preferences after store rollback failure")
+	func urgencyPreferenceFailureDoesNotTriggerManagerStoreMutation() async throws {
+		let medication = createTestMedication()
+		let otherMedication = createTestMedication(name: "Other")
+		let defaults = RestoreBlockingUserDefaults()
+		let priorData = try JSONEncoder().encode([
+			medication.id.uuidString: false,
+			otherMedication.id.uuidString: true,
+		])
+		let partialEncoder = JSONEncoder()
+		partialEncoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+		let partialData = try partialEncoder.encode([
+			medication.id.uuidString: true,
+			otherMedication.id.uuidString: true,
+		])
+		let clobberedData = try JSONEncoder().encode([
+			medication.id.uuidString: false,
+		])
+		defaults.writeDirect(
+			priorData,
+			forKey: UserDefaultsKeys.medicationNotificationUrgency
+		)
+		defaults.blocksSet = true
+		var writerCalls = 0
+		let store = MedicationNotificationUrgencyStore(
+			defaults: defaults,
+			writer: { _, destination, key in
+				writerCalls += 1
+				let data = writerCalls == 1 ? partialData : clobberedData
+				guard let defaults = destination as? RestoreBlockingUserDefaults else {
+					Issue.record("Expected restore-blocking defaults")
+					return
+				}
+				defaults.writeDirect(data, forKey: key)
+			}
+		)
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: store
+		)
+		var thrownError: NotificationManager.OperationError?
+
+		do {
+			try await manager.setUrgent(true, for: medication.id)
+			Issue.record("Expected urgency preference persistence to fail")
+		} catch let error as NotificationManager.OperationError {
+			thrownError = error
+		} catch {
+			Issue.record("Expected preference persistence error, received \(error)")
+		}
+
+		#expect(thrownError == .preferencePersistenceFailed)
+		#expect(writerCalls == 1)
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == partialData)
+		#expect(store.preference(for: otherMedication.id) == true)
 	}
 
 	@Test("Rollback add failure is contained while the original error and preference remain authoritative")
@@ -712,7 +770,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let inventoryGate = TestAsyncGate()
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		let manager = NotificationManager(
@@ -749,7 +807,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		let manager = NotificationManager(
 			notificationClient: fake.client,
@@ -859,7 +917,7 @@ struct NotificationManagerTests {
 		let currentMedication = createTestMedication(name: "Current")
 		let staleMedication = createTestMedication(name: "Stale")
 		let staleCanonical = recurringRequest(for: staleMedication)
-		let staleLegacy = legacyRequest(from: staleCanonical, identifier: "stale-legacy")
+		let staleLegacy = try legacyRequest(from: staleCanonical, identifier: "stale-legacy")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [staleLegacy])
 		let manager = NotificationManager(
 			notificationClient: fake.client,
@@ -885,7 +943,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let inventoryGate = TestAsyncGate()
 		let secondStarted = TestAsyncSignal()
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
@@ -936,7 +994,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		let manager = NotificationManager(
 			notificationClient: fake.client,
@@ -967,7 +1025,7 @@ struct NotificationManagerTests {
 			fixture.cleanUp()
 		}
 		let medication = createTestMedication()
-		let legacy = legacyRequest(
+		let legacy = try legacyRequest(
 			from: recurringRequest(for: medication),
 			identifier: "legacy-reminder"
 		)
@@ -1005,7 +1063,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addError = NotificationManagerTestError.addFailed
 		let manager = NotificationManager(
@@ -1032,7 +1090,7 @@ struct NotificationManagerTests {
 		}
 		let medication = createTestMedication()
 		let canonical = recurringRequest(for: medication)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let addGate = TestAsyncGate()
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addGate = addGate
@@ -1088,7 +1146,7 @@ struct NotificationManagerTests {
 			isUrgent: false,
 			showMedicationNames: false
 		)
-		let legacy = legacyRequest(from: canonical, identifier: "legacy-reminder")
+		let legacy = try legacyRequest(from: canonical, identifier: "legacy-reminder")
 		let addGate = TestAsyncGate()
 		let fake = FakeMedicationNotificationClient(pendingRequests: [legacy])
 		fake.addGate = addGate
@@ -1138,16 +1196,16 @@ struct NotificationManagerTests {
 
 	// MARK: - Delivered Reminder Tests
 	@Test("Acknowledging delivered reminders preserves pending recurrence")
-	func acknowledgingDeliveredRemindersPreservesPendingRecurrence() async {
+	func acknowledgingDeliveredRemindersPreservesPendingRecurrence() async throws {
 		let medication = createTestMedication()
 		let otherMedication = createTestMedication(name: "Other")
 		let pending = recurringRequest(for: medication)
-		let targetDelivered = deliveredRequest(from: pending, identifier: "target-delivered")
-		let otherMedicationDelivered = deliveredRequest(
+		let targetDelivered = try deliveredRequest(from: pending, identifier: "target-delivered")
+		let otherMedicationDelivered = try deliveredRequest(
 			from: recurringRequest(for: otherMedication),
 			identifier: "other-medication"
 		)
-		let otherCategoryDelivered = deliveredRequest(
+		let otherCategoryDelivered = try deliveredRequest(
 			from: pending,
 			identifier: "other-category",
 			categoryIdentifier: "OTHER"
@@ -1507,16 +1565,19 @@ struct NotificationManagerTests {
 		)
 	}
 
-	private func legacyRequest(from canonical: UNNotificationRequest, identifier: String) -> UNNotificationRequest {
-		deliveredRequest(from: canonical, identifier: identifier)
+	private func legacyRequest(
+		from canonical: UNNotificationRequest,
+		identifier: String
+	) throws -> UNNotificationRequest {
+		try deliveredRequest(from: canonical, identifier: identifier)
 	}
 
 	private func deliveredRequest(
 		from source: UNNotificationRequest,
 		identifier: String,
 		categoryIdentifier: String = MedicationReminderRequest.categoryIdentifier
-	) -> UNNotificationRequest {
-		let content = source.content.mutableCopy() as? UNMutableNotificationContent ?? UNMutableNotificationContent()
+	) throws -> UNNotificationRequest {
+		let content = try #require(source.content.mutableCopy() as? UNMutableNotificationContent)
 		content.categoryIdentifier = categoryIdentifier
 		return UNNotificationRequest(identifier: identifier, content: content, trigger: source.trigger)
 	}
@@ -1530,6 +1591,30 @@ private struct UrgencyStoreFixture {
 
 	func cleanUp() {
 		defaults.removePersistentDomain(forName: suiteName)
+	}
+}
+
+private final class RestoreBlockingUserDefaults: UserDefaults {
+	private var storage: [String: Any] = [:]
+	var blocksSet = false
+
+	override func set(_ value: Any?, forKey defaultName: String) {
+		guard !blocksSet else {
+			return
+		}
+		storage[defaultName] = value
+	}
+
+	override func object(forKey defaultName: String) -> Any? {
+		storage[defaultName]
+	}
+
+	override func removeObject(forKey defaultName: String) {
+		storage.removeValue(forKey: defaultName)
+	}
+
+	func writeDirect(_ value: Any, forKey key: String) {
+		storage[key] = value
 	}
 }
 

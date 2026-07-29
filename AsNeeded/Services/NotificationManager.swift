@@ -59,16 +59,16 @@ final class NotificationManager: ObservableObject {
 			performsSystemSetup: true
 		)
 	}()
-    private let logger = DHLogger(category: "NotificationManager")
+	private let logger = DHLogger(category: "NotificationManager")
 
-    enum AuthorizationStatus: Equatable {
-        case notDetermined
-        case denied
-        case authorized
-        case provisional
-        case ephemeral
-        case unknown
-    }
+	enum AuthorizationStatus: Equatable {
+		case notDetermined
+		case denied
+		case authorized
+		case provisional
+		case ephemeral
+		case unknown
+	}
 
 	enum TimeSensitiveStatus: Equatable {
 		case enabled
@@ -82,13 +82,13 @@ final class NotificationManager: ObservableObject {
 		case urgencyRequestCreationFailed
 	}
 
-    @Published var authorizationStatus: AuthorizationStatus = .notDetermined
+	@Published var authorizationStatus: AuthorizationStatus = .notDetermined
 	@Published private(set) var timeSensitiveStatus: TimeSensitiveStatus = .unknown
-    @Published var showMedicationNames: Bool = false {
-        didSet {
-            UserDefaults.standard.set(showMedicationNames, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
-        }
-    }
+	@Published var showMedicationNames: Bool = false {
+		didSet {
+			UserDefaults.standard.set(showMedicationNames, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+		}
+	}
 
 	private let notificationCenter: UNUserNotificationCenter
 	private let notificationClient: MedicationNotificationClient
@@ -257,25 +257,25 @@ final class NotificationManager: ObservableObject {
         logger.debug("Notification categories configured")
     }
 
-    func checkAuthorizationStatus() async {
-        let settings = await notificationClient.notificationSettings()
-        switch settings.authorizationStatus {
-        case .notDetermined:
-            authorizationStatus = .notDetermined
-        case .denied:
-            authorizationStatus = .denied
-        case .authorized:
-            authorizationStatus = .authorized
-        case .provisional:
-            authorizationStatus = .provisional
-        case .ephemeral:
-            authorizationStatus = .ephemeral
-        @unknown default:
-            authorizationStatus = .unknown
-        }
+	func checkAuthorizationStatus() async {
+		let settings = await notificationClient.notificationSettings()
+		switch settings.authorizationStatus {
+		case .notDetermined:
+			authorizationStatus = .notDetermined
+		case .denied:
+			authorizationStatus = .denied
+		case .authorized:
+			authorizationStatus = .authorized
+		case .provisional:
+			authorizationStatus = .provisional
+		case .ephemeral:
+			authorizationStatus = .ephemeral
+		@unknown default:
+			authorizationStatus = .unknown
+		}
 		timeSensitiveStatus = Self.timeSensitiveStatus(for: settings.timeSensitiveSetting)
-        logger.debug("Notification authorization status: \(String(describing: authorizationStatus))")
-    }
+		logger.debug("Notification authorization status: \(String(describing: authorizationStatus))")
+	}
 
 	static func timeSensitiveStatus(
 		for setting: UNNotificationSetting
@@ -363,7 +363,6 @@ final class NotificationManager: ObservableObject {
 				}
 				return replacement
 			}
-			let previousPreference = self.urgencyStore.preference(for: medicationID)
 			var replacedOriginals: [UNNotificationRequest] = []
 
 			do {
@@ -377,10 +376,6 @@ final class NotificationManager: ObservableObject {
 				}
 			} catch {
 				await self.restoreUrgencyRequests(replacedOriginals)
-				self.restoreUrgencyPreference(
-					previousPreference,
-					for: medicationID
-				)
 				throw error
 			}
 		}
@@ -396,25 +391,6 @@ final class NotificationManager: ObservableObject {
 			} catch {
 				logger.logPrivacySafeError("Failed to roll back medication reminder urgency", error: error)
 			}
-		}
-	}
-
-	private func restoreUrgencyPreference(
-		_ previousPreference: Bool?,
-		for medicationID: UUID
-	) {
-		guard urgencyStore.preference(for: medicationID) != previousPreference else {
-			return
-		}
-
-		let restored: Bool
-		if let previousPreference {
-			restored = urgencyStore.save(previousPreference, for: medicationID)
-		} else {
-			restored = urgencyStore.removePreference(for: medicationID)
-		}
-		if !restored {
-			logger.error("Failed to roll back medication notification urgency preference")
 		}
 	}
 
