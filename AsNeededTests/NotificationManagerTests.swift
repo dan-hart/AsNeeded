@@ -1194,6 +1194,183 @@ struct NotificationManagerTests {
 		#expect(fake.pendingRequests.isEmpty)
 	}
 
+	// MARK: - Medication Artifact Cleanup Tests
+	@Test("Medication cleanup removes every exact target artifact and preference")
+	func medicationCleanupRemovesExactTargetArtifacts() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let firstTarget = createTestMedication(name: "First Target")
+		let secondTarget = createTestMedication(name: "Second Target")
+		let otherMedication = createTestMedication(name: "Other")
+		#expect(fixture.store.save(true, for: firstTarget.id))
+		#expect(fixture.store.save(false, for: secondTarget.id))
+		#expect(fixture.store.save(true, for: otherMedication.id))
+
+		let firstRecurring = recurringRequest(for: firstTarget)
+		let firstOneTime = oneTimeRequest(for: firstTarget, isUrgent: true)
+		let secondRecurring = recurringRequest(for: secondTarget, isUrgent: false)
+		let otherPending = recurringRequest(for: otherMedication, isUrgent: false)
+		let misleadingPending = try deliveredRequest(
+			from: otherPending,
+			identifier: "\(firstTarget.id.uuidString)-misleading"
+		)
+		let wrongCategoryPending = try deliveredRequest(
+			from: firstRecurring,
+			identifier: "wrong-category-pending",
+			categoryIdentifier: "OTHER"
+		)
+		let firstDelivered = try deliveredRequest(
+			from: firstRecurring,
+			identifier: "first-delivered"
+		)
+		let secondDelivered = try deliveredRequest(
+			from: secondRecurring,
+			identifier: "second-delivered"
+		)
+		let otherDelivered = try deliveredRequest(
+			from: otherPending,
+			identifier: "\(secondTarget.id.uuidString)-misleading-delivered"
+		)
+		let wrongCategoryDelivered = try deliveredRequest(
+			from: firstRecurring,
+			identifier: "wrong-category-delivered",
+			categoryIdentifier: "OTHER"
+		)
+		let fake = FakeMedicationNotificationClient(
+			pendingRequests: [
+				firstRecurring,
+				otherPending,
+				firstOneTime,
+				misleadingPending,
+				secondRecurring,
+				wrongCategoryPending,
+			],
+			deliveredRequests: [
+				otherDelivered,
+				firstDelivered,
+				wrongCategoryDelivered,
+				secondDelivered,
+			]
+		)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.removeMedicationNotificationArtifacts(
+			for: [firstTarget.id, secondTarget.id]
+		)
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.deliveredRequests,
+			.removePending([
+				firstRecurring.identifier,
+				firstOneTime.identifier,
+				secondRecurring.identifier,
+			]),
+			.removeDelivered([
+				firstDelivered.identifier,
+				secondDelivered.identifier,
+			]),
+		])
+		#expect(
+			fake.pendingRequests.map(\.identifier) == [
+				otherPending.identifier,
+				misleadingPending.identifier,
+				wrongCategoryPending.identifier,
+			]
+		)
+		#expect(
+			fake.deliveredRequests.map(\.identifier) == [
+				otherDelivered.identifier,
+				wrongCategoryDelivered.identifier,
+			]
+		)
+		#expect(fixture.store.preference(for: firstTarget.id) == nil)
+		#expect(fixture.store.preference(for: secondTarget.id) == nil)
+		#expect(fixture.store.preference(for: otherMedication.id) == true)
+	}
+
+	@Test("Empty medication cleanup does not inspect or mutate notifications")
+	func emptyMedicationCleanupIsNoOp() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(true, for: medication.id))
+		let request = recurringRequest(for: medication)
+		let fake = FakeMedicationNotificationClient(
+			pendingRequests: [request],
+			deliveredRequests: [request]
+		)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		await manager.removeMedicationNotificationArtifacts(for: [])
+
+		#expect(fake.operations.isEmpty)
+		#expect(fake.pendingRequests == [request])
+		#expect(fake.deliveredRequests == [request])
+		#expect(fixture.store.preference(for: medication.id) == true)
+	}
+
+	@Test("Queued medication cleanup wins after an in-flight urgency replacement", .timeLimit(.minutes(1)))
+	func queuedMedicationCleanupWinsAfterUrgencyReplacement() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(false, for: medication.id))
+		let pending = recurringRequest(for: medication, isUrgent: false)
+		let delivered = try deliveredRequest(from: pending, identifier: "target-delivered")
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(
+			pendingRequests: [pending],
+			deliveredRequests: [delivered]
+		)
+		fake.addGate = addGate
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		let urgencyUpdate = Task {
+			try await manager.setUrgent(true, for: medication.id)
+		}
+
+		await addGate.waitUntilSuspended()
+		let cleanupStarted = TestAsyncSignal()
+		let cleanup = Task {
+			cleanupStarted.signal()
+			await manager.removeMedicationNotificationArtifacts(for: [medication.id])
+		}
+		await cleanupStarted.wait()
+
+		addGate.resume()
+		fake.addGate = nil
+		try await urgencyUpdate.value
+		await cleanup.value
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(pending.identifier),
+			.finishAdd(pending.identifier),
+			.pendingRequests,
+			.deliveredRequests,
+			.removePending([pending.identifier]),
+			.removeDelivered([delivered.identifier]),
+		])
+		#expect(fake.pendingRequests.isEmpty)
+		#expect(fake.deliveredRequests.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == nil)
+	}
+
 	// MARK: - Delivered Reminder Tests
 	@Test("Acknowledging delivered reminders preserves pending recurrence")
 	func acknowledgingDeliveredRemindersPreservesPendingRecurrence() async throws {

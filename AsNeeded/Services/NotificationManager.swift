@@ -422,6 +422,52 @@ final class NotificationManager: ObservableObject {
 		}
 	}
 
+	func removeMedicationNotificationArtifacts(
+		for medicationIDs: Set<UUID>
+	) async {
+		guard !medicationIDs.isEmpty else {
+			return
+		}
+
+		_ = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			let deliveredRequests = await self.notificationClient.deliveredRequests()
+			let pendingIdentifiers = pendingRequests.compactMap { request -> String? in
+				guard let medicationID = Self.medicationID(for: request),
+					medicationIDs.contains(medicationID)
+				else {
+					return nil
+				}
+				return request.identifier
+			}
+			let deliveredIdentifiers = deliveredRequests.compactMap { request -> String? in
+				guard let medicationID = Self.medicationID(for: request),
+					medicationIDs.contains(medicationID)
+				else {
+					return nil
+				}
+				return request.identifier
+			}
+
+			if !pendingIdentifiers.isEmpty {
+				self.notificationClient.removePending(pendingIdentifiers)
+			}
+			if !deliveredIdentifiers.isEmpty {
+				self.notificationClient.removeDelivered(deliveredIdentifiers)
+			}
+
+			for medicationID in medicationIDs.sorted(by: {
+				$0.uuidString < $1.uuidString
+			}) {
+				if !self.urgencyStore.removePreference(for: medicationID) {
+					self.logger.error(
+						"Removed medication notification requests, but its urgency preference could not be removed safely"
+					)
+				}
+			}
+		}
+	}
+
     func cancelReminder(for medication: ANMedicationConcept) async {
         logger.info("Cancelling medication reminders")
 

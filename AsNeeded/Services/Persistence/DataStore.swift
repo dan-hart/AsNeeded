@@ -10,6 +10,7 @@ import Foundation
 public final class DataStore {
 	typealias UrgencyStoreFactory = @MainActor (UserDefaults) -> MedicationNotificationUrgencyStore
 	typealias MedicationInventoryReadiness = @MainActor (Store<ANMedicationConcept>) async throws -> Void
+	typealias NotificationArtifactCleanup = @MainActor (Set<UUID>) async -> Void
 
 	struct ImportFailureInjection {
 		var beforeClearMedications: () throws -> Void = {}
@@ -40,6 +41,7 @@ public final class DataStore {
 	private let urgencyStore: MedicationNotificationUrgencyStore
 	private let importFailureInjection: ImportFailureInjection
 	private let medicationInventoryReadiness: MedicationInventoryReadiness
+	private let notificationArtifactCleanup: NotificationArtifactCleanup
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
@@ -55,6 +57,11 @@ public final class DataStore {
 		urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
 		importFailureInjection = .none
 		medicationInventoryReadiness = { try await $0.itemsHaveLoaded() }
+		notificationArtifactCleanup = { medicationIDs in
+			await NotificationManager.shared.removeMedicationNotificationArtifacts(
+				for: medicationIDs
+			)
+		}
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -168,13 +175,15 @@ public final class DataStore {
 		medicationInventoryReadiness: @escaping MedicationInventoryReadiness = {
 			try await $0.itemsHaveLoaded()
 		},
-		importFailureInjection: ImportFailureInjection = .none
+		importFailureInjection: ImportFailureInjection = .none,
+		notificationArtifactCleanup: @escaping NotificationArtifactCleanup = { _ in }
 	) {
 		self.settingsDefaults = settingsDefaults
 		self.refillProfileStore = refillProfileStore
 		self.urgencyStore = urgencyStoreFactory(settingsDefaults)
 		self.importFailureInjection = importFailureInjection
 		self.medicationInventoryReadiness = medicationInventoryReadiness
+		self.notificationArtifactCleanup = notificationArtifactCleanup
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
             storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
@@ -228,12 +237,10 @@ public final class DataStore {
             }
 
             try await medicationsStore.remove(med)
+			await cleanNotificationArtifacts(for: [med.id])
 
             // Clear the deleted medication ID from AppStorage selections to prevent crashes
             let deletedIDString = med.id.uuidString
-			if !urgencyStore.removePreference(for: med.id) {
-				logger.error("Deleted medication, but its notification urgency preference could not be removed safely")
-			}
 
             // Clear from history view selection
             if UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == deletedIDString {
@@ -534,6 +541,13 @@ public final class DataStore {
 			throw error
 		}
 
+		if !mergeExisting {
+			let finalMedicationIDs = Set(medications.map(\.id))
+			let removedMedicationIDs = Set(snapshot.medications.map(\.id))
+				.subtracting(finalMedicationIDs)
+			await cleanNotificationArtifacts(for: removedMedicationIDs)
+		}
+
         let afterMedicationCount = medications.count
         let afterEventCount = events.count
 
@@ -634,15 +648,24 @@ public final class DataStore {
     /// Clear only user data (medications and events)
     public func clearUserData() async throws {
         logger.warning("Clearing user data (medications and events)")
+		let medicationIDs = Set(medications.map(\.id))
         do {
             try await medicationsStore.removeAll()
             try await eventsStore.removeAll()
+			await cleanNotificationArtifacts(for: medicationIDs)
             logger.info("Successfully cleared all user data")
         } catch {
             logger.logPrivacySafeError("Failed to clear user data", error: error)
             throw error
         }
     }
+
+	private func cleanNotificationArtifacts(for medicationIDs: Set<UUID>) async {
+		guard !medicationIDs.isEmpty else {
+			return
+		}
+		await notificationArtifactCleanup(medicationIDs)
+	}
 
 	@MainActor
 	static func resetAppSettings(
