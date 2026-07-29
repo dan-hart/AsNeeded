@@ -84,6 +84,15 @@ struct ReminderConfigurationView: View {
         (7, "Saturday", "Sat"),
     ]
 
+	private var hasUsableNotificationAuthorization: Bool {
+		switch notificationManager.authorizationStatus {
+		case .authorized, .provisional, .ephemeral:
+			true
+		case .notDetermined, .denied, .unknown:
+			false
+		}
+	}
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -94,7 +103,7 @@ struct ReminderConfigurationView: View {
 
                     // MARK: - Permission Section
 
-                    if notificationManager.authorizationStatus != .authorized {
+                    if !hasUsableNotificationAuthorization {
                         notificationPermissionCard
                     } else {
                         // MARK: - Reminder Type Selection
@@ -518,7 +527,7 @@ struct ReminderConfigurationView: View {
 
     private var buttonDisabled: Bool {
         isScheduling ||
-            notificationManager.authorizationStatus != .authorized ||
+            !hasUsableNotificationAuthorization ||
             (reminderType == .custom && selectedDays.isEmpty)
     }
 
