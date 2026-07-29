@@ -103,17 +103,22 @@ struct DataStoreTests {
 		let retainedMedication = createTestMedication(name: "Normal")
 		#expect(urgencyStore.save(true, for: deletedMedication.id))
 		#expect(urgencyStore.save(false, for: retainedMedication.id))
+		var factoryDefaults: UserDefaults?
 		let store = DataStore(
 			testIdentifier: "delete-urgency",
 			settingsDefaults: defaults,
 			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
-			urgencyStore: urgencyStore
+			urgencyStoreFactory: { destination in
+				factoryDefaults = destination
+				return MedicationNotificationUrgencyStore(defaults: destination)
+			}
 		)
 		try await store.addMedication(deletedMedication)
 		try await store.addMedication(retainedMedication)
 
 		try await store.deleteMedication(deletedMedication)
 
+		#expect(factoryDefaults === defaults)
 		#expect(store.medications.map(\.id) == [retainedMedication.id])
 		#expect(urgencyStore.preference(for: deletedMedication.id) == nil)
 		#expect(urgencyStore.preference(for: retainedMedication.id) == false)
@@ -132,15 +137,16 @@ struct DataStoreTests {
 		#expect(writableStore.save(true, for: deletedMedication.id))
 		#expect(writableStore.save(false, for: retainedMedication.id))
 		let priorData = try #require(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency))
-		let failingStore = MedicationNotificationUrgencyStore(
-			defaults: defaults,
-			writer: { _, _, _ in }
-		)
 		let store = DataStore(
 			testIdentifier: "delete-urgency-failure",
 			settingsDefaults: defaults,
 			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
-			urgencyStore: failingStore
+			urgencyStoreFactory: { destination in
+				MedicationNotificationUrgencyStore(
+					defaults: destination,
+					writer: { _, _, _ in }
+				)
+			}
 		)
 		try await store.addMedication(deletedMedication)
 		try await store.addMedication(retainedMedication)

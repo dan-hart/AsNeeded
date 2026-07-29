@@ -6,6 +6,7 @@ import Foundation
 enum AppSettingsError: LocalizedError {
 	case refillProfilePersistenceFailed
 	case notificationUrgencyPersistenceFailed
+	case refillProfileRollbackFailed
 
 	var errorDescription: String? {
 		switch self {
@@ -13,6 +14,8 @@ enum AppSettingsError: LocalizedError {
 			"Refill preferences could not be saved safely. No other settings were changed."
 		case .notificationUrgencyPersistenceFailed:
 			"Notification urgency preferences could not be saved safely."
+		case .refillProfileRollbackFailed:
+			"Notification urgency could not be saved, and prior refill preferences could not be restored safely."
 		}
 	}
 }
@@ -305,17 +308,28 @@ struct AppSettings: Codable {
 		urgencyStore: MedicationNotificationUrgencyStore? = nil
 	) throws {
 		let validMedicationIDs = validateMedicationIDs()
+		let resolvedProfileStore = profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+		let profileSnapshot = medicationRefillProfiles == nil ?
+			nil :
+			resolvedProfileStore.snapshotProfileData()
 
 		// Persist and verify the mirrored profile payload before changing any other
 		// setting so a profile failure cannot produce a partial settings import.
 		try persistRefillProfiles(
 			validMedicationIDs: validMedicationIDs,
-			profileStore: profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+			profileStore: resolvedProfileStore
 		)
-		try persistNotificationUrgency(
-			validMedicationIDs: validMedicationIDs,
-			urgencyStore: urgencyStore ?? MedicationNotificationUrgencyStore(defaults: defaults)
-		)
+		do {
+			try persistNotificationUrgency(
+				validMedicationIDs: validMedicationIDs,
+				urgencyStore: urgencyStore ?? MedicationNotificationUrgencyStore(defaults: defaults)
+			)
+		} catch {
+			if let profileSnapshot, !resolvedProfileStore.restoreProfileData(profileSnapshot) {
+				throw AppSettingsError.refillProfileRollbackFailed
+			}
+			throw error
+		}
 
 		// App Preferences
 		if let value = hapticsEnabled {

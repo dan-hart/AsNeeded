@@ -8,6 +8,8 @@ import Foundation
 
 @MainActor
 public final class DataStore {
+	typealias UrgencyStoreFactory = @MainActor (UserDefaults) -> MedicationNotificationUrgencyStore
+
 	struct ImportFailureInjection {
 		var beforeClearMedications: () throws -> Void = {}
 		var beforeClearEvents: () throws -> Void = {}
@@ -45,9 +47,10 @@ public final class DataStore {
     public var events: [ANEventConcept] { eventsStore.items }
 
     private init() {
-		settingsDefaults = .standard
+		let defaults = UserDefaults.standard
+		settingsDefaults = defaults
 		refillProfileStore = MedicationRefillProfileStore()
-		urgencyStore = .shared
+		urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
 		importFailureInjection = .none
         logger.info("Initializing DataStore with persistent storage in App Group")
 
@@ -135,7 +138,6 @@ public final class DataStore {
 			testIdentifier: testIdentifier,
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
-			urgencyStore: MedicationNotificationUrgencyStore(),
 			importFailureInjection: .none
 		)
 	}
@@ -144,12 +146,14 @@ public final class DataStore {
 		testIdentifier: String,
 		settingsDefaults: UserDefaults,
 		refillProfileStore: MedicationRefillProfileStore,
-		urgencyStore: MedicationNotificationUrgencyStore? = nil,
+		urgencyStoreFactory: UrgencyStoreFactory = {
+			MedicationNotificationUrgencyStore(defaults: $0)
+		},
 		importFailureInjection: ImportFailureInjection = .none
 	) {
 		self.settingsDefaults = settingsDefaults
 		self.refillProfileStore = refillProfileStore
-		self.urgencyStore = urgencyStore ?? MedicationNotificationUrgencyStore(defaults: settingsDefaults)
+		self.urgencyStore = urgencyStoreFactory(settingsDefaults)
 		self.importFailureInjection = importFailureInjection
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
