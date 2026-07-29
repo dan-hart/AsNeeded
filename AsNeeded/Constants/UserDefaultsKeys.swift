@@ -61,6 +61,12 @@ public enum UserDefaultsKeys {
     /// Whether to show medication names in notifications
     static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
 
+	/// Per-medication preference for Time Sensitive notifications
+	static let medicationNotificationUrgency = "medicationNotificationUrgency"
+
+	/// Whether the notification urgency migration has completed
+	static let medicationNotificationUrgencyMigrationCompleted = "migration.medicationNotificationUrgencyCompleted"
+
     // MARK: - Typography Settings
 
     /// Selected font family for app-wide text display
@@ -194,6 +200,8 @@ public enum UserDefaultsKeys {
         archivedMedicationProfiles,
         medicationProfilesMigrationCompleted,
         showMedicationNamesInNotifications,
+		medicationNotificationUrgency,
+		medicationNotificationUrgencyMigrationCompleted,
         selectedFontFamily,
         hasUserOptedOutOfReviews,
         appLaunchCount,
@@ -275,6 +283,7 @@ public enum UserDefaultsKeys {
         analyticsDailyActiveUse,
         recentMedicationSearches,
         medicationRefillProfiles,
+		medicationNotificationUrgency,
         legacyMedicationProfiles,
         automaticBackupLocationBookmark,
         automaticBackupLastBackupDate,
@@ -291,6 +300,7 @@ public enum UserDefaultsKeys {
         archivedLegacyEventsPath,
         archivedMedicationProfiles,
         medicationProfilesMigrationCompleted,
+		medicationNotificationUrgencyMigrationCompleted,
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -311,6 +321,7 @@ public enum UserDefaultsKeys {
 
         // Notification Settings
         showMedicationNamesInNotifications,
+		medicationNotificationUrgency,
 
         // Typography Settings
         selectedFontFamily,
@@ -374,6 +385,7 @@ public enum UserDefaultsKeys {
         archivedLegacyEventsPath,
         archivedMedicationProfiles,
         medicationProfilesMigrationCompleted,
+		medicationNotificationUrgencyMigrationCompleted,
         legacyMedicationProfiles,
         importSettingsDefaultBehavior,
     ]
