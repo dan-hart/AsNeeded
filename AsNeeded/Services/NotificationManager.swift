@@ -8,6 +8,12 @@ import UserNotifications
 
 @MainActor
 struct MedicationNotificationClient {
+	struct Settings {
+		let authorizationStatus: UNAuthorizationStatus
+		let timeSensitiveSetting: UNNotificationSetting
+	}
+
+	let notificationSettings: @MainActor () async -> Settings
 	let pendingRequests: @MainActor () async -> [UNNotificationRequest]
 	let deliveredRequests: @MainActor () async -> [UNNotificationRequest]
 	let add: @MainActor (UNNotificationRequest) async throws -> Void
@@ -16,6 +22,13 @@ struct MedicationNotificationClient {
 
 	static func live(notificationCenter: UNUserNotificationCenter) -> Self {
 		Self(
+			notificationSettings: {
+				let settings = await notificationCenter.notificationSettings()
+				return Settings(
+					authorizationStatus: settings.authorizationStatus,
+					timeSensitiveSetting: settings.timeSensitiveSetting
+				)
+			},
 			pendingRequests: {
 				await notificationCenter.pendingNotificationRequests()
 			},
@@ -48,7 +61,7 @@ final class NotificationManager: ObservableObject {
 	}()
     private let logger = DHLogger(category: "NotificationManager")
 
-    enum AuthorizationStatus {
+    enum AuthorizationStatus: Equatable {
         case notDetermined
         case denied
         case authorized
@@ -57,11 +70,20 @@ final class NotificationManager: ObservableObject {
         case unknown
     }
 
-	enum OperationError: Error {
+	enum TimeSensitiveStatus: Equatable {
+		case enabled
+		case disabled
+		case notSupported
+		case unknown
+	}
+
+	enum OperationError: Error, Equatable {
 		case preferencePersistenceFailed
+		case urgencyRequestCreationFailed
 	}
 
     @Published var authorizationStatus: AuthorizationStatus = .notDetermined
+	@Published private(set) var timeSensitiveStatus: TimeSensitiveStatus = .unknown
     @Published var showMedicationNames: Bool = false {
         didSet {
             UserDefaults.standard.set(showMedicationNames, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
@@ -236,25 +258,39 @@ final class NotificationManager: ObservableObject {
     }
 
     func checkAuthorizationStatus() async {
-        let settings = await notificationCenter.notificationSettings()
-        await MainActor.run {
-            switch settings.authorizationStatus {
-            case .notDetermined:
-                self.authorizationStatus = .notDetermined
-            case .denied:
-                self.authorizationStatus = .denied
-            case .authorized:
-                self.authorizationStatus = .authorized
-            case .provisional:
-                self.authorizationStatus = .provisional
-            case .ephemeral:
-                self.authorizationStatus = .ephemeral
-            @unknown default:
-                self.authorizationStatus = .unknown
-            }
+        let settings = await notificationClient.notificationSettings()
+        switch settings.authorizationStatus {
+        case .notDetermined:
+            authorizationStatus = .notDetermined
+        case .denied:
+            authorizationStatus = .denied
+        case .authorized:
+            authorizationStatus = .authorized
+        case .provisional:
+            authorizationStatus = .provisional
+        case .ephemeral:
+            authorizationStatus = .ephemeral
+        @unknown default:
+            authorizationStatus = .unknown
         }
+		timeSensitiveStatus = Self.timeSensitiveStatus(for: settings.timeSensitiveSetting)
         logger.debug("Notification authorization status: \(String(describing: authorizationStatus))")
     }
+
+	static func timeSensitiveStatus(
+		for setting: UNNotificationSetting
+	) -> TimeSensitiveStatus {
+		switch setting {
+		case .enabled:
+			.enabled
+		case .disabled:
+			.disabled
+		case .notSupported:
+			.notSupported
+		@unknown default:
+			.unknown
+		}
+	}
 
     func requestAuthorization() async -> Bool {
         do {
@@ -307,6 +343,95 @@ final class NotificationManager: ObservableObject {
 		try result.get()
         logger.info("Reminder scheduled successfully")
     }
+
+	func isUrgent(for medicationID: UUID) -> Bool {
+		urgencyStore.isUrgent(for: medicationID)
+	}
+
+	func setUrgent(_ isUrgent: Bool, for medicationID: UUID) async throws {
+		let result = await enqueueReminderMutation {
+			let pendingRequests = await self.notificationClient.pendingRequests()
+			let originalRequests = pendingRequests.filter {
+				Self.medicationID(for: $0) == medicationID
+			}
+			let replacements = try originalRequests.map { request in
+				guard let replacement = MedicationReminderRequest.updatingUrgency(
+					of: request,
+					isUrgent: isUrgent
+				) else {
+					throw OperationError.urgencyRequestCreationFailed
+				}
+				return replacement
+			}
+			let previousPreference = self.urgencyStore.preference(for: medicationID)
+			var replacedOriginals: [UNNotificationRequest] = []
+
+			do {
+				for (original, replacement) in zip(originalRequests, replacements) {
+					try await self.notificationClient.add(replacement)
+					replacedOriginals.append(original)
+				}
+
+				guard self.urgencyStore.save(isUrgent, for: medicationID) else {
+					throw OperationError.preferencePersistenceFailed
+				}
+			} catch {
+				await self.restoreUrgencyRequests(replacedOriginals)
+				self.restoreUrgencyPreference(
+					previousPreference,
+					for: medicationID
+				)
+				throw error
+			}
+		}
+		try result.get()
+	}
+
+	private func restoreUrgencyRequests(
+		_ requests: [UNNotificationRequest]
+	) async {
+		for request in requests {
+			do {
+				try await notificationClient.add(request)
+			} catch {
+				logger.logPrivacySafeError("Failed to roll back medication reminder urgency", error: error)
+			}
+		}
+	}
+
+	private func restoreUrgencyPreference(
+		_ previousPreference: Bool?,
+		for medicationID: UUID
+	) {
+		guard urgencyStore.preference(for: medicationID) != previousPreference else {
+			return
+		}
+
+		let restored: Bool
+		if let previousPreference {
+			restored = urgencyStore.save(previousPreference, for: medicationID)
+		} else {
+			restored = urgencyStore.removePreference(for: medicationID)
+		}
+		if !restored {
+			logger.error("Failed to roll back medication notification urgency preference")
+		}
+	}
+
+	private static func medicationID(
+		for request: UNNotificationRequest
+	) -> UUID? {
+		guard request.content.categoryIdentifier == MedicationReminderRequest.categoryIdentifier else {
+			return nil
+		}
+		if let medicationID = request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? UUID {
+			return medicationID
+		}
+		guard let value = request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String else {
+			return nil
+		}
+		return UUID(uuidString: value)
+	}
 
 	func acknowledgeDeliveredReminders(for medicationID: UUID) async {
 		_ = await enqueueReminderMutation {

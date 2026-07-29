@@ -72,6 +72,34 @@ struct NotificationManagerTests {
         #expect(validStatuses.contains(manager.authorizationStatus))
     }
 
+	@Test("Time sensitive setting maps independently from authorization")
+	func timeSensitiveSettingMapping() {
+		let cases: [(UNNotificationSetting, NotificationManager.TimeSensitiveStatus)] = [
+			(.enabled, .enabled),
+			(.disabled, .disabled),
+			(.notSupported, .notSupported),
+		]
+
+		for (setting, expectedStatus) in cases {
+			#expect(NotificationManager.timeSensitiveStatus(for: setting) == expectedStatus)
+		}
+	}
+
+	@Test("Authorization check publishes authorization and time sensitive status from one snapshot")
+	func authorizationCheckPublishesOneSnapshot() async {
+		let fake = FakeMedicationNotificationClient(
+			authorizationStatus: .authorized,
+			timeSensitiveSetting: .disabled
+		)
+		let manager = NotificationManager(notificationClient: fake.client)
+
+		await manager.checkAuthorizationStatus()
+
+		#expect(manager.authorizationStatus == .authorized)
+		#expect(manager.timeSensitiveStatus == .disabled)
+		#expect(fake.operations == [.notificationSettings])
+	}
+
     @Test("RequestAuthorization returns bool")
     func requestAuthorizationReturns() async {
         let manager = NotificationManager.shared
@@ -341,6 +369,338 @@ struct NotificationManagerTests {
 
 		#expect(fixture.store.preference(for: medication.id) == nil)
 		#expect(fake.operations.isEmpty)
+	}
+
+	// MARK: - Urgency Preference Tests
+	@Test("Urgency lookup resolves stored and missing preferences")
+	func urgencyLookupResolvesStoredAndMissingPreferences() throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let urgentMedication = createTestMedication(name: "Urgent")
+		let missingMedication = createTestMedication(name: "Missing")
+		#expect(fixture.store.save(true, for: urgentMedication.id))
+		let manager = NotificationManager(
+			notificationClient: FakeMedicationNotificationClient().client,
+			urgencyStore: fixture.store
+		)
+
+		#expect(manager.isUrgent(for: urgentMedication.id))
+		#expect(!manager.isUrgent(for: missingMedication.id))
+	}
+
+	@Test("Urgency update replaces every target reminder and persists preference")
+	func urgencyUpdateReplacesEveryTargetReminder() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let recurring = recurringRequest(for: medication, isUrgent: false)
+		let oneTime = oneTimeRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [recurring, oneTime])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		try await manager.setUrgent(true, for: medication.id)
+
+		#expect(fake.addedRequests.map(\.identifier) == [recurring.identifier, oneTime.identifier])
+		#expect(fake.pendingRequests.count == 2)
+		#expect(fake.pendingRequests.allSatisfy { $0.content.interruptionLevel == .timeSensitive })
+		#expect(fixture.store.preference(for: medication.id) == true)
+	}
+
+	@Test("Urgency update matches category and medication user info instead of identifier text")
+	func urgencyUpdateLeavesOtherMedicationRequestsUntouched() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication(name: "Target")
+		let otherMedication = createTestMedication(name: "Other")
+		let target = recurringRequest(for: medication, isUrgent: false)
+		let other = recurringRequest(for: otherMedication, isUrgent: false)
+		let misleadingIdentifier = deliveredRequest(
+			from: other,
+			identifier: "\(medication.id.uuidString)-misleading"
+		)
+		let wrongCategory = deliveredRequest(
+			from: target,
+			identifier: "wrong-category",
+			categoryIdentifier: "OTHER"
+		)
+		let fake = FakeMedicationNotificationClient(
+			pendingRequests: [target, other, misleadingIdentifier, wrongCategory]
+		)
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		try await manager.setUrgent(true, for: medication.id)
+
+		#expect(fake.addedRequests.map(\.identifier) == [target.identifier])
+		#expect(fake.pendingRequests.first { $0.identifier == target.identifier }?.content.interruptionLevel == .timeSensitive)
+		#expect(fake.pendingRequests.first { $0.identifier == other.identifier }?.content.interruptionLevel == .active)
+		#expect(fake.pendingRequests.first { $0.identifier == misleadingIdentifier.identifier }?.content.interruptionLevel == .active)
+		#expect(fake.pendingRequests.first { $0.identifier == wrongCategory.identifier }?.content.interruptionLevel == .active)
+		#expect(fixture.store.preference(for: otherMedication.id) == nil)
+	}
+
+	@Test("Urgency update with no pending reminders still persists explicit preference")
+	func urgencyUpdateWithoutPendingRemindersPersistsPreference() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medicationID = UUID()
+		let fake = FakeMedicationNotificationClient()
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		try await manager.setUrgent(false, for: medicationID)
+
+		#expect(fake.operations == [.pendingRequests])
+		#expect(fixture.store.preference(for: medicationID) == false)
+	}
+
+	@Test("Urgency preference persists only after every replacement succeeds")
+	func urgencyPreferencePersistsAfterEveryReplacement() async throws {
+		var persistedAfterAddCount: Int?
+		let medication = createTestMedication()
+		let recurring = recurringRequest(for: medication, isUrgent: false)
+		let oneTime = oneTimeRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [recurring, oneTime])
+		let fixture = try makeUrgencyStore(
+			writer: { data, destination, key in
+				persistedAfterAddCount = fake.addedRequests.count
+				destination.set(data, forKey: key)
+			}
+		)
+		defer {
+			fixture.cleanUp()
+		}
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+
+		try await manager.setUrgent(true, for: medication.id)
+
+		#expect(persistedAfterAddCount == 2)
+		#expect(fixture.store.preference(for: medication.id) == true)
+	}
+
+	@Test("Replacement failure rolls back changed reminders and retains old preference")
+	func urgencyReplacementFailureRollsBack() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(true, for: medication.id))
+		let recurring = recurringRequest(for: medication, isUrgent: true)
+		let oneTime = oneTimeRequest(for: medication, isUrgent: true)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [recurring, oneTime])
+		fake.addErrorsByCall[2] = NotificationManagerTestError.addFailed
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		var thrownError: NotificationManagerTestError?
+
+		do {
+			try await manager.setUrgent(false, for: medication.id)
+			Issue.record("Expected urgency replacement to fail")
+		} catch let error as NotificationManagerTestError {
+			thrownError = error
+		} catch {
+			Issue.record("Expected original add error, received \(error)")
+		}
+
+		#expect(thrownError == .addFailed)
+		#expect(fake.addCallCount == 3)
+		#expect(fake.pendingRequests.count == 2)
+		#expect(fake.pendingRequests.allSatisfy { $0.content.interruptionLevel == .timeSensitive })
+		#expect(fixture.store.preference(for: medication.id) == true)
+	}
+
+	@Test("Preference persistence failure rolls back reminders and retains old preference")
+	func urgencyPreferenceFailureRollsBack() async throws {
+		let medication = createTestMedication()
+		let fixture = try makeUrgencyStore(writer: { _, _, _ in })
+		defer {
+			fixture.cleanUp()
+		}
+		let priorData = try JSONEncoder().encode([medication.id.uuidString: false])
+		fixture.defaults.set(
+			priorData,
+			forKey: UserDefaultsKeys.medicationNotificationUrgency
+		)
+		let recurring = recurringRequest(for: medication, isUrgent: false)
+		let oneTime = oneTimeRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [recurring, oneTime])
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		var thrownError: NotificationManager.OperationError?
+
+		do {
+			try await manager.setUrgent(true, for: medication.id)
+			Issue.record("Expected urgency preference persistence to fail")
+		} catch let error as NotificationManager.OperationError {
+			thrownError = error
+		} catch {
+			Issue.record("Expected preference persistence error, received \(error)")
+		}
+
+		#expect(thrownError == .preferencePersistenceFailed)
+		#expect(fake.addCallCount == 4)
+		#expect(fake.pendingRequests.count == 2)
+		#expect(fake.pendingRequests.allSatisfy { $0.content.interruptionLevel == .active })
+		#expect(fixture.store.preference(for: medication.id) == false)
+		#expect(fixture.defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == priorData)
+	}
+
+	@Test("Rollback add failure is contained while the original error and preference remain authoritative")
+	func urgencyRollbackFailureIsContained() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		#expect(fixture.store.save(false, for: medication.id))
+		let recurring = recurringRequest(for: medication, isUrgent: false)
+		let oneTime = oneTimeRequest(for: medication, isUrgent: false)
+		let fake = FakeMedicationNotificationClient(pendingRequests: [recurring, oneTime])
+		fake.addErrorsByCall = [
+			2: NotificationManagerTestError.addFailed,
+			3: NotificationManagerTestError.rollbackFailed,
+		]
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		var thrownError: NotificationManagerTestError?
+
+		do {
+			try await manager.setUrgent(true, for: medication.id)
+			Issue.record("Expected urgency replacement to fail")
+		} catch let error as NotificationManagerTestError {
+			thrownError = error
+		} catch {
+			Issue.record("Expected original add error, received \(error)")
+		}
+
+		#expect(thrownError == .addFailed)
+		#expect(fake.addCallCount == 3)
+		#expect(fixture.store.preference(for: medication.id) == false)
+		#expect(fake.pendingRequests.first { $0.identifier == recurring.identifier }?.content.interruptionLevel == .timeSensitive)
+		#expect(fake.pendingRequests.first { $0.identifier == oneTime.identifier }?.content.interruptionLevel == .active)
+	}
+
+	@Test("Queued urgency update completes before a later schedule", .timeLimit(.minutes(1)))
+	func queuedUrgencyUpdateCompletesBeforeSchedule() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let existing = recurringRequest(for: medication, isUrgent: false)
+		let scheduledDate = Date(timeIntervalSince1970: 1_900_000_000)
+		let scheduledRequest = MedicationReminderRequest.make(
+			medication: medication,
+			date: scheduledDate,
+			isRecurring: false,
+			isUrgent: true,
+			showMedicationNames: false
+		)
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [existing])
+		fake.addGate = addGate
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		let urgencyUpdate = Task {
+			try await manager.setUrgent(true, for: medication.id)
+		}
+
+		await addGate.waitUntilSuspended()
+		let schedulingStarted = TestAsyncSignal()
+		let scheduling = Task {
+			schedulingStarted.signal()
+			try await manager.scheduleReminder(
+				for: medication,
+				date: scheduledDate,
+				isRecurring: false
+			)
+		}
+		await schedulingStarted.wait()
+
+		addGate.resume()
+		fake.addGate = nil
+		try await urgencyUpdate.value
+		try await scheduling.value
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(existing.identifier),
+			.finishAdd(existing.identifier),
+			.pendingRequests,
+			.add(scheduledRequest.identifier),
+		])
+		#expect(fake.pendingRequests.first { $0.identifier == scheduledRequest.identifier }?.content.interruptionLevel == .timeSensitive)
+		#expect(fixture.store.preference(for: medication.id) == true)
+	}
+
+	@Test("Queued urgency update completes before a later cancellation", .timeLimit(.minutes(1)))
+	func queuedUrgencyUpdateCompletesBeforeCancellation() async throws {
+		let fixture = try makeUrgencyStore()
+		defer {
+			fixture.cleanUp()
+		}
+		let medication = createTestMedication()
+		let existing = recurringRequest(for: medication, isUrgent: false)
+		let addGate = TestAsyncGate()
+		let fake = FakeMedicationNotificationClient(pendingRequests: [existing])
+		fake.addGate = addGate
+		let manager = NotificationManager(
+			notificationClient: fake.client,
+			urgencyStore: fixture.store
+		)
+		let urgencyUpdate = Task {
+			try await manager.setUrgent(true, for: medication.id)
+		}
+
+		await addGate.waitUntilSuspended()
+		let cancellationStarted = TestAsyncSignal()
+		let cancellation = Task {
+			cancellationStarted.signal()
+			await manager.cancelReminder(for: medication)
+		}
+		await cancellationStarted.wait()
+
+		addGate.resume()
+		fake.addGate = nil
+		try await urgencyUpdate.value
+		await cancellation.value
+
+		#expect(fake.operations == [
+			.pendingRequests,
+			.add(existing.identifier),
+			.finishAdd(existing.identifier),
+			.pendingRequests,
+			.removePending([existing.identifier]),
+		])
+		#expect(fake.pendingRequests.isEmpty)
+		#expect(fixture.store.preference(for: medication.id) == true)
 	}
 
 	// MARK: - Startup Migration Tests
@@ -1115,6 +1475,19 @@ struct NotificationManagerTests {
 		)
 	}
 
+	private func oneTimeRequest(
+		for medication: ANMedicationConcept,
+		isUrgent: Bool
+	) -> UNNotificationRequest {
+		MedicationReminderRequest.make(
+			medication: medication,
+			date: Date(timeIntervalSince1970: 1_850_000_000),
+			isRecurring: false,
+			isUrgent: isUrgent,
+			showMedicationNames: false
+		)
+	}
+
 	private func makeUrgencyStore(
 		writer: MedicationNotificationUrgencyStore.Writer? = nil
 	) throws -> UrgencyStoreFixture {
@@ -1163,6 +1536,7 @@ private struct UrgencyStoreFixture {
 @MainActor
 private final class FakeMedicationNotificationClient {
 	enum Operation: Equatable {
+		case notificationSettings
 		case pendingRequests
 		case deliveredRequests
 		case add(String)
@@ -1178,18 +1552,33 @@ private final class FakeMedicationNotificationClient {
 	var removedDeliveredIdentifiers: [[String]] = []
 	var operations: [Operation] = []
 	var addError: (any Error)?
+	var addErrorsByCall: [Int: any Error] = [:]
+	var addCallCount = 0
 	var addGate: TestAsyncGate?
+	let authorizationStatus: UNAuthorizationStatus
+	let timeSensitiveSetting: UNNotificationSetting
 
 	init(
 		pendingRequests: [UNNotificationRequest] = [],
-		deliveredRequests: [UNNotificationRequest] = []
+		deliveredRequests: [UNNotificationRequest] = [],
+		authorizationStatus: UNAuthorizationStatus = .notDetermined,
+		timeSensitiveSetting: UNNotificationSetting = .notSupported
 	) {
 		self.pendingRequests = pendingRequests
 		self.deliveredRequests = deliveredRequests
+		self.authorizationStatus = authorizationStatus
+		self.timeSensitiveSetting = timeSensitiveSetting
 	}
 
 	var client: MedicationNotificationClient {
 		MedicationNotificationClient(
+			notificationSettings: {
+				self.operations.append(.notificationSettings)
+				return MedicationNotificationClient.Settings(
+					authorizationStatus: self.authorizationStatus,
+					timeSensitiveSetting: self.timeSensitiveSetting
+				)
+			},
 			pendingRequests: {
 				self.operations.append(.pendingRequests)
 				return self.pendingRequests
@@ -1200,9 +1589,13 @@ private final class FakeMedicationNotificationClient {
 			},
 			add: { request in
 				self.operations.append(.add(request.identifier))
+				self.addCallCount += 1
 				if let addGate = self.addGate {
 					await addGate.suspend()
 					self.operations.append(.finishAdd(request.identifier))
+				}
+				if let addError = self.addErrorsByCall[self.addCallCount] {
+					throw addError
 				}
 				if let addError = self.addError {
 					throw addError
@@ -1265,7 +1658,8 @@ private final class TestAsyncSignal {
 	}
 }
 
-private enum NotificationManagerTestError: Error {
+private enum NotificationManagerTestError: Error, Equatable {
 	case addFailed
 	case providerFailed
+	case rollbackFailed
 }
