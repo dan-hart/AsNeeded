@@ -453,10 +453,11 @@ struct AppSettings: Codable {
 		if hapticsEnabled != nil || selectedTab != nil {
 			categories.append("App Preferences")
 		}
-		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil {
+		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil
+			|| trendsQuestionsEnabled != nil {
 			categories.append("Display Settings")
 		}
-		if trendsQuestionsEnabled != nil || medicationRefillProfiles != nil {
+		if medicationRefillProfiles != nil {
 			categories.append("Refill Preferences")
 		}
 		if showMedicationNamesInNotifications != nil || medicationNotificationUrgency != nil {

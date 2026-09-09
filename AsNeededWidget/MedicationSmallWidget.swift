@@ -64,6 +64,7 @@ struct SmallWidgetProvider: TimelineProvider {
     @MainActor
     private func createEntry() -> MedicationEntry {
         let provider = WidgetDataProvider.shared
+        provider.invalidateRefillSnapshot()
 
         guard let medication = provider.featuredMedication else {
             return MedicationEntry(date: Date(), medication: nil, lowStock: false, refillSoon: false)

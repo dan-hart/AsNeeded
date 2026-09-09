@@ -563,6 +563,12 @@ struct MedicationTrendsView: View {
                 .padding(.horizontal, chartPaddingH)
                 .accessibilityLabel("Daily usage chart for \(med.displayName)")
                 .accessibilityHint("Tap to open history for this medication")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction {
+                    if let medicationID = viewModel.selectedMedicationID {
+                        navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+                    }
+                }
                 .onTapGesture {
                     // Navigate to history with the selected medication
                     if let medicationID = viewModel.selectedMedicationID {

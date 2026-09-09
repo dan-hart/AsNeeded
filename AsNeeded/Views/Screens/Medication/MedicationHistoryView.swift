@@ -551,7 +551,7 @@ struct MedicationHistoryView: View {
                     LogDoseView(medication: med, source: "history_sheet") { dose, event, _ in
                         var updated = med
                         if let quantity = updated.quantity, dose.amount > 0 {
-                            updated.quantity = quantity - dose.amount
+                            updated.quantity = max(0, quantity - dose.amount)
                         }
 
                         do {

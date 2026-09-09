@@ -13,13 +13,18 @@ struct MedicationStatusSummaryService {
 
 	private let calendar: Calendar
 	private let refillProjectionService: MedicationRefillProjectionService
+	private let timeFormatter: DateFormatter
+	private let dateFormatter: DateFormatter
 
 	init(
 		calendar: Calendar = .current,
+		locale: Locale = .current,
 		refillProjectionService: MedicationRefillProjectionService? = nil
 	) {
 		self.calendar = calendar
 		self.refillProjectionService = refillProjectionService ?? MedicationRefillProjectionService(calendar: calendar)
+		self.timeFormatter = Self.makeFormatter(dateStyle: .none, timeStyle: .short, locale: locale, calendar: calendar)
+		self.dateFormatter = Self.makeFormatter(dateStyle: .medium, timeStyle: .none, locale: locale, calendar: calendar)
 	}
 
 	func summary(
@@ -88,18 +93,18 @@ struct MedicationStatusSummaryService {
 			.sorted { $0.date < $1.date }
 	}
 
-	private var timeFormatter: DateFormatter {
+	private static func makeFormatter(
+		dateStyle: DateFormatter.Style,
+		timeStyle: DateFormatter.Style,
+		locale: Locale,
+		calendar: Calendar
+	) -> DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateFormat = "h:mm a"
-		return formatter
-	}
-
-	private var dateFormatter: DateFormatter {
-		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateStyle = .medium
-		formatter.timeStyle = .none
+		formatter.locale = locale
+		formatter.calendar = calendar
+		formatter.timeZone = calendar.timeZone
+		formatter.dateStyle = dateStyle
+		formatter.timeStyle = timeStyle
 		return formatter
 	}
 }

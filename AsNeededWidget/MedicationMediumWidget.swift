@@ -77,6 +77,7 @@ struct MediumWidgetProvider: TimelineProvider {
     @MainActor
     private func createEntry() -> MedicationListEntry {
         let provider = WidgetDataProvider.shared
+        provider.invalidateRefillSnapshot()
 
         let lowStockIDs = Set(provider.lowQuantityMedications.map(\.id))
         let refillSoonIDs = Set(provider.refillDueSoon.map(\.id))
