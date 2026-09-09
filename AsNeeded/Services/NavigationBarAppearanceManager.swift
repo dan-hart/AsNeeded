@@ -65,7 +65,9 @@ enum NavigationBarAppearanceManager {
             font = UIFont.preferredFont(forTextStyle: style)
 
         case .atkinsonHyperlegible, .openDyslexic:
-            let baseSize = UIFont.preferredFont(forTextStyle: style).pointSize
+            // Start from the unscaled (Large) size; UIFontMetrics applies the Dynamic Type scaling once.
+            // Using preferredFont(forTextStyle:) here would scale twice at accessibility sizes.
+            let baseSize = UIFont.dynamicTypeBaseSize(for: style)
             let fontName = style.isBoldStyle ? fontFamily.boldFontName : fontFamily.fontName
 
             if let customFont = UIFont(name: fontName, size: baseSize) {

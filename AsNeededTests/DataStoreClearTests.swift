@@ -185,7 +185,7 @@ struct DataStoreClearTests {
 			}
 		)
 		let dataStore = DataStore(
-			testIdentifier: "clear-profile-failure",
+			testIdentifier: "clear-profile-failure-\(UUID().uuidString)",
 			settingsDefaults: defaults,
 			refillProfileStore: profileStore
 		)
@@ -216,7 +216,7 @@ struct DataStoreClearTests {
 		}
 		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: sharedDefaults)
 		let dataStore = DataStore(
-			testIdentifier: "clear-database-failure",
+			testIdentifier: "clear-database-failure-\(UUID().uuidString)",
 			settingsDefaults: defaults,
 			refillProfileStore: profileStore,
 			importFailureInjection: .init(

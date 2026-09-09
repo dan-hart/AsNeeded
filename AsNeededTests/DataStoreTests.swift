@@ -274,7 +274,7 @@ struct DataStoreTests {
 		var stateAtCleanup: (medications: Int, events: Int)?
 		var store: DataStore?
 		let createdStore = DataStore(
-			testIdentifier: "partial-clear-notification-cleanup",
+			testIdentifier: "partial-clear-notification-cleanup-\(UUID().uuidString)",
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
 			importFailureInjection: .init(
@@ -500,7 +500,7 @@ struct DataStoreTests {
 		var committedMedicationIDsAtCleanup: Set<UUID>?
 		var store: DataStore?
 		let createdStore = DataStore(
-			testIdentifier: "replace-import-notification-cleanup",
+			testIdentifier: "replace-import-notification-cleanup-\(UUID().uuidString)",
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
 			notificationArtifactCleanup: { medicationIDs in
@@ -528,7 +528,7 @@ struct DataStoreTests {
 		let importedMedication = createTestMedication(name: "Imported")
 		var cleanupCalls: [Set<UUID>] = []
 		let store = DataStore(
-			testIdentifier: "failed-replace-import-notification-cleanup",
+			testIdentifier: "failed-replace-import-notification-cleanup-\(UUID().uuidString)",
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
 			importFailureInjection: .init(
@@ -557,7 +557,7 @@ struct DataStoreTests {
 		let importedMedication = createTestMedication(name: "Imported")
 		var cleanupCalls: [Set<UUID>] = []
 		let store = DataStore(
-			testIdentifier: "merge-import-notification-cleanup",
+			testIdentifier: "merge-import-notification-cleanup-\(UUID().uuidString)",
 			settingsDefaults: .standard,
 			refillProfileStore: MedicationRefillProfileStore(),
 			notificationArtifactCleanup: { cleanupCalls.append($0) }

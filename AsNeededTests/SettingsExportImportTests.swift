@@ -1157,6 +1157,12 @@ struct SettingsExportImportTests {
 		""")
 		#expect(refillSettings.settingsCategories.contains("Refill Preferences"))
 		#expect(!refillSettings.settingsCategories.contains("Clinical Guidance"))
+
+		let trendsQuestionSettings = try decodeSettings("""
+		{"trendsQuestionsEnabled": false}
+		""")
+		#expect(trendsQuestionSettings.settingsCategories.contains("Display Settings"))
+		#expect(!trendsQuestionSettings.settingsCategories.contains("Refill Preferences"))
 	}
 
 	// MARK: - Automatic Backup Alert Tests

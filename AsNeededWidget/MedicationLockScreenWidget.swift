@@ -67,6 +67,7 @@ struct LockScreenWidgetProvider: TimelineProvider {
     @MainActor
     private func createEntry() -> LockScreenEntry {
         let provider = WidgetDataProvider.shared
+        provider.invalidateRefillSnapshot()
         let medications = provider.medications
 
         guard let featuredMedication = provider.featuredMedication else {

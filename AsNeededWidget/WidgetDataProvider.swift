@@ -95,14 +95,67 @@ final class WidgetDataProvider {
         refillProfiles[medication.id.uuidString] ?? .empty
     }
 
+    // MARK: - Refill Snapshot
+    /// Active medications plus their refill projections, computed once per timeline pass.
+    ///
+    /// Building this requires one decode of the refill profiles and one read of the events store,
+    /// after which every refill-related accessor is a dictionary lookup instead of a full event scan.
+    private struct RefillSnapshot {
+        let medications: [ANMedicationConcept]
+        let projections: [UUID: WidgetMedicationRefillProjectionService.RefillProjection]
+
+        func lowStock(_ medication: ANMedicationConcept) -> Bool {
+            projections[medication.id]?.lowStock ?? false
+        }
+
+        func refillSoon(_ medication: ANMedicationConcept) -> Bool {
+            projections[medication.id]?.refillSoon ?? false
+        }
+    }
+
+    private var cachedRefillSnapshot: RefillSnapshot?
+
+    private var refillSnapshot: RefillSnapshot {
+        if let cachedRefillSnapshot {
+            return cachedRefillSnapshot
+        }
+
+        let medications = self.medications
+        let events = self.events
+        let profiles = refillProfiles
+        let projectionDate = Date.now
+        var projections: [UUID: WidgetMedicationRefillProjectionService.RefillProjection] = [:]
+        projections.reserveCapacity(medications.count)
+
+        for medication in medications {
+            projections[medication.id] = refillProjectionService.projection(
+                for: medication,
+                at: projectionDate,
+                events: events,
+                profile: profiles[medication.id.uuidString] ?? .empty
+            )
+        }
+
+        let snapshot = RefillSnapshot(medications: medications, projections: projections)
+        cachedRefillSnapshot = snapshot
+        return snapshot
+    }
+
+    /// Discard the cached refill snapshot so the next refill read rebuilds it from the current store contents.
+    ///
+    /// The provider is a process-lifetime singleton, so each timeline pass must call this before reading
+    /// refill data; otherwise a later refresh could reuse projections from a previous pass.
+    func invalidateRefillSnapshot() {
+        cachedRefillSnapshot = nil
+    }
+
     /// Sort low-stock medications first, then refill-soon medications, then alphabetically.
     var medicationsByRefillPriority: [ANMedicationConcept] {
-        let lowStockIDs = Set(lowQuantityMedications.map(\.id))
-        let refillSoonIDs = Set(refillDueSoon.map(\.id))
+        let snapshot = refillSnapshot
 
-        return medications.sorted { left, right in
-            let leftPriority = lowStockIDs.contains(left.id) ? 0 : refillSoonIDs.contains(left.id) ? 1 : 2
-            let rightPriority = lowStockIDs.contains(right.id) ? 0 : refillSoonIDs.contains(right.id) ? 1 : 2
+        return snapshot.medications.sorted { left, right in
+            let leftPriority = snapshot.lowStock(left) ? 0 : snapshot.refillSoon(left) ? 1 : 2
+            let rightPriority = snapshot.lowStock(right) ? 0 : snapshot.refillSoon(right) ? 1 : 2
 
             if leftPriority == rightPriority {
                 let nameComparison = left.displayName.localizedCaseInsensitiveCompare(right.displayName)
@@ -123,28 +176,23 @@ final class WidgetDataProvider {
 
     /// Get medications at or below their saved low-stock threshold.
     var lowQuantityMedications: [ANMedicationConcept] {
-        medications.filter { medication in
-            refillProjectionService.projection(
-                for: medication,
-                events: events,
-                profile: refillProfile(for: medication)
-            ).lowStock
-        }
+        let snapshot = refillSnapshot
+        return snapshot.medications.filter { snapshot.lowStock($0) }
     }
 
     /// Get medications that need refill soon
     var refillDueSoon: [ANMedicationConcept] {
-        medications.filter { medication in
-            refillProjectionService.projection(
-                for: medication,
-                events: events,
-                profile: refillProfile(for: medication)
-            ).refillSoon
-        }
+        let snapshot = refillSnapshot
+        return snapshot.medications.filter { snapshot.refillSoon($0) }
     }
 
     func refillStatusMessage(for medication: ANMedicationConcept) -> String {
-        refillProjectionService.projection(
+        if let projection = refillSnapshot.projections[medication.id] {
+            return projection.statusMessage
+        }
+
+        // Medication is not part of the active snapshot (e.g. archived); project it directly.
+        return refillProjectionService.projection(
             for: medication,
             events: events,
             profile: refillProfile(for: medication)
