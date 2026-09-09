@@ -5,10 +5,36 @@ import Testing
 
 @Suite("MedicationStatusSummaryService Tests", .tags(.unit))
 struct MedicationStatusSummaryServiceTests {
-	private let calendar = Calendar(identifier: .gregorian)
+	private let calendar: Calendar = {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		return calendar
+	}()
+	private let locale = Locale(identifier: "en_US_POSIX")
 
 	private var referenceDate: Date {
 		DateComponents(calendar: calendar, year: 2026, month: 6, day: 5, hour: 12).date ?? Date(timeIntervalSince1970: 1_780_685_200)
+	}
+
+	private func service(locale: Locale? = nil) -> MedicationStatusSummaryService {
+		MedicationStatusSummaryService(calendar: calendar, locale: locale ?? self.locale)
+	}
+
+	/// Mirrors the service's formatter configuration so expectations stay valid across ICU updates
+	/// (for example the narrow no-break space newer ICU data inserts before AM/PM).
+	private func formatted(
+		_ date: Date,
+		dateStyle: DateFormatter.Style,
+		timeStyle: DateFormatter.Style,
+		locale: Locale? = nil
+	) -> String {
+		let formatter = DateFormatter()
+		formatter.locale = locale ?? self.locale
+		formatter.calendar = calendar
+		formatter.timeZone = calendar.timeZone
+		formatter.dateStyle = dateStyle
+		formatter.timeStyle = timeStyle
+		return formatter.string(from: date)
 	}
 
 	private func medication(
@@ -39,32 +65,59 @@ struct MedicationStatusSummaryServiceTests {
 	@Test("Last-dose text covers no history, today, and an older date")
 	func lastDoseFormatting() {
 		let medication = medication()
-		let service = MedicationStatusSummaryService(calendar: calendar)
-		let none = service.summary(for: medication, at: referenceDate, events: [], profile: .empty)
-		let today = service.summary(
+		let summaryService = service()
+		let todayDoseDate = referenceDate.addingTimeInterval(-2 * 3600)
+		let olderDoseDate = referenceDate.addingTimeInterval(-26 * 3600)
+		let none = summaryService.summary(for: medication, at: referenceDate, events: [], profile: .empty)
+		let today = summaryService.summary(
 			for: medication,
 			at: referenceDate,
-			events: [event(medication: medication, date: referenceDate.addingTimeInterval(-2 * 3600))],
+			events: [event(medication: medication, date: todayDoseDate)],
 			profile: .empty
 		)
-		let older = service.summary(
+		let older = summaryService.summary(
 			for: medication,
 			at: referenceDate,
-			events: [event(medication: medication, date: referenceDate.addingTimeInterval(-26 * 3600))],
+			events: [event(medication: medication, date: olderDoseDate)],
+			profile: .empty
+		)
+		let todayTimeText = formatted(todayDoseDate, dateStyle: .none, timeStyle: .short)
+		let olderTimeText = formatted(olderDoseDate, dateStyle: .none, timeStyle: .short)
+		let olderDateText = formatted(olderDoseDate, dateStyle: .medium, timeStyle: .none)
+
+		#expect(none.timingText == "No doses logged yet")
+		#expect(today.timingText == "Last taken \(todayTimeText)")
+		#expect(today.timingText.contains("10:00"))
+		#expect(today.timingText.contains("AM"))
+		#expect(older.timingText == "Last taken \(olderDateText) at \(olderTimeText)")
+		#expect(older.timingText.contains("Jun"))
+		#expect(older.timingText.contains("2026"))
+		#expect(older.timingText.contains("10:00"))
+	}
+
+	@Test("Twenty-four-hour locale renders the last-dose time without AM/PM")
+	func lastDoseFormattingRespectsTwentyFourHourLocale() {
+		let medication = medication()
+		let doseDate = referenceDate.addingTimeInterval(-2 * 3600)
+		let events = [event(medication: medication, date: doseDate)]
+		let twelveHour = service().summary(for: medication, at: referenceDate, events: events, profile: .empty)
+		let twentyFourHour = service(locale: Locale(identifier: "en_GB")).summary(
+			for: medication,
+			at: referenceDate,
+			events: events,
 			profile: .empty
 		)
 
-		#expect(none.timingText == "No doses logged yet")
-		#expect(today.timingText == "Last taken 10:00 AM")
-		#expect(older.timingText.contains("Last taken"))
-		#expect(older.timingText.contains("Jun 4, 2026"))
-		#expect(older.timingText.contains("10:00 AM"))
+		#expect(twelveHour.timingText.contains("AM"))
+		#expect(twentyFourHour.timingText == "Last taken 10:00")
+		#expect(!twentyFourHour.timingText.contains("AM"))
+		#expect(!twentyFourHour.timingText.contains("PM"))
 	}
 
 	@Test("Normal stock summary has neutral refill status")
 	func normalStockSummary() {
 		let medication = medication(quantity: 30)
-		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+		let summary = service().summary(
 			for: medication,
 			at: referenceDate,
 			events: [],
@@ -81,7 +134,7 @@ struct MedicationStatusSummaryServiceTests {
 	func refillSoonOnlySummary() {
 		let refillDate = calendar.date(byAdding: .day, value: 4, to: referenceDate)
 		let medication = medication(quantity: 30, nextRefillDate: refillDate)
-		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+		let summary = service().summary(
 			for: medication,
 			at: referenceDate,
 			events: [],
@@ -97,7 +150,7 @@ struct MedicationStatusSummaryServiceTests {
 	@Test("Custom low-stock profile creates low-stock summary without duplicate wording")
 	func customLowStockProfileDrivesRefillStatus() {
 		let medication = medication(quantity: 12)
-		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+		let summary = service().summary(
 			for: medication,
 			at: referenceDate,
 			events: [],
@@ -113,7 +166,7 @@ struct MedicationStatusSummaryServiceTests {
 
 	@Test("Missing quantity prompts quantity tracking")
 	func missingQuantityPromptsQuantityTracking() {
-		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+		let summary = service().summary(
 			for: medication(quantity: nil),
 			at: referenceDate,
 			events: [],
@@ -126,7 +179,7 @@ struct MedicationStatusSummaryServiceTests {
 	@Test("Summary strings contain refill and history facts only")
 	func summaryStringsContainRefillAndHistoryFactsOnly() {
 		let medication = medication()
-		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+		let summary = service().summary(
 			for: medication,
 			at: referenceDate,
 			events: [],

@@ -38,11 +38,11 @@ struct CustomFontScalingTests {
 		return UIFontMetrics(forTextStyle: style).scaledFont(for: font, compatibleWith: traits(category)).pointSize
 	}
 
-	@Test("Atkinson Hyperlegible matches system point size at every Dynamic Type category")
-	func atkinsonMatchesSystemAcrossCategories() throws {
+	@Test("Custom fonts match system point size at every Dynamic Type category", arguments: [FontFamily.atkinsonHyperlegible, .openDyslexic])
+	func customFontMatchesSystemAcrossCategories(family: FontFamily) throws {
 		FontManager.registerCustomFonts()
-		let fontName = FontFamily.atkinsonHyperlegible.fontName
-		try #require(UIFont(name: fontName, size: 17) != nil, "Atkinson Hyperlegible must be registered")
+		let fontName = family.fontName
+		try #require(UIFont(name: fontName, size: 17) != nil, "\(family.displayName) must be registered")
 
 		let categories: [UIContentSizeCategory] = [
 			.extraSmall, .large, .extraExtraExtraLarge, .accessibilityMedium, .accessibilityLarge,
@@ -55,7 +55,7 @@ struct CustomFontScalingTests {
 				// UIFontMetrics applies its own per-style curve, which sits within ~15% of the system table at
 				// accessibility sizes. The bug this guards against produced 1.5x to 2.8x the system size.
 				let tolerance = max(1.5, system * 0.15)
-				#expect(abs(system - custom) <= tolerance, "\(name) at \(category.rawValue): system \(system) vs custom \(custom)")
+				#expect(abs(system - custom) <= tolerance, "\(family.rawValue) \(name) at \(category.rawValue): system \(system) vs custom \(custom)")
 			}
 		}
 	}

@@ -6,10 +6,46 @@ import DHLoggingKit
 import Foundation
 import SwiftUI
 
+/// Persists a quick log. The returned flags describe what remains persisted once the closure finishes:
+/// a medication update that was rolled back after a failed event write reports `updateSuccess == false`.
 typealias QuickLogPersistence = @MainActor (
 	_ updatedMedication: ANMedicationConcept,
 	_ event: ANEventConcept
 ) async -> (updateSuccess: Bool, eventSuccess: Bool)
+
+/// Reverts a quick log by removing its event and, when provided, restoring the medication quantity.
+/// Returns `false` when the undo could not be fully applied.
+typealias QuickLogUndoPersistence = @MainActor (
+	_ event: ANEventConcept,
+	_ restoredMedication: ANMedicationConcept?
+) async -> Bool
+
+/// Primitive store writes behind quick-log persistence. Tests can replace individual writes with
+/// failing ones while the compensating logic in `MedicationListViewModel` stays under test.
+struct QuickLogWrites {
+	var storedMedication: @MainActor (UUID) -> ANMedicationConcept?
+	var updateMedication: @MainActor (ANMedicationConcept) async throws -> Void
+	var addEvent: @MainActor (ANEventConcept) async throws -> Void
+	var removeEvent: @MainActor (ANEventConcept) async throws -> Void
+
+	@MainActor
+	static func live(dataStore: DataStore) -> QuickLogWrites {
+		QuickLogWrites(
+			storedMedication: { medicationID in
+				dataStore.medications.first { $0.id == medicationID }
+			},
+			updateMedication: { medication in
+				try await dataStore.updateMedication(medication)
+			},
+			addEvent: { event in
+				try await dataStore.addEvent(event, shouldRecordForReview: false)
+			},
+			removeEvent: { event in
+				try await dataStore.eventsStore.remove(event)
+			}
+		)
+	}
+}
 
 @MainActor
 final class MedicationListViewModel: ObservableObject {
@@ -22,6 +58,7 @@ final class MedicationListViewModel: ObservableObject {
     private let statusSummaryService = MedicationStatusSummaryService()
     private let scheduleQuickLogToastDismissal: (@escaping @MainActor @Sendable () -> Void) -> Void
 	private let quickLogPersistence: QuickLogPersistence
+	private let quickLogUndoPersistence: QuickLogUndoPersistence
 	private let acknowledgeDeliveredReminders: @MainActor (UUID) async -> Void
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
@@ -89,34 +126,16 @@ final class MedicationListViewModel: ObservableObject {
             }
         },
 		quickLogPersistence: QuickLogPersistence? = nil,
+		quickLogUndoPersistence: QuickLogUndoPersistence? = nil,
 		acknowledgeDeliveredReminders: @escaping @MainActor (UUID) async -> Void = { medicationID in
 			await NotificationManager.shared.acknowledgeDeliveredReminders(for: medicationID)
 		}
     ) {
         self.dataStore = dataStore
         self.scheduleQuickLogToastDismissal = scheduleQuickLogToastDismissal
-		let logger = DHLogger.ui
-		self.quickLogPersistence = quickLogPersistence ?? { updatedMedication, event in
-			async let updateSuccess: Bool = {
-				do {
-					try await dataStore.updateMedication(updatedMedication)
-					return true
-				} catch {
-					logger.logPrivacySafeError("Failed to update medication", error: error)
-					return false
-				}
-			}()
-			async let eventSuccess: Bool = {
-				do {
-					try await dataStore.addEvent(event, shouldRecordForReview: false)
-					return true
-				} catch {
-					logger.logPrivacySafeError("Failed to add event", error: error)
-					return false
-				}
-			}()
-			return await (updateSuccess, eventSuccess)
-		}
+		let writes = QuickLogWrites.live(dataStore: dataStore)
+		self.quickLogPersistence = quickLogPersistence ?? Self.makeQuickLogPersistence(writes: writes)
+		self.quickLogUndoPersistence = quickLogUndoPersistence ?? Self.makeQuickLogUndoPersistence(writes: writes)
 		self.acknowledgeDeliveredReminders = acknowledgeDeliveredReminders
 
         if medicationOrder.isEmpty && !items.isEmpty {
@@ -141,6 +160,77 @@ final class MedicationListViewModel: ObservableObject {
             medicationOrder = items.map { $0.id.uuidString }
         }
     }
+
+	// MARK: - Quick Log Persistence
+	/// Writes the medication first, then the event. If the event write fails, the medication that was
+	/// stored before the update is written back so a retry does not decrement the quantity twice.
+	static func makeQuickLogPersistence(writes: QuickLogWrites) -> QuickLogPersistence {
+		let logger = DHLogger.ui
+		return { updatedMedication, event in
+			let originalMedication = writes.storedMedication(updatedMedication.id)
+
+			do {
+				try await writes.updateMedication(updatedMedication)
+			} catch {
+				logger.logPrivacySafeError("Failed to update medication", error: error)
+				return (updateSuccess: false, eventSuccess: false)
+			}
+
+			do {
+				try await writes.addEvent(event)
+				return (updateSuccess: true, eventSuccess: true)
+			} catch {
+				logger.logPrivacySafeError("Failed to add event", error: error)
+			}
+
+			guard let originalMedication else {
+				logger.error("Unable to roll back medication update after event write failure: originalMedicationFound=false")
+				return (updateSuccess: true, eventSuccess: false)
+			}
+
+			do {
+				try await writes.updateMedication(originalMedication)
+				logger.warning("Rolled back medication update after event write failure")
+				return (updateSuccess: false, eventSuccess: false)
+			} catch {
+				logger.logPrivacySafeError("Failed to roll back medication update after event write failure", error: error)
+				return (updateSuccess: true, eventSuccess: false)
+			}
+		}
+	}
+
+	/// Removes the event first, then restores the medication. If the restore fails, the event is
+	/// re-added so the store never holds a decremented quantity without its dose event.
+	static func makeQuickLogUndoPersistence(writes: QuickLogWrites) -> QuickLogUndoPersistence {
+		let logger = DHLogger.ui
+		return { event, restoredMedication in
+			do {
+				try await writes.removeEvent(event)
+			} catch {
+				logger.logPrivacySafeError("Failed to remove quick log event", error: error)
+				return false
+			}
+
+			guard let restoredMedication else {
+				return true
+			}
+
+			do {
+				try await writes.updateMedication(restoredMedication)
+				return true
+			} catch {
+				logger.logPrivacySafeError("Failed to restore medication after quick log undo", error: error)
+			}
+
+			do {
+				try await writes.addEvent(event)
+				logger.warning("Re-added quick log event after medication restore failure")
+			} catch {
+				logger.logPrivacySafeError("Failed to re-add quick log event after medication restore failure", error: error)
+			}
+			return false
+		}
+	}
 
     // MARK: - Data Operations
     func add(_ med: ANMedicationConcept) async -> Bool {
@@ -225,7 +315,7 @@ final class MedicationListViewModel: ObservableObject {
         let eventCountBefore = dataStore.events.count
         var updated = med
         if let quantity = updated.quantity, dose.amount > 0 {
-            updated.quantity = quantity - dose.amount
+            updated.quantity = max(0, quantity - dose.amount)
         }
 
         var eventToSave = event
@@ -242,12 +332,12 @@ final class MedicationListViewModel: ObservableObject {
             details: quantityDetails(quantityWasPresent: med.quantity != nil)
         )
 
-        async let updateResult = update(updated)
-        async let eventResult = addEvent(eventToSave)
-
-        let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
+        // Sequential, compensating writes: if the event write fails the quantity is restored.
+        let (updateSuccess, eventSuccess) = await quickLogPersistence(updated, eventToSave)
 
         if updateSuccess && eventSuccess {
+            // Sheet logs count toward review eligibility (quick logs from the row intentionally do not).
+            AppReviewManager.shared.recordMedicationEvent()
             logMedication = nil
             logger.logDoseOperation(
                 "Succeeded",
@@ -331,26 +421,25 @@ final class MedicationListViewModel: ObservableObject {
             return false
         }
 
-        do {
-            try await dataStore.eventsStore.remove(event)
+		var restoredMedication: ANMedicationConcept?
+		if let dose = event.dose,
+		   let medicationID = event.medication?.id,
+		   let medication = dataStore.medications.first(where: { $0.id == medicationID })
+		{
+			var updated = medication
+			if let quantity = updated.quantity {
+				updated.quantity = quantity + dose.amount
+			}
+			restoredMedication = updated
+		}
 
-            if let dose = event.dose,
-               let medicationID = event.medication?.id,
-               let medication = dataStore.medications.first(where: { $0.id == medicationID })
-            {
-                var updated = medication
-                if let quantity = updated.quantity {
-                    updated.quantity = quantity + dose.amount
-                }
-                try await dataStore.updateMedication(updated)
-            }
+		guard await quickLogUndoPersistence(event, restoredMedication) else {
+			logger.error("Failed to undo quick log")
+			return false
+		}
 
-            dismissQuickLogToast(generation: toastGeneration)
-            return true
-        } catch {
-            logger.logPrivacySafeError("Failed to undo quick log", error: error)
-            return false
-        }
+		dismissQuickLogToast(generation: toastGeneration)
+		return true
     }
 
     func dismissQuickLogToast() {

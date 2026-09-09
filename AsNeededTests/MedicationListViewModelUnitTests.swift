@@ -25,6 +25,8 @@ struct MedicationListViewModelUnitTests {
 		}
 	}
 
+	private struct TestPersistenceError: Error {}
+
 	enum QuickLogFailureOutcome: CaseIterable {
 		case totalFailure
 		case updateOnly
@@ -312,6 +314,85 @@ struct MedicationListViewModelUnitTests {
 
 		#expect(await viewModel.quickLog(medication: medication) == false)
 		#expect(acknowledgementRecorder.medicationIDs.isEmpty)
+	}
+
+	@Test("Quick log restores quantity when event write fails after medication update")
+	func quickLogRestoresQuantityWhenEventWriteFails() async throws {
+		// Given
+		let medication = createTestMedication(name: "Rollback Med", quantity: 20.0)
+		try await dataStore.addMedication(medication)
+		var writes = QuickLogWrites.live(dataStore: dataStore)
+		writes.addEvent = { _ in throw TestPersistenceError() }
+		let acknowledgementRecorder = DeliveredReminderAcknowledgementRecorder()
+		let viewModel = MedicationListViewModel(
+			dataStore: dataStore,
+			scheduleQuickLogToastDismissal: toastScheduler.schedule,
+			quickLogPersistence: MedicationListViewModel.makeQuickLogPersistence(writes: writes),
+			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
+		)
+
+		// When
+		let success = await viewModel.quickLog(medication: medication)
+
+		// Then
+		#expect(success == false)
+		#expect(dataStore.events.isEmpty)
+		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 20.0)
+		#expect(acknowledgementRecorder.medicationIDs.isEmpty)
+		#expect(viewModel.showQuickLogToast == false)
+	}
+
+	@Test("Quick log skips event write when medication update fails")
+	func quickLogSkipsEventWriteWhenMedicationUpdateFails() async throws {
+		// Given
+		let medication = createTestMedication(name: "Update Failure Med", quantity: 20.0)
+		try await dataStore.addMedication(medication)
+		var writes = QuickLogWrites.live(dataStore: dataStore)
+		writes.updateMedication = { _ in throw TestPersistenceError() }
+		let viewModel = MedicationListViewModel(
+			dataStore: dataStore,
+			scheduleQuickLogToastDismissal: toastScheduler.schedule,
+			quickLogPersistence: MedicationListViewModel.makeQuickLogPersistence(writes: writes),
+			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
+		)
+
+		// When
+		let success = await viewModel.quickLog(medication: medication)
+
+		// Then
+		#expect(success == false)
+		#expect(dataStore.events.isEmpty)
+		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 20.0)
+	}
+
+	@Test("Undo re-adds event when medication restore fails")
+	func undoReAddsEventWhenMedicationRestoreFails() async throws {
+		// Given
+		let medication = createTestMedication(name: "Undo Rollback Med", quantity: 20.0)
+		try await dataStore.addMedication(medication)
+		var writes = QuickLogWrites.live(dataStore: dataStore)
+		writes.updateMedication = { _ in throw TestPersistenceError() }
+		let viewModel = MedicationListViewModel(
+			dataStore: dataStore,
+			scheduleQuickLogToastDismissal: toastScheduler.schedule,
+			quickLogUndoPersistence: MedicationListViewModel.makeQuickLogUndoPersistence(writes: writes),
+			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
+		)
+		#expect(await viewModel.quickLog(medication: medication))
+		#expect(dataStore.events.count == 1)
+		let loggedEventID = dataStore.events.first?.id
+		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
+
+		// When
+		let undoSuccess = await viewModel.undoLastQuickLog()
+
+		// Then
+		#expect(undoSuccess == false)
+		#expect(dataStore.events.count == 1)
+		#expect(dataStore.events.first?.id == loggedEventID)
+		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
+		#expect(viewModel.quickLogFeedback?.undoEventID == loggedEventID)
+		#expect(viewModel.showQuickLogToast)
 	}
 
 	@Test("Replacement toast ignores stale auto-dismissal")
