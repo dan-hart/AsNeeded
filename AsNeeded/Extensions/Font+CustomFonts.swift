@@ -44,8 +44,12 @@ extension Font {
             selectedFontName = fontName
         }
 
-        // Get the base size for the text style to maintain Dynamic Type scaling
-        let baseSize = UIFont.preferredFont(forTextStyle: style.uiFontTextStyle).pointSize
+        // Use the default (Large) size for the text style. `Font.custom(_:size:relativeTo:)` scales this
+        // base size for the user's current Dynamic Type setting, so it must NOT already be scaled.
+        // Reading `UIFont.preferredFont(forTextStyle:)` here would return the already-scaled size and
+        // the font would then be scaled twice, growing far faster than the system font at
+        // accessibility sizes (measured: body at AX1 rendered at 43pt instead of 28pt, at AX5 149pt instead of 53pt).
+        let baseSize = UIFont.dynamicTypeBaseSize(for: style.uiFontTextStyle)
 
         // Try to create custom font, fallback to system font if unavailable
         if UIFont(name: selectedFontName, size: baseSize) != nil {
@@ -68,6 +72,21 @@ extension Font {
         default:
             return false
         }
+    }
+}
+
+// MARK: - Dynamic Type Base Sizes
+
+extension UIFont {
+    /// The unscaled point size Apple assigns to a text style at the default (Large) content size category.
+    ///
+    /// Pass this to `Font.custom(_:size:relativeTo:)` or `UIFontMetrics.scaledFont(for:)` so a custom font
+    /// scales with Dynamic Type at the system font's rate. Never pass a size read from
+    /// `UIFont.preferredFont(forTextStyle:)` without traits, because that value is already scaled for the
+    /// current setting and would be scaled a second time.
+    static func dynamicTypeBaseSize(for style: UIFont.TextStyle) -> CGFloat {
+        let defaultTraits = UITraitCollection(preferredContentSizeCategory: .large)
+        return UIFont.preferredFont(forTextStyle: style, compatibleWith: defaultTraits).pointSize
     }
 }
 
