@@ -44,13 +44,28 @@ public enum UserDefaultsKeys {
     /// Whether private on-device Trends questions are enabled
     static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
 
-    /// Stored medication safety and refill profiles keyed by medication ID
-    static let medicationSafetyProfiles = "medicationSafetyProfiles"
+    /// Stored refill profiles keyed by medication ID
+    static let medicationRefillProfiles = "medicationRefillProfiles"
+
+    /// Legacy medication safety profiles retained until migration completes
+    static let legacyMedicationProfiles = "medicationSafetyProfiles"
+
+    /// Recovery copy of the raw legacy medication profile payload
+    static let archivedMedicationProfiles = "migration.archivedMedicationProfiles"
+
+    /// Whether legacy medication profiles have been safely archived
+    static let medicationProfilesMigrationCompleted = "migration.medicationProfilesCompleted"
 
     // MARK: - Notification Settings
 
     /// Whether to show medication names in notifications
     static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
+
+	/// Per-medication preference for Time Sensitive notifications
+	static let medicationNotificationUrgency = "medicationNotificationUrgency"
+
+	/// Whether the notification urgency migration has completed
+	static let medicationNotificationUrgencyMigrationCompleted = "migration.medicationNotificationUrgencyCompleted"
 
     // MARK: - Typography Settings
 
@@ -180,8 +195,13 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
-        medicationSafetyProfiles,
+        medicationRefillProfiles,
+        legacyMedicationProfiles,
+        archivedMedicationProfiles,
+        medicationProfilesMigrationCompleted,
         showMedicationNamesInNotifications,
+		medicationNotificationUrgency,
+		medicationNotificationUrgencyMigrationCompleted,
         selectedFontFamily,
         hasUserOptedOutOfReviews,
         appLaunchCount,
@@ -262,7 +282,9 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         recentMedicationSearches,
-        medicationSafetyProfiles,
+        medicationRefillProfiles,
+		medicationNotificationUrgency,
+        legacyMedicationProfiles,
         automaticBackupLocationBookmark,
         automaticBackupLastBackupDate,
         automaticBackupLastCleanupDate,
@@ -273,6 +295,12 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
+        storageSchemaVersion,
+        archivedLegacyMedicationsPath,
+        archivedLegacyEventsPath,
+        archivedMedicationProfiles,
+        medicationProfilesMigrationCompleted,
+		medicationNotificationUrgencyMigrationCompleted,
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -289,10 +317,11 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
-        medicationSafetyProfiles,
+        medicationRefillProfiles,
 
         // Notification Settings
         showMedicationNamesInNotifications,
+		medicationNotificationUrgency,
 
         // Typography Settings
         selectedFontFamily,
@@ -354,5 +383,10 @@ public enum UserDefaultsKeys {
         // Legacy migration paths (device-specific, must not be overwritten)
         archivedLegacyMedicationsPath,
         archivedLegacyEventsPath,
+        archivedMedicationProfiles,
+        medicationProfilesMigrationCompleted,
+		medicationNotificationUrgencyMigrationCompleted,
+        legacyMedicationProfiles,
+        importSettingsDefaultBehavior,
     ]
 }

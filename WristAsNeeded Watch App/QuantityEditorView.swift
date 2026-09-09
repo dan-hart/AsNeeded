@@ -22,9 +22,15 @@ struct QuantityEditorView: View {
                         Text("Current Quantity")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("\(medication.quantity, specifier: "%.0f")")
-                            .font(.title2)
-                            .fontWeight(.semibold)
+                        if let quantity = medication.quantity {
+                            Text("\(quantity, specifier: "%.0f")")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                        } else {
+                            Text("Not tracked")
+                                .font(.title3)
+                                .foregroundColor(.secondary)
+                        }
                     }
                     .padding()
                     .background(Color.gray.opacity(0.2))
@@ -88,7 +94,7 @@ struct QuantityEditorView: View {
                             Spacer()
 
                             Button("Reset") {
-                                quantity = medication.quantity
+                                quantity = medication.quantity ?? 0
                             }
                             .font(.caption)
                             .padding(.horizontal, 12)
@@ -120,10 +126,10 @@ struct QuantityEditorView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(isUpdating || quantity == medication.quantity ? Color.gray : Color.green)
+                    .background(isUpdating || quantity == (medication.quantity ?? 0) ? Color.gray : Color.green)
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(isUpdating || quantity == medication.quantity)
+                    .disabled(isUpdating || quantity == (medication.quantity ?? 0))
                 }
                 .padding()
             }

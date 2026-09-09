@@ -255,6 +255,35 @@ Without App Group, widgets/extensions cannot access the main app's database.
 - `DataStore.swift` - Primary data access layer
 - `DataMigrationManager.swift` - Migration logic
 
+### Medication Refill Preference Storage
+
+The refill-only preference payload is separate from the Boutique databases. This migration does not change any database path, filename, container, or database schema described above.
+
+| Purpose | UserDefaults key | Exportable | Reset behavior |
+| --- | --- | --- | --- |
+| Active refill profiles | `medicationRefillProfiles` | Yes | Removed by settings reset and clear-all |
+| Legacy active safety profiles | `medicationSafetyProfiles` | No | Removed after verified migration, settings reset, and clear-all |
+| Raw legacy recovery archive | `migration.archivedMedicationProfiles` | No | Preserved by settings reset; erased by clear-all |
+| Migration completion marker | `migration.medicationProfilesCompleted` | No | Preserved by settings reset; removed by clear-all |
+
+`UserDefaults.standard` is authoritative for active refill profiles. The App Group defaults domain is a verified mirror for widgets and extensions. Writes and removals must go through `MedicationRefillProfileStore` where practical so both domains are updated and read back before the operation succeeds. If only the App Group active value exists, the store may recover it into standard defaults; if both exist, the standard value wins and is mirrored.
+
+Legacy migration decodes only `lowStockThreshold` from each old safety profile. Removed dose limits, timing windows, and other safety fields are ignored. Before the legacy active payload is removed, its raw bytes are written to the recovery archive in both defaults domains and verified. The completion marker is then mirrored to prevent archive or stale legacy data from replaying on later launches. Migration failures retain the legacy active payload and do not claim completion.
+
+Settings exports encode only `medicationRefillProfiles`. They never include the legacy active property, raw recovery archive, or migration marker. Imports prefer `medicationRefillProfiles` when both current and legacy JSON properties exist; a present current property, including `null` or malformed data, never falls back to legacy. Legacy exports containing `medicationSafetyProfiles` remain decodable through the minimal low-stock-only shape only when the current property is absent. Settings, medications, and events form one logical import transaction. Before mutation, import snapshots every setting it may touch, exact profile state in both defaults domains, and the ordered medication/event collections. Imported profiles are verified as a preflight, all database writes must succeed, and profiles are filtered again against IDs actually present after insertion. Any clear, insertion, reference-validation, or final-verification failure restores and verifies the full snapshot. A rollback failure is reported as an explicit compound error rather than partial success.
+
+An ordinary settings reset removes active current and legacy refill preferences from standard and App Group defaults, but deliberately preserves verified recovery archives and the completion marker. Explicit clear-all is a destructive privacy erasure: it removes active current data, legacy active data, the completion marker, and raw recovery archives from both domains. Both profile operations snapshot the affected keys, remove them, read back every destination, and roll back on profile-removal failure. A failed verified profile reset leaves unrelated settings untouched; a failed clear-all profile erasure is surfaced before medication or event data is deleted. After profile privacy erasure succeeds, a later Boutique medication/event clearing failure is surfaced to the caller, but deliberately does not recreate erased profile recovery bytes.
+
+Required refill-profile storage scenarios are:
+
+- Fresh: no current or legacy value; no profile is created.
+- Legacy-only: decode only low-stock thresholds, verify active writes and archive bytes, remove legacy active data, and mark completion.
+- Current-only: preserve the current payload and verify standard/App Group mirroring.
+- Both current and legacy: current active data wins; legacy bytes are archived and removed without overwriting current data.
+- Restart: completed migration does not replay or resurrect removed profiles; failed mirrored removal rolls back to a consistent state.
+- Failure: encoding, mirroring, archive verification, or removal failure must not silently discard the last recoverable payload.
+- Settings lifecycle: current export/import, legacy exported JSON decoding, invalid-ID filtering, reset, clear-all, archive exclusion, and key-registry classification remain covered by focused tests.
+
 ---
 
 ## Migration Code Template
@@ -578,9 +607,10 @@ Boutique's `SQLiteStorageEngine` automatically:
 | 2.0 | Oct 13, 2025 | App Group migration | Yes - `DataMigrationManager` |
 | 2.1 | Oct 28, 2025 | Data merge fix | No - same manager |
 | 2.2 | Dec 3, 2025 | Archive legacy DBs after migration (fixes repeated overwrite bug) | No - same manager, adds cleanup |
+| 2.3 | Jul 11, 2026 | Refill-profile UserDefaults migration, verified mirroring, and non-replay reset rules | Yes - `MedicationRefillProfileStore` |
 
 ---
 
-**Last Updated**: December 3, 2025
+**Last Updated**: July 11, 2026
 **Maintained By**: Development Team
 **Review Frequency**: After any storage-related changes

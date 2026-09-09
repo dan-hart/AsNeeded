@@ -110,7 +110,6 @@ struct GetMedicationInfoIntent: AppIntent {
             prescribedDose: medication.prescribedDoseAmount,
             prescribedUnit: medication.prescribedUnit,
             quantity: medication.quantity,
-            minimumInterval: nil, // minimumIntervalSeconds doesn't exist yet
             lastTaken: lastTaken,
             daysUntilRefill: daysUntilRefill,
             recentDosesCount: recentDoses
@@ -126,7 +125,6 @@ struct MedicationDetailInfo {
     let prescribedDose: Double?
     let prescribedUnit: ANUnitConcept?
     let quantity: Double?
-    let minimumInterval: TimeInterval?
     let lastTaken: Date?
     let daysUntilRefill: Int?
     let recentDosesCount: Int

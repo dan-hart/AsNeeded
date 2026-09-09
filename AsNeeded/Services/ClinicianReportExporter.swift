@@ -22,41 +22,50 @@ struct ClinicianReportSummary: Equatable {
 
 struct ClinicianReportExporter {
 	private let calendar: Calendar
-	private let doseGuidanceService: MedicationDoseGuidanceService
+	private let refillProjectionService: MedicationRefillProjectionService
 
 	init(
 		calendar: Calendar = .current,
-		doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
+		refillProjectionService: MedicationRefillProjectionService = MedicationRefillProjectionService()
 	) {
 		self.calendar = calendar
-		self.doseGuidanceService = doseGuidanceService
+		self.refillProjectionService = refillProjectionService
 	}
 
 	func buildSummary(
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		safetyProfiles: [String: MedicationSafetyProfile] = [:],
+		refillProfiles: [String: MedicationRefillProfile] = [:],
 		generatedAt: Date = .now
 	) -> ClinicianReportSummary {
 		let formatter = DateFormatter()
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .short
+		let eligibleDoseEvents = events.filter {
+			$0.eventType == .doseTaken && $0.date <= generatedAt
+		}
+		let thirtyDayLowerBound = calendar.date(
+			byAdding: .day,
+			value: -30,
+			to: generatedAt
+		) ?? generatedAt
+		let lastThirtyDays = thirtyDayLowerBound ... generatedAt
 
 		let summaries = medications
 			.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
 			.map { medication in
-				let medicationEvents = events
-					.filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
+				let medicationEvents = eligibleDoseEvents
+					.filter { $0.medication?.id == medication.id }
 					.sorted { $0.date > $1.date }
-				let profile = safetyProfiles[medication.id.uuidString] ?? .empty
-				let projection = doseGuidanceService.refillProjection(
+				let profile = refillProfiles[medication.id.uuidString] ?? .empty
+				let projection = refillProjectionService.projection(
 					for: medication,
 					at: generatedAt,
-					events: events,
+					events: eligibleDoseEvents,
 					profile: profile
 				)
 				let logsInLast30Days = medicationEvents.filter {
-					$0.date >= (calendar.date(byAdding: .day, value: -30, to: generatedAt) ?? generatedAt)
+					lastThirtyDays.contains($0.date)
 				}.count
 				let prescribedDose = {
 					guard let amount = medication.prescribedDoseAmount,
@@ -83,7 +92,7 @@ struct ClinicianReportExporter {
 						return "Not enough recent data"
 					}
 
-					if let unit = medication.prescribedUnit {
+					if let unit = projection.aggregationUnit {
 						return "\(projection.averageDailyUsage.formattedAmount) \(unit.abbreviation)/day"
 					}
 
@@ -111,7 +120,7 @@ struct ClinicianReportExporter {
 		return ClinicianReportSummary(
 			generatedAt: generatedAt,
 			medicationCount: medications.count,
-			eventCount: events.filter { $0.eventType == .doseTaken }.count,
+			eventCount: eligibleDoseEvents.count,
 			medications: summaries,
 			disclaimer: "This report summarizes self-logged medication history. It may be incomplete or incorrect and should not replace clinical judgment."
 		)

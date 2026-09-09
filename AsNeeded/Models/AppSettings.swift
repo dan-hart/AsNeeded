@@ -3,8 +3,46 @@
 
 import Foundation
 
+enum AppSettingsError: LocalizedError {
+	case refillProfilePersistenceFailed
+	case notificationUrgencyPersistenceFailed
+	case refillProfileRollbackFailed
+
+	var errorDescription: String? {
+		switch self {
+		case .refillProfilePersistenceFailed:
+			"Refill preferences could not be saved safely. No other settings were changed."
+		case .notificationUrgencyPersistenceFailed:
+			"Notification urgency preferences could not be saved safely."
+		case .refillProfileRollbackFailed:
+			"Notification urgency could not be saved, and prior refill preferences could not be restored safely."
+		}
+	}
+}
+
 /// Represents exportable app settings that can be included in data exports and backups
 struct AppSettings: Codable {
+	static let appliedDefaultsKeys: [String] = [
+		UserDefaultsKeys.hapticsEnabled,
+		UserDefaultsKeys.selectedTab,
+		UserDefaultsKeys.trendsVisualizationType,
+		UserDefaultsKeys.trendsDaysWindow,
+		UserDefaultsKeys.hideSupportBanners,
+		UserDefaultsKeys.trendsQuestionsEnabled,
+		UserDefaultsKeys.showMedicationNamesInNotifications,
+		UserDefaultsKeys.medicationNotificationUrgency,
+		UserDefaultsKeys.selectedFontFamily,
+		UserDefaultsKeys.automaticBackupEnabled,
+		UserDefaultsKeys.automaticBackupRedactMedicationNames,
+		UserDefaultsKeys.automaticBackupRedactNotes,
+		UserDefaultsKeys.automaticBackupRetentionDays,
+		UserDefaultsKeys.automaticBackupIncludeSettings,
+		UserDefaultsKeys.historySelectedMedicationID,
+		UserDefaultsKeys.trendsSelectedMedicationID,
+		UserDefaultsKeys.medicationOrder,
+		UserDefaultsKeys.recentMedicationSearches,
+	]
+
 	// MARK: - App Preferences
 
 	/// Whether haptic feedback is enabled
@@ -31,6 +69,9 @@ struct AppSettings: Codable {
 
 	/// Whether to show medication names in notifications
 	var showMedicationNamesInNotifications: Bool?
+
+	/// Per-medication notification urgency preferences
+	var medicationNotificationUrgency: [String: Bool]?
 
 	// MARK: - Typography Settings
 
@@ -71,16 +112,151 @@ struct AppSettings: Codable {
 	/// Recent medication search terms
 	var recentMedicationSearches: [String]?
 
-	/// Per-medication safety and refill guidance
-	var medicationSafetyProfiles: [String: MedicationSafetyProfile]?
+	/// Per-medication refill preferences
+	var medicationRefillProfiles: [String: MedicationRefillProfile]?
+
+	private struct LegacyMedicationProfile: Decodable {
+		var lowStockThreshold: Double?
+	}
+
+	private enum CodingKeys: String, CodingKey {
+		case hapticsEnabled
+		case selectedTab
+		case trendsVisualizationType
+		case trendsDaysWindow
+		case hideSupportBanners
+		case trendsQuestionsEnabled
+		case showMedicationNamesInNotifications
+		case medicationNotificationUrgency
+		case selectedFontFamily
+		case automaticBackupEnabled
+		case automaticBackupRedactMedicationNames
+		case automaticBackupRedactNotes
+		case automaticBackupRetentionDays
+		case automaticBackupIncludeSettings
+		case historySelectedMedicationID
+		case trendsSelectedMedicationID
+		case medicationOrder
+		case recentMedicationSearches
+		case medicationRefillProfiles
+		case medicationSafetyProfiles
+	}
 
 	// MARK: - Initialization
 
 	/// Create empty settings (all nil)
 	init() {}
 
+	init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled)
+		selectedTab = try container.decodeIfPresent(Int.self, forKey: .selectedTab)
+		trendsVisualizationType = try container.decodeIfPresent(Int.self, forKey: .trendsVisualizationType)
+		trendsDaysWindow = try container.decodeIfPresent(Int.self, forKey: .trendsDaysWindow)
+		hideSupportBanners = try container.decodeIfPresent(Bool.self, forKey: .hideSupportBanners)
+		trendsQuestionsEnabled = try container.decodeIfPresent(Bool.self, forKey: .trendsQuestionsEnabled)
+		showMedicationNamesInNotifications = try container.decodeIfPresent(
+			Bool.self,
+			forKey: .showMedicationNamesInNotifications
+		)
+		medicationNotificationUrgency = try container.decodeIfPresent(
+			[String: Bool].self,
+			forKey: .medicationNotificationUrgency
+		)
+		selectedFontFamily = try container.decodeIfPresent(String.self, forKey: .selectedFontFamily)
+		automaticBackupEnabled = try container.decodeIfPresent(Bool.self, forKey: .automaticBackupEnabled)
+		automaticBackupRedactMedicationNames = try container.decodeIfPresent(
+			Bool.self,
+			forKey: .automaticBackupRedactMedicationNames
+		)
+		automaticBackupRedactNotes = try container.decodeIfPresent(
+			Bool.self,
+			forKey: .automaticBackupRedactNotes
+		)
+		automaticBackupRetentionDays = try container.decodeIfPresent(
+			Int.self,
+			forKey: .automaticBackupRetentionDays
+		)
+		automaticBackupIncludeSettings = try container.decodeIfPresent(
+			Bool.self,
+			forKey: .automaticBackupIncludeSettings
+		)
+		historySelectedMedicationID = try container.decodeIfPresent(
+			String.self,
+			forKey: .historySelectedMedicationID
+		)
+		trendsSelectedMedicationID = try container.decodeIfPresent(
+			String.self,
+			forKey: .trendsSelectedMedicationID
+		)
+		medicationOrder = try container.decodeIfPresent([String].self, forKey: .medicationOrder)
+		recentMedicationSearches = try container.decodeIfPresent(
+			[String].self,
+			forKey: .recentMedicationSearches
+		)
+
+		if container.contains(.medicationRefillProfiles) {
+			medicationRefillProfiles = try container.decodeIfPresent(
+				[String: MedicationRefillProfile].self,
+				forKey: .medicationRefillProfiles
+			)
+		} else if let legacyProfiles = try container.decodeIfPresent(
+			[String: LegacyMedicationProfile].self,
+			forKey: .medicationSafetyProfiles
+		) {
+			medicationRefillProfiles = legacyProfiles.reduce(into: [:]) { result, entry in
+				guard let threshold = entry.value.lowStockThreshold else {
+					return
+				}
+				result[entry.key] = MedicationRefillProfile(lowStockThreshold: threshold)
+			}
+		}
+	}
+
+	func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encodeIfPresent(hapticsEnabled, forKey: .hapticsEnabled)
+		try container.encodeIfPresent(selectedTab, forKey: .selectedTab)
+		try container.encodeIfPresent(trendsVisualizationType, forKey: .trendsVisualizationType)
+		try container.encodeIfPresent(trendsDaysWindow, forKey: .trendsDaysWindow)
+		try container.encodeIfPresent(hideSupportBanners, forKey: .hideSupportBanners)
+		try container.encodeIfPresent(trendsQuestionsEnabled, forKey: .trendsQuestionsEnabled)
+		try container.encodeIfPresent(
+			showMedicationNamesInNotifications,
+			forKey: .showMedicationNamesInNotifications
+		)
+		try container.encodeIfPresent(
+			medicationNotificationUrgency,
+			forKey: .medicationNotificationUrgency
+		)
+		try container.encodeIfPresent(selectedFontFamily, forKey: .selectedFontFamily)
+		try container.encodeIfPresent(automaticBackupEnabled, forKey: .automaticBackupEnabled)
+		try container.encodeIfPresent(
+			automaticBackupRedactMedicationNames,
+			forKey: .automaticBackupRedactMedicationNames
+		)
+		try container.encodeIfPresent(
+			automaticBackupRedactNotes,
+			forKey: .automaticBackupRedactNotes
+		)
+		try container.encodeIfPresent(
+			automaticBackupRetentionDays,
+			forKey: .automaticBackupRetentionDays
+		)
+		try container.encodeIfPresent(
+			automaticBackupIncludeSettings,
+			forKey: .automaticBackupIncludeSettings
+		)
+		try container.encodeIfPresent(historySelectedMedicationID, forKey: .historySelectedMedicationID)
+		try container.encodeIfPresent(trendsSelectedMedicationID, forKey: .trendsSelectedMedicationID)
+		try container.encodeIfPresent(medicationOrder, forKey: .medicationOrder)
+		try container.encodeIfPresent(recentMedicationSearches, forKey: .recentMedicationSearches)
+		try container.encodeIfPresent(medicationRefillProfiles, forKey: .medicationRefillProfiles)
+	}
+
 	/// Create settings from UserDefaults
 	/// - Parameter defaults: UserDefaults instance to read from (default: .standard)
+	@MainActor
 	init(from defaults: UserDefaults = .standard) {
 		// App Preferences
 		hapticsEnabled = defaults.object(forKey: UserDefaultsKeys.hapticsEnabled) as? Bool
@@ -94,6 +270,8 @@ struct AppSettings: Codable {
 
 		// Notification Settings
 		showMedicationNamesInNotifications = defaults.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool
+		let urgencyPreferences = MedicationNotificationUrgencyStore(defaults: defaults).allPreferences()
+		medicationNotificationUrgency = urgencyPreferences?.isEmpty == false ? urgencyPreferences : nil
 
 		// Typography Settings
 		selectedFontFamily = defaults.string(forKey: UserDefaultsKeys.selectedFontFamily)
@@ -113,9 +291,8 @@ struct AppSettings: Codable {
 		// Search Settings
 		recentMedicationSearches = defaults.array(forKey: UserDefaultsKeys.recentMedicationSearches) as? [String]
 
-		if let data = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) {
-			medicationSafetyProfiles = try? JSONDecoder().decode([String: MedicationSafetyProfile].self, from: data)
-		}
+		let profiles = MedicationRefillProfileStore(defaults: defaults).allProfiles()
+		medicationRefillProfiles = profiles.isEmpty ? nil : profiles
 	}
 
 	// MARK: - Export/Import
@@ -123,8 +300,36 @@ struct AppSettings: Codable {
 	/// Apply these settings to UserDefaults
 	/// - Parameter defaults: UserDefaults instance to write to (default: .standard)
 	/// - Parameter validateMedicationIDs: Closure to validate medication IDs exist, returns set of valid IDs
-	func apply(to defaults: UserDefaults = .standard, validateMedicationIDs: () -> Set<String>) {
+	@MainActor
+	func apply(
+		to defaults: UserDefaults = .standard,
+		validateMedicationIDs: () -> Set<String>,
+		profileStore: MedicationRefillProfileStore? = nil,
+		urgencyStore: MedicationNotificationUrgencyStore? = nil
+	) throws {
 		let validMedicationIDs = validateMedicationIDs()
+		let resolvedProfileStore = profileStore ?? MedicationRefillProfileStore(defaults: defaults)
+		let profileSnapshot = medicationRefillProfiles == nil ?
+			nil :
+			resolvedProfileStore.snapshotProfileData()
+
+		// Persist and verify the mirrored profile payload before changing any other
+		// setting so a profile failure cannot produce a partial settings import.
+		try persistRefillProfiles(
+			validMedicationIDs: validMedicationIDs,
+			profileStore: resolvedProfileStore
+		)
+		do {
+			try persistNotificationUrgency(
+				validMedicationIDs: validMedicationIDs,
+				urgencyStore: urgencyStore ?? MedicationNotificationUrgencyStore(defaults: defaults)
+			)
+		} catch {
+			if let profileSnapshot, !resolvedProfileStore.restoreProfileData(profileSnapshot) {
+				throw AppSettingsError.refillProfileRollbackFailed
+			}
+			throw error
+		}
 
 		// App Preferences
 		if let value = hapticsEnabled {
@@ -205,20 +410,38 @@ struct AppSettings: Codable {
 			defaults.set(value, forKey: UserDefaultsKeys.recentMedicationSearches)
 		}
 
-		if let profiles = medicationSafetyProfiles {
-			let filteredProfiles = MedicationSafetyProfileStore.filteredProfiles(
-				from: profiles,
-				validMedicationIDs: validMedicationIDs
-			)
-			let sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
+	}
 
-			if filteredProfiles.isEmpty {
-				defaults.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
-				sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
-			} else if let data = try? JSONEncoder().encode(filteredProfiles) {
-				defaults.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
-				sharedDefaults?.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
-			}
+	func persistRefillProfiles(
+		validMedicationIDs: Set<String>,
+		profileStore: MedicationRefillProfileStore
+	) throws {
+		guard let profiles = medicationRefillProfiles else {
+			return
+		}
+		let filteredProfiles = MedicationRefillProfileStore.filteredProfiles(
+			from: profiles,
+			validMedicationIDs: validMedicationIDs
+		)
+		guard profileStore.replaceAll(with: filteredProfiles) else {
+			throw AppSettingsError.refillProfilePersistenceFailed
+		}
+	}
+
+	@MainActor
+	func persistNotificationUrgency(
+		validMedicationIDs: Set<String>,
+		urgencyStore: MedicationNotificationUrgencyStore
+	) throws {
+		guard let preferences = medicationNotificationUrgency else {
+			return
+		}
+		let filteredPreferences = MedicationNotificationUrgencyStore.filteredPreferences(
+			preferences,
+			validMedicationIDs: validMedicationIDs.compactMap(UUID.init(uuidString:))
+		)
+		guard urgencyStore.replaceAll(with: filteredPreferences) else {
+			throw AppSettingsError.notificationUrgencyPersistenceFailed
 		}
 	}
 
@@ -233,10 +456,10 @@ struct AppSettings: Codable {
 		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil {
 			categories.append("Display Settings")
 		}
-		if trendsQuestionsEnabled != nil || medicationSafetyProfiles != nil {
-			categories.append("Clinical Guidance")
+		if trendsQuestionsEnabled != nil || medicationRefillProfiles != nil {
+			categories.append("Refill Preferences")
 		}
-		if showMedicationNamesInNotifications != nil {
+		if showMedicationNamesInNotifications != nil || medicationNotificationUrgency != nil {
 			categories.append("Notification Settings")
 		}
 		if selectedFontFamily != nil {

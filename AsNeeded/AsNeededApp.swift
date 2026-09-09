@@ -56,6 +56,11 @@ struct AsNeededApp: App {
                             logger.info("Received URL")
                             quickActionHandler.handleURL(url)
                         }
+						.task {
+							await NotificationManager.shared.start {
+								try await DataStore.shared.currentMedicationIDsWhenReady()
+							}
+						}
                 } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {
                     // Migration failed - show error screen with retry option
                     MigrationErrorView(error: error) {
@@ -69,6 +74,9 @@ struct AsNeededApp: App {
                             await migrationCoordinator.runMigrationIfNeeded()
                         }
                 }
+            }
+            .task {
+                await MedicationLiveActivityCleanup.endAll()
             }
         }
         .handlesExternalEvents(matching: ["asneeded"])

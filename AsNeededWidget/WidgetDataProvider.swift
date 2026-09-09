@@ -14,7 +14,7 @@ final class WidgetDataProvider {
     // App Group identifier matching main app
     let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
     private let decoder = JSONDecoder()
-    private let guidanceService = WidgetMedicationGuidanceService()
+    private let refillProjectionService = WidgetMedicationRefillProjectionService()
 
     // Boutique stores using shared App Group container - made internal for widget intent access
     let medicationsStore: Store<ANMedicationConcept>
@@ -67,69 +67,67 @@ final class WidgetDataProvider {
         medications.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
-    private var safetyProfiles: [String: WidgetMedicationSafetyProfile] {
-        guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
-              let data = defaults.data(forKey: "medicationSafetyProfiles"),
-              let profiles = try? decoder.decode([String: WidgetMedicationSafetyProfile].self, from: data)
-        else {
+    private var refillProfiles: [String: WidgetMedicationRefillProfile] {
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else {
             return [:]
         }
 
+        if defaults.object(forKey: WidgetUserDefaultsKeys.medicationRefillProfiles) != nil {
+            guard
+                let data = defaults.data(forKey: WidgetUserDefaultsKeys.medicationRefillProfiles),
+                let profiles = try? decoder.decode([String: WidgetMedicationRefillProfile].self, from: data)
+            else {
+                return [:]
+            }
+            return profiles
+        }
+
+        guard
+            let data = defaults.data(forKey: WidgetUserDefaultsKeys.legacyMedicationSafetyProfiles),
+            let profiles = try? decoder.decode([String: WidgetMedicationRefillProfile].self, from: data)
+        else {
+            return [:]
+        }
         return profiles
     }
 
-    private func safetyProfile(for medication: ANMedicationConcept) -> WidgetMedicationSafetyProfile {
-        safetyProfiles[medication.id.uuidString] ?? .empty
+    private func refillProfile(for medication: ANMedicationConcept) -> WidgetMedicationRefillProfile {
+        refillProfiles[medication.id.uuidString] ?? .empty
     }
 
-    /// Get the next medication due to be taken
-    var nextMedicationDue: ANMedicationConcept? {
-        medications.min { left, right in
-            let leftDate = nextDoseTime(for: left) ?? .distantPast
-            let rightDate = nextDoseTime(for: right) ?? .distantPast
+    /// Sort low-stock medications first, then refill-soon medications, then alphabetically.
+    var medicationsByRefillPriority: [ANMedicationConcept] {
+        let lowStockIDs = Set(lowQuantityMedications.map(\.id))
+        let refillSoonIDs = Set(refillDueSoon.map(\.id))
 
-            if leftDate == rightDate {
-                return left.displayName.localizedCaseInsensitiveCompare(right.displayName) == .orderedAscending
+        return medications.sorted { left, right in
+            let leftPriority = lowStockIDs.contains(left.id) ? 0 : refillSoonIDs.contains(left.id) ? 1 : 2
+            let rightPriority = lowStockIDs.contains(right.id) ? 0 : refillSoonIDs.contains(right.id) ? 1 : 2
+
+            if leftPriority == rightPriority {
+                let nameComparison = left.displayName.localizedCaseInsensitiveCompare(right.displayName)
+                if nameComparison == .orderedSame {
+                    return left.id.uuidString < right.id.uuidString
+                }
+                return nameComparison == .orderedAscending
             }
 
-            return leftDate < rightDate
+            return leftPriority < rightPriority
         }
     }
 
-    /// Calculate next dose time for a medication using the saved safety profile when available
-    func nextDoseTime(for medication: ANMedicationConcept) -> Date? {
-        guidanceService.nextEligibleDate(
-            for: medication,
-            events: events,
-            profile: safetyProfile(for: medication)
-        )
+    /// Feature the highest-priority medication for compact widgets.
+    var featuredMedication: ANMedicationConcept? {
+        medicationsByRefillPriority.first
     }
 
-    /// Check if medication can be taken now
-    func canTakeNow(_ medication: ANMedicationConcept) -> Bool {
-        guard let nextTime = nextDoseTime(for: medication) else {
-            return true
-        }
-        return nextTime <= Date()
-    }
-
-    /// Get time remaining until next dose
-    func timeUntilNextDose(for medication: ANMedicationConcept) -> TimeInterval? {
-        guard let nextTime = nextDoseTime(for: medication) else {
-            return nil
-        }
-
-        let interval = nextTime.timeIntervalSince(Date())
-        return max(0, interval)
-    }
-
-    /// Get medications that are low on quantity (< 10)
+    /// Get medications at or below their saved low-stock threshold.
     var lowQuantityMedications: [ANMedicationConcept] {
         medications.filter { medication in
-            guidanceService.refillProjection(
+            refillProjectionService.projection(
                 for: medication,
                 events: events,
-                profile: safetyProfile(for: medication)
+                profile: refillProfile(for: medication)
             ).lowStock
         }
     }
@@ -137,19 +135,19 @@ final class WidgetDataProvider {
     /// Get medications that need refill soon
     var refillDueSoon: [ANMedicationConcept] {
         medications.filter { medication in
-            guidanceService.refillProjection(
+            refillProjectionService.projection(
                 for: medication,
                 events: events,
-                profile: safetyProfile(for: medication)
+                profile: refillProfile(for: medication)
             ).refillSoon
         }
     }
 
     func refillStatusMessage(for medication: ANMedicationConcept) -> String {
-        guidanceService.refillProjection(
+        refillProjectionService.projection(
             for: medication,
             events: events,
-            profile: safetyProfile(for: medication)
+            profile: refillProfile(for: medication)
         ).statusMessage
     }
 }
@@ -237,31 +235,18 @@ extension Color {
     }
 }
 
-private struct WidgetMedicationSafetyProfile: Codable {
-    static let empty = WidgetMedicationSafetyProfile()
-
-    var minimumHoursBetweenDoses: Double?
-    var maxDailyAmount: Double?
-    var duplicateDoseWindowMinutes: Int
-    var lowStockThreshold: Double?
-    var refillLeadDays: Int
-
-    init(
-        minimumHoursBetweenDoses: Double? = nil,
-        maxDailyAmount: Double? = nil,
-        duplicateDoseWindowMinutes: Int = 30,
-        lowStockThreshold: Double? = nil,
-        refillLeadDays: Int = 5
-    ) {
-        self.minimumHoursBetweenDoses = minimumHoursBetweenDoses
-        self.maxDailyAmount = maxDailyAmount
-        self.duplicateDoseWindowMinutes = duplicateDoseWindowMinutes
-        self.lowStockThreshold = lowStockThreshold
-        self.refillLeadDays = refillLeadDays
-    }
+private enum WidgetUserDefaultsKeys {
+    static let medicationRefillProfiles = "medicationRefillProfiles"
+    static let legacyMedicationSafetyProfiles = "medicationSafetyProfiles"
 }
 
-private struct WidgetMedicationGuidanceService {
+private struct WidgetMedicationRefillProfile: Codable {
+    static let empty = WidgetMedicationRefillProfile()
+
+    var lowStockThreshold: Double?
+}
+
+private struct WidgetMedicationRefillProjectionService {
     struct RefillProjection {
         let lowStock: Bool
         let refillSoon: Bool
@@ -270,36 +255,23 @@ private struct WidgetMedicationGuidanceService {
 
     private let calendar = Calendar.current
 
-    func nextEligibleDate(
+    func projection(
         for medication: ANMedicationConcept,
+        at date: Date = .now,
         events: [ANEventConcept],
-        profile: WidgetMedicationSafetyProfile
-    ) -> Date? {
-        guard let minimumHoursBetweenDoses = profile.minimumHoursBetweenDoses else {
-            return nil
-        }
-
-        let lastEvent = events
-            .filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
-            .sorted { $0.date > $1.date }
-            .first
-
-        guard let lastEvent else {
-            return nil
-        }
-
-        return lastEvent.date.addingTimeInterval(minimumHoursBetweenDoses * 3600)
-    }
-
-    func refillProjection(
-        for medication: ANMedicationConcept,
-        events: [ANEventConcept],
-        profile: WidgetMedicationSafetyProfile
+        profile: WidgetMedicationRefillProfile
     ) -> RefillProjection {
-        let threshold = profile.lowStockThreshold ?? 10
-        let lowStock = medication.quantity != nil && (medication.quantity ?? 0) <= threshold
-        let leadDays = profile.refillLeadDays
-        let averageDailyUsage = averageDailyUsage(for: medication, events: events)
+        let filteredEvents = events
+            .filter { event in
+                event.eventType == .doseTaken &&
+                    event.medication?.id == medication.id &&
+                    event.date <= date
+            }
+            .sorted { $0.date < $1.date }
+        let averageDailyUsage = averageDailyUsage(
+            for: filteredEvents,
+            preferredUnit: medication.prescribedUnit
+        )
         let estimatedDaysRemaining: Int? = {
             guard let quantity = medication.quantity, quantity > 0, averageDailyUsage > 0 else {
                 return nil
@@ -307,18 +279,29 @@ private struct WidgetMedicationGuidanceService {
 
             return max(0, Int((quantity / averageDailyUsage).rounded(.down)))
         }()
+        let threshold = profile.lowStockThreshold ?? 10
+        let lowStock = medication.quantity != nil && (medication.quantity ?? 0) <= threshold
         let daysUntilRefill = medication.nextRefillDate.flatMap {
-            calendar.dateComponents([.day], from: calendar.startOfDay(for: Date()), to: calendar.startOfDay(for: $0)).day
+            calendar.dateComponents(
+                [.day],
+                from: calendar.startOfDay(for: date),
+                to: calendar.startOfDay(for: $0)
+            ).day
         }
         let refillSoon = lowStock ||
-            (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= leadDays) ||
-            (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= leadDays)
+            (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 5) ||
+            (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 5)
+        let urgent = lowStock ||
+            (daysUntilRefill != nil && (daysUntilRefill ?? .max) <= 2) ||
+            (estimatedDaysRemaining != nil && (estimatedDaysRemaining ?? .max) <= 2)
         let statusMessage: String
 
-        if lowStock {
+        if urgent {
             statusMessage = "Refill prep would be timely."
         } else if refillSoon {
             statusMessage = "You’re approaching your refill window."
+        } else if medication.quantity == nil {
+            statusMessage = "Add or update the quantity to see refill estimates."
         } else if let estimatedDaysRemaining {
             statusMessage = "About \(estimatedDaysRemaining)d of supply at your recent pace."
         } else {
@@ -332,15 +315,32 @@ private struct WidgetMedicationGuidanceService {
         )
     }
 
-    private func averageDailyUsage(for medication: ANMedicationConcept, events: [ANEventConcept]) -> Double {
+    private func averageDailyUsage(
+        for events: [ANEventConcept],
+        preferredUnit: ANUnitConcept?
+    ) -> Double {
         let relevantEvents = events.filter { event in
-            event.eventType == .doseTaken &&
-                event.medication?.id == medication.id &&
-                (medication.prescribedUnit == nil || event.dose?.unit == medication.prescribedUnit)
+            guard let dose = event.dose else {
+                return false
+            }
+
+            if let preferredUnit {
+                return dose.unit == preferredUnit
+            }
+
+            return true
         }
 
         guard !relevantEvents.isEmpty else {
             return 0
+        }
+
+        if preferredUnit == nil {
+            guard let eventUnit = relevantEvents.first?.dose?.unit,
+                  relevantEvents.allSatisfy({ $0.dose?.unit == eventUnit })
+            else {
+                return 0
+            }
         }
 
         let grouped = Dictionary(grouping: relevantEvents) { event in

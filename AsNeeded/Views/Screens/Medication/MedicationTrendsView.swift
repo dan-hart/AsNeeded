@@ -184,17 +184,6 @@ struct MedicationTrendsView: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Spacer()
-
-                if let nextEligibleDoseDate = viewModel.nextEligibleDoseDate, nextEligibleDoseDate > Date() {
-                    insightBadge(
-                        text: "Next window \(nextEligibleDoseDate.formatted(date: .omitted, time: .shortened))",
-                        tint: .orange
-                    )
-                } else {
-                    insightBadge(text: "Available now", tint: med.displayColor)
-                }
             }
 
             if let refillProjection = viewModel.refillProjection {
@@ -222,7 +211,7 @@ struct MedicationTrendsView: View {
                 .strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(med.displayName). \(viewModel.patternSummary)")
+        .accessibilityLabel(viewModel.summaryAccessibilityLabel)
     }
 
     @ViewBuilder

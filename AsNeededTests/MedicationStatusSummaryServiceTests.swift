@@ -8,84 +8,139 @@ struct MedicationStatusSummaryServiceTests {
 	private let calendar = Calendar(identifier: .gregorian)
 
 	private var referenceDate: Date {
-		DateComponents(calendar: calendar, year: 2026, month: 6, day: 5, hour: 12, minute: 0).date ?? Date(timeIntervalSince1970: 1_780_685_200)
+		DateComponents(calendar: calendar, year: 2026, month: 6, day: 5, hour: 12).date ?? Date(timeIntervalSince1970: 1_780_685_200)
 	}
 
-	private func medication(quantity: Double? = 12) -> ANMedicationConcept {
+	private func medication(
+		quantity: Double? = 12,
+		nextRefillDate: Date? = nil
+	) -> ANMedicationConcept {
 		ANMedicationConcept(
 			clinicalName: "Ibuprofen",
 			nickname: "Pain Relief",
 			quantity: quantity,
 			initialQuantity: 30,
 			lastRefillDate: calendar.date(byAdding: .day, value: -10, to: referenceDate),
-			nextRefillDate: calendar.date(byAdding: .day, value: 2, to: referenceDate),
+			nextRefillDate: nextRefillDate ?? calendar.date(byAdding: .day, value: 10, to: referenceDate),
 			prescribedUnit: .tablet,
 			prescribedDoseAmount: 2
 		)
 	}
 
-	private func event(
-		medication: ANMedicationConcept,
-		hoursAgo: Double,
-		amount: Double = 2
-	) -> ANEventConcept {
+	private func event(medication: ANMedicationConcept, date: Date) -> ANEventConcept {
 		ANEventConcept(
 			eventType: .doseTaken,
 			medication: medication,
-			dose: ANDoseConcept(amount: amount, unit: .tablet),
-			date: referenceDate.addingTimeInterval(-(hoursAgo * 3600))
+			dose: ANDoseConcept(amount: 2, unit: .tablet),
+			date: date
 		)
 	}
 
-	@Test("Summary includes last dose and next saved window")
-	func summaryIncludesLastDoseAndNextWindow() {
+	@Test("Last-dose text covers no history, today, and an older date")
+	func lastDoseFormatting() {
 		let medication = medication()
-		let profile = MedicationSafetyProfile(minimumHoursBetweenDoses: 4)
-		let summary = MedicationStatusSummaryService().summary(
+		let service = MedicationStatusSummaryService(calendar: calendar)
+		let none = service.summary(for: medication, at: referenceDate, events: [], profile: .empty)
+		let today = service.summary(
 			for: medication,
 			at: referenceDate,
-			events: [event(medication: medication, hoursAgo: 2)],
-			profile: profile
+			events: [event(medication: medication, date: referenceDate.addingTimeInterval(-2 * 3600))],
+			profile: .empty
 		)
-
-		#expect(summary.timingText.contains("Last taken"))
-		#expect(summary.timingText.contains("10:00"))
-		#expect(summary.nextWindowText == "Next saved window 2:00 PM")
-		#expect(summary.severity == .warning)
-		#expect(summary.badgeText == "Review")
-	}
-
-	@Test("Summary includes daily limit and refill pressure text")
-	func summaryIncludesDailyLimitAndRefillPressure() {
-		let medication = medication(quantity: 4)
-		let profile = MedicationSafetyProfile(maxDailyAmount: 6, lowStockThreshold: 5, refillLeadDays: 3)
-		let summary = MedicationStatusSummaryService().summary(
+		let older = service.summary(
 			for: medication,
 			at: referenceDate,
-			events: [
-				event(medication: medication, hoursAgo: 3),
-				event(medication: medication, hoursAgo: 8)
-			],
-			profile: profile
+			events: [event(medication: medication, date: referenceDate.addingTimeInterval(-26 * 3600))],
+			profile: .empty
 		)
 
-		#expect(summary.dailyText == "24h total would be 6 of 6 tab")
-		#expect(summary.refillText.contains("Low stock"))
-		#expect(summary.refillText.contains("Refill prep"))
+		#expect(none.timingText == "No doses logged yet")
+		#expect(today.timingText == "Last taken 10:00 AM")
+		#expect(older.timingText.contains("Last taken"))
+		#expect(older.timingText.contains("Jun 4, 2026"))
+		#expect(older.timingText.contains("10:00 AM"))
 	}
 
-	@Test("Accessibility summary contains medication name and non-color status")
-	func accessibilitySummaryContainsMedicationNameAndStatus() {
-		let medication = medication()
-		let summary = MedicationStatusSummaryService().summary(
+	@Test("Normal stock summary has neutral refill status")
+	func normalStockSummary() {
+		let medication = medication(quantity: 30)
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
 			for: medication,
 			at: referenceDate,
 			events: [],
 			profile: .empty
 		)
 
+		#expect(summary.headline == "Refill status")
+		#expect(summary.refillText == "Log more doses to estimate your run-out date.")
+		#expect(!summary.isLowStock)
+		#expect(!summary.refillSoon)
+	}
+
+	@Test("Upcoming refill date creates refill-soon-only summary")
+	func refillSoonOnlySummary() {
+		let refillDate = calendar.date(byAdding: .day, value: 4, to: referenceDate)
+		let medication = medication(quantity: 30, nextRefillDate: refillDate)
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication,
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+
+		#expect(summary.headline == "Refill soon")
+		#expect(summary.refillText == "You’re approaching your refill window.")
+		#expect(!summary.isLowStock)
+		#expect(summary.refillSoon)
+	}
+
+	@Test("Custom low-stock profile creates low-stock summary without duplicate wording")
+	func customLowStockProfileDrivesRefillStatus() {
+		let medication = medication(quantity: 12)
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication,
+			at: referenceDate,
+			events: [],
+			profile: MedicationRefillProfile(lowStockThreshold: 15)
+		)
+
+		#expect(summary.headline == "Low stock")
+		#expect(summary.refillText == "Refill prep would be timely.")
+		#expect(summary.accessibilityLabel.components(separatedBy: "Low stock").count - 1 == 1)
+		#expect(summary.isLowStock)
+		#expect(summary.refillSoon)
+	}
+
+	@Test("Missing quantity prompts quantity tracking")
+	func missingQuantityPromptsQuantityTracking() {
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication(quantity: nil),
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+
+		#expect(summary.refillText == "Add or update the quantity to see refill estimates.")
+	}
+
+	@Test("Summary strings contain refill and history facts only")
+	func summaryStringsContainRefillAndHistoryFactsOnly() {
+		let medication = medication()
+		let summary = MedicationStatusSummaryService(calendar: calendar).summary(
+			for: medication,
+			at: referenceDate,
+			events: [],
+			profile: .empty
+		)
+		let strings = [summary.headline, summary.timingText, summary.refillText, summary.accessibilityLabel]
+		let forbiddenClaims = ["guardrail", "guidance", "next window", "daily limit", "eligible", "available now"]
+
 		#expect(summary.accessibilityLabel.contains("Pain Relief"))
 		#expect(summary.accessibilityLabel.contains("No doses logged yet"))
-		#expect(summary.accessibilityLabel.contains("No saved guardrails"))
+		for string in strings {
+			for claim in forbiddenClaims {
+				#expect(!string.localizedCaseInsensitiveContains(claim))
+			}
+		}
 	}
 }

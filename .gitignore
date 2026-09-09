@@ -59,6 +59,7 @@ fastlane/test_output
 TestResults
 TestResults.xcresult
 *.xcresult
+worktrees/
 /.TranslateKit
 
 # Secrets and credentials

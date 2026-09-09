@@ -2,6 +2,34 @@ import ANModelKit
 import SFSafeSymbols
 import SwiftUI
 
+enum MedicationRowLayoutStyle: Equatable {
+	case standard
+	case compact
+	case accessibility
+
+	init(dynamicTypeSize: DynamicTypeSize) {
+		if dynamicTypeSize.isAccessibilitySize {
+			self = .accessibility
+		} else if dynamicTypeSize >= .xxxLarge {
+			self = .compact
+		} else {
+			self = .standard
+		}
+	}
+
+	var clinicalNameLineLimit: Int? {
+		self == .compact ? 1 : nil
+	}
+
+	func quantityText(for quantity: Double, unitAbbreviation: String?) -> String {
+		let quantityText = [quantity.formattedAmount, unitAbbreviation]
+			.compactMap { $0 }
+			.joined(separator: " ")
+
+		return self == .compact ? quantityText : "\(quantityText) left"
+	}
+}
+
 /// A comprehensive medication row component with adaptive layout and interactive logging
 ///
 /// Features:
@@ -55,8 +83,8 @@ struct MedicationRowComponent: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            if dynamicTypeSize.isAccessibilitySize {
-                // Accessibility Layout
+            switch layoutStyle {
+            case .accessibility:
                 VStack(alignment: .leading, spacing: 16) {
                     medicationHeader
                     if editMode?.wrappedValue != .active {
@@ -66,8 +94,27 @@ struct MedicationRowComponent: View {
                     }
                 }
                 .padding(rowPadding)
-            } else {
-                // Standard Layout
+
+            case .compact:
+				VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .center, spacing: 12) {
+                        compactMedicationHeader
+
+                        Spacer(minLength: 8)
+
+                        if editMode?.wrappedValue != .active {
+                            enhancedLogButton
+                        }
+                    }
+
+                    if editMode?.wrappedValue != .active {
+                        compactMedicationDetails
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+				.padding(12)
+
+            case .standard:
                 HStack(alignment: .center, spacing: 16) {
                     // Left Side: Icon and Info
                     HStack(spacing: iconContentSpacing) {
@@ -141,6 +188,10 @@ struct MedicationRowComponent: View {
         }
     }
 
+    private var layoutStyle: MedicationRowLayoutStyle {
+        MedicationRowLayoutStyle(dynamicTypeSize: dynamicTypeSize)
+    }
+
     // MARK: - View Components
 
     private var medicationIcon: some View {
@@ -180,6 +231,14 @@ struct MedicationRowComponent: View {
     }
 
     private var medicationHeader: some View {
+        medicationHeader(showClinicalName: true)
+    }
+
+    private var compactMedicationHeader: some View {
+		medicationHeader(showClinicalName: true)
+    }
+
+    private func medicationHeader(showClinicalName: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text(medication.displayName)
@@ -196,11 +255,12 @@ struct MedicationRowComponent: View {
                 }
             }
 
-            if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
+            if showClinicalName && !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
                 CopyableText(
                     medication.clinicalName,
                     font: .customFont(fontFamily, style: .caption),
-                    color: .secondary
+					color: .secondary,
+					lineLimit: layoutStyle.clinicalNameLineLimit
                 )
             }
         }
@@ -211,24 +271,7 @@ struct MedicationRowComponent: View {
             // Quantity Badge
             if let quantity = medication.quantity {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Image(systemSymbol: .squareStack3dUp)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(quantityColor(for: quantity))
-                            .accessibilityHidden(true)
-
-                        Text(quantityText(for: quantity))
-                            .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                            .fontDesign(.rounded)
-                            .foregroundStyle(quantityColor(for: quantity))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(quantityColor(for: quantity).opacity(0.12))
-                    )
-                    .accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+                    quantityBadge(for: quantity)
 
                     // Usage Progress Bar (only if initialQuantity is available)
                     if let usagePercentage = usagePercentage {
@@ -245,45 +288,73 @@ struct MedicationRowComponent: View {
     }
 
     @ViewBuilder
+    private var compactMedicationDetails: some View {
+        HStack(spacing: 8) {
+            if let quantity = medication.quantity {
+                quantityBadge(for: quantity)
+            }
+
+            if let statusSummary, statusSummary.isLowStock || statusSummary.refillSoon {
+                statusBadge(statusSummary)
+            }
+        }
+    }
+
+    private func quantityBadge(for quantity: Double) -> some View {
+        HStack(spacing: 6) {
+            Image(systemSymbol: .squareStack3dUp)
+                .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
+                .foregroundStyle(quantityColor(for: quantity))
+                .accessibilityHidden(true)
+
+            Text(quantityText(for: quantity))
+                .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                .fontDesign(.rounded)
+                .foregroundStyle(quantityColor(for: quantity))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(quantityColor(for: quantity).opacity(0.12))
+        )
+        .accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+    }
+
+    @ViewBuilder
     private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 6) {
-                Image(systemSymbol: summaryIcon(for: summary.severity))
-                    .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .accessibilityHidden(true)
-
-                Text(summary.badgeText)
-                    .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(summaryColor(for: summary.severity))
-
-                Text(summary.headline)
-                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                Capsule()
-                    .fill(summaryColor(for: summary.severity).opacity(0.12))
-            )
+            statusBadge(summary)
 
             Text(summary.timingText)
                 .font(.customFont(fontFamily, style: .caption2))
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
 
-            if let nextWindowText = summary.nextWindowText {
-                Text(nextWindowText)
-                    .font(.customFont(fontFamily, style: .caption2))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .lineLimit(1)
-            }
+            Text(summary.refillText)
+                .font(.customFont(fontFamily, style: .caption2))
+                .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(summary.accessibilityLabel)
+    }
+
+    private func statusBadge(_ summary: MedicationStatusSummaryService.Summary) -> some View {
+        HStack(spacing: 6) {
+            Image(systemSymbol: .shippingboxFill)
+                .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
+                .foregroundStyle(summaryColor(for: summary))
+                .accessibilityHidden(true)
+
+            Text(summary.headline)
+                .font(.customFont(fontFamily, style: .caption, weight: .medium))
+                .foregroundStyle(summaryColor(for: summary))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(summaryColor(for: summary).opacity(0.12))
+        )
     }
 
     private var enhancedLogButton: some View {
@@ -310,6 +381,17 @@ struct MedicationRowComponent: View {
                             )
                         )
                 )
+            } else if layoutStyle == .compact {
+				Image(systemSymbol: .plusCircleFill)
+					.font(.customFont(fontFamily, style: .body, weight: .semibold))
+					.accessibilityHidden(true)
+					.foregroundStyle(medication.displayColor.contrastingForegroundColor())
+					.frame(width: 44, height: 44)
+					.background(
+						RoundedRectangle(cornerRadius: 12, style: .continuous)
+							.fill(medication.displayColor)
+					)
+					.scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
             } else {
                 // Compact button with icon and text
                 VStack(spacing: 4) {
@@ -482,34 +564,18 @@ struct MedicationRowComponent: View {
     }
 
     private func quantityText(for quantity: Double) -> String {
-        let quantityStr = quantity.formattedAmount
-        if let unit = medication.prescribedUnit {
-            return "\(quantityStr) \(unit.abbreviation) left"
-        } else {
-            return "\(quantityStr) left"
-        }
+		layoutStyle.quantityText(
+			for: quantity,
+			unitAbbreviation: medication.prescribedUnit?.abbreviation
+		)
     }
 
-    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
-        switch severity {
-        case .clear:
-            return medication.displayColor
-        case .caution:
+    private func summaryColor(for summary: MedicationStatusSummaryService.Summary) -> Color {
+        if summary.isLowStock {
             return .orange
-        case .warning:
-            return .red
         }
-    }
 
-    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
-        switch severity {
-        case .clear:
-            return .checkmarkCircleFill
-        case .caution:
-            return .exclamationmarkTriangleFill
-        case .warning:
-            return .exclamationmarkTriangleFill
-        }
+        return summary.refillSoon ? medication.displayColor : .secondary
     }
 
     // MARK: - Medication Appearance Sheet

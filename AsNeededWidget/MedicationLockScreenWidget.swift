@@ -13,7 +13,7 @@ struct MedicationLockScreenWidget: Widget {
             LockScreenWidgetView(entry: entry)
         }
         .configurationDisplayName("Medication Status")
-        .description("Shows medication count and next dose on lock screen")
+        .description("Shows medication count and refill status on lock screen")
         .supportedFamilies([
             .accessoryCircular,
             .accessoryRectangular,
@@ -31,14 +31,13 @@ struct LockScreenWidgetProvider: TimelineProvider {
         LockScreenEntry(
             date: Date(),
             medicationCount: 3,
-            nextMedication: ANMedicationConcept(
+            featuredMedication: ANMedicationConcept(
                 clinicalName: "Medication",
                 quantity: 30,
                 prescribedUnit: .tablet
             ),
-            nextDoseTime: Date().addingTimeInterval(3600),
-            canTakeNow: false,
-            lowQuantityCount: 1
+            lowQuantityCount: 1,
+            refillDueCount: 1
         )
     }
 
@@ -70,27 +69,22 @@ struct LockScreenWidgetProvider: TimelineProvider {
         let provider = WidgetDataProvider.shared
         let medications = provider.medications
 
-        guard let nextMed = provider.nextMedicationDue else {
+        guard let featuredMedication = provider.featuredMedication else {
             return LockScreenEntry(
                 date: Date(),
                 medicationCount: medications.count,
-                nextMedication: nil,
-                nextDoseTime: nil,
-                canTakeNow: false,
-                lowQuantityCount: provider.lowQuantityMedications.count
+                featuredMedication: nil,
+                lowQuantityCount: provider.lowQuantityMedications.count,
+                refillDueCount: provider.refillDueSoon.count
             )
         }
-
-        let nextDoseTime = provider.nextDoseTime(for: nextMed)
-        let canTakeNow = provider.canTakeNow(nextMed)
 
         return LockScreenEntry(
             date: Date(),
             medicationCount: medications.count,
-            nextMedication: nextMed,
-            nextDoseTime: nextDoseTime,
-            canTakeNow: canTakeNow,
-            lowQuantityCount: provider.lowQuantityMedications.count
+            featuredMedication: featuredMedication,
+            lowQuantityCount: provider.lowQuantityMedications.count,
+            refillDueCount: provider.refillDueSoon.count
         )
     }
 }
@@ -102,16 +96,19 @@ struct LockScreenWidgetView: View {
     let entry: LockScreenEntry
 
     var body: some View {
-        switch family {
-        case .accessoryCircular:
-            circularView
-        case .accessoryRectangular:
-            rectangularView
-        case .accessoryInline:
-            inlineView
-        default:
-            Text("Unsupported")
+        Group {
+            switch family {
+            case .accessoryCircular:
+                circularView
+            case .accessoryRectangular:
+                rectangularView
+            case .accessoryInline:
+                inlineView
+            default:
+                Text("Unsupported")
+            }
         }
+        .widgetURL(entry.medicationURL)
     }
 
     // MARK: - Circular (Watch-style complication)
@@ -121,15 +118,15 @@ struct LockScreenWidgetView: View {
             AccessoryWidgetBackground()
 
             VStack(spacing: 2) {
-                if let nextMed = entry.nextMedication {
-                    Image(systemName: nextMed.effectiveDisplaySymbol)
+                if let featuredMedication = entry.featuredMedication {
+                    Image(systemName: featuredMedication.effectiveDisplaySymbol)
                         .font(.title3.weight(.semibold))
 
-                    if entry.canTakeNow {
-                        Text("Now")
+                    if entry.lowQuantityCount > 0 {
+                        Text("Low")
                             .font(.caption2.weight(.bold))
-                    } else if let nextDoseTime = entry.nextDoseTime {
-                        Text(timeRemainingShort(until: nextDoseTime))
+                    } else if entry.refillDueCount > 0 {
+                        Text("Refill")
                             .font(.caption2.weight(.bold))
                     }
                 } else {
@@ -165,20 +162,20 @@ struct LockScreenWidgetView: View {
 
             Divider()
 
-            if let nextMed = entry.nextMedication {
+            if let featuredMedication = entry.featuredMedication {
                 HStack {
-                    Text(nextMed.displayName)
+                    Text(featuredMedication.displayName)
                         .font(.caption2.weight(.medium))
                         .lineLimit(1)
 
                     Spacer()
 
-                    if entry.canTakeNow {
-                        Text("Available")
+                    if entry.lowQuantityCount > 0 {
+                        Text("Low stock")
                             .font(.caption2.weight(.bold))
-                            .foregroundStyle(.green)
-                    } else if let nextDoseTime = entry.nextDoseTime {
-                        Text(timeRemainingShort(until: nextDoseTime))
+                            .foregroundStyle(.orange)
+                    } else if entry.refillDueCount > 0 {
+                        Text("Refill soon")
                             .font(.caption2.weight(.bold))
                     }
                 }
@@ -194,40 +191,19 @@ struct LockScreenWidgetView: View {
     // MARK: - Inline
 
     private var inlineView: some View {
-        if let nextMed = entry.nextMedication {
-            if entry.canTakeNow {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName) • Now")
-            } else if let nextDoseTime = entry.nextDoseTime {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName) • \(timeRemainingShort(until: nextDoseTime))")
+        if let featuredMedication = entry.featuredMedication {
+            if entry.lowQuantityCount > 0 {
+                Text("\(Image(systemName: "pills")) \(featuredMedication.displayName) • Low stock")
+            } else if entry.refillDueCount > 0 {
+                Text("\(Image(systemName: "pills")) \(featuredMedication.displayName) • Refill soon")
             } else {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName)")
+                Text("\(Image(systemName: "pills")) \(featuredMedication.displayName)")
             }
         } else {
             Text("\(Image(systemName: "pills")) \(entry.medicationCount) medications")
         }
     }
 
-    // MARK: - Helper
-
-    private func timeRemainingShort(until date: Date) -> String {
-        let interval = date.timeIntervalSince(Date())
-
-        if interval <= 0 {
-            return "Now"
-        }
-
-        let hours = Int(interval) / 3600
-        let minutes = (Int(interval) % 3600) / 60
-
-        if hours > 24 {
-            let days = hours / 24
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h"
-        } else {
-            return "\(minutes)m"
-        }
-    }
 }
 
 // MARK: - Timeline Entry
@@ -235,10 +211,15 @@ struct LockScreenWidgetView: View {
 struct LockScreenEntry: TimelineEntry {
     let date: Date
     let medicationCount: Int
-    let nextMedication: ANMedicationConcept?
-    let nextDoseTime: Date?
-    let canTakeNow: Bool
+    let featuredMedication: ANMedicationConcept?
     let lowQuantityCount: Int
+    let refillDueCount: Int
+
+    var medicationURL: URL? {
+        featuredMedication.flatMap { medication in
+            URL(string: "asneeded://log/\(medication.id.uuidString)")
+        }
+    }
 }
 
 // MARK: - Previews
@@ -249,14 +230,13 @@ struct LockScreenEntry: TimelineEntry {
     LockScreenEntry(
         date: Date(),
         medicationCount: 3,
-        nextMedication: ANMedicationConcept(
+        featuredMedication: ANMedicationConcept(
             clinicalName: "Lisinopril",
             quantity: 28,
             prescribedUnit: .tablet
         ),
-        nextDoseTime: Date().addingTimeInterval(3600),
-        canTakeNow: false,
-        lowQuantityCount: 1
+        lowQuantityCount: 1,
+        refillDueCount: 1
     )
 }
 
@@ -266,14 +246,13 @@ struct LockScreenEntry: TimelineEntry {
     LockScreenEntry(
         date: Date(),
         medicationCount: 3,
-        nextMedication: ANMedicationConcept(
+        featuredMedication: ANMedicationConcept(
             clinicalName: "Lisinopril",
             quantity: 28,
             prescribedUnit: .tablet
         ),
-        nextDoseTime: Date(),
-        canTakeNow: true,
-        lowQuantityCount: 0
+        lowQuantityCount: 0,
+        refillDueCount: 1
     )
 }
 
@@ -283,13 +262,12 @@ struct LockScreenEntry: TimelineEntry {
     LockScreenEntry(
         date: Date(),
         medicationCount: 3,
-        nextMedication: ANMedicationConcept(
+        featuredMedication: ANMedicationConcept(
             clinicalName: "Lisinopril",
             quantity: 28,
             prescribedUnit: .tablet
         ),
-        nextDoseTime: Date().addingTimeInterval(3600),
-        canTakeNow: false,
-        lowQuantityCount: 1
+        lowQuantityCount: 1,
+        refillDueCount: 1
     )
 }

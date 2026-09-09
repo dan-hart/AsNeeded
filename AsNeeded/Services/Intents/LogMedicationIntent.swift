@@ -71,7 +71,6 @@ struct LogMedicationIntent: AppIntent {
 
             // Log the dose
             try await DataStore.shared.addEvent(event)
-            await MedicationLiveActivityManager.refreshFromDataStore()
 
             logger.info("Successfully logged medication dose from intent")
 
@@ -138,17 +137,6 @@ struct AsNeededShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Check Daily Usage",
             systemImageName: "chart.bar.fill"
-        )
-        AppShortcut(
-            intent: GetNextDoseIntent(),
-            phrases: [
-                "When can I take my medication in \(.applicationName)",
-                "When is my next dose in \(.applicationName)",
-                "When do I need to take \(\.$medication) in \(.applicationName)",
-                "Check my next dose in \(.applicationName)",
-            ],
-            shortTitle: "Check Next Dose",
-            systemImageName: "clock.fill"
         )
         AppShortcut(
             intent: CheckRefillStatusIntent(),

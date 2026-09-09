@@ -3,10 +3,11 @@
 
 import ANModelKit
 @testable import AsNeeded
+import Boutique
 import Foundation
 import Testing
 
-@Suite("DataStore Tests", .tags(.dataStore, .persistence, .unit))
+@Suite("DataStore Tests", .serialized, .tags(.dataStore, .persistence, .unit))
 @MainActor
 struct DataStoreTests {
     private var dataStore: DataStore
@@ -27,6 +28,60 @@ struct DataStoreTests {
     }
 
     // MARK: - Medication Tests
+
+	@Test("Current medication IDs wait for inventory readiness")
+	func currentMedicationIDsWaitForInventoryReadiness() async throws {
+		let medication = createTestMedication(name: "Loaded Medication")
+		let readinessGate = DataStoreTestAsyncGate()
+		var receivedStore: Store<ANMedicationConcept>?
+		let store = DataStore(
+			testIdentifier: "medication-inventory-readiness",
+			medicationInventoryReadiness: { medicationsStore in
+				receivedStore = medicationsStore
+				await readinessGate.suspend()
+			}
+		)
+		try await store.addMedication(medication)
+		var returnedIDs: Set<UUID>?
+		let inventoryTask = Task {
+			returnedIDs = try await store.currentMedicationIDsWhenReady()
+		}
+
+		await readinessGate.waitUntilSuspended()
+
+		#expect(receivedStore === store.medicationsStore)
+		#expect(returnedIDs == nil)
+
+		readinessGate.resume()
+		try await inventoryTask.value
+
+		#expect(returnedIDs == [medication.id])
+	}
+
+	@Test("Medication inventory readiness failure propagates without returning IDs")
+	func medicationInventoryReadinessFailurePropagates() async throws {
+		let medication = createTestMedication(name: "Unavailable Medication")
+		var receivedStore: Store<ANMedicationConcept>?
+		let store = DataStore(
+			testIdentifier: "medication-inventory-readiness-failure",
+			medicationInventoryReadiness: { medicationsStore in
+				receivedStore = medicationsStore
+				throw DataStoreTestError.medicationInventoryUnavailable
+			}
+		)
+		try await store.addMedication(medication)
+		var returnedIDs: Set<UUID>?
+
+		do {
+			returnedIDs = try await store.currentMedicationIDsWhenReady()
+			Issue.record("Expected medication inventory readiness to fail")
+		} catch {
+			#expect(error as? DataStoreTestError == .medicationInventoryUnavailable)
+		}
+
+		#expect(receivedStore === store.medicationsStore)
+		#expect(returnedIDs == nil)
+	}
 
     @Test("Add medication to data store")
     func addMedication() async throws {
@@ -90,6 +145,164 @@ struct DataStoreTests {
         // Then
         #expect(dataStore.medications.count == 0)
     }
+
+	@Test("Deleting medication removes only its urgency preference")
+	func deletingMedicationRemovesOnlyItsUrgencyPreference() async throws {
+		let suiteName = "DataStoreTests.deleteUrgency.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		let deletedMedication = createTestMedication(name: "Urgent")
+		let retainedMedication = createTestMedication(name: "Normal")
+		#expect(urgencyStore.save(true, for: deletedMedication.id))
+		#expect(urgencyStore.save(false, for: retainedMedication.id))
+		var factoryDefaults: UserDefaults?
+		var cleanupIDs: Set<UUID>?
+		var deletedMedicationWasAbsentAtCleanup = false
+		var store: DataStore?
+		let createdStore = DataStore(
+			testIdentifier: "delete-urgency",
+			settingsDefaults: defaults,
+			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
+			urgencyStoreFactory: { destination in
+				factoryDefaults = destination
+				return MedicationNotificationUrgencyStore(defaults: destination)
+			},
+			notificationArtifactCleanup: { medicationIDs in
+				cleanupIDs = medicationIDs
+				deletedMedicationWasAbsentAtCleanup =
+					store?.medications.contains { $0.id == deletedMedication.id } == false
+				for medicationID in medicationIDs {
+					#expect(urgencyStore.removePreference(for: medicationID))
+				}
+			}
+		)
+		store = createdStore
+		try await createdStore.addMedication(deletedMedication)
+		try await createdStore.addMedication(retainedMedication)
+
+		try await createdStore.deleteMedication(deletedMedication)
+
+		#expect(factoryDefaults === defaults)
+		#expect(cleanupIDs == [deletedMedication.id])
+		#expect(deletedMedicationWasAbsentAtCleanup)
+		#expect(createdStore.medications.map(\.id) == [retainedMedication.id])
+		#expect(urgencyStore.preference(for: deletedMedication.id) == nil)
+		#expect(urgencyStore.preference(for: retainedMedication.id) == false)
+	}
+
+	@Test("Urgency cleanup failure does not restore medication or mutate preferences")
+	func urgencyCleanupFailureDoesNotRestoreMedicationOrMutatePreferences() async throws {
+		let suiteName = "DataStoreTests.deleteUrgencyFailure.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defaults.removePersistentDomain(forName: suiteName)
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		let deletedMedication = createTestMedication(name: "Deleted")
+		let retainedMedication = createTestMedication(name: "Retained")
+		let writableStore = MedicationNotificationUrgencyStore(defaults: defaults)
+		#expect(writableStore.save(true, for: deletedMedication.id))
+		#expect(writableStore.save(false, for: retainedMedication.id))
+		let priorData = try #require(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency))
+		let failingUrgencyStore = MedicationNotificationUrgencyStore(
+			defaults: defaults,
+			writer: { _, _, _ in }
+		)
+		var cleanupIDs: Set<UUID>?
+		let store = DataStore(
+			testIdentifier: "delete-urgency-failure",
+			settingsDefaults: defaults,
+			refillProfileStore: MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil),
+			urgencyStoreFactory: { _ in
+				failingUrgencyStore
+			},
+			notificationArtifactCleanup: { medicationIDs in
+				cleanupIDs = medicationIDs
+				for medicationID in medicationIDs {
+					#expect(!failingUrgencyStore.removePreference(for: medicationID))
+				}
+			}
+		)
+		try await store.addMedication(deletedMedication)
+		try await store.addMedication(retainedMedication)
+
+		try await store.deleteMedication(deletedMedication)
+
+		#expect(cleanupIDs == [deletedMedication.id])
+		#expect(store.medications.map(\.id) == [retainedMedication.id])
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationNotificationUrgency) == priorData)
+		#expect(writableStore.preference(for: deletedMedication.id) == true)
+		#expect(writableStore.preference(for: retainedMedication.id) == false)
+	}
+
+	@Test("Clearing user data cleans all prior medication artifacts after both stores commit")
+	func clearingUserDataCleansAllPriorMedicationArtifactsAfterCommit() async throws {
+		let firstMedication = createTestMedication(name: "First")
+		let secondMedication = createTestMedication(name: "Second")
+		var cleanedMedicationIDs: Set<UUID>?
+		var storesWereEmptyAtCleanup = false
+		var store: DataStore?
+		let createdStore = DataStore(
+			testIdentifier: "clear-user-data-notifications",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			notificationArtifactCleanup: { medicationIDs in
+				cleanedMedicationIDs = medicationIDs
+				storesWereEmptyAtCleanup =
+					store?.medications.isEmpty == true &&
+					store?.events.isEmpty == true
+			}
+		)
+		store = createdStore
+		try await createdStore.addMedication(firstMedication)
+		try await createdStore.addMedication(secondMedication)
+		try await createdStore.addEvent(createTestEvent(medication: firstMedication))
+
+		try await createdStore.clearUserData()
+
+		#expect(cleanedMedicationIDs == [firstMedication.id, secondMedication.id])
+		#expect(storesWereEmptyAtCleanup)
+	}
+
+	@Test("Clear failure after medication removal cleans absent medication artifacts and preserves the error")
+	func clearFailureAfterMedicationRemovalCleansAbsentMedicationArtifacts() async throws {
+		let firstMedication = createTestMedication(name: "First")
+		let secondMedication = createTestMedication(name: "Second")
+		var cleanedMedicationIDs: Set<UUID>?
+		var stateAtCleanup: (medications: Int, events: Int)?
+		var store: DataStore?
+		let createdStore = DataStore(
+			testIdentifier: "partial-clear-notification-cleanup",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			importFailureInjection: .init(
+				beforeExplicitClearEvents: { throw DataStoreTestError.clearFailed }
+			),
+			notificationArtifactCleanup: { medicationIDs in
+				cleanedMedicationIDs = medicationIDs
+				stateAtCleanup = (
+					medications: store?.medications.count ?? -1,
+					events: store?.events.count ?? -1
+				)
+			}
+		)
+		store = createdStore
+		try await createdStore.addMedication(firstMedication)
+		try await createdStore.addMedication(secondMedication)
+		try await createdStore.addEvent(createTestEvent(medication: firstMedication))
+
+		await #expect(throws: DataStoreTestError.self) {
+			try await createdStore.clearUserData()
+		}
+
+		#expect(createdStore.medications.isEmpty)
+		#expect(createdStore.events.count == 1)
+		#expect(cleanedMedicationIDs == [firstMedication.id, secondMedication.id])
+		#expect(stateAtCleanup?.medications == 0)
+		#expect(stateAtCleanup?.events == 1)
+	}
 
     @Test("Delete medication with associated events removes all related data")
     func deleteMedicationWithAssociatedEvents() async throws {
@@ -257,8 +470,8 @@ struct DataStoreTests {
         #expect(dataStore.medications.first?.clinicalName == "Import Test")
     }
 
-    @Test("Import with merge combines existing and new data")
-    func importWithMerge() async throws {
+	@Test("Import with merge combines existing and new data")
+	func importWithMerge() async throws {
         // Given - Existing data
         let existingMed = createTestMedication(name: "Existing")
         try await dataStore.addMedication(existingMed)
@@ -275,8 +488,88 @@ struct DataStoreTests {
         // Then
         #expect(dataStore.medications.count == 2)
         #expect(dataStore.medications.contains { $0.clinicalName == "Existing" })
-        #expect(dataStore.medications.contains { $0.clinicalName == "New Med" })
-    }
+		#expect(dataStore.medications.contains { $0.clinicalName == "New Med" })
+	}
+
+	@Test("Replace import cleans only medications absent from committed inventory")
+	func replaceImportCleansOnlyRemovedMedicationArtifacts() async throws {
+		let removedMedication = createTestMedication(name: "Removed")
+		let retainedMedication = createTestMedication(name: "Retained")
+		let importedMedication = createTestMedication(name: "Imported")
+		var cleanupCalls: [Set<UUID>] = []
+		var committedMedicationIDsAtCleanup: Set<UUID>?
+		var store: DataStore?
+		let createdStore = DataStore(
+			testIdentifier: "replace-import-notification-cleanup",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			notificationArtifactCleanup: { medicationIDs in
+				cleanupCalls.append(medicationIDs)
+				committedMedicationIDsAtCleanup = Set(store?.medications.map(\.id) ?? [])
+			}
+		)
+		store = createdStore
+		try await createdStore.addMedication(removedMedication)
+		try await createdStore.addMedication(retainedMedication)
+		let importData = try makeExportData(
+			medications: [retainedMedication, importedMedication]
+		)
+
+		try await createdStore.importDataFromJSON(importData, mergeExisting: false)
+
+		#expect(cleanupCalls == [[removedMedication.id]])
+		#expect(committedMedicationIDsAtCleanup == [retainedMedication.id, importedMedication.id])
+		#expect(Set(createdStore.medications.map(\.id)) == [retainedMedication.id, importedMedication.id])
+	}
+
+	@Test("Failed replace import rolls back without cleaning notification artifacts")
+	func failedReplaceImportDoesNotCleanNotificationArtifacts() async throws {
+		let existingMedication = createTestMedication(name: "Existing")
+		let importedMedication = createTestMedication(name: "Imported")
+		var cleanupCalls: [Set<UUID>] = []
+		let store = DataStore(
+			testIdentifier: "failed-replace-import-notification-cleanup",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			importFailureInjection: .init(
+				beforeMedicationInsert: { medication in
+					guard medication.id != importedMedication.id else {
+						throw DataStoreTestError.importFailed
+					}
+				}
+			),
+			notificationArtifactCleanup: { cleanupCalls.append($0) }
+		)
+		try await store.addMedication(existingMedication)
+		let importData = try makeExportData(medications: [importedMedication])
+
+		await #expect(throws: DataStoreTestError.self) {
+			try await store.importDataFromJSON(importData, mergeExisting: false)
+		}
+
+		#expect(cleanupCalls.isEmpty)
+		#expect(store.medications.map(\.id) == [existingMedication.id])
+	}
+
+	@Test("Merge import never cleans existing notification artifacts")
+	func mergeImportDoesNotCleanNotificationArtifacts() async throws {
+		let existingMedication = createTestMedication(name: "Existing")
+		let importedMedication = createTestMedication(name: "Imported")
+		var cleanupCalls: [Set<UUID>] = []
+		let store = DataStore(
+			testIdentifier: "merge-import-notification-cleanup",
+			settingsDefaults: .standard,
+			refillProfileStore: MedicationRefillProfileStore(),
+			notificationArtifactCleanup: { cleanupCalls.append($0) }
+		)
+		try await store.addMedication(existingMedication)
+		let importData = try makeExportData(medications: [importedMedication])
+
+		try await store.importDataFromJSON(importData, mergeExisting: true)
+
+		#expect(cleanupCalls.isEmpty)
+		#expect(Set(store.medications.map(\.id)) == [existingMedication.id, importedMedication.id])
+	}
 
     // MARK: - Clear Data Tests
 
@@ -333,6 +626,32 @@ struct DataStoreTests {
         #expect(allKeys.contains(UserDefaultsKeys.hapticsEnabled))
         #expect(allKeys.contains(UserDefaultsKeys.medicationOrder))
         #expect(allKeys.contains(UserDefaultsKeys.selectedTab))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationRefillProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationNotificationUrgency))
+		#expect(allKeys.contains(UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted))
+
+		#expect(UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationRefillProfiles))
+		#expect(UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationNotificationUrgency))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted))
+		#expect(!UserDefaultsKeys.safeToExportKeys.contains(UserDefaultsKeys.importSettingsDefaultBehavior))
+		#expect(UserDefaultsKeys.keysToRemove.contains(UserDefaultsKeys.medicationNotificationUrgency))
+		#expect(UserDefaultsKeys.keysToSkip.contains(UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.legacyMedicationProfiles))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.archivedMedicationProfiles))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.medicationProfilesMigrationCompleted))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted))
+		#expect(UserDefaultsKeys.keysToNeverExport.contains(UserDefaultsKeys.importSettingsDefaultBehavior))
+		#expect(UserDefaultsKeys.safeToExportKeys.isDisjoint(with: UserDefaultsKeys.keysToNeverExport))
+		#expect(
+			UserDefaultsKeys.safeToExportKeys.union(UserDefaultsKeys.keysToNeverExport) == Set(allKeys),
+			"Every registered key must be classified as safe or forbidden for export"
+		)
     }
 
     // MARK: - Performance Tests
@@ -369,6 +688,23 @@ struct DataStoreTests {
         )
     }
 
+	private func makeExportData(
+		medications: [ANMedicationConcept],
+		events: [ANEventConcept] = []
+	) throws -> Data {
+		let export = DataExport(
+			medications: medications,
+			events: events,
+			exportDate: Date(timeIntervalSince1970: 1_700_000_000),
+			appVersion: "1.0",
+			dataVersion: "1.0",
+			settings: nil
+		)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		return try encoder.encode(export)
+	}
+
     private func createTestEvent(medication: ANMedicationConcept) -> ANEventConcept {
         return ANEventConcept(
             eventType: .doseTaken,
@@ -377,4 +713,50 @@ struct DataStoreTests {
             date: Date()
         )
     }
+}
+
+@MainActor
+private final class DataStoreTestAsyncGate {
+	private let arrived = DataStoreTestAsyncSignal()
+	private let released = DataStoreTestAsyncSignal()
+
+	func suspend() async {
+		arrived.signal()
+		await released.wait()
+	}
+
+	func waitUntilSuspended() async {
+		await arrived.wait()
+	}
+
+	func resume() {
+		released.signal()
+	}
+}
+
+@MainActor
+private final class DataStoreTestAsyncSignal {
+	private let stream: AsyncStream<Void>
+	private let continuation: AsyncStream<Void>.Continuation
+
+	init() {
+		(stream, continuation) = AsyncStream.makeStream()
+	}
+
+	func signal() {
+		continuation.yield()
+		continuation.finish()
+	}
+
+	func wait() async {
+		for await _ in stream {
+			return
+		}
+	}
+}
+
+private enum DataStoreTestError: Error, Equatable {
+	case clearFailed
+	case importFailed
+	case medicationInventoryUnavailable
 }

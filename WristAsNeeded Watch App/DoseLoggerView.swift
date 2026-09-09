@@ -1,4 +1,3 @@
-import Combine
 import SwiftUI
 import WatchKit
 
@@ -9,10 +8,8 @@ struct DoseLoggerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedUnit: String
     @State private var isLogging = false
-    @State private var now = Date()
 
     private let availableUnits = ["tablet", "capsule", "mg", "mL", "puff", "dose", "unit"]
-    private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     init(medication: WatchMedication, doseAmount: Binding<Double>) {
         self.medication = medication
@@ -22,8 +19,6 @@ struct DoseLoggerView: View {
     }
 
     var body: some View {
-        let canTakeNow = medication.canTake(at: now)
-
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
@@ -33,11 +28,17 @@ struct DoseLoggerView: View {
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 8)
 
-                    if !canTakeNow {
-                        Label(nextDoseLabel, systemImage: "clock.fill")
+                    if let quantity = medication.quantity {
+                        Text("Quantity: \(quantity, specifier: "%.0f")")
                             .font(.caption)
-                            .foregroundColor(.orange)
-                    } else if medication.lowStock || medication.refillSoon {
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("Quantity not tracked")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if medication.lowStock || medication.refillSoon {
                         Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
                             .font(.caption)
                             .foregroundColor(medication.lowStock ? .orange : .yellow)
@@ -141,10 +142,10 @@ struct DoseLoggerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background((isLogging || !canTakeNow) ? Color.gray : Color.accent)
+                    .background(isLogging ? Color.gray : Color.accent)
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(isLogging || !canTakeNow)
+                    .disabled(isLogging)
                 }
                 .padding()
             }
@@ -158,15 +159,9 @@ struct DoseLoggerView: View {
                 }
             }
         }
-        .onReceive(eligibilityTimer) { now = $0 }
     }
 
     private func logDose() {
-        guard medication.canTake(at: Date()) else {
-            WKInterfaceDevice.current().play(.failure)
-            return
-        }
-
         isLogging = true
 
         let eventData: [String: Any] = [
@@ -188,15 +183,6 @@ struct DoseLoggerView: View {
         }
     }
 
-    private var nextDoseLabel: String {
-        guard let nextDoseDate = medication.nextDoseDate else {
-            return "This medication is not ready yet."
-        }
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
-        return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
-    }
 }
 
 #if DEBUG

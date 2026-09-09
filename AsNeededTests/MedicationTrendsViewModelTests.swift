@@ -756,32 +756,32 @@ struct MedicationTrendsViewModelTests {
         #expect(dayData.total == 10.0) // 2 + 3 + 5
     }
 
-    @Test("Next eligible dose date reflects saved minimum interval guidance")
-    func nextEligibleDoseDateUsesSavedGuidance() async throws {
+    @Test("Refill projection uses saved custom low-stock threshold")
+    func refillProjectionUsesSavedCustomThreshold() async throws {
         clearStoredSelection()
-        let defaults = UserDefaults(suiteName: "TrendsVM-Safety-\(UUID().uuidString)") ?? .standard
-        let safetyStore = MedicationSafetyProfileStore(defaults: defaults, mirrorToSharedDefaults: false)
-        let dataStore = DataStore(testIdentifier: "TrendsVM-NextEligible")
-        let medication = createTestMedication(name: "Naproxen")
+        let suiteName = "TrendsVM-Refill-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        defaults.removePersistentDomain(forName: suiteName)
+        let refillStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
+        let dataStore = DataStore(testIdentifier: "TrendsVM-RefillProjection")
+        let medication = createTestMedication(name: "Naproxen", quantity: 12)
         try await dataStore.addMedication(medication)
 
-        let recentEvent = createTestEvent(
-            medication: medication,
-            date: Date().addingTimeInterval(-3600),
-            amount: 1,
-            unit: .tablet
-        )
-        try await dataStore.addEvent(recentEvent)
-        safetyStore.save(.init(minimumHoursBetweenDoses: 4), for: medication.id)
+        let profile = MedicationRefillProfile(lowStockThreshold: 15)
+        #expect(refillStore.save(profile, for: medication.id))
 
         let viewModel = MedicationTrendsViewModel(
             dataStore: dataStore,
             selectedMedicationID: medication.id,
-            safetyProfileStore: safetyStore
+            refillProfileStore: refillStore
         )
 
-        let nextEligibleDate = try #require(viewModel.nextEligibleDoseDate)
-        #expect(nextEligibleDate > Date())
+        #expect(viewModel.refillProfile == profile)
+        #expect(viewModel.refillProjection?.lowStock == true)
+        #expect(viewModel.refillProjection?.urgent == true)
+        #expect(viewModel.summaryAccessibilityLabel.contains("Log a few doses to see timing patterns."))
+        #expect(viewModel.summaryAccessibilityLabel.contains("Urgent refill status"))
+        #expect(viewModel.summaryAccessibilityLabel.contains("Refill prep would be timely."))
     }
 
     @Test("Question availability reflects injected question service state")

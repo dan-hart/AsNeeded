@@ -6,16 +6,23 @@ import DHLoggingKit
 import Foundation
 import SwiftUI
 
+typealias QuickLogPersistence = @MainActor (
+	_ updatedMedication: ANMedicationConcept,
+	_ event: ANEventConcept
+) async -> (updateSuccess: Bool, eventSuccess: Bool)
+
 @MainActor
 final class MedicationListViewModel: ObservableObject {
     // MARK: - Properties
     private let dataStore: DataStore
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
-    private let safetyProfileStore = MedicationSafetyProfileStore.shared
-    private let guidanceService = MedicationDoseGuidanceService()
+    private let refillProfileStore = MedicationRefillProfileStore.shared
     private let feedbackService = QuickLogFeedbackService()
     private let statusSummaryService = MedicationStatusSummaryService()
+    private let scheduleQuickLogToastDismissal: (@escaping @MainActor @Sendable () -> Void) -> Void
+	private let quickLogPersistence: QuickLogPersistence
+	private let acknowledgeDeliveredReminders: @MainActor (UUID) async -> Void
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
@@ -35,6 +42,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
     @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
+    @Published private(set) var quickLogToastGeneration: UUID?
     @Published var isLoading = true
 
     // MARK: - Computed Properties
@@ -72,8 +80,44 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(dataStore: DataStore = .shared) {
+    init(
+        dataStore: DataStore = .shared,
+        scheduleQuickLogToastDismissal: @escaping (@escaping @MainActor @Sendable () -> Void) -> Void = { action in
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                action()
+            }
+        },
+		quickLogPersistence: QuickLogPersistence? = nil,
+		acknowledgeDeliveredReminders: @escaping @MainActor (UUID) async -> Void = { medicationID in
+			await NotificationManager.shared.acknowledgeDeliveredReminders(for: medicationID)
+		}
+    ) {
         self.dataStore = dataStore
+        self.scheduleQuickLogToastDismissal = scheduleQuickLogToastDismissal
+		let logger = DHLogger.ui
+		self.quickLogPersistence = quickLogPersistence ?? { updatedMedication, event in
+			async let updateSuccess: Bool = {
+				do {
+					try await dataStore.updateMedication(updatedMedication)
+					return true
+				} catch {
+					logger.logPrivacySafeError("Failed to update medication", error: error)
+					return false
+				}
+			}()
+			async let eventSuccess: Bool = {
+				do {
+					try await dataStore.addEvent(event, shouldRecordForReview: false)
+					return true
+				} catch {
+					logger.logPrivacySafeError("Failed to add event", error: error)
+					return false
+				}
+			}()
+			return await (updateSuccess, eventSuccess)
+		}
+		self.acknowledgeDeliveredReminders = acknowledgeDeliveredReminders
 
         if medicationOrder.isEmpty && !items.isEmpty {
             medicationOrder = items.map { $0.id.uuidString }
@@ -103,7 +147,6 @@ final class MedicationListViewModel: ObservableObject {
         do {
             try await dataStore.addMedication(med)
             appendToMedicationOrderIfNeeded(med)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to add medication", error: error)
@@ -114,7 +157,6 @@ final class MedicationListViewModel: ObservableObject {
     func update(_ med: ANMedicationConcept) async -> Bool {
         do {
             try await dataStore.updateMedication(med)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to update medication", error: error)
@@ -128,7 +170,6 @@ final class MedicationListViewModel: ObservableObject {
             var order = medicationOrder
             order.removeAll { $0 == med.id.uuidString }
             medicationOrder = order
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
@@ -139,7 +180,6 @@ final class MedicationListViewModel: ObservableObject {
     func addEvent(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async -> Bool {
         do {
             try await dataStore.addEvent(event, shouldRecordForReview: shouldRecordForReview)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to add event", error: error)
@@ -235,14 +275,6 @@ final class MedicationListViewModel: ObservableObject {
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
         )
-        let assessment = guidanceService.assessment(
-            for: medication,
-            proposedDose: dose,
-            at: loggedAt,
-            events: dataStore.events,
-            profile: safetyProfileStore.profile(for: medication.id)
-        )
-
         let eventCountBefore = dataStore.events.count
         var updatedMed = medication
         if let quantity = updatedMed.quantity, dose.amount > 0 {
@@ -265,19 +297,15 @@ final class MedicationListViewModel: ObservableObject {
             details: quantityDetails(quantityWasPresent: medication.quantity != nil)
         )
 
-        async let updateResult = update(updatedMed)
-        async let eventResult = addEvent(event, shouldRecordForReview: false)
-
-        let (updateSuccess, eventSuccess) = await (updateResult, eventResult)
+		let (updateSuccess, eventSuccess) = await quickLogPersistence(updatedMed, event)
 
         if updateSuccess, eventSuccess {
+			await acknowledgeDeliveredReminders(medication.id)
             hapticsManager.doseLogged()
             let feedback = feedbackService.feedback(
                 medication: medication,
                 dose: dose,
-                loggedEvent: event,
-                assessment: assessment,
-                at: loggedAt
+                loggedEvent: event
             )
             showQuickLogToast(med: medication, dose: dose, feedback: feedback)
             logger.logDoseOperation(
@@ -296,6 +324,7 @@ final class MedicationListViewModel: ObservableObject {
 
     func undoLastQuickLog() async -> Bool {
         guard let feedback = quickLogFeedback,
+              let toastGeneration = quickLogToastGeneration,
               let undoEventID = feedback.undoEventID,
               let event = dataStore.events.first(where: { $0.id == undoEventID })
         else {
@@ -316,11 +345,7 @@ final class MedicationListViewModel: ObservableObject {
                 try await dataStore.updateMedication(updated)
             }
 
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
-            quickLogFeedback = nil
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                showQuickLogToast = false
-            }
+            dismissQuickLogToast(generation: toastGeneration)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to undo quick log", error: error)
@@ -329,6 +354,19 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     func dismissQuickLogToast() {
+        guard let generation = quickLogToastGeneration else {
+            return
+        }
+
+        dismissQuickLogToast(generation: generation)
+    }
+
+    private func dismissQuickLogToast(generation: UUID) {
+        guard quickLogToastGeneration == generation else {
+            return
+        }
+
+        quickLogToastGeneration = nil
         quickLogFeedback = nil
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showQuickLogToast = false
@@ -339,7 +377,7 @@ final class MedicationListViewModel: ObservableObject {
         statusSummaryService.summary(
             for: medication,
             events: dataStore.events,
-            profile: safetyProfileStore.profile(for: medication.id)
+            profile: refillProfileStore.profile(for: medication.id)
         )
     }
 
@@ -348,28 +386,20 @@ final class MedicationListViewModel: ObservableObject {
         dose: ANDoseConcept,
         feedback: QuickLogFeedbackService.Feedback? = nil
     ) {
+        let generation = UUID()
         quickLogMedicationName = med.displayName
         quickLogDoseAmount = dose.amount
         quickLogDoseUnit = dose.unit.abbreviation
         quickLogAccentColor = med.displayColor
         quickLogFeedback = feedback
+        quickLogToastGeneration = generation
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickLogToast = true
         }
 
-        Task {
-            let toastDuration: UInt64 = feedback?.tone == .caution || feedback?.tone == .warning ? 5_000_000_000 : 3_000_000_000
-            try? await Task.sleep(nanoseconds: toastDuration)
-            await MainActor.run {
-                guard self.quickLogFeedback?.undoEventID == feedback?.undoEventID else {
-                    return
-                }
-                self.quickLogFeedback = nil
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    self.showQuickLogToast = false
-                }
-            }
+        scheduleQuickLogToastDismissal { [weak self] in
+            self?.dismissQuickLogToast(generation: generation)
         }
     }
 

@@ -35,8 +35,6 @@ struct LargeWidgetProvider: TimelineProvider {
                         quantity: 30,
                         prescribedUnit: .tablet
                     ),
-                    nextDoseTime: Date().addingTimeInterval(3600),
-                    canTakeNow: false,
                     lowStock: false,
                     refillSoon: true
                 ),
@@ -46,8 +44,6 @@ struct LargeWidgetProvider: TimelineProvider {
                         quantity: 15,
                         prescribedUnit: .capsule
                     ),
-                    nextDoseTime: Date(),
-                    canTakeNow: true,
                     lowStock: false,
                     refillSoon: false
                 ),
@@ -84,14 +80,15 @@ struct LargeWidgetProvider: TimelineProvider {
     private func createEntry() -> FullMedicationListEntry {
         let provider = WidgetDataProvider.shared
 
-        // Get up to 6 medications for large widget
-        let medications = Array(provider.medicationsByName.prefix(6)).map { medication in
+        let lowStockIDs = Set(provider.lowQuantityMedications.map(\.id))
+        let refillSoonIDs = Set(provider.refillDueSoon.map(\.id))
+
+        let medications = Array(provider.medicationsByRefillPriority.prefix(6)).map { medication in
             MedicationInfo(
                 medication: medication,
-                nextDoseTime: provider.nextDoseTime(for: medication),
-                canTakeNow: provider.canTakeNow(medication),
-                lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
-                refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
+                lowStock: lowStockIDs.contains(medication.id),
+                refillSoon: refillSoonIDs.contains(medication.id),
+                statusMessage: provider.refillStatusMessage(for: medication)
             )
         }
 
@@ -235,20 +232,11 @@ struct LargeWidgetView: View {
                             Text("\(String(format: "%.0f", quantity)) \(unit.abbreviation)")
                                 .font(.caption2.weight(.medium))
                         }
-                        .foregroundStyle(quantityColor(for: quantity))
+                        .foregroundStyle(quantityColor(for: info))
                     }
 
                     // Status
-                    if info.canTakeNow {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.caption2)
-
-                            Text("Available")
-                                .font(.caption2.weight(.medium))
-                        }
-                        .foregroundStyle(.green)
-                    } else if info.lowStock {
+                    if info.lowStock {
                         HStack(spacing: 4) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.caption2)
@@ -266,14 +254,10 @@ struct LargeWidgetView: View {
                                 .font(.caption2.weight(.medium))
                         }
                         .foregroundStyle(.orange)
-                    } else if let nextDoseTime = info.nextDoseTime {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock")
-                                .font(.caption2)
-
-                            Text(timeRemaining(until: nextDoseTime))
-                                .font(.caption2.weight(.medium))
-                        }
+                    } else if let statusMessage = info.statusMessage {
+                        Text(statusMessage)
+                            .font(.caption2)
+                            .lineLimit(1)
                         .foregroundStyle(.secondary)
                     }
                 }
@@ -282,8 +266,12 @@ struct LargeWidgetView: View {
             Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
-            if #available(iOS 17.0, *), info.canTakeNow {
-                LogDoseLargeIconButton(medicationID: info.medication.id.uuidString, color: info.medication.displayColor)
+            if #available(iOS 17.0, *) {
+                LogDoseLargeIconButton(
+                    medicationID: info.medication.id.uuidString,
+                    medicationName: info.medication.displayName,
+                    color: info.medication.displayColor
+                )
             } else {
                 Image(systemName: "plus.circle.fill")
                     .font(.title3)
@@ -312,35 +300,16 @@ struct LargeWidgetView: View {
         .padding()
     }
 
-    private func quantityColor(for quantity: Double) -> Color {
-        if quantity < 10 {
-            return .red
-        } else if quantity < 30 {
+    private func quantityColor(for info: MedicationInfo) -> Color {
+        if info.lowStock {
+            return .orange
+        } else if info.refillSoon {
             return .orange
         } else {
-            return .green
+            return .secondary
         }
     }
 
-    private func timeRemaining(until date: Date) -> String {
-        let interval = date.timeIntervalSince(Date())
-
-        if interval <= 0 {
-            return "now"
-        }
-
-        let hours = Int(interval) / 3600
-        let minutes = (Int(interval) % 3600) / 60
-
-        if hours > 24 {
-            let days = hours / 24
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h"
-        } else {
-            return "\(minutes)m"
-        }
-    }
 }
 
 // MARK: - Timeline Entry
@@ -366,8 +335,6 @@ struct FullMedicationListEntry: TimelineEntry {
                     quantity: 5,
                     prescribedUnit: .tablet
                 ),
-                nextDoseTime: Date(),
-                canTakeNow: true,
                 lowStock: true,
                 refillSoon: true
             ),
@@ -377,8 +344,6 @@ struct FullMedicationListEntry: TimelineEntry {
                     quantity: 45,
                     prescribedUnit: .tablet
                 ),
-                nextDoseTime: Date().addingTimeInterval(7200),
-                canTakeNow: false,
                 lowStock: false,
                 refillSoon: false
             ),
@@ -388,8 +353,6 @@ struct FullMedicationListEntry: TimelineEntry {
                     quantity: 60,
                     prescribedUnit: .capsule
                 ),
-                nextDoseTime: Date().addingTimeInterval(14400),
-                canTakeNow: false,
                 lowStock: false,
                 refillSoon: false
             ),
@@ -404,6 +367,7 @@ struct FullMedicationListEntry: TimelineEntry {
 @available(iOS 17.0, *)
 struct LogDoseLargeIconButton: View {
     let medicationID: String
+    let medicationName: String
     let color: Color
 
     var body: some View {
@@ -417,5 +381,7 @@ struct LogDoseLargeIconButton: View {
                 .foregroundStyle(color)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Log dose for \(medicationName)")
+        .accessibilityHint("Logs the prescribed dose")
     }
 }

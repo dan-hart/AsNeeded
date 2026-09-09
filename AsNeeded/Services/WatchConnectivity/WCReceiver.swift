@@ -103,19 +103,14 @@ final class WCReceiver: NSObject, ObservableObject {
     // MARK: - Private Methods
 
     private func sendMedicationsToWatch() async {
-        let medications = DataStore.shared.medications
+        let medications = DataStore.shared.medications.filter { !$0.isArchived }
         let events = DataStore.shared.events
-        let safetyProfileStore = MedicationSafetyProfileStore.shared
-        let guidanceService = MedicationDoseGuidanceService()
+        let refillProfileStore = MedicationRefillProfileStore.shared
+        let refillProjectionService = MedicationRefillProjectionService()
 
         let medicationData = medications.map { medication -> [String: Any] in
-            let profile = safetyProfileStore.profile(for: medication.id)
-            let nextDoseDate = guidanceService.nextEligibleDate(
-                for: medication,
-                events: events,
-                profile: profile
-            )
-            let refillProjection = guidanceService.refillProjection(
+            let profile = refillProfileStore.profile(for: medication.id)
+            let refillProjection = refillProjectionService.projection(
                 for: medication,
                 events: events,
                 profile: profile
@@ -124,17 +119,15 @@ final class WCReceiver: NSObject, ObservableObject {
             var payload: [String: Any] = [
                 "id": medication.id.uuidString,
                 "displayName": medication.displayName,
-                "quantity": medication.quantity ?? 0.0,
                 "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
                 "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
-                "canTakeNow": nextDoseDate == nil || nextDoseDate ?? .distantPast <= Date(),
                 "lowStock": refillProjection.lowStock,
                 "refillSoon": refillProjection.refillSoon,
                 "statusMessage": refillProjection.statusMessage,
             ]
 
-            if let nextDoseDate {
-                payload["nextDoseDate"] = nextDoseDate
+            if let quantity = medication.quantity {
+                payload["quantity"] = quantity
             }
 
             return payload
@@ -185,8 +178,6 @@ final class WCReceiver: NSObject, ObservableObject {
         }
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
@@ -213,8 +204,6 @@ final class WCReceiver: NSObject, ObservableObject {
         try await DataStore.shared.updateMedication(updatedMedication)
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Quantity updated successfully, sending confirmation to watch")
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in

@@ -1,9 +1,20 @@
 import SFSafeSymbols
 import SwiftUI
 
+enum SubtleSupportLayoutStyle: Equatable {
+	case detailed
+	case compact
+
+	init(dynamicTypeSize: DynamicTypeSize) {
+		self = dynamicTypeSize >= .xxxLarge ? .compact : .detailed
+	}
+}
+
 struct SubtleSupportView: View {
     let message: String
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var contentSpacing: CGFloat = 8
     @ScaledMetric private var dividerHeight: CGFloat = 20
     @ScaledMetric private var verticalPadding: CGFloat = 8
@@ -22,17 +33,17 @@ struct SubtleSupportView: View {
                 } label: {
                     HStack(spacing: contentSpacing) {
                         Image(systemSymbol: .heart)
-                            .font(.caption.weight(.medium))
+                            .font(.customFont(fontFamily, style: .caption, weight: .medium))
                             .foregroundColor(.red.opacity(0.6))
 
-                        Text(message)
-                            .font(.footnote)
+                        Text(layoutStyle == .compact ? "Support As Needed" : message)
+                            .font(.customFont(fontFamily, style: .footnote))
                             .foregroundColor(.secondary)
 
                         Spacer()
 
                         Image(systemSymbol: .chevronRight)
-                            .font(.caption2)
+                            .font(.customFont(fontFamily, style: .caption2))
                             .foregroundColor(.secondary.opacity(0.6))
                     }
                 }
@@ -44,11 +55,19 @@ struct SubtleSupportView: View {
                 Button {
                     hideSupportBanners = true
                 } label: {
-                    Text("Hide")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    if layoutStyle == .compact {
+                        Image(systemSymbol: .xmark)
+                            .font(.customFont(fontFamily, style: .caption, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    } else {
+                        Text("Hide")
+                            .font(.customFont(fontFamily, style: .caption2))
+                    }
                 }
+                .foregroundColor(.secondary)
                 .buttonStyle(.plain)
+                .accessibilityLabel("Hide support suggestion")
             }
             .padding(.vertical, verticalPadding)
             .padding(.horizontal, horizontalPadding)
@@ -58,6 +77,10 @@ struct SubtleSupportView: View {
                     .opacity(0.5)
             )
         }
+    }
+
+    private var layoutStyle: SubtleSupportLayoutStyle {
+        SubtleSupportLayoutStyle(dynamicTypeSize: dynamicTypeSize)
     }
 }
 

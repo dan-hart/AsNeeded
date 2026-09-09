@@ -27,7 +27,6 @@ struct QuickLogToastView: View {
     @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var toastPadding: CGFloat = 16
     @ScaledMetric private var contentSpacing: CGFloat = 12
-    @ScaledMetric private var iconSize: CGFloat = 24
     @ScaledMetric private var dismissButtonSize: CGFloat = 28
     @ScaledMetric private var toastCornerRadius: CGFloat = 16
     @ScaledMetric private var topPadding: CGFloat = 60
@@ -37,16 +36,16 @@ struct QuickLogToastView: View {
             VStack {
                 VStack(alignment: .leading, spacing: contentSpacing) {
                     HStack(alignment: .top, spacing: contentSpacing) {
-                        Image(systemSymbol: toneIcon)
+                        Image(systemSymbol: .checkmarkCircleFill)
                             .font(.customFont(fontFamily, style: .title3))
-                            .foregroundStyle(toneColor)
+                            .foregroundStyle(accentColor)
                             .symbolEffect(.bounce, value: isVisible)
                             .accessibilityHidden(true)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(titleText)
                                 .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                                .foregroundStyle(toneColor)
+                                .foregroundStyle(accentColor)
 
                             Text(messageText)
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .bold))
@@ -58,12 +57,6 @@ struct QuickLogToastView: View {
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
 
-                            if let nextWindowText = feedback?.nextWindowText {
-                                Text(nextWindowText)
-                                    .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                                    .foregroundStyle(toneColor)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
                         }
 
                         Spacer(minLength: 8)
@@ -85,12 +78,12 @@ struct QuickLogToastView: View {
                         } label: {
                             Label("Undo log", systemSymbol: .arrowCounterclockwise)
                                 .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                                .foregroundStyle(toneColor)
+                                .foregroundStyle(accentColor)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(toneColor.opacity(0.12))
+                                        .fill(accentColor.opacity(0.12))
                                 )
                         }
                         .buttonStyle(.plain)
@@ -149,31 +142,6 @@ struct QuickLogToastView: View {
         return medicationName
     }
 
-    private var toneColor: Color {
-        guard let feedback else { return accentColor }
-
-        switch feedback.tone {
-        case .success:
-            return accentColor
-        case .caution:
-            return .orange
-        case .warning:
-            return .red
-        }
-    }
-
-    private var toneIcon: SFSymbol {
-        guard let feedback else { return .checkmarkCircleFill }
-
-        switch feedback.tone {
-        case .success:
-            return .checkmarkCircleFill
-        case .caution:
-            return .exclamationmarkTriangleFill
-        case .warning:
-            return .exclamationmarkTriangleFill
-        }
-    }
 }
 
 #if DEBUG

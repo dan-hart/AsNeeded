@@ -25,8 +25,8 @@ final class MedicationTrendsViewModel: ObservableObject {
     @Published var questionErrorMessage: String?
 
     private let dataStore: DataStore
-    private let safetyProfileStore: MedicationSafetyProfileStore
-    private let doseGuidanceService: MedicationDoseGuidanceService
+    private let refillProfileStore: MedicationRefillProfileStore
+    private let refillProjectionService: MedicationRefillProjectionService
     private let questionService: MedicationTrendsQuestionService
     private let calendar = Calendar.current
     private var cancellables = Set<AnyCancellable>()
@@ -34,13 +34,13 @@ final class MedicationTrendsViewModel: ObservableObject {
     init(
         dataStore: DataStore = .shared,
         selectedMedicationID: UUID? = nil,
-        safetyProfileStore: MedicationSafetyProfileStore = .shared,
-        doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService(),
+        refillProfileStore: MedicationRefillProfileStore = .shared,
+        refillProjectionService: MedicationRefillProjectionService = MedicationRefillProjectionService(),
         questionService: MedicationTrendsQuestionService = MedicationTrendsQuestionService()
     ) {
         self.dataStore = dataStore
-        self.safetyProfileStore = safetyProfileStore
-        self.doseGuidanceService = doseGuidanceService
+        self.refillProfileStore = refillProfileStore
+        self.refillProjectionService = refillProjectionService
         self.questionService = questionService
         if let initialID = selectedMedicationID {
             self.selectedMedicationID = initialID
@@ -99,12 +99,12 @@ final class MedicationTrendsViewModel: ObservableObject {
         return medications.first { $0.id == id }
     }
 
-    var safetyProfile: MedicationSafetyProfile {
+    var refillProfile: MedicationRefillProfile {
         guard let medication = selectedMedication else {
             return .empty
         }
 
-        return safetyProfileStore.profile(for: medication.id)
+        return refillProfileStore.profile(for: medication.id)
     }
 
     var events: [ANEventConcept] {
@@ -129,28 +129,31 @@ final class MedicationTrendsViewModel: ObservableObject {
         selectedMedication?.prescribedUnit ?? events.compactMap { $0.dose?.unit }.first
     }
 
-    var refillProjection: MedicationDoseGuidanceService.RefillProjection? {
+    var refillProjection: MedicationRefillProjectionService.RefillProjection? {
         guard let medication = selectedMedication else {
             return nil
         }
 
-        return doseGuidanceService.refillProjection(
+        return refillProjectionService.projection(
             for: medication,
             events: events,
-            profile: safetyProfile
+            profile: refillProfile
         )
     }
 
-    var nextEligibleDoseDate: Date? {
+    var summaryAccessibilityLabel: String {
         guard let medication = selectedMedication else {
-            return nil
+            return ""
         }
 
-        return doseGuidanceService.nextEligibleDate(
-            for: medication,
-            events: events,
-            profile: safetyProfile
-        )
+        var components = ["\(medication.displayName).", patternSummary]
+        if let refillProjection {
+            components.append(refillProjection.urgent ? "Urgent refill status." : "Refill status.")
+            if !patternSummary.contains(refillProjection.statusMessage) {
+                components.append(refillProjection.statusMessage)
+            }
+        }
+        return components.joined(separator: " ")
     }
 
     var questionAvailability: TrendsQuestionAvailability {
