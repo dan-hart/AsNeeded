@@ -7,6 +7,27 @@ enum TrendsQuestionAvailability: Equatable {
 	case available
 }
 
+/// Why on-device questions are unavailable, when the device could otherwise support them.
+enum TrendsQuestionUnavailableReason: Equatable, Sendable {
+	/// The hardware or OS cannot run the on-device model. Nothing the user can change.
+	case deviceNotEligible
+	/// The device is eligible but Apple Intelligence is turned off in Settings.
+	case appleIntelligenceNotEnabled
+	/// Apple Intelligence is on but the model is still downloading or preparing.
+	case modelNotReady
+
+	var userGuidance: String {
+		switch self {
+		case .deviceNotEligible:
+			return String(localized: "Private questions need a device that supports Apple Intelligence.")
+		case .appleIntelligenceNotEnabled:
+			return String(localized: "Turn on Apple Intelligence in iOS Settings to ask private questions about your trends.")
+		case .modelNotReady:
+			return String(localized: "Apple Intelligence is still getting ready on this device. Check back in a little while.")
+		}
+	}
+}
+
 enum TrendsQuestionServiceError: LocalizedError {
 	case unavailable
 	case disabled
@@ -23,11 +44,33 @@ enum TrendsQuestionServiceError: LocalizedError {
 
 protocol TrendsQuestionGenerating: Sendable {
 	func answer(prompt: String) async throws -> TrendsQuestionAnswer
+
+	/// Streams progressively more complete answers while the model works, ending with the final answer.
+	/// Generators that cannot stream fall back to yielding the complete answer once.
+	func streamAnswer(prompt: String) -> AsyncThrowingStream<TrendsQuestionAnswer, Error>
+}
+
+extension TrendsQuestionGenerating {
+	func streamAnswer(prompt: String) -> AsyncThrowingStream<TrendsQuestionAnswer, Error> {
+		AsyncThrowingStream { continuation in
+			let task = Task {
+				do {
+					let answer = try await self.answer(prompt: prompt)
+					continuation.yield(answer)
+					continuation.finish()
+				} catch {
+					continuation.finish(throwing: error)
+				}
+			}
+			continuation.onTermination = { _ in task.cancel() }
+		}
+	}
 }
 
 struct MedicationTrendsQuestionService: Sendable {
 	private let isEnabledProvider: @Sendable () -> Bool
 	private let isSupportedProvider: @Sendable () -> Bool
+	private let unavailableReasonProvider: @Sendable () -> TrendsQuestionUnavailableReason?
 	private let generator: any TrendsQuestionGenerating
 
 	init(
@@ -37,11 +80,23 @@ struct MedicationTrendsQuestionService: Sendable {
 		isSupportedProvider: @escaping @Sendable () -> Bool = {
 			MedicationTrendsQuestionSupport.isSupportedOnDevice
 		},
+		unavailableReasonProvider: @escaping @Sendable () -> TrendsQuestionUnavailableReason? = {
+			MedicationTrendsQuestionSupport.unavailableReason
+		},
 		generator: (any TrendsQuestionGenerating)? = nil
 	) {
 		self.isEnabledProvider = isEnabledProvider
 		self.isSupportedProvider = isSupportedProvider
+		self.unavailableReasonProvider = unavailableReasonProvider
 		self.generator = generator ?? OnDeviceTrendsQuestionGenerator()
+	}
+
+	/// The reason questions are unavailable, or nil when they are supported on this device.
+	var unavailableReason: TrendsQuestionUnavailableReason? {
+		guard !isSupportedProvider() else {
+			return nil
+		}
+		return unavailableReasonProvider() ?? .deviceNotEligible
 	}
 
 	var availability: TrendsQuestionAvailability {
@@ -100,6 +155,18 @@ struct MedicationTrendsQuestionService: Sendable {
 		case .available:
 			let prompt = buildPrompt(question: question, context: context)
 			return try await generator.answer(prompt: prompt)
+		}
+	}
+
+	/// Streams partial answers as the model generates them. The last element is the complete answer.
+	func streamAnswer(question: String, context: TrendsQuestionContext) -> AsyncThrowingStream<TrendsQuestionAnswer, Error> {
+		switch availability {
+		case .unavailable:
+			return AsyncThrowingStream { $0.finish(throwing: TrendsQuestionServiceError.unavailable) }
+		case .disabled:
+			return AsyncThrowingStream { $0.finish(throwing: TrendsQuestionServiceError.disabled) }
+		case .available:
+			return generator.streamAnswer(prompt: buildPrompt(question: question, context: context))
 		}
 	}
 }

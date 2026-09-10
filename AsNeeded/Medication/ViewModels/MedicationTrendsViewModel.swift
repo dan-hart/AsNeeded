@@ -23,6 +23,14 @@ final class MedicationTrendsViewModel: ObservableObject {
     @Published var latestQuestionAnswer: TrendsQuestionAnswer?
     @Published var isAnsweringQuestion = false
     @Published var questionErrorMessage: String?
+	/// Where the private-questions flow currently is. Drives the working, answered, and failed states in the UI.
+	@Published private(set) var questionPhase: TrendsQuestionPhase = .idle
+	/// The question that produced `questionPhase`'s current answer or error, echoed back in the UI.
+	@Published private(set) var askedQuestion: String?
+	private var questionTask: Task<Void, Never>?
+	/// Identifies the question currently allowed to publish state. A superseded or cancelled task
+	/// compares against this before writing, so it can never clobber its replacement.
+	private var questionGeneration = UUID()
 
     private let dataStore: DataStore
     private let refillProfileStore: MedicationRefillProfileStore
@@ -159,6 +167,11 @@ final class MedicationTrendsViewModel: ObservableObject {
     var questionAvailability: TrendsQuestionAvailability {
         questionService.availability
     }
+
+	/// Why questions are unavailable on this device, when they are.
+	var questionUnavailableReason: TrendsQuestionUnavailableReason? {
+		questionService.unavailableReason
+	}
 
     var examplePrompts: [String] {
         guard let medication = selectedMedication else {
@@ -395,23 +408,75 @@ final class MedicationTrendsViewModel: ObservableObject {
     func ask(question: String, windowDays: Int) async {
         guard let context = questionContext(windowDays: windowDays) else {
             questionErrorMessage = "Select a medication with recent dose data first."
+			questionPhase = .failed(questionErrorMessage ?? "")
             return
         }
 
+		questionTask?.cancel()
+		let generation = UUID()
+		questionGeneration = generation
+		let trimmedQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
+		askedQuestion = trimmedQuestion
         isAnsweringQuestion = true
         questionErrorMessage = nil
+		latestQuestionAnswer = nil
+		questionPhase = .preparing
 
-        defer {
-            isAnsweringQuestion = false
-        }
-
-        do {
-            latestQuestionAnswer = try await questionService.answer(question: question, context: context)
-        } catch {
-            latestQuestionAnswer = nil
-            questionErrorMessage = error.localizedDescription
-        }
+		let task = Task { [questionService] in
+			var latest: TrendsQuestionAnswer?
+			do {
+				for try await partial in questionService.streamAnswer(question: trimmedQuestion, context: context) {
+					try Task.checkCancellation()
+					guard questionGeneration == generation else { return }
+					latest = partial
+					questionPhase = .generating(partial)
+				}
+				try Task.checkCancellation()
+				guard questionGeneration == generation else { return }
+				if let answer = latest, !answer.answer.isEmpty {
+					latestQuestionAnswer = answer
+					questionPhase = .answered(answer)
+				} else {
+					questionErrorMessage = String(localized: "No answer came back. Try rephrasing the question.")
+					questionPhase = .failed(questionErrorMessage ?? "")
+				}
+			} catch is CancellationError {
+				guard questionGeneration == generation else { return }
+				questionPhase = .idle
+			} catch {
+				guard questionGeneration == generation else { return }
+				latestQuestionAnswer = nil
+				questionErrorMessage = error.localizedDescription
+				questionPhase = .failed(error.localizedDescription)
+			}
+			guard questionGeneration == generation else { return }
+			isAnsweringQuestion = false
+			questionTask = nil
+		}
+		questionTask = task
+		await task.value
     }
+
+	/// Stops an in-progress question and returns to the idle state.
+	func cancelQuestion() {
+		questionTask?.cancel()
+		questionTask = nil
+		questionGeneration = UUID()
+		isAnsweringQuestion = false
+		questionPhase = .idle
+	}
+
+	/// Clears the current answer or error so a new question can be asked.
+	func resetQuestion() {
+		questionTask?.cancel()
+		questionTask = nil
+		questionGeneration = UUID()
+		isAnsweringQuestion = false
+		latestQuestionAnswer = nil
+		questionErrorMessage = nil
+		askedQuestion = nil
+		questionPhase = .idle
+	}
 
     private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {
         let totals = dailyTotals(last: endOffset + days)
@@ -455,4 +520,26 @@ struct CalendarDay {
     let date: Date
     let total: Double
     let intensity: Double // 0.0 to 1.0 for color intensity
+}
+
+// MARK: - Question Phase
+
+/// The lifecycle of one private question, from idle through generation to a result.
+enum TrendsQuestionPhase: Equatable {
+	case idle
+	/// The context is built and the model has been asked; nothing has come back yet.
+	case preparing
+	/// The model is streaming; the payload is the most complete partial answer so far.
+	case generating(TrendsQuestionAnswer)
+	case answered(TrendsQuestionAnswer)
+	case failed(String)
+
+	var isWorking: Bool {
+		switch self {
+		case .preparing, .generating:
+			return true
+		case .idle, .answered, .failed:
+			return false
+		}
+	}
 }

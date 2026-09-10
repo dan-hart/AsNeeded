@@ -2,6 +2,7 @@
 // View model for presenting and mutating medication dose history.
 
 import ANModelKit
+import Combine
 import Foundation
 import SwiftUI
 
@@ -19,9 +20,31 @@ final class MedicationHistoryViewModel: ObservableObject {
     @Published var events: [ANEventConcept] = []
 
     private let dataStore: DataStore
+	/// Shared quick-log core (compensating writes, haptics, feedback, toast state).
+	let quickLogCoordinator: QuickLogCoordinator
+	private var quickLogCoordinatorSubscription: AnyCancellable?
 
-    init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil) {
+	// MARK: - Quick Log Toast State
+	// Forwarded from the coordinator; its `objectWillChange` is re-published so views observing this
+	// view model refresh when the toast changes.
+	var showQuickLogToast: Bool { quickLogCoordinator.showQuickLogToast }
+	var quickLogMedicationName: String { quickLogCoordinator.quickLogMedicationName }
+	var quickLogDoseAmount: Double { quickLogCoordinator.quickLogDoseAmount }
+	var quickLogDoseUnit: String { quickLogCoordinator.quickLogDoseUnit }
+	var quickLogAccentColor: Color { quickLogCoordinator.quickLogAccentColor }
+	var quickLogFeedback: QuickLogFeedbackService.Feedback? { quickLogCoordinator.quickLogFeedback }
+	var quickLogToastGeneration: UUID? { quickLogCoordinator.quickLogToastGeneration }
+
+    init(
+		dataStore: DataStore = .shared,
+		selectedMedicationID: String? = nil,
+		quickLogCoordinator: QuickLogCoordinator? = nil
+	) {
         self.dataStore = dataStore
+		self.quickLogCoordinator = quickLogCoordinator ?? QuickLogCoordinator(dataStore: dataStore)
+		quickLogCoordinatorSubscription = self.quickLogCoordinator.objectWillChange.sink { [weak self] _ in
+			self?.objectWillChange.send()
+		}
 
         // Initialize from passed ID or from AppStorage
         if let initialID = selectedMedicationID {
@@ -195,6 +218,36 @@ final class MedicationHistoryViewModel: ObservableObject {
             try? await dataStore.eventsStore.insert(event)
         }
     }
+
+	// MARK: - Dose Logging
+	/// Logs the medication's default dose (long press on the floating Log Dose button).
+	func quickLog(medication: ANMedicationConcept) async -> Bool {
+		await quickLogCoordinator.quickLog(medication: medication, source: "history_quick_log")
+	}
+
+	/// Logs a dose chosen in the Log Dose sheet with compensating writes.
+	func logDose(
+		medication: ANMedicationConcept,
+		dose: ANDoseConcept,
+		event: ANEventConcept,
+		operationID: UUID = UUID()
+	) async -> Bool {
+		await quickLogCoordinator.logDose(
+			medication: medication,
+			dose: dose,
+			event: event,
+			source: "history_sheet",
+			operationID: operationID
+		)
+	}
+
+	func undoLastQuickLog() async -> Bool {
+		await quickLogCoordinator.undoLastQuickLog()
+	}
+
+	func dismissQuickLogToast() {
+		quickLogCoordinator.dismissQuickLogToast()
+	}
 
     func deleteEvent(_ event: ANEventConcept) async {
         // Delete the event and restore medication quantity if needed

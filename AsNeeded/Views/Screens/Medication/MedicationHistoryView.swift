@@ -8,6 +8,8 @@ struct MedicationHistoryView: View {
     @EnvironmentObject private var navigationManager: NavigationManager
     @Environment(\.fontFamily) private var fontFamily
     @State private var logMedication: ANMedicationConcept?
+    @State private var isLogButtonPressed = false
+    @State private var isLogButtonLongPressing = false
     @State private var showSupportToast = false
     @State private var showSupportView = false
     @State private var currentTime = Date()
@@ -383,6 +385,50 @@ struct MedicationHistoryView: View {
 
     // MARK: - Private Methods
 
+    /// Floating Log Dose control. Short press opens the Log Dose sheet; holding quick logs the default dose,
+    /// mirroring the row button on the Medication tab.
+    private func floatingLogButton(for medication: ANMedicationConcept) -> some View {
+        Label("Log Dose", systemSymbol: .plus)
+            .labelStyle(.titleAndIcon)
+            .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, fabPaddingH)
+            .padding(.vertical, fabPaddingV)
+            .background(
+                Capsule()
+                    .fill(medication.displayColor)
+                    .shadow(
+                        color: .black.opacity(0.3),
+                        radius: isLogButtonPressed ? fabShadowRadius / 2 : fabShadowRadius,
+                        x: 0,
+                        y: isLogButtonPressed ? 1 : 2
+                    )
+            )
+            .scaleEffect(isLogButtonPressed || isLogButtonLongPressing ? 0.95 : 1.0)
+            .doseLogPressGesture(
+                isPressed: $isLogButtonPressed,
+                isLongPressing: $isLogButtonLongPressing,
+                onTap: {
+                    logMedication = medication
+                },
+                onQuickLog: {
+                    await viewModel.quickLog(medication: medication)
+                }
+            )
+            .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Log dose for \(medication.displayName)")
+            .accessibilityHint("Tap to customize dose, hold to log default dose")
+            .accessibilityAction {
+                logMedication = medication
+            }
+            .accessibilityAction(named: "Quick log default dose") {
+                Task {
+                    _ = await viewModel.quickLog(medication: medication)
+                }
+            }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -460,29 +506,11 @@ struct MedicationHistoryView: View {
                         }
                     }
 
-                    // Floating Action Button for Log Dose
-                    if viewModel.selectedMedication != nil && !viewModel.isShowingAllMedications {
-                        Button {
-                            if let med = viewModel.selectedMedication {
-                                logMedication = med
-                            }
-                        } label: {
-                            Label("Log Dose", systemSymbol: .plus)
-                                .labelStyle(.titleAndIcon)
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, fabPaddingH)
-                                .padding(.vertical, fabPaddingV)
-                                .background(
-                                    Capsule()
-                                        .fill(viewModel.selectedMedication?.displayColor ?? .accent)
-                                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
-                                )
-                        }
-                        .padding(.trailing, fabTrailingPadding)
-                        .padding(.bottom, fabBottomPadding)
-                        .accessibilityLabel("Log dose for selected medication")
+                    // Floating Action Button for Log Dose: tap opens the sheet, hold quick logs the default dose
+                    if let selectedMedication = viewModel.selectedMedication, !viewModel.isShowingAllMedications {
+                        floatingLogButton(for: selectedMedication)
+                            .padding(.trailing, fabTrailingPadding)
+                            .padding(.bottom, fabBottomPadding)
                     }
                 }
                 .navigationTitle("History")
@@ -548,32 +576,32 @@ struct MedicationHistoryView: View {
                     .dynamicDetent()
                 }
                 .sheet(item: $logMedication) { med in
-                    LogDoseView(medication: med, source: "history_sheet") { dose, event, _ in
-                        var updated = med
-                        if let quantity = updated.quantity, dose.amount > 0 {
-                            updated.quantity = max(0, quantity - dose.amount)
-                        }
-
-                        do {
-                            try await DataStore.shared.updateMedication(updated)
-                            try await DataStore.shared.addEvent(event)
-                            logMedication = nil
-
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    showSupportToast = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showSupportToast = false
-                                    }
-                                }
-                            }
-
-                            return true
-                        } catch {
+                    LogDoseView(medication: med, source: "history_sheet") { dose, event, operationID in
+                        // Sequential, compensating writes: if the event write fails the quantity is restored.
+                        let success = await viewModel.logDose(
+                            medication: med,
+                            dose: dose,
+                            event: event,
+                            operationID: operationID
+                        )
+                        guard success else {
                             return false
                         }
+
+                        logMedication = nil
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showSupportToast = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showSupportToast = false
+                                }
+                            }
+                        }
+
+                        return true
                     }
                 }
                 .sheet(item: $editingEvent) { event in
@@ -701,6 +729,26 @@ struct MedicationHistoryView: View {
             .onAppear {
                 // Ensure we have a valid medication selected
                 viewModel.ensureValidSelection()
+            }
+
+            // Quick Log Toast (long press on the floating Log Dose button)
+            if viewModel.showQuickLogToast {
+                QuickLogToastView(
+                    medicationName: viewModel.quickLogMedicationName,
+                    doseAmount: viewModel.quickLogDoseAmount,
+                    doseUnit: viewModel.quickLogDoseUnit,
+                    accentColor: viewModel.quickLogAccentColor,
+                    isVisible: viewModel.showQuickLogToast,
+                    feedback: viewModel.quickLogFeedback,
+                    onDismiss: {
+                        viewModel.dismissQuickLogToast()
+                    },
+                    onUndo: {
+                        Task {
+                            _ = await viewModel.undoLastQuickLog()
+                        }
+                    }
+                )
             }
 
             // Support toast positioned outside NavigationStack to avoid layout interference
