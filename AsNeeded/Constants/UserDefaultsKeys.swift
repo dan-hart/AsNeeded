@@ -44,6 +44,12 @@ public enum UserDefaultsKeys {
     /// Whether private on-device Trends questions are enabled
     static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
 
+    /// Whether the user has quick logged from the History tab's floating button at least once
+    static let hasDiscoveredHistoryQuickLog = "hasDiscoveredHistoryQuickLog"
+
+    /// How many times the History tab has shown the "hold to quick log" hint
+    static let historyQuickLogHintImpressions = "historyQuickLogHintImpressions"
+
     /// Stored refill profiles keyed by medication ID
     static let medicationRefillProfiles = "medicationRefillProfiles"
 
@@ -195,6 +201,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
+        hasDiscoveredHistoryQuickLog,
+        historyQuickLogHintImpressions,
         medicationRefillProfiles,
         legacyMedicationProfiles,
         archivedMedicationProfiles,
@@ -247,6 +255,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow: 14, // 14 days by default
         hideSupportBanners: false,
         trendsQuestionsEnabled: false,
+        hasDiscoveredHistoryQuickLog: false,
+        historyQuickLogHintImpressions: 0,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
         hasUserOptedOutOfReviews: false,
