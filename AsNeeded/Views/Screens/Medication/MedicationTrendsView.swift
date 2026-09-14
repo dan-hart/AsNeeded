@@ -118,6 +118,7 @@ struct MedicationTrendsView: View {
 			}
             .onAppear {
                 viewModel.ensureValidSelection()
+				viewModel.refreshQuestionAvailability()
             }
 			.onChange(of: viewModel.selectedMedicationIDString) { _, _ in
 				viewModel.resetQuestion()

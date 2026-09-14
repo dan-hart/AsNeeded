@@ -2,27 +2,47 @@
 // View model for presenting and mutating medication dose history.
 
 import ANModelKit
+import Boutique
 import Combine
 import Foundation
 import SwiftUI
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
+	/// One calendar day of dose history, newest entry first.
+	struct DayGroup: Identifiable, Equatable {
+		let day: Date
+		let entries: [ANEventConcept]
+
+		var id: Date { day }
+	}
+
     @AppStorage(UserDefaultsKeys.historySelectedMedicationID) private var selectedMedicationIDString: String = ""
 
     @Published var selectedMedicationID: String? {
         didSet {
             selectedMedicationIDString = selectedMedicationID ?? ""
+			rebuildGroupedHistory()
         }
     }
 
-    @Published var medications: [ANMedicationConcept] = []
-    @Published var events: [ANEventConcept] = []
+    @Published private(set) var medications: [ANMedicationConcept] = []
+    @Published private(set) var events: [ANEventConcept] = [] {
+		didSet {
+			rebuildGroupedHistory()
+		}
+	}
+
+	/// Dose events for the current selection, grouped by day and sorted newest day first.
+	/// Rebuilt only when the events or the selection change, so rendering never re-filters the store.
+	@Published private(set) var groupedHistory: [DayGroup] = []
 
     private let dataStore: DataStore
+	private let calendar = Calendar.current
 	/// Shared quick-log core (compensating writes, haptics, feedback, toast state).
 	let quickLogCoordinator: QuickLogCoordinator
 	private var quickLogCoordinatorSubscription: AnyCancellable?
+	private var storeObservationTasks: [Task<Void, Never>] = []
 
 	// MARK: - Quick Log Toast State
 	// Forwarded from the coordinator; its `objectWillChange` is re-published so views observing this
@@ -59,33 +79,55 @@ final class MedicationHistoryViewModel: ObservableObject {
 
         // Ensure we have a valid selection
         ensureValidSelection()
+		rebuildGroupedHistory()
     }
+
+	deinit {
+		storeObservationTasks.forEach { $0.cancel() }
+	}
 
     private func loadData() {
         medications = dataStore.medications
         events = dataStore.events
     }
 
+	/// Follows the Boutique stores' event streams so the view updates the moment data loads or changes.
+	/// The streams replay their latest event on subscription, which also covers a store that finished
+	/// loading from disk before this view model was created.
     private func observeStoreChanges() {
-        // Set up a timer to periodically refresh data
-        // This ensures we catch any data changes from the stores
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
-                let newMedications = self.dataStore.medications
-                let newEvents = self.dataStore.events
+		let medicationsStore = dataStore.medicationsStore
+		let eventsStore = dataStore.eventsStore
 
-                if self.medications != newMedications {
-                    self.medications = newMedications
-                    self.ensureValidSelection()
-                }
-
-                if self.events != newEvents {
-                    self.events = newEvents
-                }
-            }
-        }
+		storeObservationTasks = [
+			Task { [weak self] in
+				for await event in medicationsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					self?.refreshMedications()
+				}
+			},
+			Task { [weak self] in
+				for await event in eventsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					self?.refreshEvents()
+				}
+			},
+		]
     }
+
+	private func refreshMedications() {
+		let latest = dataStore.medications
+		guard latest != medications else { return }
+		medications = latest
+		ensureValidSelection()
+	}
+
+	private func refreshEvents() {
+		let latest = dataStore.events
+		guard latest != events else { return }
+		events = latest
+	}
 
     /// Ensures we always have a valid medication selected
     /// This prevents picker errors when selection is nil
@@ -120,26 +162,35 @@ final class MedicationHistoryViewModel: ObservableObject {
         return medications.first { $0.id == uuid }
     }
 
-    var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
+	private func rebuildGroupedHistory() {
+		let rebuilt = Self.groupByDay(events: events, selection: selectedMedicationID, calendar: calendar)
+		guard rebuilt != groupedHistory else { return }
+		groupedHistory = rebuilt
+	}
+
+	private static func groupByDay(
+		events: [ANEventConcept],
+		selection: String?,
+		calendar: Calendar
+	) -> [DayGroup] {
         let filteredEvents: [ANEventConcept]
 
-        if isShowingAllMedications {
+        if selection == "all" {
             // Show all dose events for all medications
             filteredEvents = events.filter { $0.eventType == .doseTaken }
         } else {
             // Show events for selected medication only
-            guard let selection = selectedMedicationID,
+            guard let selection,
                   let uuid = UUID(uuidString: selection) else { return [] }
             filteredEvents = events.filter { $0.medication?.id == uuid && $0.eventType == .doseTaken }
         }
 
         guard !filteredEvents.isEmpty else { return [] }
-        let calendar = Calendar.current
         let grouped = Dictionary(grouping: filteredEvents) { event in
             calendar.startOfDay(for: event.date)
         }
         return grouped
-            .map { (day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
+            .map { DayGroup(day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
             .sorted { $0.day > $1.day }
     }
 

@@ -20,6 +20,12 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     @Published var medications: [ANMedicationConcept] = []
+	/// Whether private questions can be asked right now. Checked once at creation and on
+	/// `refreshQuestionAvailability()`, because the on-device model availability check is a system call
+	/// that should not run on every render.
+	@Published private(set) var questionAvailability: TrendsQuestionAvailability = .unavailable
+	/// Why questions are unavailable on this device, when they are.
+	@Published private(set) var questionUnavailableReason: TrendsQuestionUnavailableReason?
     @Published var latestQuestionAnswer: TrendsQuestionAnswer?
     @Published var isAnsweringQuestion = false
     @Published var questionErrorMessage: String?
@@ -38,6 +44,25 @@ final class MedicationTrendsViewModel: ObservableObject {
     private let questionService: MedicationTrendsQuestionService
     private let calendar = Calendar.current
     private var cancellables = Set<AnyCancellable>()
+	private var storeObservationTasks: [Task<Void, Never>] = []
+
+	/// The selected medication's dose events, filtered and sorted once per change of the underlying
+	/// store or the selection. `source` is the store array the result was derived from; comparing it
+	/// against the store's current array is constant time while the store is unchanged.
+	private struct SelectedEventsCache {
+		let source: [ANEventConcept]
+		let medicationID: UUID?
+		let events: [ANEventConcept]
+	}
+
+	private struct DailyTotalsKey: Hashable {
+		let days: Int
+		let unit: ANUnitConcept
+	}
+
+	private var selectedEventsCache: SelectedEventsCache?
+	private var dailyTotalsCache: [DailyTotalsKey: [(day: Date, total: Double)]] = [:]
+	private var dailyTotalsCacheDay: Date?
 
     init(
         dataStore: DataStore = .shared,
@@ -57,30 +82,73 @@ final class MedicationTrendsViewModel: ObservableObject {
         // Load initial data and observe changes
         loadData()
         observeStoreChanges()
+		refreshQuestionAvailability()
 
         // Ensure we have a valid selection
         ensureValidSelection()
     }
 
+	deinit {
+		storeObservationTasks.forEach { $0.cancel() }
+	}
+
     private func loadData() {
         medications = dataStore.medications
     }
 
+	/// Follows the Boutique stores' event streams so the view updates the moment data loads or changes.
+	/// The streams replay their latest event on subscription, which also covers a store that finished
+	/// loading from disk before this view model was created.
     private func observeStoreChanges() {
-        // Use Combine's Timer publisher instead of Foundation's Timer
-        // This provides better integration with SwiftUI and proper cancellation
-        Timer.publish(every: 2.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let newMedications = self.dataStore.medications
-                if self.medications != newMedications {
-                    self.medications = newMedications
-                    self.ensureValidSelection()
-                }
-            }
-            .store(in: &cancellables)
+		let medicationsStore = dataStore.medicationsStore
+		let eventsStore = dataStore.eventsStore
+
+		storeObservationTasks = [
+			Task { [weak self] in
+				for await event in medicationsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					self?.refreshMedications()
+				}
+			},
+			Task { [weak self] in
+				for await event in eventsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					// `events` re-derives lazily from the store; the view just needs to know to re-read it.
+					self?.objectWillChange.send()
+				}
+			},
+		]
+
+		NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+			.sink { [weak self] _ in
+				Task { @MainActor in
+					self?.refreshQuestionAvailability()
+				}
+			}
+			.store(in: &cancellables)
     }
+
+	private func refreshMedications() {
+		let latest = dataStore.medications
+		guard latest != medications else { return }
+		medications = latest
+		ensureValidSelection()
+	}
+
+	/// Re-checks whether private questions are available, for example after the user enables Apple
+	/// Intelligence or toggles the feature in Settings.
+	func refreshQuestionAvailability() {
+		let availability = questionService.availability
+		let reason = questionService.unavailableReason
+		if availability != questionAvailability {
+			questionAvailability = availability
+		}
+		if reason != questionUnavailableReason {
+			questionUnavailableReason = reason
+		}
+	}
 
     /// Ensures we always have a valid medication selected
     /// This prevents picker errors when selection is nil
@@ -116,21 +184,36 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     var events: [ANEventConcept] {
-        guard let id = selectedMedicationID else { return [] }
-        // Filter events ensuring medication IDs match exactly
-        return dataStore.events
-            .filter { event in
-                // Only include events that have a medication with matching ID and are dose taken events
-                guard let eventMedication = event.medication,
-                      eventMedication.id == id,
-                      event.eventType == .doseTaken
-                else {
-                    return false
-                }
-                return true
-            }
-            .sorted { $0.date < $1.date }
+		let source = dataStore.events
+		let medicationID = selectedMedicationID
+		if let cache = selectedEventsCache,
+		   cache.medicationID == medicationID,
+		   cache.source == source
+		{
+			return cache.events
+		}
+
+		let filtered = Self.doseEvents(in: source, for: medicationID)
+		selectedEventsCache = SelectedEventsCache(source: source, medicationID: medicationID, events: filtered)
+		dailyTotalsCache.removeAll()
+		return filtered
     }
+
+	/// Dose-taken events for one medication, oldest first.
+	private static func doseEvents(in events: [ANEventConcept], for medicationID: UUID?) -> [ANEventConcept] {
+		guard let medicationID else { return [] }
+		return events
+			.filter { event in
+				guard let eventMedication = event.medication,
+				      eventMedication.id == medicationID,
+				      event.eventType == .doseTaken
+				else {
+					return false
+				}
+				return true
+			}
+			.sorted { $0.date < $1.date }
+	}
 
     // Determine a preferred unit for aggregation
     var preferredUnit: ANUnitConcept? {
@@ -164,15 +247,6 @@ final class MedicationTrendsViewModel: ObservableObject {
         return components.joined(separator: " ")
     }
 
-    var questionAvailability: TrendsQuestionAvailability {
-        questionService.availability
-    }
-
-	/// Why questions are unavailable on this device, when they are.
-	var questionUnavailableReason: TrendsQuestionUnavailableReason? {
-		questionService.unavailableReason
-	}
-
     var examplePrompts: [String] {
         guard let medication = selectedMedication else {
             return []
@@ -183,17 +257,31 @@ final class MedicationTrendsViewModel: ObservableObject {
 
     // Daily totals for the last N days (default 14)
     func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
+		// Reading `events` first refreshes the cache when the store or selection changed.
+		let events = self.events
         guard let unit = preferredUnit else { return [] }
         let start = calendar.startOfDay(for: Date())
+
+		if dailyTotalsCacheDay != start {
+			dailyTotalsCache.removeAll()
+			dailyTotalsCacheDay = start
+		}
+		let key = DailyTotalsKey(days: days, unit: unit)
+		if let cached = dailyTotalsCache[key] {
+			return cached
+		}
+
         let daySequence = (0 ..< days).compactMap { calendar.date(byAdding: .day, value: -$0, to: start) }.reversed()
         let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
-        return daySequence.map { day in
+        let totals = daySequence.map { day in
             let total = (grouped[day] ?? []).compactMap { ev -> Double? in
                 guard let dose = ev.dose, dose.unit == unit else { return nil }
                 return dose.amount
             }.reduce(0, +)
-            return (day, total)
+            return (day: day, total: total)
         }
+		dailyTotalsCache[key] = totals
+		return totals
     }
 
     // Average per day over the last window (default 7 days)

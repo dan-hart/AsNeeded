@@ -71,6 +71,9 @@ struct MedicationHistoryView: View {
                 ForEach(viewModel.groupedHistory, id: \.day) { group in
                     Section(header: sectionHeader(for: group)) {
                         ForEach(group.entries, id: \.id) { event in
+                            // Decode the note once per row; the codec parses structured reflections from JSON.
+                            let note = displayNote(for: event)
+                            let highlights = reflectionHighlights(for: event)
                             VStack(alignment: .leading, spacing: entrySpacing) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
@@ -142,7 +145,7 @@ struct MedicationHistoryView: View {
                                     Spacer()
 
                                     // Show add note button on trailing side if no note exists
-                                    if displayNote(for: event)?.isEmpty != false {
+                                    if note?.isEmpty != false {
                                         AddNoteButtonComponent(
                                             medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
                                             onTap: {
@@ -153,10 +156,10 @@ struct MedicationHistoryView: View {
                                     }
                                 }
 
-                                if !reflectionHighlights(for: event).isEmpty {
+                                if !highlights.isEmpty {
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: sectionHeaderSpacing) {
-                                            ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+                                            ForEach(highlights, id: \.self) { highlight in
                                                 Text(highlight)
                                                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                                     .foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
@@ -172,13 +175,13 @@ struct MedicationHistoryView: View {
                                 }
 
                                 // Show enhanced note display below if it exists
-                                if let note = displayNote(for: event), !note.isEmpty {
+                                if let note, !note.isEmpty {
                                     NoteDisplayCardComponent(
                                         noteText: note,
                                         medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
                                         onEdit: {
                                             editingEvent = event
-                                            editingNoteText = displayNote(for: event) ?? ""
+                                            editingNoteText = note
                                         }
                                     )
                                     .padding(.top, noteTopSpacing)
@@ -196,7 +199,7 @@ struct MedicationHistoryView: View {
                             }
                             .accessibilityAction(named: "Edit note") {
                                 editingEvent = event
-                                editingNoteText = displayNote(for: event) ?? ""
+                                editingNoteText = note ?? ""
                             }
                             .onTapGesture {
                                 editingEntryEvent = event
@@ -241,7 +244,7 @@ struct MedicationHistoryView: View {
     // MARK: - Section Header Helpers
 
     @ViewBuilder
-    private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
+    private func sectionHeader(for group: MedicationHistoryViewModel.DayGroup) -> some View {
         VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
             HStack {
                 Text(formatDateWithDayOfWeek(group.day))
@@ -262,9 +265,8 @@ struct MedicationHistoryView: View {
     }
 
     private func formatDateWithDayOfWeek(_ date: Date) -> String {
-        let dayFormatter = DateFormatter()
-        dayFormatter.dateFormat = "EEE" // Mon, Tue, Wed, etc.
-        let dayOfWeek = dayFormatter.string(from: date)
+        // Mon, Tue, Wed, etc. Uses the system's cached formatter instead of allocating one per header.
+        let dayOfWeek = date.formatted(.dateTime.weekday(.abbreviated))
 
         let dateString = date.formatted(date: .abbreviated, time: .omitted)
         return "\(dayOfWeek), \(dateString)"
