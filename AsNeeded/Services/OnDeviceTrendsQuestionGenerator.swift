@@ -14,21 +14,64 @@ struct OnDeviceTrendsQuestionGenerator: TrendsQuestionGenerating {
 	func answer(prompt: String) async throws -> TrendsQuestionAnswer {
 		#if canImport(FoundationModels)
 			if #available(iOS 26.0, *) {
-				let session = LanguageModelSession(model: .default, instructions: Self.instructions)
-				let response = try await session.respond(
-					to: prompt,
-					generating: GeneratedTrendsQuestionAnswer.self
-				)
-				return Self.cleaned(
-					answer: response.content.answer,
-					highlights: response.content.highlights,
-					limitations: response.content.limitations
-				)
+				do {
+					let session = LanguageModelSession(model: .default, instructions: Self.instructions)
+					let response = try await session.respond(
+						to: prompt,
+						generating: GeneratedTrendsQuestionAnswer.self
+					)
+					return Self.cleaned(
+						answer: response.content.answer,
+						highlights: response.content.highlights,
+						limitations: response.content.limitations
+					)
+				} catch {
+					throw Self.userFacingError(for: error)
+				}
 			}
 		#endif
 
 		throw TrendsQuestionServiceError.unavailable
 	}
+
+	/// Translates a model failure into a `TrendsQuestionServiceError` whose description the UI can show
+	/// as is, instead of the framework's raw error text. Cancellation and errors that are already service
+	/// errors pass through unchanged, so the view model can still tell a cancelled question from a failed one.
+	static func userFacingError(for error: Error) -> Error {
+		if error is CancellationError || error is TrendsQuestionServiceError {
+			return error
+		}
+
+		#if canImport(FoundationModels)
+			if #available(iOS 26.0, *), let generationError = error as? LanguageModelSession.GenerationError {
+				return TrendsQuestionServiceError.generationFailed(Self.failure(for: generationError))
+			}
+		#endif
+
+		return TrendsQuestionServiceError.generationFailed(.unknown)
+	}
+
+	#if canImport(FoundationModels)
+		@available(iOS 26.0, *)
+		private static func failure(for error: LanguageModelSession.GenerationError) -> TrendsQuestionGenerationFailure {
+			switch error {
+			case .exceededContextWindowSize:
+				return .tooMuchData
+			case .assetsUnavailable:
+				return .modelNotReady
+			case .guardrailViolation, .refusal:
+				return .declined
+			case .unsupportedLanguageOrLocale:
+				return .unsupportedLanguage
+			case .rateLimited, .concurrentRequests:
+				return .busy
+			case .decodingFailure, .unsupportedGuide:
+				return .unexpectedResponse
+			@unknown default:
+				return .unknown
+			}
+		}
+	#endif
 
 	/// Streams partial answers as the on-device model fills in the structured response.
 	func streamAnswer(prompt: String) -> AsyncThrowingStream<TrendsQuestionAnswer, Error> {
@@ -55,7 +98,7 @@ struct OnDeviceTrendsQuestionGenerator: TrendsQuestionGenerating {
 							}
 							continuation.finish()
 						} catch {
-							continuation.finish(throwing: error)
+							continuation.finish(throwing: Self.userFacingError(for: error))
 						}
 					}
 					continuation.onTermination = { _ in task.cancel() }

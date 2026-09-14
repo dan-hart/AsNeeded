@@ -28,9 +28,48 @@ enum TrendsQuestionUnavailableReason: Equatable, Sendable {
 	}
 }
 
-enum TrendsQuestionServiceError: LocalizedError {
+/// Why the on-device model could not produce an answer, in terms the user can act on.
+enum TrendsQuestionGenerationFailure: Equatable, Sendable {
+	/// The prompt, including the history summary, is larger than the model can read at once.
+	case tooMuchData
+	/// The model assets are missing or still downloading.
+	case modelNotReady
+	/// The model declined the question, for example because of its safety guardrails.
+	case declined
+	/// The model does not support the current language or locale.
+	case unsupportedLanguage
+	/// The system is rate limiting or already running another request.
+	case busy
+	/// The model returned something that could not be read as an answer.
+	case unexpectedResponse
+	/// Any other failure from the model.
+	case unknown
+
+	var userMessage: String {
+		switch self {
+		case .tooMuchData:
+			return String(localized: "There is more history than the on-device model can read at once. Try a shorter window.")
+		case .modelNotReady:
+			return String(localized: "Apple Intelligence is still getting ready on this device. Check back in a little while.")
+		case .declined:
+			return String(localized: "The on-device model declined to answer this question. Try rephrasing it.")
+		case .unsupportedLanguage:
+			return String(localized: "The on-device model does not support this language yet.")
+		case .busy:
+			return String(localized: "The on-device model is busy. Try again in a moment.")
+		case .unexpectedResponse:
+			return String(localized: "The on-device model returned something unexpected. Try asking again.")
+		case .unknown:
+			return String(localized: "The on-device model could not answer right now. Try again in a moment.")
+		}
+	}
+}
+
+enum TrendsQuestionServiceError: LocalizedError, Equatable {
 	case unavailable
 	case disabled
+	/// The model was available but failed while answering. The payload says why in user terms.
+	case generationFailed(TrendsQuestionGenerationFailure)
 
 	var errorDescription: String? {
 		switch self {
@@ -38,6 +77,8 @@ enum TrendsQuestionServiceError: LocalizedError {
 			return "On-device questions are unavailable on this device."
 		case .disabled:
 			return "On-device questions are turned off in settings."
+		case let .generationFailed(failure):
+			return failure.userMessage
 		}
 	}
 }
