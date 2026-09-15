@@ -15,8 +15,7 @@ struct MedicationHistoryView: View {
     /// Briefly true after a quick log succeeds so the button can pop.
     @State private var isLogButtonCelebrating = false
     @State private var showQuickLogHint = false
-    @AppStorage(UserDefaultsKeys.hasDiscoveredHistoryQuickLog) private var hasDiscoveredHistoryQuickLog = false
-    @AppStorage(UserDefaultsKeys.historyQuickLogHintImpressions) private var quickLogHintImpressions = 0
+    @AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showSupportToast = false
     @State private var showSupportView = false
@@ -55,9 +54,6 @@ struct MedicationHistoryView: View {
     @ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
     @ScaledMetric private var holdRingLineWidth: CGFloat = 3
     @ScaledMetric private var quickLogHintSpacing: CGFloat = 10
-    @ScaledMetric private var quickLogHintIconSpacing: CGFloat = 6
-    @ScaledMetric private var quickLogHintPaddingH: CGFloat = 12
-    @ScaledMetric private var quickLogHintPaddingV: CGFloat = 8
 
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
@@ -468,7 +464,7 @@ struct MedicationHistoryView: View {
 
     /// Marks the gesture as discovered, retires the hint, and pops the button once (skipped under Reduce Motion).
     private func celebrateQuickLog() {
-        hasDiscoveredHistoryQuickLog = true
+        hasDiscoveredQuickLog = true
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
             showQuickLogHint = false
         }
@@ -481,59 +477,6 @@ struct MedicationHistoryView: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 isLogButtonCelebrating = false
             }
-        }
-    }
-
-    /// Shows the "hold to log" hint for this appearance of the button if the policy allows, after a short
-    /// pause so it reads as a nudge rather than part of the layout. Runs from `.task` so leaving the tab
-    /// during the pause cancels it, and the policy is rechecked after the pause so a quick log or an
-    /// earlier appearance in the meantime is respected. An impression only counts once the hint is shown.
-    private func presentQuickLogHintIfNeeded() async {
-        guard HistoryQuickLogHintPolicy.shouldShow(
-            hasDiscoveredQuickLog: hasDiscoveredHistoryQuickLog,
-            impressions: quickLogHintImpressions
-        ) else { return }
-
-        do {
-            try await Task.sleep(for: .milliseconds(600))
-        } catch {
-            return
-        }
-
-        guard HistoryQuickLogHintPolicy.shouldShow(
-            hasDiscoveredQuickLog: hasDiscoveredHistoryQuickLog,
-            impressions: quickLogHintImpressions
-        ) else { return }
-
-        quickLogHintImpressions += 1
-        withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8)) {
-            showQuickLogHint = true
-        }
-    }
-
-    /// Small pill above the floating button that names the dose a hold will log. VoiceOver already hears
-    /// the hold in the button's hint, so the pill is hidden from it.
-    private func quickLogHint(for medication: ANMedicationConcept) -> some View {
-        HStack(spacing: quickLogHintIconSpacing) {
-            quickLogHintIcon
-            Text(HistoryQuickLogHintPolicy.hintText(for: medication))
-        }
-        .font(.customFont(fontFamily, style: .caption, weight: .medium))
-        .foregroundStyle(.primary)
-        .padding(.horizontal, quickLogHintPaddingH)
-        .padding(.vertical, quickLogHintPaddingV)
-        .background(.regularMaterial, in: Capsule())
-        .accessibilityHidden(true)
-        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-    }
-
-    @ViewBuilder
-    private var quickLogHintIcon: some View {
-        if reduceMotion {
-            Image(systemSymbol: .handTapFill)
-        } else {
-            Image(systemSymbol: .handTapFill)
-                .symbolEffect(.bounce, options: .repeat(3), value: showQuickLogHint)
         }
     }
 
@@ -618,18 +561,13 @@ struct MedicationHistoryView: View {
                     if let selectedMedication = viewModel.selectedMedication, !viewModel.isShowingAllMedications {
                         VStack(alignment: .trailing, spacing: quickLogHintSpacing) {
                             if showQuickLogHint {
-                                quickLogHint(for: selectedMedication)
+                                QuickLogHintPill(text: QuickLogHintPolicy.hintText(for: selectedMedication))
                             }
                             floatingLogButton(for: selectedMedication)
                         }
                         .padding(.trailing, fabTrailingPadding)
                         .padding(.bottom, fabBottomPadding)
-                        .task {
-                            await presentQuickLogHintIfNeeded()
-                        }
-                        .onDisappear {
-                            showQuickLogHint = false
-                        }
+                        .quickLogHint(isPresented: $showQuickLogHint)
                     }
                 }
                 .navigationTitle("History")

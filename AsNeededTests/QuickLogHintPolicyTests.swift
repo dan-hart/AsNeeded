@@ -1,33 +1,33 @@
-// HistoryQuickLogHintPolicyTests.swift
-// Covers when the History tab teaches the hold-to-quick-log gesture.
+// QuickLogHintPolicyTests.swift
+// Covers when Log Dose controls teach the hold-to-quick-log gesture.
 
 import ANModelKit
 @testable import AsNeeded
 import Foundation
 import Testing
 
-@Suite("HistoryQuickLogHintPolicy Tests")
-struct HistoryQuickLogHintPolicyTests {
+@Suite("QuickLogHintPolicy Tests")
+struct QuickLogHintPolicyTests {
 	@Test("Hint shows until the user has seen it the maximum number of times")
 	func hintShowsUntilMaxImpressions() {
-		for impressions in 0 ..< HistoryQuickLogHintPolicy.maxImpressions {
-			#expect(HistoryQuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: false, impressions: impressions))
+		for impressions in 0 ..< QuickLogHintPolicy.maxImpressions {
+			#expect(QuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: false, impressions: impressions))
 		}
 
-		#expect(!HistoryQuickLogHintPolicy.shouldShow(
+		#expect(!QuickLogHintPolicy.shouldShow(
 			hasDiscoveredQuickLog: false,
-			impressions: HistoryQuickLogHintPolicy.maxImpressions
+			impressions: QuickLogHintPolicy.maxImpressions
 		))
-		#expect(!HistoryQuickLogHintPolicy.shouldShow(
+		#expect(!QuickLogHintPolicy.shouldShow(
 			hasDiscoveredQuickLog: false,
-			impressions: HistoryQuickLogHintPolicy.maxImpressions + 5
+			impressions: QuickLogHintPolicy.maxImpressions + 5
 		))
 	}
 
 	@Test("Hint retires as soon as the user has quick logged once")
 	func hintRetiresAfterDiscovery() {
-		#expect(!HistoryQuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: true, impressions: 0))
-		#expect(!HistoryQuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: true, impressions: 2))
+		#expect(!QuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: true, impressions: 0))
+		#expect(!QuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: true, impressions: 2))
 	}
 
 	@Test("Hint text names the default dose the hold will log")
@@ -39,7 +39,7 @@ struct HistoryQuickLogHintPolicyTests {
 			prescribedDoseAmount: 2
 		)
 
-		let text = HistoryQuickLogHintPolicy.hintText(for: medication)
+		let text = QuickLogHintPolicy.hintText(for: medication)
 		#expect(text.hasPrefix("Hold to log"))
 		#expect(text.contains("2"))
 		#expect(text.contains(ANUnitConcept.tablet.abbreviation))
@@ -49,7 +49,7 @@ struct HistoryQuickLogHintPolicyTests {
 	func hintTextFallsBackToOneUnit() {
 		let medication = ANMedicationConcept(clinicalName: "Cetirizine")
 
-		let text = HistoryQuickLogHintPolicy.hintText(for: medication)
+		let text = QuickLogHintPolicy.hintText(for: medication)
 		#expect(text.contains("1"))
 		#expect(text.contains(ANUnitConcept.unit.abbreviation))
 	}

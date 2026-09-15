@@ -44,11 +44,11 @@ public enum UserDefaultsKeys {
     /// Whether private on-device Trends questions are enabled
     static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
 
-    /// Whether the user has quick logged from the History tab's floating button at least once
-    static let hasDiscoveredHistoryQuickLog = "hasDiscoveredHistoryQuickLog"
+    /// Whether the user has quick logged (held a Log Dose control) at least once, on any tab
+    static let hasDiscoveredQuickLog = "hasDiscoveredQuickLog"
 
-    /// How many times the History tab has shown the "hold to quick log" hint
-    static let historyQuickLogHintImpressions = "historyQuickLogHintImpressions"
+    /// How many times a "hold to quick log" hint has been shown, across tabs
+    static let quickLogHintImpressions = "quickLogHintImpressions"
 
     /// Stored refill profiles keyed by medication ID
     static let medicationRefillProfiles = "medicationRefillProfiles"
@@ -201,8 +201,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
-        hasDiscoveredHistoryQuickLog,
-        historyQuickLogHintImpressions,
+        hasDiscoveredQuickLog,
+        quickLogHintImpressions,
         medicationRefillProfiles,
         legacyMedicationProfiles,
         archivedMedicationProfiles,
@@ -255,8 +255,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow: 14, // 14 days by default
         hideSupportBanners: false,
         trendsQuestionsEnabled: false,
-        hasDiscoveredHistoryQuickLog: false,
-        historyQuickLogHintImpressions: 0,
+        hasDiscoveredQuickLog: false,
+        quickLogHintImpressions: 0,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
         hasUserOptedOutOfReviews: false,
@@ -324,6 +324,8 @@ public enum UserDefaultsKeys {
 
         // Display Settings
         trendsVisualizationType,
+        hasDiscoveredQuickLog,
+        quickLogHintImpressions,
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,

@@ -19,6 +19,7 @@ enum SupportSuggestionLayoutStyle: Equatable {
 
 struct SupportSuggestionView: View {
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
+    @State private var showSupportView = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var containerSpacing: CGFloat = 8
@@ -50,8 +51,11 @@ struct SupportSuggestionView: View {
 
     private var detailedSuggestion: some View {
         VStack(spacing: containerSpacing) {
-            NavigationLink {
-                SupportView()
+            // A Button presenting a sheet rather than a NavigationLink, so a List does not add its own
+            // disclosure chevron next to the banner's when the banner is a list row, and so it works the same
+            // inside a lazy list row and in a scroll view.
+            Button {
+                showSupportView = true
             } label: {
                 HStack(spacing: contentSpacing) {
                     ZStack {
@@ -122,6 +126,11 @@ struct SupportSuggestionView: View {
                 )
             }
             .buttonStyle(.plain)
+            .sheet(isPresented: $showSupportView) {
+                NavigationStack {
+                    SupportView()
+                }
+            }
 
             Button {
                 hideSupportBanners = true

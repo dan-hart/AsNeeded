@@ -17,7 +17,8 @@ import SwiftUI
 ///
 /// **Use Cases:**
 /// - Floating Log Dose button on the History tab
-/// - Mirrors the row button on the Medication tab (`MedicationRowComponent`)
+/// - Row LOG button on the Medication tab (`MedicationRowComponent`)
+/// - Medication tiles in the Log Dose picker (`LogDoseMedicationTile`)
 struct DoseLogPressGestureModifier: ViewModifier {
     // MARK: - Properties
     @Binding var isPressed: Bool

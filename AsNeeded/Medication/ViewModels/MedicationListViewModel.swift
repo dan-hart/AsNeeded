@@ -51,6 +51,11 @@ final class MedicationListViewModel: ObservableObject {
         showArchivedMedications ? items : items.active
     }
 
+    /// Active medications for the medication-agnostic Log Dose picker, most recently logged first.
+    var logDosePickerItems: [LogDosePickerItem] {
+        LogDosePickerModel.items(medications: items.active, events: dataStore.events)
+    }
+
     var sortedMedications: [ANMedicationConcept] {
         let items = displayedMedications
         if medicationOrder.isEmpty {
