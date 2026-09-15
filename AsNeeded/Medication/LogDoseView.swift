@@ -24,7 +24,6 @@ struct LogDoseView: View {
     @State private var sideEffectsText: String = ""
     @State private var note: String = ""
     @State private var showingDatePicker = false
-    @State private var animateHeader = false
     @State private var selectedQuickOption: String? = "Now"
     @State private var isLogging = false
     private let logger = DHLogger(category: "DoseLogView")
@@ -174,7 +173,6 @@ struct LogDoseView: View {
                     .font(.largeTitle.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.white)
-                    .symbolEffect(.pulse, options: .repeating.speed(0.5), value: animateHeader)
             }
             .padding(.top, topPadding)
 
@@ -201,11 +199,6 @@ struct LogDoseView: View {
                 .shadow(color: Color.black.opacity(0.06), radius: shadowRadius, x: 0, y: shadowY)
         )
         .padding(.horizontal)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).delay(0.2)) {
-                animateHeader = true
-            }
-        }
     }
 
     private var doseSection: some View {
