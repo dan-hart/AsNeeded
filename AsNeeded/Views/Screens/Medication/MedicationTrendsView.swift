@@ -38,7 +38,7 @@ struct MedicationTrendsView: View {
     @ScaledMetric private var metricLabelSpacing: CGFloat = 6
     @ScaledMetric private var metricTitleSpacing: CGFloat = 4
     @ScaledMetric private var heatmapCellSpacing: CGFloat = 2
-    @ScaledMetric private var pickerMaxWidth: CGFloat = 160
+    @ScaledMetric private var pickerMaxWidth: CGFloat = 200
     @ScaledMetric private var metricCardPadding: CGFloat = 12
     @ScaledMetric private var metricCardMinHeight: CGFloat = 90
     @ScaledMetric private var metricCardCornerRadius: CGFloat = 10
@@ -165,6 +165,9 @@ struct MedicationTrendsView: View {
                     Text("30d")
                         .font(.customFont(fontFamily, style: .body))
                         .tag(30)
+                    Text("90d")
+                        .font(.customFont(fontFamily, style: .body))
+                        .tag(90)
                 }
                 .font(.customFont(fontFamily, style: .body))
                 .pickerStyle(.segmented)
@@ -338,6 +341,16 @@ struct MedicationTrendsView: View {
 		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
 	}
 
+    /// Days between x-axis labels so about five or six fit at every window size.
+    private var chartAxisStrideDays: Int {
+        switch daysWindow {
+        case ...7: return 2
+        case ...14: return 3
+        case ...30: return 5
+        default: return 15
+        }
+    }
+
     @ViewBuilder
     private func usageChart(for med: ANMedicationConcept) -> some View {
         let data = viewModel.dailyTotals(last: daysWindow)
@@ -379,7 +392,7 @@ struct MedicationTrendsView: View {
                     }
                 }
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .day, count: daysWindow <= 7 ? 2 : daysWindow <= 14 ? 3 : 5)) { _ in
+                    AxisMarks(values: .stride(by: .day, count: chartAxisStrideDays)) { _ in
                         AxisGridLine()
                             .foregroundStyle(.secondary.opacity(0.3))
                         AxisValueLabel(format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : daysWindow <= 14 ? .dateTime.weekday(.abbreviated).day() : .dateTime.day().month(.abbreviated))

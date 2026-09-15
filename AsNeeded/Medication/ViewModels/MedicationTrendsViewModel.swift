@@ -255,12 +255,19 @@ final class MedicationTrendsViewModel: ObservableObject {
         return questionService.examplePrompts(for: medication)
     }
 
-    // Daily totals for the last N days (default 14)
+	/// The most recent day the trends cover: yesterday. Today is still in progress, so including it would
+	/// make every chart end in a dip and drag the averages down.
+	var trendsWindowEnd: Date {
+		let today = calendar.startOfDay(for: Date())
+		return calendar.date(byAdding: .day, value: -1, to: today) ?? today
+	}
+
+    // Daily totals for the last N complete days ending yesterday (default 14)
     func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
 		// Reading `events` first refreshes the cache when the store or selection changed.
 		let events = self.events
         guard let unit = preferredUnit else { return [] }
-        let start = calendar.startOfDay(for: Date())
+        let start = trendsWindowEnd
 
 		if dailyTotalsCacheDay != start {
 			dailyTotalsCache.removeAll()
@@ -390,11 +397,11 @@ final class MedicationTrendsViewModel: ObservableObject {
         }
     }
 
-    // Calendar heatmap data for the last N days
+    // Calendar heatmap data for the last N complete days ending yesterday
     func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
         guard let unit = preferredUnit else { return [] }
 
-        let endDate = calendar.startOfDay(for: Date())
+        let endDate = trendsWindowEnd
         let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: endDate) ?? endDate
 
         // Create all days in the range
