@@ -30,8 +30,7 @@ struct SettingsDebugSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Thank You View")
-							.font(.customFont(fontFamily, style: .body))
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Preview the thank you screen")
 							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
@@ -40,7 +39,7 @@ struct SettingsDebugSectionView: View {
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)
@@ -68,8 +67,7 @@ struct SettingsDebugSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Welcome View")
-							.font(.customFont(fontFamily, style: .body))
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Preview the welcome screen")
 							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
@@ -78,7 +76,7 @@ struct SettingsDebugSectionView: View {
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)
@@ -105,8 +103,7 @@ struct SettingsDebugSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Test Custom Fonts")
-							.font(.customFont(fontFamily, style: .body))
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Check font loading and availability")
 							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
@@ -115,7 +112,7 @@ struct SettingsDebugSectionView: View {
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

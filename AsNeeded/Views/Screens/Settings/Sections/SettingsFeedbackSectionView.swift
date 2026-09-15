@@ -28,17 +28,16 @@ struct SettingsFeedbackSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Send Feedback")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Report bugs, request features, or share ideas")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

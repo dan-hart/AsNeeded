@@ -28,17 +28,16 @@ struct SettingsPreferencesSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("App Preferences")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Notifications, haptics, and app behavior")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

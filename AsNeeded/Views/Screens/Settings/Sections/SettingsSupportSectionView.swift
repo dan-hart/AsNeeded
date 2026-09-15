@@ -28,17 +28,16 @@ struct SettingsSupportSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Support As Needed")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Tips, donations, and ways to help")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

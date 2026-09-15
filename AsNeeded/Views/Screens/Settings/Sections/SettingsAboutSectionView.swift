@@ -28,17 +28,16 @@ struct SettingsAboutSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("About This App")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Version, build, and overview")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

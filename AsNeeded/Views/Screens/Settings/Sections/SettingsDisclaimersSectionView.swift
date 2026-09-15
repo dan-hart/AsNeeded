@@ -30,17 +30,16 @@ struct SettingsDisclaimersSectionView: View {
 
 						VStack(alignment: .leading, spacing: stackItemSpacing) {
 							Text("Medical Disclaimer")
-								.font(.body)
-								.fontWeight(.medium)
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 							Text("Important medical advice information")
-								.font(.caption)
+								.font(.customFont(fontFamily, style: .caption))
 								.foregroundColor(.secondary)
 						}
 
 						Spacer()
 
 						Image(systemSymbol: .chevronRight)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 					.padding(padding)
@@ -65,17 +64,16 @@ struct SettingsDisclaimersSectionView: View {
 
 						VStack(alignment: .leading, spacing: stackItemSpacing) {
 							Text("Medical Data Sources")
-								.font(.body)
-								.fontWeight(.medium)
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 							Text("NIH/NLM RxNorm database citations")
-								.font(.caption)
+								.font(.customFont(fontFamily, style: .caption))
 								.foregroundColor(.secondary)
 						}
 
 						Spacer()
 
 						Image(systemSymbol: .chevronRight)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 					.padding(padding)
