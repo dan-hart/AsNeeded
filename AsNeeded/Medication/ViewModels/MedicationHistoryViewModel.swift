@@ -156,6 +156,12 @@ final class MedicationHistoryViewModel: ObservableObject {
         selectedMedicationID == "all"
     }
 
+    /// Active medications for the medication-agnostic Log Dose picker shown in the All view, most
+    /// recently logged first.
+    var logDosePickerItems: [LogDosePickerItem] {
+        LogDosePickerModel.items(medications: medications.active, events: events)
+    }
+
     var selectedMedication: ANMedicationConcept? {
         guard let selection = selectedMedicationID, selection != "all",
               let uuid = UUID(uuidString: selection) else { return nil }

@@ -8,6 +8,9 @@ struct MedicationHistoryView: View {
     @EnvironmentObject private var navigationManager: NavigationManager
     @Environment(\.fontFamily) private var fontFamily
     @State private var logMedication: ANMedicationConcept?
+    @State private var showLogDosePicker = false
+    /// Medication chosen in the picker; the Log Dose sheet opens for it once the picker has dismissed.
+    @State private var pendingPickerMedication: ANMedicationConcept?
     @State private var isLogButtonPressed = false
     @State private var isLogButtonLongPressing = false
     /// 0 to 1 while the Log Dose button is held; drives the ring that shows the quick log building up.
@@ -455,6 +458,30 @@ struct MedicationHistoryView: View {
             }
     }
 
+    /// Medication-agnostic Log Dose button for the All view. Mirrors the Medication tab's: an accent capsule
+    /// in the same spot, opening the picker to choose which medication to log.
+    private var allMedicationsLogButton: some View {
+        Button {
+            HapticsManager.shared.mediumImpact()
+            showLogDosePicker = true
+        } label: {
+            Label("Log Dose", systemSymbol: .plus)
+                .labelStyle(.titleAndIcon)
+                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, fabPaddingH)
+                .padding(.vertical, fabPaddingV)
+                .background(
+                    Capsule()
+                        .fill(.accent)
+                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log a dose")
+        .accessibilityHint("Opens a list of your medications to choose which one to log")
+    }
+
     private var logButtonScale: CGFloat {
         if isLogButtonCelebrating {
             return 1.08
@@ -579,6 +606,12 @@ struct MedicationHistoryView: View {
                         .padding(.trailing, fabTrailingPadding)
                         .padding(.bottom, fabBottomPadding)
                         .quickLogHint(isPresented: $showQuickLogHint)
+                    } else if viewModel.isShowingAllMedications, !viewModel.medications.active.isEmpty {
+                        // Same medication-agnostic Log Dose button as the Medication tab: accent because it
+                        // asks which medication, then the picker takes over in medication colors.
+                        allMedicationsLogButton
+                            .padding(.trailing, fabTrailingPadding)
+                            .padding(.bottom, fabBottomPadding)
                     }
                 }
                 .navigationTitle("History")
@@ -642,6 +675,28 @@ struct MedicationHistoryView: View {
                         }
                     }
                     .dynamicDetent()
+                }
+                .sheet(isPresented: $showLogDosePicker, onDismiss: {
+                    // Present the Log Dose sheet only after the picker is fully gone, so the two never overlap.
+                    if let medication = pendingPickerMedication {
+                        pendingPickerMedication = nil
+                        logMedication = medication
+                    }
+                }) {
+                    LogDosePickerSheet(
+                        items: viewModel.logDosePickerItems,
+                        onSelect: { medication in
+                            pendingPickerMedication = medication
+                            showLogDosePicker = false
+                        },
+                        onQuickLog: { medication in
+                            await viewModel.quickLog(medication: medication)
+                        },
+                        onQuickLogSuccess: { _ in
+                            hasDiscoveredQuickLog = true
+                            showLogDosePicker = false
+                        }
+                    )
                 }
                 .sheet(item: $logMedication) { med in
                     LogDoseView(medication: med, source: "history_sheet") { dose, event, operationID in
