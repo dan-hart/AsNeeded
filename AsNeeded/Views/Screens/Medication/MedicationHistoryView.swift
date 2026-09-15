@@ -462,6 +462,14 @@ struct MedicationHistoryView: View {
         return isLogButtonPressed || isLogButtonLongPressing ? 0.95 : 1.0
     }
 
+    /// The user closed the pill: retire the hint for good and hide it.
+    private func dismissQuickLogHint() {
+        QuickLogHintPolicy.dismissForever()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            showQuickLogHint = false
+        }
+    }
+
     /// Marks the gesture as discovered, retires the hint, and pops the button once (skipped under Reduce Motion).
     private func celebrateQuickLog() {
         hasDiscoveredQuickLog = true
@@ -561,7 +569,10 @@ struct MedicationHistoryView: View {
                     if let selectedMedication = viewModel.selectedMedication, !viewModel.isShowingAllMedications {
                         VStack(alignment: .trailing, spacing: quickLogHintSpacing) {
                             if showQuickLogHint {
-                                QuickLogHintPill(text: QuickLogHintPolicy.hintText(for: selectedMedication))
+                                QuickLogHintPill(
+                                    text: QuickLogHintPolicy.hintText(for: selectedMedication),
+                                    onDismiss: dismissQuickLogHint
+                                )
                             }
                             floatingLogButton(for: selectedMedication)
                         }

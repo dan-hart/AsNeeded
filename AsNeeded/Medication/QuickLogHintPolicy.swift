@@ -20,6 +20,12 @@ enum QuickLogHintPolicy {
 		!hasDiscoveredQuickLog && impressions < maxImpressions
 	}
 
+	/// Retires the hint everywhere without waiting for a hold, for the pill's close button. Spends the
+	/// remaining impressions rather than claiming the gesture was discovered.
+	static func dismissForever(defaults: UserDefaults = .standard) {
+		defaults.set(maxImpressions, forKey: UserDefaultsKeys.quickLogHintImpressions)
+	}
+
 	/// The hint text, naming the dose the hold will log so the user knows what to expect.
 	static func hintText(for medication: ANMedicationConcept) -> String {
 		let amount = (medication.prescribedDoseAmount ?? 1).formattedAmount

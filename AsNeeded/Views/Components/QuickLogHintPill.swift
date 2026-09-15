@@ -9,34 +9,54 @@ import SwiftUI
 /// **Features:**
 /// - Material capsule so it never competes with the medication-colored control beside it
 /// - Hand icon bounces a few times on appearance to draw the eye; still under Reduce Motion
+/// - Dismiss button so the user can retire the hint for good without performing the hold
 /// - Slides in from the control's edge; fades only under Reduce Motion
-/// - Hidden from VoiceOver, because every Log Dose control already describes the hold in its hint
+/// - Hidden from VoiceOver unless it has a close button, because every Log Dose control already describes the hold in its hint
 ///
 /// **Use Cases:**
 /// - Above the floating Log Dose button on the History tab
-/// - Above the first row's LOG button on the Medication tab
+/// - Floating above the first row's LOG button on the Medication tab (see `QuickLogHintAnchorKey`)
 struct QuickLogHintPill: View {
 	let text: String
+	/// Called when the user taps the pill's close button. The caller hides the pill and retires the hint.
+	var onDismiss: (() -> Void)? = nil
 
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@State private var bounceTrigger = 0
 
 	@ScaledMetric private var iconSpacing: CGFloat = 6
-	@ScaledMetric private var paddingH: CGFloat = 12
+	@ScaledMetric private var paddingLeading: CGFloat = 12
 	@ScaledMetric private var paddingV: CGFloat = 8
+	@ScaledMetric private var dismissPadding: CGFloat = 8
+	@ScaledMetric private var dismissTrailingInset: CGFloat = 4
 
 	var body: some View {
 		HStack(spacing: iconSpacing) {
 			icon
 			Text(text)
+
+			if let onDismiss {
+				Button(action: onDismiss) {
+					Image(systemSymbol: .xmark)
+						.font(.customFont(fontFamily, style: .caption2, weight: .bold))
+						.foregroundStyle(.secondary)
+						.padding(dismissPadding)
+						.contentShape(Rectangle())
+				}
+				.buttonStyle(.plain)
+				.accessibilityLabel("Dismiss hint")
+			}
 		}
 		.font(.customFont(fontFamily, style: .caption, weight: .medium))
 		.foregroundStyle(.primary)
-		.padding(.horizontal, paddingH)
-		.padding(.vertical, paddingV)
+		.padding(.leading, paddingLeading)
+		.padding(.trailing, onDismiss == nil ? paddingLeading : dismissTrailingInset)
+		.padding(.vertical, onDismiss == nil ? paddingV : 0)
 		.background(.regularMaterial, in: Capsule())
-		.accessibilityHidden(true)
+		// Every Log Dose control already describes the hold to VoiceOver, so the pill is only exposed when
+		// it carries the close button, which VoiceOver users need in order to retire the hint.
+		.accessibilityHidden(onDismiss == nil)
 		.transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
 		.onAppear {
 			bounceTrigger += 1
@@ -51,6 +71,16 @@ struct QuickLogHintPill: View {
 			Image(systemSymbol: .handTapFill)
 				.symbolEffect(.bounce, options: .repeat(3), value: bounceTrigger)
 		}
+	}
+}
+
+/// Frame of the Log Dose control the hint should float above, published by a list row so the list can
+/// draw the pill in its own overlay. Drawing it there keeps the pill from being clipped by the row.
+struct QuickLogHintAnchorKey: PreferenceKey {
+	static let defaultValue: Anchor<CGRect>? = nil
+
+	static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+		value = nextValue() ?? value
 	}
 }
 
@@ -103,11 +133,62 @@ extension View {
 	func quickLogHint(isPresented: Binding<Bool>) -> some View {
 		modifier(QuickLogHintPresenter(isPresented: isPresented))
 	}
+
+	/// Floats a `QuickLogHintPill` above (or, near the top edge, below) the control that published
+	/// `QuickLogHintAnchorKey`, trailing-aligned with it. Draw this on the scroll container, not the row.
+	func quickLogHintOverlay(isPresented: Bool, text: String, onDismiss: @escaping () -> Void) -> some View {
+		modifier(QuickLogHintOverlay(isPresented: isPresented, text: text, onDismiss: onDismiss))
+	}
+}
+
+/// Positions the hint relative to the anchored control in the container's coordinate space.
+struct QuickLogHintOverlay: ViewModifier {
+	let isPresented: Bool
+	let text: String
+	let onDismiss: () -> Void
+
+	@ScaledMetric private var spacing: CGFloat = 8
+	/// Roughly the pill's height plus `spacing`. With less room than this above the control, the pill
+	/// would poke out past the container's top edge, so it goes underneath instead.
+	@ScaledMetric private var minimumRoomAbove: CGFloat = 36
+
+	func body(content: Content) -> some View {
+		content.overlayPreferenceValue(QuickLogHintAnchorKey.self) { anchor in
+			GeometryReader { proxy in
+				if isPresented, let anchor {
+					let rect = proxy[anchor]
+					let placeAbove = rect.minY >= minimumRoomAbove
+					// Plain values for the alignment closures, which must not capture the proxy or the view.
+					let trailingInset = proxy.size.width - rect.maxX
+					let bottomEdgeWhenAbove = rect.minY - spacing
+					let topEdgeWhenBelow = rect.maxY + spacing
+					ZStack(alignment: .topTrailing) {
+						Color.clear
+							.allowsHitTesting(false)
+
+						QuickLogHintPill(text: text, onDismiss: onDismiss)
+							.fixedSize()
+							.alignmentGuide(.trailing) { dimensions in
+								dimensions[.trailing] + trailingInset
+							}
+							.alignmentGuide(.top) { dimensions in
+								placeAbove
+									? dimensions[.bottom] - bottomEdgeWhenAbove
+									: dimensions[.top] - topEdgeWhenBelow
+							}
+					}
+				}
+			}
+		}
+	}
 }
 
 #if DEBUG
 	#Preview {
-		QuickLogHintPill(text: "Hold to log 1 tablet")
-			.padding()
+		VStack(spacing: 24) {
+			QuickLogHintPill(text: "Hold to log 1 tablet")
+			QuickLogHintPill(text: "Hold to log 1 tablet", onDismiss: {})
+		}
+		.padding()
 	}
 #endif

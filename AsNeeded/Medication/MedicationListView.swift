@@ -326,9 +326,22 @@ struct MedicationListView: View {
         }
     }
 
-    /// The row that carries the "Hold to log …" pill while the hint is up: the first one, so it is on screen.
+    /// The medication whose LOG button carries the "Hold to log …" pill while the hint is up: the first
+    /// one, so it is on screen.
+    private var quickLogHintMedication: ANMedicationConcept? {
+        showQuickLogHint ? viewModel.sortedMedications.first : nil
+    }
+
     private var quickLogHintMedicationID: UUID? {
-        showQuickLogHint ? viewModel.sortedMedications.first?.id : nil
+        quickLogHintMedication?.id
+    }
+
+    /// The user closed the pill: retire the hint for good and hide it.
+    private func dismissQuickLogHint() {
+        QuickLogHintPolicy.dismissForever()
+        withAnimation(.easeOut(duration: 0.2)) {
+            showQuickLogHint = false
+        }
     }
 
     @ViewBuilder
@@ -352,6 +365,11 @@ struct MedicationListView: View {
             }
             .listStyle(.plain)
             .contentMargins(.bottom, listBottomClearance, for: .scrollContent)
+            .quickLogHintOverlay(
+                isPresented: showQuickLogHint && quickLogHintMedication != nil,
+                text: quickLogHintMedication.map { QuickLogHintPolicy.hintText(for: $0) } ?? "",
+                onDismiss: dismissQuickLogHint
+            )
             .environment(\.editMode, $viewModel.editMode)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))

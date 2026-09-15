@@ -30,6 +30,19 @@ struct QuickLogHintPolicyTests {
 		#expect(!QuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: true, impressions: 2))
 	}
 
+	@Test("Dismissing for good spends the remaining impressions so the hint never returns")
+	func dismissForeverSpendsImpressions() throws {
+		let suiteName = "QuickLogHintPolicyTests.dismiss.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
+		defer { defaults.removePersistentDomain(forName: suiteName) }
+
+		QuickLogHintPolicy.dismissForever(defaults: defaults)
+
+		let impressions = defaults.integer(forKey: UserDefaultsKeys.quickLogHintImpressions)
+		#expect(impressions == QuickLogHintPolicy.maxImpressions)
+		#expect(!QuickLogHintPolicy.shouldShow(hasDiscoveredQuickLog: false, impressions: impressions))
+	}
+
 	@Test("Hint text names the default dose the hold will log")
 	func hintTextNamesDefaultDose() {
 		let medication = ANMedicationConcept(

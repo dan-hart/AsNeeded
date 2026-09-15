@@ -61,7 +61,8 @@ struct MedicationRowComponent: View {
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
     var onAppearanceChanged: ((String?, String?) -> Void)? = nil
-    /// Shows the "Hold to log …" pill above the log button. The list turns this on for one row at a time.
+    /// Publishes the log button's frame through `QuickLogHintAnchorKey` so the list can float the
+    /// "Hold to log …" pill above it. The list turns this on for one row at a time.
     var showsQuickLogHint: Bool = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -82,7 +83,6 @@ struct MedicationRowComponent: View {
 
     @ScaledMetric private var rowPadding: CGFloat = 16
     @ScaledMetric private var holdRingLineWidth: CGFloat = 3
-    @ScaledMetric private var quickLogHintSpacing: CGFloat = 8
     @ScaledMetric private var iconContentSpacing: CGFloat = 14
     @ScaledMetric private var logButtonSize: CGFloat = 66
     @ScaledMetric private var medicationIconSize: CGFloat = 56
@@ -174,16 +174,6 @@ struct MedicationRowComponent: View {
                 )
         )
         .padding(.horizontal, 4)
-        .overlay(alignment: .topTrailing) {
-            // The "Hold to log …" pill floats over the card's corner, above the log button, so it never
-            // squeezes the medication text beside it.
-            if showsQuickLogHint {
-                QuickLogHintPill(text: QuickLogHintPolicy.hintText(for: medication))
-                    .padding(.top, quickLogHintSpacing)
-                    .padding(.trailing, quickLogHintSpacing + 4)
-                    .allowsHitTesting(false)
-            }
-        }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(statusSummary?.accessibilityLabel ?? "Medication: \(medication.displayName)")
@@ -375,6 +365,9 @@ struct MedicationRowComponent: View {
 
     private var enhancedLogButton: some View {
         logButtonControl
+            .anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { anchor in
+                showsQuickLogHint ? anchor : nil
+            }
     }
 
     private var logButtonScale: CGFloat {
