@@ -2,6 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsPreferencesSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -13,8 +14,8 @@ struct SettingsPreferencesSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Preferences")
-				.font(.title2)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			NavigationLink {
 				AppPreferencesView()

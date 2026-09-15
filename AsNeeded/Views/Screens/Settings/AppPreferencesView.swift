@@ -12,6 +12,10 @@ struct AppPreferencesView: View {
     @AppStorage(UserDefaultsKeys.importSettingsDefaultBehavior) private var importSettingsDefaultBehavior: String = "keep"
     @AppStorage(UserDefaultsKeys.trendsQuestionsEnabled) private var trendsQuestionsEnabled = false
     @State private var showingResetConfirmation = false
+    /// Briefly true after Show Tips Again so the row can confirm it worked.
+    @State private var didShowTipsAgain = false
+    /// Identifies the latest tap so an earlier tap's timer cannot clear a newer confirmation.
+    @State private var tipsConfirmationGeneration = 0
     @ScaledMetric private var sectionSpacing: CGFloat = 32
     @ScaledMetric private var itemSpacing: CGFloat = 16
     @ScaledMetric private var headerSpacing: CGFloat = 12
@@ -24,7 +28,7 @@ struct AppPreferencesView: View {
     @ScaledMetric private var innerSpacing: CGFloat = 4
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 // MARK: - Header
 
@@ -53,6 +57,10 @@ struct AppPreferencesView: View {
                 // MARK: - Data Import
 
                 dataImportSection
+
+                // MARK: - Tips
+
+                tipsSection
 
                 // MARK: - Reset
 
@@ -343,6 +351,50 @@ struct AppPreferencesView: View {
         }
     }
 
+    private var tipsSection: some View {
+        VStack(alignment: .leading, spacing: itemSpacing) {
+            Label("Tips", systemSymbol: .lightbulb)
+                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
+                .foregroundStyle(.accent)
+
+            Text("Short tips, like holding a Log Dose button to log your default dose, appear a few times and then stay out of the way.")
+                .font(.customFont(fontFamily, style: .subheadline))
+                .foregroundStyle(.secondary)
+
+            Button(action: showTipsAgain) {
+                HStack(spacing: headerSpacing) {
+                    Image(systemSymbol: didShowTipsAgain ? .checkmarkCircleFill : .handTapFill)
+                        .font(.customFont(fontFamily, style: .callout, weight: .medium))
+                        .frame(width: iconSize, height: iconSize)
+                        .foregroundStyle(.accent)
+                        .contentTransition(.symbolEffect(.replace))
+
+                    VStack(alignment: .leading, spacing: stackItemSpacing) {
+                        Text("Show Tips Again")
+                            .font(.customFont(fontFamily, style: .body, weight: .medium))
+                            .foregroundStyle(.primary)
+
+                        Text(didShowTipsAgain ? "Tips will appear again on the Medication and History tabs" : "Bring back tips you have dismissed or already seen")
+                            .font(.customFont(fontFamily, style: .caption))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(padding)
+                .background(Color(.systemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Color(.systemGray4), lineWidth: borderWidth)
+                )
+                .cornerRadius(cornerRadius)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Show tips again")
+            .accessibilityHint("Brings back tips you have dismissed or already seen")
+        }
+    }
+
     private var resetSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Reset", systemSymbol: .arrowCounterclockwise)
@@ -390,6 +442,22 @@ struct AppPreferencesView: View {
 
     // MARK: - Actions
 
+    private func showTipsAgain() {
+        hapticsManager.notificationSuccess()
+        QuickLogHintPolicy.showAgain()
+        tipsConfirmationGeneration += 1
+        let confirmationGeneration = tipsConfirmationGeneration
+        withAnimation(.easeInOut(duration: 0.2)) {
+            didShowTipsAgain = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            guard confirmationGeneration == tipsConfirmationGeneration else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                didShowTipsAgain = false
+            }
+        }
+    }
+
     private func resetAllPreferences() {
         // Reset notification preferences
         showMedicationNames = false
@@ -408,6 +476,9 @@ struct AppPreferencesView: View {
 
         // Reset import behavior
         importSettingsDefaultBehavior = "keep"
+
+        // Bring tips back
+        QuickLogHintPolicy.showAgain()
 
         // Reset AppReviewManager internal tracking
         appReviewManager.resetReviewPreferences()

@@ -12,7 +12,7 @@ struct NIHDisclaimerDetailView: View {
     @ScaledMetric private var cornerRadius: CGFloat = 12
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: mainSpacing) {
                 // Main Attribution
                 VStack(alignment: .leading, spacing: sectionSpacing) {

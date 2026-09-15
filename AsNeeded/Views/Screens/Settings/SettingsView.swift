@@ -7,7 +7,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationView {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
                     SettingsSupportSectionView()
 

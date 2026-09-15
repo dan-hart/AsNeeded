@@ -16,8 +16,8 @@ struct SettingsDebugSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Debug")
-				.font(.customFont(fontFamily, style: .title2))
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			Button {
 				showThankYouView = true

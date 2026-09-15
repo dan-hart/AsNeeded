@@ -18,7 +18,7 @@ struct AutomaticBackupView: View {
     @ScaledMetric private var buttonCornerRadius: CGFloat = 12
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 enableToggleSection
 
@@ -616,7 +616,7 @@ struct AutomaticBackupView: View {
     private var privacyOnboardingSheet: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ScrollView {
+                VerticalOnlyScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 12) {
                             Image(systemSymbol: .lockShieldFill)
