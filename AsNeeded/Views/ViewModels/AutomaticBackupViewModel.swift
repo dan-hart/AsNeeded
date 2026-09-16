@@ -1,12 +1,14 @@
 // AutomaticBackupViewModel.swift
 // View model for automatic backup settings and operations
 
+import Combine
 import Foundation
 import SwiftUI
 
 @MainActor
 final class AutomaticBackupViewModel: ObservableObject {
     private let manager = AutomaticBackupManager.shared
+    private var managerSubscription: AnyCancellable?
 
     // MARK: - Published Properties
 
@@ -144,6 +146,12 @@ final class AutomaticBackupViewModel: ObservableObject {
     // MARK: - Initialization
 
     init() {
+        // `isBackupInProgress` and `lastError` live on the manager, and the backup now runs off the main
+        // actor with the UI live, so the manager's changes have to reach views observing this view model.
+        managerSubscription = manager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+
         // Reading the backup folder touches the file system, so the view kicks it off from `.task`
         // instead of blocking whoever creates this view model.
     }

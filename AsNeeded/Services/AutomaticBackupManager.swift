@@ -109,8 +109,14 @@ final class AutomaticBackupManager: ObservableObject {
 
                 // Check if task was cancelled during sleep
                 guard !Task.isCancelled else { return }
+                guard !isBackupInProgress else {
+                    logger.debug("Backup already in progress, skipping debounced run")
+                    return
+                }
 
+                isBackupInProgress = true
                 await performBackup()
+                isBackupInProgress = false
             } catch {
                 // Task was cancelled or sleep failed
                 logger.debug("Debounce task cancelled or failed")
@@ -163,6 +169,13 @@ final class AutomaticBackupManager: ObservableObject {
     /// - Returns: BackupStatus indicating success or failure
     @discardableResult
     func performManualBackup() async -> BackupStatus {
+        // The write and validation now span many suspension points, so a second tap or a store-triggered
+        // backup can land inside a run. Overlapping runs would fight over the same file.
+        guard !isBackupInProgress else {
+            logger.debug("Manual backup already in progress, ignoring request")
+            return lastBackupStatus
+        }
+
         logger.info("Manual backup requested")
         isBackupInProgress = true
         defer { isBackupInProgress = false }
