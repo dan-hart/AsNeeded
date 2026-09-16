@@ -56,23 +56,33 @@ struct AutomaticBackupView: View {
         ) { result in
             switch result {
             case let .success(urls):
-                guard let url = urls.first else {
-                    viewModel.isSettingUp = false
-                    return
-                }
+                guard let url = urls.first else { return }
+                // Claim the selection synchronously: the picker's dismissal clears the setup state on
+                // this same turn, and without this the Enable button would come alive again for the gap
+                // before the save task starts.
+                viewModel.beginSavingLocation()
                 Task {
                     await viewModel.saveBackupLocation(url: url)
                 }
             case let .failure(error):
-                viewModel.isSettingUp = false
                 viewModel.alertMessage = "Location selection failed: \(error.localizedDescription)"
                 viewModel.showingAlert = true
+            }
+        }
+        // A cancelled folder picker does not reliably report back through the completion handler above,
+        // so setup state is cleared whenever the picker goes away.
+        .onChange(of: viewModel.showingLocationPicker) { _, isPresented in
+            if !isPresented {
+                viewModel.locationPickerDismissed()
             }
         }
         .sheet(isPresented: $viewModel.showingExplainer) {
             AutomaticBackupExplainerView()
         }
-        .sheet(isPresented: $viewModel.showingPrivacyOnboarding) {
+        // The folder picker is presented from `onDismiss` so it never races the sheet's own dismissal.
+        .sheet(isPresented: $viewModel.showingPrivacyOnboarding, onDismiss: {
+            viewModel.privacyOnboardingDismissed()
+        }) {
             privacyOnboardingSheet
         }
         .sheet(isPresented: $viewModel.showingRestoreSheet) {
@@ -125,8 +135,8 @@ struct AutomaticBackupView: View {
         } message: {
             Text("Automatic backups were enabled before restoring, but need to be reconfigured because backup location settings are device-specific.\n\nPlease reconfigure automatic backups to resume protection.")
         }
-        .onAppear {
-            viewModel.loadBackupHistory()
+        .task {
+            await viewModel.refreshStatus()
         }
     }
 
@@ -170,7 +180,7 @@ struct AutomaticBackupView: View {
                         viewModel.enableAutomaticBackup()
                     } label: {
                         HStack {
-                            if viewModel.isSettingUp {
+                            if viewModel.isBusy {
                                 Text("Loading...")
                                     .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             } else {
@@ -186,7 +196,7 @@ struct AutomaticBackupView: View {
                         .background(Color.accent)
                         .cornerRadius(buttonCornerRadius)
                     }
-                    .disabled(viewModel.isSettingUp)
+                    .disabled(viewModel.isBusy)
                 }
             }
         }
@@ -711,7 +721,6 @@ struct AutomaticBackupView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
                         viewModel.showingPrivacyOnboarding = false
-                        viewModel.isSettingUp = false
                     } label: {
                         Image(systemSymbol: .xmark)
                             .font(.customFont(fontFamily, style: .body, weight: .medium))
