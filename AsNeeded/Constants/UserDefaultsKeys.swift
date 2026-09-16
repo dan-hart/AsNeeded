@@ -44,6 +44,12 @@ public enum UserDefaultsKeys {
     /// Whether private on-device Trends questions are enabled
     static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
 
+    /// Whether the user has quick logged (held a Log Dose control) at least once, on any tab
+    static let hasDiscoveredQuickLog = "hasDiscoveredQuickLog"
+
+    /// How many times a "hold to quick log" hint has been shown, across tabs
+    static let quickLogHintImpressions = "quickLogHintImpressions"
+
     /// Stored refill profiles keyed by medication ID
     static let medicationRefillProfiles = "medicationRefillProfiles"
 
@@ -195,6 +201,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,
+        hasDiscoveredQuickLog,
+        quickLogHintImpressions,
         medicationRefillProfiles,
         legacyMedicationProfiles,
         archivedMedicationProfiles,
@@ -247,6 +255,8 @@ public enum UserDefaultsKeys {
         trendsDaysWindow: 14, // 14 days by default
         hideSupportBanners: false,
         trendsQuestionsEnabled: false,
+        hasDiscoveredQuickLog: false,
+        quickLogHintImpressions: 0,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
         hasUserOptedOutOfReviews: false,
@@ -314,6 +324,8 @@ public enum UserDefaultsKeys {
 
         // Display Settings
         trendsVisualizationType,
+        hasDiscoveredQuickLog,
+        quickLogHintImpressions,
         trendsDaysWindow,
         hideSupportBanners,
         trendsQuestionsEnabled,

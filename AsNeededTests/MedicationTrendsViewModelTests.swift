@@ -281,9 +281,11 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let today = Date()
-        let event1 = createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet)
-        let event2 = createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 3.0, unit: .tablet)
+        // Trends end at yesterday, so the doses go on yesterday around midday.
+        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
+            .addingTimeInterval(12 * 3600)
+        let event1 = createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet)
+        let event2 = createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(3600), amount: 3.0, unit: .tablet)
         try await dataStore.addEvent(event1)
         try await dataStore.addEvent(event2)
 
@@ -296,6 +298,32 @@ struct MedicationTrendsViewModelTests {
         }
 
         #expect(total.total == 5.0)
+    }
+
+    @Test("DailyTotals and heatmap exclude the current day")
+    func dailyTotalsExcludeToday() async throws {
+        let dataStore = DataStore(testIdentifier: "TrendsVM-ExcludeToday")
+        let medication = createTestMedication(name: "TestMed", unit: .tablet)
+        try await dataStore.addMedication(medication)
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: today))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 5.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday.addingTimeInterval(3600), amount: 1.0, unit: .tablet))
+
+        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+
+        let dailyTotals = viewModel.dailyTotals(last: 1)
+        #expect(dailyTotals.count == 1)
+        #expect(dailyTotals.first?.day == yesterday)
+        #expect(dailyTotals.first?.total == 1.0)
+
+        let heatmap = viewModel.calendarHeatmapData(last: 1)
+        #expect(heatmap.count == 1)
+        #expect(heatmap.first?.date == yesterday)
+        #expect(heatmap.first?.total == 1.0)
+        #expect(viewModel.trendsWindowEnd == yesterday)
     }
 
     @Test("DailyTotals includes zero days")
@@ -354,7 +382,8 @@ struct MedicationTrendsViewModelTests {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        for daysAgo in 0 ..< 14 {
+        // The window ends yesterday, so cover days 1 through 14 back from today.
+        for daysAgo in 1 ... 14 {
             guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
             let event = createTestEvent(medication: medication, date: date, amount: 1.0, unit: .tablet)
             try await dataStore.addEvent(event)
@@ -373,9 +402,10 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let today = Date()
-        let tabletEvent = createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet)
-        let mlEvent = createTestEvent(medication: medication, date: today, amount: 5.0, unit: .milliliter)
+        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
+            .addingTimeInterval(12 * 3600)
+        let tabletEvent = createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet)
+        let mlEvent = createTestEvent(medication: medication, date: yesterdayNoon, amount: 5.0, unit: .milliliter)
         try await dataStore.addEvent(tabletEvent)
         try await dataStore.addEvent(mlEvent)
 
@@ -401,17 +431,18 @@ struct MedicationTrendsViewModelTests {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        // Add events: Day 0: 3 tablets, Day -1: 6 tablets, Day -2: 3 tablets
+        // The window ends yesterday. Day -1: 3 tablets, Day -2: 6 tablets, Day -3: 3 tablets
         guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
-              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)
+              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today),
+              let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today)
         else {
             Issue.record("Failed to create dates")
             return
         }
 
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 3.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 6.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 6.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: threeDaysAgo, amount: 3.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 3)
@@ -437,8 +468,9 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let today = Date()
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 7.0, unit: .tablet))
+        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
+            .addingTimeInterval(12 * 3600)
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon, amount: 7.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 7)
@@ -710,14 +742,16 @@ struct MedicationTrendsViewModelTests {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
+              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)
+        else {
             Issue.record("Failed to create date")
             return
         }
 
-        // Today: 10 tablets (max), Yesterday: 5 tablets (half intensity)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 10.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 5.0, unit: .tablet))
+        // The window ends yesterday. Yesterday: 10 tablets (max), two days ago: 5 tablets (half intensity)
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 10.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 5.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 2)
@@ -727,11 +761,11 @@ struct MedicationTrendsViewModelTests {
             return
         }
 
-        let yesterdayData = heatmapData[0]
-        let todayData = heatmapData[1]
+        let twoDaysAgoData = heatmapData[0]
+        let yesterdayData = heatmapData[1]
 
-        #expect(yesterdayData.intensity == 0.5) // 5 / 10 = 0.5
-        #expect(todayData.intensity == 1.0) // 10 / 10 = 1.0
+        #expect(twoDaysAgoData.intensity == 0.5) // 5 / 10 = 0.5
+        #expect(yesterdayData.intensity == 1.0) // 10 / 10 = 1.0
     }
 
     @Test("CalendarHeatmapData aggregates multiple events per day")
@@ -740,10 +774,11 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let today = Date()
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 3.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(7200), amount: 5.0, unit: .tablet))
+        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
+            .addingTimeInterval(12 * 3600)
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(3600), amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(7200), amount: 5.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 1)

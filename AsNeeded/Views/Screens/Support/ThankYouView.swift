@@ -59,7 +59,7 @@ struct ThankYouView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(spacing: sectionSpacing) {
                     // MARK: - Hero Section
 

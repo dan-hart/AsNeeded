@@ -36,7 +36,7 @@ enum MedicationRowLayoutStyle: Equatable {
 /// - Adaptive layout that switches between standard and accessibility modes
 /// - Animated medication icon with smart type detection
 /// - Quantity tracking with color-coded status indicators
-/// - Interactive log button with haptic feedback
+/// - Interactive log button: tap opens Log Dose, hold quick logs, with a hold ring and haptics shared with every Log Dose control
 /// - Comprehensive accessibility support
 /// - Edit mode integration for list management
 ///
@@ -61,22 +61,28 @@ struct MedicationRowComponent: View {
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
     var onAppearanceChanged: ((String?, String?) -> Void)? = nil
+    /// Publishes the log button's frame through `QuickLogHintAnchorKey` so the list can float the
+    /// "Hold to log …" pill above it. The list turns this on for one row at a time.
+    var showsQuickLogHint: Bool = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.editMode) private var editMode
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var isLongPressing = false
-    @State private var longPressWorkItem: DispatchWorkItem?
-    @State private var hasTriggeredQuickLog = false
+    /// 0 to 1 while the log button is held; drives the ring that shows the quick log building up.
+    @State private var holdProgress: Double = 0
+    /// Briefly true after a quick log succeeds so the button can pop.
+    @State private var isCelebrating = false
     @State private var showingAppearancePicker = false
     @State private var tempSelectedColor: String?
     @State private var tempSelectedSymbol: String?
     private let hapticsManager = HapticsManager.shared
-    private let longPressDuration: TimeInterval = 0.5
 
     @ScaledMetric private var rowPadding: CGFloat = 16
+    @ScaledMetric private var holdRingLineWidth: CGFloat = 3
     @ScaledMetric private var iconContentSpacing: CGFloat = 14
     @ScaledMetric private var logButtonSize: CGFloat = 66
     @ScaledMetric private var medicationIconSize: CGFloat = 56
@@ -358,6 +364,31 @@ struct MedicationRowComponent: View {
     }
 
     private var enhancedLogButton: some View {
+        logButtonControl
+            .anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { anchor in
+                showsQuickLogHint ? anchor : nil
+            }
+    }
+
+    private var logButtonScale: CGFloat {
+        if isCelebrating {
+            return 1.08
+        }
+        return isPressed || isLongPressing ? 0.95 : 1.0
+    }
+
+    /// Corner radius of whichever button variant is on screen, so the hold ring hugs its edge.
+    private var logButtonCornerRadius: CGFloat {
+        if dynamicTypeSize.isAccessibilitySize || layoutStyle == .compact {
+            return 12
+        }
+        return 14
+    }
+
+    /// The button itself. Tap opens Log Dose, hold quick logs, using the same press modifier as every
+    /// other Log Dose control: light tick on touch-down, ring during the hold, heavy impact and a pop on
+    /// success.
+    private var logButtonControl: some View {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
                 // Full width button for accessibility
@@ -391,7 +422,6 @@ struct MedicationRowComponent: View {
 						RoundedRectangle(cornerRadius: 12, style: .continuous)
 							.fill(medication.displayColor)
 					)
-					.scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
             } else {
                 // Compact button with icon and text
                 VStack(spacing: 4) {
@@ -439,73 +469,45 @@ struct MedicationRowComponent: View {
                             lineWidth: 1
                         )
                 )
-                .scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
             }
         }
-        .contentShape(Rectangle())
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    // Only set up the timer on first change event
-                    if longPressWorkItem == nil {
-                        // Visual feedback - press started
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            isPressed = true
-                        }
-
-                        // Schedule long press action to fire at exact threshold
-                        let workItem = DispatchWorkItem { [self] in
-                            guard !hasTriggeredQuickLog else { return }
-
-                            // Trigger quick log immediately when threshold reached
-                            hasTriggeredQuickLog = true
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isLongPressing = true
-                            }
-                            hapticsManager.heavyImpact()
-
-                            // Execute quick log
-                            if let quickLog = onQuickLog {
-                                Task {
-                                    let success = await quickLog()
-                                    if success {
-                                        await MainActor.run {
-                                            // Notify parent to show toast
-                                            onQuickLogSuccess?()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        longPressWorkItem = workItem
-                        DispatchQueue.main.asyncAfter(deadline: .now() + longPressDuration, execute: workItem)
-                    }
-                }
-                .onEnded { _ in
-                    // Cancel scheduled long press if it hasn't fired yet
-                    longPressWorkItem?.cancel()
-                    longPressWorkItem = nil
-
-                    // Reset visual states
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        isPressed = false
-                        isLongPressing = false
-                    }
-
-                    // Only trigger tap action if it was a short press (long press wasn't triggered)
-                    if !hasTriggeredQuickLog {
-                        // Short press - show log sheet
-                        hapticsManager.mediumImpact()
-                        onLogTapped()
-                    }
-
-                    // Reset for next interaction
-                    hasTriggeredQuickLog = false
-                }
+        .overlay(
+            // Hold progress ring, in the button's contrasting color so it reads on every medication tint.
+            RoundedRectangle(cornerRadius: logButtonCornerRadius, style: .continuous)
+                .trim(from: 0, to: holdProgress)
+                .stroke(
+                    medication.displayColor.contrastingForegroundColor().opacity(0.95),
+                    style: StrokeStyle(lineWidth: holdRingLineWidth, lineCap: .round)
+                )
+                .opacity(holdProgress > 0 ? 1 : 0)
+        )
+        .scaleEffect(logButtonScale)
+        .doseLogPressGesture(
+            isPressed: $isPressed,
+            isLongPressing: $isLongPressing,
+            holdProgress: $holdProgress,
+            onTap: onLogTapped,
+            onQuickLog: onQuickLog,
+            onQuickLogSuccess: {
+                celebrateQuickLog()
+                onQuickLogSuccess?()
+            }
         )
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Tap to customize dose, hold to log default dose")
+    }
+
+    /// Pops the button once after a successful quick log. Skipped under Reduce Motion.
+    private func celebrateQuickLog() {
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+            isCelebrating = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                isCelebrating = false
+            }
+        }
     }
 
     // MARK: - Helper Methods

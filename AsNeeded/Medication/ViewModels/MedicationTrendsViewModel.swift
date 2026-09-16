@@ -20,9 +20,23 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     @Published var medications: [ANMedicationConcept] = []
+	/// Whether private questions can be asked right now. Checked once at creation and on
+	/// `refreshQuestionAvailability()`, because the on-device model availability check is a system call
+	/// that should not run on every render.
+	@Published private(set) var questionAvailability: TrendsQuestionAvailability = .unavailable
+	/// Why questions are unavailable on this device, when they are.
+	@Published private(set) var questionUnavailableReason: TrendsQuestionUnavailableReason?
     @Published var latestQuestionAnswer: TrendsQuestionAnswer?
     @Published var isAnsweringQuestion = false
     @Published var questionErrorMessage: String?
+	/// Where the private-questions flow currently is. Drives the working, answered, and failed states in the UI.
+	@Published private(set) var questionPhase: TrendsQuestionPhase = .idle
+	/// The question that produced `questionPhase`'s current answer or error, echoed back in the UI.
+	@Published private(set) var askedQuestion: String?
+	private var questionTask: Task<Void, Never>?
+	/// Identifies the question currently allowed to publish state. A superseded or cancelled task
+	/// compares against this before writing, so it can never clobber its replacement.
+	private var questionGeneration = UUID()
 
     private let dataStore: DataStore
     private let refillProfileStore: MedicationRefillProfileStore
@@ -30,6 +44,25 @@ final class MedicationTrendsViewModel: ObservableObject {
     private let questionService: MedicationTrendsQuestionService
     private let calendar = Calendar.current
     private var cancellables = Set<AnyCancellable>()
+	private var storeObservationTasks: [Task<Void, Never>] = []
+
+	/// The selected medication's dose events, filtered and sorted once per change of the underlying
+	/// store or the selection. `source` is the store array the result was derived from; comparing it
+	/// against the store's current array is constant time while the store is unchanged.
+	private struct SelectedEventsCache {
+		let source: [ANEventConcept]
+		let medicationID: UUID?
+		let events: [ANEventConcept]
+	}
+
+	private struct DailyTotalsKey: Hashable {
+		let days: Int
+		let unit: ANUnitConcept
+	}
+
+	private var selectedEventsCache: SelectedEventsCache?
+	private var dailyTotalsCache: [DailyTotalsKey: [(day: Date, total: Double)]] = [:]
+	private var dailyTotalsCacheDay: Date?
 
     init(
         dataStore: DataStore = .shared,
@@ -49,30 +82,73 @@ final class MedicationTrendsViewModel: ObservableObject {
         // Load initial data and observe changes
         loadData()
         observeStoreChanges()
+		refreshQuestionAvailability()
 
         // Ensure we have a valid selection
         ensureValidSelection()
     }
 
+	deinit {
+		storeObservationTasks.forEach { $0.cancel() }
+	}
+
     private func loadData() {
         medications = dataStore.medications
     }
 
+	/// Follows the Boutique stores' event streams so the view updates the moment data loads or changes.
+	/// The streams replay their latest event on subscription, which also covers a store that finished
+	/// loading from disk before this view model was created.
     private func observeStoreChanges() {
-        // Use Combine's Timer publisher instead of Foundation's Timer
-        // This provides better integration with SwiftUI and proper cancellation
-        Timer.publish(every: 2.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let newMedications = self.dataStore.medications
-                if self.medications != newMedications {
-                    self.medications = newMedications
-                    self.ensureValidSelection()
-                }
-            }
-            .store(in: &cancellables)
+		let medicationsStore = dataStore.medicationsStore
+		let eventsStore = dataStore.eventsStore
+
+		storeObservationTasks = [
+			Task { [weak self] in
+				for await event in medicationsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					self?.refreshMedications()
+				}
+			},
+			Task { [weak self] in
+				for await event in eventsStore.events {
+					guard !Task.isCancelled else { return }
+					if case .initialized = event.operation { continue }
+					// `events` re-derives lazily from the store; the view just needs to know to re-read it.
+					self?.objectWillChange.send()
+				}
+			},
+		]
+
+		NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+			.sink { [weak self] _ in
+				Task { @MainActor in
+					self?.refreshQuestionAvailability()
+				}
+			}
+			.store(in: &cancellables)
     }
+
+	private func refreshMedications() {
+		let latest = dataStore.medications
+		guard latest != medications else { return }
+		medications = latest
+		ensureValidSelection()
+	}
+
+	/// Re-checks whether private questions are available, for example after the user enables Apple
+	/// Intelligence or toggles the feature in Settings.
+	func refreshQuestionAvailability() {
+		let availability = questionService.availability
+		let reason = questionService.unavailableReason
+		if availability != questionAvailability {
+			questionAvailability = availability
+		}
+		if reason != questionUnavailableReason {
+			questionUnavailableReason = reason
+		}
+	}
 
     /// Ensures we always have a valid medication selected
     /// This prevents picker errors when selection is nil
@@ -108,21 +184,36 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     var events: [ANEventConcept] {
-        guard let id = selectedMedicationID else { return [] }
-        // Filter events ensuring medication IDs match exactly
-        return dataStore.events
-            .filter { event in
-                // Only include events that have a medication with matching ID and are dose taken events
-                guard let eventMedication = event.medication,
-                      eventMedication.id == id,
-                      event.eventType == .doseTaken
-                else {
-                    return false
-                }
-                return true
-            }
-            .sorted { $0.date < $1.date }
+		let source = dataStore.events
+		let medicationID = selectedMedicationID
+		if let cache = selectedEventsCache,
+		   cache.medicationID == medicationID,
+		   cache.source == source
+		{
+			return cache.events
+		}
+
+		let filtered = Self.doseEvents(in: source, for: medicationID)
+		selectedEventsCache = SelectedEventsCache(source: source, medicationID: medicationID, events: filtered)
+		dailyTotalsCache.removeAll()
+		return filtered
     }
+
+	/// Dose-taken events for one medication, oldest first.
+	private static func doseEvents(in events: [ANEventConcept], for medicationID: UUID?) -> [ANEventConcept] {
+		guard let medicationID else { return [] }
+		return events
+			.filter { event in
+				guard let eventMedication = event.medication,
+				      eventMedication.id == medicationID,
+				      event.eventType == .doseTaken
+				else {
+					return false
+				}
+				return true
+			}
+			.sorted { $0.date < $1.date }
+	}
 
     // Determine a preferred unit for aggregation
     var preferredUnit: ANUnitConcept? {
@@ -156,10 +247,6 @@ final class MedicationTrendsViewModel: ObservableObject {
         return components.joined(separator: " ")
     }
 
-    var questionAvailability: TrendsQuestionAvailability {
-        questionService.availability
-    }
-
     var examplePrompts: [String] {
         guard let medication = selectedMedication else {
             return []
@@ -168,19 +255,40 @@ final class MedicationTrendsViewModel: ObservableObject {
         return questionService.examplePrompts(for: medication)
     }
 
-    // Daily totals for the last N days (default 14)
+	/// The most recent day the trends cover: yesterday. Today is still in progress, so including it would
+	/// make every chart end in a dip and drag the averages down.
+	var trendsWindowEnd: Date {
+		let today = calendar.startOfDay(for: Date())
+		return calendar.date(byAdding: .day, value: -1, to: today) ?? today
+	}
+
+    // Daily totals for the last N complete days ending yesterday (default 14)
     func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
+		// Reading `events` first refreshes the cache when the store or selection changed.
+		let events = self.events
         guard let unit = preferredUnit else { return [] }
-        let start = calendar.startOfDay(for: Date())
+        let start = trendsWindowEnd
+
+		if dailyTotalsCacheDay != start {
+			dailyTotalsCache.removeAll()
+			dailyTotalsCacheDay = start
+		}
+		let key = DailyTotalsKey(days: days, unit: unit)
+		if let cached = dailyTotalsCache[key] {
+			return cached
+		}
+
         let daySequence = (0 ..< days).compactMap { calendar.date(byAdding: .day, value: -$0, to: start) }.reversed()
         let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
-        return daySequence.map { day in
+        let totals = daySequence.map { day in
             let total = (grouped[day] ?? []).compactMap { ev -> Double? in
                 guard let dose = ev.dose, dose.unit == unit else { return nil }
                 return dose.amount
             }.reduce(0, +)
-            return (day, total)
+            return (day: day, total: total)
         }
+		dailyTotalsCache[key] = totals
+		return totals
     }
 
     // Average per day over the last window (default 7 days)
@@ -289,11 +397,11 @@ final class MedicationTrendsViewModel: ObservableObject {
         }
     }
 
-    // Calendar heatmap data for the last N days
+    // Calendar heatmap data for the last N complete days ending yesterday
     func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
         guard let unit = preferredUnit else { return [] }
 
-        let endDate = calendar.startOfDay(for: Date())
+        let endDate = trendsWindowEnd
         let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: endDate) ?? endDate
 
         // Create all days in the range
@@ -395,23 +503,75 @@ final class MedicationTrendsViewModel: ObservableObject {
     func ask(question: String, windowDays: Int) async {
         guard let context = questionContext(windowDays: windowDays) else {
             questionErrorMessage = "Select a medication with recent dose data first."
+			questionPhase = .failed(questionErrorMessage ?? "")
             return
         }
 
+		questionTask?.cancel()
+		let generation = UUID()
+		questionGeneration = generation
+		let trimmedQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
+		askedQuestion = trimmedQuestion
         isAnsweringQuestion = true
         questionErrorMessage = nil
+		latestQuestionAnswer = nil
+		questionPhase = .preparing
 
-        defer {
-            isAnsweringQuestion = false
-        }
-
-        do {
-            latestQuestionAnswer = try await questionService.answer(question: question, context: context)
-        } catch {
-            latestQuestionAnswer = nil
-            questionErrorMessage = error.localizedDescription
-        }
+		let task = Task { [questionService] in
+			var latest: TrendsQuestionAnswer?
+			do {
+				for try await partial in questionService.streamAnswer(question: trimmedQuestion, context: context) {
+					try Task.checkCancellation()
+					guard questionGeneration == generation else { return }
+					latest = partial
+					questionPhase = .generating(partial)
+				}
+				try Task.checkCancellation()
+				guard questionGeneration == generation else { return }
+				if let answer = latest, !answer.answer.isEmpty {
+					latestQuestionAnswer = answer
+					questionPhase = .answered(answer)
+				} else {
+					questionErrorMessage = String(localized: "No answer came back. Try rephrasing the question.")
+					questionPhase = .failed(questionErrorMessage ?? "")
+				}
+			} catch is CancellationError {
+				guard questionGeneration == generation else { return }
+				questionPhase = .idle
+			} catch {
+				guard questionGeneration == generation else { return }
+				latestQuestionAnswer = nil
+				questionErrorMessage = error.localizedDescription
+				questionPhase = .failed(error.localizedDescription)
+			}
+			guard questionGeneration == generation else { return }
+			isAnsweringQuestion = false
+			questionTask = nil
+		}
+		questionTask = task
+		await task.value
     }
+
+	/// Stops an in-progress question and returns to the idle state.
+	func cancelQuestion() {
+		questionTask?.cancel()
+		questionTask = nil
+		questionGeneration = UUID()
+		isAnsweringQuestion = false
+		questionPhase = .idle
+	}
+
+	/// Clears the current answer or error so a new question can be asked.
+	func resetQuestion() {
+		questionTask?.cancel()
+		questionTask = nil
+		questionGeneration = UUID()
+		isAnsweringQuestion = false
+		latestQuestionAnswer = nil
+		questionErrorMessage = nil
+		askedQuestion = nil
+		questionPhase = .idle
+	}
 
     private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {
         let totals = dailyTotals(last: endOffset + days)
@@ -455,4 +615,26 @@ struct CalendarDay {
     let date: Date
     let total: Double
     let intensity: Double // 0.0 to 1.0 for color intensity
+}
+
+// MARK: - Question Phase
+
+/// The lifecycle of one private question, from idle through generation to a result.
+enum TrendsQuestionPhase: Equatable {
+	case idle
+	/// The context is built and the model has been asked; nothing has come back yet.
+	case preparing
+	/// The model is streaming; the payload is the most complete partial answer so far.
+	case generating(TrendsQuestionAnswer)
+	case answered(TrendsQuestionAnswer)
+	case failed(String)
+
+	var isWorking: Bool {
+		switch self {
+		case .preparing, .generating:
+			return true
+		case .idle, .answered, .failed:
+			return false
+		}
+	}
 }

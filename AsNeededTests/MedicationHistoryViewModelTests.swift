@@ -304,6 +304,47 @@ struct MedicationHistoryViewModelTests {
         #expect(reflection.note == "Updated note")
     }
 
+    // MARK: - Quick Log Tests
+
+    @Test("Quick log through the history view model decrements quantity once and exposes the toast")
+    func quickLogDecrementsQuantityOnceAndExposesToast() async throws {
+        clearStoredSelection()
+        let medication = createTestMedication(quantity: 10.0)
+
+        let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-QuickLog")
+        try await dataStore.clearAllData()
+        try? await dataStore.addMedication(medication)
+
+        let coordinator = QuickLogCoordinator(
+            dataStore: dataStore,
+            scheduleToastDismissal: { _ in },
+            acknowledgeDeliveredReminders: { _ in }
+        )
+        let viewModel = MedicationHistoryViewModel(
+            dataStore: dataStore,
+            selectedMedicationID: medication.id.uuidString,
+            quickLogCoordinator: coordinator
+        )
+
+        let success = await viewModel.quickLog(medication: medication)
+
+        #expect(success)
+        #expect(dataStore.events.count == 1)
+        #expect(dataStore.events.first?.dose?.amount == 2.0)
+        #expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 8.0)
+        #expect(viewModel.showQuickLogToast)
+        #expect(viewModel.quickLogMedicationName == medication.displayName)
+        #expect(viewModel.quickLogDoseAmount == 2.0)
+        #expect(viewModel.quickLogFeedback?.undoEventID == dataStore.events.first?.id)
+
+        let undoSuccess = await viewModel.undoLastQuickLog()
+
+        #expect(undoSuccess)
+        #expect(dataStore.events.isEmpty)
+        #expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
+        #expect(viewModel.showQuickLogToast == false)
+    }
+
     @Test("Deleting an event restores medication quantity")
     func deleteEventRestoresMedicationQuantity() async throws {
         clearStoredSelection()

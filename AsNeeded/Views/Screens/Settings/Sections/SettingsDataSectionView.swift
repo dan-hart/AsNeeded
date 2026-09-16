@@ -15,6 +15,7 @@ struct SettingsDataSectionView: View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Data & Privacy")
 				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			NavigationLink {
 				DataPrivacyView()

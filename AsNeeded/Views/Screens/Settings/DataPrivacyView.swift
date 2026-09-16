@@ -13,7 +13,7 @@ struct DataPrivacyView: View {
 	@ScaledMetric private var innerSpacing: CGFloat = 4
 
 	var body: some View {
-		ScrollView {
+		VerticalOnlyScrollView {
 			VStack(alignment: .leading, spacing: sectionSpacing) {
 				privacySummarySection
 
@@ -57,25 +57,26 @@ struct DataPrivacyView: View {
 			.padding(.vertical, cardPadding)
 		}
 		.background(Color(.systemGroupedBackground))
-		.customNavigationTitle("Data & Privacy")
+		// Large title, like the other Settings pages (About, Support, Send Feedback), so the section reads
+		// as a peer of those rather than a modal detail.
+		.navigationTitle("Data & Privacy")
 	}
 
+	/// Intro card. The page title already says "Data & Privacy", so the card carries the icon and the
+	/// explanation without repeating the heading.
 	private var privacySummarySection: some View {
-		VStack(alignment: .leading, spacing: rowSpacing) {
-			Label {
-				Text("Data & Privacy")
-					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-			} icon: {
-				Image(systemSymbol: .lockShield)
-					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-					.foregroundStyle(.accent)
-			}
+		HStack(alignment: .top, spacing: rowSpacing) {
+			Image(systemSymbol: .lockShield)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.foregroundStyle(.accent)
+				.accessibilityHidden(true)
 
 			Text("Your medication data stays under your control. Backup, export, import, and destructive actions are grouped here so review-sensitive choices are in one place.")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
 		}
+		.frame(maxWidth: .infinity, alignment: .leading)
 		.padding(cardPadding)
 		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
 		.accessibilityElement(children: .combine)

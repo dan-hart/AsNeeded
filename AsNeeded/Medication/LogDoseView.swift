@@ -24,17 +24,16 @@ struct LogDoseView: View {
     @State private var sideEffectsText: String = ""
     @State private var note: String = ""
     @State private var showingDatePicker = false
-    @State private var animateHeader = false
     @State private var selectedQuickOption: String? = "Now"
     @State private var isLogging = false
     private let logger = DHLogger(category: "DoseLogView")
     private let hapticsManager = HapticsManager.shared
 
-    @ScaledMetric private var iconSize: CGFloat = 80
-    @ScaledMetric private var iconShadowRadius: CGFloat = 12
-    @ScaledMetric private var iconShadowY: CGFloat = 6
+    @ScaledMetric private var iconSize: CGFloat = 52
+    @ScaledMetric private var iconShadowRadius: CGFloat = 8
+    @ScaledMetric private var iconShadowY: CGFloat = 3
     @ScaledMetric private var topPadding: CGFloat = 8
-    @ScaledMetric private var cardVerticalPadding: CGFloat = 20
+    @ScaledMetric private var cardVerticalPadding: CGFloat = 14
     @ScaledMetric private var cardCornerRadius: CGFloat = 20
     @ScaledMetric private var shadowRadius: CGFloat = 10
     @ScaledMetric private var shadowY: CGFloat = 4
@@ -155,8 +154,10 @@ struct LogDoseView: View {
 
     // MARK: - View Components
 
+    /// Compact header: the medication symbol beside its name rather than stacked above it, so the dose
+    /// controls sit higher and logging takes fewer scrolls. Same color, symbol and names as before.
     private var headerCard: some View {
-        VStack(spacing: quickButtonSpacing) {
+        HStack(spacing: quickButtonSpacing) {
             // Medication Icon
             ZStack {
                 Circle()
@@ -171,29 +172,30 @@ struct LogDoseView: View {
                     .shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
 
                 Image(systemName: medication.effectiveDisplaySymbol)
-                    .font(.largeTitle.weight(.semibold))
+                    .font(.title2.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.white)
-                    .symbolEffect(.pulse, options: .repeating.speed(0.5), value: animateHeader)
             }
-            .padding(.top, topPadding)
 
             // Medication Name
-            VStack(spacing: smallSpacing) {
+            VStack(alignment: .leading, spacing: smallSpacing) {
                 Text(medication.displayName)
-                    .font(.customFont(fontFamily, style: .title2, weight: .bold))
-                    .multilineTextAlignment(.center)
+                    .font(.customFont(fontFamily, style: .title3, weight: .bold))
+                    .multilineTextAlignment(.leading)
                     .noTruncate()
 
                 if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
                     Text(medication.clinicalName)
                         .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                 }
             }
+
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, cardVerticalPadding)
         .padding(.vertical, cardVerticalPadding)
         .background(
             RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
@@ -201,11 +203,6 @@ struct LogDoseView: View {
                 .shadow(color: Color.black.opacity(0.06), radius: shadowRadius, x: 0, y: shadowY)
         )
         .padding(.horizontal)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).delay(0.2)) {
-                animateHeader = true
-            }
-        }
     }
 
     private var doseSection: some View {

@@ -2,6 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsDisclaimersSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -13,8 +14,8 @@ struct SettingsDisclaimersSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Disclaimers")
-				.font(.title2)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			VStack(spacing: headerSpacing) {
 				// Medical Disclaimer
@@ -29,17 +30,16 @@ struct SettingsDisclaimersSectionView: View {
 
 						VStack(alignment: .leading, spacing: stackItemSpacing) {
 							Text("Medical Disclaimer")
-								.font(.body)
-								.fontWeight(.medium)
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 							Text("Important medical advice information")
-								.font(.caption)
+								.font(.customFont(fontFamily, style: .caption))
 								.foregroundColor(.secondary)
 						}
 
 						Spacer()
 
 						Image(systemSymbol: .chevronRight)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 					.padding(padding)
@@ -64,17 +64,16 @@ struct SettingsDisclaimersSectionView: View {
 
 						VStack(alignment: .leading, spacing: stackItemSpacing) {
 							Text("Medical Data Sources")
-								.font(.body)
-								.fontWeight(.medium)
+								.font(.customFont(fontFamily, style: .body, weight: .medium))
 							Text("NIH/NLM RxNorm database citations")
-								.font(.caption)
+								.font(.customFont(fontFamily, style: .caption))
 								.foregroundColor(.secondary)
 						}
 
 						Spacer()
 
 						Image(systemSymbol: .chevronRight)
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 					.padding(padding)
