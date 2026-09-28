@@ -51,7 +51,8 @@ cd AsNeeded
 # Add upstream remote
 git remote add upstream git@github.com:dan-hart/AsNeeded.git
 
-# Install security hooks (required)
+# Install security hooks (required). Hooks are per clone, so run this in every clone
+# or worktree you commit from; they are the first line of defense against committing a key.
 ./scripts/install-hooks.sh
 
 # Optional but recommended: install git-secrets for extra local scanning
@@ -110,6 +111,24 @@ Example test:
     #expect(nextAvailable.timeIntervalSince(lastDose) == 5 * 3600)
 }
 ```
+
+### Testing Tips and Subscriptions
+
+The Support screen uses RevenueCat. The maintainer's public SDK key is not in the repository, so a clean
+clone builds and runs with tipping reported as unavailable, and everything else works. To exercise purchases
+yourself, use your own RevenueCat project so nothing you do touches the maintainer's dashboard:
+
+1. Create a free [RevenueCat](https://www.revenuecat.com) project and add an iOS app to it.
+2. Add the six product identifiers from `RevenueCatManager.ProductIdentifier` to that app. They are the same
+   ones defined in `ANStoreKitConfig.storekit` at the repository root.
+3. Copy `Config/Secrets.example.xcconfig` to `Config/Secrets.xcconfig` (gitignored) and paste your project's
+   public SDK key.
+4. In Xcode, edit the AsNeeded scheme, open Run, then Options, and set StoreKit Configuration to
+   `ANStoreKitConfig.storekit`. Purchases then run against Xcode's local StoreKit test store and never charge
+   anything.
+
+`SecretManager` also reads `REVENUECAT_API_KEY` from the scheme's environment variables if you prefer that
+over the file.
 
 ### Architecture Guidelines
 

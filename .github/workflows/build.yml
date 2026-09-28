@@ -1,0 +1,75 @@
+# Clean clone build - proves the app builds from a fresh checkout with nothing configured.
+#
+# The RevenueCat public SDK key is never committed (see Config/Secrets.example.xcconfig). Pushes to this
+# repository can supply it through the REVENUECAT_API_KEY repository secret, which the job writes into the
+# gitignored Config/Secrets.xcconfig and then verifies reached the built Info.plist. Pull requests from
+# forks never receive secrets, so they exercise the keyless path, and the job verifies that too.
+
+name: Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  clean-clone-build:
+    name: Clean clone build (iOS Simulator)
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      SIMULATOR_DESTINATION: generic/platform=iOS Simulator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26.6
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+
+      - name: Write local secrets from the repository secret
+        env:
+          REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
+        run: |
+          if [ -n "$REVENUECAT_API_KEY" ]; then
+            printf 'REVENUECAT_API_KEY = %s\n' "$REVENUECAT_API_KEY" > Config/Secrets.xcconfig
+            echo "has_key=true" >> "$GITHUB_ENV"
+            echo "Repository RevenueCat key available; building with tipping enabled."
+          else
+            echo "has_key=false" >> "$GITHUB_ENV"
+            echo "No RevenueCat key available; building the keyless path a contributor sees."
+          fi
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -project AsNeeded.xcodeproj -scheme AsNeeded
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project AsNeeded.xcodeproj \
+            -scheme AsNeeded \
+            -configuration Debug \
+            -destination "$SIMULATOR_DESTINATION" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet
+
+      - name: Verify the RevenueCat key handling in the built app
+        run: |
+          APP=$(find build/DerivedData/Build/Products -maxdepth 2 -name AsNeeded.app | head -1)
+          test -n "$APP" || { echo "Built app not found"; exit 1; }
+          if [ "$has_key" = "true" ]; then
+            ./scripts/verify-release-key.sh "$APP"
+          else
+            ./scripts/verify-release-key.sh --expect-empty "$APP"
+          fi

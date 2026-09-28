@@ -10,3 +10,5 @@
 ^scripts/install-hooks\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
 ^scripts/scan-repo\.sh:[0-9]+:.*-----BEGIN\[A-Z \]\*PRIVATE KEY-----.*$
 ^scripts/utilities/asp-preflight\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
+^\.githooks/pre-commit:[0-9]+:[[:space:]]+'[^']*'[[:space:]]*(#.*)?$
+^scripts/install-hooks\.sh:[0-9]+:[[:space:]]+add_git_secrets_pattern '[^']*'$

@@ -21,6 +21,11 @@ If you discover any secrets accidentally committed to this repository, please re
 Per-build values such as the RevenueCat public SDK key belong in `Config/Secrets.xcconfig`, which is gitignored and
 read through `SecretManager`. A clean clone builds without it; see `Config/Secrets.example.xcconfig`.
 
+If a RevenueCat key ever lands in a public commit: create a new app-specific public API key in the RevenueCat
+dashboard (Project settings, API keys), put it in `Config/Secrets.xcconfig`, ship a build, then delete the old key.
+The public SDK key is extractable from any shipped build, so a leak is an annoyance rather than an incident, but
+rotating it stops forks from attaching their purchases to this project.
+
 ## App Security Properties
 
 AsNeeded is designed with privacy and security as core principles:
