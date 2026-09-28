@@ -28,10 +28,11 @@ fail() {
     exit 1
 }
 
-# A value counts as usable when it is non-empty and not an unexpanded $(BUILD_SETTING) placeholder.
+# A value counts as usable when it is non-empty, not an unexpanded $(BUILD_SETTING) placeholder, and not the
+# REPLACE_ placeholder from Config/Secrets.example.xcconfig.
 is_usable() {
     local value="$1"
-    [[ -n "$value" && "$value" != \$\(* ]]
+    [[ -n "$value" && "$value" != \$\(* && "$value" != REPLACE_* ]]
 }
 
 while [[ $# -gt 0 ]]; do
@@ -51,6 +52,9 @@ fi
 if [[ "$TARGET" == "--local" ]]; then
     [[ -f "$SECRETS_FILE" ]] || fail "$SECRETS_FILE not found. Copy Config/Secrets.example.xcconfig to it and add your RevenueCat public SDK key."
     VALUE=$(sed -nE 's/^[[:space:]]*REVENUECAT_API_KEY[[:space:]]*=[[:space:]]*(.*)$/\1/p' "$SECRETS_FILE" | tail -1 | sed -E 's|[[:space:]]*(//.*)?$||')
+    if [[ "$VALUE" == REPLACE_* ]]; then
+        fail "$SECRETS_FILE still has the REPLACE_ placeholder. Paste your RevenueCat public SDK key; archives from this checkout would ship without tipping."
+    fi
     is_usable "$VALUE" || fail "$SECRETS_FILE does not set REVENUECAT_API_KEY. Archives from this checkout would ship without tipping."
     echo "✅ $SECRETS_FILE sets REVENUECAT_API_KEY (${#VALUE} characters)."
     exit 0
@@ -93,5 +97,5 @@ if [[ "$EXPECT_EMPTY" == true ]]; then
     fail "$PLIST_KEY is set (${#VALUE} characters) but this build was expected to be keyless."
 fi
 
-is_usable "$VALUE" || fail "$PLIST_KEY is empty. This build ships without tipping. Create $SECRETS_FILE and rebuild."
+is_usable "$VALUE" || fail "$PLIST_KEY is empty or still the REPLACE_ placeholder. This build ships without tipping. Fill in $SECRETS_FILE and rebuild."
 echo "✅ $PLIST_KEY is set (${#VALUE} characters) in $(basename "$APP")."

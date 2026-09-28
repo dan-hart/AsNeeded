@@ -9,8 +9,9 @@ import Foundation
 /// 1. A process environment variable named after the key, which suits Xcode scheme environment variables.
 /// 2. The app's Info.plist, which `Config/AsNeeded.xcconfig` fills from the gitignored `Config/Secrets.xcconfig`.
 ///
-/// A value that is missing, blank, or still an unexpanded `$(...)` build-setting placeholder counts as absent, so a
-/// clean checkout with no secrets configured builds and runs with the dependent feature switched off.
+/// A value that is missing, blank, still an unexpanded `$(...)` build-setting placeholder, or still the `REPLACE_`
+/// placeholder from `Config/Secrets.example.xcconfig` counts as absent, so a clean checkout with no secrets
+/// configured builds and runs with the dependent feature switched off.
 struct SecretManager: Sendable {
 	// MARK: - Keys
 	/// Every value the app can read. The raw value is both the environment variable and the build-setting name.
@@ -75,12 +76,16 @@ struct SecretManager: Sendable {
 		return value
 	}
 
-	/// Trims whitespace and rejects blanks and unexpanded build-setting placeholders such as `$(REVENUECAT_API_KEY)`.
+	/// Prefix of the example file's placeholder value, which must never reach a live SDK.
+	static let placeholderPrefix = "REPLACE_"
+
+	/// Trims whitespace and rejects blanks, unexpanded build-setting placeholders such as `$(REVENUECAT_API_KEY)`,
+	/// and the example file's `REPLACE_` placeholder.
 	private static func usableValue(_ rawValue: String?) -> String? {
 		guard let trimmed = rawValue?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
 			return nil
 		}
-		guard !trimmed.hasPrefix("$(") else {
+		guard !trimmed.hasPrefix("$("), !trimmed.hasPrefix(placeholderPrefix) else {
 			return nil
 		}
 		return trimmed

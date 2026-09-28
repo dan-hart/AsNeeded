@@ -46,6 +46,15 @@ struct SecretManagerTests {
 		#expect(manager.secret(for: .revenueCatAPIKey) == nil)
 	}
 
+	@Test("The example file's REPLACE_ placeholder counts as missing everywhere")
+	func placeholderValuesAreMissing() {
+		let manager = SecretManager(
+			environment: ["REVENUECAT_API_KEY": "REPLACE_WITH_YOUR_REVENUECAT_PUBLIC_SDK_KEY"],
+			infoDictionary: ["RevenueCatAPIKey": " REPLACE_ME "]
+		)
+		#expect(manager.secret(for: .revenueCatAPIKey) == nil)
+	}
+
 	@Test("Non-string Info.plist entries are ignored")
 	func nonStringPlistValuesAreIgnored() {
 		let manager = SecretManager(environment: [:], infoDictionary: ["RevenueCatAPIKey": 42])
