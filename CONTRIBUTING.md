@@ -57,6 +57,9 @@ git remote add upstream git@github.com:dan-hart/AsNeeded.git
 # Optional but recommended: install git-secrets for extra local scanning
 brew install git-secrets
 
+# Optional: enable RevenueCat tipping locally. The app builds and runs without it.
+cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig   # gitignored; add your public SDK key
+
 # Create a feature branch
 git checkout -b feature/your-feature-name
 

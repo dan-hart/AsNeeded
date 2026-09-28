@@ -1,5 +1,5 @@
 {
-  "originHash" : "5ff67526c8a7f0749917b7d0158fb2167f00737c234d7e70e12022105e9551e9",
+  "originHash" : "63a7b8523abc57ee018bc7815e7c18bb185bc94052a289a5a0fc1f899856169e",
   "pins" : [
     {
       "identity" : "anmodelkit",
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "b75135996d38c93eda5d635949389006fc2e45ed",
         "version" : "1.0.0"
-      }
-    },
-    {
-      "identity" : "dhutilitykit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/dan-hart/DHUtilityKit",
-      "state" : {
-        "revision" : "d2e2c03d509ace79ffdec913626099fe57d9933e",
-        "version" : "1.0.4"
       }
     },
     {

@@ -18,6 +18,9 @@ This document outlines the security posture of **AsNeeded**, a privacy-first iOS
 
 If you discover any secrets accidentally committed to this repository, please report it immediately (see below).
 
+Per-build values such as the RevenueCat public SDK key belong in `Config/Secrets.xcconfig`, which is gitignored and
+read through `SecretManager`. A clean clone builds without it; see `Config/Secrets.example.xcconfig`.
+
 ## App Security Properties
 
 AsNeeded is designed with privacy and security as core principles:

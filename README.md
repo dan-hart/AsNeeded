@@ -75,11 +75,17 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
    - Go to Signing & Capabilities
    - Select your development team
 
-4. **Build and run**
+4. **Optional: enable tipping and subscriptions**
+   - The app builds and runs from a clean clone with no secrets. Without a key the Support screen reports that
+     tipping is unavailable.
+   - To exercise RevenueCat, copy `Config/Secrets.example.xcconfig` to `Config/Secrets.xcconfig` (gitignored) and
+     paste your RevenueCat public SDK key, or set `REVENUECAT_API_KEY` as an environment variable on the scheme.
+
+5. **Build and run**
    - Select target device/simulator (iOS 18+)
    - Press ⌘R or click the Run button
 
-5. **First launch**
+6. **First launch**
    - Add your first medication from the Home or Medications screen
    - Configure its typical dose and low-stock threshold (optional)
    - Log your first dose to see last-dose history and usage insights in action

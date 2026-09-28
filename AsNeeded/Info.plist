@@ -19,6 +19,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>RevenueCatAPIKey</key>
+	<string>$(REVENUECAT_API_KEY)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Resources/Fonts/AtkinsonHyperlegible-Regular.ttf</string>

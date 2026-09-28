@@ -62,16 +62,6 @@ final class PackageDependencyManager: Sendable {
                 isDirect: true
             ),
             PackageDependency(
-                id: "dhutilitykit",
-                name: "DHUtilityKit",
-                description: "Utility functions and extensions",
-                repositoryURL: URL(string: "https://github.com/dan-hart/DHUtilityKit")!,
-                versionInfo: .version("1.0.4"),
-                commitHash: "d2e2c03d509ace79ffdec913626099fe57d9933e",
-                license: .gpl3,
-                isDirect: true
-            ),
-            PackageDependency(
                 id: "purchases-ios",
                 name: "RevenueCat",
                 description: "In-app purchase and subscription management",
