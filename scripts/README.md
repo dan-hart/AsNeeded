@@ -154,9 +154,24 @@ Install gitleaks for best results: `brew install gitleaks`
 - Performance testing
 - Final QA builds
 
+**Guardrail:** runs `verify-release-key.sh --local` first and refuses to build when `Config/Secrets.xcconfig` carries no RevenueCat key, so a release cannot silently ship without tipping. Set `SKIP_REVENUECAT_KEY_CHECK=1` to build keyless on purpose.
+
 ```bash
 ./scripts/prod-build.sh
 ```
+
+### `verify-release-key.sh` - RevenueCat Key Guardrail 🔑
+
+**Purpose:** Confirm the RevenueCat public SDK key (never committed; see `Config/Secrets.example.xcconfig`) reached a build, or that the local secrets file carries one. Prints the key's length, never its value.
+
+```bash
+./scripts/verify-release-key.sh --local                          # before archiving
+./scripts/verify-release-key.sh path/to/AsNeeded.xcarchive        # after archiving
+./scripts/verify-release-key.sh path/to/AsNeeded.ipa              # before uploading
+./scripts/verify-release-key.sh --expect-empty path/to/AsNeeded.app   # keyless builds (forks, CI without the secret)
+```
+
+The Build workflow in `.github/workflows/build.yml` runs it on every clean-clone build.
 
 ### `clean-deriveddata.sh` - Intelligent Cleanup 🧹
 
@@ -237,12 +252,18 @@ Removes ALL DerivedData for all Xcode projects.
 
 ### Release Process
 ```bash
+# Make sure the RevenueCat key is in place (gitignored Config/Secrets.xcconfig)
+./scripts/verify-release-key.sh --local
+
 # Clean build for release
 ./scripts/prod-build.sh
 ./scripts/test-parallel.sh
 
 # Then archive in Xcode
 # Product → Archive
+
+# Confirm the archive carries the key before uploading
+./scripts/verify-release-key.sh path/to/AsNeeded.xcarchive
 ```
 
 ## 🔧 System Requirements

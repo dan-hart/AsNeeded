@@ -46,7 +46,7 @@ struct AppDependenciesView: View {
     }
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 headerSection
 

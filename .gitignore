@@ -63,6 +63,7 @@ worktrees/
 /.TranslateKit
 
 # Secrets and credentials
+Config/Secrets.xcconfig
 .env
 .env.*
 !.env.example

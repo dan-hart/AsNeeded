@@ -189,4 +189,56 @@ struct MedicationTrendsQuestionServiceTests {
 		#expect(TrendsQuestionServiceError.unavailable.errorDescription == "On-device questions are unavailable on this device.")
 		#expect(TrendsQuestionServiceError.disabled.errorDescription == "On-device questions are turned off in settings.")
 	}
+
+	@Test("Generation failure descriptions are plain sentences the user can act on")
+	func generationFailureDescriptionsArePlainLanguage() {
+		let failures: [TrendsQuestionGenerationFailure] = [
+			.tooMuchData, .modelNotReady, .declined, .unsupportedLanguage, .busy, .unexpectedResponse, .unknown,
+		]
+
+		for failure in failures {
+			let description = TrendsQuestionServiceError.generationFailed(failure).errorDescription ?? ""
+			#expect(description == failure.userMessage)
+			#expect(!description.isEmpty)
+			#expect(!description.contains("GenerationError"))
+			#expect(!description.contains("error -"))
+			#expect(description.hasSuffix("."))
+		}
+
+		#expect(
+			TrendsQuestionServiceError.generationFailed(.unknown).errorDescription ==
+				"The on-device model could not answer right now. Try again in a moment."
+		)
+	}
+
+	@Test("Unrecognized model errors become a generic generation failure")
+	func unrecognizedModelErrorsBecomeGenericFailure() {
+		struct OpaqueModelError: Error {}
+		let mapped = OnDeviceTrendsQuestionGenerator.userFacingError(for: OpaqueModelError())
+
+		#expect(mapped as? TrendsQuestionServiceError == .generationFailed(.unknown))
+		#expect(mapped.localizedDescription == TrendsQuestionGenerationFailure.unknown.userMessage)
+
+		let frameworkStyleError = NSError(
+			domain: "FoundationModels.LanguageModelSession.GenerationError",
+			code: -1,
+			userInfo: nil
+		)
+		let mappedFrameworkStyle = OnDeviceTrendsQuestionGenerator.userFacingError(for: frameworkStyleError)
+		#expect(mappedFrameworkStyle as? TrendsQuestionServiceError == .generationFailed(.unknown))
+	}
+
+	@Test("Cancellation and service errors pass through error mapping unchanged")
+	func cancellationAndServiceErrorsPassThrough() {
+		let cancellation = OnDeviceTrendsQuestionGenerator.userFacingError(for: CancellationError())
+		#expect(cancellation is CancellationError)
+
+		let disabled = OnDeviceTrendsQuestionGenerator.userFacingError(for: TrendsQuestionServiceError.disabled)
+		#expect(disabled as? TrendsQuestionServiceError == .disabled)
+
+		let declined = OnDeviceTrendsQuestionGenerator.userFacingError(
+			for: TrendsQuestionServiceError.generationFailed(.declined)
+		)
+		#expect(declined as? TrendsQuestionServiceError == .generationFailed(.declined))
+	}
 }

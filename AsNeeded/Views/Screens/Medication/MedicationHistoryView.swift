@@ -8,6 +8,18 @@ struct MedicationHistoryView: View {
     @EnvironmentObject private var navigationManager: NavigationManager
     @Environment(\.fontFamily) private var fontFamily
     @State private var logMedication: ANMedicationConcept?
+    @State private var showLogDosePicker = false
+    /// Medication chosen in the picker; the Log Dose sheet opens for it once the picker has dismissed.
+    @State private var pendingPickerMedication: ANMedicationConcept?
+    @State private var isLogButtonPressed = false
+    @State private var isLogButtonLongPressing = false
+    /// 0 to 1 while the Log Dose button is held; drives the ring that shows the quick log building up.
+    @State private var logButtonHoldProgress: Double = 0
+    /// Briefly true after a quick log succeeds so the button can pop.
+    @State private var isLogButtonCelebrating = false
+    @State private var showQuickLogHint = false
+    @AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showSupportToast = false
     @State private var showSupportView = false
     @State private var currentTime = Date()
@@ -43,6 +55,8 @@ struct MedicationHistoryView: View {
     @ScaledMetric private var datePickerSpacing: CGFloat = 20
     @ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
     @ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
+    @ScaledMetric private var holdRingLineWidth: CGFloat = 3
+    @ScaledMetric private var quickLogHintSpacing: CGFloat = 10
 
     let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
@@ -69,6 +83,9 @@ struct MedicationHistoryView: View {
                 ForEach(viewModel.groupedHistory, id: \.day) { group in
                     Section(header: sectionHeader(for: group)) {
                         ForEach(group.entries, id: \.id) { event in
+                            // Decode the note once per row; the codec parses structured reflections from JSON.
+                            let note = displayNote(for: event)
+                            let highlights = reflectionHighlights(for: event)
                             VStack(alignment: .leading, spacing: entrySpacing) {
                                 HStack(alignment: .center) {
                                     // Medication color indicator on the left side
@@ -140,7 +157,7 @@ struct MedicationHistoryView: View {
                                     Spacer()
 
                                     // Show add note button on trailing side if no note exists
-                                    if displayNote(for: event)?.isEmpty != false {
+                                    if note?.isEmpty != false {
                                         AddNoteButtonComponent(
                                             medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
                                             onTap: {
@@ -151,10 +168,10 @@ struct MedicationHistoryView: View {
                                     }
                                 }
 
-                                if !reflectionHighlights(for: event).isEmpty {
+                                if !highlights.isEmpty {
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: sectionHeaderSpacing) {
-                                            ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+                                            ForEach(highlights, id: \.self) { highlight in
                                                 Text(highlight)
                                                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                                     .foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
@@ -170,13 +187,13 @@ struct MedicationHistoryView: View {
                                 }
 
                                 // Show enhanced note display below if it exists
-                                if let note = displayNote(for: event), !note.isEmpty {
+                                if let note, !note.isEmpty {
                                     NoteDisplayCardComponent(
                                         noteText: note,
                                         medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
                                         onEdit: {
                                             editingEvent = event
-                                            editingNoteText = displayNote(for: event) ?? ""
+                                            editingNoteText = note
                                         }
                                     )
                                     .padding(.top, noteTopSpacing)
@@ -194,7 +211,7 @@ struct MedicationHistoryView: View {
                             }
                             .accessibilityAction(named: "Edit note") {
                                 editingEvent = event
-                                editingNoteText = displayNote(for: event) ?? ""
+                                editingNoteText = note ?? ""
                             }
                             .onTapGesture {
                                 editingEntryEvent = event
@@ -239,7 +256,7 @@ struct MedicationHistoryView: View {
     // MARK: - Section Header Helpers
 
     @ViewBuilder
-    private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
+    private func sectionHeader(for group: MedicationHistoryViewModel.DayGroup) -> some View {
         VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
             HStack {
                 Text(formatDateWithDayOfWeek(group.day))
@@ -260,9 +277,8 @@ struct MedicationHistoryView: View {
     }
 
     private func formatDateWithDayOfWeek(_ date: Date) -> String {
-        let dayFormatter = DateFormatter()
-        dayFormatter.dateFormat = "EEE" // Mon, Tue, Wed, etc.
-        let dayOfWeek = dayFormatter.string(from: date)
+        // Mon, Tue, Wed, etc. Uses the system's cached formatter instead of allocating one per header.
+        let dayOfWeek = date.formatted(.dateTime.weekday(.abbreviated))
 
         let dateString = date.formatted(date: .abbreviated, time: .omitted)
         return "\(dayOfWeek), \(dateString)"
@@ -383,6 +399,122 @@ struct MedicationHistoryView: View {
 
     // MARK: - Private Methods
 
+    /// Floating Log Dose control. Short press opens the Log Dose sheet; holding quick logs the default dose,
+    /// mirroring the row button on the Medication tab. While held, a ring draws around the capsule so the
+    /// hold is visible as it builds, and a successful quick log pops the button.
+    private func floatingLogButton(for medication: ANMedicationConcept) -> some View {
+        Label("Log Dose", systemSymbol: .plus)
+            .labelStyle(.titleAndIcon)
+            .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, fabPaddingH)
+            .padding(.vertical, fabPaddingV)
+            .background(
+                Capsule()
+                    .fill(medication.displayColor)
+                    .shadow(
+                        color: .black.opacity(0.3),
+                        radius: isLogButtonPressed ? fabShadowRadius / 2 : fabShadowRadius,
+                        x: 0,
+                        y: isLogButtonPressed ? 1 : 2
+                    )
+            )
+            .overlay(
+                // Hold progress ring: traces the capsule over the hold duration, then vanishes on release.
+                Capsule()
+                    .trim(from: 0, to: logButtonHoldProgress)
+                    .stroke(
+                        .white.opacity(0.95),
+                        style: StrokeStyle(lineWidth: holdRingLineWidth, lineCap: .round)
+                    )
+                    .opacity(logButtonHoldProgress > 0 ? 1 : 0)
+            )
+            .scaleEffect(logButtonScale)
+            .doseLogPressGesture(
+                isPressed: $isLogButtonPressed,
+                isLongPressing: $isLogButtonLongPressing,
+                holdProgress: $logButtonHoldProgress,
+                onTap: {
+                    logMedication = medication
+                },
+                onQuickLog: {
+                    await viewModel.quickLog(medication: medication)
+                },
+                onQuickLogSuccess: {
+                    celebrateQuickLog()
+                }
+            )
+            .accessibilityElement(children: .ignore)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Log dose for \(medication.displayName)")
+            .accessibilityHint("Tap to customize dose, hold to log default dose")
+            .accessibilityAction {
+                logMedication = medication
+            }
+            .accessibilityAction(named: "Quick log default dose") {
+                Task {
+                    _ = await viewModel.quickLog(medication: medication)
+                }
+            }
+    }
+
+    /// Medication-agnostic Log Dose button for the All view. Mirrors the Medication tab's: an accent capsule
+    /// in the same spot, opening the picker to choose which medication to log.
+    private var allMedicationsLogButton: some View {
+        Button {
+            HapticsManager.shared.mediumImpact()
+            showLogDosePicker = true
+        } label: {
+            Label("Log Dose", systemSymbol: .plus)
+                .labelStyle(.titleAndIcon)
+                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, fabPaddingH)
+                .padding(.vertical, fabPaddingV)
+                .background(
+                    Capsule()
+                        .fill(.accent)
+                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log a dose")
+        .accessibilityHint("Opens a list of your medications to choose which one to log")
+    }
+
+    private var logButtonScale: CGFloat {
+        if isLogButtonCelebrating {
+            return 1.08
+        }
+        return isLogButtonPressed || isLogButtonLongPressing ? 0.95 : 1.0
+    }
+
+    /// The user closed the pill: retire the hint for good and hide it.
+    private func dismissQuickLogHint() {
+        QuickLogHintPolicy.dismissForever()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            showQuickLogHint = false
+        }
+    }
+
+    /// Marks the gesture as discovered, retires the hint, and pops the button once (skipped under Reduce Motion).
+    private func celebrateQuickLog() {
+        hasDiscoveredQuickLog = true
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+            showQuickLogHint = false
+        }
+
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+            isLogButtonCelebrating = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                isLogButtonCelebrating = false
+            }
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -460,29 +592,26 @@ struct MedicationHistoryView: View {
                         }
                     }
 
-                    // Floating Action Button for Log Dose
-                    if viewModel.selectedMedication != nil && !viewModel.isShowingAllMedications {
-                        Button {
-                            if let med = viewModel.selectedMedication {
-                                logMedication = med
-                            }
-                        } label: {
-                            Label("Log Dose", systemSymbol: .plus)
-                                .labelStyle(.titleAndIcon)
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, fabPaddingH)
-                                .padding(.vertical, fabPaddingV)
-                                .background(
-                                    Capsule()
-                                        .fill(viewModel.selectedMedication?.displayColor ?? .accent)
-                                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
+                    // Floating Action Button for Log Dose: tap opens the sheet, hold quick logs the default dose
+                    if let selectedMedication = viewModel.selectedMedication, !viewModel.isShowingAllMedications {
+                        VStack(alignment: .trailing, spacing: quickLogHintSpacing) {
+                            if showQuickLogHint {
+                                QuickLogHintPill(
+                                    text: QuickLogHintPolicy.hintText(for: selectedMedication),
+                                    onDismiss: dismissQuickLogHint
                                 )
+                            }
+                            floatingLogButton(for: selectedMedication)
                         }
                         .padding(.trailing, fabTrailingPadding)
                         .padding(.bottom, fabBottomPadding)
-                        .accessibilityLabel("Log dose for selected medication")
+                        .quickLogHint(isPresented: $showQuickLogHint)
+                    } else if viewModel.isShowingAllMedications, !viewModel.medications.active.isEmpty {
+                        // Same medication-agnostic Log Dose button as the Medication tab: accent because it
+                        // asks which medication, then the picker takes over in medication colors.
+                        allMedicationsLogButton
+                            .padding(.trailing, fabTrailingPadding)
+                            .padding(.bottom, fabBottomPadding)
                     }
                 }
                 .navigationTitle("History")
@@ -547,33 +676,55 @@ struct MedicationHistoryView: View {
                     }
                     .dynamicDetent()
                 }
-                .sheet(item: $logMedication) { med in
-                    LogDoseView(medication: med, source: "history_sheet") { dose, event, _ in
-                        var updated = med
-                        if let quantity = updated.quantity, dose.amount > 0 {
-                            updated.quantity = max(0, quantity - dose.amount)
+                .sheet(isPresented: $showLogDosePicker, onDismiss: {
+                    // Present the Log Dose sheet only after the picker is fully gone, so the two never overlap.
+                    if let medication = pendingPickerMedication {
+                        pendingPickerMedication = nil
+                        logMedication = medication
+                    }
+                }) {
+                    LogDosePickerSheet(
+                        items: viewModel.logDosePickerItems,
+                        onSelect: { medication in
+                            pendingPickerMedication = medication
+                            showLogDosePicker = false
+                        },
+                        onQuickLog: { medication in
+                            await viewModel.quickLog(medication: medication)
+                        },
+                        onQuickLogSuccess: { _ in
+                            hasDiscoveredQuickLog = true
+                            showLogDosePicker = false
                         }
-
-                        do {
-                            try await DataStore.shared.updateMedication(updated)
-                            try await DataStore.shared.addEvent(event)
-                            logMedication = nil
-
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    showSupportToast = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        showSupportToast = false
-                                    }
-                                }
-                            }
-
-                            return true
-                        } catch {
+                    )
+                }
+                .sheet(item: $logMedication) { med in
+                    LogDoseView(medication: med, source: "history_sheet") { dose, event, operationID in
+                        // Sequential, compensating writes: if the event write fails the quantity is restored.
+                        let success = await viewModel.logDose(
+                            medication: med,
+                            dose: dose,
+                            event: event,
+                            operationID: operationID
+                        )
+                        guard success else {
                             return false
                         }
+
+                        logMedication = nil
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showSupportToast = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showSupportToast = false
+                                }
+                            }
+                        }
+
+                        return true
                     }
                 }
                 .sheet(item: $editingEvent) { event in
@@ -701,6 +852,26 @@ struct MedicationHistoryView: View {
             .onAppear {
                 // Ensure we have a valid medication selected
                 viewModel.ensureValidSelection()
+            }
+
+            // Quick Log Toast (long press on the floating Log Dose button)
+            if viewModel.showQuickLogToast {
+                QuickLogToastView(
+                    medicationName: viewModel.quickLogMedicationName,
+                    doseAmount: viewModel.quickLogDoseAmount,
+                    doseUnit: viewModel.quickLogDoseUnit,
+                    accentColor: viewModel.quickLogAccentColor,
+                    isVisible: viewModel.showQuickLogToast,
+                    feedback: viewModel.quickLogFeedback,
+                    onDismiss: {
+                        viewModel.dismissQuickLogToast()
+                    },
+                    onUndo: {
+                        Task {
+                            _ = await viewModel.undoLastQuickLog()
+                        }
+                    }
+                )
             }
 
             // Support toast positioned outside NavigationStack to avoid layout interference

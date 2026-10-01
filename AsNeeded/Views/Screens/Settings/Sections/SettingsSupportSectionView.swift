@@ -2,6 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsSupportSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -13,8 +14,8 @@ struct SettingsSupportSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Support")
-				.font(.title2)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			NavigationLink {
 				SupportView()
@@ -27,17 +28,16 @@ struct SettingsSupportSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Support As Needed")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Tips, donations, and ways to help")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

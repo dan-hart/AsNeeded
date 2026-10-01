@@ -13,7 +13,7 @@ struct MedicalDisclaimerDetailView: View {
     @ScaledMetric private var lineWidth: CGFloat = 1
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: mainSpacing) {
                 // Warning Section
                 VStack(alignment: .leading, spacing: sectionSpacing) {

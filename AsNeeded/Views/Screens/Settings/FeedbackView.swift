@@ -36,7 +36,7 @@ struct FeedbackView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
                     feedbackOverviewSection
 

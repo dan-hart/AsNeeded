@@ -2,6 +2,7 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsFeedbackSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@ScaledMetric private var itemSpacing: CGFloat = 16
 	@ScaledMetric private var headerSpacing: CGFloat = 12
 	@ScaledMetric private var stackItemSpacing: CGFloat = 2
@@ -13,8 +14,8 @@ struct SettingsFeedbackSectionView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Feedback")
-				.font(.title2)
-				.fontWeight(.semibold)
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
 			NavigationLink {
 				FeedbackView()
@@ -27,17 +28,16 @@ struct SettingsFeedbackSectionView: View {
 
 					VStack(alignment: .leading, spacing: stackItemSpacing) {
 						Text("Send Feedback")
-							.font(.body)
-							.fontWeight(.medium)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
 						Text("Report bugs, request features, or share ideas")
-							.font(.caption)
+							.font(.customFont(fontFamily, style: .caption))
 							.foregroundColor(.secondary)
 					}
 
 					Spacer()
 
 					Image(systemSymbol: .chevronRight)
-						.font(.caption)
+						.font(.customFont(fontFamily, style: .caption))
 						.foregroundColor(.secondary)
 				}
 				.padding(padding)

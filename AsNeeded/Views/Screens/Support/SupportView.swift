@@ -35,7 +35,7 @@ struct SupportView: View {
     @State private var webURL: URL?
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 headerSection
 

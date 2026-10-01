@@ -27,6 +27,12 @@ else
     USE_XCSIFT=true
 fi
 
+# Refuse to build a release that would ship without tipping.
+# Set SKIP_REVENUECAT_KEY_CHECK=1 to build a keyless release on purpose.
+if [ "${SKIP_REVENUECAT_KEY_CHECK:-0}" != "1" ]; then
+    ./scripts/verify-release-key.sh --local
+fi
+
 # Clean build folder first
 echo -e "${YELLOW}🧹 Cleaning build folder...${NC}"
 rm -rf build/

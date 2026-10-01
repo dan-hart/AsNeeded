@@ -9,6 +9,11 @@ struct MedicationListView: View {
     @Binding var navigationPath: NavigationPath
     @StateObject private var viewModel = MedicationListViewModel()
     @Environment(\.fontFamily) private var fontFamily
+    @AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
+    @State private var showLogDosePicker = false
+    /// Medication chosen in the picker; the Log Dose sheet opens for it once the picker has dismissed.
+    @State private var pendingPickerMedication: ANMedicationConcept?
+    @State private var showQuickLogHint = false
     private let hapticsManager = HapticsManager.shared
 
     @ScaledMetric private var emptyStateSpacing: CGFloat = 32
@@ -28,6 +33,13 @@ struct MedicationListView: View {
     @ScaledMetric private var listRowBottomPadding: CGFloat = 8
     @ScaledMetric private var listRowTrailingPadding: CGFloat = 12
     @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
+    @ScaledMetric private var fabPaddingH: CGFloat = 24
+    @ScaledMetric private var fabPaddingV: CGFloat = 16
+    @ScaledMetric private var fabTrailingPadding: CGFloat = 20
+    @ScaledMetric private var fabBottomPadding: CGFloat = 20
+    @ScaledMetric private var fabShadowRadius: CGFloat = 4
+    /// Extra scroll room so the last row is never hidden behind the floating Log Dose button.
+    @ScaledMetric private var listBottomClearance: CGFloat = 88
 
     var body: some View {
         mainContent
@@ -97,6 +109,28 @@ struct MedicationListView: View {
                             }
                         },
                         onCancel: { viewModel.showAddSheet = false }
+                    )
+                }
+                .sheet(isPresented: $showLogDosePicker, onDismiss: {
+                    // Present the Log Dose sheet only after the picker is fully gone, so the two never overlap.
+                    if let medication = pendingPickerMedication {
+                        pendingPickerMedication = nil
+                        viewModel.logMedication = medication
+                    }
+                }) {
+                    LogDosePickerSheet(
+                        items: viewModel.logDosePickerItems,
+                        onSelect: { medication in
+                            pendingPickerMedication = medication
+                            showLogDosePicker = false
+                        },
+                        onQuickLog: { medication in
+                            await viewModel.quickLog(medication: medication)
+                        },
+                        onQuickLogSuccess: { _ in
+                            retireQuickLogHint()
+                            showLogDosePicker = false
+                        }
                     )
                 }
                 .sheet(item: $viewModel.logMedication) { med in
@@ -245,77 +279,164 @@ struct MedicationListView: View {
 
     @ViewBuilder
     private var medicationListContent: some View {
+        ZStack(alignment: .bottomTrailing) {
+            medicationList
+
+            if viewModel.editMode == .inactive {
+                logDoseButton
+                    .padding(.trailing, fabTrailingPadding)
+                    .padding(.bottom, fabBottomPadding)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.editMode)
+        .quickLogHint(isPresented: $showQuickLogHint)
+    }
+
+    /// Medication-agnostic Log Dose button. It is app-accent rather than any medication's color because it
+    /// asks "which medication?"; color switches to the chosen medication inside the picker. Same size and
+    /// position as the History tab's button so the two tabs feel alike.
+    private var logDoseButton: some View {
+        Button {
+            hapticsManager.mediumImpact()
+            showLogDosePicker = true
+        } label: {
+            Label("Log Dose", systemSymbol: .plus)
+                .labelStyle(.titleAndIcon)
+                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, fabPaddingH)
+                .padding(.vertical, fabPaddingV)
+                .background(
+                    Capsule()
+                        .fill(.accent)
+                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log a dose")
+        .accessibilityHint("Opens a list of your medications to choose which one to log")
+    }
+
+    /// Marks the hold as learned and hides the hint on this tab.
+    private func retireQuickLogHint() {
+        hasDiscoveredQuickLog = true
+        withAnimation(.easeOut(duration: 0.25)) {
+            showQuickLogHint = false
+        }
+    }
+
+    /// The medication whose LOG button carries the "Hold to log …" pill while the hint is up: the first
+    /// one, so it is on screen.
+    private var quickLogHintMedication: ANMedicationConcept? {
+        showQuickLogHint ? viewModel.sortedMedications.first : nil
+    }
+
+    private var quickLogHintMedicationID: UUID? {
+        quickLogHintMedication?.id
+    }
+
+    /// The user closed the pill: retire the hint for good and hide it.
+    private func dismissQuickLogHint() {
+        QuickLogHintPolicy.dismissForever()
+        withAnimation(.easeOut(duration: 0.2)) {
+            showQuickLogHint = false
+        }
+    }
+
+    @ViewBuilder
+    private var medicationList: some View {
         VStack(spacing: 0) {
             List {
                 ForEach(viewModel.sortedMedications, id: \.id) { med in
-                    HStack {
-                        MedicationRowComponent(
-                            medication: med,
-                            statusSummary: viewModel.statusSummary(for: med),
-                            onLogTapped: {
-                                viewModel.logMedication = med
-                            },
-                            onQuickLog: {
-                                await viewModel.quickLog(medication: med)
-                            },
-                            onQuickLogSuccess: {
-                                // Handled by view model
-                            },
-                            onAppearanceChanged: { newColorHex, newSymbol in
-                                Task {
-                                    var updatedMed = med
-                                    updatedMed.displayColorHex = newColorHex
-                                    updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
-                                    _ = await viewModel.update(updatedMed)
-                                }
-                            }
-                        )
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if viewModel.editMode == .inactive {
-                            navigationPath.append(med)
-                        }
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: viewModel.editMode == .inactive) {
-                        if viewModel.editMode == .inactive {
-                            Button {
-                                hapticsManager.lightImpact()
-                                viewModel.editMedication = med
-                            } label: {
-                                Label("Edit", systemSymbol: .pencil)
-                            }
-                            .tint(.accent)
-                            .accessibilityLabel("Edit \(med.displayName)")
-                            .accessibilityHint("Opens edit form for this medication")
-
-                            Button(role: .destructive) {
-                                hapticsManager.mediumImpact()
-                                viewModel.pendingDelete = med
-                            } label: {
-                                Label("Delete", systemSymbol: .trash)
-                            }
-                            .tint(.red)
-                            .accessibilityLabel("Delete \(med.displayName)")
-                            .accessibilityHint("Removes this medication permanently")
-                        }
-                    }
-                    .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: listRowLeadingPadding, bottom: listRowBottomPadding, trailing: listRowTrailingPadding))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+                    medicationRow(for: med)
                 }
                 .onMove(perform: viewModel.moveMedications)
                 .onDelete(perform: viewModel.deleteMedications)
+
+                // Scrolls with the rows so the floating Log Dose button never covers it.
+                SupportSuggestionView()
+                    .padding(.bottom, supportViewBottomPadding)
+                    .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .moveDisabled(true)
+                    .deleteDisabled(true)
             }
             .listStyle(.plain)
+            .contentMargins(.bottom, listBottomClearance, for: .scrollContent)
+            .quickLogHintOverlay(
+                isPresented: showQuickLogHint && quickLogHintMedication != nil,
+                text: quickLogHintMedication.map { QuickLogHintPolicy.hintText(for: $0) } ?? "",
+                onDismiss: dismissQuickLogHint
+            )
             .environment(\.editMode, $viewModel.editMode)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
-
-            SupportSuggestionView()
-                .padding(.bottom, supportViewBottomPadding)
-                .background(Color(.systemGroupedBackground))
         }
+    }
+
+    /// One list row: the medication card with its tap-to-detail gesture, swipe actions and row styling.
+    /// Kept separate from the List so the type checker handles each expression on its own.
+    @ViewBuilder
+    private func medicationRow(for med: ANMedicationConcept) -> some View {
+        HStack {
+            MedicationRowComponent(
+                medication: med,
+                statusSummary: viewModel.statusSummary(for: med),
+                onLogTapped: {
+                    viewModel.logMedication = med
+                },
+                onQuickLog: {
+                    await viewModel.quickLog(medication: med)
+                },
+                onQuickLogSuccess: {
+                    // Toast is handled by the view model; the hint retires once the hold is learned.
+                    retireQuickLogHint()
+                },
+                onAppearanceChanged: { newColorHex, newSymbol in
+                    Task {
+                        var updatedMed = med
+                        updatedMed.displayColorHex = newColorHex
+                        updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
+                        _ = await viewModel.update(updatedMed)
+                    }
+                },
+                showsQuickLogHint: med.id == quickLogHintMedicationID
+            )
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if viewModel.editMode == .inactive {
+                navigationPath.append(med)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: viewModel.editMode == .inactive) {
+            if viewModel.editMode == .inactive {
+                Button {
+                    hapticsManager.lightImpact()
+                    viewModel.editMedication = med
+                } label: {
+                    Label("Edit", systemSymbol: .pencil)
+                }
+                .tint(.accent)
+                .accessibilityLabel("Edit \(med.displayName)")
+                .accessibilityHint("Opens edit form for this medication")
+
+                Button(role: .destructive) {
+                    hapticsManager.mediumImpact()
+                    viewModel.pendingDelete = med
+                } label: {
+                    Label("Delete", systemSymbol: .trash)
+                }
+                .tint(.red)
+                .accessibilityLabel("Delete \(med.displayName)")
+                .accessibilityHint("Removes this medication permanently")
+            }
+        }
+        .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: listRowLeadingPadding, bottom: listRowBottomPadding, trailing: listRowTrailingPadding))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
     }
 
     @ViewBuilder

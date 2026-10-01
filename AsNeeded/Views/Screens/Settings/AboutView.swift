@@ -36,7 +36,7 @@ struct AboutView: View {
     private var kevinWangURL: URL? { URL(string: "https://www.linkedin.com/in/kevinwywang/") }
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 heroSection
 
