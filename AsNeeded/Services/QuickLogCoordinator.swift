@@ -69,8 +69,8 @@ final class QuickLogCoordinator: ObservableObject {
 	private let hapticsManager = HapticsManager.shared
 	private let feedbackService = QuickLogFeedbackService()
 	private let scheduleToastDismissal: QuickLogToastDismissalScheduler
-	/// Quantity removed by the most recent successful quick log; nil once undone.
-	private var lastQuickLogQuantityDelta: Double?
+	/// Quantity removed by the quick log represented by the visible toast.
+	private var quickLogToastQuantityDelta: Double?
 	private let persistence: QuickLogPersistence
 	private let undoPersistence: QuickLogUndoPersistence
 	private let acknowledgeDeliveredReminders: @MainActor (UUID) async -> Void
@@ -227,7 +227,6 @@ final class QuickLogCoordinator: ObservableObject {
 			return false
 		}
 
-		lastQuickLogQuantityDelta = appliedQuantityDelta
 		await acknowledgeDeliveredReminders(medication.id)
 		hapticsManager.doseLogged()
 		let feedback = feedbackService.feedback(
@@ -235,7 +234,7 @@ final class QuickLogCoordinator: ObservableObject {
 			dose: dose,
 			loggedEvent: event
 		)
-		presentToast(medication: medication, dose: dose, feedback: feedback)
+		presentToast(medication: medication, dose: dose, feedback: feedback, quantityDelta: appliedQuantityDelta)
 		logger.logDoseOperation(
 			"Succeeded",
 			source: source,
@@ -314,7 +313,7 @@ final class QuickLogCoordinator: ObservableObject {
 			var updated = medication
 			if let quantity = updated.quantity {
 				// Restore what the log removed, not the nominal dose, so a clamped log undoes cleanly.
-				updated.quantity = quantity + (lastQuickLogQuantityDelta ?? dose.amount)
+				updated.quantity = quantity + (quickLogToastQuantityDelta ?? dose.amount)
 			}
 			restoredMedication = updated
 		}
@@ -324,7 +323,6 @@ final class QuickLogCoordinator: ObservableObject {
 			return false
 		}
 
-		lastQuickLogQuantityDelta = nil
 		dismissQuickLogToast(generation: toastGeneration)
 		return true
 	}
@@ -334,7 +332,8 @@ final class QuickLogCoordinator: ObservableObject {
 	func presentToast(
 		medication: ANMedicationConcept,
 		dose: ANDoseConcept,
-		feedback: QuickLogFeedbackService.Feedback? = nil
+		feedback: QuickLogFeedbackService.Feedback? = nil,
+		quantityDelta: Double? = nil
 	) {
 		let generation = UUID()
 		quickLogMedicationName = medication.displayName
@@ -342,6 +341,8 @@ final class QuickLogCoordinator: ObservableObject {
 		quickLogDoseUnit = dose.unit.abbreviation
 		quickLogAccentColor = medication.displayColor
 		quickLogFeedback = feedback
+		// Publish the undo amount with its toast, after all suspension points in the log.
+		quickLogToastQuantityDelta = quantityDelta
 		quickLogToastGeneration = generation
 
 		withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -367,6 +368,7 @@ final class QuickLogCoordinator: ObservableObject {
 		}
 
 		quickLogToastGeneration = nil
+		quickLogToastQuantityDelta = nil
 		quickLogFeedback = nil
 		withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
 			showQuickLogToast = false

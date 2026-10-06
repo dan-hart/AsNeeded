@@ -128,7 +128,7 @@ struct QuickLogCoordinatorTests {
 	}
 
 	@Test("Quick log skips the event write when the medication update fails")
-	func quickLogSkipsEventWriteWhenMedicationUpdateFails() async throws {
+	func quickLogSkipsEventOnUpdateFailure() async throws {
 		let dataStore = try await makeDataStore("QuickLogUpdateFailure")
 		let medication = makeMedication(name: "Update Failure Med")
 		try await dataStore.addMedication(medication)
@@ -219,6 +219,128 @@ struct QuickLogCoordinatorTests {
 		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
 		#expect(coordinator.quickLogFeedback?.undoEventID == loggedEventID)
 		#expect(coordinator.showQuickLogToast, "Toast stays so the user can retry the undo")
+	}
+
+	// MARK: - Undo Concurrency
+	@MainActor
+	private final class SuspensionGate {
+		private var entered = false
+		private var entryWaiter: CheckedContinuation<Void, Never>?
+		private var releaseWaiter: CheckedContinuation<Void, Never>?
+
+		func suspend() async {
+			await withCheckedContinuation { continuation in
+				releaseWaiter = continuation
+				entered = true
+				entryWaiter?.resume()
+				entryWaiter = nil
+			}
+		}
+
+		func waitUntilEntered() async {
+			if entered { return }
+			await withCheckedContinuation { entryWaiter = $0 }
+		}
+
+		func release() {
+			releaseWaiter?.resume()
+			releaseWaiter = nil
+		}
+	}
+
+	@Test("Undo of the visible toast keeps its delta while a later log awaits acknowledgement")
+	func undoVisibleToastDuringAcknowledgement() async throws {
+		let dataStore = try await makeDataStore("UndoDuringAcknowledgement")
+		let first = makeMedication(name: "Synthetic A", quantity: 3)
+		let second = makeMedication(name: "Synthetic B", quantity: 7)
+		try await dataStore.addMedication(first)
+		try await dataStore.addMedication(second)
+		let gate = SuspensionGate()
+		let coordinator = QuickLogCoordinator(
+			dataStore: dataStore,
+			scheduleToastDismissal: TestToastScheduler().schedule,
+			acknowledgeDeliveredReminders: { id in
+				if id == second.id { await gate.suspend() }
+			}
+		)
+		#expect(await coordinator.quickLog(medication: first))
+		let firstEventID = coordinator.quickLogFeedback?.undoEventID
+		let laterLog = Task { await coordinator.quickLog(medication: second) }
+		await gate.waitUntilEntered()
+		#expect(coordinator.quickLogFeedback?.undoEventID == firstEventID)
+		#expect(await coordinator.undoLastQuickLog())
+		gate.release()
+		#expect(await laterLog.value)
+
+		#expect(dataStore.medications.first { $0.id == first.id }?.quantity == 3)
+		#expect(dataStore.events.allSatisfy { $0.id != firstEventID })
+		#expect(await coordinator.undoLastQuickLog())
+		#expect(dataStore.medications.first { $0.id == second.id }?.quantity == 7)
+		#expect(dataStore.events.isEmpty)
+	}
+
+	@Test("Completing an older undo preserves the replacement toast's clamped delta")
+	func olderUndoPreservesReplacementDelta() async throws {
+		let dataStore = try await makeDataStore("UndoReplacement")
+		let first = makeMedication(name: "Synthetic A", quantity: 3)
+		let second = makeMedication(name: "Synthetic B", quantity: 7)
+		try await dataStore.addMedication(first)
+		try await dataStore.addMedication(second)
+		let gate = SuspensionGate()
+		let persistUndo = QuickLogCoordinator.makeQuickLogUndoPersistence(writes: .live(dataStore: dataStore))
+		let coordinator = QuickLogCoordinator(
+			dataStore: dataStore,
+			scheduleToastDismissal: TestToastScheduler().schedule,
+			undoPersistence: { event, restored in
+				if event.medication?.id == first.id { await gate.suspend() }
+				return await persistUndo(event, restored)
+			},
+			acknowledgeDeliveredReminders: { _ in }
+		)
+		#expect(await coordinator.quickLog(medication: first))
+		let olderUndo = Task { await coordinator.undoLastQuickLog() }
+		await gate.waitUntilEntered()
+		#expect(await coordinator.quickLog(medication: second))
+		let replacementGeneration = coordinator.quickLogToastGeneration
+		let replacementEventID = coordinator.quickLogFeedback?.undoEventID
+		gate.release()
+		#expect(await olderUndo.value)
+
+		#expect(coordinator.showQuickLogToast)
+		#expect(coordinator.quickLogToastGeneration == replacementGeneration)
+		#expect(coordinator.quickLogFeedback?.undoEventID == replacementEventID)
+		#expect(await coordinator.undoLastQuickLog())
+		#expect(dataStore.medications.first { $0.id == first.id }?.quantity == 3)
+		#expect(dataStore.medications.first { $0.id == second.id }?.quantity == 7)
+		#expect(dataStore.events.isEmpty)
+	}
+
+	@Test("Out-of-order reminder acknowledgements keep each toast's own undo delta")
+	func outOfOrderAcknowledgementsKeepOwnDelta() async throws {
+		let dataStore = try await makeDataStore("OutOfOrderAcknowledgements")
+		let first = makeMedication(name: "Synthetic A", quantity: 3)
+		let second = makeMedication(name: "Synthetic B", quantity: 7)
+		try await dataStore.addMedication(first)
+		try await dataStore.addMedication(second)
+		let gate = SuspensionGate()
+		let coordinator = QuickLogCoordinator(
+			dataStore: dataStore,
+			scheduleToastDismissal: TestToastScheduler().schedule,
+			acknowledgeDeliveredReminders: { id in
+				if id == first.id { await gate.suspend() }
+			}
+		)
+		let firstLog = Task { await coordinator.quickLog(medication: first) }
+		await gate.waitUntilEntered()
+		#expect(await coordinator.quickLog(medication: second))
+		gate.release()
+		#expect(await firstLog.value)
+		#expect(coordinator.quickLogMedicationName == first.displayName)
+		#expect(await coordinator.undoLastQuickLog())
+		#expect(dataStore.medications.first { $0.id == first.id }?.quantity == 3)
+		#expect(dataStore.medications.first { $0.id == second.id }?.quantity == 0)
+		#expect(dataStore.events.count == 1)
+		#expect(dataStore.events.first?.medication?.id == second.id)
 	}
 
 	// MARK: - Sheet Log
