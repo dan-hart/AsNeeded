@@ -77,11 +77,9 @@ struct MedicationListView: View {
                     MedicationEditView(
                         medication: med,
                         onSave: { updated in
-                            Task {
-                                if await viewModel.update(updated) {
-                                    viewModel.editMedication = nil
-                                }
-                            }
+							let saved = await viewModel.update(updated)
+							if saved { viewModel.editMedication = nil }
+							return saved
                         },
                         onCancel: { viewModel.editMedication = nil }
                     )
@@ -90,11 +88,9 @@ struct MedicationListView: View {
                     MedicationEditView(
                         medication: nil,
                         onSave: { newMed in
-                            Task {
-                                if await viewModel.add(newMed) {
-                                    viewModel.showAddSheet = false
-                                }
-                            }
+							let saved = await viewModel.add(newMed)
+							if saved { viewModel.showAddSheet = false }
+							return saved
                         },
                         onCancel: { viewModel.showAddSheet = false }
                     )

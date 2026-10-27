@@ -584,3 +584,23 @@ Boutique's `SQLiteStorageEngine` automatically:
 **Last Updated**: December 3, 2025
 **Maintained By**: Development Team
 **Review Frequency**: After any storage-related changes
+
+## 1.2.0 Optional Medication Dose Limits (October 2026)
+
+`ANMedicationConcept` now optionally encodes `minimumHoursBetweenDoses`,
+`maximumDailyDoseAmount` (quantity in `prescribedUnit`, rolling 24 hours), and
+`nextDoseNotificationEnabled`. Missing keys decode to nil; old medication and
+event records remain readable. Database paths, filenames and containers are unchanged.
+
+`MedicationDoseLimitMigration` copies legacy safety-profile timing/quantity values
+only into absent model fields, persists the medication first, then clears only
+those two legacy values. Remaining guardrails are preserved. Failed persistence
+keeps legacy values for retry. Once cleared, a later deliberate removal of a
+model limit stays removed across restarts. Restore/import is checked again during
+availability reconciliation. Existing installs never opt in automatically.
+
+Regression tests cover fresh/model-only/legacy/both states, retry on write failure,
+repeated execution, and deliberate removal. Beta testing must verify an upgrade,
+multiple launches, backup/restore, watch sync and notification delivery on a physical
+device before a public release. Downgrade readers ignore optional model keys;
+old versions will not enforce new model-only limits.

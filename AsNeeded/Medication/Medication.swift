@@ -105,7 +105,7 @@ extension ANEventConcept {
                 clinicalName: "Ibuprofen",
                 nickname: "Ibuprofen"
             ),
-            onSave: { _ in },
+            onSave: { _ in true },
             onCancel: {}
         )
     }

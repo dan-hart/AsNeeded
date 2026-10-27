@@ -50,7 +50,8 @@ struct MedicationStatusSummaryServiceTests {
 
 		#expect(summary.timingText.contains("Last taken"))
 		#expect(summary.timingText.contains("10:00"))
-		#expect(summary.nextWindowText == "Next saved window 2:00 PM")
+		#expect(summary.nextWindowText?.contains("Next saved window") == true)
+		#expect(summary.nextWindowText?.contains("2:00 PM") == true)
 		#expect(summary.severity == .warning)
 		#expect(summary.badgeText == "Review")
 	}
@@ -86,6 +87,6 @@ struct MedicationStatusSummaryServiceTests {
 
 		#expect(summary.accessibilityLabel.contains("Pain Relief"))
 		#expect(summary.accessibilityLabel.contains("No doses logged yet"))
-		#expect(summary.accessibilityLabel.contains("No saved guardrails"))
+		#expect(summary.accessibilityLabel.contains("No dose limits saved"))
 	}
 }

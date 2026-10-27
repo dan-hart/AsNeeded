@@ -73,6 +73,16 @@ struct MedicationLiveActivityStateBuilderTests {
 		)
 	}
 
+	@Test("Unknown availability never claims a dose is available")
+	func unknownAvailabilityIsExplicit() {
+		let snapshot = MedicationLiveActivityStateBuilder().snapshot(
+			medications: [medication(name: "Medication")], events: [], safetyProfiles: [:]
+		)
+		#expect(snapshot?.canTakeNow == false)
+		#expect(snapshot?.statusText != "Available now")
+		#expect(snapshot?.nextDoseDate == nil)
+	}
+
 	@Test("Snapshot is nil when there are no active medications")
 	func snapshotIsNilWithoutMedications() {
 		let builder = MedicationLiveActivityStateBuilder()
@@ -89,7 +99,8 @@ struct MedicationLiveActivityStateBuilderTests {
 	@Test("Snapshot prefers a medication that can be taken now")
 	func snapshotPrefersAvailableMedication() {
 		let builder = MedicationLiveActivityStateBuilder()
-		let availableMedication = medication(name: "Ibuprofen", quantity: 4)
+		var availableMedication = medication(name: "Ibuprofen", quantity: 4)
+		availableMedication.minimumHoursBetweenDoses = 4
 		let delayedMedication = medication(name: "Naproxen", quantity: 12)
 		let profiles = [
 			delayedMedication.id.uuidString: MedicationSafetyProfile(
@@ -103,13 +114,13 @@ struct MedicationLiveActivityStateBuilderTests {
 
 		let snapshot = builder.snapshot(
 			medications: [delayedMedication, availableMedication],
-			events: [event(for: delayedMedication, hoursAgo: 1)],
+			events: [event(for: delayedMedication, hoursAgo: 1), event(for: availableMedication, hoursAgo: 5)],
 			safetyProfiles: profiles
 		)
 
 		#expect(snapshot?.medicationID == availableMedication.id.uuidString)
 		#expect(snapshot?.canTakeNow == true)
-		#expect(snapshot?.statusText == "Available now")
+		#expect(snapshot?.statusText == "Saved limits met")
 		#expect(snapshot?.lowStock == true)
 		#expect(snapshot?.detailText.contains("Low stock") == true)
 	}
@@ -129,7 +140,7 @@ struct MedicationLiveActivityStateBuilderTests {
 		)
 
 		#expect(snapshot?.canTakeNow == false)
-		#expect(snapshot?.statusText.contains("Next dose") == true)
+		#expect(snapshot?.statusText.contains("Next saved window") == true)
 		#expect(snapshot?.detailText.isEmpty == false)
 	}
 

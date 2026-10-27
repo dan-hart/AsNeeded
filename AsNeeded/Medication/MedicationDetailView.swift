@@ -109,11 +109,12 @@ struct MedicationDetailView: View {
             MedicationEditView(
                 medication: medication,
                 onSave: { updatedMedication in
-                    Task {
-                        await viewModel.save(updated: updatedMedication)
-                        medication = updatedMedication
-                    }
-                    showEditSheet = false
+					let saved = await viewModel.save(updated: updatedMedication)
+					if saved {
+						medication = updatedMedication
+						showEditSheet = false
+					}
+					return saved
                 },
                 onCancel: {
                     showEditSheet = false
@@ -211,7 +212,9 @@ struct MedicationDetailView: View {
 
     private var detailsCardsSection: some View {
         VStack(spacing: cardSpacing) {
-            confidenceCard
+			TimelineView(.periodic(from: .now, by: 1)) { context in
+				confidenceCard(at: context.date)
+			}
 
             medicationInfoCard
 
@@ -229,16 +232,17 @@ struct MedicationDetailView: View {
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }
 
-    private var confidenceSummary: MedicationStatusSummaryService.Summary {
+    private func confidenceSummary(at date: Date) -> MedicationStatusSummaryService.Summary {
         statusSummaryService.summary(
-            for: medication,
+            for: DataStore.shared.medications.first(where: { $0.id == medicationId }) ?? medication,
+			at: date,
             events: DataStore.shared.events,
             profile: safetyProfileStore.profile(for: medication.id)
         )
     }
 
-    private var confidenceCard: some View {
-        let summary = confidenceSummary
+    private func confidenceCard(at date: Date) -> some View {
+        let summary = confidenceSummary(at: date)
 
         return VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack(alignment: .top, spacing: rowSpacing) {
@@ -248,7 +252,7 @@ struct MedicationDetailView: View {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Confidence Check")
+                    Text("Saved Dose Limits")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
 
@@ -275,6 +279,17 @@ struct MedicationDetailView: View {
             VStack(alignment: .leading, spacing: detailSpacing) {
                 confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
 
+				if let hours = medication.minimumHoursBetweenDoses {
+					confidenceRow(icon: .clock, text: "Minimum interval: \(hours.formattedAmount) hours", color: .secondary)
+				} else {
+					confidenceRow(icon: .clock, text: "No minimum interval saved", color: .secondary)
+				}
+				if let maximum = medication.maximumDailyDoseAmount {
+					confidenceRow(icon: .chartLineUptrendXyaxis, text: "Maximum in rolling 24 hours: \(maximum.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit missing)")", color: .secondary)
+				} else {
+					confidenceRow(icon: .chartLineUptrendXyaxis, text: "No maximum amount in 24 hours saved", color: .secondary)
+				}
+
                 if let nextWindowText = summary.nextWindowText {
                     confidenceRow(icon: .calendarBadgeClock, text: nextWindowText, color: summaryColor(for: summary.severity))
                 }
@@ -284,13 +299,17 @@ struct MedicationDetailView: View {
                 }
 
                 confidenceRow(icon: .shippingboxFill, text: summary.refillText, color: .secondary)
+				Text("Based only on your saved limits and logged doses. Follow your prescription and care instructions.")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
+					.fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(adaptiveCardPadding)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(summary.accessibilityLabel)
+        .accessibilityLabel([summary.accessibilityLabel, medication.minimumHoursBetweenDoses.map { "Minimum interval: \($0.formattedAmount) hours" } ?? "No minimum interval saved", medication.maximumDailyDoseAmount.map { "Maximum in rolling 24 hours: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "unit missing")" } ?? "No maximum amount in 24 hours saved", "Follow your prescription and care instructions."].joined(separator: ". "))
     }
 
     @ToolbarContentBuilder

@@ -27,7 +27,10 @@ struct QuickDateButton: ButtonStyle {
 
 struct MedicationEditView: View {
     @StateObject private var viewModel: MedicationEditViewModel
+	@ObservedObject private var notificationManager = NotificationManager.shared
+	@Environment(\.scenePhase) private var scenePhase
     @State private var showingDatePicker = false
+	@State private var isSaving = false
     @State private var datePickerType: DatePickerType = .lastRefill
     @State private var showingAppearancePicker = false
     @FocusState private var focusedField: Field?
@@ -80,12 +83,12 @@ struct MedicationEditView: View {
     }
 
     let medication: ANMedicationConcept?
-    let onSave: (ANMedicationConcept) -> Void
+    let onSave: (ANMedicationConcept) async -> Bool
     let onCancel: () -> Void
 
     init(
         medication: ANMedicationConcept?,
-        onSave: @escaping (ANMedicationConcept) -> Void,
+        onSave: @escaping (ANMedicationConcept) async -> Bool,
         onCancel: @escaping () -> Void
     ) {
         self.medication = medication
@@ -100,14 +103,16 @@ struct MedicationEditView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
-    private func performSave() {
+    private func performSave() async {
+		guard !isSaving else { return }
+		isSaving = true
+		defer { isSaving = false }
         withAnimation(.spring(response: 0.3)) {
             hideKeyboard()
         }
-        let updated = viewModel.buildMedication()
-        viewModel.saveSafetyProfile(for: updated.id)
-        hapticsManager.medicationAdded()
-        onSave(updated)
+		if await viewModel.saveMedication(using: onSave) {
+			hapticsManager.medicationAdded()
+		}
     }
 
     // MARK: - Hero Section
@@ -333,7 +338,7 @@ struct MedicationEditView: View {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 guidanceField(
                     title: "Minimum Hours Between Doses",
-                    subtitle: "Warn before logging earlier than your saved interval.",
+                    subtitle: "Use the interval from your prescription or care instructions.",
                     text: $viewModel.minimumHoursBetweenDosesText,
                     placeholder: "Example: 4",
                     field: .minimumHoursBetweenDoses
@@ -348,8 +353,8 @@ struct MedicationEditView: View {
                 )
 
                 guidanceField(
-                    title: "Saved Daily Limit",
-                    subtitle: "Compare each log against a daily total for this medication's preferred unit.",
+                    title: "Maximum Amount in 24 Hours",
+                    subtitle: "A rolling 24-hour total in the prescribed unit, including the next prescribed dose.",
                     text: $viewModel.maxDailyAmountText,
                     placeholder: "Example: 6",
                     field: .maxDailyAmount
@@ -363,6 +368,36 @@ struct MedicationEditView: View {
                     field: .lowStockThreshold
                 )
             }
+
+			if let message = viewModel.doseLimitValidationMessage {
+				Text(message)
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.red)
+			}
+
+			VStack(alignment: .leading, spacing: 8) {
+				Toggle("Notify When Saved Dose Limits Are Met", isOn: $viewModel.nextDoseNotificationEnabled)
+					.font(.customFont(fontFamily, style: .subheadline))
+					.tint(.accent)
+				Text("Optional and separate from scheduled reminders. Sends one notification for a future saved dose window after a dose is logged. This is not medical clearance to take medication.")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
+					.fixedSize(horizontal: false, vertical: true)
+				if viewModel.nextDoseNotificationEnabled {
+					Text(availabilityNotificationStatus)
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+					if notificationManager.authorizationStatus == .denied {
+						Button("Open Notification Settings") {
+							if let url = URL(string: UIApplication.openSettingsURLString) {
+								UIApplication.shared.open(url)
+							}
+						}
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.accent)
+					}
+				}
+			}
 
             VStack(spacing: cardSpacing) {
                 counterCard(
@@ -619,7 +654,7 @@ struct MedicationEditView: View {
     @ViewBuilder
     private var saveButton: some View {
         Button {
-            performSave()
+            Task { await performSave() }
         } label: {
             let backgroundColor = isFormValid ? .accent : Color.gray
 
@@ -646,7 +681,7 @@ struct MedicationEditView: View {
             .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
             .shadow(color: isFormValid ? .accent.opacity(0.3) : .clear, radius: shadowRadius, y: shadowY)
         }
-        .disabled(!isFormValid)
+        .disabled(!isFormValid || isSaving)
         .padding(.horizontal)
         .padding(.vertical, quickButtonSpacing)
     }
@@ -896,11 +931,35 @@ struct MedicationEditView: View {
         }
     }
 
+	private var availabilityNotificationStatus: String {
+		switch notificationManager.authorizationStatus {
+		case .denied:
+			return "Notifications are blocked. Enable them in Settings to receive dose availability notifications."
+		case .authorized, .provisional, .ephemeral:
+			return "Notification permission is enabled. Save a dose limit and log a dose to calculate the next window."
+		case .notDetermined:
+			return "Notification permission is required."
+		case .unknown:
+			return "Notification permission status is unavailable."
+		}
+	}
+
     // MARK: - Body
 
     var body: some View {
         NavigationStack {
             mainContent
+				.task { await notificationManager.checkAuthorizationStatus() }
+				.onChange(of: scenePhase) { _, phase in
+					if phase == .active {
+						Task { await notificationManager.checkAuthorizationStatus() }
+					}
+				}
+				.onChange(of: viewModel.nextDoseNotificationEnabled) { _, enabled in
+					if enabled {
+						Task { _ = await notificationManager.requestAuthorization() }
+					}
+				}
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -915,13 +974,13 @@ struct MedicationEditView: View {
 
                     ToolbarItem(placement: .confirmationAction) {
                         Button {
-                            performSave()
+                            Task { await performSave() }
                         } label: {
                             Image(systemSymbol: .checkmarkCircleFill)
                                 .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                                 .foregroundStyle(.accent)
                         }
-                        .disabled(!isFormValid)
+                        .disabled(!isFormValid || isSaving)
                         .accessibilityLabel("Save medication")
                         .accessibilityHint(isFormValid ? "Saves the medication details" : "Complete required fields to save")
                     }
@@ -937,7 +996,7 @@ struct MedicationEditView: View {
 #Preview {
     MedicationEditView(
         medication: nil,
-        onSave: { _ in },
+        onSave: { _ in true },
         onCancel: {}
     )
 }
@@ -953,7 +1012,7 @@ struct MedicationEditView: View {
             lastRefillDate: Calendar.current.date(byAdding: .day, value: -15, to: Date()),
             nextRefillDate: Calendar.current.date(byAdding: .day, value: 15, to: Date())
         ),
-        onSave: { _ in },
+        onSave: { _ in true },
         onCancel: {}
     )
 }
@@ -961,7 +1020,7 @@ struct MedicationEditView: View {
 #Preview("Add New Medication") {
     MedicationEditView(
         medication: nil,
-        onSave: { _ in },
+        onSave: { _ in true },
         onCancel: {}
     )
 }

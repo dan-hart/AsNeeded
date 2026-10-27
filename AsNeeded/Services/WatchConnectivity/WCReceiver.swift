@@ -88,6 +88,7 @@ final class WCReceiver: NSObject, ObservableObject {
 
     private func processMessage(_ message: SendableMessage) async {
         do {
+			try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
             if message.getMedications {
                 await sendMedicationsToWatch()
             } else if let logDoseData = message.logDoseData {
@@ -103,6 +104,13 @@ final class WCReceiver: NSObject, ObservableObject {
     // MARK: - Private Methods
 
     private func sendMedicationsToWatch() async {
+		do {
+			try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
+		} catch {
+			logger.logPrivacySafeError("Unable to load medication dose limits for watch", error: error)
+			return
+		}
+		let now = Date()
         let medications = DataStore.shared.medications
         let events = DataStore.shared.events
         let safetyProfileStore = MedicationSafetyProfileStore.shared
@@ -110,11 +118,9 @@ final class WCReceiver: NSObject, ObservableObject {
 
         let medicationData = medications.map { medication -> [String: Any] in
             let profile = safetyProfileStore.profile(for: medication.id)
-            let nextDoseDate = guidanceService.nextEligibleDate(
-                for: medication,
-                events: events,
-                profile: profile
-            )
+			let availability = guidanceService.availability(
+				for: medication, at: now, events: events, profile: profile
+			)
             let refillProjection = guidanceService.refillProjection(
                 for: medication,
                 events: events,
@@ -127,15 +133,11 @@ final class WCReceiver: NSObject, ObservableObject {
                 "quantity": medication.quantity ?? 0.0,
                 "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
                 "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
-                "canTakeNow": nextDoseDate == nil || nextDoseDate ?? .distantPast <= Date(),
                 "lowStock": refillProjection.lowStock,
                 "refillSoon": refillProjection.refillSoon,
-                "statusMessage": refillProjection.statusMessage,
             ]
 
-            if let nextDoseDate {
-                payload["nextDoseDate"] = nextDoseDate
-            }
+			payload.merge(Self.availabilityFields(for: availability, at: now)) { _, availabilityValue in availabilityValue }
 
             return payload
         }
@@ -148,7 +150,22 @@ final class WCReceiver: NSObject, ObservableObject {
         }
     }
 
+	/// Wire fields retain unknown states instead of interpreting a missing date as clearance.
+	static func availabilityFields(for availability: MedicationDoseGuidanceService.Availability, at date: Date) -> [String: Any] {
+		guard let nextDate = availability.eligibleDate else {
+			return ["canTakeNow": false, "statusMessage": availability.message]
+		}
+		return [
+			"canTakeNow": nextDate <= date,
+			"nextDoseDate": nextDate,
+			"statusMessage": nextDate > date
+				? "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened)). Follow your prescription and care instructions."
+				: "Saved limits met based on logged doses. Follow your prescription and care instructions."
+		]
+	}
+
     private func handleDoseLogging(_ logDoseData: LogDoseData) async throws {
+		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
         guard let medicationId = UUID(uuidString: logDoseData.medicationId),
               let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit)
         else {
@@ -193,9 +210,11 @@ final class WCReceiver: NSObject, ObservableObject {
                 self?.logger.logPrivacySafeError("Error sending dose confirmation to watch", error: error)
             }
         }
+		await sendMedicationsToWatch()
     }
 
     private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
+		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
         guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
             logger.warning("Invalid quantity update data from watch")
             return
@@ -221,6 +240,7 @@ final class WCReceiver: NSObject, ObservableObject {
                 self?.logger.logPrivacySafeError("Error sending quantity update confirmation to watch", error: error)
             }
         }
+		await sendMedicationsToWatch()
     }
 }
 

@@ -141,17 +141,14 @@ final class MedicationTrendsViewModel: ObservableObject {
         )
     }
 
-    var nextEligibleDoseDate: Date? {
-        guard let medication = selectedMedication else {
-            return nil
-        }
+	func doseAvailability(at date: Date = .now) -> MedicationDoseGuidanceService.Availability {
+		guard let medication = selectedMedication else { return .notConfigured }
+		return doseGuidanceService.availability(for: medication, at: date, events: events, profile: safetyProfile)
+	}
 
-        return doseGuidanceService.nextEligibleDate(
-            for: medication,
-            events: events,
-            profile: safetyProfile
-        )
-    }
+	var nextEligibleDoseDate: Date? {
+		doseAvailability().eligibleDate
+	}
 
     var questionAvailability: TrendsQuestionAvailability {
         questionService.availability

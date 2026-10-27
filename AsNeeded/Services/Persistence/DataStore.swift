@@ -10,6 +10,7 @@ import Foundation
 public final class DataStore {
     public static let shared = DataStore()
     private let logger = DHLogger.data
+	private let isTestStore: Bool
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
@@ -19,6 +20,7 @@ public final class DataStore {
     public var events: [ANEventConcept] { eventsStore.items }
 
     private init() {
+		isTestStore = false
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -97,10 +99,16 @@ public final class DataStore {
 
         // Note: Migration is now handled by MigrationCoordinator before DataStore is accessed
         // See AsNeededApp.swift and MigrationCoordinator.swift for migration flow
+
+		// Intents can initialize the store without creating ContentView.
+		Task { @MainActor in
+			await NotificationManager.shared.bootstrapAvailabilityObservation(dataStore: self)
+		}
     }
 
     // Test initializer using isolated test storage
     public init(testIdentifier: String) {
+		isTestStore = true
         let testId = UUID().uuidString
         medicationsStore = Store<ANMedicationConcept>(
             storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
@@ -112,12 +120,25 @@ public final class DataStore {
         )
     }
 
+	private func refreshDoseAvailability() async {
+		// Isolated test stores never schedule device notifications.
+		guard !isTestStore else { return }
+		do {
+			try await MedicationDoseLimitMigration().migrate(dataStore: self)
+			try await NotificationManager.shared.startAvailabilityObservation(dataStore: self)
+			await NotificationManager.shared.refreshAvailabilityNotifications()
+		} catch {
+			logger.logPrivacySafeError("Unable to refresh dose availability", error: error)
+		}
+	}
+
     // MARK: - Medication Operations
 
     public func addMedication(_ med: ANMedicationConcept) async throws {
         logger.logMedicationOperation("Adding", id: med.id)
         do {
             try await medicationsStore.insert(med)
+			await refreshDoseAvailability()
             logger.logMedicationOperation("Successfully added to local storage", id: med.id)
         } catch {
             logger.logPrivacySafeError("Failed to add medication record", error: error)
@@ -126,10 +147,12 @@ public final class DataStore {
     }
 
     public func updateMedication(_ med: ANMedicationConcept) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         logger.logMedicationOperation("Updating", id: med.id)
         do {
             // Boutique replaces items with matching cache identifiers in place.
             try await medicationsStore.insert(med)
+			await refreshDoseAvailability()
             logger.logMedicationOperation("Successfully updated in local storage", id: med.id)
         } catch {
             logger.logPrivacySafeError("Failed to update medication record", error: error)
@@ -138,6 +161,7 @@ public final class DataStore {
     }
 
     public func deleteMedication(_ med: ANMedicationConcept) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         logger.logMedicationOperation("Deleting", id: med.id)
         do {
             // Find associated events first
@@ -149,6 +173,7 @@ public final class DataStore {
             }
 
             try await medicationsStore.remove(med)
+			await refreshDoseAvailability()
 
             // Clear the deleted medication ID from AppStorage selections to prevent crashes
             let deletedIDString = med.id.uuidString
@@ -196,6 +221,7 @@ public final class DataStore {
         logger.info("Adding event details: eventCountBefore=\(eventCountBefore), shouldRecordForReview=\(shouldRecordForReview)")
         do {
             try await eventsStore.insert(event)
+			await refreshDoseAvailability()
             logger.info("Successfully added event to local storage: eventCountBefore=\(eventCountBefore), eventCountAfter=\(events.count)")
 
             // Track medication event for review eligibility (skip for quick log)
@@ -325,6 +351,7 @@ public final class DataStore {
 
     /// Import data from JSON, with options for merge or replace
     public func importDataFromJSON(_ data: Data, mergeExisting: Bool = false, applySettings: Bool = false) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         let startTime = Date()
         let fileSizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
         logger.info("Starting data import (merge: \(mergeExisting), applySettings: \(applySettings), size: \(fileSizeFormatted))")

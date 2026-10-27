@@ -52,28 +52,35 @@ struct MedicationStatusSummaryService {
 			at: date,
 			events: events
 		)
-		let nextWindowText = nextWindowText(
-			from: assessment,
-			at: date
-		)
-		let dailyText = dailyText(
-			from: assessment,
-			unit: proposedDose.unit
-		)
+		let availability = guidanceService.availability(for: medication, at: date, events: events, profile: profile)
+		let nextWindowText = availability.eligibleDate.flatMap { nextDate in
+			nextDate > date ? "Next saved window \(dateFormatter.string(from: nextDate)) at \(timeFormatter.string(from: nextDate))" : nil
+		}
+		let dailyText: String?
+		if availability.eligibleDate != nil {
+			dailyText = self.dailyText(from: assessment, unit: proposedDose.unit)
+		} else {
+			dailyText = (medication.maximumDailyDoseAmount ?? profile.maxDailyAmount).map {
+				"Saved rolling 24-hour maximum: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit missing)")"
+			}
+		}
 		let refillText = refillText(from: projection)
-		let badgeText = badgeText(for: assessment, profile: profile)
-		let headline = headline(
-			assessment: assessment,
-			nextWindowText: nextWindowText,
-			profile: profile
-		)
+		let badgeText: String
+		switch availability {
+		case .notConfigured: badgeText = "No dose limits"
+		case .noDoseHistory: badgeText = "No history"
+		case .unavailable: badgeText = "Review"
+		case .eligible:
+			badgeText = assessment.severity == .warning ? "Review" : assessment.severity == .caution ? "Caution" : "Saved limits"
+		}
+		let headline = nextWindowText ?? (availability.eligibleDate != nil ? "Saved limits met" : availability.message)
 		let accessibilityLabel = [
 			medication.displayName,
 			timingText,
 			nextWindowText,
 			dailyText,
 			refillText,
-			accessibilityGuardrailText(assessment: assessment, profile: profile)
+			availability.message
 		]
 		.compactMap { $0 }
 		.joined(separator: ". ")
@@ -107,17 +114,6 @@ struct MedicationStatusSummaryService {
 		return "Last taken \(dateFormatter.string(from: lastDose.date)) at \(timeText)"
 	}
 
-	private func nextWindowText(
-		from assessment: MedicationDoseGuidanceService.Assessment,
-		at date: Date
-	) -> String? {
-		guard let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > date else {
-			return nil
-		}
-
-		return "Next saved window \(timeFormatter.string(from: nextEligibleDate))"
-	}
-
 	private func dailyText(
 		from assessment: MedicationDoseGuidanceService.Assessment,
 		unit: ANUnitConcept
@@ -139,47 +135,6 @@ struct MedicationStatusSummaryService {
 		}
 
 		return projection.statusMessage
-	}
-
-	private func badgeText(
-		for assessment: MedicationDoseGuidanceService.Assessment,
-		profile: MedicationSafetyProfile
-	) -> String {
-		switch assessment.severity {
-		case .warning:
-			return "Review"
-		case .caution:
-			return "Caution"
-		case .clear:
-			return profile.isEmpty ? "No guardrails" : "Within guidance"
-		}
-	}
-
-	private func headline(
-		assessment: MedicationDoseGuidanceService.Assessment,
-		nextWindowText: String?,
-		profile: MedicationSafetyProfile
-	) -> String {
-		if assessment.severity != .clear {
-			return assessment.headline
-		}
-
-		if let nextWindowText {
-			return nextWindowText
-		}
-
-		return profile.isEmpty ? "No saved guardrails" : "Available now"
-	}
-
-	private func accessibilityGuardrailText(
-		assessment: MedicationDoseGuidanceService.Assessment,
-		profile: MedicationSafetyProfile
-	) -> String {
-		if profile.isEmpty {
-			return "No saved guardrails"
-		}
-
-		return assessment.headline
 	}
 
 	private func doseEvents(

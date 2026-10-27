@@ -105,6 +105,8 @@ public final class MigrationCoordinator {
 		// Run the migration
 		do {
 			try await DataMigrationManager().migrateIfNeeded()
+			// Finish model-field migration before any editing or dose logging UI appears.
+			try await MedicationDoseLimitMigration().migrate(dataStore: .shared)
 
 			// Update schema version after successful migration
 			if currentVersion < targetVersion {

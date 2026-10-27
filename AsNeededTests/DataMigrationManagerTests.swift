@@ -13,7 +13,8 @@ enum TestError: Error {
 	case appGroupUnavailable
 }
 
-@Suite("DataMigrationManager Tests", .tags(.migration, .persistence, .unit))
+// These tests mutate the same legacy paths and App Group permissions.
+@Suite("DataMigrationManager Tests", .serialized, .tags(.migration, .persistence, .unit))
 @MainActor
 struct DataMigrationManagerTests {
 	private var migrationManager: DataMigrationManager
@@ -51,7 +52,7 @@ struct DataMigrationManagerTests {
 		try await legacyStore.insert(legacyMedication)
 
 		// Create current data in App Group
-		let currentStore = createAppGroupStore()
+		let currentStore = try createAppGroupStore()
 		let currentMedication = createTestMedication(name: "Current Med")
 		try await currentStore.insert(currentMedication)
 
@@ -59,7 +60,7 @@ struct DataMigrationManagerTests {
 		try await migrationManager.migrateIfNeeded()
 
 		// Then - both medications should exist in App Group
-		let appGroupStore = createAppGroupStore()
+		let appGroupStore = try createAppGroupStore()
 		#expect(appGroupStore.items.count == 2)
 
 		let medicationNames = Set(appGroupStore.items.map { $0.clinicalName })
@@ -82,14 +83,14 @@ struct DataMigrationManagerTests {
 		let legacyStore = createLegacyStore()
 		try await legacyStore.insert(medication)
 
-		let currentStore = createAppGroupStore()
+		let currentStore = try createAppGroupStore()
 		try await currentStore.insert(medication)
 
 		// When
 		try await migrationManager.migrateIfNeeded()
 
 		// Then - only one instance should exist (deduplicated by ID)
-		let appGroupStore = createAppGroupStore()
+		let appGroupStore = try createAppGroupStore()
 		#expect(appGroupStore.items.count == 1)
 		#expect(appGroupStore.items.first?.clinicalName == "Test Medication")
 
@@ -152,14 +153,14 @@ struct DataMigrationManagerTests {
 			throw TestError.setupFailed
 		}
 
-		let appGroupStore = createAppGroupStore()
+		let appGroupStore = try createAppGroupStore()
 		try await appGroupStore.removeAll()
 
 		// When
 		try await migrationManager.migrateIfNeeded()
 
 		// Then
-		let migratedStore = createAppGroupStore()
+		let migratedStore = try createAppGroupStore()
 		let migratedNames = await migratedStore.items.map(\.clinicalName)
 		#expect(migratedNames.contains("Legacy SQLite Format"))
 
@@ -184,7 +185,7 @@ struct DataMigrationManagerTests {
 		try await migrationManager.migrateIfNeeded()
 
 		// Then - should have exactly one medication (no duplicates)
-		let appGroupStore = createAppGroupStore()
+		let appGroupStore = try createAppGroupStore()
 		#expect(appGroupStore.items.count == 1)
 		#expect(appGroupStore.items.first?.clinicalName == "Test Med")
 
@@ -212,7 +213,7 @@ struct DataMigrationManagerTests {
 		try await migrationManager.migrateIfNeeded()
 
 		// Then
-		let appGroupStore = createAppGroupStore()
+		let appGroupStore = try createAppGroupStore()
 		#expect(appGroupStore.items.count == 100)
 
 		// Cleanup
@@ -243,8 +244,8 @@ struct DataMigrationManagerTests {
 		try await migrationManager.migrateIfNeeded()
 
 		// Then - every legacy ID should exist in App Group
-		let appGroupMedStore = createAppGroupStore()
-		let appGroupEventStore = createAppGroupEventStore()
+		let appGroupMedStore = try createAppGroupStore()
+		let appGroupEventStore = try createAppGroupEventStore()
 
 		let legacyMedIDs = Set([med1.id, med2.id])
 		let currentMedIDs = Set(appGroupMedStore.items.map { $0.id })
@@ -279,7 +280,16 @@ struct DataMigrationManagerTests {
 		}
 
 		let fileManager = FileManager.default
-		let originalPermissions = (try? fileManager.attributesOfItem(atPath: appGroupURL.path)[.posixPermissions]) as? NSNumber
+		let attributes = try fileManager.attributesOfItem(atPath: appGroupURL.path)
+		let originalPermissions = try #require(attributes[.posixPermissions] as? NSNumber)
+		// Restore even if migration verification or the retry throws.
+		defer {
+			do {
+				try fileManager.setAttributes([.posixPermissions: originalPermissions], ofItemAtPath: appGroupURL.path)
+			} catch {
+				Issue.record(error, "Unable to restore App Group permissions after migration test")
+			}
+		}
 
 		// Make App Group read-only to force merge failure
 		try fileManager.setAttributes([.posixPermissions: 0o555], ofItemAtPath: appGroupURL.path)
@@ -309,9 +319,7 @@ struct DataMigrationManagerTests {
 		#expect(archivedExists == false)
 
 		// Restore permissions and retry migration (simulates crash + retry)
-		if let originalPermissions {
-			try fileManager.setAttributes([.posixPermissions: originalPermissions], ofItemAtPath: appGroupURL.path)
-		}
+		try fileManager.setAttributes([.posixPermissions: originalPermissions], ofItemAtPath: appGroupURL.path)
 		try await migrationManager.migrateIfNeeded()
 
 		let contentsAfterRetry = (try? fileManager.contentsOfDirectory(atPath: documentsURL.path)) ?? []
@@ -634,35 +642,43 @@ struct DataMigrationManagerTests {
 	}
 
 	/// Creates an App Group store
-	private func createAppGroupStore() -> Store<ANMedicationConcept> {
+	private func createAppGroupStore() throws -> Store<ANMedicationConcept> {
 		guard let sharedContainerURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
 		) else {
-			fatalError("Unable to access App Group container for testing")
+			throw TestError.appGroupUnavailable
+		}
+
+		guard let storage = SQLiteStorageEngine(
+			directory: FileManager.Directory(url: sharedContainerURL),
+			databaseFilename: "test_migration_medications"
+		) else {
+			throw TestError.setupFailed
 		}
 
 		return Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "test_migration_medications"
-			)!,
+			storage: storage,
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
 	}
 
 	/// Creates an App Group store for events
-	private func createAppGroupEventStore() -> Store<ANEventConcept> {
+	private func createAppGroupEventStore() throws -> Store<ANEventConcept> {
 		guard let sharedContainerURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
 		) else {
-			fatalError("Unable to access App Group container for testing")
+			throw TestError.appGroupUnavailable
+		}
+
+		guard let storage = SQLiteStorageEngine(
+			directory: FileManager.Directory(url: sharedContainerURL),
+			databaseFilename: "events"
+		) else {
+			throw TestError.setupFailed
 		}
 
 		return Store<ANEventConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "events"
-			)!,
+			storage: storage,
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
 	}

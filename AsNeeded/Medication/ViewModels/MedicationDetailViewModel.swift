@@ -19,7 +19,8 @@ final class MedicationDetailViewModel: ObservableObject {
         logger.debug("MedicationDetailViewModel initialized")
     }
 
-    func save(updated medication: ANMedicationConcept) async {
+    @discardableResult
+    func save(updated medication: ANMedicationConcept) async -> Bool {
         logger.logMedicationOperation("Saving", id: medication.id)
         isLoading = true
         errorMessage = nil
@@ -30,9 +31,11 @@ final class MedicationDetailViewModel: ObservableObject {
             try await dataStore.updateMedication(medication)
             await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully saved", id: medication.id)
+			return true
         } catch {
             logger.logPrivacySafeError("Failed to save medication", error: error)
             errorMessage = "Failed to save medication: \(error.localizedDescription)"
+			return false
         }
     }
 

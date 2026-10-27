@@ -187,14 +187,18 @@ struct MedicationTrendsView: View {
 
                 Spacer()
 
-                if let nextEligibleDoseDate = viewModel.nextEligibleDoseDate, nextEligibleDoseDate > Date() {
-                    insightBadge(
-                        text: "Next window \(nextEligibleDoseDate.formatted(date: .omitted, time: .shortened))",
-                        tint: .orange
-                    )
-                } else {
-                    insightBadge(text: "Available now", tint: med.displayColor)
-                }
+				TimelineView(.periodic(from: .now, by: 1)) { context in
+					let availability = viewModel.doseAvailability(at: context.date)
+					if let nextDate = availability.eligibleDate {
+						if nextDate > context.date {
+							insightBadge(text: "Next saved window \(nextDate.formatted(date: .abbreviated, time: .shortened))", tint: .orange)
+						} else {
+							insightBadge(text: "Saved limits met", tint: med.displayColor)
+						}
+					} else {
+						insightBadge(text: availability.message, tint: .secondary)
+					}
+				}
             }
 
             if let refillProjection = viewModel.refillProjection {

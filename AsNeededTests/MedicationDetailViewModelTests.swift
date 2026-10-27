@@ -72,7 +72,8 @@ struct MedicationDetailViewModelTests {
         var updatedMedication = medication
         updatedMedication.quantity = 50.0
 
-        await viewModel.save(updated: updatedMedication)
+        let saved = await viewModel.save(updated: updatedMedication)
+		#expect(saved)
 
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)

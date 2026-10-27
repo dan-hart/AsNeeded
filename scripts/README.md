@@ -408,3 +408,15 @@ When modifying these scripts:
 ---
 
 **Made with ⚡️ for maximum performance on high-end development machines**
+
+The test runner supports `TEST_DESTINATION` and `TEST_WORKERS` overrides, for example:
+
+```bash
+TEST_DESTINATION='platform=iOS Simulator,name=iPhone 17,OS=26.5' TEST_WORKERS=2 ./scripts/test-parallel.sh
+```
+
+Pipeline failures propagate even when the optional xcsift formatter is installed.
+
+Run the watch model's standalone Swift Testing regressions with
+`./scripts/tests/watch-medication-availability.test.sh` (Swift 6.2+ on macOS).
+The harness compiles the real watch model without requiring a watch simulator.

@@ -8,6 +8,127 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
+	@Test("Dose timing rejects invalid and nonfinite values", arguments: ["0", "-1", "nan", "inf", "word"])
+	@MainActor
+	func invalidDoseTiming(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.minimumHoursBetweenDosesText = value
+		#expect(!viewModel.isFormValid)
+	}
+
+	@Test("Rolling maximum requires a prescribed dose and unit")
+	@MainActor
+	func rollingMaximumRequiresDose() {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.maxDailyAmountText = "4"
+		#expect(!viewModel.isFormValid)
+		viewModel.prescribedDoseText = "5"
+		viewModel.prescribedUnit = .tablet
+		#expect(!viewModel.isFormValid)
+		viewModel.prescribedDoseText = "2"
+		#expect(viewModel.isFormValid)
+	}
+
+	@Test("Editing stores limits in the medication and preserves RxNorm metadata")
+	@MainActor
+	func editPreservesMetadataAndStoresLimits() {
+		var original = ANMedicationConcept(clinicalName: "Medication")
+		original.rxNormCode = "12345"
+		original.symbolInfo = ANSymbolInfo(name: "pills", minimumVersion: "16.0", fallbackName: "circle")
+		let viewModel = MedicationEditViewModel(medication: original)
+		viewModel.minimumHoursBetweenDosesText = "4"
+		viewModel.maxDailyAmountText = "8"
+		viewModel.nextDoseNotificationEnabled = true
+		let updated = viewModel.buildMedication()
+		#expect(updated.rxNormCode == original.rxNormCode)
+		#expect(updated.symbolInfo == original.symbolInfo)
+		#expect(updated.minimumHoursBetweenDoses == 4)
+		#expect(updated.maximumDailyDoseAmount == 8)
+		#expect(updated.nextDoseNotificationEnabled == true)
+	}
+
+	@Test("Rolling maximum rejects invalid and nonfinite values", arguments: ["0", "-1", "nan", "inf", "word"])
+	@MainActor
+	func invalidRollingMaximum(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedDoseText = "1"
+		viewModel.prescribedUnit = .tablet
+		viewModel.maxDailyAmountText = value
+		#expect(!viewModel.isFormValid)
+	}
+
+	@Test("Nonfinite prescribed amounts cannot be saved", arguments: ["nan", "inf"])
+	@MainActor
+	func nonfinitePrescribedAmount(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedDoseText = value
+		viewModel.prescribedUnit = .tablet
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.buildMedication().prescribedDoseAmount == nil)
+	}
+
+	@Test("Model limits override legacy profile values and can be removed")
+	@MainActor
+	func modelLimitsTakePrecedenceAndCanBeRemoved() {
+		let defaults = UserDefaults(suiteName: "MedicationLimitPrecedence.\(UUID().uuidString)") ?? .standard
+		let store = MedicationSafetyProfileStore(defaults: defaults)
+		var medication = ANMedicationConcept(clinicalName: "Medication")
+		medication.minimumHoursBetweenDoses = 6
+		medication.maximumDailyDoseAmount = 10
+		store.save(MedicationSafetyProfile(minimumHoursBetweenDoses: 4, maxDailyAmount: 8), for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: store)
+		#expect(viewModel.minimumHoursBetweenDosesText == "6.0")
+		#expect(viewModel.maxDailyAmountText == "10.0")
+		#expect(!viewModel.nextDoseNotificationEnabled)
+		viewModel.minimumHoursBetweenDosesText = ""
+		viewModel.maxDailyAmountText = ""
+		#expect(viewModel.buildMedication().minimumHoursBetweenDoses == nil)
+		#expect(viewModel.buildMedication().maximumDailyDoseAmount == nil)
+	}
+
+	@Test("Failed medication persistence leaves the existing safety profile intact")
+	@MainActor
+	func failedSavePreservesSafetyProfile() async {
+		let defaults = UserDefaults(suiteName: "MedicationEditFailedSave.\(UUID().uuidString)") ?? .standard
+		let profiles = MedicationSafetyProfileStore(defaults: defaults)
+		let medication = ANMedicationConcept(clinicalName: "Medication")
+		let original = MedicationSafetyProfile(minimumHoursBetweenDoses: 4, cautionHoursBetweenDoses: 6, maxDailyAmount: 8)
+		profiles.save(original, for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profiles)
+		viewModel.maxDailyAmountText = ""
+		viewModel.cautionHoursBetweenDosesText = "10"
+		let saved = await viewModel.saveMedication { _ in false }
+		#expect(!saved)
+		#expect(profiles.profile(for: medication.id) == original)
+	}
+
+	@Test("Successful medication persistence precedes non-dose profile updates")
+	@MainActor
+	func successfulSaveOrdersProfileUpdateAfterMedication() async {
+		let defaults = UserDefaults(suiteName: "MedicationEditSuccessfulSave.\(UUID().uuidString)") ?? .standard
+		let profiles = MedicationSafetyProfileStore(defaults: defaults)
+		let medication = ANMedicationConcept(clinicalName: "Medication", prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		let original = MedicationSafetyProfile(minimumHoursBetweenDoses: 4, cautionHoursBetweenDoses: 6, maxDailyAmount: 8)
+		profiles.save(original, for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profiles)
+		viewModel.cautionHoursBetweenDosesText = "10"
+		let saved = await viewModel.saveMedication { updated in
+			#expect(profiles.profile(for: medication.id) == original)
+			#expect(updated.minimumHoursBetweenDoses == 4)
+			#expect(updated.maximumDailyDoseAmount == 8)
+			viewModel.cautionHoursBetweenDosesText = "12"
+			return true
+		}
+		#expect(saved)
+		#expect(profiles.profile(for: medication.id).minimumHoursBetweenDoses == nil)
+		#expect(profiles.profile(for: medication.id).maxDailyAmount == nil)
+		#expect(profiles.profile(for: medication.id).cautionHoursBetweenDoses == 10)
+	}
+
     // MARK: - Initialization Tests
 
     @Test("Initialize with nil medication creates new medication")
@@ -324,9 +445,9 @@ struct MedicationEditViewModelTests {
 
         let profile = viewModel.buildSafetyProfile()
 
-        #expect(profile.minimumHoursBetweenDoses == 4)
+        #expect(profile.minimumHoursBetweenDoses == nil)
         #expect(profile.cautionHoursBetweenDoses == nil)
-        #expect(profile.maxDailyAmount == 8)
+        #expect(profile.maxDailyAmount == nil)
         #expect(profile.lowStockThreshold == nil)
         #expect(profile.duplicateDoseWindowMinutes == 35)
         #expect(profile.refillLeadDays == 6)

@@ -28,11 +28,15 @@ struct LogMedicationIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
         // Determine which medication to use
         let targetMedication: ANMedicationConcept
 
         if let providedMedication = medication {
-            targetMedication = providedMedication.medication
+			guard let current = DataStore.shared.medications.first(where: { $0.id == providedMedication.medication.id }) else {
+				return .result(dialog: IntentDialog("That medication is no longer available."))
+			}
+			targetMedication = current
             logger.info("Using entity medication")
         } else if let name = medicationName, !name.isEmpty {
             logger.info("Searching for medication by provided name")

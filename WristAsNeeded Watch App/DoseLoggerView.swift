@@ -3,213 +3,213 @@ import SwiftUI
 import WatchKit
 
 struct DoseLoggerView: View {
-    let medication: WatchMedication
-    @Binding var doseAmount: Double
-    @EnvironmentObject var sender: WCSender
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedUnit: String
-    @State private var isLogging = false
-    @State private var now = Date()
+	private let initialMedication: WatchMedication
+	@Binding var doseAmount: Double
+	@EnvironmentObject var sender: WCSender
+	@Environment(\.dismiss) private var dismiss
+	@State private var selectedUnit: String
+	@State private var isLogging = false
+	@State private var now = Date()
 
-    private let availableUnits = ["tablet", "capsule", "mg", "mL", "puff", "dose", "unit"]
-    private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+	private let availableUnits = ["tablet", "capsule", "mg", "mL", "puff", "dose", "unit"]
+	private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    init(medication: WatchMedication, doseAmount: Binding<Double>) {
-        self.medication = medication
-        _doseAmount = doseAmount
-        // Use prescribed unit from medication
-        _selectedUnit = State(initialValue: medication.prescribedUnit ?? "dose")
-    }
+	init(medication: WatchMedication, doseAmount: Binding<Double>) {
+		initialMedication = medication
+		_doseAmount = doseAmount
+		// Use prescribed unit from medication
+		_selectedUnit = State(initialValue: medication.prescribedUnit ?? "dose")
+	}
 
-    var body: some View {
-        let canTakeNow = medication.canTake(at: now)
+	private var medication: WatchMedication {
+		sender.medications.first { $0.id == initialMedication.id } ?? initialMedication
+	}
 
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Medication name
-                    Text(medication.displayName)
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom, 8)
+	var body: some View {
+		let canTakeNow = medication.canTake(at: now)
 
-                    if !canTakeNow {
-                        Label(nextDoseLabel, systemImage: "clock.fill")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    } else if medication.lowStock || medication.refillSoon {
-                        Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
-                            .font(.caption)
-                            .foregroundColor(medication.lowStock ? .orange : .yellow)
-                    }
+		NavigationStack {
+			ScrollView {
+				VStack(spacing: 16) {
+					// Medication name
+					Text(medication.displayName)
+						.font(.headline)
+						.multilineTextAlignment(.center)
+						.padding(.bottom, 8)
 
-                    // Dose amount selector
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Amount")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            if let prescribedAmount = medication.prescribedDoseAmount {
-                                Text("Prescribed: \(prescribedAmount, specifier: "%.1f")")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
+					if !canTakeNow {
+						Label(medication.nextDoseDate == nil ? medication.statusMessage ?? "Review saved limits" : nextDoseLabel, systemImage: "clock.fill")
+							.font(.caption)
+							.foregroundColor(.orange)
+					} else if medication.lowStock || medication.refillSoon {
+						Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
+							.font(.caption)
+							.foregroundColor(medication.lowStock ? .orange : .yellow)
+					}
 
-                        HStack {
-                            Button("-") {
-                                if doseAmount > 0.25 {
-                                    doseAmount -= 0.25
-                                    WKInterfaceDevice.current().play(.click)
-                                }
-                            }
-                            .font(.title2)
-                            .frame(width: 40, height: 40)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(8)
+					// Dose amount selector
+					VStack(alignment: .leading, spacing: 8) {
+						HStack {
+							Text("Amount")
+								.font(.caption)
+								.foregroundColor(.secondary)
+							Spacer()
+							if let prescribedAmount = medication.prescribedDoseAmount {
+								Text("Prescribed: \(prescribedAmount, specifier: "%.1f")")
+									.font(.caption2)
+									.foregroundColor(.secondary)
+							}
+						}
 
-                            Spacer()
+						HStack {
+							Button("-") {
+								if doseAmount > 0.25 {
+									doseAmount -= 0.25
+									WKInterfaceDevice.current().play(.click)
+								}
+							}
+							.font(.title2)
+							.frame(width: 40, height: 40)
+							.background(Color.gray.opacity(0.2))
+							.cornerRadius(8)
 
-                            Text("\(doseAmount, specifier: doseAmount.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f")")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .frame(minWidth: 60)
+							Spacer()
 
-                            Spacer()
+							Text("\(doseAmount, specifier: doseAmount.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f")")
+								.font(.title2)
+								.fontWeight(.semibold)
+								.frame(minWidth: 60)
 
-                            Button("+") {
-                                doseAmount += 0.25
-                                WKInterfaceDevice.current().play(.click)
-                            }
-                            .font(.title2)
-                            .frame(width: 40, height: 40)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(8)
-                        }
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(12)
+							Spacer()
 
-                    // Unit selector - show only if no prescribed unit
-                    Group {
-                        if medication.prescribedUnit == nil {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Unit")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+							Button("+") {
+								doseAmount += 0.25
+								WKInterfaceDevice.current().play(.click)
+							}
+							.font(.title2)
+							.frame(width: 40, height: 40)
+							.background(Color.gray.opacity(0.2))
+							.cornerRadius(8)
+						}
+					}
+					.padding()
+					.background(Color.gray.opacity(0.2))
+					.cornerRadius(12)
 
-                                Picker("Unit", selection: $selectedUnit) {
-                                    ForEach(availableUnits, id: \.self) { unit in
-                                        Text(unit).tag(unit)
-                                    }
-                                }
-                                .pickerStyle(WheelPickerStyle())
-                                .frame(height: 80)
-                            }
-                        } else {
-                            // Show prescribed unit as read-only
-                            HStack {
-                                Text("Unit")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                                Text(selectedUnit)
-                                    .font(.headline)
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(12)
+					// Unit selector - show only if no prescribed unit
+					Group {
+						if medication.prescribedUnit == nil {
+							VStack(alignment: .leading, spacing: 8) {
+								Text("Unit")
+									.font(.caption)
+									.foregroundColor(.secondary)
 
-                    // Log button
-                    Button(action: logDose) {
-                        if isLogging {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("Logging...")
-                            }
-                        } else {
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Log Dose")
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background((isLogging || !canTakeNow) ? Color.gray : Color.accent)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .disabled(isLogging || !canTakeNow)
-                }
-                .padding()
-            }
-            .navigationTitle("Log Dose")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .onReceive(eligibilityTimer) { now = $0 }
-    }
+								Picker("Unit", selection: $selectedUnit) {
+									ForEach(availableUnits, id: \.self) { unit in
+										Text(unit).tag(unit)
+									}
+								}
+								.pickerStyle(WheelPickerStyle())
+								.frame(height: 80)
+							}
+						} else {
+							// Show prescribed unit as read-only
+							HStack {
+								Text("Unit")
+									.font(.caption)
+									.foregroundColor(.secondary)
+								Spacer()
+								Text(selectedUnit)
+									.font(.headline)
+							}
+						}
+					}
+					.padding()
+					.background(Color.gray.opacity(0.2))
+					.cornerRadius(12)
 
-    private func logDose() {
-        guard medication.canTake(at: Date()) else {
-            WKInterfaceDevice.current().play(.failure)
-            return
-        }
+					// Log button
+					Button(action: logDose) {
+						if isLogging {
+							HStack {
+								ProgressView()
+									.scaleEffect(0.8)
+								Text("Logging...")
+							}
+						} else {
+							HStack {
+								Image(systemName: "checkmark.circle.fill")
+								Text("Log Dose")
+							}
+						}
+					}
+					.frame(maxWidth: .infinity)
+					.padding()
+					.background(isLogging ? Color.gray : Color.accent)
+					.foregroundColor(.white)
+					.cornerRadius(12)
+					.disabled(isLogging)
+				}
+				.padding()
+			}
+			.navigationTitle("Log Dose")
+			.navigationBarTitleDisplayMode(.inline)
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button("Cancel") {
+						dismiss()
+					}
+				}
+			}
+		}
+		.onReceive(eligibilityTimer) { now = $0 }
+	}
 
-        isLogging = true
+	private func logDose() {
+		guard !isLogging else { return }
+		isLogging = true
 
-        let eventData: [String: Any] = [
-            "medicationId": medication.id.uuidString,
-            "doseAmount": doseAmount,
-            "doseUnit": selectedUnit,
-            "quantityConsumed": doseAmount,
-        ]
+		let eventData: [String: Any] = [
+			"medicationId": medication.id.uuidString,
+			"doseAmount": doseAmount,
+			"doseUnit": selectedUnit,
+			"quantityConsumed": doseAmount,
+		]
 
-        sender.sendMessage(key: "logDose", value: eventData)
+		sender.sendMessage(key: "logDose", value: eventData)
 
-        // Provide subtle haptic feedback
-        WKInterfaceDevice.current().play(.click)
+		// Provide subtle haptic feedback
+		WKInterfaceDevice.current().play(.click)
 
-        // Dismiss after a short delay to show the loading state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            isLogging = false
-            dismiss()
-        }
-    }
+		// Dismiss after a short delay to show the loading state
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+			isLogging = false
+			dismiss()
+		}
+	}
 
-    private var nextDoseLabel: String {
-        guard let nextDoseDate = medication.nextDoseDate else {
-            return "This medication is not ready yet."
-        }
+	private var nextDoseLabel: String {
+		guard let nextDoseDate = medication.nextDoseDate else {
+			return "This medication is not ready yet."
+		}
 
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
-        return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
-    }
+		let formatter = RelativeDateTimeFormatter()
+		formatter.unitsStyle = .short
+		return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
+	}
 }
 
 #if DEBUG
-    #Preview {
-        DoseLoggerView(
-            medication: WatchMedication(
-                id: UUID(),
-                displayName: "Ibuprofen",
-                quantity: 24,
-                prescribedDoseAmount: 2.0,
-                prescribedUnit: "tablet"
-            ),
-            doseAmount: .constant(2.0)
-        )
-    }
+	#Preview {
+		DoseLoggerView(
+			medication: WatchMedication(
+				id: UUID(),
+				displayName: "Ibuprofen",
+				quantity: 24,
+				prescribedDoseAmount: 2.0,
+				prescribedUnit: "tablet"
+			),
+			doseAmount: .constant(2.0)
+		)
+	}
 #endif

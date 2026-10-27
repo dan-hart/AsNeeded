@@ -84,26 +84,26 @@ struct MedicationLiveActivityStateBuilder {
 		}
 
 		let profile = safetyProfiles[medication.id.uuidString] ?? .empty
-		let nextDoseDate = guidanceService.nextEligibleDate(
+		let availability = guidanceService.availability(
 			for: medication,
 			at: date,
 			events: events,
 			profile: profile
 		)
+		let nextDoseDate = availability.eligibleDate
 		let refillProjection = guidanceService.refillProjection(
 			for: medication,
 			at: date,
 			events: events,
 			profile: profile
 		)
-		let canTakeNow = nextDoseDate == nil || nextDoseDate ?? .distantPast <= date
-			let statusText = {
-				if canTakeNow {
-					return "Available now"
-				}
-
-				return "Next dose \(formattedTime(nextDoseDate ?? date))"
-			}()
+		let canTakeNow = nextDoseDate.map { $0 <= date } ?? false
+		let statusText: String
+		if let nextDoseDate, nextDoseDate > date {
+			statusText = "Next saved window \(formattedTime(nextDoseDate))"
+		} else {
+			statusText = canTakeNow ? "Saved limits met" : availability.message
+		}
 
 		var detailFragments: [String] = []
 		if refillProjection.lowStock {
@@ -160,13 +160,13 @@ struct MedicationLiveActivityStateBuilder {
 			at: date,
 			events: events,
 			profile: profile
-		) ?? .distantPast
+		) ?? .distantFuture
 	}
 
 	private func formattedTime(_ date: Date) -> String {
 		let formatter = DateFormatter()
 		formatter.timeStyle = .short
-		formatter.dateStyle = .none
+		formatter.dateStyle = .short
 		return formatter.string(from: date)
 	}
 }
