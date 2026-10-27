@@ -17,6 +17,8 @@ Preserve AsNeeded's existing SwiftUI conventions, accessibility support, and reu
 - Use `.customNavigationTitle(...)` for navigation titles.
 - Use `.noTruncate()` for critical medication names.
 
+For architecture/concurrency, also load `ai-rules/ios-development.md`; for screen-level UX and visual verification, load `ai-rules/design-accessibility.md`.
+
 ## Established Patterns
 
 - Important actions should prefer sticky bottom buttons with scrollable content above and a material or glass-backed action area below.

@@ -30,3 +30,7 @@ Examples:
 ## Optional Codex Setup
 
 If you use Codex locally, see `docs/ai/codex.md`.
+
+## Curated Skills
+
+[The optional skills index](skills.md) routes SwiftUI development, native design, and device verification to tracked reference files. New focused rules cover concurrency, accessibility, privacy, and release evidence; the root instructions stay concise.

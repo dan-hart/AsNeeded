@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-27",
+  "source_repository": "2nd-brain",
+  "source_revision": "1dedefd9c90ef10654aa465435a118f432900b65",
+  "scope": "Reviewed local snapshot, not a claim of latest upstream versions. No execution hooks or downloaded skill runtimes.",
+  "skills": [
+    {
+      "name": "swiftui-expert-skill",
+      "source_path": "skills/swiftui-expert-skill",
+      "source_skill_sha256": "8bc6aa040c3f5c62e546a0dd61f0aa881dbb7436ec00efbcac3d4ee89965c9af",
+      "installed_skill_sha256": "eb8779dfaa29a320571e177ec4d24e00fa518538b3db2556e53efbeb47ea1c2f",
+      "upstream": "https://github.com/AvdLee/SwiftUI-Agent-Skill",
+      "upstream_revision": null,
+      "license": "MIT",
+      "local_changes": [
+        "Prepend AsNeeded-specific adapter; preserve upstream body and reference content."
+      ],
+      "license_note": "License obtained from official upstream LICENSE blob cbf908dde987497fbba144909493e3a3e96f890b; original payload revision unknown."
+    },
+    {
+      "name": "mobile-design",
+      "source_path": "skills/mobile-design",
+      "source_skill_sha256": "4543ec111960fd625c15eb68e63d25a599fb433fc58367ac9cd45fae50968fb5",
+      "installed_skill_sha256": "077d6c57219cc6c76d28605f3e1284f63ef906be853a61bb958ceb2d17d82245",
+      "upstream": "https://github.com/RubenGlez/mobile-design",
+      "upstream_revision": "97474ed9b969d0c7f8a2acf712e30eeb0b9078d1",
+      "license": "MIT",
+      "local_changes": [
+        "Prepend AsNeeded-specific adapter; preserve upstream body and reference content.",
+        "Scope discovery description to native AsNeeded iOS/watchOS design."
+      ],
+      "license_note": "Retained source LICENSE."
+    },
+    {
+      "name": "sim-use",
+      "source_path": "skills/sim-use",
+      "source_skill_sha256": "126545ed9ec262c83feccf0b8ad9aa1f26e7c07240866929762c7599bb2d12cf",
+      "installed_skill_sha256": "341d4ff60e09beb85288f87adf4a08b3c644237384c5bd88536542a2cf152287",
+      "upstream": "https://github.com/lycorp-jp/sim-use",
+      "upstream_revision": null,
+      "license": "Repository-maintained workflow adaptation; no CLI binary or upstream implementation vendored.",
+      "local_changes": [
+        "Replace 2nd-brain-only reference with local guide.",
+        "Remove installation/discovery and benchmark assumptions; keep CLI optional."
+      ]
+    }
+  ],
+  "guidance_sources": [
+    "knowledge/tools/mobile-design-skills.md",
+    "knowledge/development/ios-app-architecture.md",
+    "knowledge/development/security-privacy-policy.md",
+    "knowledge/development/build-system-security.md",
+    "knowledge/tools/sim-use.md",
+    "ai-rules/security-privacy.md"
+  ]
+}

@@ -100,3 +100,11 @@ local.properties
 
 # Security audit logs (local only)
 .git/security-audit.log
+
+# Local signing and distribution artifacts
+.asc/artifacts/
+*.xcarchive/
+*.ipa
+*.mobileprovision
+*.provisionprofile
+*.dSYM/

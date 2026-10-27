@@ -14,7 +14,7 @@ Always load:
 
 Then load only the additional rule files triggered by the current task.
 
-Optional local enhancements such as Codex superpowers are allowed for maintainers, but they are never required for contributors and must never be a dependency for hooks, CI, builds, or tests. Keep machine-local config out of git. See `docs/ai/README.md`.
+Optional local enhancements such as Codex superpowers are allowed for maintainers, but they are never required for contributors and must never be a dependency for hooks, CI, builds, or tests. Keep machine-local config out of git. Optional reviewed skills live in `skills/`; see `docs/ai/skills.md` for task routing and local adaptations. See `docs/ai/README.md` for the contributor boundary.
 
 ## Build And Verification
 
