@@ -62,6 +62,17 @@ class PushScannerTests(unittest.TestCase):
 		self.assertEqual(result.returncode, 0, result.stderr)
 		self.assertIn('317', (self.repo / 'AsNeeded.xcodeproj/project.pbxproj').read_text())
 
+	def test_exact_public_example_is_safe(self):
+		public_example = 'AKIA' + 'IOSFODNN7EXAMPLE'
+		self.commit_file('fixture.txt', public_example + '\n')
+		self.assertEqual(self.scan().returncode, 0)
+
+	def test_public_example_does_not_hide_another_secret_on_same_line(self):
+		public_example = 'AKIA' + 'IOSFODNN7EXAMPLE'
+		token = 'ghp_' + 'C' * 36
+		self.commit_file('fixture.txt', public_example + ' ' + token + '\n')
+		self.assertNotEqual(self.scan().returncode, 0)
+
 	def test_provider_token_in_spaced_path_is_blocked_and_redacted(self):
 		token = 'ghp_' + 'A' * 36
 		self.commit_file('Watch App/Example.swift', f'let value = "{token}"\n')

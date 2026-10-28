@@ -80,11 +80,12 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 		while IFS= read -r -d '' file; do
 			# Deleted paths have no blob at this revision.
 			git cat-file -e "$commit:$file" 2>/dev/null || continue
-			MATCHES=$(git show "$commit:$file" | LC_ALL=C grep -I -n -E "$PATTERN" || true)
-			if [ "$file" = ".gitallowed" ]; then
-				# These two exact AWS documentation examples are already allowed by git-secrets.
-				MATCHES=$(printf '%s\n' "$MATCHES" | grep -v -E '^[0-9]+:(AKIAIOSFODNN7EXAMPLE|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY)$' || true)
-			fi
+			# Remove only the two public AWS documentation examples before matching.
+			# Other credentials on the same line remain visible to the detector.
+			MATCHES=$(git show "$commit:$file" | sed \
+				-e 's|AKIAIOSFODNN7EXAMPLE||g' \
+				-e 's|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY||g' \
+				| LC_ALL=C grep -I -n -E "$PATTERN" || true)
 			if [ -n "$MATCHES" ]; then
 				FOUND=1
 				printf 'Secret pattern detected in commit %s, file %s (content redacted).\n' "$commit" "$file" >&2
