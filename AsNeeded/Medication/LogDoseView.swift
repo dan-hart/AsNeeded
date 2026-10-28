@@ -66,7 +66,7 @@ struct LogDoseView: View {
     private let safetyProfileStore = MedicationSafetyProfileStore.shared
     private let guidanceService = MedicationDoseGuidanceService()
 
-    @ScaledMetric private var iconSize: CGFloat = 80
+    @ScaledMetric(relativeTo: .title2) private var medicationSymbolSize: CGFloat = 28
     private let iconShadowRadius: CGFloat = 12
     private let iconShadowY: CGFloat = 6
     private let topPadding: CGFloat = 8
@@ -254,26 +254,18 @@ struct LogDoseView: View {
 
     private var headerCard: some View {
 		HStack(alignment: .top, spacing: quickButtonSpacing) {
-            // Medication Icon
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 44, height: 44)
-                    .shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
-
-                Image(systemName: medication.effectiveDisplaySymbol)
-                    .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                    .symbolRenderingMode(.monochrome)
-                    .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
-            }
-            .padding(.top, topPadding)
-			.accessibilityHidden(true)
+			// Medication Icon
+			Image(systemName: medication.effectiveDisplaySymbol)
+				.resizable()
+				.scaledToFit()
+				.symbolRenderingMode(.monochrome)
+				.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+				.frame(width: medicationSymbolSize, height: medicationSymbolSize)
+				.padding(18)
+				.background(medication.displayColor.dynamicFilledButtonBackground, in: Circle())
+				.shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
+				.padding(.top, topPadding)
+				.accessibilityHidden(true)
 
             // Medication Name
             VStack(alignment: .leading, spacing: smallSpacing) {
@@ -319,9 +311,9 @@ struct LogDoseView: View {
                     }) {
                         Image(systemSymbol: .minus)
 							.font(.customFont(fontFamily, style: .caption, weight: .bold))
-							.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+							.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
 							.frame(width: stepperIconSize, height: stepperIconSize)
-							.background(Color.accent.dynamicFilledButtonBackground, in: Circle())
+							.background(medication.displayColor.dynamicFilledButtonBackground, in: Circle())
 							.opacity(draft.amount > 0.5 ? 1 : 0.5)
                             .scaleEffect(draft.amount > 0.5 ? 1.0 : 0.9)
                     }
@@ -345,7 +337,7 @@ struct LogDoseView: View {
                     .padding(.horizontal, amountHorizontalPadding)
                     .background(
                         RoundedRectangle(cornerRadius: amountCornerRadius, style: .continuous)
-                            .fill(.accent.opacity(0.1))
+                            .fill(medication.displayColor.opacity(0.1))
                     )
 
                     Button(action: {
@@ -356,9 +348,9 @@ struct LogDoseView: View {
                     }) {
                         Image(systemSymbol: .plus)
 							.font(.customFont(fontFamily, style: .caption, weight: .bold))
-							.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+							.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
 							.frame(width: stepperIconSize, height: stepperIconSize)
-							.background(Color.accent.dynamicFilledButtonBackground, in: Circle())
+							.background(medication.displayColor.dynamicFilledButtonBackground, in: Circle())
 							.opacity(draft.amount < 100 ? 1 : 0.5)
                             .scaleEffect(draft.amount < 100 ? 1.0 : 0.9)
                     }
@@ -386,13 +378,13 @@ struct LogDoseView: View {
                                     .background {
                                         if draft.selectedUnit == unit {
                                             Capsule()
-                                                .fill(Color.accent.dynamicFilledButtonBackground)
+                                                .fill(medication.displayColor.dynamicFilledButtonBackground)
                                         } else {
                                             Capsule()
                                                 .fill(.regularMaterial)
                                         }
                                     }
-                                    .foregroundStyle(draft.selectedUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
+                                    .foregroundStyle(draft.selectedUnit == unit ? medication.displayColor.dynamicFilledButtonForeground : medication.displayColor)
                             }
                             .accessibilityLabel(unit.displayName)
                             .accessibilityValue(draft.selectedUnit == unit ? "Selected" : "Not selected")
@@ -441,12 +433,12 @@ struct LogDoseView: View {
 
                         Image(systemSymbol: .chevronUpChevronDown)
                             .font(.customFont(fontFamily, style: .caption))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(medication.displayColor)
                     }
                     .padding(dateDisplayPadding)
                     .background(
                         RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
-                            .fill(.accent.opacity(0.08))
+                            .fill(medication.displayColor.opacity(0.08))
                     )
                 }
                 .buttonStyle(.plain)
@@ -496,13 +488,13 @@ struct LogDoseView: View {
                                 .background {
                                     if draft.selectedQuickOption == label {
                                         Capsule()
-                                            .fill(Color.accent.dynamicFilledButtonBackground)
+                                            .fill(medication.displayColor.dynamicFilledButtonBackground)
                                     } else {
                                         Capsule()
                                             .fill(.regularMaterial)
                                     }
                                 }
-                                .foregroundStyle(draft.selectedQuickOption == label ? Color.accent.dynamicFilledButtonForeground : .primary)
+                                .foregroundStyle(draft.selectedQuickOption == label ? medication.displayColor.dynamicFilledButtonForeground : medication.displayColor)
                         }
                         .accessibilityLabel(label)
                         .accessibilityValue(draft.selectedQuickOption == label ? "Selected" : "Not selected")
@@ -735,7 +727,7 @@ struct LogDoseView: View {
 					.font(.customFont(fontFamily, style: .caption))
 			}
 			.frame(maxWidth: .infinity, minHeight: 44)
-			.tint(.accent)
+			.tint(medication.displayColor)
 			.accessibilityElement(children: .ignore)
 			.accessibilityLabel("\(title): \(subtitle)")
 			.accessibilityValue(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
@@ -780,6 +772,7 @@ struct LogDoseView: View {
                 noteText: $draft.note,
                 placeholder: "How are you feeling? Any side effects?",
                 medicationName: medication.displayName,
+				accentColor: medication.displayColor,
                 onSave: {
                     // Haptic feedback when note is saved
                     hapticsManager.lightImpact()
@@ -804,7 +797,7 @@ struct LogDoseView: View {
             HStack(spacing: quickButtonSpacing) {
                 if draft.isLogging {
                     ProgressView()
-                        .tint(Color.accent.dynamicFilledButtonForeground)
+                        .tint(medication.displayColor.dynamicFilledButtonForeground)
                 } else {
                     Image(systemSymbol: .checkmarkCircleFill)
                         .font(.customFont(fontFamily, style: .title3))
@@ -815,19 +808,19 @@ struct LogDoseView: View {
 					.fixedSize(horizontal: false, vertical: true)
 					.multilineTextAlignment(.center)
             }
-            .foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+            .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, buttonVerticalPadding)
             .background(
                 RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
+                            colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: Color.accent.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
+                    .shadow(color: medication.displayColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
@@ -898,8 +891,9 @@ struct LogDoseView: View {
 					if hasChanges { draft.showingDiscardConfirmation = true } else { dismiss() }
                 }
 				.disabled(draft.isLogging)
+				.tint(medication.displayColor)
             }
-            .tint(.accent)
+            .tint(medication.displayColor)
 			.alert("Check Dose History", isPresented: $draft.showingLogError) {
 				Button("Keep Editing", role: .cancel) {}
 			} message: {

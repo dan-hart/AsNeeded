@@ -23,6 +23,7 @@ struct ExpandableNoteEditorComponent: View {
 	@Binding var noteText: String
 	var placeholder: String = "How are you feeling? Any side effects?"
 	var medicationName: String?
+	var accentColor: Color = .accent
 	var onSave: (() -> Void)?
 
 	@State private var isExpanded = false
@@ -68,7 +69,7 @@ struct ExpandableNoteEditorComponent: View {
 			HStack(spacing: elementSpacing) {
 				Image(systemSymbol: .noteText)
 					.font(.customFont(fontFamily, style: .body))
-					.foregroundStyle(hasContent ? .accent : .secondary)
+					.foregroundStyle(accentColor)
 
 				VStack(alignment: .leading, spacing: 2) {
 					if hasContent {
@@ -95,17 +96,17 @@ struct ExpandableNoteEditorComponent: View {
 
 				Image(systemSymbol: hasContent ? .pencilCircleFill : .plusCircle)
 					.font(.customFont(fontFamily, style: .body))
-					.foregroundStyle(hasContent ? .accent : .secondary)
+					.foregroundStyle(accentColor)
 			}
 			.padding(standardPadding)
 			.frame(minHeight: compactHeight)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
-					.fill(hasContent ? Color.accent.opacity(0.08) : Color.secondary.opacity(0.08))
+					.fill(hasContent ? accentColor.opacity(0.08) : Color.secondary.opacity(0.08))
 			)
 			.overlay(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
-					.strokeBorder(hasContent ? Color.accent.opacity(0.2) : Color.clear, lineWidth: 1)
+					.strokeBorder(hasContent ? accentColor.opacity(0.2) : Color.clear, lineWidth: 1)
 			)
 		}
 		.buttonStyle(.plain)
@@ -128,17 +129,17 @@ struct ExpandableNoteEditorComponent: View {
 				Text("Save Note")
 					.font(.customFont(fontFamily, style: .headline))
 			}
-			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+			.foregroundStyle(accentColor.dynamicFilledButtonForeground)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, 14)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
 					.fill(LinearGradient(
-						colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
+						colors: [accentColor.dynamicFilledButtonBackground, accentColor.dynamicFilledButtonBackground],
 						startPoint: .topLeading,
 						endPoint: .bottomTrailing
 					))
-					.shadow(color: .accent.opacity(0.3), radius: 4, x: 0, y: 2)
+					.shadow(color: accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
 			)
 		}
 	}
@@ -205,9 +206,10 @@ struct ExpandableNoteEditorComponent: View {
 							isExpanded = false
 						}
 					}
+					.tint(accentColor)
 				}
 			}
-			.tint(.accent)
+			.tint(accentColor)
 			.confirmationDialog("Discard note changes?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
 				Button("Discard Changes", role: .destructive) {
 					localText = noteText
