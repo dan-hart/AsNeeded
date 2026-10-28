@@ -224,7 +224,7 @@ struct MedicationRowComponent: View {
 		Button {
 			onLogTapped()
 		} label: {
-			HStack(spacing: 6) {
+			VStack(spacing: 6) {
 				Image(systemSymbol: .plusCircleFill)
 					.font(.customFont(fontFamily, style: .caption, weight: .semibold))
 					.symbolRenderingMode(.monochrome)
@@ -232,8 +232,9 @@ struct MedicationRowComponent: View {
 				Text("Log")
 					.font(.customFont(fontFamily, style: .caption2, weight: .bold))
 					.lineLimit(1)
+					.fixedSize(horizontal: true, vertical: true)
 			}
-			.fixedSize(horizontal: true, vertical: false)
+			.fixedSize(horizontal: true, vertical: true)
 			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
 			.padding(.horizontal, 16)
 			.padding(.vertical, 12)
