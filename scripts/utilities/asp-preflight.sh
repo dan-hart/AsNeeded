@@ -153,12 +153,12 @@ if command -v git-secrets >/dev/null 2>&1; then
         echo "git-secrets scan: OK (fallback)"
       else
         echo "Error: git-secrets scan failed. Review repository." >&2
-        git secrets --scan || true
+        echo "Credential findings omitted to avoid exposing values in terminal output." >&2
         exit 1
       fi
     else
       echo "Error: git-secrets scan failed. Review staged changes." >&2
-      echo "$GIT_SECRETS_OUTPUT" >&2
+      echo "Credential findings omitted to avoid exposing values in terminal output." >&2
       exit 1
     fi
   fi
@@ -168,9 +168,7 @@ else
     '(sk-proj-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{70,}|ATATT[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----|Bearer [A-Za-z0-9._-]{20,})' \
     >/dev/null; then
     echo "Error: potential secret detected in diff." >&2
-    "${DIFF_CMD[@]}" | grep -nE \
-      '(sk-proj-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{70,}|ATATT[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----|Bearer [A-Za-z0-9._-]{20,})' \
-      || true
+    echo "Credential findings omitted to avoid exposing values in terminal output." >&2
     exit 1
   fi
 fi

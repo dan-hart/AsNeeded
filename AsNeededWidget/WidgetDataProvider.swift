@@ -16,9 +16,9 @@ final class WidgetDataProvider {
     private let decoder = JSONDecoder()
     private let guidanceService = WidgetMedicationGuidanceService()
 
-    // Boutique stores using shared App Group container - made internal for widget intent access
-    let medicationsStore: Store<ANMedicationConcept>
-    let eventsStore: Store<ANEventConcept>
+	private let transactions: MedicationPersistenceTransactions?
+	private var snapshot: MedicationPersistenceSnapshot?
+	var isUnavailable: Bool { snapshot == nil }
 
     init() {
         // Get shared container URL for App Group
@@ -34,32 +34,68 @@ final class WidgetDataProvider {
                 databaseFilename: "events"
             )
         else {
-            // If any initialization fails, widget will show empty state
-            // This is acceptable as widgets fail gracefully
-            fatalError("Unable to initialize widget data provider. Widget will not function.")
+			transactions = nil
+			return
         }
 
-        medicationsStore = Store<ANMedicationConcept>(
+        let medicationsStore = Store<ANMedicationConcept>(
             storage: medicationsEngine,
             cacheIdentifier: \ANMedicationConcept.id.uuidString
         )
 
-        eventsStore = Store<ANEventConcept>(
+        let eventsStore = Store<ANEventConcept>(
             storage: eventsEngine,
             cacheIdentifier: \ANEventConcept.id.uuidString
         )
+		transactions = MedicationPersistenceTransactions(
+			directory: sharedContainerURL,
+			medicationsStore: medicationsStore,
+			eventsStore: eventsStore,
+			preferences: [:]
+		)
     }
 
     // MARK: - Public Interface
 
+	/// Read once under the cross-process transaction lock before constructing an entry.
+	func loadSnapshot() async {
+		do {
+			guard let transactions else { throw PersistenceTransactionError.storageUnavailable }
+			snapshot = try await transactions.read()
+		} catch {
+			// Recovery or lock failure must never expose cached timing as clearance.
+			snapshot = nil
+		}
+	}
+
+	func recordDose(medicationID: UUID) async throws {
+		guard let transactions else { throw PersistenceTransactionError.storageUnavailable }
+		try await transactions.perform { snapshot in
+			guard let medication = snapshot.medications.first(where: { $0.id == medicationID && !$0.isArchived }) else {
+				throw WidgetLogError.medicationUnavailable
+			}
+			let now = Date()
+			if let nextDate = guidanceService.nextEligibleDate(for: medication, events: snapshot.events, profile: safetyProfile(for: medication)), nextDate > now {
+				throw WidgetLogError.reviewInApp
+			}
+			let event = ANEventConcept(
+				eventType: .doseTaken,
+				medication: medication,
+				dose: ANDoseConcept(amount: medication.prescribedDoseAmount ?? 1, unit: medication.prescribedUnit ?? .unit),
+				date: now
+			)
+			try snapshot.recordDose(event)
+		}
+	}
+
     /// Get all active medications
     var medications: [ANMedicationConcept] {
-        medicationsStore.items.filter { !$0.isArchived }
+        (snapshot?.medications ?? []).filter { !$0.isArchived }
     }
 
     /// Get all events
     var events: [ANEventConcept] {
-        eventsStore.items
+        snapshot?.events ?? []
     }
 
     /// Get medications sorted alphabetically by display name

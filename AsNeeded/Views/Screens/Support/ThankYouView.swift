@@ -59,7 +59,7 @@ struct ThankYouView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(spacing: sectionSpacing) {
                     // MARK: - Hero Section
 
@@ -230,11 +230,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .chevronLeftForwardslashChevronRight)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundColor(.white)
+                            .contrastingForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.purple, .indigo],
+                                    colors: [.accent, .accent],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -270,11 +270,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundColor(.white)
+                            .contrastingForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.orange, .yellow],
+                                    colors: [.accent, .accent],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -310,11 +310,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .envelopeFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundColor(.white)
+                            .contrastingForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.blue, .cyan],
+                                    colors: [.accent, .accent],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -350,11 +350,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .star)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundColor(.white)
+                            .contrastingForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.orange, .yellow],
+                                    colors: [.accent, .accent],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -418,16 +418,16 @@ struct ThankYouView: View {
                 Spacer()
                 Text("Done")
                     .font(.customFont(fontFamily, style: .headline))
-                    .foregroundColor(.white)
+                    .contrastingForeground(against: .accent)
                 Image(systemSymbol: .arrowRight)
                     .font(.customFont(fontFamily, style: .headline))
-                    .foregroundColor(.white)
+                    .contrastingForeground(against: .accent)
                 Spacer()
             }
             .padding(.vertical, buttonPaddingV)
             .background(
                 LinearGradient(
-                    colors: [.accent, .accent.opacity(0.8)],
+                    colors: [.accent, .accent],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

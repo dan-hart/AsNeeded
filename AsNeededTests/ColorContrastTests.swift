@@ -34,6 +34,49 @@ struct ColorContrastTests {
 		}
 	}
 
+	@Test("App accent button labels meet AA in both appearances")
+	@MainActor
+	func accentButtonForegroundMeetsAA() throws {
+		for scheme in [ColorScheme.light, .dark] {
+			try expectAAForeground(on: .accent, named: "App accent", scheme: scheme)
+		}
+	}
+
+	@Test("Accent text meets AA on native button surfaces")
+	@MainActor
+	func accentTextOnNativeSurfacesMeetsAA() throws {
+		let surfaces: [UIColor] = [
+			.systemBackground, .secondarySystemBackground, .tertiarySystemBackground,
+			.systemGroupedBackground, .secondarySystemGroupedBackground, .tertiarySystemGroupedBackground,
+		]
+		for scheme in [ColorScheme.light, .dark] {
+			let accentLuminance = try referenceLuminance(.accent, scheme: scheme)
+			for surface in surfaces {
+				let surfaceLuminance = try referenceLuminance(Color(uiColor: surface), scheme: scheme)
+				let ratio = (max(accentLuminance, surfaceLuminance) + 0.05)
+					/ (min(accentLuminance, surfaceLuminance) + 0.05)
+				#expect(ratio >= 4.5, "Accent text contrast: \(ratio):1 in \(scheme)")
+			}
+		}
+	}
+
+	@Test("Clear guidance stays readable on its tinted card")
+	@MainActor
+	func guidanceGreenContrast() throws {
+		for scheme in [ColorScheme.light, .dark] {
+			let green = Color.guidanceGreen(for: scheme)
+			// Conservative bounds: light green overlay on white / dark overlay on grouped gray.
+			let surface = scheme == .dark
+				? Color(red: 0.18, green: 0.25, blue: 0.19)
+				: Color(red: 0.85, green: 0.93, blue: 0.88)
+			let foregroundLuminance = try referenceLuminance(green, scheme: scheme)
+			let surfaceLuminance = try referenceLuminance(surface, scheme: scheme)
+			let ratio = (max(foregroundLuminance, surfaceLuminance) + 0.05)
+				/ (min(foregroundLuminance, surfaceLuminance) + 0.05)
+			#expect(ratio >= 4.5)
+		}
+	}
+
 	@Test("Adaptive backgrounds use the requested appearance for contrast")
 	@MainActor
 	func adaptiveForegroundUsesRequestedScheme() throws {

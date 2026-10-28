@@ -28,6 +28,7 @@ struct LogMedicationIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+		try await DataStore.shared.prepareForAccess()
 		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
         // Determine which medication to use
         let targetMedication: ANMedicationConcept
@@ -74,8 +75,7 @@ struct LogMedicationIntent: AppIntent {
             )
 
             // Log the dose
-            try await DataStore.shared.addEvent(event)
-            await MedicationLiveActivityManager.refreshFromDataStore()
+            try await DataStore.shared.recordDose(event)
 
             logger.info("Successfully logged medication dose from intent")
 

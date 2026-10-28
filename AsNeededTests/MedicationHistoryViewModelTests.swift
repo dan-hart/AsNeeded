@@ -4,6 +4,7 @@
 import ANModelKit
 @testable import AsNeeded
 import Foundation
+import Combine
 import Testing
 
 @MainActor
@@ -94,6 +95,112 @@ struct MedicationHistoryViewModelTests {
 		#expect(viewModel.groupedHistory.count == 2)
 		#expect(viewModel.groupedHistory.first?.entries.first?.medication?.id == med1.id)
 		#expect(viewModel.groupedHistory.allSatisfy { $0.entries.allSatisfy { $0.medication?.id == med1.id } })
+	}
+
+	@Test("History cache follows selection changes and replacements with the same event identity")
+	func groupedHistoryInvalidatesForSelectionAndEventEdits() async throws {
+		let first = createTestMedication()
+		let second = createTestMedication()
+		let store = DataStore(testIdentifier: "History-Cache-\(UUID().uuidString)")
+		try await store.addMedication(first)
+		try await store.addMedication(second)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: first.id.uuidString)
+		let event = createTestEvent(medication: first, amount: 1, unit: .tablet)
+		let secondEvent = createTestEvent(medication: second, amount: 2, unit: .tablet)
+		model.events = [event, secondEvent]
+		#expect(model.groupedHistory.flatMap(\.entries).map(\.id) == [event.id])
+		model.selectedMedicationID = second.id.uuidString
+		#expect(model.groupedHistory.flatMap(\.entries).map(\.id) == [secondEvent.id])
+		var edited = secondEvent
+		edited.date = Calendar.current.date(byAdding: .day, value: -2, to: event.date) ?? event.date
+		edited.dose = ANDoseConcept(amount: 3, unit: .tablet)
+		model.events = [event, edited]
+		#expect(model.groupedHistory.first?.day == Calendar.current.startOfDay(for: edited.date))
+		#expect(model.groupedHistory.first?.entries.first?.dose?.amount == 3)
+		model.selectedMedicationID = "all"
+		#expect(model.groupedHistory.flatMap(\.entries).count == 2)
+	}
+
+	@Test("History observes newly saved doses without polling", .timeLimit(.minutes(1)))
+	func historyObservesSavedDose() async throws {
+		let medication = createTestMedication(quantity: 10)
+		let store = DataStore(testIdentifier: "History-ObservedDose-\(UUID().uuidString)")
+		try await store.addMedication(medication)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString)
+		#expect(model.groupedHistory.isEmpty)
+		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		let updates = AsyncStream<[ANEventConcept]>.makeStream(bufferingPolicy: .bufferingNewest(1))
+		let subscription = model.$events.sink { updates.continuation.yield($0) }
+		let observation = Task { @MainActor in
+			for await events in updates.stream {
+				if events.contains(where: { $0.id == event.id }) { return }
+			}
+		}
+		defer {
+			observation.cancel()
+			subscription.cancel()
+			updates.continuation.finish()
+		}
+		try await store.recordDose(event)
+		await observation.value
+		#expect(model.groupedHistory.first?.entries.first?.id == event.id)
+		#expect(model.medications.first?.quantity == 8)
+	}
+
+	@Test("History receives a cold store load and keeps the requested medication", .timeLimit(.minutes(1)))
+	func historyObservesColdStoreLoad() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("History-ColdLoad-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let medication = createTestMedication()
+		let writer = DataStore(storageDirectory: directory)
+		try await writer.addMedication(medication)
+		let event = createTestEvent(medication: medication, amount: 1, unit: .tablet)
+		try await writer.addEvent(event)
+		let reader = DataStore(storageDirectory: directory)
+		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString)
+		let updates = AsyncStream<[ANEventConcept]>.makeStream(bufferingPolicy: .bufferingNewest(1))
+		let subscription = model.$events.sink { updates.continuation.yield($0) }
+		defer {
+			subscription.cancel()
+			updates.continuation.finish()
+		}
+		for await events in updates.stream {
+			if events.contains(where: { $0.id == event.id }) { break }
+		}
+		#expect(model.selectedMedicationID == medication.id.uuidString)
+		#expect(model.groupedHistory.first?.entries.first?.id == event.id)
+	}
+
+	@Test("History clock refresh redraws date labels without a store mutation")
+	func clockRefreshPublishesPresentationChange() async throws {
+		let store = DataStore(testIdentifier: "History-Clock-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter())
+		var refreshes = 0
+		let subscription = model.objectWillChange.sink { refreshes += 1 }
+		defer { subscription.cancel() }
+		model.refreshForClockChange()
+		#expect(refreshes == 1)
+		#expect(model.groupedHistory.isEmpty)
+	}
+
+	@Test("History foreground refresh loads doses saved by another store")
+	func foregroundRefreshLoadsExternalDose() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("History-Foreground-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let reader = DataStore(storageDirectory: directory)
+		let medication = createTestMedication(quantity: 10)
+		try await reader.addMedication(medication)
+		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter())
+		await model.refreshAfterForeground()
+		#expect(model.groupedHistory.isEmpty)
+		let writer = DataStore(storageDirectory: directory)
+		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await writer.recordDose(event)
+		await model.refreshAfterForeground()
+		#expect(model.groupedHistory.first?.entries.first?.id == event.id)
+		#expect(model.medications.first?.quantity == 8)
 	}
 
 	// MARK: - Dose Increase Tests
@@ -439,4 +546,21 @@ struct MedicationHistoryViewModelTests {
 		#expect(dataStore.events.count == 1)
 		#expect(dataStore.medications.first?.quantity == 12.0)
 	}
+	@Test("All History chooser excludes archived medications and keeps list order")
+	func allHistoryLogChoices() {
+		let previousSelection = UserDefaults.standard.object(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		defer { UserDefaults.standard.set(previousSelection, forKey: UserDefaultsKeys.historySelectedMedicationID) }
+		let store = DataStore(testIdentifier: "History-Chooser-\(UUID().uuidString)")
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", notificationCenter: NotificationCenter())
+		let first = ANMedicationConcept(clinicalName: "Synthetic Z")
+		let second = ANMedicationConcept(clinicalName: "Synthetic A")
+		var archived = ANMedicationConcept(clinicalName: "Synthetic archived")
+		archived.isArchived = true
+		model.medications = [first, archived, second]
+		#expect(model.isShowingAllMedications)
+		#expect(model.logDosePickerMedications.map(\.id) == [first.id, second.id])
+		model.medications = [archived]
+		#expect(model.logDosePickerMedications.isEmpty)
+	}
+
 }

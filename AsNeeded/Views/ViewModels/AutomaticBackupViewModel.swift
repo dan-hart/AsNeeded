@@ -1,12 +1,15 @@
 // AutomaticBackupViewModel.swift
 // View model for automatic backup settings and operations
 
+import Combine
 import Foundation
 import SwiftUI
 
 @MainActor
 final class AutomaticBackupViewModel: ObservableObject {
-    private let manager = AutomaticBackupManager.shared
+    private let manager: AutomaticBackupManager
+    private var managerSubscription: AnyCancellable?
+    private let prepareBookmark: @MainActor (URL) async throws -> Data
 
     // MARK: - Published Properties
 
@@ -18,7 +21,15 @@ final class AutomaticBackupViewModel: ObservableObject {
     @Published var showingExplainer = false
     @Published var showingRestoreSheet = false
     @Published var showingPrivacyOnboarding = false
+    /// True while the setup sheets (privacy options, then the folder picker) are on screen.
     @Published var isSettingUp = false
+    /// True while a chosen folder is being bookmarked and its first backup written.
+    @Published private(set) var isSavingLocation = false
+    /// Name of the configured backup folder. Stored rather than computed because resolving the bookmark
+    /// reads the file system, which must not happen while SwiftUI is building the view.
+    @Published private(set) var locationName: String?
+    /// Set when the privacy sheet is dismissed on the way to the folder picker.
+    private var shouldPresentLocationPickerAfterOnboarding = false
     @Published var selectedBackup: BackupFile?
     @Published var alertMessage: String?
     @Published var showingAlert = false
@@ -30,6 +41,15 @@ final class AutomaticBackupViewModel: ObservableObject {
 
     var isEnabled: Bool {
         UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+    }
+
+    /// Whether the Enable button should read as busy: setup sheets are up, or the location is being saved.
+    var isBusy: Bool {
+        isSettingUp || isSavingLocation
+    }
+
+    var canChangeBackupLocation: Bool {
+        !isBackupInProgress && !isSavingLocation
     }
 
     var isConfigured: Bool {
@@ -87,24 +107,6 @@ final class AutomaticBackupViewModel: ObservableObject {
         }
     }
 
-    var locationName: String? {
-        guard let bookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) else {
-            return nil
-        }
-
-        var isStale = false
-        guard let url = try? URL(
-            resolvingBookmarkData: bookmark,
-            options: [],
-            relativeTo: nil,
-            bookmarkDataIsStale: &isStale
-        ) else {
-            return nil
-        }
-
-        return url.lastPathComponent
-    }
-
     var retentionDays: Int {
         get {
             manager.retentionDays
@@ -148,15 +150,44 @@ final class AutomaticBackupViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init() {
-        loadBackupHistory()
+    init(
+        manager: AutomaticBackupManager = .shared,
+        prepareBookmark: @escaping @MainActor (URL) async throws -> Data = { url in
+            try await Task.detached(priority: .userInitiated) {
+                guard url.startAccessingSecurityScopedResource() else {
+                    throw BackupError.accessDenied
+                }
+                defer { url.stopAccessingSecurityScopedResource() }
+                return try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+            }.value
+        }
+    ) {
+        self.manager = manager
+        self.prepareBookmark = prepareBookmark
+        // `isBackupInProgress` and `lastError` live on the manager, and the backup now runs off the main
+        // actor with the UI live, so the manager's changes have to reach views observing this view model.
+        managerSubscription = manager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+
+        // Reading the backup folder touches the file system, so the view kicks it off from `.task`
+        // instead of blocking whoever creates this view model.
     }
 
     // MARK: - Public Methods
 
-    func loadBackupHistory() {
-        backupHistory = manager.getBackupHistory()
-        totalStorageUsed = manager.getTotalBackupSize()
+    func loadBackupHistory() async {
+        let files = await manager.backupHistory()
+        backupHistory = files
+        totalStorageUsed = files.reduce(0) { $0 + $1.size }
+    }
+
+    /// Refreshes everything the backup screen shows, off the main actor. Called when the screen appears.
+    func refreshStatus() async {
+        await manager.refreshBookmarkStatus()
+        locationName = await manager.backupLocationName()
+        await loadBackupHistory()
+        objectWillChange.send()
     }
 
     func enableAutomaticBackup() {
@@ -165,9 +196,33 @@ final class AutomaticBackupViewModel: ObservableObject {
         showingPrivacyOnboarding = true
     }
 
+    /// Starts the hand-off from the privacy sheet to the folder picker.
+    ///
+    /// The picker is not presented here: asking UIKit to present it in the same runloop turn that
+    /// dismisses the privacy sheet makes the two presentations race, and the picker can silently fail to
+    /// appear. `privacyOnboardingDismissed()` presents it once the sheet is actually gone.
     func proceedWithLocationSelection() {
+        shouldPresentLocationPickerAfterOnboarding = true
         showingPrivacyOnboarding = false
-        showingLocationPicker = true
+    }
+
+    /// Called from the privacy sheet's `onDismiss`, after UIKit has finished tearing the sheet down.
+    func privacyOnboardingDismissed() {
+        if shouldPresentLocationPickerAfterOnboarding {
+            shouldPresentLocationPickerAfterOnboarding = false
+            showingLocationPicker = true
+        } else {
+            // Cancelled or swiped away, so setup is over and the Enable button must come back.
+            isSettingUp = false
+        }
+    }
+
+    /// Called when the folder picker goes away for any reason.
+    ///
+    /// A cancelled picker does not reliably call its completion handler, so clearing setup state here is
+    /// what stops the Enable button from being stuck on "Loading..." forever.
+    func locationPickerDismissed() {
+        isSettingUp = false
     }
 
     func confirmDisableAutomaticBackup() {
@@ -181,41 +236,43 @@ final class AutomaticBackupViewModel: ObservableObject {
         objectWillChange.send()
     }
 
+    /// Marks a folder selection as claimed, before the picker's dismissal clears `isSettingUp`.
+    func beginSavingLocation() {
+        isSavingLocation = true
+    }
+
     func saveBackupLocation(url: URL) async {
+        isSavingLocation = true
         defer {
+            isSavingLocation = false
             isSettingUp = false
         }
 
         do {
-            // Access security-scoped resource before creating bookmark
-            guard url.startAccessingSecurityScopedResource() else {
-                alertMessage = "Permission denied to access selected location"
-                showingAlert = true
+            guard !manager.isBackupInProgress else {
+                showLocationChangeUnavailable()
                 return
             }
-            defer {
-                url.stopAccessingSecurityScopedResource()
+            let revision = manager.configurationRevision
+            let bookmark = try await prepareBookmark(url)
+            guard !manager.isBackupInProgress, manager.configurationRevision == revision else {
+                showLocationChangeUnavailable()
+                return
             }
 
-            // Create security-scoped bookmark
-            let bookmark = try url.bookmarkData(
-                options: [],
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil
-            )
-
             manager.saveBackupLocation(bookmark: bookmark)
+            locationName = url.lastPathComponent
             objectWillChange.send()
-            loadBackupHistory()
 
             // Perform automatic test backup
             let status = await manager.performManualBackup()
+            await manager.refreshBookmarkStatus()
 
             switch status {
             case .success:
                 successMessage = "Automatic backup enabled and initial backup completed successfully"
                 showingSuccess = true
-                loadBackupHistory()
+                await loadBackupHistory()
             case let .failed(message):
                 alertMessage = "Automatic backup enabled, but initial backup failed: \(message)"
                 showingAlert = true
@@ -239,7 +296,13 @@ final class AutomaticBackupViewModel: ObservableObject {
         }
     }
 
+    private func showLocationChangeUnavailable() {
+        alertMessage = "Backup settings changed or a backup is in progress. Please try selecting the location again."
+        showingAlert = true
+    }
+
     func changeBackupLocation() {
+        guard canChangeBackupLocation else { return }
         showingLocationPicker = true
     }
 
@@ -250,7 +313,7 @@ final class AutomaticBackupViewModel: ObservableObject {
         case .success:
             successMessage = "Backup completed successfully"
             showingSuccess = true
-            loadBackupHistory()
+            await loadBackupHistory()
         case let .failed(message):
             alertMessage = message
             showingAlert = true
@@ -270,17 +333,20 @@ final class AutomaticBackupViewModel: ObservableObject {
         }
     }
 
-    func deleteBackup(at offsets: IndexSet) {
-        for index in offsets {
-            let backup = backupHistory[index]
+    func deleteBackup(at offsets: IndexSet) async {
+        let doomed = offsets.compactMap { backupHistory[doesExistAt: $0] }
+        for backup in doomed {
             do {
-                try FileManager.default.removeItem(at: backup.url)
-                loadBackupHistory()
+                let url = backup.url
+                try await Task.detached(priority: .userInitiated) {
+                    try FileManager.default.removeItem(at: url)
+                }.value
             } catch {
                 alertMessage = "Failed to delete backup: \(error.localizedDescription)"
                 showingAlert = true
             }
         }
+        await loadBackupHistory()
     }
 
     func clearAllBackups() async {
@@ -288,7 +354,7 @@ final class AutomaticBackupViewModel: ObservableObject {
             try await manager.clearAllBackups()
             successMessage = "All backups cleared successfully"
             showingSuccess = true
-            loadBackupHistory()
+            await loadBackupHistory()
         } catch {
             alertMessage = "Failed to clear backups: \(error.localizedDescription)"
             showingAlert = true

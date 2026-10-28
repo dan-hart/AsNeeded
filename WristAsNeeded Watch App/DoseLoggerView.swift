@@ -3,12 +3,15 @@ import SwiftUI
 import WatchKit
 
 struct DoseLoggerView: View {
+	@Environment(\.colorScheme) private var colorScheme
 	private let initialMedication: WatchMedication
 	@Binding var doseAmount: Double
 	@EnvironmentObject var sender: WCSender
 	@Environment(\.dismiss) private var dismiss
 	@State private var selectedUnit: String
 	@State private var isLogging = false
+	@State private var eventID = UUID()
+	@State private var loggedAt: Date?
 	@State private var isQueued = false
 	@State private var now = Date()
 
@@ -155,7 +158,7 @@ struct DoseLoggerView: View {
 					.frame(maxWidth: .infinity)
 					.padding()
 					.background(isLogging ? Color.gray : Color.accent)
-					.foregroundColor(.white)
+					.foregroundStyle(colorScheme == .dark ? .black : .white)
 					.cornerRadius(12)
 					.disabled(isLogging || isQueued)
 				}
@@ -180,7 +183,10 @@ struct DoseLoggerView: View {
 		guard !isLogging else { return }
 		isLogging = true
 
+		if loggedAt == nil { loggedAt = Date() }
 		let eventData: [String: Any] = [
+			"eventID": eventID.uuidString,
+			"date": loggedAt ?? Date(),
 			"medicationId": medication.id.uuidString,
 			"doseAmount": doseAmount,
 			"doseUnit": selectedUnit,

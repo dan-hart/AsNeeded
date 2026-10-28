@@ -32,10 +32,7 @@ struct MedicationEditView: View {
 	@ObservedObject private var notificationManager = NotificationManager.shared
 	@Environment(\.scenePhase) private var scenePhase
     @State private var showingDatePicker = false
-	@State private var isSaving = false
-	@State private var showingSaveError = false
 	@State private var showingDiscardConfirmation = false
-	@State private var originalDraft: [String]?
 	@State private var showingDoseLimits = false
 	@State private var showingSupply = false
 	@State private var showingAppearance = false
@@ -97,11 +94,12 @@ struct MedicationEditView: View {
 
     init(
         medication: ANMedicationConcept?,
+		draft: MedicationEditViewModel? = nil,
         onSave: @escaping (ANMedicationConcept) async -> Bool,
         onCancel: @escaping () -> Void
     ) {
         self.medication = medication
-        _viewModel = StateObject(wrappedValue: MedicationEditViewModel(medication: medication))
+        _viewModel = StateObject(wrappedValue: draft ?? MedicationEditViewModel(medication: medication))
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -123,7 +121,7 @@ struct MedicationEditView: View {
 	}
 
 	private var hasChanges: Bool {
-		originalDraft.map { $0 != draftValues } ?? false
+		viewModel.originalDraft.map { $0 != draftValues } ?? false
 	}
 
 	private var validationMessage: String? {
@@ -146,16 +144,14 @@ struct MedicationEditView: View {
     }
 
     private func performSave() async {
-		guard !isSaving else { return }
-		isSaving = true
-		defer { isSaving = false }
+		guard !viewModel.isSaving else { return }
         withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
             hideKeyboard()
         }
 		if await viewModel.saveMedication(using: onSave) {
 			hapticsManager.medicationAdded()
 		} else {
-			showingSaveError = true
+			viewModel.showingSaveError = true
 		}
     }
 
@@ -712,14 +708,14 @@ struct MedicationEditView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
             }
-            .foregroundStyle(backgroundColor.contrastingForegroundColor())
+            .contrastingForeground(against: backgroundColor)
             .frame(maxWidth: .infinity)
             .padding(.vertical, buttonVerticalPadding)
             .background(
                 LinearGradient(
                     colors: isFormValid ?
-                        [.accent, .accent.opacity(0.8)] :
-                        [Color.gray, Color.gray.opacity(0.8)],
+                        [.accent, .accent] :
+                        [Color.gray, Color.gray],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
@@ -727,7 +723,7 @@ struct MedicationEditView: View {
             .clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
             .shadow(color: isFormValid ? .accent.opacity(0.3) : .clear, radius: shadowRadius, y: shadowY)
         }
-        .disabled(!isFormValid || isSaving)
+        .disabled(!isFormValid || viewModel.isSaving)
         .padding(.horizontal)
         .padding(.vertical, quickButtonSpacing)
     }
@@ -998,7 +994,7 @@ struct MedicationEditView: View {
     var body: some View {
         NavigationStack {
             mainContent
-				.disabled(isSaving)
+				.disabled(viewModel.isSaving)
 				.task { await notificationManager.checkAuthorizationStatus() }
 				.onChange(of: scenePhase) { _, phase in
 					if phase == .active {
@@ -1012,8 +1008,8 @@ struct MedicationEditView: View {
 				}
 				.customNavigationTitle(medication == nil ? "Add Medication" : "Edit Medication", displayMode: .inline)
 				.onAppear {
-					if originalDraft == nil {
-						originalDraft = draftValues
+					if viewModel.originalDraft == nil {
+						viewModel.originalDraft = draftValues
 						showingDoseLimits = !viewModel.minimumHoursBetweenDosesText.isEmpty || !viewModel.maxDailyAmountText.isEmpty || viewModel.nextDoseNotificationEnabled
 						showingSupply = !viewModel.quantityText.isEmpty || !viewModel.initialQuantityText.isEmpty || viewModel.lastRefillDate != nil || viewModel.nextRefillDate != nil
 					}
@@ -1028,7 +1024,7 @@ struct MedicationEditView: View {
                         } label: {
                             Image(systemSymbol: .xmark)
                         }
-						.disabled(isSaving)
+						.disabled(viewModel.isSaving)
 						.accessibilityLabel("Cancel medication changes")
                     }
 
@@ -1039,8 +1035,8 @@ struct MedicationEditView: View {
 					}
                 }
                 .tint(.accent)
-				.interactiveDismissDisabled(isSaving || hasChanges)
-				.alert("Medication not saved", isPresented: $showingSaveError) {
+				.interactiveDismissDisabled(viewModel.isSaving || hasChanges)
+				.alert("Medication not saved", isPresented: $viewModel.showingSaveError) {
 					Button("Keep Editing", role: .cancel) {}
 				} message: {
 					Text("Your changes are still here. Please try again.")

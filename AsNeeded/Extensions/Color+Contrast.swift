@@ -4,6 +4,14 @@
 import SwiftUI
 
 extension Color {
+	/// Semantic success tint that stays legible on the guidance card in either appearance.
+	static func guidanceGreen(for colorScheme: ColorScheme) -> Color {
+		colorScheme == .dark
+			? Color(red: 0.38, green: 0.84, blue: 0.48)
+			: Color(red: 0.0, green: 0.42, blue: 0.2)
+	}
+
+
     /// Calculates the relative luminance of a color according to WCAG standards
     /// - Returns: Luminance value between 0 (darkest) and 1 (lightest)
     var luminance: Double {
@@ -102,9 +110,9 @@ extension View {
     /// - Returns: View with contrasting foreground style applied
     func contrastingForeground(
         against backgroundColor: Color,
-        in colorScheme: ColorScheme = .light
+        in colorScheme: ColorScheme? = nil
     ) -> some View {
-        foregroundStyle(backgroundColor.contrastingForegroundColor(for: colorScheme))
+		modifier(ContrastingForegroundModifier(background: backgroundColor, preferredScheme: colorScheme))
     }
 
     /// Applies the optimal secondary foreground color for the given background color
@@ -118,4 +126,18 @@ extension View {
     ) -> some View {
         foregroundStyle(backgroundColor.contrastingSecondaryColor(for: colorScheme))
     }
+}
+
+// MARK: - Appearance-aware Foreground
+private struct ContrastingForegroundModifier: ViewModifier {
+	@Environment(\.colorScheme) private var colorScheme
+	let background: Color
+	let preferredScheme: ColorScheme?
+
+	func body(content: Content) -> some View {
+		let foreground = background.contrastingForegroundColor(for: preferredScheme ?? colorScheme)
+		content
+			.foregroundStyle(foreground)
+			.tint(foreground)
+	}
 }

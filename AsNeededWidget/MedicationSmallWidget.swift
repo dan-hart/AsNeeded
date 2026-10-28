@@ -40,14 +40,14 @@ struct SmallWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (MedicationEntry) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<MedicationEntry>) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(
@@ -62,11 +62,12 @@ struct SmallWidgetProvider: TimelineProvider {
     }
 
     @MainActor
-    private func createEntry() -> MedicationEntry {
-        let provider = WidgetDataProvider.shared
+    private func createEntry() async -> MedicationEntry {
+        let provider = WidgetDataProvider()
+		await provider.loadSnapshot()
 
         guard let medication = provider.nextMedicationDue else {
-            return MedicationEntry(date: Date(), medication: nil, nextDoseTime: nil, canTakeNow: false)
+            return MedicationEntry(date: Date(), medication: nil, nextDoseTime: nil, canTakeNow: false, unavailable: provider.isUnavailable)
         }
 
         let nextDoseTime = provider.nextDoseTime(for: medication)
@@ -143,11 +144,11 @@ struct SmallWidgetView: View {
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
 
-                Text("No Medications")
+                Text(entry.unavailable ? "Unavailable" : "No Medications")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                Text("Add medications\nin the app")
+                Text(entry.unavailable ? "Open AsNeeded" : "Add medications\nin the app")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -184,6 +185,7 @@ struct MedicationEntry: TimelineEntry {
     let medication: ANMedicationConcept?
     let nextDoseTime: Date?
     let canTakeNow: Bool
+	var unavailable: Bool = false
 }
 
 // MARK: - Preview
@@ -218,6 +220,7 @@ struct MedicationEntry: TimelineEntry {
 
 @available(iOS 17.0, *)
 struct LogDoseButton: View {
+	@Environment(\.colorScheme) private var colorScheme
     let medicationID: String
 	let medicationName: String
 	let doseDescription: String
@@ -235,8 +238,8 @@ struct LogDoseButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color.green)
-            .foregroundStyle(.white)
+            .background(Color("AccentColor"))
+            .foregroundStyle(colorScheme == .dark ? .black : .white)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

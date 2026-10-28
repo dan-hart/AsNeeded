@@ -297,7 +297,7 @@ public final class DataMigrationManager {
             let currentData = try await loadCurrentData()
             logger.info("Loaded current data: \\(currentData.count) items")
 
-            // 4. Merge data (deduplicate by ID, legacy takes precedence)
+            // 4. Recover missing IDs; preserve edits in the current store
             let mergedData = mergeByID(legacy: legacyData, current: currentData)
             logger.info("Merged data: \\(mergedData.count) items")
 
@@ -320,8 +320,8 @@ public final class DataMigrationManager {
 
     private func mergeByID<T: Identifiable>(legacy: [T], current: [T]) -> [T] {
         var itemsById = Dictionary(uniqueKeysWithValues: current.map { ($0.id, $0) })
-        for item in legacy {
-            itemsById[item.id] = item // Legacy takes precedence
+        for item in legacy where itemsById[item.id] == nil {
+            itemsById[item.id] = item // Current records take precedence
         }
         return Array(itemsById.values)
     }
@@ -344,7 +344,7 @@ The migration approach is **data-driven** (no UserDefaults flags), but this requ
 - [ ] Implement `findLegacyDatabases()` to detect legacy data locations
 - [ ] Implement `loadLegacyData()` method
 - [ ] Implement `loadCurrentData()` method
-- [ ] Implement `mergeByID()` logic (legacy takes precedence)
+- [ ] Implement `mergeByID()` logic (current records take precedence; recover missing legacy IDs)
 - [ ] Implement `writeMergedData()` method
 - [ ] Add verification step
 - [ ] **⚠️ Implement `archiveLegacyDatabases()` to rename legacy files after success**
@@ -614,3 +614,57 @@ UserDefaults does not enable any functionality; no destructive cleanup or data
 migration is needed. Medication/event storage paths and schemas are unchanged.
 Compatibility tests cover decoding older settings and medication exports,
 preserving supported preferences, and omitting the retired key from new exports.
+
+### 1.2.0 Stabilization: Legacy Reads, Imports and Migration Backups
+
+The October 27 stabilization pass changes no primary database paths, containers,
+filenames or model schemas. Bodega appends `.sqlite3`
+to engine names; discovered legacy `.sqlite`, `.db` and extensionless files must
+therefore be copied with their WAL/SHM sidecars into a disposable reading directory
+using that required filename. The original remains available until merge
+verification and archival succeed. Corrupt sources throw rather than appearing empty.
+
+**Conflict policy correction:** current same-ID medications and events take
+precedence over legacy records. The repaired reader can recover old files that
+previous versions ignored; historical legacy-first merging would revert newer
+quantities, names, limits, doses, dates and notes during that recovery. Import
+missing IDs, preserve whole current records, and retain the archived source for
+recovery instead of guessing which individual fields are newer. Existing records
+are not removed/reinserted. This changes the historical policy shown in the
+incident sections above. It can retain incomplete current metadata; the original
+legacy metadata stays archived. Without deletion tombstones, missing-ID recovery
+cannot distinguish an orphaned record from an intentional past deletion; this
+existing limitation still needs a release decision for affected upgrade fixtures.
+
+Record replacement during JSON import preserves device preferences and backup
+bookmarks. Imported settings remain opt-in. Resolve medication identity by exact
+ID before any unique-name fallback, include existing medications for merges, and
+validate unresolved/ambiguous history references before replacing records.
+
+Migration backup directories retain `pre_migration_` and their timestamp, with a
+unique suffix to prevent same-second collisions. Existing backup discovery and
+restore paths remain compatible. File-based migration restore is an offline
+operation performed before Boutique stores open; it does not refresh live caches.
+It rejects empty sources, stages the requested snapshot before retention cleanup,
+and requires a successful safety backup before replacing files. The shipping
+automatic-backup restore UI uses the separate JSON import path.
+
+Failure/retry and repeated-launch coverage uses disposable directories/defaults,
+not permission changes to the shared container. See the [stabilization evidence](testing/1.2.0-data-integrity-stabilization.md).
+The October 28 pass routes dose/stock, history changes and JSON imports through
+`MedicationPersistenceTransactions`. It keeps the existing databases and adds
+`.persistence.lock` plus a version-1 `pending-data-transaction.json` undo journal
+in their directory. Cooperating app/widget writers load fresh records under the
+same lock. The journal is flushed before writes and removed only after completion.
+Ordinary failures restore affected records and exact persisted imported preferences;
+interruption or failed rollback retains the journal for recovery before access.
+Malformed journals fail closed. Widgets cannot recover app-owned preferences and
+show an unavailable state until the app recovers them. Registered defaults and
+unrelated preference changes are not captured as persisted import values.
+
+History edits/deletes and Undo adjust compatible stock in the same operation.
+Retries with the same event ID cannot deduct twice; Watch messages retain that ID.
+No unit conversion is inferred. Existing database paths/schema are unchanged.
+Older releases cannot recover this journal: do not downgrade with one pending.
+These are process-interruption guarantees, not certification against every device
+power-loss/filesystem failure. See [build 310 verification](testing/1.2.0-310-stabilization-verification.md).

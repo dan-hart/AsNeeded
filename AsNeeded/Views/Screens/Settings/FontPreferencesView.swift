@@ -34,7 +34,7 @@ struct FontPreferencesView: View {
 	private let padding: CGFloat = 16
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 headerSection
 

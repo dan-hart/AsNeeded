@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # prod-build.sh - Optimized production/release builds
 # Uses whole-module optimization and aggressive compiler settings for App Store
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -25,6 +25,12 @@ if ! command -v xcsift &> /dev/null; then
     USE_XCSIFT=false
 else
     USE_XCSIFT=true
+fi
+
+# Refuse to build a release that would ship without support options.
+# Set SKIP_REVENUECAT_KEY_CHECK=1 for an intentionally keyless release.
+if [ "${SKIP_REVENUECAT_KEY_CHECK:-0}" != "1" ]; then
+    ./scripts/verify-release-key.sh --local
 fi
 
 # Clean build folder first

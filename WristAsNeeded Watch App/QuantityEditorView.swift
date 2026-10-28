@@ -2,6 +2,7 @@ import SwiftUI
 import WatchKit
 
 struct QuantityEditorView: View {
+	@Environment(\.colorScheme) private var colorScheme
     let medication: WatchMedication
     @Binding var quantity: Double
     @EnvironmentObject var sender: WCSender
@@ -125,7 +126,7 @@ struct QuantityEditorView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
 					.background(isUpdating || isQueued || quantity == medication.quantity ? Color.gray : Color.accent)
-                    .foregroundColor(.white)
+                    .foregroundStyle(colorScheme == .dark ? .black : .white)
                     .cornerRadius(12)
 					.disabled(isUpdating || isQueued || !quantity.isFinite || quantity < 0 || quantity == medication.quantity)
                 }

@@ -96,7 +96,7 @@ struct WelcomeView: View {
                     Text("Continue")
                         .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .contrastingForeground(against: .accent)
                     Spacer()
                 }
                 .padding(.vertical, standardPadding)

@@ -13,6 +13,8 @@ import Foundation
 public final class BackupManager {
 	public static let shared = BackupManager()
 	private let logger = DHLogger.data
+	private let appGroupURL: URL?
+	private let now: () -> Date
 
 	/// Result of a backup operation
 	public struct BackupResult {
@@ -24,23 +26,27 @@ public final class BackupManager {
 		public let error: Error?
 	}
 
-	private init() {}
+	init(
+		appGroupURL: URL? = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier),
+		now: @escaping () -> Date = { Date() }
+	) {
+		self.appGroupURL = appGroupURL
+		self.now = now
+	}
 
 	// MARK: - Public API
 
 	/// Creates a timestamped backup of all databases before migration
 	/// - Returns: BackupResult with path to backup directory
 	public func createPreMigrationBackup() async -> BackupResult {
-		let timestamp = Date()
+		let timestamp = now()
 		let formatter = DateFormatter()
 		formatter.dateFormat = "yyyyMMdd_HHmmss"
 		let timestampString = formatter.string(from: timestamp)
 
 		logger.info("Creating pre-migration backup at \(timestampString)")
 
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL else {
 			logger.error("❌ Cannot create backup - App Group unavailable")
 			return BackupResult(
 				success: false,
@@ -54,7 +60,7 @@ public final class BackupManager {
 
 		let backupDir = appGroupURL
 			.appendingPathComponent(StorageConstants.backupDirectoryName)
-			.appendingPathComponent("pre_migration_\(timestampString)")
+			.appendingPathComponent("pre_migration_\(timestampString)_\(UUID().uuidString)")
 
 		do {
 			// Create backup directory
@@ -117,9 +123,7 @@ public final class BackupManager {
 	/// Lists all available backups
 	/// - Returns: Array of backup URLs sorted by date (newest first)
 	public func listBackups() -> [URL] {
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL else {
 			return []
 		}
 
@@ -151,12 +155,12 @@ public final class BackupManager {
 	/// Restores data from a specific backup
 	/// - Parameter backupURL: URL to the backup directory
 	/// - Returns: True if restore succeeded
+	/// - Important: Restore migration files before opening Boutique stores. Existing
+	///   store connections and in-memory caches are not refreshed by file replacement.
 	public func restoreFromBackup(at backupURL: URL) async throws -> Bool {
 		logger.info("Restoring from backup")
 
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL else {
 			throw MigrationBackupError.appGroupUnavailable
 		}
 
@@ -164,15 +168,36 @@ public final class BackupManager {
 		guard FileManager.default.fileExists(atPath: backupURL.path) else {
 			throw MigrationBackupError.backupNotFound
 		}
+		let fileManager = FileManager.default
+		guard fileManager.fileExists(atPath: backupURL.appendingPathComponent(StorageConstants.medicationsDBPath).path) ||
+			fileManager.fileExists(atPath: backupURL.appendingPathComponent(StorageConstants.eventsDBPath).path) else {
+			throw MigrationBackupError.backupNotFound
+		}
+
+		// Creating the safety backup runs retention cleanup. Pin the requested
+		// snapshot first so restoring the oldest backup cannot delete its own source.
+		let restoreSource = fileManager.temporaryDirectory.appendingPathComponent("AsNeededRestore-\(UUID().uuidString)")
+		try fileManager.createDirectory(at: restoreSource, withIntermediateDirectories: true)
+		defer { try? fileManager.removeItem(at: restoreSource) }
+		for name in [StorageConstants.medicationsDBPath, StorageConstants.eventsDBPath] {
+			for suffix in ["", "-wal", "-shm"] {
+				let source = backupURL.appendingPathComponent(name + suffix)
+				if fileManager.fileExists(atPath: source.path) {
+					try fileManager.copyItem(at: source, to: restoreSource.appendingPathComponent(name + suffix))
+				}
+			}
+		}
+		let medicationsBackup = restoreSource.appendingPathComponent(StorageConstants.medicationsDBPath)
+		let eventsBackup = restoreSource.appendingPathComponent(StorageConstants.eventsDBPath)
 
 		// First, create a backup of current state before restoring
 		let preRestoreBackup = await createPreMigrationBackup()
-		if !preRestoreBackup.success {
-			logger.warning("Could not create pre-restore backup, proceeding anyway")
+		guard preRestoreBackup.success else {
+			logger.error("Could not create safety backup; restore stopped before replacement")
+			throw preRestoreBackup.error ?? MigrationBackupError.restoreFailed("Could not back up current data")
 		}
 
 		// Restore medications (using atomic replace for safety)
-		let medicationsBackup = backupURL.appendingPathComponent(StorageConstants.medicationsDBPath)
 		let medicationsDest = appGroupURL.appendingPathComponent(StorageConstants.medicationsDBPath)
 
 		if FileManager.default.fileExists(atPath: medicationsBackup.path) {
@@ -180,11 +205,10 @@ public final class BackupManager {
 			logger.info("✅ Restored medications database")
 
 			// Also restore WAL/SHM files if they exist in backup
-			try restoreWALFiles(from: backupURL, to: appGroupURL, baseName: StorageConstants.medicationsDBName)
+			try restoreWALFiles(from: restoreSource, to: appGroupURL, baseName: StorageConstants.medicationsDBName)
 		}
 
 		// Restore events (using atomic replace for safety)
-		let eventsBackup = backupURL.appendingPathComponent(StorageConstants.eventsDBPath)
 		let eventsDest = appGroupURL.appendingPathComponent(StorageConstants.eventsDBPath)
 
 		if FileManager.default.fileExists(atPath: eventsBackup.path) {
@@ -192,7 +216,7 @@ public final class BackupManager {
 			logger.info("✅ Restored events database")
 
 			// Also restore WAL/SHM files if they exist in backup
-			try restoreWALFiles(from: backupURL, to: appGroupURL, baseName: StorageConstants.eventsDBName)
+			try restoreWALFiles(from: restoreSource, to: appGroupURL, baseName: StorageConstants.eventsDBName)
 		}
 
 		logger.info("Restore complete")

@@ -164,7 +164,7 @@ public final class DataRecoveryManager {
 		for medication in recoveredData.medications {
 			let existingIDs = Set(dataStore.medications.map { $0.id })
 			if !existingIDs.contains(medication.id) {
-				try await dataStore.medicationsStore.insert(medication)
+				try await dataStore.addMedication(medication)
 				medicationsRecovered += 1
 			}
 		}
@@ -173,7 +173,7 @@ public final class DataRecoveryManager {
 		for event in recoveredData.events {
 			let existingIDs = Set(dataStore.events.map { $0.id })
 			if !existingIDs.contains(event.id) {
-				try await dataStore.eventsStore.insert(event)
+				try await dataStore.addEvent(event, shouldRecordForReview: false)
 				eventsRecovered += 1
 			}
 		}

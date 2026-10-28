@@ -1,5 +1,4 @@
 import DHLoggingKit
-import DHUtilityKit
 import Foundation
 import RevenueCat
 import SwiftUI
@@ -36,18 +35,28 @@ class RevenueCatManager: NSObject, ObservableObject {
     @Published var isLoadingProducts = false
     @Published var purchaseError: String?
 
-    func configure() {
-        // Configure RevenueCat with your API key
-        // You'll need to add your RevenueCat API key here
-        // Get it from https://app.revenuecat.com
+    /// True once RevenueCat has been configured with an API key. Builds without one (for example a clean checkout
+    /// with no `Config/Secrets.xcconfig`) leave this false, and every StoreKit call becomes a no-op that reports
+    /// `unavailableMessage` instead of trapping on `Purchases.shared`.
+    @Published private(set) var isConfigured = false
 
-        guard let rcPublicKey = try? SecretManager.shared.getSecret(.revenueCatAPIKey) else {
-            DHLogger.data.error("RevenueCat API key not found in secrets manager")
+    /// Shown wherever a purchase is attempted in a build that has no RevenueCat key.
+    static let unavailableMessage = "Support options are not available in this build."
+
+    func configure() {
+        // The RevenueCat public SDK key is supplied per build, never committed. See Config/Secrets.example.xcconfig.
+        guard let rcPublicKey = SecretManager.shared.secret(for: .revenueCatAPIKey) else {
+            DHLogger.data.warning(
+                "RevenueCat API key not configured; tipping and subscriptions are unavailable in this build. "
+                    + "See Config/Secrets.example.xcconfig."
+            )
+            purchaseError = Self.unavailableMessage
             return
         }
 
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: rcPublicKey)
+        isConfigured = true
 
         // Enable debug logs in debug builds
         #if DEBUG
@@ -70,6 +79,7 @@ class RevenueCatManager: NSObject, ObservableObject {
 
     @MainActor
     func fetchProducts() async {
+        guard isConfigured else { return }
         isLoadingProducts = true
         defer { isLoadingProducts = false }
 
@@ -116,6 +126,7 @@ class RevenueCatManager: NSObject, ObservableObject {
     @MainActor
     func fetchOfferings() async {
         // Keep this for backwards compatibility, but we'll primarily use direct products
+        guard isConfigured else { return }
         do {
             let offerings = try await Purchases.shared.offerings()
             self.offerings = offerings
@@ -127,6 +138,7 @@ class RevenueCatManager: NSObject, ObservableObject {
 
     @MainActor
     func fetchCustomerInfo() async {
+        guard isConfigured else { return }
         do {
             let customerInfo = try await Purchases.shared.customerInfo()
             self.customerInfo = customerInfo
@@ -158,6 +170,12 @@ class RevenueCatManager: NSObject, ObservableObject {
 
     @MainActor
     private func purchase(_ productId: ProductIdentifier) async -> Bool {
+        guard isConfigured else {
+            DHLogger.data.warning("Purchase attempted without a RevenueCat API key")
+            purchaseError = Self.unavailableMessage
+            return false
+        }
+
         purchaseError = nil
 
         // First, ensure products are loaded
@@ -233,6 +251,11 @@ class RevenueCatManager: NSObject, ObservableObject {
     }
 
     func restorePurchases() async -> Bool {
+        guard isConfigured else {
+            purchaseError = Self.unavailableMessage
+            return false
+        }
+
         do {
             let customerInfo = try await Purchases.shared.restorePurchases()
             self.customerInfo = customerInfo

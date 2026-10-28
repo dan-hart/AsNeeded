@@ -44,14 +44,14 @@ struct LockScreenWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (LockScreenEntry) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<LockScreenEntry>) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(
@@ -66,8 +66,9 @@ struct LockScreenWidgetProvider: TimelineProvider {
     }
 
     @MainActor
-    private func createEntry() -> LockScreenEntry {
-        let provider = WidgetDataProvider.shared
+    private func createEntry() async -> LockScreenEntry {
+        let provider = WidgetDataProvider()
+		await provider.loadSnapshot()
         let medications = provider.medications
 
         guard let nextMed = provider.nextMedicationDue else {
@@ -77,7 +78,8 @@ struct LockScreenWidgetProvider: TimelineProvider {
                 nextMedication: nil,
                 nextDoseTime: nil,
                 canTakeNow: false,
-                lowQuantityCount: provider.lowQuantityMedications.count
+                lowQuantityCount: provider.lowQuantityMedications.count,
+				unavailable: provider.isUnavailable
             )
         }
 
@@ -102,16 +104,15 @@ struct LockScreenWidgetView: View {
     let entry: LockScreenEntry
 
     var body: some View {
-        switch family {
-        case .accessoryCircular:
-            circularView
-        case .accessoryRectangular:
-            rectangularView
-        case .accessoryInline:
-            inlineView
-        default:
-            Text("Unsupported")
+        Group {
+            switch family {
+            case .accessoryCircular: circularView
+            case .accessoryRectangular: rectangularView
+            case .accessoryInline: inlineView
+            default: Text("Unsupported")
+            }
         }
+		.widgetURL(entry.nextMedication.flatMap { URL(string: "asneeded://log/\($0.id.uuidString)") })
     }
 
     // MARK: - Circular (Watch-style complication)
@@ -136,13 +137,13 @@ struct LockScreenWidgetView: View {
                     Image(systemName: "pills")
                         .font(.title2)
 
-                    Text("\(entry.medicationCount)")
+                    Text(entry.unavailable ? "Open app" : "\(entry.medicationCount)")
                         .font(.caption.weight(.bold))
                 }
             }
         }
 		.accessibilityElement(children: .ignore)
-		.accessibilityLabel(entry.nextMedication.map { "\($0.displayName). Open AsNeeded to review timing or log a dose." } ?? "\(entry.medicationCount) medications")
+		.accessibilityLabel(entry.unavailable ? "Medication data unavailable. Open AsNeeded." : entry.nextMedication.map { "\($0.displayName). Open AsNeeded to review timing or log a dose." } ?? "\(entry.medicationCount) medications")
     }
 
     // MARK: - Rectangular
@@ -186,7 +187,7 @@ struct LockScreenWidgetView: View {
                     }
                 }
             } else {
-                Text("No medications")
+                Text(entry.unavailable ? "Open AsNeeded" : "No medications")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -205,6 +206,8 @@ struct LockScreenWidgetView: View {
             } else {
                 Text("\(Image(systemName: "pills")) \(nextMed.displayName)")
             }
+        } else if entry.unavailable {
+			Text("Open AsNeeded")
         } else {
             Text("\(Image(systemName: "pills")) \(entry.medicationCount) medications")
         }
@@ -242,6 +245,7 @@ struct LockScreenEntry: TimelineEntry {
     let nextDoseTime: Date?
     let canTakeNow: Bool
     let lowQuantityCount: Int
+	var unavailable: Bool = false
 }
 
 // MARK: - Previews

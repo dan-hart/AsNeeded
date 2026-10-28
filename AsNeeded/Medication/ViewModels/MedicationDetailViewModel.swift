@@ -19,8 +19,10 @@ final class MedicationDetailViewModel: ObservableObject {
         logger.debug("MedicationDetailViewModel initialized")
     }
 
+	func currentMedication(id: UUID) -> ANMedicationConcept? { dataStore.medications.first { $0.id == id } }
+
     @discardableResult
-    func save(updated medication: ANMedicationConcept) async -> Bool {
+    func save(updated medication: ANMedicationConcept, original: ANMedicationConcept? = nil) async -> Bool {
         logger.logMedicationOperation("Saving", id: medication.id)
         isLoading = true
         errorMessage = nil
@@ -28,8 +30,7 @@ final class MedicationDetailViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            try await dataStore.updateMedication(medication)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
+            try await dataStore.updateMedication(medication, original: original)
             logger.logMedicationOperation("Successfully saved", id: medication.id)
 			return true
         } catch {
@@ -48,7 +49,6 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.deleteMedication(medication)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.logMedicationOperation("Successfully deleted", id: medication.id)
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
@@ -75,17 +75,18 @@ final class MedicationDetailViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
+		guard let medication = dataStore.medications.first(where: { $0.id == medication.id }) else {
+			errorMessage = "This medication is no longer available. Close this sheet and review your medications."
+			return false
+		}
         let eventCountBefore = dataStore.events.count
-        var updatedMedication = medication
-        if let quantity = updatedMedication.quantity, dose.amount > 0 {
-            updatedMedication.quantity = quantity - dose.amount
-        }
 
         var eventToSave = event
         if eventToSave.medication?.id != medication.id {
             logger.warning("Correcting mismatched dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
         }
         eventToSave.medication = medication
+		eventToSave.dose = dose
 
         logger.logDoseOperation(
             "Starting",
@@ -96,9 +97,7 @@ final class MedicationDetailViewModel: ObservableObject {
         )
 
         do {
-            try await dataStore.updateMedication(updatedMedication)
-            try await dataStore.addEvent(eventToSave)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
+			try await dataStore.recordDose(eventToSave)
             logger.logDoseOperation(
                 "Succeeded",
                 source: source,
@@ -123,7 +122,6 @@ final class MedicationDetailViewModel: ObservableObject {
 
         do {
             try await dataStore.addEvent(event)
-            await MedicationLiveActivityManager.refreshFromDataStore(dataStore: dataStore)
             logger.info("Successfully logged event record")
         } catch {
             logger.logPrivacySafeError("Failed to log event", error: error)

@@ -32,7 +32,13 @@ final class WCSender: NSObject, ObservableObject {
 			actionMessage = "iPhone connection is starting. Try again shortly."
 			return .failed
 		}
-		let message = [key: value]
+		var payload = value
+		if key == "logDose", var dose = value as? [String: Any] {
+			if dose["eventID"] == nil { dose["eventID"] = UUID().uuidString }
+			if dose["date"] == nil { dose["date"] = Date() }
+			payload = dose
+		}
+		let message = [key: payload]
 		guard session.isReachable else {
 			session.transferUserInfo(message)
 			actionMessage = key == "logDose"

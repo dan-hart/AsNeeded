@@ -3,6 +3,7 @@ import SwiftUI
 import WatchKit
 
 struct MedicationListView: View {
+	@Environment(\.colorScheme) private var colorScheme
 	@EnvironmentObject var sender: WCSender
 	@State private var isLoading = true
 	@State private var now = Date()
@@ -48,7 +49,7 @@ struct MedicationListView: View {
 					.padding(.horizontal, 16)
 					.padding(.vertical, 8)
 					.background(Color.accent)
-					.foregroundColor(.white)
+					.foregroundStyle(colorScheme == .dark ? .black : .white)
 					.cornerRadius(8)
 				}
 				.padding()
@@ -108,7 +109,7 @@ struct MedicationListView: View {
 							.frame(maxWidth: .infinity)
 							.padding()
 							.background(Color.accent)
-							.foregroundColor(.white)
+							.foregroundStyle(colorScheme == .dark ? .black : .white)
 							.cornerRadius(12)
 						}
 						.buttonStyle(.plain)

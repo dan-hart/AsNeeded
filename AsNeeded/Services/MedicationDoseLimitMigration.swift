@@ -16,7 +16,7 @@ struct MedicationDoseLimitMigration {
 			try await dataStore.medicationsStore.itemsHaveLoaded()
 			try await dataStore.eventsStore.itemsHaveLoaded()
 			try await migrate(medications: dataStore.medications, profileStore: .shared) { medication in
-				try await dataStore.medicationsStore.insert(medication)
+				try await dataStore.saveMigratedMedication(medication)
 			}
 		}
 		Self.productionTask = task

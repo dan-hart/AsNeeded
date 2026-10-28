@@ -48,7 +48,7 @@ struct MedicationAppearancePickerComponent: View {
 	private let logger = DHLogger.ui
 
 	@ScaledMetric private var mainSpacing: CGFloat = 20
-	@ScaledMetric private var headerPadding: CGFloat = 16
+	private let headerPadding: CGFloat = 16
 	@ScaledMetric private var previewHeight: CGFloat = 80
 	@ScaledMetric private var iconSize: CGFloat = 56
 	@ScaledMetric private var segmentedPadding: CGFloat = 8
@@ -158,9 +158,11 @@ struct MedicationAppearancePickerComponent: View {
 					Spacer()
 
 					// Current selection indicator
-					Text(selectedTab == .color ? "Color" : "Symbol")
-						.font(.customFont(fontFamily, style: .caption2))
-						.foregroundStyle(.secondary)
+					if !dynamicTypeSize.isAccessibilitySize {
+						Text(selectedTab == .color ? "Color" : "Symbol")
+							.font(.customFont(fontFamily, style: .caption2))
+							.foregroundStyle(.secondary)
+					}
 				}
 				.padding(.horizontal, headerPadding)
 				.padding(.vertical, 10)
@@ -195,20 +197,22 @@ struct MedicationAppearancePickerComponent: View {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.customFont(fontFamily, style: .title3))
 
-				Text("Save Appearance")
+				Text("Save")
 					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					.fixedSize(horizontal: false, vertical: true)
+					.multilineTextAlignment(.center)
 
 				Spacer()
 			}
-			.foregroundStyle(displayColor.contrastingForegroundColor())
+			.contrastingForeground(against: .accent)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, headerPadding)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(displayColor)
+					.fill(Color.accent)
 			)
 			.shadow(
-				color: displayColor.opacity(0.3),
+				color: Color.accent.opacity(0.3),
 				radius: 8,
 				x: 0,
 				y: 4

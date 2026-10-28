@@ -70,6 +70,9 @@ struct AsNeededApp: App {
                         }
                 }
             }
+			.task {
+				await RetiredLiveActivityCleanup.endExistingActivities()
+			}
         }
         .handlesExternalEvents(matching: ["asneeded"])
     }

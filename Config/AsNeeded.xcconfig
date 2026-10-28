@@ -1,0 +1,10 @@
+// Base build configuration for the AsNeeded app target.
+//
+// Values that must never be committed (API keys) live in Config/Secrets.xcconfig, which is gitignored.
+// Copy Config/Secrets.example.xcconfig to create it. The optional include below means a clean checkout
+// builds and runs without it; features that need a key simply stay disabled.
+
+// RevenueCat public SDK key. Empty keeps tipping and subscriptions unavailable in this build.
+REVENUECAT_API_KEY =
+
+#include? "Secrets.xcconfig"

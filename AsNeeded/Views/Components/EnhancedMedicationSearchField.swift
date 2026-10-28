@@ -379,7 +379,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 						if result.isExactMatch {
 							Text("EXACT")
 								.font(.caption2.weight(.bold))
-								.foregroundColor(.white)
+								.contrastingForeground(against: .green)
 								.padding(.horizontal, 4)
 								.padding(.vertical, 2)
 								.background(Capsule().fill(Color.green))
@@ -413,10 +413,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 
 	private var quickMedicationCapsules: some View {
 		DisclosureGroup(isExpanded: $isQuickMedicationsExpanded) {
-			LazyVGrid(columns: [
-				GridItem(.flexible(), spacing: 8),
-				GridItem(.flexible(), spacing: 8),
-			], spacing: 8) {
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: 8) {
 				ForEach(simplifiedCommonMedications, id: \.clinicalName) { medication in
 					simplifiedMedicationButton(medication)
 				}

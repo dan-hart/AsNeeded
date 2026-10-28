@@ -8,6 +8,22 @@ import Testing
 
 @MainActor
 struct DataStoreClearTests {
+	@Test("Reset preserves device storage version and legacy recovery paths")
+	func resetPreservesStorageRecoveryMetadata() throws {
+		let suite = "DataStoreClearTests.recovery.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suite))
+		defer { defaults.removePersistentDomain(forName: suite) }
+		let recoveryKeys = [UserDefaultsKeys.storageSchemaVersion, UserDefaultsKeys.archivedLegacyMedicationsPath, UserDefaultsKeys.archivedLegacyEventsPath]
+		for key in recoveryKeys {
+			#expect(UserDefaultsKeys.keysToSkip.contains(key))
+			defaults.set("recovery metadata", forKey: key)
+		}
+		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: nil)
+		for key in recoveryKeys {
+			#expect(defaults.string(forKey: key) == "recovery metadata")
+		}
+	}
+
 	private func makeDefaults(suiteName: String) -> UserDefaults {
 		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
 		defaults.removePersistentDomain(forName: suiteName)

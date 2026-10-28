@@ -38,7 +38,7 @@ struct DataManagementView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
                     dataOverviewSection
 
@@ -590,7 +590,7 @@ struct DataManagementView: View {
                     Text(title)
                         .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
-                        .foregroundStyle(isDestructive ? .red : .primary)
+                        .foregroundStyle(.primary)
 
                     Text(subtitle)
                         .font(.customFont(fontFamily, style: .caption))

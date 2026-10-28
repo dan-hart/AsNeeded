@@ -59,13 +59,7 @@ struct MedicationTrendsView: View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: sectionSpacing) {
-					controlsSection
-
 					if let med = viewModel.selectedMedication {
-						summaryCard(for: med)
-
-						metricsView(for: med)
-
 						switch visualizationType {
 						case .chart:
 							usageChart(for: med)
@@ -73,15 +67,19 @@ struct MedicationTrendsView: View {
 							calendarHeatmap(for: med)
 						}
 
+						controlsSection
+						summaryCard(for: med)
+						metricsView(for: med)
 					} else {
+						controlsSection
 						Text(viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication above to see its trends.")
 							.font(.customFont(fontFamily, style: .body))
 							.foregroundStyle(.secondary)
 							.frame(maxWidth: .infinity, alignment: .leading)
 					}
 
-                    if viewModel.selectedMedication != nil,
-                       viewModel.dailyTotals(last: daysWindow).contains(where: { $0.total > 0 }) {
+					if viewModel.selectedMedication != nil,
+					   viewModel.dailyTotals(last: daysWindow).contains(where: { $0.total > 0 }) {
 						SupportSuggestionView()
 							.padding(.bottom, chartContainerPadding)
 					}
@@ -98,7 +96,7 @@ struct MedicationTrendsView: View {
 
 	private var controlsSection: some View {
 		VStack(alignment: .leading, spacing: controlsSpacing) {
-			Text("Review recorded doses, timing, and refill estimates.")
+			Text("Showing complete days through yesterday. Today’s doses appear after the day is complete.")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
@@ -140,10 +138,13 @@ struct MedicationTrendsView: View {
 					Text("30 Days")
 						.font(.customFont(fontFamily, style: .body))
 						.tag(30)
+					Text("90 Days")
+						.font(.customFont(fontFamily, style: .body))
+						.tag(90)
 				}
 				.font(.customFont(fontFamily, style: .body))
 				.pickerStyle(.menu)
-				.tint(viewModel.selectedMedication?.displayColor ?? .accent)
+				.tint(.accent)
 				.frame(minHeight: 44)
 			}
 
@@ -168,7 +169,7 @@ struct MedicationTrendsView: View {
 			}
 		}
 		.font(.customFont(fontFamily, style: .body))
-		.tint(viewModel.selectedMedication?.displayColor ?? .accent)
+		.tint(.accent)
 		.frame(minHeight: 44)
 	}
 
@@ -316,6 +317,27 @@ struct MedicationTrendsView: View {
 			)
 	}
 
+	private var chartAxisStrideDays: Int {
+		switch daysWindow {
+		case ...7: return 2
+		case ...14: return 3
+		case ...30: return 5
+		default: return 15
+		}
+	}
+
+	private func visualizationHeader(_ title: String, medication: ANMedicationConcept) -> some View {
+		VStack(alignment: .leading, spacing: metricTitleSpacing) {
+			Text(medication.displayName)
+				.font(.customFont(fontFamily, style: .title3, weight: .semibold))
+				.noTruncate()
+			Text("\(title) · \(daysWindow) days through \(viewModel.trendsWindowEnd.formatted(date: .abbreviated, time: .omitted))")
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+		}
+	}
+
 	@ViewBuilder
 	private func usageChart(for med: ANMedicationConcept) -> some View {
 		let data = viewModel.dailyTotals(last: daysWindow)
@@ -326,8 +348,7 @@ struct MedicationTrendsView: View {
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
 			VStack(alignment: .leading, spacing: controlsSpacing) {
-				Text("Daily Usage")
-					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+				visualizationHeader("Daily Usage", medication: med)
 
 				Chart(data, id: \.day) { item in
 					// Area mark for visual appeal
@@ -346,7 +367,7 @@ struct MedicationTrendsView: View {
 						x: .value("Day", item.day, unit: .day),
 						y: .value("Total", item.total)
 					)
-					.interpolationMethod(.catmullRom)
+					.interpolationMethod(.linear)
 					.foregroundStyle(med.displayColor)
 					.lineStyle(StrokeStyle(lineWidth: chartLineWidth))
 
@@ -361,7 +382,7 @@ struct MedicationTrendsView: View {
 					}
 				}
 				.chartXAxis {
-					AxisMarks(values: .stride(by: .day, count: daysWindow <= 7 ? 2 : daysWindow <= 14 ? 3 : 5)) { _ in
+					AxisMarks(values: .stride(by: .day, count: chartAxisStrideDays)) { _ in
 						AxisGridLine()
 							.foregroundStyle(.secondary.opacity(0.3))
 						AxisValueLabel(format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : daysWindow <= 14 ? .dateTime.weekday(.abbreviated).day() : .dateTime.day().month(.abbreviated))
@@ -416,8 +437,7 @@ struct MedicationTrendsView: View {
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
 			VStack(alignment: .leading, spacing: controlsSpacing) {
-				Text("Usage Calendar")
-					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+				visualizationHeader("Usage Calendar", medication: med)
 
 				CalendarHeatmapGrid(
 					data: data,

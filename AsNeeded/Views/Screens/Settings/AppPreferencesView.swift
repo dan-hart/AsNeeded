@@ -23,7 +23,7 @@ struct AppPreferencesView: View {
 	private let innerSpacing: CGFloat = 4
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 // MARK: - Header
 

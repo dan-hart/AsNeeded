@@ -57,14 +57,14 @@ struct MediumWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (MedicationListEntry) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<MedicationListEntry>) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(
@@ -79,8 +79,9 @@ struct MediumWidgetProvider: TimelineProvider {
     }
 
     @MainActor
-    private func createEntry() -> MedicationListEntry {
-        let provider = WidgetDataProvider.shared
+    private func createEntry() async -> MedicationListEntry {
+        let provider = WidgetDataProvider()
+		await provider.loadSnapshot()
 
         // Get top 3 medications by next dose time
         let medications = Array(provider.medicationsByName.prefix(3)).map { medication in
@@ -93,7 +94,7 @@ struct MediumWidgetProvider: TimelineProvider {
             )
         }
 
-        return MedicationListEntry(date: Date(), medications: medications)
+        return MedicationListEntry(date: Date(), medications: medications, unavailable: provider.isUnavailable)
     }
 }
 
@@ -209,11 +210,11 @@ struct MediumWidgetView: View {
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
 
-            Text("No Medications")
+            Text(entry.unavailable ? "Unavailable" : "No Medications")
                 .font(.headline.weight(.medium))
                 .foregroundStyle(.secondary)
 
-            Text("Add medications in the app")
+            Text(entry.unavailable ? "Open AsNeeded" : "Add medications in the app")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
@@ -246,6 +247,7 @@ struct MediumWidgetView: View {
 struct MedicationListEntry: TimelineEntry {
     let date: Date
     let medications: [MedicationInfo]
+	var unavailable: Bool = false
 }
 
 struct MedicationInfo {
@@ -319,8 +321,8 @@ struct LogDoseIconButton: View {
         return Button(intent: intent) {
             Image(systemName: "plus.circle.fill")
                 .font(.title2)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(color)
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(Color("AccentColor"))
         }
         .buttonStyle(.plain)
 		.accessibilityLabel("Log \(doseDescription) of \(medicationName)")

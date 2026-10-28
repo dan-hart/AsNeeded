@@ -44,4 +44,33 @@ struct WatchMessageValidationTests {
 		payload["quantityConsumed"] = -1.0
 		#expect(!LogDoseData(from: payload).isValid)
 	}
+	@Test("Malformed Watch retry identifiers and timestamps are rejected")
+	func invalidRetryMetadata() {
+		let valid: [String: Any] = ["medicationId": UUID().uuidString, "doseAmount": 0.5, "doseUnit": ANUnitConcept.tablet.rawValue]
+		let invalidValues: [Any] = ["invalid", 123]
+		for invalid in invalidValues {
+			var payload = valid
+			payload["eventID"] = invalid
+			#expect(!LogDoseData(from: payload).isValid)
+		}
+		var payload = valid
+		payload["date"] = "invalid"
+		#expect(!LogDoseData(from: payload).isValid)
+	}
+
+	@Test("Watch retry identity and dose time survive decoding; older payloads remain readable")
+	func retryIdentityIsPreserved() {
+		let id = UUID()
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		let payload: [String: Any] = ["medicationId": UUID().uuidString, "doseAmount": 0.5, "doseUnit": ANUnitConcept.tablet.rawValue, "eventID": id.uuidString, "date": date]
+		let decoded = LogDoseData(from: payload)
+		#expect(decoded.isValid)
+		#expect(decoded.eventID == id)
+		#expect(decoded.date == date)
+		var old = payload
+		old.removeValue(forKey: "eventID")
+		old.removeValue(forKey: "date")
+		#expect(LogDoseData(from: old).isValid)
+	}
+
 }

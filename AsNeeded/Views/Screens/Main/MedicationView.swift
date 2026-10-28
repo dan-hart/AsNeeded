@@ -21,6 +21,12 @@ struct MedicationView: View {
                     }
                 }
         }
+		.onChange(of: navigationManager.pendingLogMedicationID) { _, medicationID in
+			guard medicationID != nil else { return }
+			// The root list owns dose presentation. Reveal it when a widget link
+			// arrives while another medication's detail is on the navigation stack.
+			navigationPath = NavigationPath()
+		}
     }
 }
 

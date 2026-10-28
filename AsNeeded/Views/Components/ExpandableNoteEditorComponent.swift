@@ -134,7 +134,7 @@ struct ExpandableNoteEditorComponent: View {
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
 					.fill(LinearGradient(
-						colors: [.accent, .accent.opacity(0.9)],
+						colors: [.accent, .accent],
 						startPoint: .topLeading,
 						endPoint: .bottomTrailing
 					))

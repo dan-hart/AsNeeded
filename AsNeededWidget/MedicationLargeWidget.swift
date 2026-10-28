@@ -59,14 +59,14 @@ struct LargeWidgetProvider: TimelineProvider {
 
     func getSnapshot(in _: Context, completion: @escaping (FullMedicationListEntry) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
             completion(entry)
         }
     }
 
     func getTimeline(in _: Context, completion: @escaping (Timeline<FullMedicationListEntry>) -> Void) {
         Task { @MainActor in
-            let entry = createEntry()
+            let entry = await createEntry()
 
             // Update every 15 minutes
             let nextUpdate = Calendar.current.date(
@@ -81,8 +81,9 @@ struct LargeWidgetProvider: TimelineProvider {
     }
 
     @MainActor
-    private func createEntry() -> FullMedicationListEntry {
-        let provider = WidgetDataProvider.shared
+    private func createEntry() async -> FullMedicationListEntry {
+        let provider = WidgetDataProvider()
+		await provider.loadSnapshot()
 
         // Get up to 6 medications for large widget
         let medications = Array(provider.medicationsByName.prefix(6)).map { medication in
@@ -102,7 +103,8 @@ struct LargeWidgetProvider: TimelineProvider {
             date: Date(),
             medications: medications,
             lowQuantityCount: lowQuantityCount,
-            refillDueCount: refillDueCount
+            refillDueCount: refillDueCount,
+			unavailable: provider.isUnavailable
         )
     }
 }
@@ -300,11 +302,11 @@ struct LargeWidgetView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
 
-            Text("No Medications")
+            Text(entry.unavailable ? "Unavailable" : "No Medications")
                 .font(.title3.weight(.medium))
                 .foregroundStyle(.secondary)
 
-            Text("Add medications in the app to see them here")
+            Text(entry.unavailable ? "Open AsNeeded" : "Add medications in the app to see them here")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -350,6 +352,7 @@ struct FullMedicationListEntry: TimelineEntry {
     let medications: [MedicationInfo]
     let lowQuantityCount: Int
     let refillDueCount: Int
+	var unavailable: Bool = false
 }
 
 // MARK: - Preview
@@ -415,8 +418,8 @@ struct LogDoseLargeIconButton: View {
         return Button(intent: intent) {
             Image(systemName: "plus.circle.fill")
                 .font(.title3)
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(color)
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(Color("AccentColor"))
         }
         .buttonStyle(.plain)
 		.accessibilityLabel("Log \(doseDescription) of \(medicationName)")

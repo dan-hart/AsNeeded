@@ -11,6 +11,7 @@ struct ReminderConfigurationView: View {
     let medication: ANMedicationConcept
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontFamily) private var fontFamily
+	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var notificationManager = NotificationManager.shared
@@ -215,7 +216,7 @@ struct ReminderConfigurationView: View {
                 )
                 .foregroundColor(
                     notificationManager.authorizationStatus == .denied ?
-                        .primary : .white
+                        .primary : Color.accent.contrastingForegroundColor(for: colorScheme)
                 )
                 .cornerRadius(buttonCornerRadius)
             }
@@ -245,16 +246,16 @@ struct ReminderConfigurationView: View {
                         VStack(spacing: typeCardSpacing) {
                             Image(systemSymbol: type.systemImage)
                                 .font(.customFont(fontFamily, style: .title2))
-                                .foregroundStyle(reminderType == type ? .white : .accent)
+                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .accent)
 
                             Text(type.rawValue)
                                 .font(.customFont(fontFamily, style: .subheadline))
                                 .fontWeight(.medium)
-                                .foregroundStyle(reminderType == type ? .white : .primary)
+                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
 
                             Text(type.description)
                                 .font(.customFont(fontFamily, style: .caption2))
-                                .foregroundStyle(reminderType == type ? .white.opacity(0.8) : .secondary)
+                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .secondary)
                                 .multilineTextAlignment(.center)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -265,7 +266,7 @@ struct ReminderConfigurationView: View {
                             RoundedRectangle(cornerRadius: typeCardCornerRadius)
                                 .fill(reminderType == type ?
                                     LinearGradient(
-                                        colors: [.accent, .accent.opacity(0.8)],
+                                        colors: [.accent, .accent],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ) :
@@ -493,7 +494,7 @@ struct ReminderConfigurationView: View {
                 if isScheduling {
                     ProgressView()
                         .scaleEffect(0.8)
-                        .tint(.white)
+                        .tint(Color.accent.contrastingForegroundColor(for: colorScheme))
                 } else {
                     Image(systemSymbol: .bellBadgeFill)
                         .font(.customFont(fontFamily, style: .headline))
@@ -501,14 +502,14 @@ struct ReminderConfigurationView: View {
                 Text("Schedule Reminder")
                     .fontWeight(.semibold)
             }
-            .foregroundColor(.white)
+            .contrastingForeground(against: .accent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, scheduleButtonPadding)
             .background(
                 LinearGradient(
                     colors: buttonDisabled ?
                         [Color(.systemGray3), Color(.systemGray4)] :
-                        [.accent, .accent.opacity(0.8)],
+                        [.accent, .accent],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

@@ -41,11 +41,11 @@ struct TestFlightAccessComponent: View {
             HStack(spacing: elementSpacing) {
                 Image(systemSymbol: .airplaneCircleFill)
                     .font(.title2)
-                    .foregroundColor(.white)
+                    .contrastingForeground(against: .accent)
                     .frame(width: iconSize40, height: iconSize40)
                     .background(
                         LinearGradient(
-                            colors: [.blue, .cyan],
+                            colors: [.accent, .accent],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

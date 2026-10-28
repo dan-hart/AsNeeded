@@ -13,7 +13,7 @@ struct NIHDisclaimerDetailView: View {
 	private let cornerRadius: CGFloat = 12
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: mainSpacing) {
                 // Main Attribution
                 VStack(alignment: .leading, spacing: sectionSpacing) {

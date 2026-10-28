@@ -35,9 +35,12 @@ struct LogDoseData: Sendable {
     let doseAmount: Double
     let doseUnit: String
     let quantityConsumed: Double?
+	let eventID: UUID?
+	let date: Date?
+	private let invalidRetryMetadata: Bool
 
 	var isValid: Bool {
-		UUID(uuidString: medicationId) != nil &&
+		!invalidRetryMetadata && UUID(uuidString: medicationId) != nil &&
 			ANUnitConcept(rawValue: doseUnit) != nil &&
 			doseAmount.isFinite && doseAmount > 0 &&
 			(quantityConsumed.map { $0.isFinite && $0 > 0 } ?? true)
@@ -48,6 +51,10 @@ struct LogDoseData: Sendable {
         doseAmount = dict["doseAmount"] as? Double ?? 0.0
         doseUnit = dict["doseUnit"] as? String ?? ""
         quantityConsumed = dict["quantityConsumed"] as? Double
+		eventID = (dict["eventID"] as? String).flatMap(UUID.init(uuidString:))
+		date = dict["date"] as? Date
+		invalidRetryMetadata = (dict["eventID"] != nil && eventID == nil) ||
+			(dict["date"] != nil && (date == nil || date?.timeIntervalSince1970.isFinite != true))
     }
 }
 
@@ -187,6 +194,7 @@ final class WCReceiver: NSObject, ObservableObject {
 	}
 
     private func handleDoseLogging(_ logDoseData: LogDoseData) async throws -> Bool {
+		try await DataStore.shared.prepareForAccess()
 		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
 		guard logDoseData.isValid,
 			  let medicationId = UUID(uuidString: logDoseData.medicationId),
@@ -205,28 +213,17 @@ final class WCReceiver: NSObject, ObservableObject {
         // Create dose and event
         let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
         let event = ANEventConcept(
+			id: logDoseData.eventID ?? UUID(),
             eventType: .doseTaken,
             medication: medication,
             dose: dose,
-            date: Date()
+            date: logDoseData.date ?? Date()
         )
 
         // Log the event
-        try await DataStore.shared.addEvent(event)
-
-        // Update medication quantity if provided
-        if let quantityConsumed = logDoseData.quantityConsumed,
-           let currentQuantity = medication.quantity
-        {
-            // Use mutation to preserve all medication properties (color, symbol, etc.)
-            var updatedMedication = medication
-            updatedMedication.quantity = max(0, currentQuantity - quantityConsumed)
-            try await DataStore.shared.updateMedication(updatedMedication)
-        }
+        try await DataStore.shared.recordDose(event)
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
@@ -248,19 +245,9 @@ final class WCReceiver: NSObject, ObservableObject {
         }
 
         // Find the medication
-        guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-            logger.warning("Medication not found for quantity update")
-            return false
-        }
-
-        // Update medication quantity using mutation to preserve all properties (color, symbol, etc.)
-        var updatedMedication = medication
-        updatedMedication.quantity = quantityUpdateData.quantity
-        try await DataStore.shared.updateMedication(updatedMedication)
+		try await DataStore.shared.updateQuantity(medicationID: medicationId, quantity: quantityUpdateData.quantity)
 
         // Send confirmation back to watch
-        await MedicationLiveActivityManager.refreshFromDataStore()
-
         if session.isReachable {
             logger.debug("Quantity updated successfully, sending confirmation to watch")
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in

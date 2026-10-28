@@ -10,3 +10,12 @@
 ^scripts/install-hooks\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
 ^scripts/scan-repo\.sh:[0-9]+:.*-----BEGIN\[A-Z \]\*PRIVATE KEY-----.*$
 ^scripts/utilities/asp-preflight\.sh:[0-9]+:.*-----BEGIN \(RSA\|DSA\|EC\|OPENSSH\) PRIVATE KEY-----.*$
+
+# Exact detector definitions, not credentials; exceptions approved by maintainer.
+^\.githooks/pre-commit:[0-9]+:    'JIRA_API_TOKEN\\s\*\[=:\]\\s\*\[a-zA-Z0-9\]\+'$
+^\.githooks/pre-commit:[0-9]+:    'apikey\\s\*\[=:\]\\s\*\[a-zA-Z0-9_-\]\{16,\}'$
+^scripts/install-hooks\.sh:[0-9]+:    add_git_secrets_pattern 'OPENAI_API_KEY'$
+^scripts/install-hooks\.sh:[0-9]+:    add_git_secrets_pattern 'GPR_API_KEY'$
+^scripts/install-hooks\.sh:[0-9]+:    add_git_secrets_pattern 'JIRA_API_TOKEN'$
+^scripts/install-hooks\.sh:[0-9]+:    add_git_secrets_pattern 'postgres://\[\^:\]\+:\[\^@\]\+@'$
+^scripts/install-hooks\.sh:[0-9]+:    add_git_secrets_pattern 'mysql://\[\^:\]\+:\[\^@\]\+@'$

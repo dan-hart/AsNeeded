@@ -25,6 +25,7 @@ import SwiftUI
 
 struct ColorPickerComponent: View {
 	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@Binding var selectedColorHex: String?
 	let onColorSelected: (String?) -> Void
@@ -34,18 +35,18 @@ struct ColorPickerComponent: View {
 	private let logger = DHLogger.ui
 
 	@ScaledMetric private var mainSpacing: CGFloat = 24
-	@ScaledMetric private var headerSpacing: CGFloat = 12
+	private let headerSpacing: CGFloat = 12
 	@ScaledMetric private var topPadding: CGFloat = 8
 	@ScaledMetric private var gridItemSpacing: CGFloat = 20
 	@ScaledMetric private var gridBottomPadding: CGFloat = 8
 	@ScaledMetric private var saveButtonTopPadding: CGFloat = 8
-	@ScaledMetric private var contentHPadding: CGFloat = 20
-	@ScaledMetric private var defaultCircleSize: CGFloat = 32
-	@ScaledMetric private var defaultHPadding: CGFloat = 16
+	private let contentHPadding: CGFloat = 20
+	private let defaultCircleSize: CGFloat = 32
+	private let defaultHPadding: CGFloat = 16
 	@ScaledMetric private var defaultVPadding: CGFloat = 12
 	@ScaledMetric private var defaultCornerRadius: CGFloat = 12
 	@ScaledMetric private var defaultBorderWidth: CGFloat = 1.5
-	@ScaledMetric private var swatchSize: CGFloat = 70
+	private let swatchSize: CGFloat = 70
 	@ScaledMetric private var saveCircleSize: CGFloat = 24
 	@ScaledMetric private var saveButtonVPadding: CGFloat = 16
 
@@ -65,7 +66,7 @@ struct ColorPickerComponent: View {
 								)
 							)
 
-						Text("Medication Color")
+						Text("Color")
 							.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					}
 
@@ -118,7 +119,7 @@ struct ColorPickerComponent: View {
 					if selectedColorHex == nil {
 						Image(systemSymbol: .checkmark)
 							.font(.customFont(fontFamily, style: .caption, weight: .bold))
-							.foregroundStyle(Color.accent.contrastingForegroundColor())
+							.foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
 					}
 				}
 
@@ -126,10 +127,12 @@ struct ColorPickerComponent: View {
 					Text("Default")
 						.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 						.foregroundStyle(.primary)
+						.fixedSize(horizontal: false, vertical: true)
 
 					Text("Uses app accent color")
 						.font(.customFont(fontFamily, style: .caption))
 						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
 				}
 
 				Spacer()
@@ -157,7 +160,7 @@ struct ColorPickerComponent: View {
 	}
 
 	private var colorGrid: some View {
-		LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: gridItemSpacing), count: 3), spacing: gridItemSpacing) {
+		LazyVGrid(columns: [GridItem(.adaptive(minimum: swatchSize), spacing: gridItemSpacing)], spacing: gridItemSpacing) {
 			ForEach(MedicationColors.colors, id: \.hex) { colorInfo in
 				colorSwatch(colorInfo)
 			}
@@ -185,7 +188,7 @@ struct ColorPickerComponent: View {
 				if selectedColorHex == colorInfo.hex {
 					Image(systemSymbol: .checkmark)
 						.font(.customFont(fontFamily, style: .title2, weight: .bold))
-						.foregroundStyle(colorInfo.color.contrastingForegroundColor())
+						.foregroundStyle(colorInfo.color.contrastingForegroundColor(for: colorScheme))
 				}
 			}
 		}
@@ -202,7 +205,7 @@ struct ColorPickerComponent: View {
 			hapticsManager.mediumImpact()
 			onSave()
 		} label: {
-			let backgroundColor = selectedColorHex.flatMap { Color(hex: $0) } ?? Color.accent
+			let backgroundColor = Color.accent
 
 			HStack(spacing: headerSpacing) {
 				Spacer()
@@ -215,7 +218,7 @@ struct ColorPickerComponent: View {
 
 				Spacer()
 			}
-			.foregroundStyle(backgroundColor.contrastingForegroundColor())
+			.foregroundStyle(backgroundColor.contrastingForegroundColor(for: colorScheme))
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, saveButtonVPadding)
 			.background(

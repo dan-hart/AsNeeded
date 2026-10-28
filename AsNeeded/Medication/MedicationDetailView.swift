@@ -7,9 +7,11 @@ import SwiftUI
 import UIKit
 
 struct MedicationDetailView: View {
+	@StateObject private var doseLogSession = LogDoseView.Session()
     let medicationId: UUID
     @State private var medication: ANMedicationConcept
     @StateObject private var viewModel = MedicationDetailViewModel()
+	@StateObject private var medicationEditSession = MedicationEditViewModel.Session()
     @StateObject private var notificationManager = NotificationManager.shared
     @StateObject private var navigationManager = NavigationManager.shared
     private let statusSummaryService = MedicationStatusSummaryService()
@@ -24,6 +26,9 @@ struct MedicationDetailView: View {
     @State private var showEditSheet = false
     @State private var showReminderSheet = false
     @State private var showReminderList = false
+	@Environment(\.scenePhase) private var scenePhase
+	@State private var isUpdatingNotificationUrgency = false
+	@State private var notificationUrgencyError: String?
     @State private var reminderCount = 0
     @State private var showAppearancePicker = false
     @State private var selectedColorHex: String?
@@ -91,8 +96,10 @@ struct MedicationDetailView: View {
         } message: {
             Text("This action cannot be undone. All history and reminders for this medication will be deleted.")
         }
-        .sheet(isPresented: $showLogDose) {
-            LogDoseView(medication: medication, source: "detail_sheet") { dose, event, operationID in
+        .sheet(isPresented: $showLogDose, onDismiss: {
+			if !showLogDose { doseLogSession.reset() }
+		}) {
+            LogDoseView(medication: medication, source: "detail_sheet", draft: doseLogSession.draft(for: medication)) { dose, event, operationID in
                 let success = await viewModel.logDose(
                     medication: medication,
                     dose: dose,
@@ -108,13 +115,16 @@ struct MedicationDetailView: View {
                 return success
             }
         }
-        .sheet(isPresented: $showEditSheet) {
+        .sheet(isPresented: $showEditSheet, onDismiss: {
+			if !showEditSheet { medicationEditSession.reset() }
+		}) {
             MedicationEditView(
                 medication: medication,
+				draft: medicationEditSession.draft(for: medication),
                 onSave: { updatedMedication in
-					let saved = await viewModel.save(updated: updatedMedication)
+					let saved = await viewModel.save(updated: updatedMedication, original: medicationEditSession.draft(for: medication).originalMedication)
 					if saved {
-						medication = updatedMedication
+						medication = viewModel.currentMedication(id: medicationId) ?? updatedMedication
 						showEditSheet = false
 					}
 					return saved
@@ -167,8 +177,8 @@ struct MedicationDetailView: View {
                         if let symbol = selectedSymbol {
                             updatedMedication.symbolInfo = ANSymbolInfo(name: symbol)
                         }
-						if await viewModel.save(updated: updatedMedication) {
-							medication = updatedMedication
+						if await viewModel.save(updated: updatedMedication, original: medication) {
+							medication = viewModel.currentMedication(id: medicationId) ?? updatedMedication
 							showAppearancePicker = false
 						}
                     }
@@ -196,6 +206,7 @@ struct MedicationDetailView: View {
 		}
         .task {
             await refreshMedication()
+			await notificationManager.checkAuthorizationStatus()
             if notificationsAllowed || notificationManager.authorizationStatus == .notDetermined {
                 await loadReminderCount()
             }
@@ -208,6 +219,17 @@ struct MedicationDetailView: View {
                 await refreshMedication()
             }
         }
+		.onChange(of: scenePhase) { _, phase in
+			if phase == .active { Task { await notificationManager.checkAuthorizationStatus() } }
+		}
+		.alert("Reminder settings not saved", isPresented: Binding(
+			get: { notificationUrgencyError != nil },
+			set: { if !$0 { notificationUrgencyError = nil } }
+		)) {
+			Button("OK", role: .cancel) { notificationUrgencyError = nil }
+		} message: {
+			Text(notificationUrgencyError ?? "Please try again.")
+		}
     }
 
     // MARK: - Main Content
@@ -530,6 +552,7 @@ struct MedicationDetailView: View {
 
             if notificationsAllowed || notificationManager.authorizationStatus == .notDetermined {
                 VStack(spacing: rowSpacing) {
+					if notificationsAllowed { urgencyControl }
                     if reminderCount > 0 {
                         Button {
                             showReminderList = true
@@ -598,6 +621,53 @@ struct MedicationDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
     }
 
+	private var urgencyControl: some View {
+		VStack(alignment: .leading, spacing: 8) {
+			Toggle(isOn: Binding(
+				get: { notificationManager.isUrgent(for: medicationId) },
+				set: { requested in
+					guard !isUpdatingNotificationUrgency else { return }
+					isUpdatingNotificationUrgency = true
+					Task {
+						defer { isUpdatingNotificationUrgency = false }
+						do { try await notificationManager.setUrgent(requested, for: medicationId) }
+						catch { notificationUrgencyError = "Your reminder settings could not be updated. Please try again." }
+					}
+				}
+			)) {
+				VStack(alignment: .leading, spacing: 4) {
+					Text("Urgent Reminders")
+						.font(.customFont(fontFamily, style: .body, weight: .medium))
+					Text("Use Time Sensitive delivery for scheduled reminders. Can notify you through Focus and Scheduled Summary when allowed in iOS Settings.")
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+			}
+			.tint(.accent)
+			.disabled(isUpdatingNotificationUrgency)
+			if isUpdatingNotificationUrgency {
+				ProgressView("Updating reminders…")
+					.font(.customFont(fontFamily, style: .caption))
+			}
+			if notificationManager.isUrgent(for: medicationId), notificationManager.timeSensitiveSetting != .enabled {
+				Text(notificationManager.timeSensitiveSetting == .disabled ? "Time Sensitive alerts are off in iOS Settings." : "Time Sensitive delivery is unavailable for this build or device.")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
+					.fixedSize(horizontal: false, vertical: true)
+				Button("Open Settings") {
+					if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+				}
+				.font(.customFont(fontFamily, style: .caption))
+				.tint(.accent)
+			}
+		}
+		.padding(.vertical, rowSpacing)
+		.padding(.horizontal, detailSpacing)
+		.background(Color(.tertiarySystemGroupedBackground))
+		.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
+	}
+
     private var logDoseButton: some View {
         Button {
             HapticsManager.shared.mediumImpact()
@@ -611,10 +681,10 @@ struct MedicationDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-			.foregroundStyle(medication.displayColor.contrastingForegroundColor())
+			.foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
         }
 		.buttonStyle(.borderedProminent)
-		.tint(medication.displayColor)
+		.tint(.accent)
         .frame(maxWidth: cardMaxWidth)
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }
@@ -655,7 +725,7 @@ struct MedicationDetailView: View {
     private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
         switch severity {
         case .clear:
-            return medication.displayColor
+            return .guidanceGreen(for: colorScheme)
         case .caution:
             return .orange
         case .warning:
@@ -682,7 +752,7 @@ struct MedicationDetailView: View {
     private func refreshMedication() async {
         if let updatedMedication = DataStore.shared.medications.first(where: { $0.id == medicationId }) {
             await MainActor.run {
-                medication = updatedMedication
+                medication = viewModel.currentMedication(id: medicationId) ?? updatedMedication
             }
         }
     }

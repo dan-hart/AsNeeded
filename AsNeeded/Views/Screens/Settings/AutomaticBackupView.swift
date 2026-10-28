@@ -18,7 +18,7 @@ struct AutomaticBackupView: View {
 	private let buttonCornerRadius: CGFloat = 12
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 enableToggleSection
 
@@ -56,23 +56,27 @@ struct AutomaticBackupView: View {
         ) { result in
             switch result {
             case let .success(urls):
-                guard let url = urls.first else {
-                    viewModel.isSettingUp = false
-                    return
-                }
+                guard let url = urls.first else { return }
+                viewModel.beginSavingLocation()
                 Task {
                     await viewModel.saveBackupLocation(url: url)
                 }
             case let .failure(error):
-                viewModel.isSettingUp = false
                 viewModel.alertMessage = "Location selection failed: \(error.localizedDescription)"
                 viewModel.showingAlert = true
+            }
+        }
+        .onChange(of: viewModel.showingLocationPicker) { _, isPresented in
+            if !isPresented {
+                viewModel.locationPickerDismissed()
             }
         }
         .sheet(isPresented: $viewModel.showingExplainer) {
             AutomaticBackupExplainerView()
         }
-        .sheet(isPresented: $viewModel.showingPrivacyOnboarding) {
+        .sheet(isPresented: $viewModel.showingPrivacyOnboarding, onDismiss: {
+            viewModel.privacyOnboardingDismissed()
+        }) {
             privacyOnboardingSheet
         }
         .sheet(isPresented: $viewModel.showingRestoreSheet) {
@@ -125,8 +129,8 @@ struct AutomaticBackupView: View {
         } message: {
             Text("Automatic backups were enabled before restoring, but need to be reconfigured because backup location settings are device-specific.\n\nPlease reconfigure automatic backups to resume protection.")
         }
-        .onAppear {
-            viewModel.loadBackupHistory()
+        .task {
+            await viewModel.refreshStatus()
         }
     }
 
@@ -170,7 +174,7 @@ struct AutomaticBackupView: View {
                         viewModel.enableAutomaticBackup()
                     } label: {
                         HStack {
-                            if viewModel.isSettingUp {
+                            if viewModel.isBusy {
                                 Text("Loading...")
                                     .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             } else {
@@ -180,13 +184,13 @@ struct AutomaticBackupView: View {
                                     .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             }
                         }
-                        .foregroundStyle(.white)
+                        .contrastingForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.accent)
                         .cornerRadius(buttonCornerRadius)
                     }
-                    .disabled(viewModel.isSettingUp)
+                    .disabled(viewModel.isBusy)
                 }
             }
         }
@@ -301,7 +305,7 @@ struct AutomaticBackupView: View {
                         ProgressView()
                     }
                 }
-                .foregroundStyle(.white)
+                .contrastingForeground(against: .accent)
                 .padding()
                 .background(Color.accent)
                 .cornerRadius(buttonCornerRadius)
@@ -331,6 +335,7 @@ struct AutomaticBackupView: View {
                 Button("Change") {
                     viewModel.changeBackupLocation()
                 }
+                .disabled(!viewModel.canChangeBackupLocation)
                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
             }
 
@@ -477,7 +482,7 @@ struct AutomaticBackupView: View {
                                         if index == 0 {
                                             Text("Latest")
                                                 .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                .foregroundStyle(.white)
+                                                .contrastingForeground(against: .accent)
                                                 .padding(.horizontal, 8)
                                                 .padding(.vertical, 2)
                                                 .background(Color.accent)
@@ -617,7 +622,7 @@ struct AutomaticBackupView: View {
     private var privacyOnboardingSheet: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ScrollView {
+                VerticalOnlyScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 12) {
                             Image(systemSymbol: .lockShieldFill)
@@ -696,7 +701,7 @@ struct AutomaticBackupView: View {
                             Image(systemSymbol: .arrowRight)
                                 .font(.customFont(fontFamily, style: .body))
                         }
-                        .foregroundStyle(.white)
+                        .contrastingForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.accent)
@@ -711,7 +716,6 @@ struct AutomaticBackupView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
                         viewModel.showingPrivacyOnboarding = false
-                        viewModel.isSettingUp = false
                     } label: {
                         Image(systemSymbol: .xmark)
                     }
@@ -726,7 +730,7 @@ struct AutomaticBackupView: View {
 
 	private func restoreSheet(for backup: BackupFile) -> some View {
 		NavigationStack {
-			ScrollView {
+			VerticalOnlyScrollView {
 				VStack(spacing: 24) {
 					VStack(spacing: 12) {
 						Image(systemSymbol: .trayAndArrowDown)
@@ -774,7 +778,7 @@ struct AutomaticBackupView: View {
 								Text("Replace All Data")
 									.font(.customFont(fontFamily, style: .body, weight: .semibold))
 							}
-							.foregroundStyle(.white)
+							.contrastingForeground(against: .red)
 							.frame(maxWidth: .infinity)
 							.padding()
 							.background(Color.red)

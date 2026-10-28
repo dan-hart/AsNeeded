@@ -64,7 +64,7 @@ struct MoreDisclaimerInfoView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: mainSpacing) {
                     HStack {
                         Image(systemSymbol: .exclamationmarkTriangleFill)

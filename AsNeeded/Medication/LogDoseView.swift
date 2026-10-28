@@ -7,6 +7,49 @@ import SFSafeSymbols
 import SwiftUI
 
 struct LogDoseView: View {
+	@MainActor
+	final class Draft: ObservableObject {
+		@Published var amount: Double
+		@Published var selectedUnit: ANUnitConcept
+		@Published var selectedDate: Date = .now
+		@Published var reason = ""
+		@Published var symptomSeverityBefore = 0
+		@Published var symptomSeverityAfter = 0
+		@Published var effectiveness = 0
+		@Published var sideEffectsText = ""
+		@Published var note = ""
+		@Published var showingDatePicker = false
+		@Published var showingLogError = false
+		@Published var showingDiscardConfirmation = false
+		@Published var selectedQuickOption: String? = "Now"
+		@Published var isLogging = false
+
+		init(medication: ANMedicationConcept) {
+			amount = medication.prescribedDoseAmount ?? 1
+			selectedUnit = medication.prescribedUnit ?? .unit
+		}
+	}
+
+	@MainActor
+	final class Session: ObservableObject {
+		private var medicationID: UUID?
+		private var retainedDraft: Draft?
+
+		func draft(for medication: ANMedicationConcept) -> Draft {
+			if let retainedDraft, medicationID == medication.id { return retainedDraft }
+			let draft = Draft(medication: medication)
+			medicationID = medication.id
+			retainedDraft = draft
+			return draft
+		}
+
+		func reset() {
+			retainedDraft = nil
+			medicationID = nil
+		}
+	}
+
+	@StateObject private var draft: Draft
     let medication: ANMedicationConcept
     let source: String
     var onLog: (ANDoseConcept, ANEventConcept, UUID) async -> Bool
@@ -16,20 +59,6 @@ struct LogDoseView: View {
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var amount: Double = 1
-    @State private var selectedUnit: ANUnitConcept = .unit
-    @State private var selectedDate: Date = .now
-    @State private var reason: String = ""
-    @State private var symptomSeverityBefore: Int = 0
-    @State private var symptomSeverityAfter: Int = 0
-    @State private var effectiveness: Int = 0
-    @State private var sideEffectsText: String = ""
-    @State private var note: String = ""
-    @State private var showingDatePicker = false
-	@State private var showingLogError = false
-	@State private var showingDiscardConfirmation = false
-    @State private var selectedQuickOption: String? = "Now"
-    @State private var isLogging = false
     private let logger = DHLogger(category: "DoseLogView")
     private let hapticsManager = HapticsManager.shared
     private let dataStore = DataStore.shared
@@ -50,7 +79,7 @@ struct LogDoseView: View {
     private let contentSpacing: CGFloat = 24
     private let doseSpacing: CGFloat = 20
     private let stepperSpacing: CGFloat = 16
-    @ScaledMetric private var amountMinWidth: CGFloat = 120
+    private let amountMinWidth: CGFloat = 120
     private let amountVerticalPadding: CGFloat = 12
     private let amountHorizontalPadding: CGFloat = 24
     private let amountCornerRadius: CGFloat = 16
@@ -79,61 +108,70 @@ struct LogDoseView: View {
     private let bottomPadding: CGFloat = 20
     private let sectionShadowRadius: CGFloat = 8
     private let sectionShadowY: CGFloat = 2
+	@ScaledMetric private var quickTimeOptionMinWidth: CGFloat = 100
     private let guidanceBadgePaddingH: CGFloat = 10
     private let guidanceBadgePaddingV: CGFloat = 6
     private let reflectionGridSpacing: CGFloat = 10
     @ScaledMetric private var scaleButtonMinWidth: CGFloat = 36
+
+	private static let quickTimeSelections: [(label: String, secondsAgo: TimeInterval)] = [
+		("Now", 0),
+		("30 min ago", 1_800),
+		("1 hour ago", 3_600),
+		("4 hours ago", 14_400),
+		("1 day ago", 86_400),
+	]
 
     private var safetyProfile: MedicationSafetyProfile {
         safetyProfileStore.profile(for: medication.id)
     }
 
     private var proposedDose: ANDoseConcept {
-        ANDoseConcept(amount: amount, unit: selectedUnit)
+        ANDoseConcept(amount: draft.amount, unit: draft.selectedUnit)
     }
 
     private var assessment: MedicationDoseGuidanceService.Assessment {
         guidanceService.assessment(
             for: medication,
             proposedDose: proposedDose,
-            at: selectedDate,
+            at: draft.selectedDate,
             events: dataStore.events,
             profile: safetyProfile
         )
     }
 
     private var parsedSideEffects: [String] {
-        sideEffectsText
+        draft.sideEffectsText
             .components(separatedBy: CharacterSet(charactersIn: ",\n"))
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
     }
 
 	private var hasChanges: Bool {
-		amount != (medication.prescribedDoseAmount ?? 1) ||
-		selectedUnit != (medication.prescribedUnit ?? .unit) ||
-		selectedQuickOption != "Now" || !reason.isEmpty ||
-		symptomSeverityBefore != 0 || symptomSeverityAfter != 0 ||
-		effectiveness != 0 || !sideEffectsText.isEmpty || !note.isEmpty
+		draft.amount != (medication.prescribedDoseAmount ?? 1) ||
+		draft.selectedUnit != (medication.prescribedUnit ?? .unit) ||
+		draft.selectedQuickOption != "Now" || !draft.reason.isEmpty ||
+		draft.symptomSeverityBefore != 0 || draft.symptomSeverityAfter != 0 ||
+		draft.effectiveness != 0 || !draft.sideEffectsText.isEmpty || !draft.note.isEmpty
 	}
 
     init(
         medication: ANMedicationConcept,
         source: String = "unknown",
+		draft: Draft? = nil,
         onLog: @escaping (ANDoseConcept, ANEventConcept, UUID) async -> Bool
     ) {
         self.medication = medication
         self.source = source
         self.onLog = onLog
-        _amount = State(initialValue: medication.prescribedDoseAmount ?? 1)
-        _selectedUnit = State(initialValue: medication.prescribedUnit ?? .unit)
+		_draft = StateObject(wrappedValue: draft ?? Draft(medication: medication))
     }
 
     // MARK: - Private Methods
 
 	@MainActor
 	private func performLogDose() async {
-        guard !isLogging else {
+        guard !draft.isLogging else {
             logger.warning("Ignored duplicate dose log tap while request is in flight: source=\(source)")
             return
         }
@@ -141,23 +179,23 @@ struct LogDoseView: View {
         let operationID = UUID()
         let dose = proposedDose
         let reflection = DoseReflection(
-            reason: reason,
-            symptomSeverityBefore: nilIfZero(symptomSeverityBefore),
-            symptomSeverityAfter: nilIfZero(symptomSeverityAfter),
-            effectiveness: nilIfZero(effectiveness),
+            reason: draft.reason,
+            symptomSeverityBefore: nilIfZero(draft.symptomSeverityBefore),
+            symptomSeverityAfter: nilIfZero(draft.symptomSeverityAfter),
+            effectiveness: nilIfZero(draft.effectiveness),
             sideEffects: parsedSideEffects,
-            note: note
+            note: draft.note
         )
-        let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? draft.note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
         let event = ANEventConcept(
             eventType: .doseTaken,
             medication: medication,
             dose: dose,
-            date: selectedDate,
+            date: draft.selectedDate,
             note: encodedNote
         )
 
-        isLogging = true
+        draft.isLogging = true
         logger.logDoseOperation(
             "Submitting",
             source: source,
@@ -175,8 +213,8 @@ struct LogDoseView: View {
             dismiss()
         } else {
             logger.error("Dose log failed: source=\(source), operationID=\(operationID.uuidString)")
-            isLogging = false
-			showingLogError = true
+            draft.isLogging = false
+			draft.showingLogError = true
         }
     }
 
@@ -187,7 +225,7 @@ struct LogDoseView: View {
     private func tintColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
         switch severity {
         case .clear:
-            return medication.displayColor
+            return .guidanceGreen(for: colorScheme)
         case .caution:
             return .orange
         case .warning:
@@ -198,12 +236,12 @@ struct LogDoseView: View {
     private var guidanceAccessibilityLabel: String {
         var parts = [assessment.headline, assessment.detail]
 
-        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
+        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > draft.selectedDate {
             parts.append("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
         }
 
         if let maxDailyAmount = assessment.maxDailyAmount {
-            parts.append("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
+            parts.append("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(draft.selectedUnit.abbreviation).")
         }
 
         parts.append(contentsOf: assessment.reasons)
@@ -230,7 +268,7 @@ struct LogDoseView: View {
                 Image(systemName: medication.effectiveDisplaySymbol)
                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(medication.displayColor.contrastingForegroundColor())
+                    .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
             }
             .padding(.top, topPadding)
 			.accessibilityHidden(true)
@@ -272,27 +310,27 @@ struct LogDoseView: View {
 					: AnyLayout(HStackLayout(spacing: stepperSpacing))
 				amountLayout {
                     Button(action: {
-                        if amount > 0.5 {
-                            amount -= 0.5
+                        if draft.amount > 0.5 {
+                            draft.amount -= 0.5
                             hapticsManager.lightImpact()
                         }
                     }) {
                         Image(systemSymbol: .minusCircleFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundStyle(amount > 0.5 ? .accent : Color.secondary.opacity(0.5))
-                            .scaleEffect(amount > 0.5 ? 1.0 : 0.9)
+                            .foregroundStyle(draft.amount > 0.5 ? .accent : Color.secondary.opacity(0.5))
+                            .scaleEffect(draft.amount > 0.5 ? 1.0 : 0.9)
                     }
-                    .disabled(amount <= 0.5)
+                    .disabled(draft.amount <= 0.5)
 					.frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Decrease dose amount")
-                    .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
+                    .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
 
                     VStack(spacing: smallSpacing) {
-                        Text("\(amount, specifier: "%.1f")")
+                        Text("\(draft.amount, specifier: "%.1f")")
                             .font(.customFont(fontFamily, style: .title, weight: .semibold))
                             .contentTransition(.numericText())
 
-                        Text(selectedUnit.displayName)
+                        Text(draft.selectedUnit.displayName)
                             .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
@@ -306,20 +344,20 @@ struct LogDoseView: View {
                     )
 
                     Button(action: {
-                        if amount < 100 {
-                            amount += 0.5
+                        if draft.amount < 100 {
+                            draft.amount += 0.5
                             hapticsManager.lightImpact()
                         }
                     }) {
                         Image(systemSymbol: .plusCircleFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .foregroundStyle(amount < 100 ? .accent : Color.secondary.opacity(0.5))
-                            .scaleEffect(amount < 100 ? 1.0 : 0.9)
+                            .foregroundStyle(draft.amount < 100 ? .accent : Color.secondary.opacity(0.5))
+                            .scaleEffect(draft.amount < 100 ? 1.0 : 0.9)
                     }
-                    .disabled(amount >= 100)
+                    .disabled(draft.amount >= 100)
 					.frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Increase dose amount")
-                    .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
+                    .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
                 }
                 .accessibilityElement(children: .contain)
 
@@ -329,27 +367,27 @@ struct LogDoseView: View {
                         ForEach(ANUnitConcept.allCases, id: \.self) { unit in
                             Button(action: {
                                 withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                                    selectedUnit = unit
+                                    draft.selectedUnit = unit
                                     hapticsManager.selectionChanged()
                                 }
                             }) {
                                 Text(unit.displayName)
-                                    .font(.customFont(fontFamily, style: .subheadline, weight: selectedUnit == unit ? .semibold : .regular))
+                                    .font(.customFont(fontFamily, style: .subheadline, weight: draft.selectedUnit == unit ? .semibold : .regular))
                                     .padding(.horizontal, unitHorizontalPadding)
                                     .padding(.vertical, unitVerticalPadding)
                                     .background {
-                                        if selectedUnit == unit {
+                                        if draft.selectedUnit == unit {
                                             Capsule()
-                                                .fill(.accent.gradient)
+                                                .fill(Color.accent)
                                         } else {
                                             Capsule()
                                                 .fill(.regularMaterial)
                                         }
                                     }
-                                    .foregroundStyle(selectedUnit == unit ? .white : .primary)
+                                    .foregroundStyle(draft.selectedUnit == unit ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
                             }
                             .accessibilityLabel(unit.displayName)
-                            .accessibilityValue(selectedUnit == unit ? "Selected" : "Not selected")
+                            .accessibilityValue(draft.selectedUnit == unit ? "Selected" : "Not selected")
                         }
                     }
                     .padding(.horizontal, unitScrollPadding)
@@ -375,17 +413,17 @@ struct LogDoseView: View {
                 // Date Display Button
                 Button(action: {
                     withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                        showingDatePicker.toggle()
+                        draft.showingDatePicker.toggle()
                         hapticsManager.selectionChanged()
                     }
                 }) {
                     HStack {
                         VStack(alignment: .leading, spacing: smallSpacing) {
-                            Text(selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
+                            Text(draft.selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
                                 .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundStyle(.secondary)
 
-                            Text(selectedDate, format: .dateTime.hour().minute())
+                            Text(draft.selectedDate, format: .dateTime.hour().minute())
                                 .font(.customFont(fontFamily, style: .title3))
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.primary)
@@ -405,19 +443,19 @@ struct LogDoseView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Dose time")
-                .accessibilityValue(selectedDate.formatted(date: .abbreviated, time: .shortened))
+                .accessibilityValue(draft.selectedDate.formatted(date: .abbreviated, time: .shortened))
                 .accessibilityHint("Tap to show or hide the date picker")
 
-                if showingDatePicker {
+                if draft.showingDatePicker {
                     DatePicker(
                             "Dose date and time",
-                        selection: $selectedDate,
+                        selection: $draft.selectedDate,
                         displayedComponents: [.date, .hourAndMinute]
                     )
                     .datePickerStyle(.wheel)
                     .labelsHidden()
-                    .onChange(of: selectedDate) { _, _ in
-                        selectedQuickOption = nil
+                    .onChange(of: draft.selectedDate) { _, _ in
+                        draft.selectedQuickOption = nil
                     }
                     .transition(reduceMotion ? .opacity : .asymmetric(
                         insertion: .push(from: .top).combined(with: .opacity),
@@ -425,21 +463,19 @@ struct LogDoseView: View {
                     ))
                 }
 
-                // Quick Actions
-				let timeLayout = dynamicTypeSize.isAccessibilitySize
-					? AnyLayout(VStackLayout(spacing: quickButtonSpacing))
-					: AnyLayout(HStackLayout(spacing: quickButtonSpacing))
-				timeLayout {
-                    ForEach([
-                        ("Now", Date()),
-                        ("30 min ago", Date().addingTimeInterval(-30 * 60)),
-                        ("1 hour ago", Date().addingTimeInterval(-60 * 60)),
-                    ], id: \.0) { label, date in
+				LazyVGrid(
+					columns: [GridItem(
+						dynamicTypeSize.isAccessibilitySize ? .flexible() : .adaptive(minimum: quickTimeOptionMinWidth),
+						spacing: quickButtonSpacing
+					)],
+					spacing: quickButtonSpacing
+				) {
+					ForEach(Self.quickTimeSelections, id: \.label) { label, secondsAgo in
                         Button(action: {
                             withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                                selectedDate = date
-                                selectedQuickOption = label
-                                showingDatePicker = false
+                                draft.selectedDate = Date().addingTimeInterval(-secondsAgo)
+                                draft.selectedQuickOption = label
+                                draft.showingDatePicker = false
                                 hapticsManager.selectionChanged()
                             }
                         }) {
@@ -447,19 +483,21 @@ struct LogDoseView: View {
                                 .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                 .padding(.horizontal, quickButtonHorizontalPadding)
                                 .padding(.vertical, quickButtonVerticalPadding)
+								.frame(maxWidth: .infinity, minHeight: 44)
+								.fixedSize(horizontal: false, vertical: true)
                                 .background {
-                                    if selectedQuickOption == label {
+                                    if draft.selectedQuickOption == label {
                                         Capsule()
-                                            .fill(.accent.gradient)
+                                            .fill(Color.accent)
                                     } else {
                                         Capsule()
                                             .fill(.regularMaterial)
                                     }
                                 }
-                                .foregroundStyle(selectedQuickOption == label ? .white : .primary)
+                                .foregroundStyle(draft.selectedQuickOption == label ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
                         }
                         .accessibilityLabel(label)
-                        .accessibilityValue(selectedQuickOption == label ? "Selected" : "Not selected")
+                        .accessibilityValue(draft.selectedQuickOption == label ? "Selected" : "Not selected")
                     }
                 }
             }
@@ -473,16 +511,22 @@ struct LogDoseView: View {
         .padding(.horizontal)
     }
 
+	private var sectionHeaderLayout: AnyLayout {
+		dynamicTypeSize.isAccessibilitySize
+			? AnyLayout(VStackLayout(alignment: .leading, spacing: labelSpacing))
+			: AnyLayout(HStackLayout())
+	}
+
     private var guidanceSection: some View {
         let tint = tintColor(for: assessment.severity)
 
         return VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack {
+            sectionHeaderLayout {
                 Label("Dose Check", systemSymbol: .crossCaseFill)
                     .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
                 Text(assessment.severity == .clear ? "Saved Guidance" : "Review")
                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
@@ -506,7 +550,7 @@ struct LogDoseView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > selectedDate {
+            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > draft.selectedDate {
                 HStack(alignment: .top, spacing: mediumSpacing) {
                     Image(systemSymbol: .clockBadgeExclamationmark)
                         .foregroundStyle(tint)
@@ -525,7 +569,7 @@ struct LogDoseView: View {
                         .foregroundStyle(tint)
                         .padding(.top, smallSpacing)
 
-                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(selectedUnit.abbreviation).")
+                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(draft.selectedUnit.abbreviation).")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -534,14 +578,14 @@ struct LogDoseView: View {
 
             if !assessment.reasons.isEmpty {
                 VStack(alignment: .leading, spacing: smallSpacing) {
-                    ForEach(assessment.reasons, id: \.self) { reason in
+                    ForEach(assessment.reasons, id: \.self) { guidanceReason in
                         HStack(alignment: .top, spacing: smallSpacing) {
                             Image(systemSymbol: .circleFill)
                                 .font(.customFont(fontFamily, style: .caption2))
                                 .foregroundStyle(tint)
                                 .padding(.top, smallSpacing)
 
-                            Text(reason)
+                            Text(guidanceReason)
                                 .font(.customFont(fontFamily, style: .caption))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -566,12 +610,12 @@ struct LogDoseView: View {
 
     private var reflectionSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack {
+            sectionHeaderLayout {
                 Label("How It Went", systemSymbol: .heartTextSquareFill)
                     .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
                 Text("Optional")
                     .font(.customFont(fontFamily, style: .caption))
@@ -588,7 +632,8 @@ struct LogDoseView: View {
                 Text("Reason")
                     .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 
-                TextField("Example: headache, cramps, trouble sleeping", text: $reason)
+                TextField("Example: headache", text: $draft.reason, axis: .vertical)
+					.lineLimit(1 ... 3)
                     .font(.customFont(fontFamily, style: .body))
                     .textFieldStyle(.roundedBorder)
                     .accessibilityLabel("Reason for taking this dose")
@@ -600,19 +645,19 @@ struct LogDoseView: View {
                 scalePickerCard(
                     title: "Before",
                     subtitle: "Symptom level before logging",
-                    selection: $symptomSeverityBefore
+                    selection: $draft.symptomSeverityBefore
                 )
 
                 scalePickerCard(
                     title: "After",
                     subtitle: "How you feel afterward",
-                    selection: $symptomSeverityAfter
+                    selection: $draft.symptomSeverityAfter
                 )
 
                 scalePickerCard(
                     title: "Effect",
                     subtitle: "How helpful this dose feels",
-                    selection: $effectiveness
+                    selection: $draft.effectiveness
                 )
 
                 VStack(alignment: .leading, spacing: labelSpacing) {
@@ -623,12 +668,13 @@ struct LogDoseView: View {
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
 
-                    TextField("Sleepy, dry mouth, nausea", text: $sideEffectsText, axis: .vertical)
+                    TextField("Sleepy, dry mouth, nausea", text: $draft.sideEffectsText, axis: .vertical)
                         .font(.customFont(fontFamily, style: .body))
                         .lineLimit(2 ... 4)
                         .textFieldStyle(.roundedBorder)
                         .accessibilityLabel("Side effects")
                 }
+				.frame(maxWidth: .infinity, alignment: .leading)
                 .padding(standardPadding)
                 .background(
                     RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
@@ -665,9 +711,11 @@ struct LogDoseView: View {
             }
 			.pickerStyle(.menu)
 			.labelsHidden()
-			.frame(minHeight: 44)
+			.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+			.tint(.accent)
 			.accessibilityLabel("\(title): \(subtitle)")
         }
+		.frame(maxWidth: .infinity, alignment: .leading)
         .padding(standardPadding)
         .background(
             RoundedRectangle(cornerRadius: dateDisplayCornerRadius, style: .continuous)
@@ -677,12 +725,12 @@ struct LogDoseView: View {
 
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack {
+            sectionHeaderLayout {
                 Label("Note", systemSymbol: .noteText)
                     .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
                 Text("Optional")
                     .font(.customFont(fontFamily, style: .caption))
@@ -697,7 +745,7 @@ struct LogDoseView: View {
 
             // Use the new expandable note editor component
             ExpandableNoteEditorComponent(
-                noteText: $note,
+                noteText: $draft.note,
                 placeholder: "How are you feeling? Any side effects?",
                 medicationName: medication.displayName,
                 onSave: {
@@ -722,30 +770,32 @@ struct LogDoseView: View {
             }
         } label: {
             HStack(spacing: quickButtonSpacing) {
-                if isLogging {
+                if draft.isLogging {
                     ProgressView()
-                        .tint(medication.displayColor.contrastingForegroundColor())
+                        .tint(Color.accent.contrastingForegroundColor(for: colorScheme))
                 } else {
                     Image(systemSymbol: .checkmarkCircleFill)
                         .font(.customFont(fontFamily, style: .title3))
                 }
 
-                Text(isLogging ? "Logging" : "Log Dose")
+                Text(draft.isLogging ? "Logging" : "Log Dose")
                     .font(.customFont(fontFamily, style: .headline))
+					.fixedSize(horizontal: false, vertical: true)
+					.multilineTextAlignment(.center)
             }
-            .foregroundStyle(medication.displayColor.contrastingForegroundColor())
+            .foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
             .frame(maxWidth: .infinity)
             .padding(.vertical, buttonVerticalPadding)
             .background(
                 RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [medication.displayColor, medication.displayColor.opacity(0.9)],
+                            colors: [Color.accent, Color.accent],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: medication.displayColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
+                    .shadow(color: Color.accent.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
@@ -759,10 +809,10 @@ struct LogDoseView: View {
                     )
             )
         }
-        .disabled(!amount.isFinite || amount <= 0 || isLogging)
-        .opacity(amount <= 0 || isLogging ? 0.6 : 1.0)
-        .accessibilityLabel(isLogging ? "Logging dose" : "Log dose")
-        .accessibilityValue("\(amount.formattedAmount) \(selectedUnit.displayName)")
+        .disabled(!draft.amount.isFinite || draft.amount <= 0 || draft.isLogging)
+        .opacity(draft.amount <= 0 || draft.isLogging ? 0.6 : 1.0)
+        .accessibilityLabel(draft.isLogging ? "Logging dose" : "Log dose")
+        .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
         .accessibilityHint(assessment.severity == .clear ? "Saves this dose entry" : "Saves this dose entry with the shown guidance warning")
     }
 
@@ -778,7 +828,12 @@ struct LogDoseView: View {
 
                         dateTimeSection
 
-                        guidanceSection
+						if assessment.severity != .clear ||
+							medication.minimumHoursBetweenDoses != nil ||
+							safetyProfile.minimumHoursBetweenDoses != nil ||
+							assessment.maxDailyAmount != nil {
+							guidanceSection
+						}
 
                         reflectionSection
 
@@ -791,7 +846,7 @@ struct LogDoseView: View {
                         .ignoresSafeArea()
                 )
                 .scrollDismissesKeyboard(.interactively)
-				.disabled(isLogging)
+				.disabled(draft.isLogging)
 
                 // Sticky button container
                 VStack(spacing: 0) {
@@ -808,22 +863,22 @@ struct LogDoseView: View {
 			.customNavigationTitle("Log Dose", displayMode: .inline)
             .toolbar {
                 Button(role: .close) {
-					if hasChanges { showingDiscardConfirmation = true } else { dismiss() }
+					if hasChanges { draft.showingDiscardConfirmation = true } else { dismiss() }
                 }
-				.disabled(isLogging)
+				.disabled(draft.isLogging)
             }
             .tint(.accent)
-			.alert("Check Dose History", isPresented: $showingLogError) {
+			.alert("Check Dose History", isPresented: $draft.showingLogError) {
 				Button("Keep Editing", role: .cancel) {}
 			} message: {
 				Text("Some changes may already be saved. Your entry is still here. Check History before logging again.")
 			}
-			.confirmationDialog("Discard this dose entry?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
+			.confirmationDialog("Discard this dose entry?", isPresented: $draft.showingDiscardConfirmation, titleVisibility: .visible) {
 				Button("Discard Entry", role: .destructive) { dismiss() }
 				Button("Keep Editing", role: .cancel) {}
 			}
         }
-        .interactiveDismissDisabled(isLogging || hasChanges)
+        .interactiveDismissDisabled(draft.isLogging || hasChanges)
     }
 }
 

@@ -12,7 +12,7 @@ struct AutomaticBackupExplainerView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     whatIsSection
                     howItWorksSection

@@ -7,7 +7,7 @@ import SwiftUI
 /// Features:
 /// - Adaptive layout that switches between standard and accessibility modes
 /// - Animated medication icon with smart type detection
-/// - Quantity tracking with color-coded status indicators
+/// - Quantity tracking with color-coded stock indicators
 /// - Interactive log button with haptic feedback
 /// - Comprehensive accessibility support
 /// - Edit mode integration for list management
@@ -33,6 +33,7 @@ struct MedicationRowComponent: View {
 	var onOpen: (() -> Void)?
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
+	var showQuickLogHintAnchor = false
     var onAppearanceChanged: ((String?, String?) -> Void)? = nil
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -42,19 +43,16 @@ struct MedicationRowComponent: View {
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var isLongPressing = false
-    @State private var longPressWorkItem: DispatchWorkItem?
-    @State private var hasTriggeredQuickLog = false
-	@State private var cancelledLogGesture = false
+	@State private var holdProgress: Double = 0
     @State private var showingAppearancePicker = false
     @State private var tempSelectedColor: String?
     @State private var tempSelectedSymbol: String?
     private let hapticsManager = HapticsManager.shared
-    private let longPressDuration: TimeInterval = 0.5
 
     private let rowPadding: CGFloat = 16
     private let iconContentSpacing: CGFloat = 14
-    @ScaledMetric private var logButtonSize: CGFloat = 66
-    @ScaledMetric private var medicationIconSize: CGFloat = 56
+    @ScaledMetric private var logButtonSize: CGFloat = 52
+    @ScaledMetric private var medicationIconSize: CGFloat = 40
 
     var body: some View {
         HStack(spacing: 0) {
@@ -70,30 +68,28 @@ struct MedicationRowComponent: View {
                 }
                 .padding(rowPadding)
             } else {
-                // Standard Layout
-                HStack(alignment: .center, spacing: 16) {
-                    // Left Side: Icon and Info
-                    HStack(spacing: iconContentSpacing) {
-                        if editMode?.wrappedValue != .active {
-                            medicationIcon
-                        }
+				VStack(alignment: .leading, spacing: 8) {
+					HStack(alignment: .center, spacing: 10) {
+						if editMode?.wrappedValue != .active {
+							medicationIcon
+								.frame(minWidth: 44, minHeight: 44)
+						}
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            medicationHeader
-                            if editMode?.wrappedValue != .active {
-                                medicationDetails
-                            }
-                        }
-                    }
+						medicationHeader
+							.frame(maxWidth: .infinity, alignment: .leading)
+							.layoutPriority(1)
 
-                    Spacer(minLength: 8)
+						if editMode?.wrappedValue != .active {
+							enhancedLogButton
+						}
+					}
 
-                    // Right Side: Enhanced Log Button
-                    if editMode?.wrappedValue != .active {
-                        enhancedLogButton
-                    }
-                }
-                .padding(rowPadding)
+					if editMode?.wrappedValue != .active {
+						medicationDetails
+							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+				}
+				.padding(12)
             }
         }
         .background(
@@ -126,7 +122,7 @@ struct MedicationRowComponent: View {
         .padding(.horizontal, 4)
         .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(statusSummary?.accessibilityLabel ?? "Medication: \(medication.displayName)")
+        .accessibilityLabel("Medication: \(medication.displayName)")
         .accessibilityHint("Tap to view details or log dose")
 		.accessibilityAction { if editMode?.wrappedValue != .active { onOpen?() } }
 		.accessibilityAction(named: "View details") { if editMode?.wrappedValue != .active { onOpen?() } }
@@ -211,78 +207,34 @@ struct MedicationRowComponent: View {
         }
     }
 
-    private var medicationDetails: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Quantity Badge
-            if let quantity = medication.quantity {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Image(systemSymbol: .squareStack3dUp)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(quantityColor(for: quantity))
-                            .accessibilityHidden(true)
+	private var medicationDetails: some View {
+		VStack(alignment: .leading, spacing: 6) {
+			if let quantity = medication.quantity {
+				HStack(spacing: 6) {
+					Image(systemSymbol: .squareStack3dUp)
+						.font(.caption2.weight(.semibold))
+						.foregroundStyle(quantityColor(for: quantity))
+						.accessibilityHidden(true)
 
-                        Text(quantityText(for: quantity))
-                            .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                            .fontDesign(.rounded)
-                            .foregroundStyle(quantityColor(for: quantity))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(quantityColor(for: quantity).opacity(0.12))
-                    )
-                    .accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+					Text(quantityText(for: quantity))
+						.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+						.fontDesign(.rounded)
+						.foregroundStyle(quantityColor(for: quantity))
+				}
+				.padding(.horizontal, 10)
+				.padding(.vertical, 5)
+				.background(Capsule().fill(quantityColor(for: quantity).opacity(0.12)))
+				.accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+			}
 
-                    // Usage Progress Bar (only if initialQuantity is available)
-                    if let usagePercentage = usagePercentage {
-                        usageProgressBar(percentage: usagePercentage)
-                            .accessibilityLabel("Usage progress: \(Int(usagePercentage))% used")
-                    }
-                }
-            }
-
-            if let statusSummary {
-                statusSummaryView(statusSummary)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .top, spacing: 6) {
-                Image(systemSymbol: summaryIcon(for: summary.severity))
-                    .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .accessibilityHidden(true)
-
-                Text(summary.badgeText)
-                    .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(summaryColor(for: summary.severity).opacity(0.12))
-            )
-
-            Text(summary.timingText)
-                .font(.customFont(fontFamily, style: .caption2))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(summary.headline)
-                    .font(.customFont(fontFamily, style: .caption2))
-                    .foregroundStyle(summaryColor(for: summary.severity))
-                    .fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(summary.accessibilityLabel)
-    }
+			if let nextWindowText = statusSummary?.nextWindowText {
+				Text(nextWindowText)
+					.font(.customFont(fontFamily, style: .caption2))
+					.foregroundStyle(.secondary)
+					.fixedSize(horizontal: false, vertical: true)
+			}
+		}
+	}
 
     private var enhancedLogButton: some View {
 		Button {
@@ -298,14 +250,14 @@ struct MedicationRowComponent: View {
                     Text("Log Dose")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                 }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor())
+                .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [medication.displayColor, medication.displayColor.opacity(0.85)],
+                                colors: [medication.displayColor, medication.displayColor],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -323,7 +275,7 @@ struct MedicationRowComponent: View {
                         .font(.customFont(fontFamily, style: .caption2, weight: .bold))
                         .textCase(.uppercase)
                 }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor())
+                .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
                 .frame(width: logButtonSize, height: logButtonSize)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -331,7 +283,7 @@ struct MedicationRowComponent: View {
                             LinearGradient(
                                 colors: [
                                     medication.displayColor,
-                                    medication.displayColor.opacity(0.9),
+                                    medication.displayColor,
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -349,8 +301,8 @@ struct MedicationRowComponent: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    medication.displayColor.contrastingForegroundColor().opacity(0.3),
-                                    medication.displayColor.contrastingForegroundColor().opacity(0.1),
+                                    medication.displayColor.contrastingForegroundColor(for: colorScheme).opacity(0.3),
+                                    medication.displayColor.contrastingForegroundColor(for: colorScheme).opacity(0.1),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -364,133 +316,25 @@ struct MedicationRowComponent: View {
         }
 		.buttonStyle(.plain)
         .contentShape(Rectangle())
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 0)
-				.onChanged { value in
-					guard !cancelledLogGesture else { return }
-					if abs(value.translation.width) > 10 || abs(value.translation.height) > 10 {
-						cancelledLogGesture = true
-						longPressWorkItem?.cancel()
-						longPressWorkItem = nil
-						isPressed = false
-						isLongPressing = false
-						return
-					}
-                    // Only set up the timer on first change event
-                    if longPressWorkItem == nil {
-                        // Visual feedback - press started
-                        withAnimation(.easeInOut(duration: 0.1)) {
-                            isPressed = true
-                        }
-
-                        // Schedule long press action to fire at exact threshold
-                        let workItem = DispatchWorkItem { [self] in
-                            guard !hasTriggeredQuickLog else { return }
-
-                            // Trigger quick log immediately when threshold reached
-                            hasTriggeredQuickLog = true
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isLongPressing = true
-                            }
-                            hapticsManager.heavyImpact()
-
-                            // Execute quick log
-                            if let quickLog = onQuickLog {
-                                Task {
-                                    let success = await quickLog()
-                                    if success {
-                                        await MainActor.run {
-                                            // Notify parent to show toast
-                                            onQuickLogSuccess?()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        longPressWorkItem = workItem
-                        DispatchQueue.main.asyncAfter(deadline: .now() + longPressDuration, execute: workItem)
-                    }
-                }
-                .onEnded { _ in
-                    // Cancel scheduled long press if it hasn't fired yet
-                    longPressWorkItem?.cancel()
-                    longPressWorkItem = nil
-
-                    // Reset visual states
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        isPressed = false
-                        isLongPressing = false
-                    }
-
-                    // Only trigger tap action if it was a short press (long press wasn't triggered)
-                    if !hasTriggeredQuickLog && !cancelledLogGesture {
-                        // Short press - show log sheet
-                        hapticsManager.mediumImpact()
-                        onLogTapped()
-                    }
-
-                    // Reset for next interaction
-                    hasTriggeredQuickLog = false
-					cancelledLogGesture = false
-                }
-        )
+		.overlay {
+			RoundedRectangle(cornerRadius: dynamicTypeSize.isAccessibilitySize ? 12 : 14)
+				.trim(from: 0, to: holdProgress)
+				.stroke(medication.displayColor.contrastingForegroundColor(for: colorScheme), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+				.padding(2)
+				.allowsHitTesting(false)
+				.accessibilityHidden(true)
+		}
+		.anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { showQuickLogHintAnchor ? $0 : nil }
+		.doseLogPressGesture(
+			isPressed: $isPressed, isLongPressing: $isLongPressing, holdProgress: $holdProgress,
+			onTap: onLogTapped, onQuickLog: onQuickLog, onQuickLogSuccess: onQuickLogSuccess
+		)
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Tap to customize dose, hold to log default dose")
-		.onDisappear {
-			longPressWorkItem?.cancel()
-			longPressWorkItem = nil
-			hasTriggeredQuickLog = false
-			cancelledLogGesture = false
-			isPressed = false
-			isLongPressing = false
-		}
+
     }
 
     // MARK: - Helper Methods
-
-    /// Calculates the percentage of medication used (0-100) if both quantities are available
-    private var usagePercentage: Double? {
-        guard let initial = medication.initialQuantity,
-              let current = medication.quantity,
-              initial > 0
-        else {
-            return nil
-        }
-        let used = initial - current
-        return max(0, min(100, (used / initial) * 100))
-    }
-
-    /// Creates a thin progress bar showing usage percentage
-    @ViewBuilder
-    private func usageProgressBar(percentage: Double) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background track
-                Capsule()
-                    .fill(.regularMaterial)
-                    .frame(height: 4)
-
-                // Progress fill
-                Capsule()
-                    .fill(progressBarColor(for: percentage))
-                    .frame(width: geometry.size.width * (percentage / 100), height: 4)
-            }
-        }
-        .frame(height: 4)
-        .padding(.horizontal, 10)
-    }
-
-    /// Returns color for progress bar based on percentage used
-    private func progressBarColor(for percentage: Double) -> Color {
-        if percentage < 33 {
-            return .green
-        } else if percentage < 66 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
 
     private func quantityColor(for quantity: Double) -> Color {
         if quantity < 10 {
@@ -508,28 +352,6 @@ struct MedicationRowComponent: View {
             return "\(quantityStr) \(unit.abbreviation) left"
         } else {
             return "\(quantityStr) left"
-        }
-    }
-
-    private func summaryColor(for severity: MedicationDoseGuidanceService.Severity) -> Color {
-        switch severity {
-        case .clear:
-            return medication.displayColor
-        case .caution:
-            return .orange
-        case .warning:
-            return .red
-        }
-    }
-
-    private func summaryIcon(for severity: MedicationDoseGuidanceService.Severity) -> SFSymbol {
-        switch severity {
-        case .clear:
-            return .checkmarkCircleFill
-        case .caution:
-            return .exclamationmarkTriangleFill
-        case .warning:
-            return .exclamationmarkTriangleFill
         }
     }
 

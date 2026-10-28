@@ -30,12 +30,16 @@ public enum UserDefaultsKeys {
     /// Currently selected tab index
     static let selectedTab = "selectedTab"
 
+	/// Shared discovery state for quick-log hints on this device.
+	static let hasDiscoveredQuickLog = "hasDiscoveredQuickLog"
+	static let quickLogHintImpressions = "quickLogHintImpressions"
+
     // MARK: - Display Settings
 
     /// Trends visualization type (chart, list, etc.)
     static let trendsVisualizationType = "trendsVisualizationType"
 
-    /// Trends time window in days (14 or 30)
+    /// Trends time window in days (14, 30 or 90)
     static let trendsDaysWindow = "trendsDaysWindow"
 
     /// Whether to hide support banners
@@ -45,6 +49,9 @@ public enum UserDefaultsKeys {
     static let medicationSafetyProfiles = "medicationSafetyProfiles"
 
     // MARK: - Notification Settings
+
+	/// Device-local Time Sensitive preference keyed by medication identity.
+	static let medicationNotificationUrgency = "medicationNotificationUrgency"
 
     /// Whether to show medication names in notifications
     static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
@@ -173,11 +180,14 @@ public enum UserDefaultsKeys {
         shouldShowWelcomeOnNextLaunch,
         hapticsEnabled,
         selectedTab,
+		hasDiscoveredQuickLog,
+		quickLogHintImpressions,
         trendsVisualizationType,
         trendsDaysWindow,
         hideSupportBanners,
         medicationSafetyProfiles,
         showMedicationNamesInNotifications,
+		medicationNotificationUrgency,
         selectedFontFamily,
         hasUserOptedOutOfReviews,
         appLaunchCount,
@@ -218,6 +228,8 @@ public enum UserDefaultsKeys {
         // hasSeenWelcome is handled specially - not reset immediately
         shouldShowWelcomeOnNextLaunch: true, // Set flag to show welcome on next launch
         hapticsEnabled: true,
+		hasDiscoveredQuickLog: false,
+		quickLogHintImpressions: 0,
         selectedTab: 0,
         trendsVisualizationType: 0, // Chart view
         trendsDaysWindow: 14, // 14 days by default
@@ -245,6 +257,7 @@ public enum UserDefaultsKeys {
 
     /// Keys that should be removed (not set to a default) when resetting
     public static let keysToRemove: Set<String> = [
+		medicationNotificationUrgency,
         historySelectedMedicationID,
         trendsSelectedMedicationID,
         medicationOrder,
@@ -268,6 +281,9 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
+		storageSchemaVersion, // Storage state is independent of user preferences
+		archivedLegacyMedicationsPath, // Preserve recovery locations after a settings reset
+		archivedLegacyEventsPath,
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -310,6 +326,9 @@ public enum UserDefaultsKeys {
     /// Keys that should NEVER be exported (blocklist for security/privacy)
     /// These contain device-specific data, security-scoped bookmarks, or historical analytics
     public static let keysToNeverExport: Set<String> = [
+		hasDiscoveredQuickLog, // Gesture discovery is device-local.
+		quickLogHintImpressions,
+		medicationNotificationUrgency, // Delivery preferences belong to this device.
         // Security-scoped bookmarks (device-specific, won't work on other devices)
         automaticBackupLocationBookmark,
 

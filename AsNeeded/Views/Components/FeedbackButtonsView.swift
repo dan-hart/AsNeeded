@@ -79,16 +79,16 @@ struct FeedbackButtonsView: View {
         .overlay {
             if isLoading {
                 RoundedRectangle(cornerRadius: containerCornerRadius)
-                    .fill(Color.black.opacity(0.4))
+                    .fill(Color(uiColor: .secondarySystemBackground))
                     .overlay {
                         VStack(spacing: loadingSpacing) {
                             ProgressView()
                                 .scaleEffect(1.2)
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .progressViewStyle(CircularProgressViewStyle(tint: .primary))
 
                             Text(loadingMessage)
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.primary)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(containerPadding)

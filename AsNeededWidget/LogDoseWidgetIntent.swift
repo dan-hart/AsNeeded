@@ -3,7 +3,6 @@
 
 import ANModelKit
 import AppIntents
-import Boutique
 import Foundation
 import WidgetKit
 
@@ -23,63 +22,16 @@ struct LogDoseWidgetIntent: AppIntent {
 			throw WidgetLogError.medicationUnavailable
         }
 
-        // Get shared data provider
-        let provider = WidgetDataProvider.shared
+		try await WidgetDataProvider.shared.recordDose(medicationID: id)
+		WidgetCenter.shared.reloadAllTimelines()
+		return .result()
 
-        // Find the medication
-        guard let medication = provider.medications.first(where: { $0.id == id }) else {
-			throw WidgetLogError.medicationUnavailable
-        }
-
-        // Check if can take now (simplified 4-hour interval check)
-        guard provider.canTakeNow(medication) else {
-            // Cannot take yet - interval not elapsed
-			throw WidgetLogError.reviewInApp
-        }
-
-        // Determine dose amount and unit
-        let doseAmount = medication.prescribedDoseAmount ?? 1.0
-        let selectedUnit = medication.prescribedUnit ?? .unit
-
-        // Create dose and event
-        let dose = ANDoseConcept(amount: doseAmount, unit: selectedUnit)
-        let event = ANEventConcept(
-            eventType: .doseTaken,
-            medication: medication,
-            dose: dose,
-            date: Date()
-        )
-
-        do {
-            // Log the dose to shared store
-            try await provider.eventsStore.insert(event)
-
-            // Update medication quantity if tracked
-            if let quantity = medication.quantity, quantity > 0 {
-                var updatedMedication = medication
-                updatedMedication.quantity = max(0, quantity - doseAmount)
-                // Boutique's insert will replace existing item with same ID
-                // No need to remove first, avoiding race condition
-                try await provider.medicationsStore.insert(updatedMedication)
-            }
-
-            // Reload all widget timelines to show updated state
-            WidgetCenter.shared.reloadAllTimelines()
-            await MedicationLiveActivityBridge.refreshFromSharedStores(provider: provider)
-
-            return .result()
-
-        } catch {
-            // Failed to log dose
-			throw WidgetLogError.saveUnconfirmed
-        }
     }
 }
 
-private enum WidgetLogError: LocalizedError {
+enum WidgetLogError: LocalizedError {
 	case medicationUnavailable
 	case reviewInApp
-	case saveUnconfirmed
 
 	var errorDescription: String? {
 		switch self {
@@ -87,8 +39,6 @@ private enum WidgetLogError: LocalizedError {
 			"This medication is no longer available. Open AsNeeded to choose a medication."
 		case .reviewInApp:
 			"The saved interval hasn’t elapsed. Open AsNeeded to review your limits or record a dose."
-		case .saveUnconfirmed:
-			"Couldn’t confirm the dose was saved. Check your history in AsNeeded before logging it again."
 		}
 	}
 }

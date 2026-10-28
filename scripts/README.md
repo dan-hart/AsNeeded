@@ -420,3 +420,11 @@ Pipeline failures propagate even when the optional xcsift formatter is installed
 Run the watch model's standalone Swift Testing regressions with
 `./scripts/tests/watch-medication-availability.test.sh` (Swift 6.2+ on macOS).
 The harness compiles the real watch model without requiring a watch simulator.
+
+### Encoded-secret classification
+
+The pre-commit security hook requires Python 3 (standard library only) and scans the staged blob, including paths with spaces. `utilities/base64-secret-scan.py --path FILE` reads content from stdin (with optional `--revision SHA` for historical tracked paths), checks canonical Base64 and measured character entropy, and reports only file/line locations. Source-code identifiers, tracked file references, and labeled reproducibility hashes have narrow data classifications; provider-specific and generic credential checks remain active.
+
+Run the deterministic classifier regressions with `python3 scripts/tests/base64-secret-scan.test.py`. Run `python3 scripts/tests/pre-commit-security.test.py` for real-hook regressions in temporary repositories, including staged secrets hidden by a clean working copy. Fixtures are synthetic and constructed without embedding live credentials.
+
+The push hook is read-only: set build numbers before committing rather than relying on a push-time bump. It scans only unpublished commits, with historical path classification tied to each scanned revision. Run `python3 scripts/tests/pre-push-scan.test.py` for isolated push-hook regressions. After reviewing storage-sensitive changes, use `ASP_ACK_DATA_PATH=1 git commit ...` to supply the existing preflight acknowledgement explicitly; it does not disable secret scanning.

@@ -6,7 +6,8 @@ import ANModelKit
 import Foundation
 import Testing
 
-@Suite("DataStore Tests", .tags(.dataStore, .persistence, .unit))
+// Several cases exercise shared selection preferences and navigation state.
+@Suite("DataStore Tests", .serialized, .tags(.dataStore, .persistence, .unit))
 @MainActor
 struct DataStoreTests {
     private var dataStore: DataStore
@@ -112,7 +113,7 @@ struct DataStoreTests {
         #expect(dataStore.events.count == 0, "Associated events should be deleted")
     }
 
-    @Test("Delete medication clears AppStorage selections", .disabled("Test pollution causes false failures when run in full suite - passes in isolation"))
+    @Test("Delete medication clears AppStorage selections")
     func deleteMedicationClearsAppStorageSelections() async throws {
         // Clean up any existing state
         UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")

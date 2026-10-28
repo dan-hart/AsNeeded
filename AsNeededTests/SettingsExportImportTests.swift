@@ -11,7 +11,7 @@ import Foundation
 import Testing
 
 @MainActor
-@Suite(.tags(.dataManagement, .unit))
+@Suite(.serialized, .tags(.dataManagement, .unit))
 struct SettingsExportImportTests {
 	// MARK: - Test Helpers
 
@@ -113,9 +113,12 @@ struct SettingsExportImportTests {
 	@Test("Import without settings should not modify user defaults")
 	func importWithoutSettingsShouldNotModifyDefaults() async throws {
 		let dataStore = createTestDataStore()
+		let defaults = UserDefaults.standard
+		let previousHaptics = defaults.object(forKey: UserDefaultsKeys.hapticsEnabled)
+		defer { defaults.set(previousHaptics, forKey: UserDefaultsKeys.hapticsEnabled) }
 
 		// Set a test value
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
 
 		// Create export without settings
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: false)
@@ -125,7 +128,7 @@ struct SettingsExportImportTests {
 
 		// Verify setting unchanged
 		let hapticsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
-		#expect(hapticsEnabled == true)
+		#expect(hapticsEnabled == false)
 	}
 
 	@Test("Import with applySettings=false should keep current settings")
@@ -316,8 +319,8 @@ struct SettingsExportImportTests {
 		#expect(UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil)
 	}
 
-	@Test("Import applying settings should clear bookmark but preserve enabled flag")
-	func importApplyingSettingsShouldClearBookmark() async throws {
+	@Test("Import applying settings preserves this device's backup bookmark")
+	func importApplyingSettingsPreservesBookmark() async throws {
 		let dataStore = createTestDataStore()
 
 		// Setup: Enable automatic backups with bookmark
@@ -334,7 +337,7 @@ struct SettingsExportImportTests {
 		// Import and apply settings
 		try await dataStore.importDataFromJSON(exportData, applySettings: true)
 
-		// Verify: enabled flag imported, but bookmark cleared (not in allowlist)
+		// Verify: the bookmark is device-specific and must not be replaced by import.
 		let hasBookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil
 		#expect(hasBookmark == true) // Bookmark should remain because it's not overwritten by import
 

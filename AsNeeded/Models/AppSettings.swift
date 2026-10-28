@@ -18,7 +18,7 @@ struct AppSettings: Codable {
 	/// Trends visualization type (chart, list, etc.)
 	var trendsVisualizationType: Int?
 
-	/// Trends time window in days (14 or 30)
+	/// Trends time window in days (14, 30 or 90)
 	var trendsDaysWindow: Int?
 
 	/// Whether to hide support banners
@@ -71,6 +71,29 @@ struct AppSettings: Codable {
 	/// Per-medication safety and refill guidance
 	var medicationSafetyProfiles: [String: MedicationSafetyProfile]?
 
+	/// Only supplied settings can be changed by import; rollback must not touch other preferences.
+	var importedPreferenceKeys: Set<String> {
+		var keys: Set<String> = []
+		if hapticsEnabled != nil { keys.insert(UserDefaultsKeys.hapticsEnabled) }
+		if selectedTab != nil { keys.insert(UserDefaultsKeys.selectedTab) }
+		if trendsVisualizationType != nil { keys.insert(UserDefaultsKeys.trendsVisualizationType) }
+		if trendsDaysWindow != nil { keys.insert(UserDefaultsKeys.trendsDaysWindow) }
+		if hideSupportBanners != nil { keys.insert(UserDefaultsKeys.hideSupportBanners) }
+		if showMedicationNamesInNotifications != nil { keys.insert(UserDefaultsKeys.showMedicationNamesInNotifications) }
+		if selectedFontFamily != nil { keys.insert(UserDefaultsKeys.selectedFontFamily) }
+		if automaticBackupEnabled != nil { keys.insert(UserDefaultsKeys.automaticBackupEnabled) }
+		if automaticBackupRedactMedicationNames != nil { keys.insert(UserDefaultsKeys.automaticBackupRedactMedicationNames) }
+		if automaticBackupRedactNotes != nil { keys.insert(UserDefaultsKeys.automaticBackupRedactNotes) }
+		if automaticBackupRetentionDays != nil { keys.insert(UserDefaultsKeys.automaticBackupRetentionDays) }
+		if automaticBackupIncludeSettings != nil { keys.insert(UserDefaultsKeys.automaticBackupIncludeSettings) }
+		if historySelectedMedicationID != nil { keys.insert(UserDefaultsKeys.historySelectedMedicationID) }
+		if trendsSelectedMedicationID != nil { keys.insert(UserDefaultsKeys.trendsSelectedMedicationID) }
+		if medicationOrder != nil { keys.insert(UserDefaultsKeys.medicationOrder) }
+		if recentMedicationSearches != nil { keys.insert(UserDefaultsKeys.recentMedicationSearches) }
+		if medicationSafetyProfiles != nil { keys.insert(UserDefaultsKeys.medicationSafetyProfiles) }
+		return keys
+	}
+
 	// MARK: - Initialization
 
 	/// Create empty settings (all nil)
@@ -119,7 +142,7 @@ struct AppSettings: Codable {
 	/// Apply these settings to UserDefaults
 	/// - Parameter defaults: UserDefaults instance to write to (default: .standard)
 	/// - Parameter validateMedicationIDs: Closure to validate medication IDs exist, returns set of valid IDs
-	func apply(to defaults: UserDefaults = .standard, validateMedicationIDs: () -> Set<String>) {
+	func apply(to defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = UserDefaults(suiteName: StorageConstants.appGroupIdentifier), validateMedicationIDs: () -> Set<String>) {
 		let validMedicationIDs = validateMedicationIDs()
 
 		// App Preferences
@@ -203,7 +226,6 @@ struct AppSettings: Codable {
 				from: profiles,
 				validMedicationIDs: validMedicationIDs
 			)
-			let sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
 
 			if filteredProfiles.isEmpty {
 				defaults.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)

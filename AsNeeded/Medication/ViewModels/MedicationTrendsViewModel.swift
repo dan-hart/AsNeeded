@@ -2,138 +2,234 @@
 // Computes usage trends and metrics for a selected medication.
 
 import ANModelKit
-import Combine
+import DHLoggingKit
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 final class MedicationTrendsViewModel: ObservableObject {
-    @AppStorage(UserDefaultsKeys.trendsSelectedMedicationID) var selectedMedicationIDString: String = ""
+	@AppStorage(UserDefaultsKeys.trendsSelectedMedicationID) var selectedMedicationIDString: String = ""
 
-    var selectedMedicationID: UUID? {
-        get {
-            selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
-        }
-        set {
-            selectedMedicationIDString = newValue?.uuidString ?? ""
-        }
-    }
+	var selectedMedicationID: UUID? {
+		get {
+			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
+		}
+		set {
+			objectWillChange.send()
+			selectedMedicationIDString = newValue?.uuidString ?? ""
+		}
+	}
 
-    @Published var medications: [ANMedicationConcept] = []
+	@Published var medications: [ANMedicationConcept] = [] {
+		didSet { cachedDailyTotals = nil }
+	}
 
-    private let dataStore: DataStore
-    private let safetyProfileStore: MedicationSafetyProfileStore
-    private let doseGuidanceService: MedicationDoseGuidanceService
-    private let calendar = Calendar.current
-    private var cancellables = Set<AnyCancellable>()
+	private let dataStore: DataStore
+	private let safetyProfileStore: MedicationSafetyProfileStore
+	private let doseGuidanceService: MedicationDoseGuidanceService
+	private var calendar: Calendar { calendarProvider() }
+	private let calendarProvider: () -> Calendar
+	private let now: () -> Date
+	private var storeObservationTasks: [Task<Void, Never>] = []
+	private let notificationCenter: NotificationCenter
+	private var allEvents: [ANEventConcept] = []
+	private var cachedSelection: UUID?
+	private var cachedCalendar = Calendar.current
+	private var cachedEvents: [ANEventConcept]?
+	private var cachedDailyTotals: [Date: Double]?
 
-    init(
-        dataStore: DataStore = .shared,
-        selectedMedicationID: UUID? = nil,
-        safetyProfileStore: MedicationSafetyProfileStore = .shared,
-        doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
-    ) {
-        self.dataStore = dataStore
-        self.safetyProfileStore = safetyProfileStore
-        self.doseGuidanceService = doseGuidanceService
-        if let initialID = selectedMedicationID {
-            self.selectedMedicationID = initialID
-        }
+	init(
+		dataStore: DataStore = .shared,
+		selectedMedicationID: UUID? = nil,
+		safetyProfileStore: MedicationSafetyProfileStore = .shared,
+		doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService(),
+		notificationCenter: NotificationCenter = .default,
+		calendar: @escaping () -> Calendar = { .current },
+		now: @escaping () -> Date = Date.init
+	) {
+		self.dataStore = dataStore
+		self.notificationCenter = notificationCenter
+		self.safetyProfileStore = safetyProfileStore
+		self.doseGuidanceService = doseGuidanceService
+		self.now = now
+		self.calendarProvider = calendar
+		if let initialID = selectedMedicationID {
+			self.selectedMedicationID = initialID
+		}
 
-        // Load initial data and observe changes
-        loadData()
-        observeStoreChanges()
+		// Load initial data and observe changes
+		loadData()
+		observeStoreChanges()
+		observeClockAndForegroundChanges()
 
-        // Ensure we have a valid selection
-        ensureValidSelection()
-    }
+		// Ensure we have a valid selection
+		ensureValidSelection()
+	}
 
-    private func loadData() {
-        medications = dataStore.medications
-    }
+	deinit {
+		storeObservationTasks.forEach { $0.cancel() }
+	}
 
-    private func observeStoreChanges() {
-        // Use Combine's Timer publisher instead of Foundation's Timer
-        // This provides better integration with SwiftUI and proper cancellation
-        Timer.publish(every: 2.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let newMedications = self.dataStore.medications
-                if self.medications != newMedications {
-                    self.medications = newMedications
-                    self.ensureValidSelection()
-                }
-            }
-            .store(in: &cancellables)
-    }
+	private func loadData(snapshot: MedicationPersistenceSnapshot? = nil) {
+		let snapshot = snapshot ?? MedicationPersistenceSnapshot(medications: dataStore.medications, events: dataStore.events)
+		if medications != snapshot.medications {
+			medications = snapshot.medications
+			cachedDailyTotals = nil
+		}
+		if allEvents != snapshot.events {
+			allEvents = snapshot.events
+			cachedEvents = nil
+			cachedDailyTotals = nil
+			// Events can change without any medication metadata changing.
+			objectWillChange.send()
+		}
+	}
 
-    /// Ensures we always have a valid medication selected
-    /// This prevents picker errors when selection is nil
-    func ensureValidSelection() {
-        // If no medications are loaded yet, wait
-        guard !medications.isEmpty else { return }
+	private func observeStoreChanges() {
+		// Register before the bootstrap read so a concurrent write cannot be missed.
+		// Boutique emits intermediate writes; only committed snapshots are safe to cache.
+		let snapshots = dataStore.committedSnapshots()
+		storeObservationTasks = [
+			Task { [weak self] in
+				for await snapshot in snapshots {
+					guard !Task.isCancelled else { return }
+					self?.loadData(snapshot: snapshot)
+					self?.ensureValidSelection()
+				}
+			},
+			Task { [dataStore] in
+				do {
+					try await dataStore.prepareForAccess()
+				} catch {
+					DHLogger.data.logPrivacySafeError("Unable to load medication trends", error: error)
+				}
+			}
+		]
+	}
 
-        // If we have a selection and it's valid, keep it
-        if let id = selectedMedicationID, medications.contains(where: { $0.id == id }) {
-            return
-        }
+	/// Refreshes date-relative presentation even when no medication data changes.
+	func refreshForClockChange() {
+		cachedDailyTotals = nil
+		cachedEvents = nil
+		objectWillChange.send()
+	}
 
-        // Otherwise, select the first medication
-        selectedMedicationID = medications.first?.id
-    }
+	/// Reconciles writes made by widgets or Siri while the app was inactive.
+	func refreshAfterForeground() async {
+		refreshForClockChange()
+		do {
+			let snapshot = try await dataStore.prepareForAccess()
+			loadData(snapshot: snapshot)
+			ensureValidSelection()
+		} catch {
+			DHLogger.data.logPrivacySafeError("Unable to refresh medication data", error: error)
+		}
+	}
 
-    /// Legacy method for compatibility
-    func validateSelectedMedication() {
-        ensureValidSelection()
-    }
+	private func observeClockAndForegroundChanges() {
+		let clockNotifications: [Notification.Name] = [
+			.NSCalendarDayChanged,
+			.NSSystemTimeZoneDidChange,
+			UIApplication.significantTimeChangeNotification
+		]
+		for name in clockNotifications {
+			storeObservationTasks.append(Task { [weak self, notificationCenter] in
+				for await _ in notificationCenter.notifications(named: name) {
+					guard !Task.isCancelled else { return }
+					self?.refreshForClockChange()
+				}
+			})
+		}
+		storeObservationTasks.append(Task { [weak self, notificationCenter] in
+			for await _ in notificationCenter.notifications(named: UIApplication.willEnterForegroundNotification) {
+				guard !Task.isCancelled else { return }
+				await self?.refreshAfterForeground()
+			}
+		})
+	}
 
-    var selectedMedication: ANMedicationConcept? {
-        guard let id = selectedMedicationID else { return nil }
-        return medications.first { $0.id == id }
-    }
+	private func validateDerivedCache() {
+		if cachedSelection != selectedMedicationID || cachedCalendar != calendar {
+			cachedSelection = selectedMedicationID
+			cachedCalendar = calendar
+			cachedEvents = nil
+			cachedDailyTotals = nil
+		}
+	}
 
-    var safetyProfile: MedicationSafetyProfile {
-        guard let medication = selectedMedication else {
-            return .empty
-        }
+	/// Ensures we always have a valid medication selected
+	/// This prevents picker errors when selection is nil
+	func ensureValidSelection() {
+		// If no medications are loaded yet, wait
+		guard !medications.isEmpty else { return }
 
-        return safetyProfileStore.profile(for: medication.id)
-    }
+		// If we have a selection and it's valid, keep it
+		if let id = selectedMedicationID, medications.contains(where: { $0.id == id }) {
+			return
+		}
 
-    var events: [ANEventConcept] {
-        guard let id = selectedMedicationID else { return [] }
-        // Filter events ensuring medication IDs match exactly
-        return dataStore.events
-            .filter { event in
-                // Only include events that have a medication with matching ID and are dose taken events
-                guard let eventMedication = event.medication,
-                      eventMedication.id == id,
-                      event.eventType == .doseTaken
-                else {
-                    return false
-                }
-                return true
-            }
-            .sorted { $0.date < $1.date }
-    }
+		// Otherwise, select the first medication
+		selectedMedicationID = medications.first?.id
+	}
 
-    // Determine a preferred unit for aggregation
-    var preferredUnit: ANUnitConcept? {
-        selectedMedication?.prescribedUnit ?? events.compactMap { $0.dose?.unit }.first
-    }
+	/// Legacy method for compatibility
+	func validateSelectedMedication() {
+		ensureValidSelection()
+	}
 
-    var refillProjection: MedicationDoseGuidanceService.RefillProjection? {
-        guard let medication = selectedMedication else {
-            return nil
-        }
+	var selectedMedication: ANMedicationConcept? {
+		guard let id = selectedMedicationID else { return nil }
+		return medications.first { $0.id == id }
+	}
 
-        return doseGuidanceService.refillProjection(
-            for: medication,
-            events: events,
-            profile: safetyProfile
-        )
-    }
+	var safetyProfile: MedicationSafetyProfile {
+		guard let medication = selectedMedication else {
+			return .empty
+		}
+
+		return safetyProfileStore.profile(for: medication.id)
+	}
+
+	var events: [ANEventConcept] {
+		validateDerivedCache()
+		if let cachedEvents { return cachedEvents }
+		guard let id = selectedMedicationID else { return [] }
+		let result = allEvents
+			.filter { $0.medication?.id == id && $0.eventType == .doseTaken }
+			.sorted { $0.date < $1.date }
+		cachedEvents = result
+		return result
+	}
+
+	private var totalsByDay: [Date: Double] {
+		validateDerivedCache()
+		if let cachedDailyTotals { return cachedDailyTotals }
+		guard let unit = preferredUnit else { return [:] }
+		let totals = events.reduce(into: [Date: Double]()) { totals, event in
+			guard let dose = event.dose, dose.unit == unit else { return }
+			totals[calendar.startOfDay(for: event.date), default: 0] += dose.amount
+		}
+		cachedDailyTotals = totals
+		return totals
+	}
+
+	// Determine a preferred unit for aggregation
+	var preferredUnit: ANUnitConcept? {
+		selectedMedication?.prescribedUnit ?? events.compactMap { $0.dose?.unit }.first
+	}
+
+	var refillProjection: MedicationDoseGuidanceService.RefillProjection? {
+		guard let medication = selectedMedication else {
+			return nil
+		}
+
+		return doseGuidanceService.refillProjection(
+			for: medication,
+			events: events,
+			profile: safetyProfile
+		)
+	}
 
 	func doseAvailability(at date: Date = .now) -> MedicationDoseGuidanceService.Availability {
 		guard let medication = selectedMedication else { return .notConfigured }
@@ -144,234 +240,212 @@ final class MedicationTrendsViewModel: ObservableObject {
 		doseAvailability().eligibleDate
 	}
 
-    // Daily totals for the last N days (default 14)
-    func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
-        guard let unit = preferredUnit else { return [] }
-        let start = calendar.startOfDay(for: Date())
-        let daySequence = (0 ..< days).compactMap { calendar.date(byAdding: .day, value: -$0, to: start) }.reversed()
-        let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
-        return daySequence.map { day in
-            let total = (grouped[day] ?? []).compactMap { ev -> Double? in
-                guard let dose = ev.dose, dose.unit == unit else { return nil }
-                return dose.amount
-            }.reduce(0, +)
-            return (day, total)
-        }
-    }
+	/// The last completed local calendar day. Calendar arithmetic preserves day boundaries across DST.
+	var trendsWindowEnd: Date {
+		let today = calendar.startOfDay(for: now())
+		return calendar.date(byAdding: .day, value: -1, to: today) ?? today
+	}
 
-    // Average per day over the last window (default 7 days)
-    func averagePerDay(window days: Int = 7) -> Double {
-        let totals = dailyTotals(last: days)
-        guard !totals.isEmpty else { return 0 }
-        let sum = totals.map { $0.total }.reduce(0, +)
-        return sum / Double(totals.count)
-    }
+	private var completeDayEvents: [ANEventConcept] {
+		let today = calendar.startOfDay(for: now())
+		return events.filter { $0.date < today }
+	}
 
-    // Days until refill date (if set)
-    var daysUntilRefill: Int? {
-        guard let date = selectedMedication?.nextRefillDate else { return nil }
-        let start = calendar.startOfDay(for: Date())
-        let end = calendar.startOfDay(for: date)
-        return calendar.dateComponents([.day], from: start, to: end).day
-    }
+	// Daily totals for the last N complete days ending yesterday (default 14)
+	func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
+		guard days > 0, preferredUnit != nil else { return [] }
+		let start = trendsWindowEnd
+		let totals = totalsByDay
+		return (0 ..< days).reversed().compactMap { offset in
+			guard let day = calendar.date(byAdding: .day, value: -offset, to: start) else { return nil }
+			return (day, totals[day] ?? 0)
+		}
+	}
 
-    // Estimated days remaining from quantity and avg usage
-    var estimatedDaysRemaining: Int? {
-        refillProjection?.estimatedDaysRemaining
-    }
+	// Average per day over the last window (default 7 days)
+	func averagePerDay(window days: Int = 7) -> Double {
+		let totals = dailyTotals(last: days)
+		guard !totals.isEmpty else { return 0 }
+		let sum = totals.map { $0.total }.reduce(0, +)
+		return sum / Double(totals.count)
+	}
 
-    // MARK: - Usage Progress Metrics
+	// Days until refill date (if set)
+	var daysUntilRefill: Int? {
+		guard let date = selectedMedication?.nextRefillDate else { return nil }
+		let start = calendar.startOfDay(for: now())
+		let end = calendar.startOfDay(for: date)
+		return calendar.dateComponents([.day], from: start, to: end).day
+	}
 
-    /// Returns the percentage of medication used (0-100) if both initial and current quantities are available
-    var usagePercentage: Double? {
-        guard let initial = selectedMedication?.initialQuantity,
-              let current = selectedMedication?.quantity,
-              initial > 0
-        else {
-            return nil
-        }
-        let used = initial - current
-        return max(0, min(100, (used / initial) * 100))
-    }
+	// Estimated days remaining from quantity and avg usage
+	var estimatedDaysRemaining: Int? {
+		refillProjection?.estimatedDaysRemaining
+	}
 
-    /// Returns a formatted string representing usage (e.g., "50% used (30/60 pills)")
-    var usageProgressText: String? {
-        guard let initial = selectedMedication?.initialQuantity,
-              let current = selectedMedication?.quantity,
-              let percentage = usagePercentage,
-              let unit = preferredUnit
-        else {
-            return nil
-        }
-        let used = initial - current
-        return String(format: "%.0f%% used (%.0f/%.0f %@)",
-                      percentage, used, initial, unit.abbreviation)
-    }
+	// MARK: - Usage Progress Metrics
 
-    /// Enum representing whether usage is on track with refill schedule
-    enum RefillCycleStatus {
-        case onTrack
-        case ahead // Using slower than expected
-        case behind // Using faster than expected
-        case unknown
-    }
+	/// Returns the percentage of medication used (0-100) if both initial and current quantities are available
+	var usagePercentage: Double? {
+		guard let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  initial > 0
+		else {
+			return nil
+		}
+		let used = initial - current
+		return max(0, min(100, (used / initial) * 100))
+	}
 
-    /// Compares usage rate to refill schedule and returns status
-    var refillCycleStatus: RefillCycleStatus {
-        // Need both dates and quantities
-        guard let lastRefill = selectedMedication?.lastRefillDate,
-              let nextRefill = selectedMedication?.nextRefillDate,
-              let initial = selectedMedication?.initialQuantity,
-              let current = selectedMedication?.quantity,
-              initial > 0
-        else {
-            return .unknown
-        }
+	/// Returns a formatted string representing usage (e.g., "50% used (30/60 pills)")
+	var usageProgressText: String? {
+		guard let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  let percentage = usagePercentage,
+			  let unit = preferredUnit
+		else {
+			return nil
+		}
+		let used = initial - current
+		return String(format: "%.0f%% used (%.0f/%.0f %@)",
+					  percentage, used, initial, unit.abbreviation)
+	}
 
-        let now = Date()
-        let totalCycleDays = calendar.dateComponents([.day], from: lastRefill, to: nextRefill).day ?? 0
-        let daysElapsed = calendar.dateComponents([.day], from: lastRefill, to: now).day ?? 0
+	/// Enum representing whether usage is on track with refill schedule
+	enum RefillCycleStatus {
+		case onTrack
+		case ahead // Using slower than expected
+		case behind // Using faster than expected
+		case unknown
+	}
 
-        guard totalCycleDays > 0, daysElapsed > 0 else { return .unknown }
+	/// Compares usage rate to refill schedule and returns status
+	var refillCycleStatus: RefillCycleStatus {
+		// Need both dates and quantities
+		guard let lastRefill = selectedMedication?.lastRefillDate,
+			  let nextRefill = selectedMedication?.nextRefillDate,
+			  let initial = selectedMedication?.initialQuantity,
+			  let current = selectedMedication?.quantity,
+			  initial > 0
+		else {
+			return .unknown
+		}
 
-        // Calculate expected vs actual usage
-        let timeProgress = Double(daysElapsed) / Double(totalCycleDays)
-        let usedAmount = initial - current
-        let usageProgress = usedAmount / initial
+		let now = now()
+		let totalCycleDays = calendar.dateComponents([.day], from: lastRefill, to: nextRefill).day ?? 0
+		let daysElapsed = calendar.dateComponents([.day], from: lastRefill, to: now).day ?? 0
 
-        // Allow 10% tolerance
-        let tolerance = 0.10
+		guard totalCycleDays > 0, daysElapsed > 0 else { return .unknown }
 
-        if abs(usageProgress - timeProgress) <= tolerance {
-            return .onTrack
-        } else if usageProgress < timeProgress {
-            return .ahead // Using slower
-        } else {
-            return .behind // Using faster
-        }
-    }
+		// Calculate expected vs actual usage
+		let timeProgress = Double(daysElapsed) / Double(totalCycleDays)
+		let usedAmount = initial - current
+		let usageProgress = usedAmount / initial
 
-    /// Returns a user-friendly description of refill cycle status
-    var refillCycleStatusText: String {
-        switch refillCycleStatus {
-        case .onTrack:
-            return String(localized: "On track")
-        case .ahead:
-            return String(localized: "Using slower than schedule")
-        case .behind:
-            return String(localized: "Using faster than schedule")
-        case .unknown:
-            return "—"
-        }
-    }
+		// Allow 10% tolerance
+		let tolerance = 0.10
 
-    // Calendar heatmap data for the last N days
-    func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
-        guard let unit = preferredUnit else { return [] }
+		if abs(usageProgress - timeProgress) <= tolerance {
+			return .onTrack
+		} else if usageProgress < timeProgress {
+			return .ahead // Using slower
+		} else {
+			return .behind // Using faster
+		}
+	}
 
-        let endDate = calendar.startOfDay(for: Date())
-        let startDate = calendar.date(byAdding: .day, value: -(days - 1), to: endDate) ?? endDate
+	/// Returns a user-friendly description of refill cycle status
+	var refillCycleStatusText: String {
+		switch refillCycleStatus {
+		case .onTrack:
+			return String(localized: "On track")
+		case .ahead:
+			return String(localized: "Using slower than schedule")
+		case .behind:
+			return String(localized: "Using faster than schedule")
+		case .unknown:
+			return "—"
+		}
+	}
 
-        // Create all days in the range
-        var allDays: [Date] = []
-        var currentDate = startDate
-        while currentDate <= endDate {
-            allDays.append(currentDate)
-            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
-        }
+	// Calendar heatmap data for the last N complete days ending yesterday
+	func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
+		let totals = dailyTotals(last: days)
+		// Keep partial and future days out of the intensity scale as well.
+		let today = calendar.startOfDay(for: now())
+		let maxTotal = totalsByDay.filter { $0.key < today }.values.max() ?? 1
+		return totals.map { day, total in
+			CalendarDay(date: day, total: total, intensity: maxTotal > 0 ? total / maxTotal : 0)
+		}
+	}
 
-        // Group events by day
-        let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.date) }
+	var patternSummary: String {
+		guard !completeDayEvents.isEmpty else {
+			return "Log a few doses to see timing patterns after the day is complete."
+		}
 
-        // Calculate max total for intensity scaling
-        let allTotals = grouped.values.map { dayEvents in
-            dayEvents.compactMap { ev -> Double? in
-                guard let dose = ev.dose, dose.unit == unit else { return nil }
-                return dose.amount
-            }.reduce(0, +)
-        }
-        let maxTotal = allTotals.max() ?? 1
+		let preferredTimeBucket = mostCommonTimeBucket()
+		let recentAverage = averagePerDay(window: 7)
+		let priorAverage = averagePerDay(daysEnding: 7, window: 7)
 
-        // Create calendar days with usage data
-        return allDays.map { day in
-            let dayEvents = grouped[day] ?? []
-            let total = dayEvents.compactMap { ev -> Double? in
-                guard let dose = ev.dose, dose.unit == unit else { return nil }
-                return dose.amount
-            }.reduce(0, +)
+		var fragments: [String] = []
+		fragments.append("Use is most often clustered in the \(preferredTimeBucket).")
 
-            let intensity = maxTotal > 0 ? total / maxTotal : 0
-            return CalendarDay(date: day, total: total, intensity: intensity)
-        }
-    }
+		if recentAverage > priorAverage * 1.2, priorAverage > 0 {
+			fragments.append("Your recent pace is higher than the week before.")
+		} else if priorAverage > recentAverage * 1.2, recentAverage > 0 {
+			fragments.append("Your recent pace is lighter than the week before.")
+		} else {
+			fragments.append("Your recent pace looks fairly steady.")
+		}
 
-    var patternSummary: String {
-        guard !events.isEmpty else {
-            return "Log a few doses to see timing patterns."
-        }
+		if let refillProjection {
+			fragments.append(refillProjection.statusMessage)
+		}
 
-        let preferredTimeBucket = mostCommonTimeBucket()
-        let recentAverage = averagePerDay(window: 7)
-        let priorAverage = averagePerDay(daysEnding: 7, window: 7)
+		return fragments.joined(separator: " ")
+	}
 
-        var fragments: [String] = []
-        fragments.append("Use is most often clustered in the \(preferredTimeBucket).")
+	private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {
+		let totals = dailyTotals(last: endOffset + days)
+		guard totals.count >= days else {
+			return 0
+		}
 
-        if recentAverage > priorAverage * 1.2, priorAverage > 0 {
-            fragments.append("Your recent pace is higher than the week before.")
-        } else if priorAverage > recentAverage * 1.2, recentAverage > 0 {
-            fragments.append("Your recent pace is lighter than the week before.")
-        } else {
-            fragments.append("Your recent pace looks fairly steady.")
-        }
+		let slice = totals.dropLast(endOffset).suffix(days)
+		guard !slice.isEmpty else {
+			return 0
+		}
 
-        if let refillProjection {
-            fragments.append(refillProjection.statusMessage)
-        }
+		let sum = slice.map(\.total).reduce(0, +)
+		return sum / Double(slice.count)
+	}
 
-        return fragments.joined(separator: " ")
-    }
+	private func mostCommonTimeBucket() -> String {
+		let bucketCounts = completeDayEvents.reduce(into: [String: Int]()) { counts, event in
+			let hour = calendar.component(.hour, from: event.date)
+			let bucket: String
 
-    private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {
-        let totals = dailyTotals(last: endOffset + days)
-        guard totals.count >= days else {
-            return 0
-        }
+			switch hour {
+			case 5 ..< 12:
+				bucket = "morning"
+			case 12 ..< 17:
+				bucket = "afternoon"
+			case 17 ..< 22:
+				bucket = "evening"
+			default:
+				bucket = "night"
+			}
 
-        let slice = totals.dropLast(endOffset).suffix(days)
-        guard !slice.isEmpty else {
-            return 0
-        }
+			counts[bucket, default: 0] += 1
+		}
 
-        let sum = slice.map(\.total).reduce(0, +)
-        return sum / Double(slice.count)
-    }
-
-    private func mostCommonTimeBucket() -> String {
-        let bucketCounts = events.reduce(into: [String: Int]()) { counts, event in
-            let hour = calendar.component(.hour, from: event.date)
-            let bucket: String
-
-            switch hour {
-            case 5 ..< 12:
-                bucket = "morning"
-            case 12 ..< 17:
-                bucket = "afternoon"
-            case 17 ..< 22:
-                bucket = "evening"
-            default:
-                bucket = "night"
-            }
-
-            counts[bucket, default: 0] += 1
-        }
-
-        return bucketCounts.max { $0.value < $1.value }?.key ?? "day"
-    }
+		return bucketCounts.max { $0.value < $1.value }?.key ?? "day"
+	}
 }
 
 struct CalendarDay {
-    let date: Date
-    let total: Double
-    let intensity: Double // 0.0 to 1.0 for color intensity
+	let date: Date
+	let total: Double
+	let intensity: Double // 0.0 to 1.0 for color intensity
 }

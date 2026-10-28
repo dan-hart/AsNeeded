@@ -3,6 +3,7 @@ import SwiftUI
 import WatchKit
 
 struct MedicationDetailView: View {
+	@Environment(\.colorScheme) private var colorScheme
 	private let initialMedication: WatchMedication
 	@EnvironmentObject var sender: WCSender
 	@State private var doseAmount: Double
@@ -96,7 +97,7 @@ struct MedicationDetailView: View {
 						.frame(maxWidth: .infinity)
 						.padding()
 						.background(Color.accent)
-						.foregroundColor(.white)
+						.foregroundStyle(colorScheme == .dark ? .black : .white)
 						.cornerRadius(12)
 					}
 					.buttonStyle(.plain)
@@ -118,7 +119,7 @@ struct MedicationDetailView: View {
 						.frame(maxWidth: .infinity)
 						.padding()
 						.background(Color.accent)
-						.foregroundColor(.white)
+						.foregroundStyle(colorScheme == .dark ? .black : .white)
 						.cornerRadius(12)
 					}
 					.buttonStyle(.plain)

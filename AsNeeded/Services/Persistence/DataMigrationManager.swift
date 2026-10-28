@@ -23,6 +23,22 @@ import Foundation
 @MainActor
 public final class DataMigrationManager {
 	private let logger = DHLogger.data
+	private let legacyDocumentsURL: URL?
+	private let legacySupportURL: URL?
+	private let appGroupURL: URL?
+	private let defaults: UserDefaults
+
+	init(
+		documentsURL: URL? = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+		applicationSupportURL: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
+		appGroupURL: URL? = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier),
+		defaults: UserDefaults = .standard
+	) {
+		legacyDocumentsURL = documentsURL
+		legacySupportURL = applicationSupportURL
+		self.appGroupURL = appGroupURL
+		self.defaults = defaults
+	}
 
 	// MARK: - Migration Report
 
@@ -58,7 +74,7 @@ public final class DataMigrationManager {
 		var report = MigrationReport()
 
 		// Step 1: Find legacy data
-		guard let legacyPaths = findLegacyDatabases() else {
+		guard var legacyPaths = findLegacyDatabases() else {
 			logger.info("✅ DRY RUN: No legacy data found")
 			report.status = .noLegacyData
 			return report
@@ -69,7 +85,9 @@ public final class DataMigrationManager {
 
 		// Step 2: Load legacy data (read-only)
 		do {
-			let legacyData = try await loadLegacyData(from: legacyPaths)
+			let legacyData = try await loadLegacyData(from: &legacyPaths)
+			report.legacyMedicationsPath = legacyPaths.medications?.path
+			report.legacyEventsPath = legacyPaths.events?.path
 			report.foundLegacyMedications = legacyData.medications.count
 			report.foundLegacyEvents = legacyData.events.count
 
@@ -96,7 +114,7 @@ public final class DataMigrationManager {
 			report.conflicts = legacyMedicationIDs.intersection(currentMedicationIDs).count
 
 			logger.info("DRY RUN: Post-merge would have \(mergedMedicationIDs.count) medications, \(mergedEventIDs.count) events")
-			logger.info("DRY RUN: \(report.conflicts) ID conflicts (legacy data takes precedence)")
+			logger.info("DRY RUN: \(report.conflicts) medication ID conflicts (current data preserved)")
 
 			report.status = .dryRunComplete
 		} catch {
@@ -115,7 +133,7 @@ public final class DataMigrationManager {
 		logger.info("=== Starting Migration Check ===")
 
 		// Step 1: Find legacy data at correct iOS path
-		guard let legacyPaths = findLegacyDatabases() else {
+		guard var legacyPaths = findLegacyDatabases() else {
 			logger.info("✅ No legacy data found - migration not needed")
 			return
 		}
@@ -125,7 +143,7 @@ public final class DataMigrationManager {
 		logger.info("  Events database found: \(legacyPaths.events != nil)")
 
 		// Step 2: Load legacy data
-		let legacyData = try await loadLegacyData(from: legacyPaths)
+		let legacyData = try await loadLegacyData(from: &legacyPaths)
 		let legacyMedicationIDs = Set(legacyData.medications.map { $0.id })
 		let legacyEventIDs = Set(legacyData.events.map { $0.id })
 
@@ -166,7 +184,7 @@ public final class DataMigrationManager {
 
 		// On iOS, Bodega's SQLiteStorageEngine.default() uses Documents directory
 		// Structure: Documents/<name>.sqlite/data.sqlite3 (folder with default filename)
-		if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+		if let documentsURL = legacyDocumentsURL {
 			logger.info("Searching Documents directory")
 
 			// Check Bodega folder structure
@@ -193,7 +211,7 @@ public final class DataMigrationManager {
 
 		// Also check Application Support (macOS compatibility / edge cases)
 		if medicationsURL == nil || eventsURL == nil {
-			if let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+			if let appSupportURL = legacySupportURL {
 				logger.info("Searching Application Support")
 
 				// Check direct paths
@@ -284,21 +302,25 @@ public final class DataMigrationManager {
 
 	/// Loads data from legacy database files in isolated scope to ensure connections are closed
 	/// This prevents database file locks when archiving legacy folders
-	private func loadLegacyData(from paths: (medications: URL?, events: URL?)) async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {
+	private func loadLegacyData(from paths: inout (medications: URL?, events: URL?)) async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {
 		var medications: [ANMedicationConcept] = []
 		var events: [ANEventConcept] = []
 
 		// Load medications in isolated scope to ensure connection cleanup
 		if let medicationsURL = paths.medications {
 			logger.info("Loading legacy medications")
-			medications = try await loadLegacyItems(from: medicationsURL, type: ANMedicationConcept.self)
+			let resolved = try await loadLegacyItemsResolvingEmptyNeighbor(from: medicationsURL, type: ANMedicationConcept.self)
+			medications = resolved.items
+			paths.medications = resolved.source
 			logger.info("Loaded \(medications.count) medications from legacy database")
 		}
 
 		// Load events in isolated scope to ensure connection cleanup
 		if let eventsURL = paths.events {
 			logger.info("Loading legacy events")
-			events = try await loadLegacyItems(from: eventsURL, type: ANEventConcept.self)
+			let resolved = try await loadLegacyItemsResolvingEmptyNeighbor(from: eventsURL, type: ANEventConcept.self)
+			events = resolved.items
+			paths.events = resolved.source
 			logger.info("Loaded \(events.count) events from legacy database")
 		}
 
@@ -310,14 +332,53 @@ public final class DataMigrationManager {
 		return (medications: medications, events: events)
 	}
 
+	/// Earlier readers could create an empty .sqlite3 beside the real legacy file.
+	/// Only fall back when that preferred flat database is empty; preserve existing
+	/// precedence for populated sources and archive the actual recovered source.
+	private func loadLegacyItemsResolvingEmptyNeighbor<T: Codable & Identifiable & Sendable>(
+		from databaseURL: URL,
+		type: T.Type
+	) async throws -> (items: [T], source: URL) where T.ID == UUID {
+		let items = try await loadLegacyItems(from: databaseURL, type: type)
+		guard items.isEmpty, databaseURL.pathExtension == "sqlite3",
+			databaseURL.lastPathComponent != StorageConstants.Legacy.bodegaDataFile else {
+			return (items, databaseURL)
+		}
+		let base = databaseURL.deletingPathExtension().path
+		for suffix in [".sqlite", "", ".db"] {
+			let candidate = URL(fileURLWithPath: base + suffix)
+			var isDirectory: ObjCBool = false
+			guard FileManager.default.fileExists(atPath: candidate.path, isDirectory: &isDirectory), !isDirectory.boolValue else { continue }
+			let recovered = try await loadLegacyItems(from: candidate, type: type)
+			if !recovered.isEmpty { return (recovered, candidate) }
+		}
+		return (items, databaseURL)
+	}
+
 	/// Loads items from a legacy database in an isolated scope
 	/// The Store and SQLiteStorageEngine are deallocated when this method returns,
 	/// ensuring database connections are closed before archival
-	private func loadLegacyItems<T: Codable & Identifiable & Sendable>(
+	func loadLegacyItems<T: Codable & Identifiable & Sendable>(
 		from databaseURL: URL,
 		type: T.Type
 	) async throws -> [T] where T.ID == UUID {
-		let storage = try createStorageEngine(forDatabaseAt: databaseURL)
+		// Bodega always appends .sqlite3. Open a private copy with that exact name,
+		// rather than silently creating an empty neighbor for legacy .sqlite/.db files.
+		// Copy sidecars together so uncheckpointed records remain available. Keep the
+		// source untouched until merge verification and archival have succeeded.
+		let fileManager = FileManager.default
+		let readDirectory = fileManager.temporaryDirectory.appendingPathComponent("AsNeededMigration-\(UUID().uuidString)")
+		try fileManager.createDirectory(at: readDirectory, withIntermediateDirectories: true)
+		defer { try? fileManager.removeItem(at: readDirectory) }
+		let readURL = readDirectory.appendingPathComponent(StorageConstants.Legacy.bodegaDataFile)
+		try fileManager.copyItem(at: databaseURL, to: readURL)
+		for suffix in ["-wal", "-shm"] {
+			let source = URL(fileURLWithPath: databaseURL.path + suffix)
+			if fileManager.fileExists(atPath: source.path) {
+				try fileManager.copyItem(at: source, to: URL(fileURLWithPath: readURL.path + suffix))
+			}
+		}
+		let storage = try createStorageEngine(forDatabaseAt: readURL)
 		let store = try await Store<T>(
 			storage: storage,
 			cacheIdentifier: \T.id.uuidString
@@ -352,9 +413,7 @@ public final class DataMigrationManager {
 
 	/// Merges legacy data into App Group storage
 	private func mergeIntoAppGroup(legacyData: (medications: [ANMedicationConcept], events: [ANEventConcept])) async throws {
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL else {
 			logger.error("App Group unavailable: \(StorageConstants.appGroupIdentifier)")
 			throw MigrationError.appGroupUnavailable
 		}
@@ -365,7 +424,7 @@ public final class DataMigrationManager {
 		let currentData = try await loadCurrentAppGroupData(containerURL: appGroupURL)
 		logger.info("Current App Group data: \(currentData.medications.count) medications, \(currentData.events.count) events")
 
-		// Merge data (legacy takes precedence for same IDs)
+		// Recover missing IDs without reverting edits in the active store.
 		let mergedMedications = mergeByID(legacy: legacyData.medications, current: currentData.medications)
 		let mergedEvents = mergeByID(legacy: legacyData.events, current: currentData.events)
 
@@ -421,20 +480,18 @@ public final class DataMigrationManager {
 
 	/// Loads current data from App Group storage (convenience method)
 	private func loadCurrentAppGroupData() async throws -> (medications: [ANMedicationConcept], events: [ANEventConcept]) {
-		guard let containerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let containerURL = appGroupURL else {
 			throw MigrationError.appGroupUnavailable
 		}
 		return try await loadCurrentAppGroupData(containerURL: containerURL)
 	}
 
-	/// Merges two arrays by ID, with legacy taking precedence
+	/// Recovers legacy IDs while preserving current records, which can contain newer edits.
 	private func mergeByID<T: Identifiable>(legacy: [T], current: [T]) -> [T] {
 		var itemsById = Dictionary(uniqueKeysWithValues: current.map { ($0.id, $0) })
 
-		// Legacy items overwrite current items with same ID
-		for item in legacy {
+		// Archived legacy records remain recoverable; never guess away current edits.
+		for item in legacy where itemsById[item.id] == nil {
 			itemsById[item.id] = item
 		}
 
@@ -471,27 +528,22 @@ public final class DataMigrationManager {
 			cacheIdentifier: \ANEventConcept.id.uuidString
 		)
 
-		// Get current items for update logic
-		let currentMedications = medicationsStore.items
-		let currentEvents = eventsStore.items
+		// Existing records must not be removed/reinserted during recovery. In addition
+		// to preserving edits, this avoids a deletion gap if a later insert fails.
+		let currentMedicationIDs = Set(medicationsStore.items.map(\.id))
+		let currentEventIDs = Set(eventsStore.items.map(\.id))
+		let recoveredMedications = medications.filter { !currentMedicationIDs.contains($0.id) }
+		let recoveredEvents = events.filter { !currentEventIDs.contains($0.id) }
 
-		// Insert/update medications
-		for medication in medications {
-			if let existing = currentMedications.first(where: { $0.id == medication.id }) {
-				try await medicationsStore.remove(existing)
-			}
+		for medication in recoveredMedications {
 			try await medicationsStore.insert(medication)
 		}
-		logger.info("Wrote \(medications.count) medications")
+		logger.info("Recovered \(recoveredMedications.count) medications")
 
-		// Insert/update events
-		for event in events {
-			if let existing = currentEvents.first(where: { $0.id == event.id }) {
-				try await eventsStore.remove(existing)
-			}
+		for event in recoveredEvents {
 			try await eventsStore.insert(event)
 		}
-		logger.info("Wrote \(events.count) events")
+		logger.info("Recovered \(recoveredEvents.count) events")
 	}
 
 	// MARK: - Verification
@@ -499,9 +551,7 @@ public final class DataMigrationManager {
 	/// Verifies that merge completed successfully
 	/// - Throws: `MigrationError.verificationFailed` if data counts don't match expectations
 	private func verifyMerge(legacyMedicationIDs: Set<UUID>, legacyEventIDs: Set<UUID>) async throws {
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL else {
 			throw MigrationError.appGroupUnavailable
 		}
 
@@ -645,7 +695,7 @@ public final class DataMigrationManager {
 		}
 
 		// Store the archived path for potential recovery
-		UserDefaults.standard.set(archivedFolder.path, forKey: userDefaultsKey)
+		defaults.set(archivedFolder.path, forKey: userDefaultsKey)
 	}
 
 	/// Returns paths to archived legacy databases if they exist
@@ -657,14 +707,14 @@ public final class DataMigrationManager {
 		var eventsURL: URL?
 
 		// Check stored paths
-			if let storedMedicationsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath),
+			if let storedMedicationsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath),
 			   fileManager.fileExists(atPath: storedMedicationsPath)
 			{
 				medicationsURL = URL(fileURLWithPath: storedMedicationsPath)
 				logger.info("Found archived legacy medications")
 			}
 
-			if let storedEventsPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath),
+			if let storedEventsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath),
 			   fileManager.fileExists(atPath: storedEventsPath)
 			{
 				eventsURL = URL(fileURLWithPath: storedEventsPath)

@@ -542,6 +542,11 @@ struct DataManagementViewModelTests {
         await viewModel.importData(from: tempURL)
 
         // 5. Verify data is restored
+		// Exports include settings by default. Follow the same explicit choice
+		// required by the shipping import confirmation before expecting writes.
+		#expect(viewModel.showingImportSettingsDialog)
+		#expect(viewModel.medicationCount == 0)
+		await viewModel.proceedWithImport(applySettings: false)
         #expect(viewModel.medicationCount == 1)
         #expect(dataStore.medications.first?.clinicalName == "Test Medication")
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)

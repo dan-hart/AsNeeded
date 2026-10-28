@@ -69,24 +69,49 @@ final class AutomaticBackupManager: ObservableObject {
 
     static let shared = AutomaticBackupManager()
 
-    private let logger = DHLogger(category: "AutomaticBackup")
+    /// `nonisolated` so the off-main file helpers can log without hopping back to the main actor.
+    private nonisolated let logger = DHLogger(category: "AutomaticBackup")
     private var debounceTask: Task<Void, Never>?
-    private let debounceInterval: TimeInterval = 5.0
+    private var hasPendingAutomaticBackup = false
+    private(set) var configurationRevision = 0
+    private let defaults: UserDefaults
+    private let debounceSleep: @MainActor () async throws -> Void
+    private let backupOperation: (@MainActor () async -> BackupStatus)?
+    /// Fallback estimate used when there is no previous backup to measure.
+    private nonisolated static let defaultEstimatedBackupSize: Int64 = 10_485_760
+    /// Prefix shared by every automatic backup filename.
+    private nonisolated static let backupFilenamePrefix = "AsNeeded-AutoBackup-"
+    /// Last known reachability of the backup folder, plus the bookmark it was resolved from.
+    /// `checkBookmarkStatus()` is read while SwiftUI builds the view, so resolving the bookmark there
+    /// would put file system work on the main actor for every frame. `refreshBookmarkStatus()` fills
+    /// this in off the main actor instead.
+    private var cachedBookmarkStatus: BackupStatus?
+    private var cachedBookmarkStatusKey: Data?
 
     @Published var lastBackupDate: Date?
     @Published var lastError: String?
     @Published var lastBackupStatus: BackupStatus = .none
     @Published var isBackupInProgress: Bool = false
 
-    private init() {
+    init(
+        defaults: UserDefaults = .standard,
+        debounceSleep: @escaping @MainActor () async throws -> Void = {
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+        },
+        backupOperation: (@MainActor () async -> BackupStatus)? = nil
+    ) {
+        self.defaults = defaults
+        self.debounceSleep = debounceSleep
+        self.backupOperation = backupOperation
         loadLastBackupDate()
     }
 
     // MARK: - Public Methods
 
     /// Trigger a backup with 5-second debouncing
-    func triggerBackup() {
-        guard isEnabled else { return }
+    @discardableResult
+    func triggerBackup() -> Task<Void, Never>? {
+        guard isEnabled else { return nil }
 
         // Cancel any existing debounce task
         debounceTask?.cancel()
@@ -94,24 +119,31 @@ final class AutomaticBackupManager: ObservableObject {
         // Create new debounced task
         debounceTask = Task {
             do {
-                try await Task.sleep(nanoseconds: UInt64(debounceInterval * 1_000_000_000))
+                try await debounceSleep()
 
                 // Check if task was cancelled during sleep
-                guard !Task.isCancelled else { return }
-
-                await performBackup()
+                guard !Task.isCancelled, isEnabled else { return }
+                // This reference belongs only to waiting work. A new mutation must not cancel a
+                // provider operation that has already started.
+                debounceTask = nil
+                guard !isBackupInProgress else {
+                    hasPendingAutomaticBackup = true
+                    return
+                }
+                await performManualBackup()
             } catch {
                 // Task was cancelled or sleep failed
                 logger.debug("Debounce task cancelled or failed")
             }
         }
+        return debounceTask
     }
 
     /// Perform daily cleanup if needed (removes old backup files, keeps only today's)
     func performDailyCleanupIfNeeded() async {
         guard isEnabled else { return }
 
-        let lastCleanupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
+        let lastCleanupDate = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
         let today = Calendar.current.startOfDay(for: Date())
 
         // Check if we've already cleaned up today
@@ -125,24 +157,32 @@ final class AutomaticBackupManager: ObservableObject {
         await performCleanup()
 
         // Update last cleanup date
-        UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        defaults.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
     }
 
     /// Disable automatic backup and clear bookmark
     func disable() {
-        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.automaticBackupEnabled)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        configurationRevision += 1
+        hasPendingAutomaticBackup = false
+        debounceTask?.cancel()
+        debounceTask = nil
+        defaults.set(false, forKey: UserDefaultsKeys.automaticBackupEnabled)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
         lastBackupDate = nil
         lastError = nil
+        lastBackupStatus = .none
+        invalidateBookmarkStatusCache()
         logger.info("Automatic backup disabled and settings cleared")
     }
 
     /// Save bookmark for selected backup location
     func saveBackupLocation(bookmark: Data) {
-        UserDefaults.standard.set(bookmark, forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
+        configurationRevision += 1
+        defaults.set(bookmark, forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        defaults.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
+        invalidateBookmarkStatusCache()
         logger.info("Backup location saved and automatic backup enabled")
     }
 
@@ -150,12 +190,28 @@ final class AutomaticBackupManager: ObservableObject {
     /// - Returns: BackupStatus indicating success or failure
     @discardableResult
     func performManualBackup() async -> BackupStatus {
+        // The write and validation now span many suspension points, so a second tap or a store-triggered
+        // backup can land inside a run. Overlapping runs would fight over the same file.
+        guard !isBackupInProgress else {
+            logger.debug("Manual backup already in progress, ignoring request")
+            return lastBackupStatus
+        }
+
         logger.info("Manual backup requested")
         isBackupInProgress = true
         defer { isBackupInProgress = false }
 
         await performBackup()
-        return lastBackupStatus
+        let requestedStatus = lastBackupStatus
+        // A change may arrive after this run exported its snapshot. Coalesce those changes into
+        // a fresh run while retaining the same progress lock and the manual request's own result.
+        while hasPendingAutomaticBackup && isEnabled {
+            hasPendingAutomaticBackup = false
+            debounceTask?.cancel()
+            debounceTask = nil
+            await performBackup()
+        }
+        return requestedStatus
     }
 
     /// Restore data from a backup file
@@ -198,10 +254,8 @@ final class AutomaticBackupManager: ObservableObject {
             throw BackupError.noLocationConfigured
         }
 
-        var isStale = false
-        guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale),
-              !isStale
-        else {
+        let resolved = await resolveBackupDirectory(bookmark)
+        guard let backupDirectory = resolved.url, !resolved.isStale else {
             throw BackupError.bookmarkStale
         }
 
@@ -211,26 +265,30 @@ final class AutomaticBackupManager: ObservableObject {
         defer { backupDirectory.stopAccessingSecurityScopedResource() }
 
         do {
-            let fileManager = FileManager.default
-            let contents = try fileManager.contentsOfDirectory(
-                at: backupDirectory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            )
+            // Listing and deleting every backup file runs off the main actor.
+            let deletedCount = try await Self.offMain { [self] in
+                let fileManager = FileManager.default
+                let contents = try fileManager.contentsOfDirectory(
+                    at: backupDirectory,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
 
-            let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix("AsNeeded-AutoBackup-") }
+                let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix(Self.backupFilenamePrefix) }
 
-            var deletedCount = 0
-            for fileURL in backupFiles {
-                try fileManager.removeItem(at: fileURL)
-                deletedCount += 1
-                logger.debug("Deleted backup")
+                var deleted = 0
+                for fileURL in backupFiles {
+                    try fileManager.removeItem(at: fileURL)
+                    deleted += 1
+                    logger.debug("Deleted backup")
+                }
+                return deleted
             }
 
             logger.info("Cleared \(deletedCount) backup file(s)")
 
             // Clear last backup date since no backups exist
-            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+            defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
             lastBackupDate = nil
         } catch {
             logger.logPrivacySafeError("Failed to clear backups", error: error)
@@ -238,42 +296,84 @@ final class AutomaticBackupManager: ObservableObject {
         }
     }
 
+    // MARK: - Off-Main File Work
+    /// Runs blocking file work off the main actor and returns its result.
+    ///
+    /// The backup folder normally lives in iCloud Drive or another Files provider, where a single read,
+    /// write or directory listing can take seconds. Any of that on the main actor freezes the whole UI,
+    /// which is what made picking a backup location look like a hang. `Task.detached` is used instead of
+    /// a plain `nonisolated` async function because approachable concurrency keeps those on the caller's
+    /// actor, which would leave the work on the main thread.
+    private static func offMain<T: Sendable>(
+        _ work: @escaping @Sendable () throws -> T
+    ) async throws -> T {
+        try await Task.detached(priority: .userInitiated, operation: work).value
+    }
+
+    /// A resolved backup folder together with whether its bookmark has gone stale.
+    private struct ResolvedLocation {
+        var url: URL?
+        var isStale: Bool
+    }
+
+    /// Resolves the backup folder bookmark off the main actor.
+    private func resolveBackupDirectory(_ bookmark: Data) async -> ResolvedLocation {
+        let resolved = try? await Self.offMain { [self] in
+            var isStale = false
+            let url = resolveBookmark(bookmark, isStale: &isStale)
+            return ResolvedLocation(url: url, isStale: isStale)
+        }
+        return resolved ?? ResolvedLocation(url: nil, isStale: false)
+    }
+
     // MARK: - Private Methods
 
     private var isEnabled: Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
     }
 
     private var bookmarkData: Data? {
-        UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        defaults.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
     }
 
     private var redactMedicationNames: Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
     }
 
     private var redactNotes: Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
     }
 
     private var includeSettings: Bool {
         // Default to true if not explicitly set
-        if UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupIncludeSettings) == nil {
+        if defaults.object(forKey: UserDefaultsKeys.automaticBackupIncludeSettings) == nil {
             return true
         }
-        return UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupIncludeSettings)
+        return defaults.bool(forKey: UserDefaultsKeys.automaticBackupIncludeSettings)
     }
 
     var retentionDays: Int {
-        let days = UserDefaults.standard.integer(forKey: UserDefaultsKeys.automaticBackupRetentionDays)
+        let days = defaults.integer(forKey: UserDefaultsKeys.automaticBackupRetentionDays)
         return days > 0 ? days : 90 // Default to 90 if not set or invalid
     }
 
     private func loadLastBackupDate() {
-        lastBackupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
+        lastBackupDate = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
     }
 
     private func performBackup() async {
+        let revision = configurationRevision
+        let startingBookmark = bookmarkData
+        let wasEnabled = isEnabled
+        func configurationIsCurrent() -> Bool {
+            configurationRevision == revision && bookmarkData == startingBookmark && isEnabled == wasEnabled
+        }
+        if let backupOperation {
+            let status = await backupOperation()
+            guard configurationIsCurrent() else { return }
+            lastBackupStatus = status
+            return
+        }
         logger.info("Performing automatic backup (redactNames: \(redactMedicationNames), redactNotes: \(redactNotes), includeSettings: \(includeSettings))")
 
         guard let bookmark = bookmarkData else {
@@ -284,9 +384,11 @@ final class AutomaticBackupManager: ObservableObject {
             return
         }
 
-        // Resolve security-scoped bookmark and check staleness
-        var isStale = false
-        guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale) else {
+        // Resolve security-scoped bookmark and check staleness. Resolving touches the file system, so
+        // it runs off the main actor.
+        let resolved = await resolveBackupDirectory(bookmark)
+        guard configurationIsCurrent() else { return }
+        guard let backupDirectory = resolved.url else {
             let error = "Failed to access backup location"
             logger.error("Failed to access backup location")
             lastError = error
@@ -295,7 +397,7 @@ final class AutomaticBackupManager: ObservableObject {
         }
 
         // ✅ Check bookmark staleness
-        if isStale {
+        if resolved.isStale {
             let error = "Backup location is no longer accessible (bookmark stale)"
             logger.warning("Backup location is no longer accessible (bookmark stale)")
             lastError = error
@@ -317,9 +419,13 @@ final class AutomaticBackupManager: ObservableObject {
         }
 
         do {
-            // ✅ Check available storage space before backup
-            let estimatedSize = getEstimatedBackupSize()
-            try checkStorageSpace(in: backupDirectory, estimatedSize: estimatedSize)
+            // ✅ Check available storage space before backup. Sizing the previous backup and reading the
+            // volume's free space both hit the provider, so they run off the main actor.
+            try await Self.offMain { [self] in
+                let estimatedSize = estimatedBackupSize(in: backupDirectory)
+                try checkStorageSpace(in: backupDirectory, estimatedSize: estimatedSize)
+            }
+            guard configurationIsCurrent() else { return }
 
             // Export data from DataStore (DRY!)
             let exportData = try await DataStore.shared.exportDataAsJSON(
@@ -327,50 +433,38 @@ final class AutomaticBackupManager: ObservableObject {
                 redactNotes: redactNotes,
                 includeSettings: includeSettings
             )
+            guard configurationIsCurrent() else { return }
 
             // Create filename with today's date
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             let dateString = dateFormatter.string(from: Date())
-            let filename = "AsNeeded-AutoBackup-\(dateString).json"
+            let filename = "\(Self.backupFilenamePrefix)\(dateString).json"
 
-            // Write to backup location
+            // Write to backup location, then validate it. An atomic write into a Files provider is the
+            // slowest step in a backup and reading it back to validate is a close second, so both are
+            // kept off the main actor.
             let fileURL = backupDirectory.appendingPathComponent(filename)
-            try exportData.write(to: fileURL, options: .atomic)
-
-            // ✅ Validate backup after write
-            let isValid = validateBackup(at: fileURL)
-            if !isValid {
-                logger.error("Backup validation failed, attempting retry")
-                // Delete corrupted file
-                try? FileManager.default.removeItem(at: fileURL)
-
-                // Retry once without redaction as fallback
-                let retryData = try await DataStore.shared.exportDataAsJSON(
-                    redactNames: false,
-                    redactNotes: false
-                )
-                try retryData.write(to: fileURL, options: .atomic)
-
-                // Validate retry
-                let retryValid = validateBackup(at: fileURL)
-                if !retryValid {
-                    try FileManager.default.removeItem(at: fileURL)
-                    throw BackupError.validationFailed
+            try await Self.offMain { [self] in
+                try Self.writeAndValidateBackup(exportData, to: fileURL) { url in
+                    validateBackup(at: url)
                 }
-                logger.info("Backup retry successful")
             }
+            guard configurationIsCurrent() else { return }
 
             logger.info("Automatic backup saved and validated successfully")
 
             // Update last backup date and status
             let now = Date()
-            UserDefaults.standard.set(now, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+            defaults.set(now, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
             lastBackupDate = now
             lastError = nil
             lastBackupStatus = .success
+            cachedBookmarkStatusKey = bookmark
+            cachedBookmarkStatus = .success
 
         } catch let error as BackupError {
+            guard configurationIsCurrent() else { return }
             let errorMessage = error.errorDescription ?? "Backup failed"
             logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
@@ -386,6 +480,7 @@ final class AutomaticBackupManager: ObservableObject {
                 lastBackupStatus = .failed(errorMessage)
             }
         } catch {
+            guard configurationIsCurrent() else { return }
             let errorMessage = "Backup failed: \(error.localizedDescription)"
             logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
@@ -401,9 +496,9 @@ final class AutomaticBackupManager: ObservableObject {
             return
         }
 
-        // Resolve security-scoped bookmark
-        var isStale = false
-        guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale) else {
+        // Resolve security-scoped bookmark off the main actor; cleanup runs at launch and must not
+        // delay the first frame.
+        guard let backupDirectory = await resolveBackupDirectory(bookmark).url else {
             logger.error("Failed to access backup location for cleanup")
             return
         }
@@ -418,56 +513,60 @@ final class AutomaticBackupManager: ObservableObject {
             backupDirectory.stopAccessingSecurityScopedResource()
         }
 
+        // Calculate cutoff date based on retention policy
+        let retention = retentionDays
+        let calendar = Calendar.current
+        guard let cutoffDate = calendar.date(byAdding: .day, value: -retention, to: Date()) else {
+            logger.error("Failed to calculate cutoff date")
+            return
+        }
+
+        logger.info("Cleaning up backups older than \(retention) days (cutoff: \(cutoffDate))")
+
+        // Get today's date string to always preserve today's backup
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        let todayFilename = "\(Self.backupFilenamePrefix)\(todayString).json"
+
         do {
-            // Get all backup files
-            let fileManager = FileManager.default
-            let contents = try fileManager.contentsOfDirectory(
-                at: backupDirectory,
-                includingPropertiesForKeys: [.creationDateKey],
-                options: [.skipsHiddenFiles]
-            )
+            // Listing the folder and deleting expired files runs off the main actor.
+            let deletedCount = try await Self.offMain { [self] in
+                // Get all backup files
+                let fileManager = FileManager.default
+                let contents = try fileManager.contentsOfDirectory(
+                    at: backupDirectory,
+                    includingPropertiesForKeys: [.creationDateKey],
+                    options: [.skipsHiddenFiles]
+                )
 
-            // Filter for automatic backup files
-            let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix("AsNeeded-AutoBackup-") }
+                // Filter for automatic backup files
+                let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix(Self.backupFilenamePrefix) }
 
-            // Calculate cutoff date based on retention policy
-            let retention = retentionDays
-            let calendar = Calendar.current
-            guard let cutoffDate = calendar.date(byAdding: .day, value: -retention, to: Date()) else {
-                logger.error("Failed to calculate cutoff date")
-                return
-            }
+                // Delete backup files older than retention period (but always keep today's)
+                var deleted = 0
+                for fileURL in backupFiles {
+                    // Always keep today's backup regardless of retention policy
+                    if fileURL.lastPathComponent == todayFilename {
+                        continue
+                    }
 
-            logger.info("Cleaning up backups older than \(retention) days (cutoff: \(cutoffDate))")
+                    // Get file creation date
+                    guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
+                          let creationDate = values.creationDate
+                    else {
+                        logger.warning("Could not get backup creation date, skipping")
+                        continue
+                    }
 
-            // Get today's date string to always preserve today's backup
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            let todayString = dateFormatter.string(from: Date())
-            let todayFilename = "AsNeeded-AutoBackup-\(todayString).json"
-
-            // Delete backup files older than retention period (but always keep today's)
-            var deletedCount = 0
-            for fileURL in backupFiles {
-                // Always keep today's backup regardless of retention policy
-                if fileURL.lastPathComponent == todayFilename {
-                    continue
+                    // Delete if older than cutoff
+                    if creationDate < cutoffDate {
+                        try fileManager.removeItem(at: fileURL)
+                        deleted += 1
+                        logger.debug("Deleted old backup")
+                    }
                 }
-
-                // Get file creation date
-                guard let values = try? fileURL.resourceValues(forKeys: [.creationDateKey]),
-                      let creationDate = values.creationDate
-                else {
-                    logger.warning("Could not get backup creation date, skipping")
-                    continue
-                }
-
-                // Delete if older than cutoff
-                if creationDate < cutoffDate {
-                    try fileManager.removeItem(at: fileURL)
-                    deletedCount += 1
-                    logger.debug("Deleted old backup")
-                }
+                return deleted
             }
 
             logger.info("Cleanup complete: deleted \(deletedCount) old backup file(s), retention policy: \(retention) days")
@@ -477,7 +576,8 @@ final class AutomaticBackupManager: ObservableObject {
         }
     }
 
-    private func resolveBookmark(_ bookmark: Data, isStale: inout Bool) -> URL? {
+    /// `nonisolated` so it can be called from `offMain`; it touches no actor-isolated state.
+    private nonisolated func resolveBookmark(_ bookmark: Data, isStale: inout Bool) -> URL? {
         do {
             let url = try URL(
                 resolvingBookmarkData: bookmark,
@@ -503,7 +603,7 @@ final class AutomaticBackupManager: ObservableObject {
     ///   - estimatedSize: Estimated backup size (defaults to 10MB if unknown)
     /// - Returns: True if enough space available
     /// - Throws: BackupError.insufficientStorage if not enough space
-    private func checkStorageSpace(in directory: URL, estimatedSize: Int64 = 10_485_760) throws {
+    private nonisolated func checkStorageSpace(in directory: URL, estimatedSize: Int64) throws {
         do {
             let values = try directory.resourceValues(forKeys: [.volumeAvailableCapacityKey])
             guard let availableBytes = values.volumeAvailableCapacity else {
@@ -530,34 +630,20 @@ final class AutomaticBackupManager: ObservableObject {
         }
     }
 
-    /// Get estimated backup size based on previous backups or default
-    private func getEstimatedBackupSize() -> Int64 {
-        guard let bookmark = bookmarkData else {
-            return 10_485_760 // Default 10MB
-        }
-
-        var isStale = false
-        guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale),
-              !isStale
-        else {
-            return 10_485_760 // Default 10MB
-        }
-
-        // Try to get size of most recent backup file
-        guard backupDirectory.startAccessingSecurityScopedResource() else {
-            return 10_485_760 // Default 10MB
-        }
-        defer { backupDirectory.stopAccessingSecurityScopedResource() }
-
+    /// Estimated size of the next backup, taken from the newest existing backup file.
+    ///
+    /// Takes the already-resolved folder so it never resolves the bookmark or re-acquires security-scoped
+    /// access a second time, and is `nonisolated` so the directory listing can run off the main actor.
+    /// The caller must already hold access to `backupDirectory`.
+    private nonisolated func estimatedBackupSize(in backupDirectory: URL) -> Int64 {
         do {
-            let fileManager = FileManager.default
-            let contents = try fileManager.contentsOfDirectory(
+            let contents = try FileManager.default.contentsOfDirectory(
                 at: backupDirectory,
                 includingPropertiesForKeys: [.fileSizeKey],
                 options: [.skipsHiddenFiles]
             )
 
-            let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix("AsNeeded-AutoBackup-") }
+            let backupFiles = contents.filter { $0.lastPathComponent.hasPrefix(Self.backupFilenamePrefix) }
             if let mostRecent = backupFiles.first,
                let values = try? mostRecent.resourceValues(forKeys: [.fileSizeKey]),
                let size = values.fileSize
@@ -569,58 +655,103 @@ final class AutomaticBackupManager: ObservableObject {
             logger.logPrivacySafeDebug("Could not estimate backup size", error: error)
         }
 
-        return 10_485_760 // Default 10MB
+        return Self.defaultEstimatedBackupSize
     }
 
-    /// Check bookmark staleness and return status
+    /// Last known bookmark staleness, without touching the file system.
+    ///
+    /// SwiftUI reads this while building the backup screen, so it must never resolve the bookmark itself.
+    /// Until `refreshBookmarkStatus()` has run it falls back to the last recorded backup status.
     func checkBookmarkStatus() -> BackupStatus {
         guard let bookmark = bookmarkData else {
             return .none
         }
 
-        var isStale = false
-        guard resolveBookmark(bookmark, isStale: &isStale) != nil else {
-            return .accessDenied
+        guard cachedBookmarkStatusKey == bookmark, let cached = cachedBookmarkStatus else {
+            return lastBackupStatus
         }
 
-        if isStale {
-            return .bookmarkStale
+        // A reachable location reports whatever the last backup did; only problems override it.
+        if cached == .success {
+            return lastBackupStatus
         }
-
-        return lastBackupStatus
+        return cached
     }
 
-    /// Get backup history (list of all backup files with metadata)
-    func getBackupHistory() -> [BackupFile] {
+    /// Resolves the bookmark off the main actor and caches whether the backup folder is still reachable.
+    func refreshBookmarkStatus() async {
+        guard let bookmark = bookmarkData else {
+            invalidateBookmarkStatusCache()
+            return
+        }
+
+        let resolved = await resolveBackupDirectory(bookmark)
+        guard bookmarkData == bookmark else { return }
+        cachedBookmarkStatusKey = bookmark
+        if resolved.url == nil {
+            cachedBookmarkStatus = .accessDenied
+        } else if resolved.isStale {
+            cachedBookmarkStatus = .bookmarkStale
+        } else {
+            cachedBookmarkStatus = .success
+        }
+    }
+
+    /// Display name of the configured backup folder, resolved off the main actor.
+    func backupLocationName() async -> String? {
+        guard let bookmark = bookmarkData else {
+            return nil
+        }
+        return await resolveBackupDirectory(bookmark).url?.lastPathComponent
+    }
+
+    private func invalidateBookmarkStatusCache() {
+        cachedBookmarkStatusKey = nil
+        cachedBookmarkStatus = nil
+    }
+
+    /// Backup files at the configured location, newest first.
+    ///
+    /// Listing the folder and reading every file back to check it decodes is the single most expensive
+    /// thing this class does, so all of it runs off the main actor. Callers derive the total size from
+    /// the returned array rather than asking for a second scan.
+    func backupHistory() async -> [BackupFile] {
         guard let bookmark = bookmarkData else {
             logger.debug("No bookmark configured for backup history")
             return []
         }
 
-        var isStale = false
-        guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale),
-              !isStale
-        else {
-            logger.warning("Bookmark is stale, cannot get backup history")
-            return []
+        let files = try? await Self.offMain { [self] in
+            var isStale = false
+            guard let backupDirectory = resolveBookmark(bookmark, isStale: &isStale), !isStale else {
+                logger.warning("Bookmark is stale, cannot get backup history")
+                return [BackupFile]()
+            }
+
+            guard backupDirectory.startAccessingSecurityScopedResource() else {
+                logger.error("Permission denied to access backup location for history")
+                return [BackupFile]()
+            }
+            defer { backupDirectory.stopAccessingSecurityScopedResource() }
+
+            return scanBackupFiles(in: backupDirectory)
         }
 
-        guard backupDirectory.startAccessingSecurityScopedResource() else {
-            logger.error("Permission denied to access backup location for history")
-            return []
-        }
-        defer { backupDirectory.stopAccessingSecurityScopedResource() }
+        return files ?? []
+    }
 
+    /// Lists and validates the backup files in an already-accessible folder.
+    /// `nonisolated` so `backupHistory()` can run it off the main actor.
+    private nonisolated func scanBackupFiles(in backupDirectory: URL) -> [BackupFile] {
         do {
-            let fileManager = FileManager.default
-            let contents = try fileManager.contentsOfDirectory(
+            let contents = try FileManager.default.contentsOfDirectory(
                 at: backupDirectory,
                 includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
                 options: [.skipsHiddenFiles]
             )
 
             let backupFiles = contents
-                .filter { $0.lastPathComponent.hasPrefix("AsNeeded-AutoBackup-") }
+                .filter { $0.lastPathComponent.hasPrefix(Self.backupFilenamePrefix) }
                 .compactMap { url -> BackupFile? in
                     guard let values = try? url.resourceValues(forKeys: [.creationDateKey, .fileSizeKey]),
                           let date = values.creationDate,
@@ -642,16 +773,24 @@ final class AutomaticBackupManager: ObservableObject {
         }
     }
 
-    /// Get total size of all backup files
-    func getTotalBackupSize() -> Int64 {
-        let backupFiles = getBackupHistory()
-        return backupFiles.reduce(0) { $0 + $1.size }
-    }
+	/// Retries the captured export bytes without changing its privacy or included-settings policy.
+	nonisolated static func writeAndValidateBackup(
+		_ data: Data,
+		to url: URL,
+		validate: (URL) -> Bool
+	) throws {
+		for _ in 0..<2 {
+			try data.write(to: url, options: .atomic)
+			if validate(url) { return }
+			try FileManager.default.removeItem(at: url)
+		}
+		throw BackupError.validationFailed
+	}
 
     /// Validate a backup file by attempting to decode it
     /// - Parameter url: URL of the backup file to validate
     /// - Returns: True if the backup file is valid and can be decoded
-    private func validateBackup(at url: URL) -> Bool {
+    private nonisolated func validateBackup(at url: URL) -> Bool {
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()

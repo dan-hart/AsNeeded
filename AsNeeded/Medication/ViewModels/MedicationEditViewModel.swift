@@ -9,6 +9,29 @@ import SwiftUI
 
 @MainActor
 final class MedicationEditViewModel: ObservableObject {
+	// The presenting view owns this session so adaptive sheet rehosting keeps the draft.
+	@MainActor
+	final class Session: ObservableObject {
+		private var medicationID: UUID?
+		private var retainedDraft: MedicationEditViewModel?
+
+		func draft(for medication: ANMedicationConcept?) -> MedicationEditViewModel {
+			if let retainedDraft, medicationID == medication?.id { return retainedDraft }
+			let draft = MedicationEditViewModel(medication: medication)
+			medicationID = medication?.id
+			retainedDraft = draft
+			return draft
+		}
+
+		func reset() {
+			retainedDraft = nil
+			medicationID = nil
+		}
+	}
+
+	var originalDraft: [String]?
+	@Published private(set) var isSaving = false
+	@Published var showingSaveError = false
 	// Form fields
 	@Published var clinicalName: String
 	@Published var nickname: String
@@ -30,7 +53,7 @@ final class MedicationEditViewModel: ObservableObject {
 	@Published var refillLeadDays: Int
 
 	// Editing existing or adding new
-	private let existingMedication: ANMedicationConcept?
+	let originalMedication: ANMedicationConcept?
 	private let safetyProfileStore: MedicationSafetyProfileStore
 
 	init(
@@ -38,7 +61,7 @@ final class MedicationEditViewModel: ObservableObject {
 		safetyProfileStore: MedicationSafetyProfileStore = .shared
 	) {
 		self.safetyProfileStore = safetyProfileStore
-		existingMedication = medication
+		originalMedication = medication
 		clinicalName = medication?.clinicalName ?? ""
 		nickname = medication?.nickname ?? ""
 		initialQuantityText = medication?.initialQuantity.map { String(describing: $0) } ?? ""
@@ -120,7 +143,7 @@ final class MedicationEditViewModel: ObservableObject {
 		let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
 		let amount = (Double(doseText).flatMap { $0.isFinite && $0 > 0 ? $0 : nil })
 		let unit = (amount != nil) ? prescribedUnit : nil
-		var medication = existingMedication ?? ANMedicationConcept(clinicalName: "")
+		var medication = originalMedication ?? ANMedicationConcept(clinicalName: "")
 		medication.clinicalName = clinicalName.trimmingCharacters(in: .whitespacesAndNewlines)
 		medication.nickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
 		medication.quantity = quantity
@@ -150,7 +173,9 @@ final class MedicationEditViewModel: ObservableObject {
 	}
 
 	func saveMedication(using persist: (ANMedicationConcept) async -> Bool) async -> Bool {
-		guard isFormValid else { return false }
+		guard !isSaving, isFormValid else { return false }
+		isSaving = true
+		defer { isSaving = false }
 		let updated = buildMedication()
 		let profile = buildSafetyProfile()
 		guard await persist(updated) else { return false }

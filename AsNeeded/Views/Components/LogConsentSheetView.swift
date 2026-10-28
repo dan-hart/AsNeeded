@@ -279,7 +279,7 @@ struct LogConsentSheetView: View {
                 .padding(.vertical, actionButtonVPadding)
                 .background(
                     LinearGradient(
-                        colors: [Color.green, Color.green.opacity(0.8)],
+                        colors: [Color.green, Color.green],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

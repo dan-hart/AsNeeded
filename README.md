@@ -42,7 +42,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
 - **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
 - **Usage insights**: Visual charts, searchable history, and clinician-friendly export
-- **Ambient access**: Home Screen widgets, Lock Screen widgets, Live Activities, interactive quick actions, and watchOS support
+- **Ambient access**: Home Screen widgets, Lock Screen widgets, interactive quick actions, and watchOS support
 - **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
 
 ---
@@ -109,6 +109,14 @@ xcodebuild test -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=
 - Colors: Use `.accent` for interactive elements
 
 ---
+
+### Optional purchase configuration
+
+A clean checkout builds without private packages or purchase configuration. To enable tips and subscriptions, copy `Config/Secrets.example.xcconfig` to the gitignored `Config/Secrets.xcconfig` and replace its placeholder with your RevenueCat public SDK key. Without a usable key, the Support screen explains that purchases are unavailable; medication tracking continues to work.
+
+Before a release, run `./scripts/verify-release-key.sh --local`, then verify the exported `.app`, `.xcarchive`, or `.ipa` with the same script. `scripts/prod-build.sh` requires configuration unless `SKIP_REVENUECAT_KEY_CHECK=1` is explicitly set for a keyless build.
+
+The Build workflow compiles the Debug iOS simulator scheme from a fresh checkout on pushes and pull requests targeting `main`, `develop`, or `task/v1.2.0`, and checks configuration in the built app. Pull requests exercise the keyless path. This compile check does not run tests or verify release signing and distribution.
 
 ## Project Structure
 

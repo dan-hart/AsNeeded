@@ -152,7 +152,7 @@ struct SymbolPickerComponent: View {
 				.background(.regularMaterial)
 			}
 		}
-		.searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search symbols")
+		.searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
 		.onChange(of: searchText) { _, newValue in
 			withAnimation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.8)) {
 				isSearching = !newValue.isEmpty
@@ -191,6 +191,7 @@ struct SymbolPickerComponent: View {
 				Text(selectedSymbol != nil ? "Symbol Selected" : "Choose Symbol")
 					.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 					.foregroundStyle(.primary)
+					.fixedSize(horizontal: false, vertical: true)
 
 				Spacer()
 			}
@@ -229,7 +230,7 @@ struct SymbolPickerComponent: View {
 				.padding(.horizontal, headerSpacing)
 				.padding(.vertical, categoryPadding)
 				.frame(minHeight: 44)
-				.foregroundStyle(selectedCategory == category ? medicationColor.contrastingForegroundColor() : .primary)
+				.foregroundStyle(selectedCategory == category ? medicationColor.contrastingForegroundColor(for: colorScheme) : .primary)
 				.background {
 					if selectedCategory == category {
 						RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
@@ -268,7 +269,9 @@ struct SymbolPickerComponent: View {
 				.padding(.vertical, mainSpacing)
 			} else {
 				LazyVGrid(
-					columns: Array(repeating: GridItem(.flexible(), spacing: adaptiveGridSpacing), count: columnCount),
+					columns: dynamicTypeSize.isAccessibilitySize
+						? [GridItem(.adaptive(minimum: symbolSize * 1.4), spacing: adaptiveGridSpacing)]
+						: Array(repeating: GridItem(.flexible(), spacing: adaptiveGridSpacing), count: columnCount),
 					spacing: adaptiveGridSpacing
 				) {
 					ForEach(filteredSymbols, id: \.self) { symbolName in
@@ -317,7 +320,7 @@ struct SymbolPickerComponent: View {
 					if isSelected {
 						Image(systemSymbol: .checkmarkCircleFill)
 							.font(.customFont(fontFamily, style: .caption, weight: .bold))
-							.foregroundStyle(medicationColor.contrastingForegroundColor())
+							.foregroundStyle(medicationColor.contrastingForegroundColor(for: colorScheme))
 							.background(
 								Circle()
 									.fill(medicationColor)
@@ -331,7 +334,7 @@ struct SymbolPickerComponent: View {
 					Text(symbolName.components(separatedBy: ".").first ?? symbolName)
 						.font(.customFont(fontFamily, style: .caption2, weight: isSelected ? .semibold : .regular))
 						.foregroundStyle(isSelected ? medicationColor : .secondary)
-						.lineLimit(1)
+						.lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
 				}
 			}
 			.frame(maxWidth: .infinity)
@@ -360,15 +363,15 @@ struct SymbolPickerComponent: View {
 
 				Spacer()
 			}
-			.foregroundStyle(medicationColor.contrastingForegroundColor())
+			.contrastingForeground(against: .accent)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, saveButtonPadding)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(medicationColor)
+					.fill(Color.accent)
 			)
 			.shadow(
-				color: medicationColor.opacity(0.3),
+				color: Color.accent.opacity(0.3),
 				radius: 8,
 				x: 0,
 				y: 4

@@ -36,7 +36,7 @@ struct SupportView: View {
     @State private var webURL: URL?
 
     var body: some View {
-        ScrollView {
+        VerticalOnlyScrollView {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 headerSection
 
@@ -112,10 +112,10 @@ struct SupportView: View {
 
                 // Tip Jar
 				if revenueCatManager.availableProducts.isEmpty {
-					Text(revenueCatManager.isLoadingProducts ? "Loading support options…" : "Purchase options are temporarily unavailable. You can keep using every feature.")
+					Text(!revenueCatManager.isConfigured ? "Support options are not available in this build. You can keep using every feature." : (revenueCatManager.isLoadingProducts ? "Loading support options…" : "Purchase options are temporarily unavailable. You can keep using every feature."))
 						.font(.customFont(fontFamily, style: .callout))
 						.foregroundStyle(.secondary)
-					if !revenueCatManager.isLoadingProducts {
+					if revenueCatManager.isConfigured && !revenueCatManager.isLoadingProducts {
 						Button("Reload Prices") { Task { await revenueCatManager.reloadProducts() } }
 					}
 				}
@@ -339,7 +339,7 @@ struct SupportView: View {
                     .font(.customFont(fontFamily, style: .callout))
                     .fontWeight(.medium)
             }
-            .foregroundColor(.white)
+            .contrastingForeground(against: .accent)
             .padding(.horizontal, restoreButtonPaddingH)
             .padding(.vertical, buttonPaddingV)
             .background(
