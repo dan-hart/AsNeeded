@@ -7,6 +7,51 @@ import Testing
 import UIKit
 
 struct ColorContrastTests {
+	@Test("Filled button palettes preserve white defaults and black increased-contrast labels")
+	@MainActor
+	func filledButtonPaletteContrast() throws {
+		let backgrounds = MedicationColors.colors.map(\.color) + [Color.accent, .white, .black, .gray, .green, .red]
+		for background in backgrounds {
+			for scheme in [ColorScheme.light, .dark] {
+				for contrast in [ColorSchemeContrast.standard, .increased] {
+					let palette = background.filledButtonColors(for: scheme, contrast: contrast)
+					#expect(palette.foreground == (contrast == .increased ? .black : .white))
+					let luminance = try referenceLuminance(palette.background, scheme: scheme)
+					let ratio = contrast == .increased ? (luminance + 0.05) / 0.05 : 1.05 / (luminance + 0.05)
+					#expect(ratio >= (contrast == .increased ? 7.0 : 4.5) - 0.000_001)
+				}
+			}
+		}
+	}
+
+	@Test("Dynamic filled button colors resolve accessibility contrast and appearance")
+	@MainActor
+	func dynamicFilledButtonColorsResolveTraits() throws {
+		for background in [Color.accent, .white, .black, .green, .red] {
+			for scheme in [ColorScheme.light, .dark] {
+				for increased in [false, true] {
+					let traitsContrast: UIAccessibilityContrast = increased ? .high : .normal
+					let fill = try referenceLuminance(background.dynamicFilledButtonBackground, scheme: scheme, contrast: traitsContrast)
+					let label = try referenceLuminance(background.dynamicFilledButtonForeground, scheme: scheme, contrast: traitsContrast)
+					#expect(abs(label - (increased ? 0 : 1)) < 0.000_001)
+					let ratio = (max(fill, label) + 0.05) / (min(fill, label) + 0.05)
+					#expect(ratio >= (increased ? 7.0 : 4.5) - 0.000_001)
+				}
+			}
+		}
+	}
+
+	@Test("Filled button palettes preserve already-legible RGB colors and resolve appearance")
+	@MainActor
+	func filledButtonPalettePreservesLegibleColors() throws {
+		let dark = Color(red: 0.05, green: 0.1, blue: 0.2)
+		let light = Color(red: 0.9, green: 0.95, blue: 1)
+		let adaptive = Color(uiColor: UIColor { traits in traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light) })
+		#expect(abs(try referenceLuminance(dark.filledButtonColors(for: .light, contrast: .standard).background, scheme: .light) - referenceLuminance(dark, scheme: .light)) < 0.000_001)
+		#expect(abs(try referenceLuminance(light.filledButtonColors(for: .dark, contrast: .increased).background, scheme: .dark) - referenceLuminance(light, scheme: .dark)) < 0.000_001)
+		#expect(try referenceLuminance(adaptive.filledButtonColors(for: .dark, contrast: .standard).background, scheme: .dark) < referenceLuminance(adaptive.filledButtonColors(for: .light, contrast: .standard).background, scheme: .light))
+	}
+
 	@Test("Opaque medium backgrounds receive an AA foreground")
 	@MainActor
 	func opaqueMediumForegroundMeetsAA() throws {
@@ -105,8 +150,11 @@ struct ColorContrastTests {
 	}
 
 	@MainActor
-	private func referenceLuminance(_ color: Color, scheme: ColorScheme) throws -> Double {
-		let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
+	private func referenceLuminance(_ color: Color, scheme: ColorScheme, contrast: UIAccessibilityContrast = .normal) throws -> Double {
+		let traits = UITraitCollection(traitsFrom: [
+			UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light),
+			UITraitCollection(accessibilityContrast: contrast),
+		])
 		let resolved = UIColor(color).resolvedColor(with: traits)
 		var red: CGFloat = 0
 		var green: CGFloat = 0

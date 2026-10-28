@@ -230,11 +230,11 @@ struct SymbolPickerComponent: View {
 				.padding(.horizontal, headerSpacing)
 				.padding(.vertical, categoryPadding)
 				.frame(minHeight: 44)
-				.foregroundStyle(selectedCategory == category ? medicationColor.contrastingForegroundColor(for: colorScheme) : .primary)
+				.foregroundStyle(selectedCategory == category ? medicationColor.dynamicFilledButtonForeground : .primary)
 				.background {
 					if selectedCategory == category {
 						RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
-							.fill(medicationColor)
+							.fill(medicationColor.dynamicFilledButtonBackground)
 					} else {
 						RoundedRectangle(cornerRadius: cornerRadius - 4, style: .continuous)
 							.fill(.regularMaterial)
@@ -320,10 +320,10 @@ struct SymbolPickerComponent: View {
 					if isSelected {
 						Image(systemSymbol: .checkmarkCircleFill)
 							.font(.customFont(fontFamily, style: .caption, weight: .bold))
-							.foregroundStyle(medicationColor.contrastingForegroundColor(for: colorScheme))
+							.foregroundStyle(medicationColor.dynamicFilledButtonForeground)
 							.background(
 								Circle()
-									.fill(medicationColor)
+									.fill(medicationColor.dynamicFilledButtonBackground)
 									.frame(width: 18, height: 18)
 							)
 							.offset(x: symbolSize * 0.5, y: -symbolSize * 0.5)
@@ -363,12 +363,12 @@ struct SymbolPickerComponent: View {
 
 				Spacer()
 			}
-			.contrastingForeground(against: .accent)
+			.filledButtonForeground(against: .accent)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, saveButtonPadding)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(Color.accent)
+					.fill(Color.accent.dynamicFilledButtonBackground)
 			)
 			.shadow(
 				color: Color.accent.opacity(0.3),

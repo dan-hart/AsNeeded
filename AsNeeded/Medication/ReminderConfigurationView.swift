@@ -212,11 +212,11 @@ struct ReminderConfigurationView: View {
                 .padding(.vertical, buttonVerticalPadding)
                 .background(
                     notificationManager.authorizationStatus == .denied ?
-                        Color(.systemGray5) : .accent
+                        Color(.systemGray5) : Color.accent.dynamicFilledButtonBackground
                 )
                 .foregroundColor(
                     notificationManager.authorizationStatus == .denied ?
-                        .primary : Color.accent.contrastingForegroundColor(for: colorScheme)
+                        .primary : Color.accent.dynamicFilledButtonForeground
                 )
                 .cornerRadius(buttonCornerRadius)
             }
@@ -246,16 +246,16 @@ struct ReminderConfigurationView: View {
                         VStack(spacing: typeCardSpacing) {
                             Image(systemSymbol: type.systemImage)
                                 .font(.customFont(fontFamily, style: .title2))
-                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .accent)
+                                .foregroundStyle(reminderType == type ? Color.accent.dynamicFilledButtonForeground : .accent)
 
                             Text(type.rawValue)
                                 .font(.customFont(fontFamily, style: .subheadline))
                                 .fontWeight(.medium)
-                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
+                                .foregroundStyle(reminderType == type ? Color.accent.dynamicFilledButtonForeground : .primary)
 
                             Text(type.description)
                                 .font(.customFont(fontFamily, style: .caption2))
-                                .foregroundStyle(reminderType == type ? Color.accent.contrastingForegroundColor(for: colorScheme) : .secondary)
+                                .foregroundStyle(reminderType == type ? Color.accent.dynamicFilledButtonForeground : .secondary)
                                 .multilineTextAlignment(.center)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -266,7 +266,7 @@ struct ReminderConfigurationView: View {
                             RoundedRectangle(cornerRadius: typeCardCornerRadius)
                                 .fill(reminderType == type ?
                                     LinearGradient(
-                                        colors: [.accent, .accent],
+                                        colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ) :
@@ -494,7 +494,7 @@ struct ReminderConfigurationView: View {
                 if isScheduling {
                     ProgressView()
                         .scaleEffect(0.8)
-                        .tint(Color.accent.contrastingForegroundColor(for: colorScheme))
+                        .tint(Color.accent.dynamicFilledButtonForeground)
                 } else {
                     Image(systemSymbol: .bellBadgeFill)
                         .font(.customFont(fontFamily, style: .headline))
@@ -502,14 +502,14 @@ struct ReminderConfigurationView: View {
                 Text("Schedule Reminder")
                     .fontWeight(.semibold)
             }
-            .contrastingForeground(against: .accent)
+            .filledButtonForeground(against: .accent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, scheduleButtonPadding)
             .background(
                 LinearGradient(
                     colors: buttonDisabled ?
-                        [Color(.systemGray3), Color(.systemGray4)] :
-                        [.accent, .accent],
+                        [Color(.systemGray3).dynamicFilledButtonBackground, Color(.systemGray4).dynamicFilledButtonBackground] :
+                        [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

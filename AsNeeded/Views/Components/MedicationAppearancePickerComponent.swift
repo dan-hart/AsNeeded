@@ -204,12 +204,12 @@ struct MedicationAppearancePickerComponent: View {
 
 				Spacer()
 			}
-			.contrastingForeground(against: .accent)
+			.filledButtonForeground(against: .accent)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, headerPadding)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-					.fill(Color.accent)
+					.fill(Color.accent.dynamicFilledButtonBackground)
 			)
 			.shadow(
 				color: Color.accent.opacity(0.3),

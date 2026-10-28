@@ -2,6 +2,7 @@ import ANModelKit
 import Charts
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 enum VisualizationType: String, CaseIterable {
 	case chart
@@ -24,6 +25,13 @@ enum VisualizationType: String, CaseIterable {
 
 struct MedicationTrendsView: View {
 	@StateObject private var viewModel = MedicationTrendsViewModel()
+	@StateObject private var quickLogCoordinator = MedicationListViewModel()
+	@StateObject private var doseLogSession = LogDoseView.Session()
+	@State private var showLogDosePicker = false
+	@State private var pickerQuery = ""
+	@State private var pendingPickerMedication: ANMedicationConcept?
+	@State private var quickLogError = false
+	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -87,11 +95,87 @@ struct MedicationTrendsView: View {
 				.padding(.horizontal)
 				.padding(.vertical)
 			}
+			.safeAreaInset(edge: .bottom, spacing: 0) {
+				if !loggableMedications.isEmpty { Color.clear.frame(height: floatingButtonClearance) }
+			}
+			.overlay(alignment: .bottomTrailing) {
+				if !loggableMedications.isEmpty { primaryLogDoseButton }
+			}
 			.customNavigationTitle("Trends", displayMode: .large)
+			.alert("Couldn’t Log Dose", isPresented: $quickLogError) {
+				Button("OK", role: .cancel) {}
+			} message: { Text("We couldn’t save this change. Please try again.") }
+			.overlay(alignment: .top) {
+				if quickLogCoordinator.showQuickLogToast {
+					QuickLogToastView(
+						medicationName: quickLogCoordinator.quickLogMedicationName,
+						doseAmount: quickLogCoordinator.quickLogDoseAmount,
+						doseUnit: quickLogCoordinator.quickLogDoseUnit,
+						accentColor: quickLogCoordinator.quickLogAccentColor,
+						isVisible: quickLogCoordinator.showQuickLogToast,
+						feedback: quickLogCoordinator.quickLogFeedback,
+						onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
+						onUndo: { Task { if !(await quickLogCoordinator.undoLastQuickLog()) { quickLogError = true } } })
+				}
+				SupportToastView(message: "Dose logged successfully", supportMessage: "Support As Needed",
+					isVisible: quickLogCoordinator.showSupportToast,
+					onDismiss: { quickLogCoordinator.showSupportToast = false },
+					onSupportTapped: {
+						quickLogCoordinator.showSupportToast = false
+						quickLogCoordinator.showSupportView = true
+					})
+			}
+			.sheet(isPresented: $quickLogCoordinator.showSupportView) {
+				NavigationStack { SupportView() }
+			}
+			.sheet(isPresented: $showLogDosePicker, onDismiss: {
+				pickerQuery = ""
+				guard let medication = pendingPickerMedication else { return }
+				pendingPickerMedication = nil
+				quickLogCoordinator.logMedication = loggableMedications.first { $0.id == medication.id }
+			}) {
+				LogDosePickerSheet(medications: loggableMedications, query: $pickerQuery,
+					onSelect: { medication in
+						pendingPickerMedication = medication
+						showLogDosePicker = false
+					}, onQuickLog: { medication in
+						await quickLogCoordinator.quickLog(medication: medication)
+					}, onQuickLogSuccess: { _ in
+						AppTips.didQuickLog()
+						showLogDosePicker = false
+					})
+			}
+			.sheet(item: $quickLogCoordinator.logMedication, onDismiss: {
+				if quickLogCoordinator.logMedication == nil { doseLogSession.reset() }
+			}) { med in
+				LogDoseView(medication: med, source: "trends_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+					await quickLogCoordinator.logDose(med: med, dose: dose, event: event,
+						source: "trends_sheet", operationID: operationID)
+				}
+			}
 			.onAppear {
 				viewModel.ensureValidSelection()
 			}
 		}
+	}
+
+	private var loggableMedications: [ANMedicationConcept] {
+		LogDosePickerModel.medications(from: quickLogCoordinator.sortedMedications)
+	}
+
+	private var primaryLogDoseButton: some View {
+		let medication = DataStore.shared.lastLoggedMedication
+		return FloatingLogDoseButton(lastMedication: medication, onChoose: {
+			pendingPickerMedication = nil
+			pickerQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
+	}
+
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		let saved = await quickLogCoordinator.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
 	}
 
 	private var controlsSection: some View {
@@ -144,6 +228,7 @@ struct MedicationTrendsView: View {
 				}
 				.font(.customFont(fontFamily, style: .body))
 				.pickerStyle(.menu)
+				.popoverTip(AppTips.isConfigured ? TrendsRangeTip() : nil)
 				.tint(.accent)
 				.frame(minHeight: 44)
 			}

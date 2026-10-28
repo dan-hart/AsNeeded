@@ -68,6 +68,8 @@ struct NotificationPermissionRequestView: View {
 							}
 						}
 						.buttonStyle(.borderedProminent)
+					.tint(Color.accent.dynamicFilledButtonBackground)
+					.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
 						.disabled(isRequesting)
 
 						Button("Not Now") {

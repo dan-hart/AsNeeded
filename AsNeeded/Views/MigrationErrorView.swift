@@ -46,7 +46,8 @@ struct MigrationErrorView: View {
 							.padding(.vertical, 12)
 					}
 					.buttonStyle(.borderedProminent)
-					.tint(.accent)
+					.tint(Color.accent.dynamicFilledButtonBackground)
+					.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
 
 					// Technical details (collapsible)
 					DisclosureGroup {

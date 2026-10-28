@@ -184,10 +184,10 @@ struct AutomaticBackupView: View {
                                     .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             }
                         }
-                        .contrastingForeground(against: .accent)
+                        .filledButtonForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accent)
+                        .background(Color.accent.dynamicFilledButtonBackground)
                         .cornerRadius(buttonCornerRadius)
                     }
                     .disabled(viewModel.isBusy)
@@ -305,9 +305,9 @@ struct AutomaticBackupView: View {
                         ProgressView()
                     }
                 }
-                .contrastingForeground(against: .accent)
+                .filledButtonForeground(against: .accent)
                 .padding()
-                .background(Color.accent)
+                .background(Color.accent.dynamicFilledButtonBackground)
                 .cornerRadius(buttonCornerRadius)
             }
             .disabled(viewModel.isBackupInProgress)
@@ -701,10 +701,10 @@ struct AutomaticBackupView: View {
                             Image(systemSymbol: .arrowRight)
                                 .font(.customFont(fontFamily, style: .body))
                         }
-                        .contrastingForeground(against: .accent)
+                        .filledButtonForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accent)
+                        .background(Color.accent.dynamicFilledButtonBackground)
                         .cornerRadius(buttonCornerRadius)
                     }
                     .padding()
@@ -778,10 +778,10 @@ struct AutomaticBackupView: View {
 								Text("Replace All Data")
 									.font(.customFont(fontFamily, style: .body, weight: .semibold))
 							}
-							.contrastingForeground(against: .red)
+							.filledButtonForeground(against: .red)
 							.frame(maxWidth: .infinity)
 							.padding()
-							.background(Color.red)
+							.background(Color.red.dynamicFilledButtonBackground)
 							.cornerRadius(buttonCornerRadius)
 						}
 					}

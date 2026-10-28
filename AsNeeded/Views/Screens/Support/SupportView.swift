@@ -339,12 +339,12 @@ struct SupportView: View {
                     .font(.customFont(fontFamily, style: .callout))
                     .fontWeight(.medium)
             }
-            .contrastingForeground(against: .accent)
+            .filledButtonForeground(against: .accent)
             .padding(.horizontal, restoreButtonPaddingH)
             .padding(.vertical, buttonPaddingV)
             .background(
                 RoundedRectangle(cornerRadius: buttonCornerRadius)
-                    .fill(.accent)
+                    .fill(Color.accent.dynamicFilledButtonBackground)
             )
         }
         .buttonStyle(.plain)

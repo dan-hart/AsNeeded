@@ -708,14 +708,14 @@ struct MedicationEditView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
             }
-            .contrastingForeground(against: backgroundColor)
+            .filledButtonForeground(against: backgroundColor)
             .frame(maxWidth: .infinity)
             .padding(.vertical, buttonVerticalPadding)
             .background(
                 LinearGradient(
                     colors: isFormValid ?
-                        [.accent, .accent] :
-                        [Color.gray, Color.gray],
+                        [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground] :
+                        [Color.gray.dynamicFilledButtonBackground, Color.gray.dynamicFilledButtonBackground],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

@@ -128,13 +128,13 @@ struct ExpandableNoteEditorComponent: View {
 				Text("Save Note")
 					.font(.customFont(fontFamily, style: .headline))
 			}
-			.foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
+			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, 14)
 			.background(
 				RoundedRectangle(cornerRadius: cornerRadius12, style: .continuous)
 					.fill(LinearGradient(
-						colors: [.accent, .accent],
+						colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
 						startPoint: .topLeading,
 						endPoint: .bottomTrailing
 					))

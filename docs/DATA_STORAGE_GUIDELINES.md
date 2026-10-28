@@ -668,3 +668,16 @@ No unit conversion is inferred. Existing database paths/schema are unchanged.
 Older releases cannot recover this journal: do not downgrade with one pending.
 These are process-interruption guarantees, not certification against every device
 power-loss/filesystem failure. See [build 310 verification](testing/1.2.0-310-stabilization-verification.md).
+
+
+### Shared Quick Log Recording Recency
+
+`lastLoggedDoseEventIDs` is a device-local ordered list of committed event IDs, independent of the dose's selected date. It is
+covered by the existing transaction preference undo journal with its dose and
+stock change, including recovery after interruption. Idempotent retries do not
+advance it. It is removed by settings reset and excluded from settings exports
+and imports. No database paths, filenames, containers or model schemas change.
+Existing installs without the key use the latest valid dose date. Deleted,
+undone or archived targets fall back through recording order, then legacy active history; empty history
+opens the medication selector. The resolver always returns the current medication
+record instead of the older copy embedded in an event.

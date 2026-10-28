@@ -28,6 +28,15 @@ public final class DataStore {
     public var medications: [ANMedicationConcept] { transactions.visibleSnapshot?.medications ?? medicationsStore.items }
     public var events: [ANEventConcept] { transactions.visibleSnapshot?.events ?? eventsStore.items }
 
+	/// Most recently recorded dose target, resolved against current active records.
+	public var lastLoggedMedication: ANMedicationConcept? {
+		LastLoggedMedicationResolver.resolve(
+			medications: medications,
+			events: events,
+			lastLoggedEventIDs: (defaults.stringArray(forKey: UserDefaultsKeys.lastLoggedDoseEventIDs) ?? []).compactMap(UUID.init(uuidString:))
+		)
+	}
+
     private init() {
 		isTestStore = false
 		defaults = .standard
@@ -144,7 +153,7 @@ public final class DataStore {
 	}
 
 	private lazy var transactions: MedicationPersistenceTransactions = {
-		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: UserDefaultsKeys.safeToExportKeys, persistentDomainName: defaultsDomainName)]
+		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: UserDefaultsKeys.safeToExportKeys.union([UserDefaultsKeys.lastLoggedDoseEventIDs]), persistentDomainName: defaultsDomainName)]
 		if let sharedDefaults {
 			domains["shared"] = PersistencePreferenceDomain(defaults: sharedDefaults, keys: [UserDefaultsKeys.medicationSafetyProfiles], persistentDomainName: sharedDefaultsDomainName)
 		}
@@ -195,12 +204,27 @@ public final class DataStore {
 
 	public func recordDose(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
 		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
-		let didSave = try await transactions.perform { try $0.recordDose(event) }
+		var insertedNewDose = false
+		let didSave = try await transactions.perform(
+			preferenceKeys: ["application": [UserDefaultsKeys.lastLoggedDoseEventIDs]],
+			change: { snapshot in
+				insertedNewDose = !snapshot.events.contains { $0.id == event.id }
+				try snapshot.recordDose(event)
+			}, applyPreferences: { snapshot in
+				// The journal restores recording order with the records if commit fails.
+				// Replaying an older operation must never change recording recency.
+				if insertedNewDose {
+					let validIDs = Set(snapshot.events.map { $0.id.uuidString })
+					let previous = defaults.stringArray(forKey: UserDefaultsKeys.lastLoggedDoseEventIDs) ?? []
+					let order = [event.id.uuidString] + previous.filter { $0 != event.id.uuidString && validIDs.contains($0) }
+					defaults.set(order, forKey: UserDefaultsKeys.lastLoggedDoseEventIDs)
+				}
+			})
 		// A successful retry can finish notification cleanup interrupted after the original commit.
 		if event.eventType == .doseTaken, let medicationID = event.medication?.id {
 			await reminderAcknowledgement(medicationID)
 		}
-		guard didSave else { return }
+		guard didSave, insertedNewDose else { return }
 		await refreshDoseAvailability()
 		if !isTestStore {
 			if shouldRecordForReview { AppReviewManager.shared.recordMedicationEvent() }

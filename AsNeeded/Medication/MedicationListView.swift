@@ -13,8 +13,7 @@ struct MedicationListView: View {
 	@StateObject private var medicationEditSession = MedicationEditViewModel.Session()
 	@Environment(\.scenePhase) private var scenePhase
     @Environment(\.fontFamily) private var fontFamily
-	@AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
-	@State private var showQuickLogHint = false
+	@State private var quickLogError = false
 	@State private var showLogDosePicker = false
 	@State private var pendingPickerMedication: ANMedicationConcept?
 	@State private var logDoseSearchQuery = ""
@@ -41,12 +40,7 @@ struct MedicationListView: View {
 
     var body: some View {
         mainContent
-			.quickLogHint(isPresented: $showQuickLogHint)
-			.quickLogHintOverlay(
-				isPresented: showQuickLogHint && viewModel.editMode == .inactive && !showLogDosePicker,
-				text: loggableMedications.first.map { QuickLogHintPolicy.hintText(for: $0) } ?? "Hold to log",
-				onDismiss: retireQuickLogHint
-			)
+			.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
             .customNavigationTitle("Medication", displayMode: .large)
 			.safeAreaInset(edge: .bottom, spacing: 0) {
 				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
@@ -136,7 +130,7 @@ struct MedicationListView: View {
 					}, onQuickLog: { medication in
 						await viewModel.quickLog(medication: medication)
 					}, onQuickLogSuccess: { _ in
-						retireQuickLogHint()
+						AppTips.didQuickLog()
 						showLogDosePicker = false
 					})
 				}
@@ -188,7 +182,7 @@ struct MedicationListView: View {
                             },
                             onUndo: {
                                 Task {
-                                    _ = await viewModel.undoLastQuickLog()
+                                    if !(await viewModel.undoLastQuickLog()) { quickLogError = true }
                                 }
                             }
                         )
@@ -229,11 +223,6 @@ struct MedicationListView: View {
 
     }
 
-	private func retireQuickLogHint() {
-		hasDiscoveredQuickLog = true
-		showQuickLogHint = false
-	}
-
     // MARK: - Computed Properties
 
 	private var loggableMedications: [ANMedicationConcept] {
@@ -241,29 +230,18 @@ struct MedicationListView: View {
 	}
 
 	private var primaryLogDoseButton: some View {
-		Button {
-			hapticsManager.lightImpact()
-			if loggableMedications.count == 1, let medication = loggableMedications.first {
-				viewModel.logMedication = medication
-			} else {
-				pendingPickerMedication = nil
-				logDoseSearchQuery = ""
-				showLogDosePicker = true
-			}
-		} label: {
-			Label("Log Dose", systemSymbol: .plusCircleFill)
-				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
-				.padding(.horizontal, 24)
-				.padding(.vertical, 16)
-				.contrastingForeground(against: .accent)
-				.background(Color.accent, in: Capsule())
-				.shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
-		}
-		.buttonStyle(.plain)
-		.accessibilityLabel("Log dose")
-		.accessibilityHint("Opens a dose form, letting you choose a medication when needed")
-		.padding(.trailing, 20)
-		.padding(.bottom, 16)
+		let medication = DataStore.shared.lastLoggedMedication
+		return FloatingLogDoseButton(lastMedication: medication, onChoose: {
+			pendingPickerMedication = nil
+			logDoseSearchQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
+	}
+
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		let saved = await viewModel.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
 	}
 
     @ViewBuilder
@@ -313,12 +291,12 @@ struct MedicationListView: View {
             }) {
                 Label("Add Your First Medication", systemSymbol: .plusCircleFill)
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                    .contrastingForeground(against: .accent)
+                    .filledButtonForeground(against: .accent)
                     .padding(.vertical, buttonVerticalPadding)
                     .padding(.horizontal, buttonHorizontalPadding)
                     .background(
                         RoundedRectangle(cornerRadius: buttonCornerRadius)
-                            .fill(Color.accent)
+                            .fill(Color.accent.dynamicFilledButtonBackground)
                     )
                     .shadow(color: .accent.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             }
@@ -346,10 +324,9 @@ struct MedicationListView: View {
                             },
 							onOpen: { navigationPath.append(med) },
                             onQuickLog: {
-                                await viewModel.quickLog(medication: med)
+                                await quickLog(med)
                             },
-                            onQuickLogSuccess: { retireQuickLogHint() },
-							showQuickLogHintAnchor: showQuickLogHint && med.id == loggableMedications.first?.id,
+                            onQuickLogSuccess: { AppTips.didQuickLog() },
                             onAppearanceChanged: { newColorHex, newSymbol in
                                 Task {
                                     var updatedMed = med

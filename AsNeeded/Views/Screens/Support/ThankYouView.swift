@@ -230,11 +230,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .chevronLeftForwardslashChevronRight)
                             .font(.customFont(fontFamily, style: .title2))
-                            .contrastingForeground(against: .accent)
+                            .filledButtonForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.accent, .accent],
+                                    colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -270,11 +270,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .contrastingForeground(against: .accent)
+                            .filledButtonForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.accent, .accent],
+                                    colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -310,11 +310,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .envelopeFill)
                             .font(.customFont(fontFamily, style: .title2))
-                            .contrastingForeground(against: .accent)
+                            .filledButtonForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.accent, .accent],
+                                    colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -350,11 +350,11 @@ struct ThankYouView: View {
                     HStack {
                         Image(systemSymbol: .star)
                             .font(.customFont(fontFamily, style: .title2))
-                            .contrastingForeground(against: .accent)
+                            .filledButtonForeground(against: .accent)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
                                 LinearGradient(
-                                    colors: [.accent, .accent],
+                                    colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -418,16 +418,16 @@ struct ThankYouView: View {
                 Spacer()
                 Text("Done")
                     .font(.customFont(fontFamily, style: .headline))
-                    .contrastingForeground(against: .accent)
+                    .filledButtonForeground(against: .accent)
                 Image(systemSymbol: .arrowRight)
                     .font(.customFont(fontFamily, style: .headline))
-                    .contrastingForeground(against: .accent)
+                    .filledButtonForeground(against: .accent)
                 Spacer()
             }
             .padding(.vertical, buttonPaddingV)
             .background(
                 LinearGradient(
-                    colors: [.accent, .accent],
+                    colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

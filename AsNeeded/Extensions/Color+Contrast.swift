@@ -4,6 +4,64 @@
 import SwiftUI
 
 extension Color {
+	/// Presentation colors for an opaque filled control. The original color stays unchanged.
+	func filledButtonColors(for colorScheme: ColorScheme, contrast: ColorSchemeContrast) -> FilledButtonColors {
+		let traits = UITraitCollection(traitsFrom: [
+			UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light),
+			UITraitCollection(accessibilityContrast: contrast == .increased ? .high : .normal),
+		])
+		return filledButtonColors(resolvedWith: traits)
+	}
+
+	var dynamicFilledButtonBackground: Color {
+		Color(uiColor: UIColor { traits in
+			UIColor(self.filledButtonColors(resolvedWith: traits).background)
+		})
+	}
+
+	var dynamicFilledButtonForeground: Color {
+		Color(uiColor: UIColor { traits in
+			traits.accessibilityContrast == .high ? .black : .white
+		})
+	}
+
+	private func filledButtonColors(resolvedWith traits: UITraitCollection) -> FilledButtonColors {
+		let increased = traits.accessibilityContrast == .high
+		let foreground: Color = increased ? .black : .white
+		let requiredRatio = increased ? 7.0 : 4.5
+		let resolved = UIColor(self).resolvedColor(with: traits)
+		var red: CGFloat = 0
+		var green: CGFloat = 0
+		var blue: CGFloat = 0
+		var alpha: CGFloat = 0
+		guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+			return FilledButtonColors(background: increased ? .white : .black, foreground: foreground)
+		}
+		let target = increased ? 1.0 : 0.0
+		func background(at fraction: Double) -> Color {
+			Color(.sRGB,
+				red: Double(red) + (target - Double(red)) * fraction,
+				green: Double(green) + (target - Double(green)) * fraction,
+				blue: Double(blue) + (target - Double(blue)) * fraction,
+				opacity: 1)
+		}
+		if background(at: 0).contrastRatio(with: foreground) >= requiredRatio {
+			return FilledButtonColors(background: background(at: 0), foreground: foreground)
+		}
+		// Find the smallest blend toward black/white that satisfies the requested contrast.
+		var lower = 0.0
+		var upper = 1.0
+		for _ in 0..<32 {
+			let midpoint = (lower + upper) / 2
+			if background(at: midpoint).contrastRatio(with: foreground) >= requiredRatio {
+				upper = midpoint
+			} else {
+				lower = midpoint
+			}
+		}
+		return FilledButtonColors(background: background(at: upper), foreground: foreground)
+	}
+
 	/// Semantic success tint that stays legible on the guidance card in either appearance.
 	static func guidanceGreen(for colorScheme: ColorScheme) -> Color {
 		colorScheme == .dark
@@ -139,5 +197,28 @@ private struct ContrastingForegroundModifier: ViewModifier {
 		content
 			.foregroundStyle(foreground)
 			.tint(foreground)
+	}
+}
+
+/// Rendering-only colors for filled buttons and their icons.
+struct FilledButtonColors {
+	let background: Color
+	let foreground: Color
+}
+
+extension View {
+	func filledButtonForeground(against background: Color) -> some View {
+		modifier(FilledButtonForegroundModifier(background: background))
+	}
+}
+
+private struct FilledButtonForegroundModifier: ViewModifier {
+	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.colorSchemeContrast) private var contrast
+	let background: Color
+
+	func body(content: Content) -> some View {
+		let foreground = background.filledButtonColors(for: colorScheme, contrast: contrast).foreground
+		content.foregroundStyle(foreground).tint(foreground)
 	}
 }

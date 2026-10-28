@@ -22,6 +22,7 @@ struct AsNeededApp: App {
     private let logger = DHLogger.general
 
     init() {
+		AppTips.configure()
         // Configure RevenueCat on app launch
         RevenueCatManager.shared.configure()
 

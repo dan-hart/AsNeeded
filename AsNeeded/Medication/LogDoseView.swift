@@ -55,6 +55,7 @@ struct LogDoseView: View {
     var onLog: (ANDoseConcept, ANEventConcept, UUID) async -> Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .caption) private var stepperIconSize: CGFloat = 22
     @Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -257,7 +258,7 @@ struct LogDoseView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [medication.displayColor.opacity(0.8), medication.displayColor],
+                            colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -267,8 +268,8 @@ struct LogDoseView: View {
 
                 Image(systemName: medication.effectiveDisplaySymbol)
                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
             }
             .padding(.top, topPadding)
 			.accessibilityHidden(true)
@@ -315,9 +316,12 @@ struct LogDoseView: View {
                             hapticsManager.lightImpact()
                         }
                     }) {
-                        Image(systemSymbol: .minusCircleFill)
-                            .font(.customFont(fontFamily, style: .title2))
-                            .foregroundStyle(draft.amount > 0.5 ? .accent : Color.secondary.opacity(0.5))
+                        Image(systemSymbol: .minus)
+							.font(.customFont(fontFamily, style: .caption, weight: .bold))
+							.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+							.frame(width: stepperIconSize, height: stepperIconSize)
+							.background(Color.accent.dynamicFilledButtonBackground, in: Circle())
+							.opacity(draft.amount > 0.5 ? 1 : 0.5)
                             .scaleEffect(draft.amount > 0.5 ? 1.0 : 0.9)
                     }
                     .disabled(draft.amount <= 0.5)
@@ -349,9 +353,12 @@ struct LogDoseView: View {
                             hapticsManager.lightImpact()
                         }
                     }) {
-                        Image(systemSymbol: .plusCircleFill)
-                            .font(.customFont(fontFamily, style: .title2))
-                            .foregroundStyle(draft.amount < 100 ? .accent : Color.secondary.opacity(0.5))
+                        Image(systemSymbol: .plus)
+							.font(.customFont(fontFamily, style: .caption, weight: .bold))
+							.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+							.frame(width: stepperIconSize, height: stepperIconSize)
+							.background(Color.accent.dynamicFilledButtonBackground, in: Circle())
+							.opacity(draft.amount < 100 ? 1 : 0.5)
                             .scaleEffect(draft.amount < 100 ? 1.0 : 0.9)
                     }
                     .disabled(draft.amount >= 100)
@@ -378,13 +385,13 @@ struct LogDoseView: View {
                                     .background {
                                         if draft.selectedUnit == unit {
                                             Capsule()
-                                                .fill(Color.accent)
+                                                .fill(Color.accent.dynamicFilledButtonBackground)
                                         } else {
                                             Capsule()
                                                 .fill(.regularMaterial)
                                         }
                                     }
-                                    .foregroundStyle(draft.selectedUnit == unit ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
+                                    .foregroundStyle(draft.selectedUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
                             }
                             .accessibilityLabel(unit.displayName)
                             .accessibilityValue(draft.selectedUnit == unit ? "Selected" : "Not selected")
@@ -488,13 +495,13 @@ struct LogDoseView: View {
                                 .background {
                                     if draft.selectedQuickOption == label {
                                         Capsule()
-                                            .fill(Color.accent)
+                                            .fill(Color.accent.dynamicFilledButtonBackground)
                                     } else {
                                         Capsule()
                                             .fill(.regularMaterial)
                                     }
                                 }
-                                .foregroundStyle(draft.selectedQuickOption == label ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
+                                .foregroundStyle(draft.selectedQuickOption == label ? Color.accent.dynamicFilledButtonForeground : .primary)
                         }
                         .accessibilityLabel(label)
                         .accessibilityValue(draft.selectedQuickOption == label ? "Selected" : "Not selected")
@@ -772,7 +779,7 @@ struct LogDoseView: View {
             HStack(spacing: quickButtonSpacing) {
                 if draft.isLogging {
                     ProgressView()
-                        .tint(Color.accent.contrastingForegroundColor(for: colorScheme))
+                        .tint(Color.accent.dynamicFilledButtonForeground)
                 } else {
                     Image(systemSymbol: .checkmarkCircleFill)
                         .font(.customFont(fontFamily, style: .title3))
@@ -783,14 +790,14 @@ struct LogDoseView: View {
 					.fixedSize(horizontal: false, vertical: true)
 					.multilineTextAlignment(.center)
             }
-            .foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
+            .foregroundStyle(Color.accent.dynamicFilledButtonForeground)
             .frame(maxWidth: .infinity)
             .padding(.vertical, buttonVerticalPadding)
             .background(
                 RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Color.accent, Color.accent],
+                            colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

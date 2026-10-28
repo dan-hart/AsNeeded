@@ -681,10 +681,10 @@ struct MedicationDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-			.foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
+			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
         }
 		.buttonStyle(.borderedProminent)
-		.tint(.accent)
+		.tint(Color.accent.dynamicFilledButtonBackground)
         .frame(maxWidth: cardMaxWidth)
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }

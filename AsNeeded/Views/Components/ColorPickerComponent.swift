@@ -218,12 +218,12 @@ struct ColorPickerComponent: View {
 
 				Spacer()
 			}
-			.foregroundStyle(backgroundColor.contrastingForegroundColor(for: colorScheme))
+			.foregroundStyle(backgroundColor.dynamicFilledButtonForeground)
 			.frame(maxWidth: .infinity)
 			.padding(.vertical, saveButtonVPadding)
 			.background(
 				RoundedRectangle(cornerRadius: defaultCornerRadius, style: .continuous)
-					.fill(backgroundColor)
+					.fill(backgroundColor.dynamicFilledButtonBackground)
 			)
 			.shadow(
 				color: backgroundColor.opacity(0.3),

@@ -2,20 +2,17 @@ import ANModelKit
 import Foundation
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 struct MedicationHistoryView: View {
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var viewModel = MedicationHistoryViewModel()
 	// Reuse the existing atomic dose/Undo coordinator on both tabs.
 	@StateObject private var quickLogCoordinator = MedicationListViewModel()
-	@AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
-	@State private var showQuickLogHint = false
+	@State private var quickLogError = false
 	@State private var showLogDosePicker = false
 	@State private var pickerQuery = ""
 	@State private var pendingPickerMedication: ANMedicationConcept?
-	@State private var isLogPressed = false
-	@State private var isLogLongPressing = false
-	@State private var holdProgress: Double = 0
 
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
@@ -53,10 +50,7 @@ struct MedicationHistoryView: View {
 	@ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
 	@ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
 	@ScaledMetric private var fabPaddingH: CGFloat = 24
-	@ScaledMetric private var fabPaddingV: CGFloat = 16
-	@ScaledMetric private var fabTrailingPadding: CGFloat = 20
-	@ScaledMetric private var fabBottomPadding: CGFloat = 20
-	@ScaledMetric private var fabShadowRadius: CGFloat = 4
+	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
 	@ScaledMetric private var datePickerSpacing: CGFloat = 20
 	@ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
 	@ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
@@ -435,37 +429,19 @@ struct MedicationHistoryView: View {
 
 	// MARK: - Private Methods
 
-	private func logButtonLabel(color: Color) -> some View {
-		Label("Log Dose", systemSymbol: .plus)
-			.font(.customFont(fontFamily, style: .headline, weight: .semibold))
-			.foregroundStyle(color.contrastingForegroundColor(for: colorScheme))
-			.padding(.horizontal, fabPaddingH)
-			.padding(.vertical, fabPaddingV)
-			.background(color, in: Capsule())
-			.overlay {
-				Capsule().trim(from: 0, to: holdProgress)
-					.stroke(color.contrastingForegroundColor(for: colorScheme), lineWidth: 3)
-					.padding(2).allowsHitTesting(false).accessibilityHidden(true)
-			}
+	private var primaryLogDoseButton: some View {
+		let medication = DataStore.shared.lastLoggedMedication
+		return FloatingLogDoseButton(lastMedication: medication, onChoose: {
+			pendingPickerMedication = nil
+			pickerQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
 	}
 
-	private func selectedMedicationLogButton(_ medication: ANMedicationConcept) -> some View {
-		Button { logMedication = medication } label: { logButtonLabel(color: medication.displayColor) }
-			.buttonStyle(.plain)
-			.scaleEffect(reduceMotion ? 1 : (isLogPressed || isLogLongPressing ? 0.95 : 1))
-			.doseLogPressGesture(isPressed: $isLogPressed, isLongPressing: $isLogLongPressing,
-				holdProgress: $holdProgress, onTap: { logMedication = medication },
-				onQuickLog: { await quickLogCoordinator.quickLog(medication: medication) },
-				onQuickLogSuccess: { hasDiscoveredQuickLog = true; showQuickLogHint = false })
-			.accessibilityLabel("Log dose for \(medication.displayName)")
-			.accessibilityHint("Tap to customize dose, hold to log default dose")
-			.accessibilityAction(named: "Quick log default dose") {
-				Task {
-					if await quickLogCoordinator.quickLog(medication: medication) {
-						hasDiscoveredQuickLog = true
-					}
-				}
-			}
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		let saved = await quickLogCoordinator.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
 	}
 
 	private var historyFilterControls: some View {
@@ -500,6 +476,7 @@ struct MedicationHistoryView: View {
 					}
 					.frame(minHeight: 44)
 				}
+				.popoverTip(AppTips.isConfigured ? HistoryFilterTip() : nil)
 				.accessibilityLabel("History medication filter")
 				.accessibilityValue(viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.displayName ?? "All medications"))
 
@@ -561,37 +538,22 @@ struct MedicationHistoryView: View {
 							selectionPromptView()
 						}
 					}
+					.safeAreaInset(edge: .bottom, spacing: 0) {
+						if !viewModel.logDosePickerMedications.isEmpty {
+							Color.clear.frame(height: floatingButtonClearance)
+						}
+					}
 					.safeAreaInset(edge: .top, spacing: 0) {
 						historyFilterControls
 					}
 
-					if let medication = viewModel.selectedMedication {
-						VStack(alignment: .trailing, spacing: 8) {
-							if showQuickLogHint {
-								QuickLogHintPill(text: QuickLogHintPolicy.hintText(for: medication)) {
-									hasDiscoveredQuickLog = true
-									showQuickLogHint = false
-								}
-								.fixedSize(horizontal: false, vertical: true)
-							}
-							selectedMedicationLogButton(medication)
-						}
-						.padding(.trailing, fabTrailingPadding)
-						.padding(.bottom, fabBottomPadding)
-						.quickLogHint(isPresented: $showQuickLogHint)
-					} else if viewModel.isShowingAllMedications, !viewModel.logDosePickerMedications.isEmpty {
-						Button { showLogDosePicker = true } label: {
-							logButtonLabel(color: .accent)
-						}
-						.buttonStyle(.plain)
-						.padding(.trailing, fabTrailingPadding)
-						.padding(.bottom, fabBottomPadding)
-						.accessibilityLabel("Log a dose")
-						.accessibilityHint("Choose a medication to log")
+					if !viewModel.logDosePickerMedications.isEmpty {
+						primaryLogDoseButton
 					}
 
 				}
 				.customNavigationTitle("History", displayMode: .large)
+				.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
 				.overlay(alignment: .top) {
 					if quickLogCoordinator.showQuickLogToast {
 						QuickLogToastView(
@@ -602,7 +564,7 @@ struct MedicationHistoryView: View {
 							isVisible: quickLogCoordinator.showQuickLogToast,
 							feedback: quickLogCoordinator.quickLogFeedback,
 							onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
-							onUndo: { Task { _ = await quickLogCoordinator.undoLastQuickLog() } })
+							onUndo: { Task { if !(await quickLogCoordinator.undoLastQuickLog()) { quickLogError = true } } })
 					}
 				}
 
@@ -668,7 +630,7 @@ struct MedicationHistoryView: View {
 					pickerQuery = ""
 					if let medication = pendingPickerMedication {
 						pendingPickerMedication = nil
-						logMedication = medication
+						logMedication = viewModel.logDosePickerMedications.first { $0.id == medication.id }
 					}
 				}) {
 					LogDosePickerSheet(medications: viewModel.logDosePickerMedications, query: $pickerQuery,
@@ -678,7 +640,7 @@ struct MedicationHistoryView: View {
 						}, onQuickLog: { medication in
 							await quickLogCoordinator.quickLog(medication: medication)
 						}, onQuickLogSuccess: { _ in
-							hasDiscoveredQuickLog = true
+							AppTips.didQuickLog()
 							showLogDosePicker = false
 						})
 				}
@@ -796,15 +758,15 @@ struct MedicationHistoryView: View {
 										Text("Save Note")
 											.font(.customFont(fontFamily, style: .headline))
 									}
-									.foregroundStyle(Color.accent.contrastingForegroundColor(for: colorScheme))
+									.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
 									.frame(maxWidth: .infinity)
 									.padding(.vertical, 14)
 									.background(
 										RoundedRectangle(cornerRadius: 12, style: .continuous)
 											.fill(LinearGradient(
 												colors: [
-													Color.accent,
-													Color.accent,
+													Color.accent.dynamicFilledButtonBackground,
+													Color.accent.dynamicFilledButtonBackground,
 												],
 												startPoint: .topLeading,
 												endPoint: .bottomTrailing
@@ -970,9 +932,9 @@ struct MedicationHistoryView: View {
 												.frame(minHeight: 44)
 												.background(
 													Capsule()
-														.fill(editingEntryUnit == unit ? Color.accent : Color.secondary.opacity(0.1))
+														.fill(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonBackground : Color.secondary.opacity(0.1))
 												)
-												.foregroundStyle(editingEntryUnit == unit ? Color.accent.contrastingForegroundColor(for: colorScheme) : .primary)
+												.foregroundStyle(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
 										}
 										.buttonStyle(.borderless)
 										.accessibilityAddTraits(editingEntryUnit == unit ? [.isSelected] : [])

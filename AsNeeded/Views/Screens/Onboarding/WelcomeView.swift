@@ -96,11 +96,11 @@ struct WelcomeView: View {
                     Text("Continue")
                         .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
-                        .contrastingForeground(against: .accent)
+                        .filledButtonForeground(against: .accent)
                     Spacer()
                 }
                 .padding(.vertical, standardPadding)
-                .background(.accent)
+                .background(Color.accent.dynamicFilledButtonBackground)
                 .cornerRadius(cornerRadius12)
             }
             .buttonStyle(.plain)

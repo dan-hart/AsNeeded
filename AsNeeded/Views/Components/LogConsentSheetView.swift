@@ -274,12 +274,12 @@ struct LogConsentSheetView: View {
                     Text("Include Logs")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                 }
-                .foregroundStyle(Color.green.contrastingForegroundColor(for: colorScheme))
+                .foregroundStyle(Color.green.dynamicFilledButtonForeground)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, actionButtonVPadding)
                 .background(
                     LinearGradient(
-                        colors: [Color.green, Color.green],
+                        colors: [Color.green.dynamicFilledButtonBackground, Color.green.dynamicFilledButtonBackground],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

@@ -73,13 +73,13 @@ struct QuickLogToastView: View {
 							} label: {
 								Label("Undo log", systemSymbol: .arrowCounterclockwise)
 									.font(.customFont(fontFamily, style: .caption, weight: .semibold))
-									.foregroundStyle(toneColor)
+									.foregroundStyle(toneColor.dynamicFilledButtonForeground)
 									.frame(maxWidth: .infinity)
 									.padding(.vertical, 8)
 									.frame(minHeight: 44)
 									.background(
 										RoundedRectangle(cornerRadius: 10, style: .continuous)
-											.fill(toneColor.opacity(0.12))
+											.fill(toneColor.dynamicFilledButtonBackground)
 									)
 							}
 							.buttonStyle(.plain)

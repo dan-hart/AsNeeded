@@ -10,6 +10,7 @@ struct LogDosePickerSheet: View {
 	var onQuickLog: ((ANMedicationConcept) async -> Bool)? = nil
 	var onQuickLogSuccess: ((ANMedicationConcept) -> Void)? = nil
 
+	@State private var quickLogError = false
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.fontFamily) private var fontFamily
 
@@ -27,13 +28,20 @@ struct LogDosePickerSheet: View {
 				} else {
 					ForEach(matches) { medication in
 						LogDosePickerRow(medication: medication, onSelect: { onSelect(medication) },
-							onQuickLog: onQuickLog.map { action in { await action(medication) } },
+							onQuickLog: onQuickLog.map { action in {
+							let saved = await action(medication)
+							if !saved { quickLogError = true }
+							return saved
+						} },
 							onSuccess: { onQuickLogSuccess?(medication) })
 							.listRowInsets(EdgeInsets(top: 3, leading: 16, bottom: 3, trailing: 16))
 
 					}
 				}
 			}
+			.alert("Couldn’t Log Dose", isPresented: $quickLogError) {
+				Button("OK", role: .cancel) {}
+			} message: { Text("Your dose was not saved. Please try again.") }
 			.listStyle(.plain)
 			.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search medications")
 			.customNavigationTitle("Choose Medication", displayMode: .inline)
@@ -55,11 +63,13 @@ private struct LogDosePickerRow: View {
 	let onSuccess: () -> Void
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.colorSchemeContrast) private var contrast
 	@State private var isPressed = false
 	@State private var isLongPressing = false
 	@State private var holdProgress: Double = 0
 
 	var body: some View {
+		let palette = medication.displayColor.filledButtonColors(for: colorScheme, contrast: contrast)
 		Button(action: onSelect) {
 			HStack(spacing: 12) {
 				Image(systemName: medication.effectiveDisplaySymbol)
@@ -75,13 +85,13 @@ private struct LogDosePickerRow: View {
 				}
 				.frame(maxWidth: .infinity, alignment: .leading)
 			}
-			.foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
+			.foregroundStyle(palette.foreground)
 			.padding(8)
 			.frame(minHeight: 60)
-			.background(medication.displayColor, in: RoundedRectangle(cornerRadius: 12))
+			.background(palette.background, in: RoundedRectangle(cornerRadius: 12))
 			.overlay {
 				RoundedRectangle(cornerRadius: 12).trim(from: 0, to: holdProgress)
-					.stroke(medication.displayColor.contrastingForegroundColor(for: colorScheme), lineWidth: 3)
+					.stroke(palette.foreground, lineWidth: 3)
 					.padding(2).allowsHitTesting(false).accessibilityHidden(true)
 			}
 		}

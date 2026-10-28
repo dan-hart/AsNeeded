@@ -13,6 +13,9 @@ public enum UserDefaultsKeys {
     /// Selected medication ID for trends tab
     static let trendsSelectedMedicationID = "trendsSelectedMedicationID"
 
+	/// Device-local recording order of committed doses, independent of their dates.
+	static let lastLoggedDoseEventIDs = "lastLoggedDoseEventIDs"
+
     /// Order of medications in the list
     static let medicationOrder = "medicationOrder"
 
@@ -175,6 +178,7 @@ public enum UserDefaultsKeys {
     public static let allKeys: [String] = [
         historySelectedMedicationID,
         trendsSelectedMedicationID,
+		lastLoggedDoseEventIDs,
         medicationOrder,
         hasSeenWelcome,
         shouldShowWelcomeOnNextLaunch,
@@ -257,6 +261,7 @@ public enum UserDefaultsKeys {
 
     /// Keys that should be removed (not set to a default) when resetting
     public static let keysToRemove: Set<String> = [
+		lastLoggedDoseEventIDs,
 		medicationNotificationUrgency,
         historySelectedMedicationID,
         trendsSelectedMedicationID,
@@ -326,6 +331,7 @@ public enum UserDefaultsKeys {
     /// Keys that should NEVER be exported (blocklist for security/privacy)
     /// These contain device-specific data, security-scoped bookmarks, or historical analytics
     public static let keysToNeverExport: Set<String> = [
+		lastLoggedDoseEventIDs, // Recording order belongs to this device.
 		hasDiscoveredQuickLog, // Gesture discovery is device-local.
 		quickLogHintImpressions,
 		medicationNotificationUrgency, // Delivery preferences belong to this device.

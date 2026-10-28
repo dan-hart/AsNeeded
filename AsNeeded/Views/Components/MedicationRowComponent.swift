@@ -51,7 +51,6 @@ struct MedicationRowComponent: View {
 
     private let rowPadding: CGFloat = 16
     private let iconContentSpacing: CGFloat = 14
-    @ScaledMetric private var logButtonSize: CGFloat = 52
     @ScaledMetric private var medicationIconSize: CGFloat = 40
 
     var body: some View {
@@ -250,14 +249,14 @@ struct MedicationRowComponent: View {
                     Text("Log Dose")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                 }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
+                .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [medication.displayColor, medication.displayColor],
+                                colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -268,22 +267,24 @@ struct MedicationRowComponent: View {
                 VStack(spacing: 4) {
                     Image(systemSymbol: .plusCircleFill)
                         .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
+                        .symbolRenderingMode(.monochrome)
                         .accessibilityHidden(true)
 
                     Text("Log")
                         .font(.customFont(fontFamily, style: .caption2, weight: .bold))
                         .textCase(.uppercase)
                 }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor(for: colorScheme))
-                .frame(width: logButtonSize, height: logButtonSize)
+                .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(minWidth: 60, minHeight: 60)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    medication.displayColor,
-                                    medication.displayColor,
+                                    medication.displayColor.dynamicFilledButtonBackground,
+                                    medication.displayColor.dynamicFilledButtonBackground,
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -301,8 +302,8 @@ struct MedicationRowComponent: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    medication.displayColor.contrastingForegroundColor(for: colorScheme).opacity(0.3),
-                                    medication.displayColor.contrastingForegroundColor(for: colorScheme).opacity(0.1),
+                                    medication.displayColor.dynamicFilledButtonForeground.opacity(0.3),
+                                    medication.displayColor.dynamicFilledButtonForeground.opacity(0.1),
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -319,7 +320,7 @@ struct MedicationRowComponent: View {
 		.overlay {
 			RoundedRectangle(cornerRadius: dynamicTypeSize.isAccessibilitySize ? 12 : 14)
 				.trim(from: 0, to: holdProgress)
-				.stroke(medication.displayColor.contrastingForegroundColor(for: colorScheme), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+				.stroke(medication.displayColor.dynamicFilledButtonForeground, style: StrokeStyle(lineWidth: 3, lineCap: .round))
 				.padding(2)
 				.allowsHitTesting(false)
 				.accessibilityHidden(true)
