@@ -9,16 +9,18 @@ import UIKit
 struct ColorContrastTests {
 	@Test("Filled button palettes preserve white defaults and black increased-contrast labels")
 	@MainActor
-	func filledButtonPaletteContrast() throws {
+	func filledButtonPalettePreservesExactColors() throws {
 		let backgrounds = MedicationColors.colors.map(\.color) + [Color.accent, .white, .black, .gray, .green, .red]
 		for background in backgrounds {
 			for scheme in [ColorScheme.light, .dark] {
 				for contrast in [ColorSchemeContrast.standard, .increased] {
 					let palette = background.filledButtonColors(for: scheme, contrast: contrast)
 					#expect(palette.foreground == (contrast == .increased ? .black : .white))
-					let luminance = try referenceLuminance(palette.background, scheme: scheme)
-					let ratio = contrast == .increased ? (luminance + 0.05) / 0.05 : 1.05 / (luminance + 0.05)
-					#expect(ratio >= (contrast == .increased ? 7.0 : 4.5) - 0.000_001)
+					let traits = UITraitCollection(traitsFrom: [
+						UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light),
+						UITraitCollection(accessibilityContrast: contrast == .increased ? .high : .normal),
+					])
+					#expect(UIColor(palette.background).isEqual(UIColor(background).resolvedColor(with: traits)))
 				}
 			}
 		}
@@ -34,14 +36,14 @@ struct ColorContrastTests {
 					let fill = try referenceLuminance(background.dynamicFilledButtonBackground, scheme: scheme, contrast: traitsContrast)
 					let label = try referenceLuminance(background.dynamicFilledButtonForeground, scheme: scheme, contrast: traitsContrast)
 					#expect(abs(label - (increased ? 0 : 1)) < 0.000_001)
-					let ratio = (max(fill, label) + 0.05) / (min(fill, label) + 0.05)
-					#expect(ratio >= (increased ? 7.0 : 4.5) - 0.000_001)
+					let original = try referenceLuminance(background, scheme: scheme, contrast: traitsContrast)
+					#expect(abs(fill - original) < 0.000_001)
 				}
 			}
 		}
 	}
 
-	@Test("Filled button palettes preserve already-legible RGB colors and resolve appearance")
+	@Test("Filled button palettes preserve exact RGB colors and resolve appearance")
 	@MainActor
 	func filledButtonPalettePreservesLegibleColors() throws {
 		let dark = Color(red: 0.05, green: 0.1, blue: 0.2)
