@@ -4,7 +4,7 @@ Verified October 27, 2026, after explicit maintainer approval for signing setup 
 
 ## Cause and correction
 
-Default distribution signing selected an identity stored in a temporary keychain belonging to another project. Its password was unrelated to the Mac login password. Removing the approved stale search-list entry was insufficient: another temporary keychain appeared during the repair and Xcode again selected the shared certificate. Those other signing assets were left intact.
+Default distribution signing selected an identity stored in a temporary keychain belonging to another project. Its password was unrelated to the Mac login password. Removing the approved stale search-list entry was insufficient. Another temporary keychain appeared during the repair and Xcode again selected the shared certificate. Those other signing assets were left intact.
 
 Created a dedicated Apple Distribution identity for AsNeeded in the normal login keychain, plus matching App Store profiles for the existing app, widget and Watch bundle identifiers. No certificates were revoked, bundle identifiers/capabilities changed, keychain files deleted, or access controls relaxed. No passwords or private-key contents were read by the agent. The newly generated temporary private-key file was imported with default protections and removed after the login identity was verified.
 
