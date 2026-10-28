@@ -10,7 +10,7 @@ struct LogDoseTip: Tip {
 
 	var title: Text { Text("Two ways to log a dose") }
 	var message: Text? {
-		Text("Tap to choose a medication. After recording a dose, hold this button to quickly log that medication again.")
+		Text("Tap to choose a medication. Hold to log a default dose: History and Trends use your selected medication; otherwise, the last medication you logged.")
 	}
 	var image: Image? { Image(systemSymbol: .handTapFill) }
 	var rules: [Rule] {

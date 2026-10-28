@@ -3,9 +3,9 @@ import SFSafeSymbols
 import SwiftUI
 import TipKit
 
-/// The same chooser and last-recorded quick-log action on each logging tab.
+/// The same chooser and context-specific quick-log action on each logging tab.
 struct FloatingLogDoseButton: View {
-	let lastMedication: ANMedicationConcept?
+	let quickLogMedication: ANMedicationConcept?
 	var tint: Color = .accent
 	let onChoose: () -> Void
 	let onQuickLog: (() async -> Bool)?
@@ -43,15 +43,17 @@ struct FloatingLogDoseButton: View {
 			},
 			onQuickLogSuccess: succeeded)
 		.accessibilityLabel("Log dose")
-		.accessibilityHint(lastMedication.map { "Choose a medication, or hold to log the default dose for \($0.displayName)" } ?? "Choose a medication to record a dose")
+		.accessibilityHint(quickLogMedication.map { "Choose a medication, or hold to log the default dose for \($0.displayName)" } ?? "Choose a medication to record a dose")
 		.accessibilityActions {
-			if let medication = lastMedication, let onQuickLog {
+			if let medication = quickLogMedication, let onQuickLog {
 				Button("Quick log default dose for \(medication.displayName)") {
 					Task { if await onQuickLog() { succeeded() } }
 				}
 			}
 		}
 		.popoverTip(AppTips.isConfigured ? LogDoseTip() : nil)
+		// Replacing the target cancels an unfinished hold through the gesture's onDisappear.
+		.id(quickLogMedication?.id)
 		.padding(.trailing, 20)
 		.padding(.bottom, 16)
 	}

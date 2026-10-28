@@ -167,9 +167,14 @@ struct MedicationTrendsView: View {
 		LogDosePickerModel.medications(from: quickLogCoordinator.sortedMedications)
 	}
 
+	private var floatingQuickLogMedication: ANMedicationConcept? {
+		guard let selected = viewModel.selectedMedication else { return nil }
+		return loggableMedications.first { $0.id == selected.id }
+	}
+
 	private var primaryLogDoseButton: some View {
-		let medication = DataStore.shared.lastLoggedMedication
-		return FloatingLogDoseButton(lastMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
+		let medication = floatingQuickLogMedication
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
 			pendingPickerMedication = nil
 			pickerQuery = ""
 			showLogDosePicker = true
@@ -177,6 +182,7 @@ struct MedicationTrendsView: View {
 	}
 
 	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		guard floatingQuickLogMedication?.id == medication.id else { return false }
 		let saved = await quickLogCoordinator.quickLog(medication: medication)
 		if !saved { quickLogError = true }
 		return saved
