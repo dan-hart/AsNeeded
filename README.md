@@ -37,7 +37,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 ### Key Features
 
-- **Privacy-first storage and insights**: Local-first data, no tracking, full export/import, and on-device Trends questions that never send your logs off-device for processing
+- **Privacy-first storage and insights**: Local-first data, no tracking, and full export/import
 - **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
 - **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
@@ -88,6 +88,8 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 ---
 
 ## Development
+
+**1.2.0 is feature-frozen as of October 27, 2026.** Remaining work is testing, bug fixes, and restrained refinement of existing flows. See the [stabilization checklist](docs/testing/1.2.0-stabilization.md).
 
 ### Building from Command Line
 ```bash
