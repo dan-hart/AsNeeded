@@ -1008,7 +1008,7 @@ struct MedicationEditView: View {
 					saveFooter
 				}
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button {
 							if hasChanges { showingDiscardConfirmation = true } else { onCancel() }
                         } label: {

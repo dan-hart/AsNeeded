@@ -22,7 +22,7 @@ For architecture/concurrency, also load `ai-rules/ios-development.md`; for scree
 ## Established Patterns
 
 - Important actions should prefer sticky bottom buttons with scrollable content above and a material or glass-backed action area below.
-- Sheet toolbars should use a leading close action and an accent-styled confirmation action unless a sticky bottom CTA replaces the trailing action.
+- A sheet with only an X in its navigation toolbar places it at `.topBarTrailing`. Keyboard accessories and sticky bottom actions do not change this rule. With other navigation-toolbar actions, retain native leading cancel and trailing confirmation/action placements.
 - For iOS 26+ Liquid Glass work, prefer the existing `docs/LIQUID_GLASS.md` guidance.
 
 ## Avoid

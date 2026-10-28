@@ -492,9 +492,8 @@ struct MedicationHistoryView: View {
 				}
 			}
 		} label: {
-			Label("Medication", systemSymbol: .line3HorizontalDecrease)
+			Label("Filter Medications", systemSymbol: .line3HorizontalDecrease)
 		}
-		.labelStyle(.iconOnly)
 		.popoverTip(AppTips.isConfigured ? HistoryFilterTip() : nil)
 		.accessibilityLabel("History medication filter")
 		.accessibilityValue(historyScopeTitle)
@@ -778,7 +777,7 @@ struct MedicationHistoryView: View {
 						}
 						.customNavigationTitle("Edit Note")
 						.toolbar {
-							ToolbarItem(placement: .cancellationAction) {
+							ToolbarItem(placement: .topBarTrailing) {
 								Button {
 									if editingNoteText != (displayNote(for: event) ?? "") {
 										showDiscardNoteChanges = true

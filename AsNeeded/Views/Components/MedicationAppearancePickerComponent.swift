@@ -113,7 +113,7 @@ struct MedicationAppearancePickerComponent: View {
 			.navigationTitle("Medication Appearance")
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
+				ToolbarItem(placement: .topBarTrailing) {
 					Button(role: .close) {
 						dismiss()
 						onCancel()

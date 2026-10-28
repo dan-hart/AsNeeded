@@ -105,9 +105,11 @@ struct LogConsentSheetView: View {
             .navigationTitle("Include App Logs?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                Button(role: .close) {
-                    dismiss()
-                }
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
+				}
             }
             .tint(.accent)
         }

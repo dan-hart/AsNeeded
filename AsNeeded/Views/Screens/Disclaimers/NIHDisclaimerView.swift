@@ -184,9 +184,11 @@ struct NIHFullDisclaimerView: View {
             }
             .customNavigationTitle("NIH Data Attribution", displayMode: .large)
             .toolbar {
-                Button(role: .close) {
-                    dismiss()
-                }
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
+				}
             }
             .tint(.accent)
         }

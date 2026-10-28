@@ -161,9 +161,11 @@ struct MoreDisclaimerInfoView: View {
             }
             .customNavigationTitle("Medical Disclaimer")
             .toolbar {
-                Button(role: .close) {
-                    dismiss()
-                }
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
+				}
             }
             .tint(.accent)
         }

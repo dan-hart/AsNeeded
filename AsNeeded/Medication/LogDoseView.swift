@@ -965,7 +965,7 @@ struct LogDoseView: View {
 							.font(.customFont(fontFamily, style: .body))
 					}
 				}
-				ToolbarItem(placement: .cancellationAction) {
+				ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .close) {
 					if hasChanges { draft.showingDiscardConfirmation = true } else { dismiss() }
                 }

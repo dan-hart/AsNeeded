@@ -49,8 +49,10 @@ struct AlternativeFeedbackView: View {
 			}
 			.customNavigationTitle("Send Feedback")
 			.toolbar {
-				Button(role: .close) {
-					dismiss()
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
 				}
 			}
 			.tint(.accent)

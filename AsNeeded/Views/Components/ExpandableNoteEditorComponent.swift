@@ -200,7 +200,7 @@ struct ExpandableNoteEditorComponent: View {
 			}
 			.customNavigationTitle(hasContent ? "Edit Note" : "Add Note")
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
+				ToolbarItem(placement: .topBarTrailing) {
 					Button(role: .close) {
 						if hasUnsavedChanges {
 							showingDiscardConfirmation = true

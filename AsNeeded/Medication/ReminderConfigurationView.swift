@@ -119,9 +119,11 @@ struct ReminderConfigurationView: View {
             .background(Color(.systemGroupedBackground))
             .customNavigationTitle("Schedule Reminder")
             .toolbar {
-                Button(role: .close) {
-                    dismiss()
-                }
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
+				}
             }
             .tint(.accent)
             .disabled(isScheduling)

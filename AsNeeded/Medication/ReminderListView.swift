@@ -37,7 +37,7 @@ struct ReminderListView: View {
             }
             .customNavigationTitle("Scheduled Reminders")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+				ToolbarItem(placement: reminders.isEmpty ? .topBarTrailing : .cancellationAction) {
                     Button(role: .close) {
                         dismiss()
                     }

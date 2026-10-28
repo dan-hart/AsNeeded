@@ -713,7 +713,7 @@ struct AutomaticBackupView: View {
             }
             .customNavigationTitle("Setup Backup")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         viewModel.showingPrivacyOnboarding = false
                     } label: {
@@ -792,7 +792,7 @@ struct AutomaticBackupView: View {
 			}
 			.customNavigationTitle("Restore Backup")
 			.toolbar {
-				ToolbarItem(placement: .cancellationAction) {
+				ToolbarItem(placement: .topBarTrailing) {
 					Button {
 						viewModel.showingRestoreSheet = false
 					} label: {

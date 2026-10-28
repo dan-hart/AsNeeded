@@ -346,6 +346,12 @@ struct DataManagementView: View {
         .sheet(isPresented: $showSupportView) {
             NavigationView {
                 SupportView()
+					.toolbar {
+						ToolbarItem(placement: .topBarTrailing) {
+							Button(role: .close) { showSupportView = false }
+								.accessibilityLabel("Close support")
+						}
+					}
             }
         }
         .onAppear {

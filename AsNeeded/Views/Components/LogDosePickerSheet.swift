@@ -47,8 +47,10 @@ struct LogDosePickerSheet: View {
 			.demoMedicationSearch(query: $query)
 			.customNavigationTitle("Choose Medication", displayMode: .inline)
 			.toolbar {
-				Button(role: .close) { dismiss() }
-					.accessibilityLabel("Close medication picker")
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) { dismiss() }
+						.accessibilityLabel("Close medication picker")
+				}
 			}
 			.tint(.accent)
 		}

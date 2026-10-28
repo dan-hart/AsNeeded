@@ -26,7 +26,7 @@ struct AutomaticBackupExplainerView: View {
             }
             .customNavigationTitle("How It Works")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         dismiss()
                     } label: {

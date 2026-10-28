@@ -168,6 +168,12 @@ struct MedicationListView: View {
                 .sheet(isPresented: $viewModel.showSupportView) {
                     NavigationView {
                         SupportView()
+							.toolbar {
+								ToolbarItem(placement: .topBarTrailing) {
+									Button(role: .close) { viewModel.showSupportView = false }
+										.accessibilityLabel("Close support")
+								}
+							}
                     }
                 }
                 .overlay(alignment: .top) {

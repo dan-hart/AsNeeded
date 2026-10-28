@@ -132,7 +132,15 @@ struct MedicationTrendsView: View {
 
 			}
 			.sheet(isPresented: $quickLogCoordinator.showSupportView) {
-				NavigationStack { SupportView() }
+				NavigationStack {
+					SupportView()
+						.toolbar {
+							ToolbarItem(placement: .topBarTrailing) {
+								Button(role: .close) { quickLogCoordinator.showSupportView = false }
+									.accessibilityLabel("Close support")
+							}
+						}
+				}
 			}
 			.sheet(isPresented: $showLogDosePicker, onDismiss: {
 				pickerQuery = ""
@@ -221,7 +229,7 @@ struct MedicationTrendsView: View {
 				}
 			}
 		} label: {
-			Label("Medication", systemSymbol: .pills)
+			Label("Filter Medications", systemSymbol: .line3HorizontalDecrease)
 		}
 		.disabled(viewModel.medications.isEmpty)
 		.accessibilityLabel("Trends medication filter")

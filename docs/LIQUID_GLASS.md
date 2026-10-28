@@ -15,10 +15,11 @@ For toolbar buttons:
 - Keep text buttons in the selected app font at the standard body style, without extra bold/size treatment. Native symbol labels use system sizing.
 - Use `ToolbarItemGroup` for multiple items rather than placing a custom `HStack` in one item. Use a normal trailing placement for a visible More menu; `.secondaryAction` may place it in a system overflow menu.
 - Keep one primary Save action per sheet. If a sticky Save button exists, do not repeat it in the toolbar.
+- If X is the only navigation-toolbar action, place it at `.topBarTrailing`. With other navigation-toolbar actions, retain native leading cancel and trailing confirmation/action placements. Keep native labels so iOS can show symbols or text for the available space.
 
 ```swift
 .toolbar {
-	ToolbarItem(placement: .cancellationAction) {
+	ToolbarItem(placement: .topBarTrailing) {
 		Button { closeEditor() } label: {
 			Image(systemSymbol: .xmark)
 		}
