@@ -167,10 +167,12 @@ struct MedicationRowComponent: View {
     private var medicationHeader: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Text(medication.displayName)
-                    .font(.customFont(fontFamily, style: .headline, weight: .bold))
-                    .noTruncate()
-                    .foregroundStyle(.primary)
+				CopyableText(
+					medication.displayName,
+					font: .customFont(fontFamily, style: .headline, weight: .bold),
+					color: .primary,
+					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
+				)
                     .accessibilityAddTraits(.isHeader)
 
                 if medication.isArchived {
@@ -185,7 +187,8 @@ struct MedicationRowComponent: View {
                 CopyableText(
                     medication.clinicalName,
                     font: .customFont(fontFamily, style: .caption),
-                    color: .secondary
+                    color: .secondary,
+					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
                 )
             }
         }

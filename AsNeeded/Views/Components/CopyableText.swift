@@ -2,10 +2,10 @@ import SFSafeSymbols
 import SwiftUI
 import UIKit
 
-/// A text view that can be copied to clipboard via tap gesture
+/// A text view that can be copied to clipboard via a long press.
 ///
 /// Features:
-/// - Tap gesture to copy text immediately to clipboard
+/// - Long press to copy, with a separate optional tap action
 /// - Inline "Copied to Clipboard!" confirmation message
 /// - Haptic feedback on copy action
 /// - Completion handler for parent view notifications
@@ -27,6 +27,7 @@ struct CopyableText: View {
 	let font: Font
 	let weight: Font.Weight?
 	let color: Color
+	var onTap: (() -> Void)?
 	var onCopied: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
@@ -39,12 +40,14 @@ struct CopyableText: View {
 		font: Font,
 		weight: Font.Weight? = nil,
 		color: Color = .secondary,
+		onTap: (() -> Void)? = nil,
 		onCopied: (() -> Void)? = nil
 	) {
 		self.text = text
 		self.font = font
 		self.weight = weight
 		self.color = color
+		self.onTap = onTap
 		self.onCopied = onCopied
 	}
 
@@ -58,12 +61,22 @@ struct CopyableText: View {
 			.animation(.easeInOut(duration: 0.1), value: isPressed)
 			.animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedMessage)
 			.contentShape(Rectangle())
-			.onTapGesture {
-				copyToClipboard()
-			}
+			.gesture(
+				LongPressGesture(minimumDuration: 0.5)
+					.exclusively(before: TapGesture())
+					.onEnded { result in
+						switch result {
+						case .first(true): copyToClipboard()
+						case .second: onTap?()
+						default: break
+						}
+					}
+			)
 			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
-			.accessibilityHint("Tap to copy clinical name to clipboard")
+			.accessibilityHint(onTap == nil ? "Long press to copy name to clipboard" : "Tap to view medication details. Long press to copy name to clipboard")
 			.accessibilityAddTraits(.isButton)
+			.accessibilityAction { onTap?() }
+			.accessibilityAction(named: "Copy name") { copyToClipboard() }
 	}
 
 	// MARK: - Private Methods
