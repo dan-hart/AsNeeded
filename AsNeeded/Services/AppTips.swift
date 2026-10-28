@@ -16,7 +16,7 @@ struct LogDoseTip: Tip {
 	var rules: [Rule] {
 		#Rule(Self.$hasLearnedQuickLog) { $0 == false }
 	}
-	var options: [any TipOption] { MaxDisplayCount(3) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
 }
 
 struct HistoryFilterTip: Tip {
@@ -44,6 +44,20 @@ struct TrendsRangeTip: Tip {
 	var options: [any TipOption] { MaxDisplayCount(1) }
 }
 
+struct DoseTimeTip: Tip {
+	var title: Text { Text("Logging an earlier dose?") }
+	var message: Text? { Text("Tap the date and time to choose when you took it, or use a quick time below.") }
+	var image: Image? { Image(systemSymbol: .clock) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct BackupDiscoveryTip: Tip {
+	var title: Text { Text("Keep a copy of your records") }
+	var message: Text? { Text("Find automatic backups and export options in Data & Privacy. You choose where to save them.") }
+	var image: Image? { Image(systemSymbol: .externaldrive) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
 @MainActor
 enum AppTips {
 	private(set) static var isConfigured = false
@@ -51,7 +65,7 @@ enum AppTips {
 	static func configure(defaults: UserDefaults = .standard) {
 		guard !isConfigured else { return }
 		do {
-			try Tips.configure([.displayFrequency(.hourly)])
+			try Tips.configure([.displayFrequency(.daily)])
 			isConfigured = true
 			// Existing users who learned or dismissed the former hint are not taught it again.
 			LogDoseTip.hasLearnedQuickLog = defaults.bool(forKey: UserDefaultsKeys.hasDiscoveredQuickLog)

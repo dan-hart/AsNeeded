@@ -5,6 +5,7 @@ import ANModelKit
 import DHLoggingKit
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 struct LogDoseView: View {
 	@MainActor
@@ -412,6 +413,7 @@ struct LogDoseView: View {
             VStack(spacing: quickButtonSpacing) {
                 // Date Display Button
                 Button(action: {
+					DoseTimeTip().invalidate(reason: .actionPerformed)
                     withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                         draft.showingDatePicker.toggle()
                         hapticsManager.selectionChanged()
@@ -445,6 +447,7 @@ struct LogDoseView: View {
                 .accessibilityLabel("Dose time")
                 .accessibilityValue(draft.selectedDate.formatted(date: .abbreviated, time: .shortened))
                 .accessibilityHint("Tap to show or hide the date picker")
+				.popoverTip(AppTips.isConfigured ? DoseTimeTip() : nil)
 
                 if draft.showingDatePicker {
                     DatePicker(
@@ -472,6 +475,7 @@ struct LogDoseView: View {
 				) {
 					ForEach(Self.quickTimeSelections, id: \.label) { label, secondsAgo in
                         Button(action: {
+							DoseTimeTip().invalidate(reason: .actionPerformed)
                             withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                                 draft.selectedDate = Date().addingTimeInterval(-secondsAgo)
                                 draft.selectedQuickOption = label

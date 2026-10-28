@@ -1,5 +1,6 @@
 import SwiftUI
 import SFSafeSymbols
+import TipKit
 
 struct SettingsDataSectionView: View {
 	@Environment(\.fontFamily) private var fontFamily
@@ -25,6 +26,7 @@ struct SettingsDataSectionView: View {
 			.buttonStyle(.plain)
 			.accessibilityLabel("Data and Privacy")
 			.accessibilityHint("Backup, export, import, and privacy choices")
+			.popoverTip(AppTips.isConfigured ? BackupDiscoveryTip() : nil)
 		}
 	}
 }
