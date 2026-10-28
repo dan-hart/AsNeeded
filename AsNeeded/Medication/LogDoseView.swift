@@ -8,6 +8,9 @@ import SwiftUI
 import TipKit
 
 struct LogDoseView: View {
+	private enum ScrollTarget {
+		case guidance
+	}
 	@MainActor
 	final class Draft: ObservableObject {
 		@Published var amount: Double
@@ -637,6 +640,36 @@ struct LogDoseView: View {
         .accessibilityLabel(guidanceAccessibilityLabel)
     }
 
+	private func reviewGuidanceButton(proxy: ScrollViewProxy) -> some View {
+		Button {
+			amountIsFocused = false
+			UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+			withAnimation(reduceMotion ? nil : .easeInOut) {
+				proxy.scrollTo(ScrollTarget.guidance, anchor: .top)
+			}
+		} label: {
+			HStack(spacing: 12) {
+				Image(systemSymbol: .exclamationmarkTriangleFill)
+					.accessibilityHidden(true)
+				Text("Review before logging")
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					.noTruncate()
+				Spacer(minLength: 0)
+				Image(systemSymbol: .arrowDown)
+					.accessibilityHidden(true)
+			}
+			.font(.customFont(fontFamily, style: .body))
+			.foregroundStyle(.black)
+			.padding(16)
+			.frame(maxWidth: .infinity, minHeight: 44)
+			.background(.yellow, in: RoundedRectangle(cornerRadius: 12))
+		}
+		.buttonStyle(.plain)
+		.padding(.horizontal)
+		.padding(.top, topPadding)
+		.accessibilityHint("Scroll to the dose check warning")
+	}
+
     private var reflectionSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             sectionHeaderLayout {
@@ -873,8 +906,12 @@ struct LogDoseView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+				ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: contentSpacing) {
+						if assessment.severity != .clear {
+							reviewGuidanceButton(proxy: proxy)
+						}
                         headerCard
                             .padding(.top, topPadding)
 
@@ -887,6 +924,7 @@ struct LogDoseView: View {
 							safetyProfile.minimumHoursBetweenDoses != nil ||
 							assessment.maxDailyAmount != nil {
 							guidanceSection
+								.id(ScrollTarget.guidance)
 						}
 
                         reflectionSection
@@ -901,6 +939,7 @@ struct LogDoseView: View {
                 )
                 .scrollDismissesKeyboard(.interactively)
 				.disabled(draft.isLogging)
+				}
 
                 // Sticky button container
                 VStack(spacing: 0) {
