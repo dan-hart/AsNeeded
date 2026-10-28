@@ -6,7 +6,7 @@ import TipKit
 /// The same chooser and last-recorded quick-log action on each logging tab.
 struct FloatingLogDoseButton: View {
 	let lastMedication: ANMedicationConcept?
-	var tint: Color? = nil
+	var tint: Color = .accent
 	let onChoose: () -> Void
 	let onQuickLog: (() async -> Bool)?
 	var onSuccess: () -> Void = {}
@@ -19,7 +19,7 @@ struct FloatingLogDoseButton: View {
 	@State private var holdProgress: Double = 0
 
 	var body: some View {
-		let palette = (tint ?? lastMedication?.displayColor ?? .accent).filledButtonColors(for: colorScheme, contrast: contrast)
+		let palette = tint.filledButtonColors(for: colorScheme, contrast: contrast)
 		Button(action: choose) {
 			Label("Log Dose", systemSymbol: .plusCircleFill)
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))

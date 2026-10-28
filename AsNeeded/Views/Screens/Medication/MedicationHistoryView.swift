@@ -434,7 +434,7 @@ struct MedicationHistoryView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = DataStore.shared.lastLoggedMedication
-		return FloatingLogDoseButton(lastMedication: medication, onChoose: {
+		return FloatingLogDoseButton(lastMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
 			pendingPickerMedication = nil
 			pickerQuery = ""
 			showLogDosePicker = true
