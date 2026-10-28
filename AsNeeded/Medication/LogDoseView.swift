@@ -253,7 +253,7 @@ struct LogDoseView: View {
     // MARK: - View Components
 
     private var headerCard: some View {
-		HStack(alignment: .top, spacing: quickButtonSpacing) {
+		HStack(alignment: .center, spacing: quickButtonSpacing) {
 			// Medication Icon
 			Image(systemName: medication.effectiveDisplaySymbol)
 				.resizable()
@@ -264,7 +264,6 @@ struct LogDoseView: View {
 				.padding(18)
 				.background(medication.displayColor.dynamicFilledButtonBackground, in: Circle())
 				.shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
-				.padding(.top, topPadding)
 				.accessibilityHidden(true)
 
             // Medication Name
@@ -280,6 +279,7 @@ struct LogDoseView: View {
                         .noTruncate()
                 }
             }
+			.padding(.leading, 8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(sectionPadding)
