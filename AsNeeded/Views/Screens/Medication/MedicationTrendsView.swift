@@ -79,7 +79,7 @@ struct MedicationTrendsView: View {
 						metricsView(for: med)
 					} else {
 						controlsSection
-						Text(viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication above to see its trends.")
+						Text(viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication in the toolbar to see its trends.")
 							.font(.customFont(fontFamily, style: .body))
 							.foregroundStyle(.secondary)
 							.frame(maxWidth: .infinity, alignment: .leading)
@@ -101,6 +101,15 @@ struct MedicationTrendsView: View {
 				if !loggableMedications.isEmpty { primaryLogDoseButton }
 			}
 			.customNavigationTitle("Trends", displayMode: .large)
+			.navigationSubtitle(Text("\(viewModel.selectedMedication?.displayName ?? "Select Medication") · \(daysWindow) Days")
+				.font(.customFont(fontFamily, style: .subheadline)))
+			.toolbar {
+				ToolbarItemGroup(placement: .topBarTrailing) {
+					medicationMenu
+					timeRangeMenu
+				}
+			}
+			.tint(.accent)
 			.alert("Couldn’t Log Dose", isPresented: $quickLogError) {
 				Button("OK", role: .cancel) {}
 			} message: { Text("We couldn’t save this change. Please try again.") }
@@ -178,53 +187,6 @@ struct MedicationTrendsView: View {
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
 
-			let controlsLayout = dynamicTypeSize.isAccessibilitySize
-				? AnyLayout(VStackLayout(alignment: .leading, spacing: controlsSpacing))
-				: AnyLayout(HStackLayout(alignment: .center, spacing: controlsSpacing))
-			controlsLayout {
-				Menu {
-					ForEach(viewModel.medications, id: \.id) { med in
-						Button {
-							viewModel.selectedMedicationID = med.id
-						} label: {
-							Text(med.displayName)
-								.font(.customFont(fontFamily, style: .body))
-						}
-					}
-				} label: {
-					HStack {
-						Text(viewModel.selectedMedication?.displayName ?? "Select Medication")
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-							.noTruncate()
-
-						Image(systemSymbol: .chevronUpChevronDown)
-							.font(.customFont(fontFamily, style: .caption2))
-							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-					}
-					.frame(maxWidth: .infinity, alignment: .leading)
-					.frame(minHeight: 44)
-				}
-				.accessibilityLabel("Medication")
-				.accessibilityValue(viewModel.selectedMedication?.displayName ?? "Not selected")
-
-				Picker("Range", selection: $daysWindow) {
-					Text("14 Days")
-						.font(.customFont(fontFamily, style: .body))
-						.tag(14)
-					Text("30 Days")
-						.font(.customFont(fontFamily, style: .body))
-						.tag(30)
-					Text("90 Days")
-						.font(.customFont(fontFamily, style: .body))
-						.tag(90)
-				}
-				.font(.customFont(fontFamily, style: .body))
-				.pickerStyle(.menu)
-				.popoverTip(AppTips.isConfigured ? TrendsRangeTip() : nil)
-				.tint(.accent)
-				.frame(minHeight: 44)
-			}
 
 			if dynamicTypeSize.isAccessibilitySize {
 				visualizationPicker
@@ -236,6 +198,40 @@ struct MedicationTrendsView: View {
 		}
 		.padding(clinicalCardPadding)
 		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
+	}
+
+	private var medicationMenu: some View {
+		Menu {
+			Picker("Medication", selection: $viewModel.selectedMedicationID) {
+				ForEach(viewModel.medications, id: \.id) { medication in
+					Text(medication.displayName)
+						.font(.customFont(fontFamily, style: .body))
+						.tag(Optional(medication.id))
+				}
+			}
+		} label: {
+			Label("Medication", systemSymbol: .pills)
+		}
+		.disabled(viewModel.medications.isEmpty)
+		.accessibilityLabel("Trends medication filter")
+		.accessibilityValue(viewModel.selectedMedication?.displayName ?? "Not selected")
+	}
+
+	private var timeRangeMenu: some View {
+		Menu {
+			Picker("Time Range", selection: $daysWindow) {
+				ForEach([14, 30, 90], id: \.self) { days in
+					Text("\(days) Days")
+						.font(.customFont(fontFamily, style: .body))
+						.tag(days)
+				}
+			}
+		} label: {
+			Label("\(daysWindow) Days", systemSymbol: .calendar)
+		}
+		.accessibilityLabel("Trends time range")
+		.accessibilityValue("\(daysWindow) days")
+		.popoverTip(AppTips.isConfigured ? TrendsRangeTip() : nil)
 	}
 
 	private var visualizationPicker: some View {
