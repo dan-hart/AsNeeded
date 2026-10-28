@@ -117,6 +117,7 @@ struct LogDoseView: View {
 
 	private static let quickTimeSelections: [(label: String, secondsAgo: TimeInterval)] = [
 		("Now", 0),
+		("15 min ago", 900),
 		("30 min ago", 1_800),
 		("1 hour ago", 3_600),
 		("4 hours ago", 14_400),
@@ -709,18 +710,42 @@ struct LogDoseView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-			Picker(title, selection: selection) {
-                ForEach(0 ... 5, id: \.self) { value in
-					Text(value == 0 ? "Not rated" : "\(value) of 5")
-						.font(.customFont(fontFamily, style: .body))
-						.tag(value)
-                }
-            }
-			.pickerStyle(.menu)
-			.labelsHidden()
-			.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+			Text(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+				.font(.customFont(fontFamily, style: .body, weight: .medium))
+				.foregroundStyle(.primary)
+
+			Slider(
+				value: Binding(
+					get: { Double(selection.wrappedValue) },
+					set: { selection.wrappedValue = Int($0.rounded()) }
+				),
+				in: 0 ... 5,
+				step: 1
+			) {
+				Text("\(title): \(subtitle)")
+					.font(.customFont(fontFamily, style: .body))
+			} currentValueLabel: {
+				Text(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+					.font(.customFont(fontFamily, style: .body))
+			} minimumValueLabel: {
+				Text("Not rated")
+					.font(.customFont(fontFamily, style: .caption))
+			} maximumValueLabel: {
+				Text("5")
+					.font(.customFont(fontFamily, style: .caption))
+			}
+			.frame(maxWidth: .infinity, minHeight: 44)
 			.tint(.accent)
+			.accessibilityElement(children: .ignore)
 			.accessibilityLabel("\(title): \(subtitle)")
+			.accessibilityValue(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+			.accessibilityAdjustableAction { direction in
+				switch direction {
+				case .increment: selection.wrappedValue = min(5, selection.wrappedValue + 1)
+				case .decrement: selection.wrappedValue = max(0, selection.wrappedValue - 1)
+				@unknown default: break
+				}
+			}
         }
 		.frame(maxWidth: .infinity, alignment: .leading)
         .padding(standardPadding)
