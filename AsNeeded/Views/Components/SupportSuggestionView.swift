@@ -7,6 +7,7 @@ struct SupportSuggestionView: View {
 	@State private var isDismissed = false
 
 	var message: String = "Consider supporting continued development"
+	let onSupportTapped: () -> Void
 
 	var body: some View {
 		if !hideSupportBanners && !isDismissed {
@@ -15,13 +16,10 @@ struct SupportSuggestionView: View {
 				onDismiss: { isDismissed = true },
 				onHide: { hideSupportBanners = true }
 			) { label in
-				NavigationLink {
-					SupportView()
-				} label: {
+				Button(action: onSupportTapped) {
 					label
 				}
 				.buttonStyle(.plain)
-				.navigationLinkIndicatorVisibility(.hidden)
 			}
 			.padding(.horizontal, 16)
 			.padding(.top, 8)
@@ -149,7 +147,7 @@ struct SupportBannerLabel: View {
 	#Preview {
 		NavigationStack {
 			List {
-				SupportSuggestionView()
+				SupportSuggestionView(onSupportTapped: {})
 					.listRowBackground(Color.clear)
 					.listRowSeparator(.hidden)
 			}

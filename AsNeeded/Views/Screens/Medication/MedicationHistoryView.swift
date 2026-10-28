@@ -5,6 +5,7 @@ import SwiftUI
 import TipKit
 
 struct MedicationHistoryView: View {
+	@State private var showSupportPage = false
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var viewModel = MedicationHistoryViewModel()
 	// Reuse the existing atomic dose/Undo coordinator on both tabs.
@@ -264,7 +265,7 @@ struct MedicationHistoryView: View {
 					}
 					.id(group.day)
 				}
-				SupportSuggestionView()
+				SupportSuggestionView(onSupportTapped: { showSupportPage = true })
 					.listRowInsets(EdgeInsets())
 					.listRowBackground(Color.clear)
 					.listRowSeparator(.hidden)
@@ -534,6 +535,7 @@ struct MedicationHistoryView: View {
 
 				}
 				.customNavigationTitle("History", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 				.navigationSubtitle(Text(historyScopeTitle).font(.customFont(fontFamily, style: .subheadline)))
 				.toolbar {
 					ToolbarItemGroup(placement: .topBarTrailing) {

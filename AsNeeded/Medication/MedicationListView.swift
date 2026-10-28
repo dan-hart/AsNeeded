@@ -6,6 +6,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicationListView: View {
+	@State private var showSupportPage = false
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var navigationManager = NavigationManager.shared
     @Binding var navigationPath: NavigationPath
@@ -42,6 +43,7 @@ struct MedicationListView: View {
         mainContent
 			.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
             .customNavigationTitle("Medication", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 			.safeAreaInset(edge: .bottom, spacing: 0) {
 				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
 					Color.clear.frame(height: floatingButtonClearance)
@@ -357,7 +359,7 @@ struct MedicationListView: View {
                 .onDelete(perform: viewModel.deleteMedications)
 
 				if viewModel.editMode == .inactive {
-					SupportSuggestionView()
+					SupportSuggestionView(onSupportTapped: { showSupportPage = true })
 						.listRowInsets(EdgeInsets())
 						.listRowBackground(Color.clear)
 						.listRowSeparator(.hidden)

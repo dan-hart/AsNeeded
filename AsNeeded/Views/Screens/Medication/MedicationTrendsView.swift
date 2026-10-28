@@ -24,6 +24,7 @@ enum VisualizationType: String, CaseIterable {
 }
 
 struct MedicationTrendsView: View {
+	@State private var showSupportPage = false
 	@StateObject private var viewModel = MedicationTrendsViewModel()
 	@StateObject private var quickLogCoordinator = MedicationListViewModel()
 	@StateObject private var doseLogSession = LogDoseView.Session()
@@ -87,7 +88,7 @@ struct MedicationTrendsView: View {
 
 					if viewModel.selectedMedication != nil,
 					   viewModel.dailyTotals(last: daysWindow).contains(where: { $0.total > 0 }) {
-						SupportSuggestionView()
+						SupportSuggestionView(onSupportTapped: { showSupportPage = true })
 							.padding(.bottom, chartContainerPadding)
 					}
 				}
@@ -101,6 +102,7 @@ struct MedicationTrendsView: View {
 				if !loggableMedications.isEmpty { primaryLogDoseButton }
 			}
 			.customNavigationTitle("Trends", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 			.navigationSubtitle(Text("\(viewModel.selectedMedication?.displayName ?? "Select Medication") · \(daysWindow) Days")
 				.font(.customFont(fontFamily, style: .subheadline)))
 			.toolbar {
