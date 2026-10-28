@@ -127,6 +127,8 @@ struct SupportView: View {
                 // Rate & Review CTA (between tips and subscriptions)
                 rateAndReviewButton
 
+				aboutButton
+
                 // Subscription Options
                 subscriptionOptions
 
@@ -263,6 +265,39 @@ struct SupportView: View {
         .buttonStyle(.plain)
         .padding(.top, headerPaddingV)
     }
+
+	private var aboutButton: some View {
+		NavigationLink {
+			AboutView()
+		} label: {
+			HStack(spacing: rowSpacing) {
+				Image(systemSymbol: .infoCircle)
+					.font(.customFont(fontFamily, style: .title3))
+					.foregroundColor(.accent)
+
+				VStack(alignment: .leading, spacing: labelSpacing) {
+					Text("About As Needed")
+						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+						.foregroundColor(.primary)
+
+					Text("Version, build, and overview")
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundColor(.secondary)
+				}
+
+				Spacer()
+
+				Image(systemSymbol: .chevronRight)
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundColor(.secondary)
+			}
+			.padding(cardPadding)
+			.background(.regularMaterial)
+			.cornerRadius(cardCornerRadius)
+		}
+		.buttonStyle(.plain)
+		.padding(.top, headerPaddingV)
+	}
 
     private var tipJarGrid: some View {
         VStack(alignment: .leading, spacing: rowSpacing) {
