@@ -79,10 +79,11 @@ private struct DemoModeDisableConfirmation: ViewModifier {
 		content.alert("Are you sure you want to turn off demo mode?", isPresented: $isPresented) {
 			Button("No", role: .cancel) {}
 				.keyboardShortcut(.defaultAction)
-			Button("Yes", role: .destructive) {
+			Button("Yes") {
 				demoMode.disableAfterConfirmation()
 			}
 		}
+		.tint(.accent)
 	}
 }
 
