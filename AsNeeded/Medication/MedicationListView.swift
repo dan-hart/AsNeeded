@@ -47,7 +47,7 @@ struct MedicationListView: View {
 				text: loggableMedications.first.map { QuickLogHintPolicy.hintText(for: $0) } ?? "Hold to log",
 				onDismiss: retireQuickLogHint
 			)
-            .customNavigationTitle("Medication")
+            .customNavigationTitle("Medication", displayMode: .large)
 			.safeAreaInset(edge: .bottom, spacing: 0) {
 				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
 					Color.clear.frame(height: floatingButtonClearance)

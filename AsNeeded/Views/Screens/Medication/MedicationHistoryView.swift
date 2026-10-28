@@ -468,6 +468,63 @@ struct MedicationHistoryView: View {
 			}
 	}
 
+	private var historyFilterControls: some View {
+		VStack(spacing: 0) {
+			// Medication picker and date button
+			let pickerLayout = dynamicTypeSize.isAccessibilitySize
+				? AnyLayout(VStackLayout(alignment: .leading, spacing: rowSpacing))
+				: AnyLayout(HStackLayout(alignment: .center, spacing: rowSpacing))
+			pickerLayout {
+				Menu {
+					Button {
+						viewModel.selectedMedicationID = "all"
+					} label: {
+						Text("All", comment: "Option to view all medications in history")
+					}
+					ForEach(viewModel.medications, id: \.id) { medication in
+						Button {
+							viewModel.selectedMedicationID = medication.id.uuidString
+						} label: {
+							Text(medication.displayName)
+						}
+					}
+				} label: {
+					HStack {
+						Text(viewModel.isShowingAllMedications ? "All" : (viewModel.selectedMedication?.displayName ?? "All"))
+							.font(.customFont(fontFamily, style: .body))
+							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+							.noTruncate()
+						Image(systemSymbol: .chevronUpChevronDown)
+							.font(.customFont(fontFamily, style: .caption2))
+							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+					}
+					.frame(minHeight: 44)
+				}
+				.accessibilityLabel("History medication filter")
+				.accessibilityValue(viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.displayName ?? "All medications"))
+
+				Spacer()
+
+				Button {
+					showDatePicker = true
+				} label: {
+					Label("Jump to Date", systemSymbol: .calendar)
+						.labelStyle(.titleAndIcon)
+						.font(.customFont(fontFamily, style: .callout))
+						.foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
+						.frame(minHeight: 44)
+				}
+				.disabled(viewModel.groupedHistory.isEmpty)
+				.accessibilityLabel("Jump to date")
+			}
+			.padding(.horizontal)
+			.padding(.vertical, pickerContainerPaddingV)
+
+			Divider()
+		}
+		.background(Color(.systemBackground), ignoresSafeAreaEdges: [])
+	}
+
 	// MARK: - Body
 
 	var body: some View {
@@ -475,58 +532,6 @@ struct MedicationHistoryView: View {
 			NavigationStack {
 				ZStack(alignment: .bottomTrailing) {
 					VStack(alignment: .leading, spacing: 0) {
-						// Medication picker and date button
-						let pickerLayout = dynamicTypeSize.isAccessibilitySize
-							? AnyLayout(VStackLayout(alignment: .leading, spacing: rowSpacing))
-							: AnyLayout(HStackLayout(alignment: .center, spacing: rowSpacing))
-						pickerLayout {
-							Menu {
-								Button {
-									viewModel.selectedMedicationID = "all"
-								} label: {
-									Text("All", comment: "Option to view all medications in history")
-								}
-								ForEach(viewModel.medications, id: \.id) { medication in
-									Button {
-										viewModel.selectedMedicationID = medication.id.uuidString
-									} label: {
-										Text(medication.displayName)
-									}
-								}
-							} label: {
-								HStack {
-									Text(viewModel.isShowingAllMedications ? "All" : (viewModel.selectedMedication?.displayName ?? "All"))
-										.font(.customFont(fontFamily, style: .body))
-										.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-										.noTruncate()
-									Image(systemSymbol: .chevronUpChevronDown)
-										.font(.customFont(fontFamily, style: .caption2))
-										.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-								}
-								.frame(minHeight: 44)
-							}
-							.accessibilityLabel("History medication filter")
-							.accessibilityValue(viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.displayName ?? "All medications"))
-
-							Spacer()
-
-							Button {
-								showDatePicker = true
-							} label: {
-								Label("Jump to Date", systemSymbol: .calendar)
-									.labelStyle(.titleAndIcon)
-									.font(.customFont(fontFamily, style: .callout))
-									.foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
-									.frame(minHeight: 44)
-							}
-							.disabled(viewModel.groupedHistory.isEmpty)
-							.accessibilityLabel("Jump to date")
-						}
-						.padding(.horizontal)
-						.padding(.vertical, pickerContainerPaddingV)
-
-						Divider()
-
 						if viewModel.isShowingAllMedications {
 							if viewModel.groupedHistory.isEmpty {
 								Spacer()
@@ -556,6 +561,9 @@ struct MedicationHistoryView: View {
 							selectionPromptView()
 						}
 					}
+					.safeAreaInset(edge: .top, spacing: 0) {
+						historyFilterControls
+					}
 
 					if let medication = viewModel.selectedMedication {
 						VStack(alignment: .trailing, spacing: 8) {
@@ -583,7 +591,7 @@ struct MedicationHistoryView: View {
 					}
 
 				}
-				.customNavigationTitle("History")
+				.customNavigationTitle("History", displayMode: .large)
 				.overlay(alignment: .top) {
 					if quickLogCoordinator.showQuickLogToast {
 						QuickLogToastView(

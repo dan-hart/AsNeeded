@@ -87,7 +87,7 @@ struct MedicationTrendsView: View {
 				.padding(.horizontal)
 				.padding(.vertical)
 			}
-			.customNavigationTitle("Trends")
+			.customNavigationTitle("Trends", displayMode: .large)
 			.onAppear {
 				viewModel.ensureValidSelection()
 			}
