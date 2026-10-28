@@ -23,7 +23,6 @@ final class MedicationListViewModel: ObservableObject {
     private let statusSummaryService = MedicationStatusSummaryService()
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
-    @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 
     // MARK: - Published Properties
     @Published var showArchivedMedications: Bool = false
@@ -230,11 +229,7 @@ final class MedicationListViewModel: ObservableObject {
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
-            if hideSupportBanners {
-                showQuickLogToast(med: med, dose: dose, sequence: confirmationSequence)
-            } else {
-                triggerSupportToast()
-            }
+			showQuickLogToast(med: med, dose: dose, sequence: confirmationSequence)
             return true
         }
 
@@ -383,19 +378,6 @@ final class MedicationListViewModel: ObservableObject {
 		// Keep the confirmation and Undo available until the person dismisses it.
     }
 
-    private func triggerSupportToast() {
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                self.showSupportToast = true
-            }
-
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                self.showSupportToast = false
-            }
-        }
-    }
 
     private func quantityDetails(quantityWasPresent: Bool) -> String {
         "quantityUpdated=\(quantityWasPresent)"

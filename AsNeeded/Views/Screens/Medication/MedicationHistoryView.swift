@@ -20,8 +20,6 @@ struct MedicationHistoryView: View {
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@State private var logMedication: ANMedicationConcept?
-	@State private var showSupportToast = false
-	@State private var showSupportView = false
 	@State private var currentTime = Date()
 	@State private var scrollTarget: Date?
 	@State private var showDatePicker = false
@@ -252,6 +250,11 @@ struct MedicationHistoryView: View {
 					}
 					.id(group.day)
 				}
+				SupportSuggestionView()
+					.listRowInsets(EdgeInsets())
+					.listRowBackground(Color.clear)
+					.listRowSeparator(.hidden)
+					.environment(\.defaultMinListRowHeight, 0)
 			}
 			.listStyle(.insetGrouped)
 			.onChange(of: scrollTarget) { _, newTarget in
@@ -625,29 +628,10 @@ struct MedicationHistoryView: View {
 				.sheet(item: $logMedication, onDismiss: {
 					if logMedication == nil { doseLogSession.reset() }
 				}) { med in
-					LogDoseView(medication: med, source: "history_sheet", draft: doseLogSession.draft(for: med)) { dose, event, _ in
-						var savedEvent = event
-						savedEvent.medication = med
-						savedEvent.dose = dose
-						do {
-							try await DataStore.shared.recordDose(savedEvent)
-							logMedication = nil
-
-							DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-								withAnimation(.easeInOut(duration: 0.3)) {
-									showSupportToast = true
-								}
-								DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-									withAnimation(.easeInOut(duration: 0.3)) {
-										showSupportToast = false
-									}
-								}
-							}
-
-							return true
-						} catch {
-							return false
-						}
+					LogDoseView(medication: med, source: "history_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+						let saved = await quickLogCoordinator.logDose(med: med, dose: dose, event: event, source: "history_sheet", operationID: operationID)
+						if saved { logMedication = nil }
+						return saved
 					}
 				}
 				.sheet(item: $editingEvent) { event in
@@ -805,23 +789,7 @@ struct MedicationHistoryView: View {
 				viewModel.ensureValidSelection()
 			}
 
-			// Support toast positioned outside NavigationStack to avoid layout interference
-			SupportToastView(
-				message: "Dose logged successfully",
-				supportMessage: "Support As Needed",
-				isVisible: showSupportToast,
-				onDismiss: {
-					withAnimation(.easeInOut(duration: 0.3)) {
-						showSupportToast = false
-					}
-				},
-				onSupportTapped: {
-					withAnimation(.easeInOut(duration: 0.3)) {
-						showSupportToast = false
-						showSupportView = true
-					}
-				}
-			)
+
 		}
 		.sheet(item: $editingEntryEvent) { event in
 			NavigationStack {
@@ -998,11 +966,6 @@ struct MedicationHistoryView: View {
 				Text(viewModel.mutationError ?? "Review History before trying again.")
 			}
 			.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
-		}
-		.sheet(isPresented: $showSupportView) {
-			NavigationView {
-				SupportView()
-			}
 		}
 		.alert("Couldn’t Update History", isPresented: Binding(
 			get: { viewModel.mutationError != nil && editingEvent == nil && editingEntryEvent == nil },

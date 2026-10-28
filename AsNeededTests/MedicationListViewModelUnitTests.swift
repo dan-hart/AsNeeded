@@ -305,8 +305,15 @@ struct MedicationListViewModelUnitTests {
 		#expect(viewModel.showQuickLogToast == false)
 	}
 
-    @Test("logDose correctly logs dose and updates state")
-    func logDoseCorrectlyLogsDose() async throws {
+    @Test("Form logging confirms the dose without a promotional overlay", arguments: [false, true])
+    func logDoseCorrectlyLogsDose(hideBanners: Bool) async throws {
+		let defaults = UserDefaults.standard
+		let previous = defaults.object(forKey: UserDefaultsKeys.hideSupportBanners)
+		defer {
+			if let previous { defaults.set(previous, forKey: UserDefaultsKeys.hideSupportBanners) }
+			else { defaults.removeObject(forKey: UserDefaultsKeys.hideSupportBanners) }
+		}
+		defaults.set(hideBanners, forKey: UserDefaultsKeys.hideSupportBanners)
         // Given
         let medication = createTestMedication(name: "Log Dose Med", quantity: 10.0)
         _ = await viewModel.add(medication)
@@ -326,10 +333,10 @@ struct MedicationListViewModelUnitTests {
         }
         #expect(updatedMed.quantity == 5.0) // Quantity updated
         
-        // Depending on hideSupportBanners, either quickLogToast or supportToast will show
-        // For this test, we ensure hideSupportBanners is false in init
-        try await Task.sleep(nanoseconds: 600_000_000)
-        #expect(viewModel.showSupportToast)
+		#expect(viewModel.showQuickLogToast)
+		#expect(!viewModel.showSupportToast)
+		#expect(viewModel.quickLogMedicationName == medication.displayName)
+		#expect(viewModel.quickLogDoseAmount == dose.amount)
     }
 
     // MARK: - Helper Methods

@@ -2,121 +2,118 @@ import SFSafeSymbols
 import SwiftUI
 
 struct SupportSuggestionView: View {
-    @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
-    @ScaledMetric private var containerSpacing: CGFloat = 8
-    @ScaledMetric private var contentSpacing: CGFloat = 14
-    @ScaledMetric private var iconSize: CGFloat = 36
-    @ScaledMetric private var labelSpacing: CGFloat = 3
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 16
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 8
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 8
-    @ScaledMetric private var borderWidth: CGFloat = 1
+	@Environment(\.fontFamily) private var fontFamily
+	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
+	@State private var isDismissed = false
 
-    var body: some View {
-        if !hideSupportBanners {
-            VStack(spacing: containerSpacing) {
-                NavigationLink {
-                    SupportView()
-                } label: {
-                    HStack(spacing: contentSpacing) {
-                        ZStack {
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.red.opacity(0.1), Color.pink.opacity(0.15)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: iconSize, height: iconSize)
+	var message: String = "Consider supporting continued development"
 
-                            Image(systemSymbol: .heart)
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.red, Color.pink],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                        }
+	var body: some View {
+		if !hideSupportBanners && !isDismissed {
+			SupportBannerCard(
+				message: message,
+				onDismiss: { isDismissed = true },
+				onHide: { hideSupportBanners = true }
+			) {
+				NavigationLink {
+					SupportView()
+				} label: {
+					Text("Support As Needed")
+						.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+						.frame(maxWidth: .infinity, minHeight: 44)
+						.contentShape(Rectangle())
+				}
+				.buttonStyle(.plain)
+			}
+			.padding(.horizontal, 16)
+			.padding(.top, 8)
+		}
+	}
+}
 
-                        VStack(alignment: .leading, spacing: labelSpacing) {
-                            Text("Enjoying As Needed?")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                            Text("Consider supporting continued development")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+/// Shared support presentation keeps dismissal separate from the support action.
+struct SupportBannerCard<SupportAction: View>: View {
+	@Environment(\.fontFamily) private var fontFamily
 
-                        Spacer()
+	let message: String
+	let onDismiss: () -> Void
+	let onHide: () -> Void
+	@ViewBuilder let supportAction: () -> SupportAction
 
-                        Image(systemSymbol: .chevronRight)
-                            .font(.caption)
-                            .foregroundColor(.secondary.opacity(0.5))
-                    }
-                    .padding(cardPadding)
-                    .background(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color(.systemBackground),
-                                        Color(.secondarySystemBackground).opacity(0.5),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.red.opacity(0.2),
-                                        Color.pink.opacity(0.1),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: borderWidth
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
+	var body: some View {
+		VStack(spacing: 8) {
+			VStack(alignment: .leading, spacing: 12) {
+				HStack(alignment: .top, spacing: 8) {
+					Image(systemSymbol: .heart)
+						.font(.customFont(fontFamily, style: .title3, weight: .semibold))
+						.frame(minHeight: 44)
+						.accessibilityHidden(true)
 
-                Button {
-                    hideSupportBanners = true
-                } label: {
-                    Text("Don't Show Again")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, buttonVerticalPadding)
-                        .background {
-                            RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                                .fill(.regularMaterial)
-                        }
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, cardPadding)
-            .padding(.top, containerSpacing)
-        }
-    }
+					Text("Enjoying As Needed?")
+						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+						.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+						.fixedSize(horizontal: false, vertical: true)
+
+					Button(action: onDismiss) {
+						Image(systemSymbol: .xmark)
+							.font(.customFont(fontFamily, style: .body, weight: .semibold))
+							.frame(width: 44, height: 44)
+							.contentShape(Rectangle())
+					}
+					.buttonStyle(.plain)
+					.accessibilityLabel("Close support banner")
+				}
+
+				Text(message)
+					.font(.customFont(fontFamily, style: .subheadline))
+					.fixedSize(horizontal: false, vertical: true)
+
+				supportAction()
+					.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+					.overlay {
+						RoundedRectangle(cornerRadius: 10)
+							.strokeBorder(Color.accent.dynamicFilledButtonForeground, lineWidth: 1)
+					}
+			}
+			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+			.padding(16)
+			.background(Color.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+			Button(action: onDismiss) {
+				Text("Close")
+					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+					.frame(maxWidth: .infinity, minHeight: 44)
+					.contentShape(Rectangle())
+			}
+			.buttonStyle(.plain)
+			.foregroundStyle(.accent)
+			.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+			.overlay {
+				RoundedRectangle(cornerRadius: 10)
+					.strokeBorder(Color.accent, lineWidth: 1)
+			}
+
+			Button(action: onHide) {
+				Text("Don't Show Again")
+					.font(.customFont(fontFamily, style: .footnote))
+					.frame(maxWidth: .infinity, minHeight: 44)
+					.contentShape(Rectangle())
+			}
+			.buttonStyle(.plain)
+			.foregroundStyle(.secondary)
+			.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+		}
+	}
 }
 
 #if DEBUG
-    #Preview {
-        List {
-            SupportSuggestionView()
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-        }
-    }
+	#Preview {
+		NavigationStack {
+			List {
+				SupportSuggestionView()
+					.listRowBackground(Color.clear)
+					.listRowSeparator(.hidden)
+			}
+		}
+	}
 #endif

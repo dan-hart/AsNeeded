@@ -116,13 +116,7 @@ struct MedicationTrendsView: View {
 						onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
 						onUndo: { Task { if !(await quickLogCoordinator.undoLastQuickLog()) { quickLogError = true } } })
 				}
-				SupportToastView(message: "Dose logged successfully", supportMessage: "Support As Needed",
-					isVisible: quickLogCoordinator.showSupportToast,
-					onDismiss: { quickLogCoordinator.showSupportToast = false },
-					onSupportTapped: {
-						quickLogCoordinator.showSupportToast = false
-						quickLogCoordinator.showSupportView = true
-					})
+
 			}
 			.sheet(isPresented: $quickLogCoordinator.showSupportView) {
 				NavigationStack { SupportView() }

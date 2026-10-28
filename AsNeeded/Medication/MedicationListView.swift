@@ -188,23 +188,6 @@ struct MedicationListView: View {
                         )
                     }
 
-                    // Support Toast
-                    SupportToastView(
-                        message: "Dose logged successfully",
-                        supportMessage: "Support As Needed",
-                        isVisible: viewModel.showSupportToast,
-                        onDismiss: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.showSupportToast = false
-                            }
-                        },
-                        onSupportTapped: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.showSupportToast = false
-                                viewModel.showSupportView = true
-                            }
-                        }
-                    )
                 }
 				.task(id: "\(navigationManager.pendingLogMedicationID ?? "")|\(viewModel.logMedication?.id.uuidString ?? "")|\(scenePhase)|\(showLogDosePicker)|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
 					guard let id = navigationManager.pendingLogMedicationID, viewModel.logMedication == nil, !showLogDosePicker, viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
@@ -372,6 +355,14 @@ struct MedicationListView: View {
                 }
                 .onMove(perform: viewModel.moveMedications)
                 .onDelete(perform: viewModel.deleteMedications)
+
+				if viewModel.editMode == .inactive {
+					SupportSuggestionView()
+						.listRowInsets(EdgeInsets())
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+						.environment(\.defaultMinListRowHeight, 0)
+				}
             }
             .listStyle(.plain)
             .environment(\.editMode, $viewModel.editMode)
