@@ -49,10 +49,10 @@ struct ReminderListView: View {
                             reminderToDelete = nil
                         }
                         .font(.customFont(fontFamily, style: .body))
-                        .foregroundColor(.red)
                     }
                 }
             }
+            .tint(.accent)
             .task {
                 await loadReminders()
             }

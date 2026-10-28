@@ -886,8 +886,6 @@ struct MedicationEditView: View {
                         showingDatePicker = false
                     } label: {
                         Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -895,12 +893,11 @@ struct MedicationEditView: View {
                     Button {
                         showingDatePicker = false
                     } label: {
-                        Image(systemSymbol: .checkmarkCircleFill)
-                            .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                            .foregroundStyle(.accent)
+                        Image(systemSymbol: .checkmark)
                     }
                 }
             }
+            .tint(.accent)
         }
         .presentationDetents([.large])
     }
@@ -1030,8 +1027,6 @@ struct MedicationEditView: View {
 							if hasChanges { showingDiscardConfirmation = true } else { onCancel() }
                         } label: {
                             Image(systemSymbol: .xmark)
-                                .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                .foregroundStyle(.secondary)
                         }
 						.disabled(isSaving)
 						.accessibilityLabel("Cancel medication changes")
@@ -1040,9 +1035,10 @@ struct MedicationEditView: View {
 					ToolbarItemGroup(placement: .keyboard) {
 						Spacer()
 						Button("Done") { hideKeyboard(); focusedField = nil }
-							.font(.customFont(fontFamily, style: .body, weight: .semibold))
+							.font(.customFont(fontFamily, style: .body))
 					}
                 }
+                .tint(.accent)
 				.interactiveDismissDisabled(isSaving || hasChanges)
 				.alert("Medication not saved", isPresented: $showingSaveError) {
 					Button("Keep Editing", role: .cancel) {}

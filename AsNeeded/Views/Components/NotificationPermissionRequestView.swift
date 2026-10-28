@@ -87,6 +87,7 @@ struct NotificationPermissionRequestView: View {
 					dismiss()
 				}
 			}
+			.tint(.accent)
 		}
 		.onAppear {
 			// Check if status changed while view was loading

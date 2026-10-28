@@ -44,11 +44,11 @@ struct AutomaticBackupView: View {
                     viewModel.showingExplainer = true
                 } label: {
                     Image(systemSymbol: .infoCircle)
-                        .font(.customFont(fontFamily, style: .body))
                 }
                 .accessibilityLabel("About Automatic Backup")
             }
         }
+        .tint(.accent)
         .fileImporter(
             isPresented: $viewModel.showingLocationPicker,
             allowedContentTypes: [.folder],
@@ -714,12 +714,11 @@ struct AutomaticBackupView: View {
                         viewModel.isSettingUp = false
                     } label: {
                         Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
                     }
                     .accessibilityLabel("Cancel Backup Setup")
                 }
             }
+            .tint(.accent)
         }
     }
 
@@ -794,12 +793,11 @@ struct AutomaticBackupView: View {
 						viewModel.showingRestoreSheet = false
 					} label: {
 						Image(systemSymbol: .xmark)
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-							.foregroundStyle(.secondary)
 					}
 					.accessibilityLabel("Cancel Restore")
 				}
 			}
+			.tint(.accent)
 		}
 		.dynamicDetent()
 	}

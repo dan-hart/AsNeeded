@@ -79,6 +79,7 @@ struct MedicationDetailView: View {
         .toolbar {
             toolbarContent
         }
+        .tint(.accent)
         .confirmationDialog("Delete \(medication.displayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete Medication", role: .destructive) {
                 Task {
@@ -329,14 +330,13 @@ struct MedicationDetailView: View {
                 showLogDose = true
             } label: {
                 Image(systemSymbol: .pillsFill)
-                    .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                    .foregroundStyle(medication.displayColor)
             }
+			.tint(.accent)
             .accessibilityLabel("Log dose")
             .accessibilityHint("Open log dose view")
         }
 
-        ToolbarItem(placement: .secondaryAction) {
+        ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button {
                     showEditSheet = true
@@ -358,9 +358,9 @@ struct MedicationDetailView: View {
                     Label("Delete", systemSymbol: .trash)
                 }
             } label: {
-                Image(systemSymbol: .ellipsisCircle)
-                    .font(.customFont(fontFamily, style: .body, weight: .medium))
+                Image(systemSymbol: .ellipsis)
             }
+			.tint(.accent)
             .accessibilityLabel("More actions")
         }
     }
@@ -611,15 +611,10 @@ struct MedicationDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(medication.displayColor.gradient)
-                    .glassEffect(.regular.tint(medication.displayColor.opacity(0.2)).interactive(true))
-                    .shadow(color: medication.displayColor.opacity(0.3), radius: 12, y: 6)
-            }
-            .foregroundStyle(medication.displayColor.contrastingForegroundColor())
+			.foregroundStyle(medication.displayColor.contrastingForegroundColor())
         }
-        .buttonStyle(.plain)
+		.buttonStyle(.borderedProminent)
+		.tint(medication.displayColor)
         .frame(maxWidth: cardMaxWidth)
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }

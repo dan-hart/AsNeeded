@@ -98,6 +98,7 @@ struct ThankYouView: View {
                     .tint(.accent)
                 }
             }
+            .tint(.accent)
         }
         .onAppear {
             if reduceMotion {

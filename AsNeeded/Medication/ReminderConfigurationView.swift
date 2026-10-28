@@ -121,6 +121,7 @@ struct ReminderConfigurationView: View {
                     dismiss()
                 }
             }
+            .tint(.accent)
             .disabled(isScheduling)
             .alert("Notifications Disabled", isPresented: $showingPermissionAlert) {
                 Button("Open Settings") {

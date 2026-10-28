@@ -31,12 +31,11 @@ struct AutomaticBackupExplainerView: View {
                         dismiss()
                     } label: {
                         Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
                     }
                     .accessibilityLabel("Close Backup Information")
                 }
             }
+            .tint(.accent)
         }
     }
 

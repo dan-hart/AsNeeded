@@ -120,17 +120,8 @@ struct MedicationAppearancePickerComponent: View {
 					.accessibilityLabel("Cancel")
 				}
 
-				ToolbarItem(placement: .confirmationAction) {
-					Button(role: .confirm) {
-						performSave()
-					} label: {
-						Image(systemSymbol: .checkmark)
-							.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-					}
-					.tint(.accent)
-					.accessibilityLabel("Save appearance")
-				}
 			}
+			.tint(.accent)
 		}
 		.onAppear {
 			tempColorHex = selectedColorHex ?? medication.displayColorHex

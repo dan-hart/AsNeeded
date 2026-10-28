@@ -812,6 +812,7 @@ struct LogDoseView: View {
                 }
 				.disabled(isLogging)
             }
+            .tint(.accent)
 			.alert("Check Dose History", isPresented: $showingLogError) {
 				Button("Keep Editing", role: .cancel) {}
 			} message: {

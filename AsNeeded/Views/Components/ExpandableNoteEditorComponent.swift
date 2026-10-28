@@ -207,6 +207,7 @@ struct ExpandableNoteEditorComponent: View {
 					}
 				}
 			}
+			.tint(.accent)
 			.confirmationDialog("Discard note changes?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
 				Button("Discard Changes", role: .destructive) {
 					localText = noteText

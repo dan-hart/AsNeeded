@@ -188,6 +188,7 @@ struct NIHFullDisclaimerView: View {
                     dismiss()
                 }
             }
+            .tint(.accent)
         }
     }
 }

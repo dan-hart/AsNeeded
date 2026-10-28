@@ -165,6 +165,7 @@ struct MoreDisclaimerInfoView: View {
                     dismiss()
                 }
             }
+            .tint(.accent)
         }
     }
 

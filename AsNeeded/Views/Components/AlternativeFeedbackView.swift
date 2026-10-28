@@ -53,6 +53,7 @@ struct AlternativeFeedbackView: View {
 					dismiss()
 				}
 			}
+			.tint(.accent)
 		}
 		.overlay {
 			if showingCopiedConfirmation {

@@ -195,11 +195,11 @@ struct DataManagementView: View {
                                 }
                             } label: {
                                 Text("Export")
-                                    .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                                    .foregroundStyle(.accent)
+                                    .font(.customFont(fontFamily, style: .body))
                             }
                         }
                     }
+                    .tint(.accent)
                 }
                 .dynamicDetent()
             }

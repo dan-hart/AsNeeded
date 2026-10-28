@@ -186,6 +186,7 @@ private struct CustomNavigationTitleModifier: ViewModifier {
 							.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					}
 				}
+				.tint(.accent)
 		} else {
 			// For large titles, we need a different approach using UINavigationBar appearance
 			// The custom font will be applied through the environment to child views

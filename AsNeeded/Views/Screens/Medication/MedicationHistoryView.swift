@@ -576,9 +576,6 @@ struct MedicationHistoryView: View {
 									showDatePicker = false
 								} label: {
 									Image(systemSymbol: .xmark)
-										.font(.customFont(fontFamily, style: .body, weight: .medium))
-										.foregroundStyle(.secondary)
-										.frame(minWidth: 44, minHeight: 44)
 								}
 								.accessibilityLabel("Cancel date selection")
 							}
@@ -588,14 +585,12 @@ struct MedicationHistoryView: View {
 									scrollTarget = Calendar.current.startOfDay(for: selectedDate)
 									showDatePicker = false
 								} label: {
-									Image(systemSymbol: .checkmarkCircleFill)
-										.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-										.foregroundStyle(.accent)
-										.frame(minWidth: 44, minHeight: 44)
+									Image(systemSymbol: .checkmark)
 								}
 								.accessibilityLabel("Jump to selected date")
 							}
 						}
+						.tint(.accent)
 					}
 					.dynamicDetent()
 				}
@@ -748,14 +743,12 @@ struct MedicationHistoryView: View {
 									}
 								} label: {
 									Image(systemSymbol: .xmark)
-										.font(.customFont(fontFamily, style: .body, weight: .medium))
-										.foregroundStyle(.secondary)
-										.frame(minWidth: 44, minHeight: 44)
 								}
 								.accessibilityLabel("Close note editor")
 								.disabled(viewModel.isMutating)
 							}
 						}
+						.tint(.accent)
 						.confirmationDialog("Discard note changes?", isPresented: $showDiscardNoteChanges, titleVisibility: .visible) {
 							Button("Discard Changes", role: .destructive) {
 								editingEvent = nil
@@ -938,9 +931,6 @@ struct MedicationHistoryView: View {
 							}
 						} label: {
 							Image(systemSymbol: .xmark)
-								.font(.customFont(fontFamily, style: .body, weight: .medium))
-								.foregroundStyle(.secondary)
-								.frame(minWidth: 44, minHeight: 44)
 						}
 						.accessibilityLabel("Close entry editor")
 						.disabled(viewModel.isMutating)
@@ -962,15 +952,13 @@ struct MedicationHistoryView: View {
 								}
 							}
 						} label: {
-							Image(systemSymbol: .checkmarkCircleFill)
-								.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-								.foregroundStyle(.accent)
-								.frame(minWidth: 44, minHeight: 44)
+							Image(systemSymbol: .checkmark)
 						}
 						.accessibilityLabel("Save entry changes")
 						.disabled(viewModel.isMutating)
 					}
 				}
+				.tint(.accent)
 				.confirmationDialog("Discard entry changes?", isPresented: $showDiscardEntryChanges, titleVisibility: .visible) {
 					Button("Discard Changes", role: .destructive) { editingEntryEvent = nil }
 					Button("Keep Editing", role: .cancel) {}

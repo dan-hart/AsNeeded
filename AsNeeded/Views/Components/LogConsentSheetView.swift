@@ -109,6 +109,7 @@ struct LogConsentSheetView: View {
                     dismiss()
                 }
             }
+            .tint(.accent)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

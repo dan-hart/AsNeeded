@@ -34,29 +34,25 @@ struct MedicationListView: View {
             .customNavigationTitle("Medication")
                 .toolbar {
                     if viewModel.items.count > 1 || !viewModel.items.archived.isEmpty {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            HStack(spacing: 12) {
-                                if viewModel.items.count > 1 {
-                                    Button(viewModel.editMode == .inactive ? "Edit" : "Done") {
-                                        viewModel.toggleEditMode()
-                                    }
-                                    .font(.customFont(fontFamily, style: .body, weight: .bold))
-                                    .accessibilityLabel(viewModel.editMode == .inactive ? "Edit medication list" : "Done editing")
-                                    .accessibilityHint(viewModel.editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
+                        ToolbarItemGroup(placement: .topBarLeading) {
+                            if viewModel.items.count > 1 {
+                                Button(viewModel.editMode == .inactive ? "Edit" : "Done") {
+                                    viewModel.toggleEditMode()
                                 }
+                                .font(.customFont(fontFamily, style: .body))
+                                .accessibilityLabel(viewModel.editMode == .inactive ? "Edit medication list" : "Done editing")
+                                .accessibilityHint(viewModel.editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
+                            }
 
-                                // Show archived toggle if there are any archived medications
-                                if !viewModel.items.archived.isEmpty && viewModel.editMode == .inactive {
-                                    Button(action: {
-                                        viewModel.toggleArchivedMedications()
-                                    }) {
-                                        Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
-                                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .accessibilityLabel(viewModel.showArchivedMedications ? "Hide archived medications" : "Show archived medications")
-                                    .accessibilityHint("Toggle visibility of archived medications in the list")
+                            // Show archived toggle if there are any archived medications
+                            if !viewModel.items.archived.isEmpty && viewModel.editMode == .inactive {
+                                Button(action: {
+                                    viewModel.toggleArchivedMedications()
+                                }) {
+                                    Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
                                 }
+                                .accessibilityLabel(viewModel.showArchivedMedications ? "Hide archived medications" : "Show archived medications")
+                                .accessibilityHint("Toggle visibility of archived medications in the list")
                             }
                         }
                     }
@@ -66,13 +62,12 @@ struct MedicationListView: View {
                             viewModel.showAddSheet = true
                         }) {
                             Label("Add Medication", systemSymbol: .plus)
-                                .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                .foregroundColor(.accent)
                         }
                         .accessibilityLabel("Add new medication")
                         .accessibilityHint("Opens form to add a new medication to your list")
                     }
                 }
+                .tint(.accent)
                 .sheet(item: $viewModel.editMedication) { med in
                     MedicationEditView(
                         medication: med,
