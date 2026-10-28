@@ -51,6 +51,8 @@ struct LogDoseView: View {
 	}
 
 	@StateObject private var draft: Draft
+	@State private var amountInput: String?
+	@FocusState private var amountIsFocused: Bool
     let medication: ANMedicationConcept
     let source: String
     var onLog: (ANDoseConcept, ANEventConcept, UUID) async -> Bool
@@ -133,6 +135,20 @@ struct LogDoseView: View {
         ANDoseConcept(amount: draft.amount, unit: draft.selectedUnit)
     }
 
+	private var amountText: Binding<String> {
+		Binding(
+			get: { amountInput ?? draft.amount.formatted(.number.grouping(.never)) },
+			set: { text in
+				amountInput = text
+				let separator = Locale.current.decimalSeparator ?? "."
+				let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+					.replacingOccurrences(of: separator, with: ".")
+				let parsed = Double(normalized)
+				draft.amount = parsed.flatMap { $0.isFinite ? $0 : nil } ?? 0
+			}
+		)
+	}
+
     private var assessment: MedicationDoseGuidanceService.Assessment {
         guidanceService.assessment(
             for: medication,
@@ -174,6 +190,7 @@ struct LogDoseView: View {
 
 	@MainActor
 	private func performLogDose() async {
+		guard draft.amount.isFinite, draft.amount > 0 else { return }
         guard !draft.isLogging else {
             logger.warning("Ignored duplicate dose log tap while request is in flight: source=\(source)")
             return
@@ -305,6 +322,8 @@ struct LogDoseView: View {
 					: AnyLayout(HStackLayout(spacing: stepperSpacing))
 				amountLayout {
                     Button(action: {
+                        amountIsFocused = false
+                        amountInput = nil
                         if draft.amount > 0.5 {
                             draft.amount -= 0.5
                             hapticsManager.lightImpact()
@@ -324,9 +343,13 @@ struct LogDoseView: View {
                     .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
 
                     VStack(spacing: smallSpacing) {
-                        Text("\(draft.amount, specifier: "%.1f")")
+						TextField("Amount", text: amountText)
                             .font(.customFont(fontFamily, style: .title, weight: .semibold))
-                            .contentTransition(.numericText())
+							.keyboardType(.decimalPad)
+							.multilineTextAlignment(.center)
+							.focused($amountIsFocused)
+							.accessibilityLabel("Dose amount")
+							.accessibilityHint("Enter the amount in \(draft.selectedUnit.displayName)")
 
                         Text(draft.selectedUnit.displayName)
                             .font(.customFont(fontFamily, style: .subheadline))
@@ -342,6 +365,8 @@ struct LogDoseView: View {
                     )
 
                     Button(action: {
+                        amountIsFocused = false
+                        amountInput = nil
                         if draft.amount < 100 {
                             draft.amount += 0.5
                             hapticsManager.lightImpact()
@@ -891,11 +916,20 @@ struct LogDoseView: View {
             .navigationBarTitleDisplayMode(.inline)
 			.customNavigationTitle("Log Dose", displayMode: .inline)
             .toolbar {
+				ToolbarItemGroup(placement: .keyboard) {
+					if amountIsFocused {
+						Spacer()
+						Button("Done") { amountIsFocused = false }
+							.font(.customFont(fontFamily, style: .body))
+					}
+				}
+				ToolbarItem(placement: .cancellationAction) {
                 Button(role: .close) {
 					if hasChanges { draft.showingDiscardConfirmation = true } else { dismiss() }
                 }
 				.disabled(draft.isLogging)
 				.tint(medication.displayColor)
+				}
             }
             .tint(medication.displayColor)
 			.alert("Check Dose History", isPresented: $draft.showingLogError) {
