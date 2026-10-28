@@ -45,8 +45,7 @@ struct MedicationTrendsView: View {
 	@ScaledMetric private var metricTitleSpacing: CGFloat = 4
 	@ScaledMetric private var heatmapCellSpacing: CGFloat = 2
 	@ScaledMetric private var pickerMaxWidth: CGFloat = 160
-	@ScaledMetric private var metricCardPadding: CGFloat = 12
-	@ScaledMetric private var metricCardMinHeight: CGFloat = 90
+	private let metricCardPadding: CGFloat = 12
 	@ScaledMetric private var metricCardCornerRadius: CGFloat = 10
 	@ScaledMetric private var chartHeight: CGFloat = 280
 	@ScaledMetric private var chartPaddingH: CGFloat = 4
@@ -370,23 +369,30 @@ struct MedicationTrendsView: View {
 	}
 
 	private func metricCard(title: String, value: String, systemImage: SFSymbol) -> some View {
-		VStack(alignment: .leading, spacing: metricTitleSpacing) {
-			HStack(spacing: metricLabelSpacing) {
-				Image(systemSymbol: systemImage)
-					.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-				Text(title)
-					.font(.customFont(fontFamily, style: .caption))
-					.foregroundStyle(.secondary)
+		RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous)
+			.fill(.regularMaterial)
+			.aspectRatio(1, contentMode: .fit)
+			.overlay(alignment: .leading) {
+				VStack(alignment: .leading, spacing: metricTitleSpacing) {
+					HStack(spacing: metricLabelSpacing) {
+						Image(systemSymbol: systemImage)
+							.font(.customFont(fontFamily, style: .caption))
+							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+							.accessibilityHidden(true)
+						Text(title)
+							.font(.customFont(fontFamily, style: .caption))
+							.foregroundStyle(.secondary)
+							.fixedSize(horizontal: false, vertical: true)
+					}
+					Text(value)
+						.font(.customFont(fontFamily, style: .headline))
+						.noTruncate()
+				}
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.padding(metricCardPadding)
 			}
-			Text(value)
-				.font(.customFont(fontFamily, style: .headline))
-				.noTruncate()
-		}
-		.padding(metricCardPadding)
-		.frame(maxWidth: .infinity, minHeight: metricCardMinHeight, alignment: .leading)
-		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
-		.accessibilityElement(children: .combine)
-		.accessibilityLabel("\(title): \(value)")
+			.accessibilityElement(children: .combine)
+			.accessibilityLabel("\(title): \(value)")
 	}
 
 	private func insightBadge(text: String, tint: Color) -> some View {
