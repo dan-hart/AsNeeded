@@ -53,7 +53,8 @@ struct QuickLogFeedbackServiceTests {
 
 		#expect(feedback.tone == .success)
 		#expect(feedback.title == "Dose logged")
-		#expect(feedback.message == "Logged 2 tab of Ibuprofen at 12:00 PM.")
+		let expectedTime = DateFormatter.localizedString(from: referenceDate, dateStyle: .none, timeStyle: .short)
+		#expect(feedback.message == "Logged 2 tab of Ibuprofen at \(expectedTime).")
 		#expect(feedback.undoEventID != nil)
 		#expect(feedback.nextDoseDate == nil)
 	}
@@ -90,7 +91,8 @@ struct QuickLogFeedbackServiceTests {
 		#expect(feedback.detail == assessment.detail)
 		#expect(assessment.nextEligibleDate == referenceDate.addingTimeInterval(2 * 3600))
 		#expect(feedback.nextDoseDate == referenceDate.addingTimeInterval(4 * 3600))
-		#expect(feedback.nextWindowText == "Next dose window: 4:00 PM")
+		let expectedTime = DateFormatter.localizedString(from: referenceDate.addingTimeInterval(4 * 3600), dateStyle: .none, timeStyle: .short)
+		#expect(feedback.nextWindowText == "Next dose window: \(expectedTime)")
 	}
 
 	@Test("An absent or elapsed post-log window does not reuse the earlier assessment")

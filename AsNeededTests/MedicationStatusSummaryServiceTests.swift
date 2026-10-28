@@ -49,9 +49,11 @@ struct MedicationStatusSummaryServiceTests {
 		)
 
 		#expect(summary.timingText.contains("Last taken"))
-		#expect(summary.timingText.contains("10:00"))
+		let expectedLastTime = DateFormatter.localizedString(from: referenceDate.addingTimeInterval(-2 * 3600), dateStyle: .none, timeStyle: .short)
+		#expect(summary.timingText.contains(expectedLastTime))
 		#expect(summary.nextWindowText?.contains("Next dose window") == true)
-		#expect(summary.nextWindowText?.contains("2:00 PM") == true)
+		let expectedNextTime = DateFormatter.localizedString(from: referenceDate.addingTimeInterval(2 * 3600), dateStyle: .none, timeStyle: .short)
+		#expect(summary.nextWindowText?.contains(expectedNextTime) == true)
 		#expect(summary.severity == .warning)
 		#expect(summary.badgeText == "Waiting")
 	}

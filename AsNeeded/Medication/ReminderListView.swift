@@ -244,11 +244,13 @@ struct ReminderRow: View {
             return "Tomorrow at \(formatter.string(from: reminder.nextFireDate))"
         } else if calendar.isDate(reminder.nextFireDate, equalTo: now, toGranularity: .weekOfYear) {
             let formatter = DateFormatter()
-            formatter.dateFormat = "EEEE 'at' h:mm a"
+            formatter.locale = .autoupdatingCurrent
+            formatter.setLocalizedDateFormatFromTemplate("EEEEjm")
             return formatter.string(from: reminder.nextFireDate)
         } else {
             let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d 'at' h:mm a"
+            formatter.locale = .autoupdatingCurrent
+            formatter.setLocalizedDateFormatFromTemplate("MMMdjm")
             return formatter.string(from: reminder.nextFireDate)
         }
     }

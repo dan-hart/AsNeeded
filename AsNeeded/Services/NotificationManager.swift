@@ -567,11 +567,12 @@ struct ReminderDetail: Identifiable {
 			// Generate repeat info
 			if calendarTrigger.repeats {
 				let components = calendarTrigger.dateComponents
-				if let weekday = components.weekday, let hour = components.hour, let minute = components.minute {
+				let time = nextFireDate.formatted(date: .omitted, time: .shortened)
+				if let weekday = components.weekday, components.hour != nil, components.minute != nil {
 					let weekdayName = Calendar.current.weekdaySymbols[weekday - 1]
-					repeatInfo = "Weekly on \(weekdayName) at \(String(format: "%02d:%02d", hour, minute))"
-				} else if let hour = components.hour, let minute = components.minute {
-					repeatInfo = "Daily at \(String(format: "%02d:%02d", hour, minute))"
+					repeatInfo = "Weekly on \(weekdayName) at \(time)"
+				} else if components.hour != nil, components.minute != nil {
+					repeatInfo = "Daily at \(time)"
 				} else {
 					repeatInfo = "Recurring"
 				}

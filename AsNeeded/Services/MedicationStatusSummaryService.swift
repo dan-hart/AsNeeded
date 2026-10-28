@@ -157,14 +157,15 @@ struct MedicationStatusSummaryService {
 
 	private var timeFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateFormat = "h:mm a"
+		formatter.locale = .autoupdatingCurrent
+		formatter.dateStyle = .none
+		formatter.timeStyle = .short
 		return formatter
 	}
 
 	private var dateFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
+		formatter.locale = .autoupdatingCurrent
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .none
 		return formatter
