@@ -5,6 +5,7 @@ import ANModelKit
 import Boutique
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 // Button style for quick date adjustments
 struct QuickDateButton: ButtonStyle {
@@ -33,9 +34,6 @@ struct MedicationEditView: View {
 	@Environment(\.scenePhase) private var scenePhase
     @State private var showingDatePicker = false
 	@State private var showingDiscardConfirmation = false
-	@State private var showingDoseLimits = false
-	@State private var showingSupply = false
-	@State private var showingAppearance = false
     @State private var datePickerType: DatePickerType = .lastRefill
     @State private var showingAppearancePicker = false
     @FocusState private var focusedField: Field?
@@ -235,7 +233,7 @@ struct MedicationEditView: View {
                         )
                     )
 
-                Text("Track Supply")
+                Text("Track Supply (optional)")
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
             }
@@ -365,7 +363,7 @@ struct MedicationEditView: View {
                     )
 
                 VStack(alignment: .leading, spacing: smallPadding) {
-                    Text("Dose Limits")
+                    Text("Dose Limits (optional)")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
                     Text("Use the instructions from your prescription or care team. Every field is optional.")
@@ -572,7 +570,7 @@ struct MedicationEditView: View {
                         )
                     )
 
-                Text("Personalize Appearance")
+                Text("Personalize Appearance (optional)")
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
             }
@@ -580,6 +578,7 @@ struct MedicationEditView: View {
             // Appearance preview button
             Button {
                 hapticsManager.lightImpact()
+                MedicationAppearanceTip().invalidate(reason: .actionPerformed)
                 showingAppearancePicker = true
             } label: {
                 HStack(spacing: iconSpacing) {
@@ -628,6 +627,7 @@ struct MedicationEditView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Customize medication appearance")
             .accessibilityHint("Opens color and symbol picker")
+			.popoverTip(AppTips.isConfigured ? MedicationAppearanceTip() : nil)
         }
         .glassCard()
         .padding(.horizontal)
@@ -663,7 +663,7 @@ struct MedicationEditView: View {
                         )
                     )
 
-                Text("Status")
+                Text("Status (optional)")
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
             }
 
@@ -702,11 +702,11 @@ struct MedicationEditView: View {
 
             HStack(spacing: iconSpacing) {
                 Image(systemSymbol: .checkmarkCircleFill)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
 
                 Text("Save Medication")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					.fixedSize(horizontal: false, vertical: true)
             }
             .filledButtonForeground(against: backgroundColor)
             .frame(maxWidth: .infinity)
@@ -918,25 +918,17 @@ struct MedicationEditView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: mainContentSpacing) {
+					Text("Medication name is required. Everything else is optional. If you add a prescribed dose, enter both an amount and a unit.")
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundStyle(.secondary)
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.padding(.horizontal)
                     medicationInfoSection
                     prescribedDoseSection
-					DisclosureGroup("Dose Limits & Alerts", isExpanded: $showingDoseLimits) {
-						clinicalGuidanceSection
-					}
-					.font(.customFont(fontFamily, style: .headline))
-					.padding(.horizontal)
-					DisclosureGroup("Supply & Refills", isExpanded: $showingSupply) {
-						refillInfoSection
-					}
-					.font(.customFont(fontFamily, style: .headline))
-					.padding(.horizontal)
-					DisclosureGroup("Appearance & Archive", isExpanded: $showingAppearance) {
-						appearanceSection
-						archivedStatusSection
-					}
-					.font(.customFont(fontFamily, style: .headline))
-					.padding(.horizontal)
-					if dynamicTypeSize.isAccessibilitySize { saveFooter }
+					clinicalGuidanceSection
+					refillInfoSection
+					appearanceSection
+					archivedStatusSection
                 }
 				.padding(.vertical)
             }
@@ -1010,12 +1002,10 @@ struct MedicationEditView: View {
 				.onAppear {
 					if viewModel.originalDraft == nil {
 						viewModel.originalDraft = draftValues
-						showingDoseLimits = !viewModel.minimumHoursBetweenDosesText.isEmpty || !viewModel.maxDailyAmountText.isEmpty || viewModel.nextDoseNotificationEnabled
-						showingSupply = !viewModel.quantityText.isEmpty || !viewModel.initialQuantityText.isEmpty || viewModel.lastRefillDate != nil || viewModel.nextRefillDate != nil
 					}
 				}
 				.safeAreaInset(edge: .bottom) {
-					if !dynamicTypeSize.isAccessibilitySize { saveFooter }
+					saveFooter
 				}
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {

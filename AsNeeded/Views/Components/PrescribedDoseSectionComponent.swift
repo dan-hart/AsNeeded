@@ -62,7 +62,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 						.accessibilityHidden(true)
 				}
 
-				Text("Prescribed Dose")
+				Text("Prescribed Dose (optional)")
 					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					.accessibilityAddTraits(.isHeader)
 					.noTruncate()

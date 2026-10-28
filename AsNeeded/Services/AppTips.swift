@@ -28,6 +28,13 @@ struct HistoryFilterTip: Tip {
 	var options: [any TipOption] { MaxDisplayCount(1) }
 }
 
+struct MedicationAppearanceTip: Tip {
+	var title: Text { Text("Make it yours") }
+	var message: Text? { Text("Tap here to choose a color and icon for this medication. Customizing is optional.") }
+	var image: Image? { Image(systemSymbol: .paintbrushPointedFill) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
 struct TrendsRangeTip: Tip {
 	var title: Text { Text("Choose the bigger picture") }
 	var message: Text? { Text("Switch between 14, 30, and 90 complete days to explore your recorded doses.") }

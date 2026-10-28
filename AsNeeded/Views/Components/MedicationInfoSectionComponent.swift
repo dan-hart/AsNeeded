@@ -38,7 +38,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			Text("Medication name")
+			Text("Medication name (required)")
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				.accessibilityAddTraits(.isHeader)
 
