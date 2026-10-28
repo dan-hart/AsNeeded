@@ -231,7 +231,7 @@ struct MedicationListView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = DataStore.shared.lastLoggedMedication
-		return FloatingLogDoseButton(lastMedication: medication, onChoose: {
+		return FloatingLogDoseButton(lastMedication: medication, tint: .accent, onChoose: {
 			pendingPickerMedication = nil
 			logDoseSearchQuery = ""
 			showLogDosePicker = true
