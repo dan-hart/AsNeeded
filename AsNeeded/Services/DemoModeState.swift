@@ -76,13 +76,12 @@ private struct DemoModeDisableConfirmation: ViewModifier {
 	@Binding var isPresented: Bool
 
 	func body(content: Content) -> some View {
-		content.alert("Turn Off Demo Mode?", isPresented: $isPresented) {
-			Button("Keep Names Hidden", role: .cancel) {}
-			Button("Show Medication Names", role: .destructive) {
+		content.alert("Are you sure you want to turn off demo mode?", isPresented: $isPresented) {
+			Button("No", role: .cancel) {}
+				.keyboardShortcut(.defaultAction)
+			Button("Yes", role: .destructive) {
 				demoMode.disableAfterConfirmation()
 			}
-		} message: {
-			Text("Your medication names will become visible. Continue only when you're ready to show them.")
 		}
 	}
 }
