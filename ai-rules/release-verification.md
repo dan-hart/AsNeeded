@@ -11,3 +11,5 @@ Load for versions, signing, archives, TestFlight, or App Store submissions.
 7. Upload only to the authorized app/audience. Verify processing state and actual group/review status. Report internal availability and pending external beta review separately. Keep physical-device upgrade/delivery checks explicit before public release.
 
 Use the installed release tooling's current help. Do not embed account credentials, tester contact lists, or machine-specific provisioning paths in repo instructions.
+
+For local AsNeeded exports, prefer the optional `scripts/export-testflight.sh` when its project-specific local signing options are configured. It pins the intended identity/profiles and avoids unrelated temporary signing keychains. `ASNEEDED_EXPORT_OPTIONS` supports other hosts; keep those local files outside Git. See [the verified repair](../docs/testing/2026-10-27-signing-repair.md).
