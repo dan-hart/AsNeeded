@@ -49,14 +49,12 @@ struct SupportToastView: View {
 				hideSupportBanners = true
 				onDismiss()
 			}
-		) {
+		) { label in
 			Button(action: onSupportTapped) {
-				Text(supportMessage)
-					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-					.frame(maxWidth: .infinity, minHeight: 44)
-					.contentShape(Rectangle())
+				label
 			}
 			.buttonStyle(.plain)
+			.accessibilityHint(supportMessage)
 		}
 		.fixedSize(horizontal: false, vertical: true)
 	}

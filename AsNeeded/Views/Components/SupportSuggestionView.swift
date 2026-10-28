@@ -14,14 +14,11 @@ struct SupportSuggestionView: View {
 				message: message,
 				onDismiss: { isDismissed = true },
 				onHide: { hideSupportBanners = true }
-			) {
+			) { label in
 				NavigationLink {
 					SupportView()
 				} label: {
-					Text("Support As Needed")
-						.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-						.frame(maxWidth: .infinity, minHeight: 44)
-						.contentShape(Rectangle())
+					label
 				}
 				.buttonStyle(.plain)
 			}
@@ -38,46 +35,25 @@ struct SupportBannerCard<SupportAction: View>: View {
 	let message: String
 	let onDismiss: () -> Void
 	let onHide: () -> Void
-	@ViewBuilder let supportAction: () -> SupportAction
+	@ViewBuilder let supportAction: (SupportBannerLabel) -> SupportAction
 
 	var body: some View {
 		VStack(spacing: 8) {
-			VStack(alignment: .leading, spacing: 12) {
-				HStack(alignment: .top, spacing: 8) {
-					Image(systemSymbol: .heart)
-						.font(.customFont(fontFamily, style: .title3, weight: .semibold))
-						.frame(minHeight: 44)
-						.accessibilityHidden(true)
-
-					Text("Enjoying As Needed?")
-						.font(.customFont(fontFamily, style: .headline, weight: .semibold))
-						.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-						.fixedSize(horizontal: false, vertical: true)
-
-					Button(action: onDismiss) {
-						Image(systemSymbol: .xmark)
-							.font(.customFont(fontFamily, style: .body, weight: .semibold))
-							.frame(width: 44, height: 44)
-							.contentShape(Rectangle())
-					}
+			ZStack(alignment: .topTrailing) {
+				supportAction(SupportBannerLabel(message: message))
 					.buttonStyle(.plain)
-					.accessibilityLabel("Close support banner")
+
+				Button(action: onDismiss) {
+					Image(systemSymbol: .xmark)
+						.font(.customFont(fontFamily, style: .body, weight: .semibold))
+						.foregroundStyle(.accent)
+						.frame(width: 44, height: 44)
+						.contentShape(Rectangle())
 				}
-
-				Text(message)
-					.font(.customFont(fontFamily, style: .subheadline))
-					.fixedSize(horizontal: false, vertical: true)
-
-				supportAction()
-					.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
-					.overlay {
-						RoundedRectangle(cornerRadius: 10)
-							.strokeBorder(Color.accent.dynamicFilledButtonForeground, lineWidth: 1)
-					}
+				.buttonStyle(.plain)
+				.accessibilityLabel("Close support banner")
+				.padding(16)
 			}
-			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
-			.padding(16)
-			.background(Color.accent, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
 			Button(action: onDismiss) {
 				Text("Close")
@@ -95,14 +71,58 @@ struct SupportBannerCard<SupportAction: View>: View {
 
 			Button(action: onHide) {
 				Text("Don't Show Again")
-					.font(.customFont(fontFamily, style: .footnote))
+					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
 					.frame(maxWidth: .infinity, minHeight: 44)
 					.contentShape(Rectangle())
 			}
 			.buttonStyle(.plain)
 			.foregroundStyle(.secondary)
 			.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
+			.overlay {
+				RoundedRectangle(cornerRadius: 10)
+					.strokeBorder(Color.secondary, lineWidth: 1)
+			}
 		}
+	}
+}
+
+
+/// The whole outlined card is the support link; Close remains a separate control.
+struct SupportBannerLabel: View {
+	@Environment(\.fontFamily) private var fontFamily
+	let message: String
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 12) {
+			HStack(alignment: .top, spacing: 8) {
+				Image(systemSymbol: .heart)
+					.font(.customFont(fontFamily, style: .title3, weight: .semibold))
+					.frame(minHeight: 44)
+					.foregroundStyle(.accent)
+					.accessibilityHidden(true)
+				Text("Enjoying As Needed?")
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+					.fixedSize(horizontal: false, vertical: true)
+			}
+			.padding(.trailing, 52)
+
+			Text(message)
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+		}
+		.foregroundStyle(.primary)
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.padding(16)
+		.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+		.overlay {
+			RoundedRectangle(cornerRadius: 16, style: .continuous)
+				.strokeBorder(Color.accent, lineWidth: 1)
+		}
+		.contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+		.accessibilityElement(children: .combine)
+		.accessibilityHint("View ways to support As Needed")
 	}
 }
 
