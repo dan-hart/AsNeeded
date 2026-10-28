@@ -87,6 +87,7 @@ private struct LogDosePickerRow: View {
 			}
 			.foregroundStyle(palette.foreground)
 			.padding(8)
+			.padding(.leading, 8)
 			.frame(minHeight: 60)
 			.background(palette.background, in: RoundedRectangle(cornerRadius: 12))
 			.overlay {
