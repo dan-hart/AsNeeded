@@ -4,6 +4,7 @@ import SwiftUI
 
 /// Medication chooser adapted from 8fab48f, opening the existing dose form.
 struct LogDosePickerSheet: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	let medications: [ANMedicationConcept]
 	@Binding var query: String
 	let onSelect: (ANMedicationConcept) -> Void
@@ -43,7 +44,7 @@ struct LogDosePickerSheet: View {
 				Button("OK", role: .cancel) {}
 			} message: { Text("Your dose was not saved. Please try again.") }
 			.listStyle(.plain)
-			.searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search medications")
+			.demoMedicationSearch(query: $query)
 			.customNavigationTitle("Choose Medication", displayMode: .inline)
 			.toolbar {
 				Button(role: .close) { dismiss() }
@@ -57,6 +58,7 @@ struct LogDosePickerSheet: View {
 }
 
 private struct LogDosePickerRow: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	let medication: ANMedicationConcept
 	let onSelect: () -> Void
 	let onQuickLog: (() async -> Bool)?
@@ -76,7 +78,8 @@ private struct LogDosePickerRow: View {
 					.font(.customFont(fontFamily, style: .title3))
 					.accessibilityHidden(true)
 				VStack(alignment: .leading, spacing: 4) {
-					Text(medication.displayName)
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
 						.font(.customFont(fontFamily, style: .headline))
 						.noTruncate()
 					Text(QuickLogHintPolicy.hintText(for: medication))
@@ -100,7 +103,7 @@ private struct LogDosePickerRow: View {
 		.listRowSeparator(.hidden)
 		.doseLogPressGesture(isPressed: $isPressed, isLongPressing: $isLongPressing,
 			holdProgress: $holdProgress, onTap: onSelect, onQuickLog: onQuickLog, onQuickLogSuccess: onSuccess)
-		.accessibilityLabel("Log dose for \(medication.displayName)")
+		.accessibilityLabel("Log dose for \(medication.demoDisplayName)")
 		.accessibilityHint("Tap to customize dose, hold to log default dose")
 		.accessibilityAction(named: "Quick log default dose") {
 			guard let onQuickLog else { return }

@@ -8,6 +8,7 @@ import SwiftUI
 import UserNotifications
 
 struct ReminderConfigurationView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     let medication: ANMedicationConcept
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontFamily) private var fontFamily
@@ -157,7 +158,8 @@ struct ReminderConfigurationView: View {
                     )
                 )
 
-            Text(medication.displayName)
+            Text(medication.demoDisplayName)
+                .demoNameRedacted()
                 .font(.customFont(fontFamily, style: .callout))
                 .foregroundStyle(.secondary)
                 .noTruncate()

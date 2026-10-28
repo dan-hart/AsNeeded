@@ -2,6 +2,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct DataPrivacyView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@Environment(\.fontFamily) private var fontFamily
 
 	private let sectionSpacing: CGFloat = 24
@@ -15,7 +16,9 @@ struct DataPrivacyView: View {
 	var body: some View {
 		VerticalOnlyScrollView {
 			VStack(alignment: .leading, spacing: sectionSpacing) {
+				if demoMode.isEnabled { DemoModeBanner() }
 				privacySummarySection
+
 
 				section(
 					title: "Backup & Recovery",
@@ -52,6 +55,19 @@ struct DataPrivacyView: View {
 						)
 					]
 				)
+				VStack(alignment: .leading, spacing: rowSpacing) {
+					Toggle("Demo Mode", isOn: $demoMode.isEnabled)
+						.font(.customFont(fontFamily, style: .body, weight: .semibold))
+						.tint(.accent)
+					Text("Temporarily hide medication names while showing the app. Everything stays tappable. Turns off when the app relaunches.")
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundStyle(.secondary)
+					Text("Screen privacy only. Saved data, exports, notifications, and widgets are unchanged.")
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+				}
+				.padding(cardPadding)
+				.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: cardCornerRadius))
 			}
 			.padding(.horizontal, cardPadding)
 			.padding(.vertical, cardPadding)

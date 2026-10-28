@@ -28,6 +28,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicationAppearancePickerComponent: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	let medication: ANMedicationConcept
 	@Binding var selectedColorHex: String?
 	@Binding var selectedSymbol: String?
@@ -150,7 +151,8 @@ struct MedicationAppearancePickerComponent: View {
 					}
 
 					// Medication name only
-					Text(medication.displayName)
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
 						.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 						.foregroundStyle(.primary)
 						.noTruncate()
@@ -170,7 +172,7 @@ struct MedicationAppearancePickerComponent: View {
 			}
 		}
 		.accessibilityElement(children: .combine)
-		.accessibilityLabel("\(medication.displayName) appearance")
+		.accessibilityLabel("\(medication.demoDisplayName) appearance")
 	}
 
 	private var segmentedControl: some View {

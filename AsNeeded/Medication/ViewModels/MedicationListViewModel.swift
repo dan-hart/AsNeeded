@@ -40,7 +40,6 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
     @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
-	@Published var confirmationIncludesSupport = false
     @Published var isLoading = true
 
     // MARK: - Computed Properties
@@ -340,7 +339,6 @@ final class MedicationListViewModel: ObservableObject {
     func dismissQuickLogToast() {
 		confirmationDismissTask?.cancel()
 		confirmationDismissTask = nil
-		confirmationIncludesSupport = false
         quickLogFeedback = nil
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showQuickLogToast = false
@@ -361,7 +359,7 @@ final class MedicationListViewModel: ObservableObject {
 			at: now
 		)
 		showQuickLogToast(med: med, dose: dose, feedback: feedback,
-			sequence: sequence ?? allocateConfirmationSequence(), includesSupport: true)
+			sequence: sequence ?? allocateConfirmationSequence())
 	}
 
     func statusSummary(for medication: ANMedicationConcept) -> MedicationStatusSummaryService.Summary {
@@ -381,8 +379,7 @@ final class MedicationListViewModel: ObservableObject {
         med: ANMedicationConcept,
         dose: ANDoseConcept,
         feedback: QuickLogFeedbackService.Feedback? = nil,
-		sequence: Int,
-		includesSupport: Bool = false
+		sequence: Int
     ) {
 		guard sequence > latestPresentedSequence else { return }
 		latestPresentedSequence = sequence
@@ -391,7 +388,6 @@ final class MedicationListViewModel: ObservableObject {
         quickLogDoseUnit = dose.unit.abbreviation
         quickLogAccentColor = med.displayColor
         quickLogFeedback = feedback
-		confirmationIncludesSupport = includesSupport
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickLogToast = true

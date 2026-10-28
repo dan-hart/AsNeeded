@@ -20,6 +20,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct ExpandableNoteEditorComponent: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@Binding var noteText: String
 	var placeholder: String = "How are you feeling? Any side effects?"
 	var medicationName: String?
@@ -154,7 +155,8 @@ struct ExpandableNoteEditorComponent: View {
 						// Header with medication info if available
 						if let medicationName {
 							HStack {
-								Label("Note for \(medicationName)", systemSymbol: .pills)
+								Label("Note for \(demoMode.name(medicationName))", systemSymbol: .pills)
+									.demoNameRedacted()
 									.font(.customFont(fontFamily, style: .subheadline))
 									.foregroundStyle(.secondary)
 									.noTruncate()

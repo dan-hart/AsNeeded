@@ -5,6 +5,7 @@ import TipKit
 
 /// The same chooser and context-specific quick-log action on each logging tab.
 struct FloatingLogDoseButton: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	let quickLogMedication: ANMedicationConcept?
 	var tint: Color = .accent
 	let onChoose: () -> Void
@@ -43,10 +44,10 @@ struct FloatingLogDoseButton: View {
 			},
 			onQuickLogSuccess: succeeded)
 		.accessibilityLabel("Log dose")
-		.accessibilityHint(quickLogMedication.map { "Choose a medication, or hold to log the default dose for \($0.displayName)" } ?? "Choose a medication to record a dose")
+		.accessibilityHint(quickLogMedication.map { "Choose a medication, or hold to log the default dose for \($0.demoDisplayName)" } ?? "Choose a medication to record a dose")
 		.accessibilityActions {
 			if let medication = quickLogMedication, let onQuickLog {
-				Button("Quick log default dose for \(medication.displayName)") {
+				Button("Quick log default dose for \(medication.demoDisplayName)") {
 					Task { if await onQuickLog() { succeeded() } }
 				}
 			}

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     @StateObject private var featureToggleManager = FeatureToggleManager.shared
 	private let sectionSpacing: CGFloat = 24
 	private let padding: CGFloat = 16
@@ -9,6 +10,7 @@ struct SettingsView: View {
         NavigationView {
             VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
+					if demoMode.isEnabled { DemoModeBanner() }
                     SettingsPreferencesSectionView()
 
                     SettingsDataSectionView()
@@ -31,7 +33,7 @@ struct SettingsView: View {
                 .padding(.horizontal, padding)
                 .padding(.vertical, padding)
             }
-            .customNavigationTitle("Settings", displayMode: .large)
+			.customNavigationTitle("Settings", displayMode: .large)
         }
     }
 }

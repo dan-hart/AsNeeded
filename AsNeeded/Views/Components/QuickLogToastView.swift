@@ -15,6 +15,7 @@ import SwiftUI
 /// - Medication dose logging feedback
 /// - Non-intrusive success messages
 struct QuickLogToastView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	let medicationName: String
 	let doseAmount: Double
 	let doseUnit: String
@@ -23,8 +24,6 @@ struct QuickLogToastView: View {
 	var feedback: QuickLogFeedbackService.Feedback?
 	let onDismiss: () -> Void
 	var onUndo: ((UUID) -> Void)?
-	var includesSupportSuggestion = false
-	var onSupportTapped: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -109,9 +108,6 @@ struct QuickLogToastView: View {
 					.padding(.horizontal, toastPadding)
 					.padding(.top, topInset)
 
-					if includesSupportSuggestion, let onSupportTapped {
-						SupportSuggestionView(onSupportTapped: onSupportTapped)
-					}
 				}
 				}
 				.scrollBounceBehavior(.basedOnSize)
@@ -135,6 +131,7 @@ struct QuickLogToastView: View {
 				.foregroundStyle(.primary)
 				.noTruncate()
 			Text(detailText)
+				.redacted(reason: demoMode.isEnabled && feedback == nil ? .placeholder : [])
 				.font(.customFont(fontFamily, style: .caption, weight: .medium))
 				.foregroundStyle(.secondary)
 				.noTruncate()
@@ -159,15 +156,15 @@ struct QuickLogToastView: View {
 	}
 
 	private var messageText: String {
-		feedback?.message ?? formattedDose
+		demoMode.isEnabled ? "\(formattedDose) logged" : (feedback?.message ?? formattedDose)
 	}
 
 	private var detailText: String {
 		if let feedback {
-			return feedback.detail
+			return demoMode.text(feedback.detail)
 		}
 
-		return medicationName
+		return demoMode.name(medicationName)
 	}
 
 	private var toneColor: Color {

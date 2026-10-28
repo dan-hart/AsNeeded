@@ -57,6 +57,7 @@ struct CopyableText: View {
 			.fontWeight(weight)
 			.foregroundStyle(showCopiedMessage ? .accent : color)
 			.noTruncate()
+			.demoNameRedacted()
 			.scaleEffect(isPressed ? 0.98 : 1.0)
 			.animation(.easeInOut(duration: 0.1), value: isPressed)
 			.animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedMessage)

@@ -8,6 +8,7 @@ import SwiftUI
 import TipKit
 
 struct LogDoseView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	private enum ScrollTarget {
 		case guidance
 	}
@@ -289,12 +290,14 @@ struct LogDoseView: View {
 
             // Medication Name
             VStack(alignment: .leading, spacing: smallSpacing) {
-                Text(medication.displayName)
+                Text(medication.demoDisplayName)
+                    .demoNameRedacted()
                     .font(.customFont(fontFamily, style: .headline, weight: .bold))
                     .noTruncate()
 
                 if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
-                    Text(medication.clinicalName)
+                    Text(medication.demoClinicalName)
+                        .demoNameRedacted()
                         .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                         .noTruncate()
@@ -833,7 +836,7 @@ struct LogDoseView: View {
             ExpandableNoteEditorComponent(
                 noteText: $draft.note,
                 placeholder: "How are you feeling? Any side effects?",
-                medicationName: medication.displayName,
+                medicationName: medication.demoDisplayName,
 				accentColor: medication.displayColor,
                 onSave: {
                     // Haptic feedback when note is saved

@@ -25,6 +25,7 @@ import SwiftUI
 /// - Healthcare app medication forms
 /// - Any form requiring medication identification with search
 struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     @Binding var clinicalName: String
     @Binding var nickname: String
     @FocusState.Binding var focusedField: Field?
@@ -54,7 +55,14 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 
 			Text("Nickname (optional)")
 				.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-			TextField("e.g. Headache relief", text: $nickname)
+			Group {
+				if demoMode.isEnabled {
+					SecureField("Nickname", text: $nickname)
+						.demoNameRedacted()
+				} else {
+					TextField("e.g. Headache relief", text: $nickname)
+				}
+			}
 				.font(.customFont(fontFamily, style: .body))
 				.textFieldStyle(.roundedBorder)
 				.textInputAutocapitalization(.words)

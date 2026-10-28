@@ -27,6 +27,7 @@ import SwiftUI
 /// - Healthcare provider dashboards
 /// - Any interface displaying medication information with interaction capabilities
 struct MedicationRowComponent: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     let medication: ANMedicationConcept
     var statusSummary: MedicationStatusSummaryService.Summary?
     var onLogTapped: () -> Void = {}
@@ -106,7 +107,7 @@ struct MedicationRowComponent: View {
         .padding(.horizontal, 4)
         .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Medication: \(medication.displayName)")
+        .accessibilityLabel("Medication: \(medication.demoDisplayName)")
         .accessibilityHint("Tap to view details or log dose")
 		.accessibilityAction { if editMode?.wrappedValue != .active { onOpen?() } }
 		.accessibilityAction(named: "View details") { if editMode?.wrappedValue != .active { onOpen?() } }
@@ -158,7 +159,7 @@ struct MedicationRowComponent: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Change medication appearance")
-        .accessibilityHint("Tap to change the color and symbol for \(medication.displayName)")
+        .accessibilityHint("Tap to change the color and symbol for \(medication.demoDisplayName)")
         .sheet(isPresented: $showingAppearancePicker) {
             medicationAppearanceSheet
         }
@@ -168,7 +169,7 @@ struct MedicationRowComponent: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
 				CopyableText(
-					medication.displayName,
+					medication.demoDisplayName,
 					font: .customFont(fontFamily, style: .headline, weight: .bold),
 					color: .primary,
 					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
@@ -185,7 +186,7 @@ struct MedicationRowComponent: View {
 
             if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
                 CopyableText(
-                    medication.clinicalName,
+                    medication.demoClinicalName,
                     font: .customFont(fontFamily, style: .caption),
                     color: .secondary,
 					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
@@ -265,7 +266,7 @@ struct MedicationRowComponent: View {
 			isPressed: $isPressed, isLongPressing: $isLongPressing, holdProgress: $holdProgress,
 			onTap: onLogTapped, onQuickLog: onQuickLog, onQuickLogSuccess: onQuickLogSuccess
 		)
-        .accessibilityLabel("Log dose for \(medication.displayName)")
+        .accessibilityLabel("Log dose for \(medication.demoDisplayName)")
         .accessibilityHint("Tap to customize dose, hold to log default dose")
 
     }

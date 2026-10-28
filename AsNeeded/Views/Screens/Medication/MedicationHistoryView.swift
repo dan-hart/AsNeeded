@@ -5,6 +5,7 @@ import SwiftUI
 import TipKit
 
 struct MedicationHistoryView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@State private var showSupportPage = false
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var viewModel = MedicationHistoryViewModel()
@@ -62,7 +63,8 @@ struct MedicationHistoryView: View {
 	private func emptyHistoryView(for selected: ANMedicationConcept) -> some View {
 		Spacer()
 		VStack(spacing: emptySectionSpacing) {
-			Text("No history for \(selected.displayName).")
+			Text("No history for \(selected.demoDisplayName).")
+				.demoNameRedacted()
 				.font(.customFont(fontFamily, style: .body))
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .center)
@@ -108,6 +110,12 @@ struct MedicationHistoryView: View {
 	private func historyListView() -> some View {
 		ScrollViewReader { proxy in
 			List {
+				if demoMode.isEnabled {
+					DemoModeBanner()
+						.listRowInsets(EdgeInsets())
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+				}
 				ForEach(viewModel.groupedHistory, id: \.day) { group in
 					Section(header: sectionHeader(for: group)) {
 						ForEach(group.entries, id: \.id) { event in
@@ -167,7 +175,8 @@ struct MedicationHistoryView: View {
 												if viewModel.isShowingAllMedications, let eventMedication = event.medication {
 													let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
 													let rowMedication = currentMedication ?? eventMedication
-													Text(rowMedication.displayName)
+													Text(rowMedication.demoDisplayName)
+														.demoNameRedacted()
 														.font(.customFont(fontFamily, style: .headline))
 														.foregroundStyle(.primary)
 														.noTruncate()
@@ -416,10 +425,10 @@ struct MedicationHistoryView: View {
 		}
 
 		if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
-			return currentMedication.displayName
+			return currentMedication.demoDisplayName
 		}
 
-		return event.medication?.displayName ?? "Medication"
+		return event.medication?.demoDisplayName ?? "Medication"
 	}
 
 	private func entryHasChanges(for event: ANEventConcept) -> Bool {
@@ -476,7 +485,8 @@ struct MedicationHistoryView: View {
 					.font(.customFont(fontFamily, style: .body))
 					.tag(Optional("all"))
 				ForEach(viewModel.medications, id: \.id) { medication in
-					Text(medication.displayName)
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
 						.font(.customFont(fontFamily, style: .body))
 						.tag(Optional(medication.id.uuidString))
 				}
@@ -491,7 +501,7 @@ struct MedicationHistoryView: View {
 	}
 
 	private var historyScopeTitle: String {
-		viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.displayName ?? "All medications")
+		viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.demoDisplayName ?? "All medications")
 	}
 
 	// MARK: - Body
@@ -501,6 +511,7 @@ struct MedicationHistoryView: View {
 			NavigationStack {
 				ZStack(alignment: .bottomTrailing) {
 					VStack(alignment: .leading, spacing: 0) {
+						if demoMode.isEnabled && viewModel.groupedHistory.isEmpty { DemoModeBanner().padding(.horizontal) }
 						if viewModel.isShowingAllMedications {
 							if viewModel.groupedHistory.isEmpty {
 								Spacer()
@@ -568,9 +579,7 @@ struct MedicationHistoryView: View {
 							isVisible: quickLogCoordinator.showQuickLogToast,
 							feedback: quickLogCoordinator.quickLogFeedback,
 							onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
-							onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } },
-						includesSupportSuggestion: quickLogCoordinator.confirmationIncludesSupport,
-						onSupportTapped: { quickLogCoordinator.dismissQuickLogToast(); showSupportPage = true })
+							onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
 					}
 				}
 
@@ -831,7 +840,8 @@ struct MedicationHistoryView: View {
 							if let eventMedication = event.medication {
 								let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
 								let medication = currentMedication ?? eventMedication
-								Text(medication.displayName)
+								Text(medication.demoDisplayName)
+									.demoNameRedacted()
 									.foregroundStyle(.secondary)
 									.noTruncate()
 							}

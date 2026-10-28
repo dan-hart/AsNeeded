@@ -7,6 +7,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct ReminderListView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     let medication: ANMedicationConcept
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontFamily) private var fontFamily
@@ -95,7 +96,8 @@ struct ReminderListView: View {
                 .font(.customFont(fontFamily, style: .title2))
                 .fontWeight(.semibold)
 
-            Text("You haven't set any reminders for \(medication.displayName) yet.")
+            Text("You haven't set any reminders for \(medication.demoDisplayName) yet.")
+                .demoNameRedacted()
                 .font(.customFont(fontFamily, style: .body))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -157,6 +159,7 @@ struct ReminderListView: View {
 }
 
 struct ReminderRow: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let reminder: ReminderDetail
@@ -170,12 +173,14 @@ struct ReminderRow: View {
         VStack(alignment: .leading, spacing: rowSpacing) {
             HStack {
                 VStack(alignment: .leading, spacing: smallSpacing) {
-                    Text(reminder.title)
+                    Text(demoMode.text(reminder.title))
+                        .demoNameRedacted()
                         .font(.customFont(fontFamily, style: .headline))
                         .noTruncate()
 
                     if !reminder.body.isEmpty {
-                        Text(reminder.body)
+                        Text(demoMode.text(reminder.body))
+                            .demoNameRedacted()
                             .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)

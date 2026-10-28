@@ -24,6 +24,7 @@ enum VisualizationType: String, CaseIterable {
 }
 
 struct MedicationTrendsView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@State private var showSupportPage = false
 	@StateObject private var viewModel = MedicationTrendsViewModel()
 	@StateObject private var quickLogCoordinator = MedicationListViewModel()
@@ -67,6 +68,7 @@ struct MedicationTrendsView: View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: sectionSpacing) {
+					if demoMode.isEnabled { DemoModeBanner() }
 					if let med = viewModel.selectedMedication {
 						switch visualizationType {
 						case .chart:
@@ -103,7 +105,7 @@ struct MedicationTrendsView: View {
 			}
 			.customNavigationTitle("Trends", displayMode: .large)
 			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
-			.navigationSubtitle(Text("\(viewModel.selectedMedication?.displayName ?? "Select Medication") · \(daysWindow) Days")
+			.navigationSubtitle(Text("\(viewModel.selectedMedication?.demoDisplayName ?? "Select Medication") · \(daysWindow) Days")
 				.font(.customFont(fontFamily, style: .subheadline)))
 			.toolbar {
 				ToolbarItemGroup(placement: .topBarTrailing) {
@@ -125,9 +127,7 @@ struct MedicationTrendsView: View {
 						isVisible: quickLogCoordinator.showQuickLogToast,
 						feedback: quickLogCoordinator.quickLogFeedback,
 						onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
-						onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } },
-						includesSupportSuggestion: quickLogCoordinator.confirmationIncludesSupport,
-						onSupportTapped: { quickLogCoordinator.dismissQuickLogToast(); showSupportPage = true })
+						onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
 				}
 
 			}
@@ -214,7 +214,8 @@ struct MedicationTrendsView: View {
 		Menu {
 			Picker("Medication", selection: $viewModel.selectedMedicationID) {
 				ForEach(viewModel.medications, id: \.id) { medication in
-					Text(medication.displayName)
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
 						.font(.customFont(fontFamily, style: .body))
 						.tag(Optional(medication.id))
 				}
@@ -224,7 +225,7 @@ struct MedicationTrendsView: View {
 		}
 		.disabled(viewModel.medications.isEmpty)
 		.accessibilityLabel("Trends medication filter")
-		.accessibilityValue(viewModel.selectedMedication?.displayName ?? "Not selected")
+		.accessibilityValue(viewModel.selectedMedication?.demoDisplayName ?? "Not selected")
 	}
 
 	private var timeRangeMenu: some View {
@@ -262,7 +263,8 @@ struct MedicationTrendsView: View {
 		VStack(alignment: .leading, spacing: controlsSpacing) {
 			VStack(alignment: .leading, spacing: controlsSpacing) {
 				VStack(alignment: .leading, spacing: metricTitleSpacing) {
-					Text(med.displayName)
+					Text(med.demoDisplayName)
+						.demoNameRedacted()
 						.font(.customFont(fontFamily, style: .title3, weight: .semibold))
 						.foregroundStyle(.primary)
 						.noTruncate()
@@ -419,7 +421,8 @@ struct MedicationTrendsView: View {
 
 	private func visualizationHeader(_ title: String, medication: ANMedicationConcept) -> some View {
 		VStack(alignment: .leading, spacing: metricTitleSpacing) {
-			Text(medication.displayName)
+			Text(medication.demoDisplayName)
+				.demoNameRedacted()
 				.font(.customFont(fontFamily, style: .title3, weight: .semibold))
 				.noTruncate()
 			Text("\(title) · \(daysWindow) days through \(viewModel.trendsWindowEnd.formatted(date: .abbreviated, time: .omitted))")
@@ -494,7 +497,7 @@ struct MedicationTrendsView: View {
 				}
 				.frame(height: chartHeight)
 				.padding(.horizontal, chartPaddingH)
-				.accessibilityLabel("Daily usage chart for \(med.displayName)")
+				.accessibilityLabel("Daily usage chart for \(med.demoDisplayName)")
 				.accessibilityHint("Tap to open history for this medication")
 				.onTapGesture {
 					// Navigate to history with the selected medication
@@ -511,7 +514,7 @@ struct MedicationTrendsView: View {
 						.font(.customFont(fontFamily, style: .body))
 						.frame(minHeight: 44)
 				}
-				.accessibilityLabel("View history for \(med.displayName)")
+				.accessibilityLabel("View history for \(med.demoDisplayName)")
 			}
 			.padding(chartContainerPadding)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
@@ -534,7 +537,7 @@ struct MedicationTrendsView: View {
 					data: data,
 					daysWindow: daysWindow,
 					medicationColor: med.displayColor,
-					medicationName: med.displayName,
+					medicationName: med.demoDisplayName,
 					onDateTapped: { date in
 						// Navigate to history with selected date and medication
 						if let medicationID = viewModel.selectedMedicationID {
@@ -550,6 +553,7 @@ struct MedicationTrendsView: View {
 }
 
 struct CalendarHeatmapGrid: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	let data: [CalendarDay]

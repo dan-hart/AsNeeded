@@ -11,6 +11,7 @@ import SwiftRxNorm
 import SwiftUI
 
 struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	// MARK: - Properties
 
 	@Binding var text: String
@@ -89,7 +90,14 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 					.accessibilityHidden(true)
 			}
 
-			TextField(dynamicTypeSize.isAccessibilitySize ? "Name" : placeholder, text: $text)
+			Group {
+				if demoMode.isEnabled {
+					SecureField("Medication name", text: $text)
+						.demoNameRedacted()
+				} else {
+					TextField(dynamicTypeSize.isAccessibilitySize ? "Name" : placeholder, text: $text)
+				}
+			}
 				.accessibilityLabel("Medication name, required")
 				.accessibilityHint("Type a name or choose a search result.")
 				.textFieldStyle(.plain)
@@ -324,12 +332,14 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 					.frame(width: 24)
 
 				VStack(alignment: .leading, spacing: 2) {
-					Text(title)
+					Text(demoMode.name(title))
+						.demoNameRedacted()
 						.font(.body)
 						.foregroundColor(.primary)
 
 					if let subtitle {
-						Text(subtitle)
+						Text(demoMode.name(subtitle))
+							.demoNameRedacted()
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
@@ -370,7 +380,8 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 
 				VStack(alignment: .leading, spacing: 3) {
 					HStack(spacing: 6) {
-						Text(result.drug.name)
+						Text(demoMode.name(result.drug.name))
+							.demoNameRedacted()
 							.font(.body)
 							.foregroundColor(.primary)
 							.noTruncate()
@@ -406,7 +417,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			)
 		}
 		.buttonStyle(SuggestionButtonStyle())
-		.accessibilityLabel(result.drug.name + (result.isExactMatch ? ", exact match" : "") + (result.score >= 0.95 ? ", high confidence" : ""))
+		.accessibilityLabel(demoMode.name(result.drug.name) + (result.isExactMatch ? ", exact match" : "") + (result.score >= 0.95 ? ", high confidence" : ""))
 		.accessibilityHint("Double tap to select this medication")
 		.accessibilityAddTraits(.isButton)
 	}
@@ -444,7 +455,8 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 				Image(systemSymbol: .pillsFill)
 					.font(.caption)
 
-				Text(medication.brandName)
+				Text(demoMode.name(medication.brandName))
+					.demoNameRedacted()
 					.font(.customFont(fontFamily, style: .caption, weight: .medium))
 					.noTruncate()
 			}

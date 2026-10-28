@@ -7,6 +7,7 @@ import SwiftUI
 import UIKit
 
 struct MedicationDetailView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var doseConfirmation = MedicationListViewModel()
 	@State private var showSupportPage = false
@@ -83,7 +84,7 @@ struct MedicationDetailView: View {
             mainContent
         }
         .background(Color(.systemGroupedBackground))
-        .customNavigationTitle(medication.displayName, displayMode: .inline)
+		.customNavigationTitle(medication.demoDisplayName, displayMode: .inline)
 		.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 		.overlay(alignment: .top) {
 			if doseConfirmation.showQuickLogToast {
@@ -100,9 +101,7 @@ struct MedicationDetailView: View {
 							if await doseConfirmation.undoLastQuickLog(eventID: eventID) { await refreshMedication() }
 							else { undoDoseError = true }
 						}
-					},
-					includesSupportSuggestion: doseConfirmation.confirmationIncludesSupport,
-					onSupportTapped: { doseConfirmation.dismissQuickLogToast(); showSupportPage = true }
+					}
 				)
 			}
 		}
@@ -113,7 +112,7 @@ struct MedicationDetailView: View {
             toolbarContent
         }
         .tint(.accent)
-        .confirmationDialog("Delete \(medication.displayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .confirmationDialog("Delete \(medication.demoDisplayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete Medication", role: .destructive) {
                 Task {
 					await viewModel.delete(medication)
@@ -266,6 +265,7 @@ struct MedicationDetailView: View {
 
     private var mainContent: some View {
         VStack(spacing: adaptiveContentSpacing) {
+			if demoMode.isEnabled { DemoModeBanner().padding(.horizontal, isRegularWidth ? 32 : 20) }
             heroSection
 
             detailsCardsSection
@@ -446,15 +446,17 @@ struct MedicationDetailView: View {
 					.background(medication.displayColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
 			}
 			.buttonStyle(.plain)
-			.accessibilityLabel("Change appearance for \(medication.displayName)")
+			.accessibilityLabel("Change appearance for \(medication.demoDisplayName)")
 
 			VStack(alignment: .leading, spacing: 4) {
-				Text(medication.displayName)
+				Text(medication.demoDisplayName)
+					.demoNameRedacted()
 					.font(.customFont(fontFamily, style: .title2, weight: .bold))
 					.noTruncate()
 					.accessibilityAddTraits(.isHeader)
 				if medication.clinicalName != medication.displayName {
-					CopyableText(medication.clinicalName, font: .customFont(fontFamily, style: .subheadline), color: .secondary)
+					CopyableText(medication.demoClinicalName, font: .customFont(fontFamily, style: .subheadline), color: .secondary)
+						.demoNameRedacted()
 				}
 			}
 			Spacer(minLength: 0)
@@ -480,7 +482,7 @@ struct MedicationDetailView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     CopyableText(
-                        medication.clinicalName,
+                        medication.demoClinicalName,
                         font: .subheadline,
                         weight: .medium,
                         color: .secondary
@@ -489,7 +491,8 @@ struct MedicationDetailView: View {
 
                 if let nickname = medication.nickname {
                     Divider()
-                    detailRow(label: "Nickname", value: nickname)
+                    detailRow(label: "Nickname", value: demoMode.name(nickname))
+						.demoNameRedacted()
                 }
             }
         }

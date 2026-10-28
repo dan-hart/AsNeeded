@@ -6,6 +6,7 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicationListView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
 	@State private var showSupportPage = false
 	@StateObject private var doseLogSession = LogDoseView.Session()
 	@StateObject private var navigationManager = NavigationManager.shared
@@ -42,7 +43,7 @@ struct MedicationListView: View {
     var body: some View {
         mainContent
 			.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
-            .customNavigationTitle("Medication", displayMode: .large)
+			.customNavigationTitle("Medication", displayMode: .large)
 			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 			.safeAreaInset(edge: .bottom, spacing: 0) {
 				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
@@ -186,9 +187,7 @@ struct MedicationListView: View {
                                 Task {
                                     if !(await viewModel.undoLastQuickLog(eventID: eventID)) { quickLogError = true }
                                 }
-                            },
-                            includesSupportSuggestion: viewModel.confirmationIncludesSupport,
-                            onSupportTapped: { viewModel.dismissQuickLogToast(); showSupportPage = true }
+                            }
                         )
                     }
 
@@ -249,6 +248,7 @@ struct MedicationListView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         VStack(spacing: emptyStateSpacing) {
+			if demoMode.isEnabled { DemoModeBanner().padding(.horizontal, 16) }
             Spacer()
 
             VStack(spacing: emptyStateInnerSpacing) {
@@ -301,6 +301,12 @@ struct MedicationListView: View {
     private var medicationListContent: some View {
         VStack(spacing: 0) {
             List {
+				if demoMode.isEnabled {
+					DemoModeBanner()
+						.listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+				}
                 ForEach(viewModel.sortedMedications, id: \.id) { med in
                     HStack {
                         MedicationRowComponent(
@@ -339,7 +345,7 @@ struct MedicationListView: View {
                                 Label("Edit", systemSymbol: .pencil)
                             }
                             .tint(.accent)
-                            .accessibilityLabel("Edit \(med.displayName)")
+                            .accessibilityLabel("Edit \(med.demoDisplayName)")
                             .accessibilityHint("Opens edit form for this medication")
 
                             Button(role: .destructive) {
@@ -349,7 +355,7 @@ struct MedicationListView: View {
                                 Label("Delete", systemSymbol: .trash)
                             }
                             .tint(.red)
-                            .accessibilityLabel("Delete \(med.displayName)")
+                            .accessibilityLabel("Delete \(med.demoDisplayName)")
                             .accessibilityHint("Removes this medication permanently")
                         }
                     }
