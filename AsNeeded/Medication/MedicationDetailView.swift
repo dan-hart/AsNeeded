@@ -239,11 +239,6 @@ struct MedicationDetailView: View {
         VStack(spacing: adaptiveContentSpacing) {
             heroSection
 
-			VStack(spacing: 12) {
-				logDoseButton
-				editMedicationButton
-			}
-
             detailsCardsSection
         }
         .padding(.vertical)
@@ -256,6 +251,11 @@ struct MedicationDetailView: View {
             if medication.quantity != nil || medication.lastRefillDate != nil || medication.nextRefillDate != nil {
                 refillInfoCard
             }
+
+			VStack(spacing: 12) {
+				logDoseButton
+				editMedicationButton
+			}
 
 			if doseInterval != nil || dailyDoseLimit != nil {
 				TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -361,7 +361,7 @@ struct MedicationDetailView: View {
             Button {
                 showLogDose = true
             } label: {
-                Image(systemSymbol: .pillsFill)
+                Label("Log Dose", systemSymbol: .pillsFill)
             }
 			.tint(.accent)
             .accessibilityLabel("Log dose")
@@ -393,7 +393,7 @@ struct MedicationDetailView: View {
                 }
 				.tint(.red)
             } label: {
-                Image(systemSymbol: .ellipsis)
+                Label("More Actions", systemSymbol: .ellipsis)
             }
 			.tint(.accent)
             .accessibilityLabel("More actions")
@@ -690,13 +690,13 @@ struct MedicationDetailView: View {
 	}
 
 	private var editMedicationButton: some View {
-		detailActionButton("Edit Medication", icon: .pencil) {
+		detailActionButton("Edit Medication", icon: .pencil, isSecondary: true) {
 			HapticsManager.shared.mediumImpact()
 			showEditSheet = true
 		}
 	}
 
-	private func detailActionButton(_ title: String, icon: SFSymbol, action: @escaping () -> Void) -> some View {
+	private func detailActionButton(_ title: String, icon: SFSymbol, isSecondary: Bool = false, action: @escaping () -> Void) -> some View {
 		Button(action: action) {
 			HStack(spacing: 12) {
 				Image(systemSymbol: icon)
@@ -710,12 +710,10 @@ struct MedicationDetailView: View {
 			.frame(maxWidth: .infinity)
 			.padding(.horizontal, 16)
 			.padding(.vertical, 16)
-			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+			.foregroundStyle(isSecondary ? Color.primary : medication.displayColor.dynamicFilledButtonForeground)
 		}
 		.buttonStyle(.borderedProminent)
-		.tint(medication.displayColor.dynamicFilledButtonBackground)
-		.frame(maxWidth: cardMaxWidth)
-		.padding(.horizontal, isRegularWidth ? 32 : 20)
+		.tint(isSecondary ? Color(.secondarySystemFill) : medication.displayColor.dynamicFilledButtonBackground)
 	}
 
     // MARK: - Helper Views
