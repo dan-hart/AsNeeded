@@ -92,6 +92,7 @@ struct MedicationDetailView: View {
 					if viewModel.errorMessage == nil { dismiss() }
 				}
             }
+			.tint(.red)
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This action cannot be undone. All history and reminders for this medication will be deleted.")
@@ -238,7 +239,10 @@ struct MedicationDetailView: View {
         VStack(spacing: adaptiveContentSpacing) {
             heroSection
 
-            logDoseButton
+			VStack(spacing: 12) {
+				logDoseButton
+				editMedicationButton
+			}
 
             detailsCardsSection
         }
@@ -247,15 +251,17 @@ struct MedicationDetailView: View {
 
     private var detailsCardsSection: some View {
         VStack(spacing: cardSpacing) {
-			TimelineView(.periodic(from: .now, by: 1)) { context in
-				confidenceCard(at: context.date)
-			}
-
             medicationInfoCard
 
             if medication.quantity != nil || medication.lastRefillDate != nil || medication.nextRefillDate != nil {
                 refillInfoCard
             }
+
+			if doseInterval != nil || dailyDoseLimit != nil {
+				TimelineView(.periodic(from: .now, by: 1)) { context in
+					confidenceCard(at: context.date)
+				}
+			}
 
             if medication.prescribedDoseAmount != nil && medication.prescribedUnit != nil {
                 prescribedDoseCard
@@ -266,6 +272,14 @@ struct MedicationDetailView: View {
         .frame(maxWidth: cardMaxWidth)
         .padding(.horizontal, isRegularWidth ? 32 : 20)
     }
+
+	private var doseInterval: Double? {
+		medication.minimumHoursBetweenDoses ?? safetyProfileStore.profile(for: medicationId).minimumHoursBetweenDoses
+	}
+
+	private var dailyDoseLimit: Double? {
+		medication.maximumDailyDoseAmount ?? safetyProfileStore.profile(for: medicationId).maxDailyAmount
+	}
 
     private func confidenceSummary(at date: Date) -> MedicationStatusSummaryService.Summary {
         statusSummaryService.summary(
@@ -316,15 +330,11 @@ struct MedicationDetailView: View {
             VStack(alignment: .leading, spacing: detailSpacing) {
                 confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
 
-				if let hours = medication.minimumHoursBetweenDoses {
+				if let hours = doseInterval {
 					confidenceRow(icon: .clock, text: "At least \(hours.formattedAmount) hours between doses", color: .secondary)
-				} else {
-					confidenceRow(icon: .clock, text: "No minimum interval saved", color: .secondary)
 				}
-				if let maximum = medication.maximumDailyDoseAmount {
+				if let maximum = dailyDoseLimit {
 					confidenceRow(icon: .chartLineUptrendXyaxis, text: "Maximum in any 24 hours: \(maximum.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit not set)")", color: .secondary)
-				} else {
-					confidenceRow(icon: .chartLineUptrendXyaxis, text: "No maximum amount in 24 hours saved", color: .secondary)
 				}
 
                 if let dailyText = summary.dailyText {
@@ -342,7 +352,7 @@ struct MedicationDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel([summary.accessibilityLabel, medication.minimumHoursBetweenDoses.map { "Minimum interval: \($0.formattedAmount) hours" } ?? "No minimum interval saved", medication.maximumDailyDoseAmount.map { "Maximum in rolling 24 hours: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "unit missing")" } ?? "No maximum amount in 24 hours saved", "Follow your prescription and care instructions."].joined(separator: ". "))
+        .accessibilityLabel([summary.accessibilityLabel, doseInterval.map { "Minimum interval: \($0.formattedAmount) hours" }, dailyDoseLimit.map { "Maximum in rolling 24 hours: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "unit missing")" }, "Follow your prescription and care instructions."].compactMap { $0 }.joined(separator: ". "))
     }
 
     @ToolbarContentBuilder
@@ -377,8 +387,11 @@ struct MedicationDetailView: View {
                 Button(role: .destructive) {
                     showDeleteConfirm = true
                 } label: {
-                    Label("Delete", systemSymbol: .trash)
+					Label("Delete Medication", systemSymbol: .trash)
+						.symbolRenderingMode(.monochrome)
+						.foregroundStyle(.red)
                 }
+				.tint(.red)
             } label: {
                 Image(systemSymbol: .ellipsis)
             }
@@ -399,7 +412,8 @@ struct MedicationDetailView: View {
 				Image(systemName: medication.effectiveDisplaySymbol)
 					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 					.foregroundStyle(medication.displayColor)
-					.frame(width: 44, height: 44)
+					.padding(16)
+					.frame(minWidth: 64, minHeight: 64)
 					.background(medication.displayColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
 			}
 			.buttonStyle(.plain)
@@ -668,26 +682,41 @@ struct MedicationDetailView: View {
 		.clipShape(RoundedRectangle(cornerRadius: buttonCornerRadius))
 	}
 
-    private var logDoseButton: some View {
-        Button {
-            HapticsManager.shared.mediumImpact()
-            showLogDose = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemSymbol: .plusCircleFill)
-                    .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                Text("Log Dose")
-                    .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
-        }
+	private var logDoseButton: some View {
+		detailActionButton("Log Dose", icon: .plusCircleFill) {
+			HapticsManager.shared.mediumImpact()
+			showLogDose = true
+		}
+	}
+
+	private var editMedicationButton: some View {
+		detailActionButton("Edit Medication", icon: .pencil) {
+			HapticsManager.shared.mediumImpact()
+			showEditSheet = true
+		}
+	}
+
+	private func detailActionButton(_ title: String, icon: SFSymbol, action: @escaping () -> Void) -> some View {
+		Button(action: action) {
+			HStack(spacing: 12) {
+				Image(systemSymbol: icon)
+					.font(.customFont(fontFamily, style: .body, weight: .semibold))
+					.padding(4)
+					.accessibilityHidden(true)
+				Text(title)
+					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+					.fixedSize(horizontal: false, vertical: true)
+			}
+			.frame(maxWidth: .infinity)
+			.padding(.horizontal, 16)
+			.padding(.vertical, 16)
+			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+		}
 		.buttonStyle(.borderedProminent)
-		.tint(Color.accent.dynamicFilledButtonBackground)
-        .frame(maxWidth: cardMaxWidth)
-        .padding(.horizontal, isRegularWidth ? 32 : 20)
-    }
+		.tint(medication.displayColor.dynamicFilledButtonBackground)
+		.frame(maxWidth: cardMaxWidth)
+		.padding(.horizontal, isRegularWidth ? 32 : 20)
+	}
 
     // MARK: - Helper Views
 
