@@ -6,9 +6,12 @@ import SwiftUI
 @MainActor
 final class DemoModeState: ObservableObject {
 	static let shared = DemoModeState()
-	@Published var isEnabled = false
+	@Published private(set) var isEnabled = false
 
 	private init() {}
+
+	func enable() { isEnabled = true }
+	fileprivate func disableAfterConfirmation() { isEnabled = false }
 
 	func name(_ original: String) -> String {
 		isEnabled && !original.isEmpty ? "Hidden medication" : original
@@ -46,10 +49,11 @@ private struct DemoNameRedaction: ViewModifier {
 struct DemoModeBanner: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
 	@Environment(\.fontFamily) private var fontFamily
+	@State private var showDisableConfirmation = false
 
 	var body: some View {
 		if demoMode.isEnabled {
-			Button { demoMode.isEnabled = false } label: {
+			Button { showDisableConfirmation = true } label: {
 				Label("Demo Mode is on · Tap to turn off", systemSymbol: .exclamationmarkTriangleFill)
 					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
 					.fixedSize(horizontal: false, vertical: true)
@@ -60,7 +64,25 @@ struct DemoModeBanner: View {
 			}
 			.buttonStyle(.plain)
 			.accessibilityLabel("Demo Mode is on. Turn off Demo Mode")
+			.accessibilityHint("Asks for confirmation before showing medication names")
+			.confirmDemoModeDisable(isPresented: $showDisableConfirmation)
 			.padding(.vertical, 8)
+		}
+	}
+}
+
+private struct DemoModeDisableConfirmation: ViewModifier {
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@Binding var isPresented: Bool
+
+	func body(content: Content) -> some View {
+		content.alert("Turn Off Demo Mode?", isPresented: $isPresented) {
+			Button("Keep Names Hidden", role: .cancel) {}
+			Button("Show Medication Names", role: .destructive) {
+				demoMode.disableAfterConfirmation()
+			}
+		} message: {
+			Text("Your medication names will become visible. Continue only when you're ready to show them.")
 		}
 	}
 }
@@ -88,6 +110,10 @@ private struct DemoMedicationSearch: ViewModifier {
 }
 
 extension View {
+	func confirmDemoModeDisable(isPresented: Binding<Bool>) -> some View {
+		modifier(DemoModeDisableConfirmation(isPresented: isPresented))
+	}
+
 	func demoNameRedacted() -> some View { modifier(DemoNameRedaction()) }
 
 	func demoMedicationSearch(query: Binding<String>) -> some View {

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DataPrivacyView: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
+	@State private var showDisableConfirmation = false
 	@Environment(\.fontFamily) private var fontFamily
 
 	private let sectionSpacing: CGFloat = 24
@@ -56,9 +57,16 @@ struct DataPrivacyView: View {
 					]
 				)
 				VStack(alignment: .leading, spacing: rowSpacing) {
-					Toggle("Demo Mode", isOn: $demoMode.isEnabled)
+					Toggle("Demo Mode", isOn: Binding(
+						get: { demoMode.isEnabled },
+						set: { enabled in
+							if enabled { demoMode.enable() }
+							else { showDisableConfirmation = true }
+						}
+					))
 						.font(.customFont(fontFamily, style: .body, weight: .semibold))
 						.tint(.accent)
+						.confirmDemoModeDisable(isPresented: $showDisableConfirmation)
 					Text("Temporarily hide medication names while showing the app. Everything stays tappable. Turns off when the app relaunches.")
 						.font(.customFont(fontFamily, style: .subheadline))
 						.foregroundStyle(.secondary)
