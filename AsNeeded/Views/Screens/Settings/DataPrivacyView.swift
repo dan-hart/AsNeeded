@@ -40,7 +40,7 @@ struct DataPrivacyView: View {
 					rows: [
 						.init(
 							title: "App Preferences",
-							subtitle: "Review private questions, review prompts, haptics, and import behavior",
+							subtitle: "Review feedback prompts, haptics, and import behavior",
 							icon: .gearshapeFill,
 							destination: AnyView(AppPreferencesView())
 						),

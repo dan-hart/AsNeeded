@@ -41,7 +41,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 - **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
 - **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
-- **Usage insights**: Visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
+- **Usage insights**: Visual charts, searchable history, and clinician-friendly export
 - **Ambient access**: Home Screen widgets, Lock Screen widgets, Live Activities, interactive quick actions, and watchOS support
 - **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
 
@@ -203,7 +203,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Privacy
 
-Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. When supported and enabled, question-based Trends exploration is processed entirely on device. Your health data belongs to you.
+Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. Your health data belongs to you.
 
 ---
 

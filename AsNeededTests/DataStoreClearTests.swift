@@ -41,7 +41,6 @@ struct DataStoreClearTests {
 
 		#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
 		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
-		#expect(defaults.bool(forKey: UserDefaultsKeys.trendsQuestionsEnabled) == false)
 	}
 
     @Test("clearAllData removes all AppStorage medication selections")

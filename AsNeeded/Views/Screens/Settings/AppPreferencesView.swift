@@ -10,7 +10,6 @@ struct AppPreferencesView: View {
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
     @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
     @AppStorage(UserDefaultsKeys.importSettingsDefaultBehavior) private var importSettingsDefaultBehavior: String = "keep"
-    @AppStorage(UserDefaultsKeys.trendsQuestionsEnabled) private var trendsQuestionsEnabled = false
     @State private var showingResetConfirmation = false
     @ScaledMetric private var sectionSpacing: CGFloat = 32
     @ScaledMetric private var itemSpacing: CGFloat = 16
@@ -45,10 +44,6 @@ struct AppPreferencesView: View {
                 // MARK: - Privacy
 
                 privacySection
-
-                if MedicationTrendsQuestionSupport.isSupportedOnDevice {
-                    privateQuestionsSection
-                }
 
                 // MARK: - Data Import
 
@@ -216,51 +211,6 @@ struct AppPreferencesView: View {
         }
     }
 
-    private var privateQuestionsSection: some View {
-        VStack(alignment: .leading, spacing: itemSpacing) {
-            Label("Private Questions", systemSymbol: .bubbleLeftAndBubbleRightFill)
-                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                .foregroundStyle(.accent)
-
-            Text("Ask the Trends tab about your own logs using on-device processing that stays private.")
-                .font(.customFont(fontFamily, style: .subheadline))
-                .foregroundStyle(.secondary)
-
-            PreferenceRow(
-                icon: .lockFill,
-                title: "Enable On-Device Questions",
-                subtitle: "Opt in before asking about medication patterns",
-                detail: "When enabled, the Trends tab can answer questions about your logged medication history. For this feature, your data stays on this device and never leaves the device for processing.",
-                isOn: $trendsQuestionsEnabled
-            ) { _ in }
-
-            HStack(alignment: .top, spacing: headerSpacing) {
-                Image(systemSymbol: .checkmarkShieldFill)
-                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
-                    .foregroundStyle(.accent)
-                    .frame(width: iconSize, height: iconSize)
-
-                VStack(alignment: .leading, spacing: stackItemSpacing) {
-                    Text("What to expect")
-                        .font(.customFont(fontFamily, style: .body, weight: .medium))
-                        .foregroundStyle(.primary)
-
-                    Text("Responses can be incorrect or incomplete, and the feature only summarizes the data you’ve already logged.")
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(padding)
-            .background(Color(.systemBackground))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color(.systemGray4), lineWidth: borderWidth)
-            )
-            .cornerRadius(cornerRadius)
-        }
-    }
-
     private var dataImportSection: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
             Label("Data Import Behavior", systemSymbol: .squareAndArrowDown)
@@ -403,7 +353,6 @@ struct AppPreferencesView: View {
 
         // Reset privacy preferences
         hideSupportBanners = false
-        trendsQuestionsEnabled = false
         appReviewManager.hasOptedOutOfReviews = false
 
         // Reset import behavior

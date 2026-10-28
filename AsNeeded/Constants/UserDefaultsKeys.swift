@@ -41,9 +41,6 @@ public enum UserDefaultsKeys {
     /// Whether to hide support banners
     static let hideSupportBanners = "hideSupportBanners"
 
-    /// Whether private on-device Trends questions are enabled
-    static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
-
     /// Stored medication safety and refill profiles keyed by medication ID
     static let medicationSafetyProfiles = "medicationSafetyProfiles"
 
@@ -179,7 +176,6 @@ public enum UserDefaultsKeys {
         trendsVisualizationType,
         trendsDaysWindow,
         hideSupportBanners,
-        trendsQuestionsEnabled,
         medicationSafetyProfiles,
         showMedicationNamesInNotifications,
         selectedFontFamily,
@@ -226,7 +222,6 @@ public enum UserDefaultsKeys {
         trendsVisualizationType: 0, // Chart view
         trendsDaysWindow: 14, // 14 days by default
         hideSupportBanners: false,
-        trendsQuestionsEnabled: false,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
         hasUserOptedOutOfReviews: false,
@@ -288,7 +283,6 @@ public enum UserDefaultsKeys {
         trendsVisualizationType,
         trendsDaysWindow,
         hideSupportBanners,
-        trendsQuestionsEnabled,
         medicationSafetyProfiles,
 
         // Notification Settings

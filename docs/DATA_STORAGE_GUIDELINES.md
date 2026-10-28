@@ -604,3 +604,13 @@ repeated execution, and deliberate removal. Beta testing must verify an upgrade,
 multiple launches, backup/restore, watch sync and notification delivery on a physical
 device before a public release. Downgrade readers ignore optional model keys;
 old versions will not enforce new model-only limits.
+
+### 1.2.0 Experimental Questions Removal
+
+The optional `trendsQuestionsEnabled` setting is no longer read, written, exported,
+or applied by the shipping app. Older settings JSON containing that key decodes
+successfully because unknown keys are ignored. An existing unused boolean in
+UserDefaults does not enable any functionality; no destructive cleanup or data
+migration is needed. Medication/event storage paths and schemas are unchanged.
+Compatibility tests cover decoding older settings and medication exports,
+preserving supported preferences, and omitting the retired key from new exports.

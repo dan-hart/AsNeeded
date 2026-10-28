@@ -28,8 +28,6 @@ struct MedicationTrendsView: View {
     @Environment(\.fontFamily) private var fontFamily
     @AppStorage(UserDefaultsKeys.trendsDaysWindow) private var daysWindow: Int = 14
     @AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
-    @State private var questionText = ""
-    @State private var showingDisclaimer = false
 
     @ScaledMetric private var sectionSpacing: CGFloat = 16
     @ScaledMetric private var controlsSpacing: CGFloat = 12
@@ -52,16 +50,9 @@ struct MedicationTrendsView: View {
     @ScaledMetric private var legendSquareSize: CGFloat = 12
     @ScaledMetric private var chartLineWidth: CGFloat = 2
     @ScaledMetric private var chartSymbolSize: CGFloat = 30
-    @ScaledMetric private var questionPromptSpacing: CGFloat = 8
     @ScaledMetric private var clinicalCardPadding: CGFloat = 18
-    @ScaledMetric private var promptButtonPaddingH: CGFloat = 10
-    @ScaledMetric private var promptButtonPaddingV: CGFloat = 8
     @ScaledMetric private var insightBadgePaddingH: CGFloat = 10
     @ScaledMetric private var insightBadgePaddingV: CGFloat = 6
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 14
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 14
-    @ScaledMetric private var smallSpacing: CGFloat = 4
-    @ScaledMetric private var mediumSpacing: CGFloat = 8
 
     var body: some View {
         NavigationStack {
@@ -81,7 +72,6 @@ struct MedicationTrendsView: View {
                             calendarHeatmap(for: med)
                         }
 
-                        questionsSection(for: med)
                     } else {
                         Text("Select a medication to see trends.")
                             .font(.customFont(fontFamily, style: .body))
@@ -99,11 +89,6 @@ struct MedicationTrendsView: View {
             .onAppear {
                 viewModel.ensureValidSelection()
             }
-            .sheet(isPresented: $showingDisclaimer) {
-                NavigationStack {
-                    MedicalDisclaimerDetailView()
-                }
-            }
         }
     }
 
@@ -119,8 +104,6 @@ struct MedicationTrendsView: View {
                     ForEach(viewModel.medications, id: \.id) { med in
                         Button {
                             viewModel.selectedMedicationID = med.id
-                            viewModel.latestQuestionAnswer = nil
-                            viewModel.questionErrorMessage = nil
                         } label: {
                             Text(med.displayName)
                                 .font(.customFont(fontFamily, style: .body))
@@ -281,179 +264,6 @@ struct MedicationTrendsView: View {
         }
     }
 
-    @ViewBuilder
-    private func questionsSection(for med: ANMedicationConcept) -> some View {
-        switch viewModel.questionAvailability {
-        case .unavailable:
-            EmptyView()
-        case .disabled:
-            VStack(alignment: .leading, spacing: controlsSpacing) {
-                HStack {
-                    Text("Private Questions")
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                    Spacer()
-                    insightBadge(text: "Opt in", tint: med.displayColor)
-                }
-
-                Text("Turn this on in App Preferences to ask private questions about your trends. Questions stay on this device, and this medication data never leaves the device for processing.")
-                    .font(.customFont(fontFamily, style: .subheadline))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                NavigationLink(destination: AppPreferencesView()) {
-                    Label("Open App Preferences", systemSymbol: .gearshapeFill)
-                        .font(.customFont(fontFamily, style: .body, weight: .medium))
-                        .foregroundStyle(.accent)
-                }
-
-                disclaimerFooter
-            }
-            .padding(clinicalCardPadding)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
-        case .available:
-            VStack(alignment: .leading, spacing: controlsSpacing) {
-                HStack {
-                    Text("Private Questions")
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                    Spacer()
-                    insightBadge(text: "On device", tint: med.displayColor)
-                }
-
-                Text("Ask about your logged history in plain language. Questions stay on this device, and your medication data never leaves the device for this feature.")
-                    .font(.customFont(fontFamily, style: .subheadline))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                TextField("Ask about timing, consistency, or changes in this medication's pattern", text: $questionText, axis: .vertical)
-                    .font(.customFont(fontFamily, style: .body))
-                    .lineLimit(2 ... 4)
-                    .textFieldStyle(.roundedBorder)
-
-                Button {
-                    Task {
-                        let prompt = questionText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !prompt.isEmpty else { return }
-                        await viewModel.ask(question: prompt, windowDays: daysWindow)
-                    }
-                } label: {
-                    HStack {
-                        if viewModel.isAnsweringQuestion {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Image(systemSymbol: .bubbleLeftAndBubbleRightFill)
-                        }
-                        Text(viewModel.isAnsweringQuestion ? "Reviewing your history..." : "Ask About This Data")
-                            .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, buttonVerticalPadding)
-                    .background(med.displayColor, in: RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous))
-                }
-                .disabled(questionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnsweringQuestion)
-
-                if !viewModel.examplePrompts.isEmpty {
-                    VStack(alignment: .leading, spacing: questionPromptSpacing) {
-                        Text("Try a prompt")
-                            .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(viewModel.examplePrompts, id: \.self) { prompt in
-                            Button {
-                                questionText = prompt
-                                Task {
-                                    await viewModel.ask(question: prompt, windowDays: daysWindow)
-                                }
-                            } label: {
-                                HStack(alignment: .top, spacing: mediumSpacing) {
-                                    Image(systemSymbol: .sparkles)
-                                        .foregroundStyle(med.displayColor)
-                                        .padding(.top, smallSpacing)
-
-                                    Text(prompt)
-                                        .font(.customFont(fontFamily, style: .subheadline))
-                                        .foregroundStyle(.primary)
-                                        .fixedSize(horizontal: false, vertical: true)
-
-                                    Spacer()
-                                }
-                                .padding(.horizontal, promptButtonPaddingH)
-                                .padding(.vertical, promptButtonPaddingV)
-                                .background(
-                                    RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
-                                        .fill(Color(.tertiarySystemFill))
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                if let errorMessage = viewModel.questionErrorMessage {
-                    Text(errorMessage)
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if let answer = viewModel.latestQuestionAnswer {
-                    VStack(alignment: .leading, spacing: controlsSpacing) {
-                        Text(answer.answer)
-                            .font(.customFont(fontFamily, style: .body))
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if !answer.highlights.isEmpty {
-                            VStack(alignment: .leading, spacing: smallSpacing) {
-                                Text("What stands out")
-                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                    .foregroundStyle(.secondary)
-
-                                ForEach(answer.highlights, id: \.self) { highlight in
-                                    HStack(alignment: .top, spacing: smallSpacing) {
-                                        Image(systemSymbol: .circleFill)
-                                            .font(.customFont(fontFamily, style: .caption2))
-                                            .foregroundStyle(med.displayColor)
-                                            .padding(.top, smallSpacing)
-                                        Text(highlight)
-                                            .font(.customFont(fontFamily, style: .caption))
-                                            .foregroundStyle(.secondary)
-                                            .fixedSize(horizontal: false, vertical: true)
-                                    }
-                                }
-                            }
-                        }
-
-                        if !answer.limitations.isEmpty {
-                            VStack(alignment: .leading, spacing: smallSpacing) {
-                                Text("Limitations")
-                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                    .foregroundStyle(.secondary)
-
-                                ForEach(answer.limitations, id: \.self) { limitation in
-                                    Text(limitation)
-                                        .font(.customFont(fontFamily, style: .caption))
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                        }
-                    }
-                    .padding(clinicalCardPadding)
-                    .background(
-                        RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
-                            .fill(med.displayColor.opacity(0.06))
-                    )
-                }
-
-                disclaimerFooter
-            }
-            .padding(clinicalCardPadding)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
-        }
-    }
-
     private func metricCard(title: String, value: String, systemImage: SFSymbol) -> some View {
         VStack(alignment: .leading, spacing: metricTitleSpacing) {
             HStack(spacing: metricLabelSpacing) {
@@ -483,31 +293,6 @@ struct MedicationTrendsView: View {
                 Capsule()
                     .fill(tint.opacity(0.12))
             )
-    }
-
-    private var disclaimerFooter: some View {
-        HStack(alignment: .top, spacing: mediumSpacing) {
-            Image(systemSymbol: .exclamationmarkTriangleFill)
-                .foregroundStyle(.orange)
-                .padding(.top, smallSpacing)
-
-            VStack(alignment: .leading, spacing: smallSpacing) {
-                Text("Responses may be incorrect or incomplete. Review your history directly before making decisions.")
-                    .font(.customFont(fontFamily, style: .caption))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    showingDisclaimer = true
-                } label: {
-                    Text("Medical Disclaimer")
-                        .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                        .foregroundStyle(.accent)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.top, smallSpacing)
     }
 
     @ViewBuilder

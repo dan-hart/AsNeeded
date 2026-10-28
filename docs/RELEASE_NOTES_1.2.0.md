@@ -8,6 +8,8 @@
 
 Timing is based on saved limits and recorded doses. Follow prescription and care instructions.
 
+- Removed the experimental Private Questions feature from Trends and App Preferences.
+
 ## TestFlight verification
 
 1. Upgrade with existing medication/history data and legacy guardrails; verify timing/quantity values and other settings survive two launches.
@@ -18,3 +20,5 @@ Timing is based on saved limits and recorded doses. Follow prescription and care
 6. Verify missing history, missing dose units, and incompatible units produce explanatory states rather than claims of safety.
 7. Test backup/export/import and watch logging. Confirm model limits survive and alerts update.
 8. On a physical device, confirm notification delivery while the app is backgrounded/terminated and after an upgrade. Device delivery and upgrade behavior require beta testing before public release.
+
+Confirm Trends has no question input/answers and App Preferences has no questions toggle, including on Apple Intelligence-capable devices. Older settings exports must still import while preserving medication data.

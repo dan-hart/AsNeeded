@@ -20,14 +20,10 @@ final class MedicationTrendsViewModel: ObservableObject {
     }
 
     @Published var medications: [ANMedicationConcept] = []
-    @Published var latestQuestionAnswer: TrendsQuestionAnswer?
-    @Published var isAnsweringQuestion = false
-    @Published var questionErrorMessage: String?
 
     private let dataStore: DataStore
     private let safetyProfileStore: MedicationSafetyProfileStore
     private let doseGuidanceService: MedicationDoseGuidanceService
-    private let questionService: MedicationTrendsQuestionService
     private let calendar = Calendar.current
     private var cancellables = Set<AnyCancellable>()
 
@@ -35,13 +31,11 @@ final class MedicationTrendsViewModel: ObservableObject {
         dataStore: DataStore = .shared,
         selectedMedicationID: UUID? = nil,
         safetyProfileStore: MedicationSafetyProfileStore = .shared,
-        doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService(),
-        questionService: MedicationTrendsQuestionService = MedicationTrendsQuestionService()
+        doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
     ) {
         self.dataStore = dataStore
         self.safetyProfileStore = safetyProfileStore
         self.doseGuidanceService = doseGuidanceService
-        self.questionService = questionService
         if let initialID = selectedMedicationID {
             self.selectedMedicationID = initialID
         }
@@ -149,18 +143,6 @@ final class MedicationTrendsViewModel: ObservableObject {
 	var nextEligibleDoseDate: Date? {
 		doseAvailability().eligibleDate
 	}
-
-    var questionAvailability: TrendsQuestionAvailability {
-        questionService.availability
-    }
-
-    var examplePrompts: [String] {
-        guard let medication = selectedMedication else {
-            return []
-        }
-
-        return questionService.examplePrompts(for: medication)
-    }
 
     // Daily totals for the last N days (default 14)
     func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
@@ -348,63 +330,6 @@ final class MedicationTrendsViewModel: ObservableObject {
         }
 
         return fragments.joined(separator: " ")
-    }
-
-    func questionContext(windowDays: Int) -> TrendsQuestionContext? {
-        guard let medication = selectedMedication,
-              let unit = preferredUnit
-        else {
-            return nil
-        }
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-
-        let dailyTotalsSummary = dailyTotals(last: windowDays).map { item in
-            TrendsQuestionDailyTotal(
-                dayLabel: formatter.string(from: item.day),
-                total: item.total
-            )
-        }
-
-        let refillSummary = refillProjection?.statusMessage ?? "No refill projection available yet."
-        let quantitySummary: String
-        if let quantity = medication.quantity {
-            quantitySummary = "\(quantity.formattedAmount) \(unit.abbreviation)s left."
-        } else {
-            quantitySummary = "Current quantity is not being tracked."
-        }
-
-        return TrendsQuestionContext(
-            medicationName: medication.displayName,
-            unitName: unit.displayName,
-            windowDays: windowDays,
-            dailyTotals: dailyTotalsSummary,
-            patternSummary: patternSummary,
-            refillSummary: refillSummary,
-            quantitySummary: quantitySummary
-        )
-    }
-
-    func ask(question: String, windowDays: Int) async {
-        guard let context = questionContext(windowDays: windowDays) else {
-            questionErrorMessage = "Select a medication with recent dose data first."
-            return
-        }
-
-        isAnsweringQuestion = true
-        questionErrorMessage = nil
-
-        defer {
-            isAnsweringQuestion = false
-        }
-
-        do {
-            latestQuestionAnswer = try await questionService.answer(question: question, context: context)
-        } catch {
-            latestQuestionAnswer = nil
-            questionErrorMessage = error.localizedDescription
-        }
     }
 
     private func averagePerDay(daysEnding endOffset: Int, window days: Int) -> Double {

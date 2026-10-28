@@ -11,22 +11,6 @@ import Testing
 struct MedicationTrendsViewModelTests {
     // MARK: - Test Helpers
 
-    private struct MockGenerator: TrendsQuestionGenerating {
-        let response: TrendsQuestionAnswer
-
-        func answer(prompt: String) async throws -> TrendsQuestionAnswer {
-            response
-        }
-    }
-
-    private struct ThrowingGenerator: TrendsQuestionGenerating {
-        let error: any Error
-
-        func answer(prompt: String) async throws -> TrendsQuestionAnswer {
-            throw error
-        }
-    }
-
     private func clearStoredSelection() {
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
     }
@@ -327,22 +311,6 @@ struct MedicationTrendsViewModelTests {
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
 
         #expect(viewModel.patternSummary.contains("evening"))
-    }
-
-    @Test("Question context includes refill and quantity summaries")
-    func questionContextIncludesRefillAndQuantitySummaries() async throws {
-        let dataStore = DataStore(testIdentifier: "TrendsVM-QuestionContext")
-        let medication = createTestMedication(name: "ContextMed", quantity: 18, initialQuantity: 30, nextRefill: Date().addingTimeInterval(5 * 86_400), unit: .tablet)
-        try await dataStore.addMedication(medication)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: Date().addingTimeInterval(-3600), amount: 2, unit: .tablet))
-
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
-        let context = viewModel.questionContext(windowDays: 14)
-
-        #expect(context?.medicationName == "ContextMed")
-        #expect(context?.quantitySummary.contains("18") == true)
-        #expect(context?.refillSummary.isEmpty == false)
-        #expect(context?.dailyTotals.isEmpty == false)
     }
 
     @Test("DailyTotals calculates correct 14-day window")
@@ -784,117 +752,4 @@ struct MedicationTrendsViewModelTests {
         #expect(nextEligibleDate > Date())
     }
 
-    @Test("Question availability reflects injected question service state")
-    func questionAvailabilityReflectsInjectedService() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-QuestionAvailability")
-        let medication = createTestMedication(name: "Melatonin")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { false },
-            isSupportedProvider: { true },
-            generator: MockGenerator(
-                response: TrendsQuestionAnswer(answer: "", highlights: [], limitations: [])
-            )
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        #expect(viewModel.questionAvailability == .disabled)
-    }
-
-    @Test("Example prompts are derived from the selected medication")
-    func examplePromptsReflectSelectedMedication() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-ExamplePrompts")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { true },
-            isSupportedProvider: { true },
-            generator: MockGenerator(
-                response: TrendsQuestionAnswer(answer: "", highlights: [], limitations: [])
-            )
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        #expect(viewModel.examplePrompts.count == 4)
-        #expect(viewModel.examplePrompts.allSatisfy { $0.contains("Ibuprofen") })
-    }
-
-    @Test("Ask stores the generated answer for the selected medication")
-    func askStoresGeneratedAnswer() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-AskSuccess")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-        try await dataStore.addEvent(
-            createTestEvent(
-                medication: medication,
-                date: Date().addingTimeInterval(-1800),
-                amount: 2,
-                unit: .tablet
-            )
-        )
-
-        let expectedAnswer = TrendsQuestionAnswer(
-            answer: "Your logging is clustered in the evening.",
-            highlights: ["Most entries are late in the day."],
-            limitations: ["Recent data only."]
-        )
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { true },
-            isSupportedProvider: { true },
-            generator: MockGenerator(response: expectedAnswer)
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        await viewModel.ask(question: "When do I usually log this?", windowDays: 14)
-
-        #expect(viewModel.latestQuestionAnswer == expectedAnswer)
-        #expect(viewModel.questionErrorMessage == nil)
-        #expect(viewModel.isAnsweringQuestion == false)
-    }
-
-    @Test("Ask surfaces service errors when private questions are disabled")
-    func askSurfacesServiceErrors() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-AskFailure")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { false },
-            isSupportedProvider: { true },
-            generator: ThrowingGenerator(error: TrendsQuestionServiceError.disabled)
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        await viewModel.ask(question: "Do I log this consistently?", windowDays: 14)
-
-        #expect(viewModel.latestQuestionAnswer == nil)
-        #expect(viewModel.questionErrorMessage == "On-device questions are turned off in settings.")
-        #expect(viewModel.isAnsweringQuestion == false)
-    }
 }
