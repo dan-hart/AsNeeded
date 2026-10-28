@@ -31,7 +31,7 @@ struct GetNextDoseIntent: AppIntent {
 		}
 		guard let target else {
 			return .result(
-				dialog: IntentDialog("You don't have any active medications added to AsNeeded yet."),
+				dialog: IntentDialog(stringLiteral: medication == nil ? "No active medications are available. Open AsNeeded to add one." : "That medication is no longer active. Choose a different medication in AsNeeded."),
 				view: EmptyMedicationsView()
 			)
 		}

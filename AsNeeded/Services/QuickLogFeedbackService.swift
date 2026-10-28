@@ -13,6 +13,7 @@ struct QuickLogFeedbackService {
 		let title: String
 		let message: String
 		let detail: String
+		let nextDoseDate: Date?
 		let nextWindowText: String?
 		let undoEventID: UUID?
 	}
@@ -22,18 +23,20 @@ struct QuickLogFeedbackService {
 		dose: ANDoseConcept,
 		loggedEvent: ANEventConcept,
 		assessment: MedicationDoseGuidanceService.Assessment,
+		nextDoseDate: Date?,
 		at date: Date = .now
 	) -> Feedback {
 		let tone = tone(for: assessment.severity)
 		let title = title(for: tone)
 		let message = "Logged \(dose.amount.formattedAmount) \(dose.unit.abbreviation) of \(medication.displayName) at \(timeFormatter.string(from: loggedEvent.date))."
-		let nextWindowText = nextWindowText(from: assessment, at: date)
+		let nextWindowText = nextWindowText(from: nextDoseDate, at: date)
 
 		return Feedback(
 			tone: tone,
 			title: title,
 			message: message,
 			detail: assessment.detail,
+			nextDoseDate: nextDoseDate,
 			nextWindowText: nextWindowText,
 			undoEventID: loggedEvent.id
 		)
@@ -55,21 +58,27 @@ struct QuickLogFeedbackService {
 		case .success:
 			return "Dose logged"
 		case .caution:
-			return "Logged - close to guardrail"
+			return "Dose logged. Check timing."
 		case .warning:
-			return "Logged - review saved guidance"
+			return "Dose logged. Review limits."
 		}
 	}
 
 	private func nextWindowText(
-		from assessment: MedicationDoseGuidanceService.Assessment,
+		from nextDoseDate: Date?,
 		at date: Date
 	) -> String? {
-		guard let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > date else {
+		guard let nextDoseDate, nextDoseDate > date else {
 			return nil
 		}
 
-		return "Next saved window \(timeFormatter.string(from: nextEligibleDate))"
+		if Calendar.current.isDate(nextDoseDate, inSameDayAs: date) {
+			return "Next dose window: \(timeFormatter.string(from: nextDoseDate))"
+		}
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+		return "Next dose window: \(formatter.string(from: nextDoseDate))"
 	}
 
 	private var timeFormatter: DateFormatter {

@@ -15,7 +15,7 @@ struct MedicationSmallWidget: Widget {
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Next Medication")
-        .description("Shows your next medication due with countdown timer")
+		.description("Shows a medication and timing based on your saved interval")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -109,11 +109,11 @@ struct SmallWidgetView: View {
                 if entry.canTakeNow {
                     if #available(iOS 17.0, *) {
                         // Interactive button for iOS 17+
-                        LogDoseButton(medicationID: medication.id.uuidString)
+						LogDoseButton(medicationID: medication.id.uuidString, medicationName: medication.displayName, doseDescription: "\((medication.prescribedDoseAmount ?? 1).formatted(.number)) \(medication.prescribedUnit?.displayName ?? "unit")")
                     } else {
                         // Fallback for iOS 16
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Available Now")
+							Text("Record a Dose")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(.green)
 
@@ -124,11 +124,11 @@ struct SmallWidgetView: View {
                     }
                 } else if let nextDoseTime = entry.nextDoseTime {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Next Dose")
+						Text("Saved Interval")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(.secondary)
 
-                        Text(timeRemaining(until: nextDoseTime))
+						Text(nextDoseTime, style: .relative)
                             .font(.title3.weight(.bold))
                             .foregroundStyle(medication.displayColor)
                     }
@@ -219,6 +219,8 @@ struct MedicationEntry: TimelineEntry {
 @available(iOS 17.0, *)
 struct LogDoseButton: View {
     let medicationID: String
+	let medicationName: String
+	let doseDescription: String
 
     var body: some View {
         let intent = LogDoseWidgetIntent()
@@ -238,5 +240,6 @@ struct LogDoseButton: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+		.accessibilityLabel("Log \(doseDescription) of \(medicationName)")
     }
 }

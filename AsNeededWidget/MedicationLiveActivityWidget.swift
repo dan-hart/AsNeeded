@@ -25,6 +25,7 @@ struct MedicationLiveActivityWidget: Widget {
 					Image(systemName: context.state.symbolName)
 						.font(.title3.weight(.semibold))
 						.foregroundStyle(widgetAccent)
+							.accessibilityLabel(context.state.medicationName)
 				}
 
 				DynamicIslandExpandedRegion(.trailing) {
@@ -37,9 +38,10 @@ struct MedicationLiveActivityWidget: Widget {
 			} compactLeading: {
 				Image(systemName: context.state.symbolName)
 					.foregroundStyle(widgetAccent)
+					.accessibilityLabel("\(context.state.medicationName). \(context.state.statusText)")
 			} compactTrailing: {
 				if context.state.canTakeNow {
-					Text("Now")
+						Text("Log")
 						.font(.caption2.weight(.semibold))
 				} else if let nextDoseDate = context.state.nextDoseDate {
 					Text(nextDoseDate, style: .timer)
@@ -49,13 +51,14 @@ struct MedicationLiveActivityWidget: Widget {
 			} minimal: {
 				Image(systemName: context.state.symbolName)
 					.foregroundStyle(widgetAccent)
+						.accessibilityLabel("\(context.state.medicationName). \(context.state.statusText)")
 			}
 		}
 	}
 
 	@ViewBuilder
 	private func liveStatusBadge(for state: MedicationLiveActivityAttributes.ContentState) -> some View {
-		Text(state.lowStock ? "Low stock" : state.canTakeNow ? "Ready" : "Later")
+			Text(state.lowStock ? "Low stock" : state.canTakeNow ? "Log dose" : "Saved interval")
 			.font(.caption2.weight(.semibold))
 			.foregroundStyle(state.lowStock ? .orange : widgetAccent)
 			.padding(.horizontal, 10)
@@ -84,13 +87,13 @@ private struct LiveActivityLockScreenView: View {
 					)
 
 				VStack(alignment: .leading, spacing: 4) {
-					Text("Next dose")
+					Text("Medication")
 						.font(.caption.weight(.medium))
 						.foregroundStyle(.secondary)
 
 					Text(state.medicationName)
 						.font(.headline.weight(.semibold))
-						.lineLimit(1)
+						.fixedSize(horizontal: false, vertical: true)
 
 					Text(state.detailText)
 						.font(.caption)
@@ -125,6 +128,7 @@ private struct LiveActivityLockScreenView: View {
 				}
 				.buttonStyle(.borderedProminent)
 				.tint(widgetAccent)
+					.accessibilityLabel("Log a dose of \(state.medicationName)")
 			}
 		}
 		.padding(.vertical, 8)
@@ -143,6 +147,9 @@ private struct LiveActivityExpandedView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 10) {
+			Text(state.medicationName)
+				.font(.headline)
+				.fixedSize(horizontal: false, vertical: true)
 			Text(state.statusText)
 				.font(.subheadline.weight(.semibold))
 

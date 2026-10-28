@@ -54,7 +54,11 @@ struct MedicationStatusSummaryService {
 		)
 		let availability = guidanceService.availability(for: medication, at: date, events: events, profile: profile)
 		let nextWindowText = availability.eligibleDate.flatMap { nextDate in
-			nextDate > date ? "Next saved window \(dateFormatter.string(from: nextDate)) at \(timeFormatter.string(from: nextDate))" : nil
+			guard nextDate > date else { return nil as String? }
+			let time = timeFormatter.string(from: nextDate)
+			let window = calendar.isDate(nextDate, inSameDayAs: date)
+				? time : "\(dateFormatter.string(from: nextDate)) at \(time)"
+			return "Next dose window: \(window)"
 		}
 		let dailyText: String?
 		if availability.eligibleDate != nil {
@@ -70,8 +74,8 @@ struct MedicationStatusSummaryService {
 		case .notConfigured: badgeText = "No dose limits"
 		case .noDoseHistory: badgeText = "No history"
 		case .unavailable: badgeText = "Review"
-		case .eligible:
-			badgeText = assessment.severity == .warning ? "Review" : assessment.severity == .caution ? "Caution" : "Saved limits"
+		case let .eligible(nextDate):
+			badgeText = nextDate > date ? "Waiting" : assessment.severity == .warning ? "Review" : assessment.severity == .caution ? "Caution" : "Limits met"
 		}
 		let headline = nextWindowText ?? (availability.eligibleDate != nil ? "Saved limits met" : availability.message)
 		let accessibilityLabel = [
@@ -122,7 +126,7 @@ struct MedicationStatusSummaryService {
 			return nil
 		}
 
-		return "24h total would be \(assessment.projectedDailyTotal.formattedAmount) of \(maxDailyAmount.formattedAmount) \(unit.abbreviation)"
+		return "With this dose: \(assessment.projectedDailyTotal.formattedAmount) of \(maxDailyAmount.formattedAmount) \(unit.abbreviation) in 24 hours"
 	}
 
 	private func refillText(from projection: MedicationDoseGuidanceService.RefillProjection) -> String {

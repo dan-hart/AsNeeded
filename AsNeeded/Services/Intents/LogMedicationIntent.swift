@@ -80,7 +80,7 @@ struct LogMedicationIntent: AppIntent {
             logger.info("Successfully logged medication dose from intent")
 
             // Format response message
-            let amountText = doseAmount == 1.0 ? "1" : String(format: "%.1f", doseAmount)
+			let amountText = doseAmount.formatted(.number.precision(.fractionLength(0...3)))
             let unitText = selectedUnit.displayName
             let medicationText = if let nickname = targetMedication.nickname, !nickname.isEmpty {
                 nickname

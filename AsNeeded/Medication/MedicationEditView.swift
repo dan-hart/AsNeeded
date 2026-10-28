@@ -8,12 +8,13 @@ import SwiftUI
 
 // Button style for quick date adjustments
 struct QuickDateButton: ButtonStyle {
-    @ScaledMetric private var horizontalPadding: CGFloat = 16
-    @ScaledMetric private var verticalPadding: CGFloat = 8
+    @Environment(\.fontFamily) private var fontFamily
+    private let horizontalPadding: CGFloat = 16
+    private let verticalPadding: CGFloat = 8
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.subheadline)
+            .font(.customFont(fontFamily, style: .subheadline))
             .fontWeight(.medium)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
@@ -26,40 +27,48 @@ struct QuickDateButton: ButtonStyle {
 }
 
 struct MedicationEditView: View {
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var viewModel: MedicationEditViewModel
 	@ObservedObject private var notificationManager = NotificationManager.shared
 	@Environment(\.scenePhase) private var scenePhase
     @State private var showingDatePicker = false
 	@State private var isSaving = false
+	@State private var showingSaveError = false
+	@State private var showingDiscardConfirmation = false
+	@State private var originalDraft: [String]?
+	@State private var showingDoseLimits = false
+	@State private var showingSupply = false
+	@State private var showingAppearance = false
     @State private var datePickerType: DatePickerType = .lastRefill
     @State private var showingAppearancePicker = false
     @FocusState private var focusedField: Field?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
     private let hapticsManager = HapticsManager.shared
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @ScaledMetric private var sectionSpacing: CGFloat = 20
-    @ScaledMetric private var iconSpacing: CGFloat = 12
-    @ScaledMetric private var labelSpacing: CGFloat = 8
-    @ScaledMetric private var cardSpacing: CGFloat = 12
-    @ScaledMetric private var smallPadding: CGFloat = 4
-    @ScaledMetric private var mediumPadding: CGFloat = 8
-    @ScaledMetric private var standardPadding: CGFloat = 12
-    @ScaledMetric private var largePadding: CGFloat = 16
-    @ScaledMetric private var xlargePadding: CGFloat = 18
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 18
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 16
-    @ScaledMetric private var shadowRadius: CGFloat = 10
-    @ScaledMetric private var shadowY: CGFloat = 5
+    private let sectionSpacing: CGFloat = 20
+    private let iconSpacing: CGFloat = 12
+    private let labelSpacing: CGFloat = 8
+    private let cardSpacing: CGFloat = 12
+    private let smallPadding: CGFloat = 4
+    private let mediumPadding: CGFloat = 8
+    private let standardPadding: CGFloat = 12
+    private let largePadding: CGFloat = 16
+    private let xlargePadding: CGFloat = 18
+    private let buttonVerticalPadding: CGFloat = 18
+    private let buttonCornerRadius: CGFloat = 16
+    private let shadowRadius: CGFloat = 10
+    private let shadowY: CGFloat = 5
     @ScaledMetric private var iconCircleSize: CGFloat = 64
-    @ScaledMetric private var removeBorderWidth: CGFloat = 1
-    @ScaledMetric private var removeButtonPadding: CGFloat = 20
-    @ScaledMetric private var removeButtonVerticalPadding: CGFloat = 12
-    @ScaledMetric private var removeButtonCornerRadius: CGFloat = 12
-    @ScaledMetric private var toolbarButtonPadding: CGFloat = 8
-    @ScaledMetric private var mainContentSpacing: CGFloat = 24
+    private let removeBorderWidth: CGFloat = 1
+    private let removeButtonPadding: CGFloat = 20
+    private let removeButtonVerticalPadding: CGFloat = 12
+    private let removeButtonCornerRadius: CGFloat = 12
+    private let toolbarButtonPadding: CGFloat = 8
+    private let mainContentSpacing: CGFloat = 24
     @ScaledMetric private var clearFrameHeight: CGFloat = 20
-    @ScaledMetric private var quickButtonSpacing: CGFloat = 10
+    private let quickButtonSpacing: CGFloat = 10
 
     enum Field: Hashable {
         case clinicalName
@@ -99,6 +108,39 @@ struct MedicationEditView: View {
 
     private var isFormValid: Bool { viewModel.isFormValid }
 
+	private var draftValues: [String] {
+		[
+			viewModel.clinicalName, viewModel.nickname, viewModel.initialQuantityText,
+			viewModel.quantityText, String(describing: viewModel.lastRefillDate),
+			String(describing: viewModel.nextRefillDate), viewModel.prescribedDoseText,
+			viewModel.prescribedUnit?.rawValue ?? "", viewModel.displayColorHex ?? "",
+			viewModel.displaySymbol ?? "", String(viewModel.isArchived),
+			String(viewModel.nextDoseNotificationEnabled), viewModel.minimumHoursBetweenDosesText,
+			viewModel.cautionHoursBetweenDosesText, viewModel.maxDailyAmountText,
+			viewModel.lowStockThresholdText, String(viewModel.duplicateDoseWindowMinutes),
+			String(viewModel.refillLeadDays)
+		]
+	}
+
+	private var hasChanges: Bool {
+		originalDraft.map { $0 != draftValues } ?? false
+	}
+
+	private var validationMessage: String? {
+		guard !isFormValid else { return nil }
+		if viewModel.clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+			return "Enter a medication name to save."
+		}
+		if let lastRefill = viewModel.lastRefillDate, lastRefill > Date() {
+			return "Last refill must be today or earlier."
+		}
+		if let nextRefill = viewModel.nextRefillDate, nextRefill < Calendar.current.startOfDay(for: Date()) {
+			return "Update or clear the past next-refill date in Supply & Refills."
+		}
+		if let message = viewModel.doseLimitValidationMessage { return message }
+		return "Add a positive dose amount and a unit, or leave both blank."
+	}
+
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
@@ -107,11 +149,13 @@ struct MedicationEditView: View {
 		guard !isSaving else { return }
 		isSaving = true
 		defer { isSaving = false }
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
             hideKeyboard()
         }
 		if await viewModel.saveMedication(using: onSave) {
 			hapticsManager.medicationAdded()
+		} else {
+			showingSaveError = true
 		}
     }
 
@@ -159,7 +203,7 @@ struct MedicationEditView: View {
             onMedicationSelected: { clinicalName, nickname in
                 viewModel.clinicalName = clinicalName
                 viewModel.nickname = nickname
-                withAnimation(.spring(response: 0.3)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
                     focusedField = nil
                 }
             }
@@ -279,7 +323,7 @@ struct MedicationEditView: View {
                             showingDatePicker = true
                         },
                         onRemove: viewModel.lastRefillDate != nil ? {
-                            withAnimation(.spring(response: 0.3)) {
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
                                 viewModel.lastRefillDate = nil
                             }
                         } : nil
@@ -296,7 +340,7 @@ struct MedicationEditView: View {
                             showingDatePicker = true
                         },
                         onRemove: viewModel.nextRefillDate != nil ? {
-                            withAnimation(.spring(response: 0.3)) {
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.3)) {
                                 viewModel.nextRefillDate = nil
                             }
                         } : nil
@@ -325,10 +369,10 @@ struct MedicationEditView: View {
                     )
 
                 VStack(alignment: .leading, spacing: smallPadding) {
-                    Text("Safety Guardrails")
+                    Text("Dose Limits")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
-                    Text("Optional timing, duplicate, daily total, and refill checks.")
+                    Text("Use the instructions from your prescription or care team. Every field is optional.")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -345,16 +389,16 @@ struct MedicationEditView: View {
                 )
 
                 guidanceField(
-                    title: "Caution Window",
-                    subtitle: "Show a gentler reminder when a new dose is still fairly close to the last one.",
+                    title: "Extra Caution Period (Hours)",
+                    subtitle: "Show a caution message while a dose is still close to the last one.",
                     text: $viewModel.cautionHoursBetweenDosesText,
                     placeholder: "Example: 6",
                     field: .cautionHoursBetweenDoses
                 )
 
                 guidanceField(
-                    title: "Maximum Amount in 24 Hours",
-                    subtitle: "A rolling 24-hour total in the prescribed unit, including the next prescribed dose.",
+                    title: "Maximum in 24 Hours\(viewModel.prescribedUnit.map { " (\($0.abbreviation))" } ?? "")",
+                    subtitle: "The total allowed in any 24 hours, including the next dose. This does not reset at midnight.",
                     text: $viewModel.maxDailyAmountText,
                     placeholder: "Example: 6",
                     field: .maxDailyAmount
@@ -376,10 +420,10 @@ struct MedicationEditView: View {
 			}
 
 			VStack(alignment: .leading, spacing: 8) {
-				Toggle("Notify When Saved Dose Limits Are Met", isOn: $viewModel.nextDoseNotificationEnabled)
+				Toggle("Next-Dose Alerts", isOn: $viewModel.nextDoseNotificationEnabled)
 					.font(.customFont(fontFamily, style: .subheadline))
 					.tint(.accent)
-				Text("Optional and separate from scheduled reminders. Sends one notification for a future saved dose window after a dose is logged. This is not medical clearance to take medication.")
+				Text("After you log a dose, get an alert when your saved limits allow another. These alerts are separate from scheduled reminders and are not medical advice.")
 					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 					.fixedSize(horizontal: false, vertical: true)
@@ -401,8 +445,8 @@ struct MedicationEditView: View {
 
             VStack(spacing: cardSpacing) {
                 counterCard(
-                    title: "Duplicate Log Window",
-                    subtitle: "Treat entries within this many minutes as likely duplicates when the dose matches.",
+                    title: "Check for Duplicate Logs",
+                    subtitle: "Flag matching doses logged within this many minutes.",
                     value: viewModel.duplicateDoseWindowMinutes,
                     valueLabel: "\(viewModel.duplicateDoseWindowMinutes) min",
                     step: 5,
@@ -413,7 +457,7 @@ struct MedicationEditView: View {
 
                 counterCard(
                     title: "Refill Lead Time",
-                    subtitle: "Start refill reminders this many days before the schedule or run-out estimate.",
+                    subtitle: "Show refill guidance this many days before your saved refill date or estimated run-out date.",
                     value: viewModel.refillLeadDays,
                     valueLabel: "\(viewModel.refillLeadDays) days",
                     step: 1,
@@ -483,6 +527,7 @@ struct MedicationEditView: View {
                         .foregroundStyle(value > range.lowerBound ? .accent : .secondary)
                 }
                 .disabled(value <= range.lowerBound)
+				.frame(minWidth: 44, minHeight: 44)
                 .accessibilityLabel("Decrease \(title.lowercased()) by \(step)")
 
                 Text(valueLabel)
@@ -503,6 +548,7 @@ struct MedicationEditView: View {
                         .foregroundStyle(value < range.upperBound ? .accent : .secondary)
                 }
                 .disabled(value >= range.upperBound)
+				.frame(minWidth: 44, minHeight: 44)
                 .accessibilityLabel("Increase \(title.lowercased()) by \(step)")
             }
         }
@@ -798,7 +844,7 @@ struct MedicationEditView: View {
                 // Remove date button (more prominent)
                 if (datePickerType == .lastRefill ? viewModel.lastRefillDate : viewModel.nextRefillDate) != nil {
                     Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
                             if datePickerType == .lastRefill {
                                 viewModel.lastRefillDate = nil
                             } else {
@@ -879,36 +925,27 @@ struct MedicationEditView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: mainContentSpacing) {
-                    heroSection
-                    progressiveSectionHeader(
-                        title: "Essentials",
-                        subtitle: "Add the medication name and the default dose used for fast logging.",
-                        systemSymbol: .checkmarkCircleFill
-                    )
                     medicationInfoSection
                     prescribedDoseSection
-                    progressiveSectionHeader(
-                        title: "Make Quick Logs Safer",
-                        subtitle: "Optional guardrails turn the list and quick-log toast into a confidence check.",
-                        systemSymbol: .crossCaseFill
-                    )
-                    clinicalGuidanceSection
-                    progressiveSectionHeader(
-                        title: "Track Supply",
-                        subtitle: "Optional quantity and refill details help the app highlight low stock.",
-                        systemSymbol: .shippingboxFill
-                    )
-                    refillInfoSection
-                    progressiveSectionHeader(
-                        title: "Personalize",
-                        subtitle: "Optional color, symbol, and status choices make this medication easier to scan.",
-                        systemSymbol: .paintbrushPointedFill
-                    )
-                    appearanceSection
-                    archivedStatusSection
-                    saveButton
-                    Color.clear.frame(height: clearFrameHeight)
+					DisclosureGroup("Dose Limits & Alerts", isExpanded: $showingDoseLimits) {
+						clinicalGuidanceSection
+					}
+					.font(.customFont(fontFamily, style: .headline))
+					.padding(.horizontal)
+					DisclosureGroup("Supply & Refills", isExpanded: $showingSupply) {
+						refillInfoSection
+					}
+					.font(.customFont(fontFamily, style: .headline))
+					.padding(.horizontal)
+					DisclosureGroup("Appearance & Archive", isExpanded: $showingAppearance) {
+						appearanceSection
+						archivedStatusSection
+					}
+					.font(.customFont(fontFamily, style: .headline))
+					.padding(.horizontal)
+					if dynamicTypeSize.isAccessibilitySize { saveFooter }
                 }
+				.padding(.vertical)
             }
             .background(
                 LinearGradient(
@@ -923,7 +960,7 @@ struct MedicationEditView: View {
             )
             .onChange(of: focusedField) { _, newValue in
                 if newValue == .clinicalName {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                         proxy.scrollTo(ScrollTarget.searchFieldContainer, anchor: .top)
                     }
                 }
@@ -934,9 +971,9 @@ struct MedicationEditView: View {
 	private var availabilityNotificationStatus: String {
 		switch notificationManager.authorizationStatus {
 		case .denied:
-			return "Notifications are blocked. Enable them in Settings to receive dose availability notifications."
+			return "Notifications are off. Open Settings to turn on next-dose alerts."
 		case .authorized, .provisional, .ephemeral:
-			return "Notification permission is enabled. Save a dose limit and log a dose to calculate the next window."
+			return "Notifications are on. Add a dose limit and log a dose to start receiving alerts."
 		case .notDetermined:
 			return "Notification permission is required."
 		case .unknown:
@@ -944,11 +981,27 @@ struct MedicationEditView: View {
 		}
 	}
 
+	private var saveFooter: some View {
+					VStack(spacing: 4) {
+						if let validationMessage {
+							Text(validationMessage)
+								.font(.customFont(fontFamily, style: .caption))
+								.foregroundStyle(.secondary)
+								.fixedSize(horizontal: false, vertical: true)
+								.padding(.horizontal)
+						}
+					saveButton
+					}
+						.padding(.vertical, 8)
+						.background(.regularMaterial)
+	}
+
     // MARK: - Body
 
     var body: some View {
         NavigationStack {
             mainContent
+				.disabled(isSaving)
 				.task { await notificationManager.checkAuthorizationStatus() }
 				.onChange(of: scenePhase) { _, phase in
 					if phase == .active {
@@ -960,31 +1013,46 @@ struct MedicationEditView: View {
 						Task { _ = await notificationManager.requestAuthorization() }
 					}
 				}
-                .navigationBarTitleDisplayMode(.inline)
+				.customNavigationTitle(medication == nil ? "Add Medication" : "Edit Medication", displayMode: .inline)
+				.onAppear {
+					if originalDraft == nil {
+						originalDraft = draftValues
+						showingDoseLimits = !viewModel.minimumHoursBetweenDosesText.isEmpty || !viewModel.maxDailyAmountText.isEmpty || viewModel.nextDoseNotificationEnabled
+						showingSupply = !viewModel.quantityText.isEmpty || !viewModel.initialQuantityText.isEmpty || viewModel.lastRefillDate != nil || viewModel.nextRefillDate != nil
+					}
+				}
+				.safeAreaInset(edge: .bottom) {
+					if !dynamicTypeSize.isAccessibilitySize { saveFooter }
+				}
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button {
-                            onCancel()
+							if hasChanges { showingDiscardConfirmation = true } else { onCancel() }
                         } label: {
                             Image(systemSymbol: .xmark)
                                 .font(.customFont(fontFamily, style: .body, weight: .medium))
                                 .foregroundStyle(.secondary)
                         }
+						.disabled(isSaving)
+						.accessibilityLabel("Cancel medication changes")
                     }
 
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            Task { await performSave() }
-                        } label: {
-                            Image(systemSymbol: .checkmarkCircleFill)
-                                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                .foregroundStyle(.accent)
-                        }
-                        .disabled(!isFormValid || isSaving)
-                        .accessibilityLabel("Save medication")
-                        .accessibilityHint(isFormValid ? "Saves the medication details" : "Complete required fields to save")
-                    }
+					ToolbarItemGroup(placement: .keyboard) {
+						Spacer()
+						Button("Done") { hideKeyboard(); focusedField = nil }
+							.font(.customFont(fontFamily, style: .body, weight: .semibold))
+					}
                 }
+				.interactiveDismissDisabled(isSaving || hasChanges)
+				.alert("Medication not saved", isPresented: $showingSaveError) {
+					Button("Keep Editing", role: .cancel) {}
+				} message: {
+					Text("Your changes are still here. Please try again.")
+				}
+				.confirmationDialog("Discard medication changes?", isPresented: $showingDiscardConfirmation, titleVisibility: .visible) {
+					Button("Discard Changes", role: .destructive) { onCancel() }
+					Button("Keep Editing", role: .cancel) {}
+				}
                 .scrollDismissesKeyboard(.interactively)
                 .sheet(isPresented: $showingDatePicker) {
                     datePickerSheet

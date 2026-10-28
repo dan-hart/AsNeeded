@@ -26,21 +26,17 @@ extension Color {
         return 0.2126 * linearRed + 0.7152 * linearGreen + 0.0722 * linearBlue
     }
 
-    /// Returns the optimal foreground color (black or white) for maximum contrast
+    /// Returns black or white for maximum contrast against the resolved opaque background.
     /// - Parameter colorScheme: Current color scheme (light/dark)
-    /// - Returns: Black for light backgrounds, white for dark backgrounds
+    /// - Returns: Whichever of black and white has the greater WCAG contrast ratio.
+    /// Translucent backgrounds need compositing against their actual surface before comparison.
     func contrastingForegroundColor(for colorScheme: ColorScheme = .light) -> Color {
-        // For very dark or very light backgrounds, use absolute contrast
-        if luminance < 0.15 {
-            return .white
-        } else if luminance > 0.85 {
-            return .black
-        }
-
-        // For medium luminance, use threshold approach
-        // Threshold adjusted for better visual hierarchy in UI contexts
-        let threshold = colorScheme == .dark ? 0.4 : 0.5
-        return luminance > threshold ? .black : .white
+		let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+		let resolved = UIColor(self).resolvedColor(with: traits)
+		let backgroundLuminance = Color(uiColor: resolved).luminance
+		let blackContrast = (backgroundLuminance + 0.05) / 0.05
+		let whiteContrast = 1.05 / (backgroundLuminance + 0.05)
+		return blackContrast >= whiteContrast ? .black : .white
     }
 
     /// Returns the optimal foreground color with opacity for secondary text
@@ -89,7 +85,7 @@ extension Color {
 // MARK: - Private Helpers
 
 private func gamma(_ value: Double) -> Double {
-    if value <= 0.03928 {
+    if value <= 0.04045 {
         return value / 12.92
     } else {
         return pow((value + 0.055) / 1.055, 2.4)

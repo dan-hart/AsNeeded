@@ -2,53 +2,28 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsDisclaimersSectionView: View {
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	@Environment(\.fontFamily) private var fontFamily
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Disclaimers")
-				.font(.title2)
+				.font(.customFont(fontFamily, style: .title2))
 				.fontWeight(.semibold)
+				.accessibilityAddTraits(.isHeader)
 
 			VStack(spacing: headerSpacing) {
 				// Medical Disclaimer
 				NavigationLink {
 					MedicalDisclaimerDetailView()
 				} label: {
-					HStack(spacing: headerSpacing) {
-						Image(systemSymbol: .exclamationmarkTriangle)
-							.font(.callout.weight(.medium))
-							.frame(width: iconSize, height: iconSize)
-							.foregroundColor(.yellow)
-
-						VStack(alignment: .leading, spacing: stackItemSpacing) {
-							Text("Medical Disclaimer")
-								.font(.body)
-								.fontWeight(.medium)
-							Text("Important medical advice information")
-								.font(.caption)
-								.foregroundColor(.secondary)
-						}
-
-						Spacer()
-
-						Image(systemSymbol: .chevronRight)
-							.font(.caption)
-							.foregroundColor(.secondary)
-					}
-					.padding(padding)
-					.background(Color(.systemBackground))
-					.overlay(
-						RoundedRectangle(cornerRadius: cornerRadius)
-							.stroke(Color(.systemGray4), lineWidth: borderWidth)
+					SettingsNavigationRowLabel(
+						title: "Medical Disclaimer",
+						subtitle: "Important medical advice information",
+						icon: .exclamationmarkTriangle,
+						iconColor: .yellow
 					)
-					.cornerRadius(cornerRadius)
 				}
 				.buttonStyle(.plain)
 
@@ -56,34 +31,12 @@ struct SettingsDisclaimersSectionView: View {
 				NavigationLink {
 					NIHDisclaimerDetailView()
 				} label: {
-					HStack(spacing: headerSpacing) {
-						Image(systemSymbol: .buildingColumns)
-							.font(.callout.weight(.medium))
-							.frame(width: iconSize, height: iconSize)
-							.foregroundColor(.accent)
-
-						VStack(alignment: .leading, spacing: stackItemSpacing) {
-							Text("Medical Data Sources")
-								.font(.body)
-								.fontWeight(.medium)
-							Text("NIH/NLM RxNorm database citations")
-								.font(.caption)
-								.foregroundColor(.secondary)
-						}
-
-						Spacer()
-
-						Image(systemSymbol: .chevronRight)
-							.font(.caption)
-							.foregroundColor(.secondary)
-					}
-					.padding(padding)
-					.background(Color(.systemBackground))
-					.overlay(
-						RoundedRectangle(cornerRadius: cornerRadius)
-							.stroke(Color(.systemGray4), lineWidth: borderWidth)
+					SettingsNavigationRowLabel(
+						title: "Medical Data Sources",
+						subtitle: "NIH/NLM RxNorm database citations",
+						icon: .buildingColumns,
+						iconColor: .accent
 					)
-					.cornerRadius(cornerRadius)
 				}
 				.buttonStyle(.plain)
 			}

@@ -5,15 +5,16 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsNotificationSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@StateObject private var notificationManager = NotificationManager.shared
 	@AppStorage(UserDefaultsKeys.showMedicationNamesInNotifications) private var showMedicationNames: Bool = false
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let stackItemSpacing: CGFloat = 2
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
 
 	var body: some View {
 		// Only show this section if notifications are authorized or not determined
@@ -21,7 +22,7 @@ struct SettingsNotificationSectionView: View {
 		   notificationManager.authorizationStatus == .notDetermined {
 			VStack(alignment: .leading, spacing: itemSpacing) {
 				Text("Notifications")
-					.font(.title2)
+					.font(.customFont(fontFamily, style: .title2))
 					.fontWeight(.semibold)
 
 				VStack(spacing: headerSpacing) {
@@ -46,17 +47,17 @@ struct SettingsNotificationSectionView: View {
 
 			VStack(alignment: .leading, spacing: stackItemSpacing) {
 				Text("Show Medication Names")
-					.font(.body)
+					.font(.customFont(fontFamily, style: .body))
 					.fontWeight(.medium)
 
 				Text("Display medication names in reminders")
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundColor(.secondary)
 			}
 
 			Spacer()
 
-			Toggle("", isOn: $showMedicationNames)
+			Toggle("Show Medication Names", isOn: $showMedicationNames)
 				.labelsHidden()
 				.onChange(of: showMedicationNames) { _, newValue in
 					notificationManager.showMedicationNames = newValue

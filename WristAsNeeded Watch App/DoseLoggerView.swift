@@ -9,6 +9,7 @@ struct DoseLoggerView: View {
 	@Environment(\.dismiss) private var dismiss
 	@State private var selectedUnit: String
 	@State private var isLogging = false
+	@State private var isQueued = false
 	@State private var now = Date()
 
 	private let availableUnits = ["tablet", "capsule", "mg", "mL", "puff", "dose", "unit"]
@@ -61,33 +62,34 @@ struct DoseLoggerView: View {
 							}
 						}
 
-						HStack {
-							Button("-") {
-								if doseAmount > 0.25 {
-									doseAmount -= 0.25
-									WKInterfaceDevice.current().play(.click)
-								}
-							}
+						Text(doseAmount.formatted(.number.precision(.fractionLength(0...3))))
 							.font(.title2)
-							.frame(width: 40, height: 40)
+							.fontWeight(.semibold)
+							.frame(maxWidth: .infinity)
+						HStack {
+							Button {
+								doseAmount = max(0.25, doseAmount - 0.25)
+								WKInterfaceDevice.current().play(.click)
+							} label: {
+								Image(systemName: "minus")
+									.frame(minWidth: 44, minHeight: 44)
+							}
+							.accessibilityLabel("Decrease amount")
+							.font(.title2)
 							.background(Color.gray.opacity(0.2))
 							.cornerRadius(8)
 
 							Spacer()
 
-							Text("\(doseAmount, specifier: doseAmount.truncatingRemainder(dividingBy: 1) == 0 ? "%.0f" : "%.2f")")
-								.font(.title2)
-								.fontWeight(.semibold)
-								.frame(minWidth: 60)
-
-							Spacer()
-
-							Button("+") {
+							Button {
 								doseAmount += 0.25
 								WKInterfaceDevice.current().play(.click)
+							} label: {
+								Image(systemName: "plus")
+									.frame(minWidth: 44, minHeight: 44)
 							}
+							.accessibilityLabel("Increase amount")
 							.font(.title2)
-							.frame(width: 40, height: 40)
 							.background(Color.gray.opacity(0.2))
 							.cornerRadius(8)
 						}
@@ -95,6 +97,7 @@ struct DoseLoggerView: View {
 					.padding()
 					.background(Color.gray.opacity(0.2))
 					.cornerRadius(12)
+					.disabled(isLogging || isQueued)
 
 					// Unit selector - show only if no prescribed unit
 					Group {
@@ -127,8 +130,14 @@ struct DoseLoggerView: View {
 					.padding()
 					.background(Color.gray.opacity(0.2))
 					.cornerRadius(12)
+					.disabled(isLogging || isQueued)
 
 					// Log button
+					if let message = sender.actionMessage {
+						Text(message)
+							.font(.caption)
+							.fixedSize(horizontal: false, vertical: true)
+					}
 					Button(action: logDose) {
 						if isLogging {
 							HStack {
@@ -139,7 +148,7 @@ struct DoseLoggerView: View {
 						} else {
 							HStack {
 								Image(systemName: "checkmark.circle.fill")
-								Text("Log Dose")
+								Text(isQueued ? "Waiting to Sync" : "Log Dose")
 							}
 						}
 					}
@@ -148,7 +157,7 @@ struct DoseLoggerView: View {
 					.background(isLogging ? Color.gray : Color.accent)
 					.foregroundColor(.white)
 					.cornerRadius(12)
-					.disabled(isLogging)
+					.disabled(isLogging || isQueued)
 				}
 				.padding()
 			}
@@ -156,12 +165,14 @@ struct DoseLoggerView: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
-					Button("Cancel") {
+						Button(isQueued ? "Close" : "Cancel") {
 						dismiss()
 					}
+					.disabled(isLogging)
 				}
 			}
 		}
+		.onAppear { sender.actionMessage = nil }
 		.onReceive(eligibilityTimer) { now = $0 }
 	}
 
@@ -176,15 +187,18 @@ struct DoseLoggerView: View {
 			"quantityConsumed": doseAmount,
 		]
 
-		sender.sendMessage(key: "logDose", value: eventData)
-
-		// Provide subtle haptic feedback
-		WKInterfaceDevice.current().play(.click)
-
-		// Dismiss after a short delay to show the loading state
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+		Task {
+			let outcome = await sender.sendAction(key: "logDose", value: eventData)
 			isLogging = false
-			dismiss()
+			switch outcome {
+			case .saved:
+				WKInterfaceDevice.current().play(.success)
+				dismiss()
+			case .queued:
+				isQueued = true
+			case .failed:
+				break
+			}
 		}
 	}
 
@@ -195,7 +209,7 @@ struct DoseLoggerView: View {
 
 		let formatter = RelativeDateTimeFormatter()
 		formatter.unitsStyle = .short
-		return "Ready \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
+		return "Saved interval ends \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
 	}
 }
 

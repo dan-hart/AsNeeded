@@ -20,7 +20,7 @@ struct LogDoseWidgetIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         // Parse medication ID
         guard let id = UUID(uuidString: medicationID) else {
-            return .result()
+			throw WidgetLogError.medicationUnavailable
         }
 
         // Get shared data provider
@@ -28,13 +28,13 @@ struct LogDoseWidgetIntent: AppIntent {
 
         // Find the medication
         guard let medication = provider.medications.first(where: { $0.id == id }) else {
-            return .result()
+			throw WidgetLogError.medicationUnavailable
         }
 
         // Check if can take now (simplified 4-hour interval check)
         guard provider.canTakeNow(medication) else {
             // Cannot take yet - interval not elapsed
-            return .result()
+			throw WidgetLogError.reviewInApp
         }
 
         // Determine dose amount and unit
@@ -71,7 +71,24 @@ struct LogDoseWidgetIntent: AppIntent {
 
         } catch {
             // Failed to log dose
-            return .result()
+			throw WidgetLogError.saveUnconfirmed
         }
     }
+}
+
+private enum WidgetLogError: LocalizedError {
+	case medicationUnavailable
+	case reviewInApp
+	case saveUnconfirmed
+
+	var errorDescription: String? {
+		switch self {
+		case .medicationUnavailable:
+			"This medication is no longer available. Open AsNeeded to choose a medication."
+		case .reviewInApp:
+			"The saved interval hasn’t elapsed. Open AsNeeded to review your limits or record a dose."
+		case .saveUnconfirmed:
+			"Couldn’t confirm the dose was saved. Check your history in AsNeeded before logging it again."
+		}
+	}
 }

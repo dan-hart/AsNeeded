@@ -2,10 +2,11 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicalDisclaimerView: View {
-    @ScaledMetric private var spacing: CGFloat = 8
-    @ScaledMetric private var smallSpacing: CGFloat = 4
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
+	@Environment(\.fontFamily) private var fontFamily
+	private let spacing: CGFloat = 8
+	private let smallSpacing: CGFloat = 4
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
 
     @State private var showMoreInfo = false
 
@@ -13,13 +14,13 @@ struct MedicalDisclaimerView: View {
         VStack(alignment: .leading, spacing: spacing) {
             Image(systemSymbol: .exclamationmarkTriangleFill)
                 .foregroundStyle(.yellow)
-                .font(.title2)
+                .font(.customFont(fontFamily, style: .title2))
 
             VStack(alignment: .leading, spacing: smallSpacing) {
                 Text("This app is not a replacement for medical advice.")
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                 Text("Consult a licensed medical professional before making any changes to your medication.")
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundStyle(.secondary)
             }
 
@@ -27,7 +28,7 @@ struct MedicalDisclaimerView: View {
                 showMoreInfo = true
             } label: {
                 Text("Read more info")
-                    .font(.body)
+                    .font(.customFont(fontFamily, style: .body))
                     .fontWeight(.medium)
             }
             .padding(.top, smallSpacing)
@@ -45,18 +46,19 @@ struct MedicalDisclaimerView: View {
 }
 
 struct MoreDisclaimerInfoView: View {
-    @ScaledMetric private var mainSpacing: CGFloat = 24
-    @ScaledMetric private var sectionSpacing: CGFloat = 20
-    @ScaledMetric private var itemSpacing: CGFloat = 16
-    @ScaledMetric private var listSpacing: CGFloat = 12
-    @ScaledMetric private var smallSpacing: CGFloat = 8
-    @ScaledMetric private var tinySpacing: CGFloat = 4
-    @ScaledMetric private var tightestSpacing: CGFloat = 2
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var outerPadding: CGFloat = 20
-    @ScaledMetric private var cornerRadius: CGFloat = 12
-    @ScaledMetric private var iconWidth: CGFloat = 24
-    @ScaledMetric private var lineWidth: CGFloat = 1
+	@Environment(\.fontFamily) private var fontFamily
+	private let mainSpacing: CGFloat = 24
+	private let sectionSpacing: CGFloat = 20
+	private let itemSpacing: CGFloat = 16
+	private let listSpacing: CGFloat = 12
+	private let smallSpacing: CGFloat = 8
+	private let tinySpacing: CGFloat = 4
+	private let tightestSpacing: CGFloat = 2
+	private let padding: CGFloat = 16
+	private let outerPadding: CGFloat = 20
+	private let cornerRadius: CGFloat = 12
+	private let iconWidth: CGFloat = 24
+	private let lineWidth: CGFloat = 1
 
     @Environment(\.dismiss) private var dismiss
 
@@ -67,34 +69,34 @@ struct MoreDisclaimerInfoView: View {
                     HStack {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
                             .foregroundStyle(.orange)
-                            .font(.largeTitle)
+                            .font(.customFont(fontFamily, style: .largeTitle))
                             .symbolRenderingMode(.hierarchical)
 
                         Text("Medical Disclaimer")
-                            .font(.largeTitle)
+                            .font(.customFont(fontFamily, style: .largeTitle))
                             .fontWeight(.bold)
                             .foregroundStyle(.primary)
                     }
 
                     VStack(alignment: .leading, spacing: sectionSpacing) {
                         Text("This application does not provide medical advice, diagnosis, or treatment. All content, including text, graphics, and information, is for informational purposes only.")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Always seek the advice of your physician or another qualified health provider with any questions you may have regarding a medical condition, medication, or treatment. Never disregard professional medical advice or delay seeking it because of something you have read or recorded in this app.")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         VStack(alignment: .leading, spacing: smallSpacing) {
                             Image(systemSymbol: .exclamationmarkTriangleFill)
                                 .foregroundStyle(.red)
-                                .font(.title2)
+                                .font(.customFont(fontFamily, style: .title2))
                                 .symbolRenderingMode(.hierarchical)
 
                             Text("If you think you may have a medical emergency, call your doctor or emergency services immediately.")
-                                .font(.body)
+                                .font(.customFont(fontFamily, style: .body))
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.red)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -109,11 +111,11 @@ struct MoreDisclaimerInfoView: View {
                         // Authoritative Medical Information Sources
                         VStack(alignment: .leading, spacing: itemSpacing) {
                             Text("Trusted Medical Information Sources")
-                                .font(.headline)
+                                .font(.customFont(fontFamily, style: .headline))
                                 .fontWeight(.bold)
 
                             Text("For accurate medical information, consult these authoritative sources:")
-                                .font(.body)
+                                .font(.customFont(fontFamily, style: .body))
 
                             VStack(alignment: .leading, spacing: listSpacing) {
                                 medicalSourceLink(
@@ -157,8 +159,7 @@ struct MoreDisclaimerInfoView: View {
                 }
                 .padding(outerPadding)
             }
-            .navigationTitle("Medical Disclaimer")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("Medical Disclaimer")
             .toolbar {
                 Button(role: .close) {
                     dismiss()
@@ -177,19 +178,19 @@ struct MoreDisclaimerInfoView: View {
         }) {
             HStack(spacing: listSpacing) {
                 Image(systemSymbol: .linkCircle)
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundColor(.accent)
                     .frame(width: iconWidth)
 
                 VStack(alignment: .leading, spacing: tightestSpacing) {
                     Text(title)
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.leading)
 
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
                 }
@@ -197,7 +198,7 @@ struct MoreDisclaimerInfoView: View {
                 Spacer()
 
                 Image(systemSymbol: .arrowUpRightSquare)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
             }
             .padding(.vertical, tinySpacing)

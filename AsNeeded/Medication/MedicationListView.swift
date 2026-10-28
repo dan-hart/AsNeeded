@@ -11,27 +11,27 @@ struct MedicationListView: View {
     @Environment(\.fontFamily) private var fontFamily
     private let hapticsManager = HapticsManager.shared
 
-    @ScaledMetric private var emptyStateSpacing: CGFloat = 32
-    @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
-    @ScaledMetric private var emptyStateSubSpacing: CGFloat = 8
+    private let emptyStateSpacing: CGFloat = 32
+    private let emptyStateInnerSpacing: CGFloat = 16
+    private let emptyStateSubSpacing: CGFloat = 8
     @ScaledMetric private var iconSize: CGFloat = 80
-    @ScaledMetric private var iconCornerRadius: CGFloat = 18
-    @ScaledMetric private var shadowRadius: CGFloat = 8
-    @ScaledMetric private var shadowY: CGFloat = 4
-    @ScaledMetric private var emptyHorizontalPadding: CGFloat = 24
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 16
-    @ScaledMetric private var buttonHorizontalPadding: CGFloat = 32
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 16
-    @ScaledMetric private var buttonShadowRadius: CGFloat = 8
-    @ScaledMetric private var listRowTopPadding: CGFloat = 8
-    @ScaledMetric private var listRowLeadingPadding: CGFloat = 12
-    @ScaledMetric private var listRowBottomPadding: CGFloat = 8
-    @ScaledMetric private var listRowTrailingPadding: CGFloat = 12
-    @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
+    private let iconCornerRadius: CGFloat = 18
+    private let shadowRadius: CGFloat = 8
+    private let shadowY: CGFloat = 4
+    private let emptyHorizontalPadding: CGFloat = 24
+    private let buttonVerticalPadding: CGFloat = 16
+    private let buttonHorizontalPadding: CGFloat = 32
+    private let buttonCornerRadius: CGFloat = 16
+    private let buttonShadowRadius: CGFloat = 8
+    private let listRowTopPadding: CGFloat = 8
+    private let listRowLeadingPadding: CGFloat = 12
+    private let listRowBottomPadding: CGFloat = 8
+    private let listRowTrailingPadding: CGFloat = 12
+    private let supportViewBottomPadding: CGFloat = 16
 
     var body: some View {
         mainContent
-            .navigationTitle("Medication")
+            .customNavigationTitle("Medication")
                 .toolbar {
                     if viewModel.items.count > 1 || !viewModel.items.archived.isEmpty {
                         ToolbarItem(placement: .navigationBarLeading) {
@@ -119,7 +119,7 @@ struct MedicationListView: View {
                     }
                     Button("Cancel", role: .cancel) { viewModel.pendingDelete = nil }
                 } message: {
-                    Text("This action cannot be undone.")
+                    Text("This deletes the medication, its dose history, and its reminders. This cannot be undone.")
                 }
                 .sheet(isPresented: $viewModel.showSupportView) {
                     NavigationView {
@@ -251,6 +251,7 @@ struct MedicationListView: View {
                             onLogTapped: {
                                 viewModel.logMedication = med
                             },
+							onOpen: { navigationPath.append(med) },
                             onQuickLog: {
                                 await viewModel.quickLog(medication: med)
                             },
@@ -308,9 +309,6 @@ struct MedicationListView: View {
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
 
-            SupportSuggestionView()
-                .padding(.bottom, supportViewBottomPadding)
-                .background(Color(.systemGroupedBackground))
         }
     }
 

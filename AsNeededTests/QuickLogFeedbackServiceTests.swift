@@ -47,6 +47,7 @@ struct QuickLogFeedbackServiceTests {
 			dose: dose,
 			loggedEvent: event(medication: medication),
 			assessment: assessment,
+			nextDoseDate: nil,
 			at: referenceDate
 		)
 
@@ -54,10 +55,11 @@ struct QuickLogFeedbackServiceTests {
 		#expect(feedback.title == "Dose logged")
 		#expect(feedback.message == "Logged 2 tab of Ibuprofen at 12:00 PM.")
 		#expect(feedback.undoEventID != nil)
+		#expect(feedback.nextDoseDate == nil)
 	}
 
-	@Test("Feedback uses warning tone and next window for guardrail warnings")
-	func feedbackUsesWarningToneAndNextWindowForGuardrailWarnings() {
+	@Test("Feedback preserves the warning while displaying the newly logged dose window")
+	func feedbackUsesPostLogWindowAndPreLogWarning() {
 		let medication = medication()
 		let dose = ANDoseConcept(amount: 2, unit: .tablet)
 		let priorEvent = ANEventConcept(
@@ -79,12 +81,66 @@ struct QuickLogFeedbackServiceTests {
 			dose: dose,
 			loggedEvent: event(medication: medication),
 			assessment: assessment,
+			nextDoseDate: referenceDate.addingTimeInterval(4 * 3600),
 			at: referenceDate
 		)
 
 		#expect(feedback.tone == .warning)
-		#expect(feedback.title == "Logged - review saved guidance")
-		#expect(feedback.detail.contains("minimum interval"))
-		#expect(feedback.nextWindowText == "Next saved window 2:00 PM")
+		#expect(feedback.title == "Dose logged. Review limits.")
+		#expect(feedback.detail == assessment.detail)
+		#expect(assessment.nextEligibleDate == referenceDate.addingTimeInterval(2 * 3600))
+		#expect(feedback.nextDoseDate == referenceDate.addingTimeInterval(4 * 3600))
+		#expect(feedback.nextWindowText == "Next dose window: 4:00 PM")
 	}
+
+	@Test("An absent or elapsed post-log window does not reuse the earlier assessment")
+	func feedbackOmitsAbsentOrElapsedPostLogWindow() {
+		let medication = medication()
+		let dose = ANDoseConcept(amount: 2, unit: .tablet)
+		let priorEvent = ANEventConcept(
+			eventType: .doseTaken,
+			medication: medication,
+			dose: dose,
+			date: referenceDate.addingTimeInterval(-2 * 3600)
+		)
+		let assessment = MedicationDoseGuidanceService().assessment(
+			for: medication,
+			proposedDose: dose,
+			at: referenceDate,
+			events: [priorEvent],
+			profile: MedicationSafetyProfile(minimumHoursBetweenDoses: 4)
+		)
+		for nextDate in [nil, referenceDate, referenceDate.addingTimeInterval(-60)] {
+			let feedback = QuickLogFeedbackService().feedback(
+				medication: medication,
+				dose: dose,
+				loggedEvent: event(medication: medication),
+				assessment: assessment,
+				nextDoseDate: nextDate,
+				at: referenceDate
+			)
+			#expect(feedback.nextWindowText == nil)
+			#expect(feedback.nextDoseDate == nextDate)
+			#expect(feedback.tone == .warning)
+			#expect(feedback.detail == assessment.detail)
+		}
+	}
+	@Test("A next-day window includes the calendar date")
+	func feedbackIncludesDateAcrossMidnight() {
+		let med = medication()
+		let dose = ANDoseConcept(amount: 2, unit: .tablet)
+		let assessment = MedicationDoseGuidanceService().assessment(
+			for: med, proposedDose: dose, at: referenceDate, events: [], profile: .empty
+		)
+		let nextDate = referenceDate.addingTimeInterval(24 * 3600)
+		let feedback = QuickLogFeedbackService().feedback(
+			medication: med, dose: dose, loggedEvent: event(medication: med),
+			assessment: assessment, nextDoseDate: nextDate, at: referenceDate
+		)
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+		#expect(feedback.nextWindowText == "Next dose window: \(formatter.string(from: nextDate))")
+	}
+
 }

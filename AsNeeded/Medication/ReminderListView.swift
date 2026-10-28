@@ -23,7 +23,7 @@ struct ReminderListView: View {
     @ScaledMetric private var smallSpacing: CGFloat = 4
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Group {
                 if isLoading {
                     ProgressView("Loading reminders...")
@@ -34,8 +34,7 @@ struct ReminderListView: View {
                     remindersList
                 }
             }
-            .navigationTitle("Active Reminders")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("Scheduled Reminders")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) {
@@ -45,7 +44,7 @@ struct ReminderListView: View {
 
                 if !reminders.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Clear All") {
+                        Button("Delete All", role: .destructive) {
                             showingDeleteConfirm = true
                             reminderToDelete = nil
                         }
@@ -60,7 +59,7 @@ struct ReminderListView: View {
             .refreshable {
                 await loadReminders()
             }
-            .alert("Delete Reminder", isPresented: $showingDeleteConfirm) {
+            .alert(reminderToDelete == nil ? "Delete All Reminders?" : "Delete Reminder?", isPresented: $showingDeleteConfirm) {
                 if let reminder = reminderToDelete {
                     Button("Delete", role: .destructive) {
                         Task {
@@ -68,7 +67,7 @@ struct ReminderListView: View {
                         }
                     }
                 } else {
-                    Button("Clear All", role: .destructive) {
+                    Button("Delete All", role: .destructive) {
                         Task {
                             await clearAllReminders()
                         }
@@ -77,11 +76,12 @@ struct ReminderListView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 if reminderToDelete != nil {
-                    Text("Are you sure you want to delete this reminder?")
+                    Text("This reminder will be removed. Your medication and dose history will stay unchanged.")
                 } else {
-                    Text("Are you sure you want to clear all reminders for this medication?")
+                    Text("All reminders for this medication will be removed. Your medication and dose history will stay unchanged.")
                 }
             }
+            .font(.customFont(fontFamily, style: .body))
         }
     }
 
@@ -91,32 +91,39 @@ struct ReminderListView: View {
                 .font(.largeTitle.weight(.medium))
                 .foregroundColor(.secondary)
 
-            Text("No Active Reminders")
-                .font(.title2)
+            Text("No Scheduled Reminders")
+                .font(.customFont(fontFamily, style: .title2))
                 .fontWeight(.semibold)
 
             Text("You haven't set any reminders for \(medication.displayName) yet.")
-                .font(.body)
+                .font(.customFont(fontFamily, style: .body))
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var remindersList: some View {
-        List {
-            ForEach(reminders) { reminder in
-                ReminderRow(
-                    reminder: reminder,
-                    onDelete: {
-                        reminderToDelete = reminder
-                        showingDeleteConfirm = true
-                    }
-                )
-            }
-        }
-    }
+	private var remindersList: some View {
+		List {
+			Section {
+				ForEach(reminders) { reminder in
+					ReminderRow(
+						reminder: reminder,
+						onDelete: {
+							reminderToDelete = reminder
+							showingDeleteConfirm = true
+						}
+					)
+				}
+			} footer: {
+				Text("Scheduled reminders use dates and times you choose. Optional next-dose alerts are managed separately.")
+					.font(.customFont(fontFamily, style: .caption))
+					.fixedSize(horizontal: false, vertical: true)
+			}
+		}
+	}
 
     private func loadReminders() async {
         logger.debug("Loading medication reminders")
@@ -150,6 +157,8 @@ struct ReminderListView: View {
 }
 
 struct ReminderRow: View {
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let reminder: ReminderDetail
     let onDelete: () -> Void
 
@@ -162,49 +171,55 @@ struct ReminderRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: smallSpacing) {
                     Text(reminder.title)
-                        .font(.headline)
-                        .lineLimit(1)
+                        .font(.customFont(fontFamily, style: .headline))
+                        .noTruncate()
 
                     if !reminder.body.isEmpty {
                         Text(reminder.body)
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
-                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
                 Spacer()
 
-                Button {
+                Button(role: .destructive) {
                     onDelete()
                 } label: {
                     Image(systemSymbol: .trash)
                         .foregroundColor(.red)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+				.accessibilityLabel("Delete reminder: \(reminder.title), \(nextFireText)")
+				.accessibilityHint("Asks for confirmation before deleting")
             }
 
-            HStack {
+            timingLayout {
                 Label {
                     Text(nextFireText)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 } icon: {
                     Image(systemSymbol: .clock)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }
 
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Spacer()
+                }
 
                 if reminder.isRepeating {
                     Label {
                         Text(reminder.repeatInfo ?? "Recurring")
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     } icon: {
                         Image(systemSymbol: .repeat)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -237,6 +252,14 @@ struct ReminderRow: View {
             return formatter.string(from: reminder.nextFireDate)
         }
     }
+
+	private var timingLayout: AnyLayout {
+		if dynamicTypeSize.isAccessibilitySize {
+			AnyLayout(VStackLayout(alignment: .leading, spacing: rowSpacing))
+		} else {
+			AnyLayout(HStackLayout())
+		}
+	}
 }
 
 #Preview {

@@ -10,12 +10,12 @@ struct AutomaticBackupView: View {
     @Environment(\.fontFamily) private var fontFamily
     @State private var showAllBackups = false
 
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var contentSpacing: CGFloat = 16
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var cardCornerRadius: CGFloat = 12
-    @ScaledMetric private var badgeCornerRadius: CGFloat = 6
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 12
+	private let sectionSpacing: CGFloat = 24
+	private let contentSpacing: CGFloat = 16
+	private let cardPadding: CGFloat = 16
+	private let cardCornerRadius: CGFloat = 12
+	private let badgeCornerRadius: CGFloat = 6
+	private let buttonCornerRadius: CGFloat = 12
 
     var body: some View {
         ScrollView {
@@ -37,8 +37,7 @@ struct AutomaticBackupView: View {
             }
             .padding()
         }
-        .navigationTitle("Automatic Backup")
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle("Automatic Backup", displayMode: .large)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -47,6 +46,7 @@ struct AutomaticBackupView: View {
                     Image(systemSymbol: .infoCircle)
                         .font(.customFont(fontFamily, style: .body))
                 }
+                .accessibilityLabel("About Automatic Backup")
             }
         }
         .fileImporter(
@@ -349,7 +349,7 @@ struct AutomaticBackupView: View {
 
     private var retentionPolicySection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
-            Text("Retention Policy")
+            Text("Keep Backups")
                 .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 8) {
@@ -357,13 +357,14 @@ struct AutomaticBackupView: View {
                     Text("Keep backups for:")
                         .font(.customFont(fontFamily, style: .body))
                     Spacer()
-                    Picker("", selection: $viewModel.retentionDays) {
+                    Picker("Keep backups for", selection: $viewModel.retentionDays) {
                         Text("7 days").tag(7)
                         Text("30 days").tag(30)
                         Text("90 days").tag(90)
                         Text("1 year").tag(365)
                     }
                     .pickerStyle(.menu)
+                    .labelsHidden()
                 }
 
                 Text("Backups older than \(viewModel.retentionDays) days are automatically deleted to save space")
@@ -705,8 +706,7 @@ struct AutomaticBackupView: View {
                 }
                 .background(.regularMaterial)
             }
-            .navigationTitle("Setup Backup")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("Setup Backup")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -717,6 +717,7 @@ struct AutomaticBackupView: View {
                             .font(.customFont(fontFamily, style: .body, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Cancel Backup Setup")
                 }
             }
         }
@@ -724,82 +725,84 @@ struct AutomaticBackupView: View {
 
     // MARK: - Restore Sheet
 
-    private func restoreSheet(for backup: BackupFile) -> some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Image(systemSymbol: .trayAndArrowDown)
-                        .font(.system(size: 50))
-                        .foregroundStyle(.accent)
+	private func restoreSheet(for backup: BackupFile) -> some View {
+		NavigationStack {
+			ScrollView {
+				VStack(spacing: 24) {
+					VStack(spacing: 12) {
+						Image(systemSymbol: .trayAndArrowDown)
+							.font(.system(size: 50))
+							.foregroundStyle(.accent)
 
-                    Text("Restore from Backup")
-                        .font(.customFont(fontFamily, style: .title2, weight: .bold))
+						Text("Restore from Backup")
+							.font(.customFont(fontFamily, style: .title2, weight: .bold))
 
-                    Text(backup.date, style: .date)
-                        .font(.customFont(fontFamily, style: .body))
-                        .foregroundStyle(.secondary)
-                }
+						Text(backup.date, style: .date)
+							.font(.customFont(fontFamily, style: .body))
+							.foregroundStyle(.secondary)
+					}
 
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemSymbol: .exclamationmarkTriangleFill)
-                            .font(.system(size: 40))
-                            .foregroundStyle(.orange)
-                            .frame(maxWidth: .infinity)
+					VStack(alignment: .leading, spacing: 16) {
+						VStack(alignment: .leading, spacing: 8) {
+							Image(systemSymbol: .exclamationmarkTriangleFill)
+								.font(.system(size: 40))
+								.foregroundStyle(.orange)
+								.frame(maxWidth: .infinity)
 
-                        Text("Warning")
-                            .font(.customFont(fontFamily, style: .headline, weight: .bold))
-                            .frame(maxWidth: .infinity)
+							Text("Warning")
+								.font(.customFont(fontFamily, style: .headline, weight: .bold))
+								.frame(maxWidth: .infinity)
 
-                        Text("This will replace all current data with the backup. This cannot be undone.")
-                            .font(.customFont(fontFamily, style: .body))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .noTruncate()
-                            .frame(maxWidth: .infinity)
-                    }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(cardCornerRadius)
+							Text("This will replace all current data with the backup. This cannot be undone.")
+								.font(.customFont(fontFamily, style: .body))
+								.foregroundStyle(.secondary)
+								.multilineTextAlignment(.center)
+								.noTruncate()
+								.frame(maxWidth: .infinity)
+						}
+						.padding()
+						.background(Color.orange.opacity(0.1))
+						.cornerRadius(cardCornerRadius)
 
-                    Button {
-                        Task {
-                            await viewModel.restoreFromBackup(mergeExisting: false)
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemSymbol: .arrowCounterclockwise)
-                                .font(.customFont(fontFamily, style: .body))
-                            Text("Replace All Data")
-                                .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red)
-                        .cornerRadius(buttonCornerRadius)
-                    }
-                }
+						Button(role: .destructive) {
+							Task {
+								await viewModel.restoreFromBackup(mergeExisting: false)
+							}
+						} label: {
+							HStack {
+								Image(systemSymbol: .arrowCounterclockwise)
+									.font(.customFont(fontFamily, style: .body))
+								Text("Replace All Data")
+									.font(.customFont(fontFamily, style: .body, weight: .semibold))
+							}
+							.foregroundStyle(.white)
+							.frame(maxWidth: .infinity)
+							.padding()
+							.background(Color.red)
+							.cornerRadius(buttonCornerRadius)
+						}
+					}
 
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Restore Backup")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        viewModel.showingRestoreSheet = false
-                    } label: {
-                        Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .dynamicDetent()
-    }
+					Spacer()
+				}
+				.padding()
+			}
+			.customNavigationTitle("Restore Backup")
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button {
+						viewModel.showingRestoreSheet = false
+					} label: {
+						Image(systemSymbol: .xmark)
+							.font(.customFont(fontFamily, style: .body, weight: .medium))
+							.foregroundStyle(.secondary)
+					}
+					.accessibilityLabel("Cancel Restore")
+				}
+			}
+		}
+		.dynamicDetent()
+	}
 }
 
 #Preview {

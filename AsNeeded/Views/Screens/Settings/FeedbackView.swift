@@ -3,14 +3,14 @@ import SFSafeSymbols
 import SwiftUI
 
 struct FeedbackView: View {
-    @ScaledMetric private var sectionSpacing: CGFloat = 20
-    @ScaledMetric private var subsectionSpacing: CGFloat = 16
-    @ScaledMetric private var itemSpacing: CGFloat = 12
-    @ScaledMetric private var textSpacing: CGFloat = 2
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var lineWidth05: CGFloat = 0.5
-    @ScaledMetric private var iconSize24: CGFloat = 24
+	private let sectionSpacing: CGFloat = 20
+	private let subsectionSpacing: CGFloat = 16
+	private let itemSpacing: CGFloat = 12
+	private let textSpacing: CGFloat = 2
+	private let cardPadding: CGFloat = 16
+	private let cornerRadius12: CGFloat = 12
+	private let lineWidth05: CGFloat = 0.5
+	private let iconSize24: CGFloat = 24
 
     @StateObject private var feedbackService = FeedbackService.shared
     @State private var showingMailComposer = false
@@ -68,7 +68,7 @@ struct FeedbackView: View {
                                     ))
 
                                 Text(loadingMessage)
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .fontWeight(.medium)
                                     .foregroundStyle(Color(.systemGray6).contrastingForegroundColor(for: colorScheme))
                                     .multilineTextAlignment(.center)
@@ -80,8 +80,7 @@ struct FeedbackView: View {
                 }
             }
         }
-        .navigationTitle("Send Feedback")
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle("Send Feedback", displayMode: .large)
         .sheet(isPresented: $feedbackService.showingMailComposer) {
             MailComposeView(feedbackService: feedbackService)
         }
@@ -198,19 +197,19 @@ struct FeedbackView: View {
 
                 VStack(alignment: .leading, spacing: textSpacing) {
                     Text(title)
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                         .foregroundColor(isLoading ? .secondary : .primary)
 
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemSymbol: .chevronRight)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
                     .opacity(isLoading ? 0.5 : 1.0)
             }

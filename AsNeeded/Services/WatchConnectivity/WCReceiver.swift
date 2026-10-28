@@ -36,6 +36,13 @@ struct LogDoseData: Sendable {
     let doseUnit: String
     let quantityConsumed: Double?
 
+	var isValid: Bool {
+		UUID(uuidString: medicationId) != nil &&
+			ANUnitConcept(rawValue: doseUnit) != nil &&
+			doseAmount.isFinite && doseAmount > 0 &&
+			(quantityConsumed.map { $0.isFinite && $0 > 0 } ?? true)
+	}
+
     init(from dict: [String: Any]) {
         medicationId = dict["medicationId"] as? String ?? ""
         doseAmount = dict["doseAmount"] as? Double ?? 0.0
@@ -49,10 +56,19 @@ struct QuantityUpdateData: Sendable {
     let medicationId: String
     let quantity: Double
 
+	var isValid: Bool {
+		UUID(uuidString: medicationId) != nil && quantity.isFinite && quantity >= 0
+	}
+
     init(from dict: [String: Any]) {
         medicationId = dict["medicationId"] as? String ?? ""
-        quantity = dict["quantity"] as? Double ?? 0.0
+		quantity = dict["quantity"] as? Double ?? .nan
     }
+}
+
+/// WatchConnectivity's reply callback may be retained until the main-actor save finishes.
+private struct WatchMessageReply: @unchecked Sendable {
+	let handler: ([String: Any]) -> Void
 }
 
 // MARK: - Watch Connectivity Receiver
@@ -79,26 +95,32 @@ final class WCReceiver: NSObject, ObservableObject {
     // MARK: - Message Handling
 
     /// Handle messages from watch in a thread-safe manner
-    private nonisolated func handleMessage(_ message: [String: Any]) {
+    private nonisolated func handleMessage(_ message: [String: Any], reply: WatchMessageReply? = nil) {
         let sendableMessage = SendableMessage(from: message)
         Task { @MainActor in
-            await self.processMessage(sendableMessage)
+			let saved = await self.processMessage(sendableMessage)
+			reply?.handler(["saved": saved])
+			if reply == nil, !saved, !sendableMessage.getMedications {
+				self.session.transferUserInfo(["saveFailed": true])
+			}
         }
     }
 
-    private func processMessage(_ message: SendableMessage) async {
+    private func processMessage(_ message: SendableMessage) async -> Bool {
         do {
 			try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
             if message.getMedications {
                 await sendMedicationsToWatch()
+				return true
             } else if let logDoseData = message.logDoseData {
-                try await handleDoseLogging(logDoseData)
+				return try await handleDoseLogging(logDoseData)
             } else if let quantityUpdateData = message.quantityUpdateData {
-                try await handleQuantityUpdate(quantityUpdateData)
+				return try await handleQuantityUpdate(quantityUpdateData)
             }
         } catch {
             logger.logPrivacySafeError("Error handling watch message", error: error)
         }
+		return false
     }
 
     // MARK: - Private Methods
@@ -164,19 +186,20 @@ final class WCReceiver: NSObject, ObservableObject {
 		]
 	}
 
-    private func handleDoseLogging(_ logDoseData: LogDoseData) async throws {
+    private func handleDoseLogging(_ logDoseData: LogDoseData) async throws -> Bool {
 		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
-        guard let medicationId = UUID(uuidString: logDoseData.medicationId),
-              let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit)
+		guard logDoseData.isValid,
+			  let medicationId = UUID(uuidString: logDoseData.medicationId),
+			  let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit)
         else {
             logger.warning("Invalid dose logging data from watch")
-            return
+            return false
         }
 
         // Find the medication
         guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
             logger.warning("Medication not found for dose logging")
-            return
+            return false
         }
 
         // Create dose and event
@@ -209,21 +232,25 @@ final class WCReceiver: NSObject, ObservableObject {
             session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
                 self?.logger.logPrivacySafeError("Error sending dose confirmation to watch", error: error)
             }
+		} else {
+			session.transferUserInfo(["doseLogged": true])
         }
 		await sendMedicationsToWatch()
+		return true
     }
 
-    private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws {
+    private func handleQuantityUpdate(_ quantityUpdateData: QuantityUpdateData) async throws -> Bool {
 		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
-        guard let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
+		guard quantityUpdateData.isValid,
+			  let medicationId = UUID(uuidString: quantityUpdateData.medicationId) else {
             logger.warning("Invalid quantity update data from watch")
-            return
+            return false
         }
 
         // Find the medication
         guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
             logger.warning("Medication not found for quantity update")
-            return
+            return false
         }
 
         // Update medication quantity using mutation to preserve all properties (color, symbol, etc.)
@@ -239,8 +266,11 @@ final class WCReceiver: NSObject, ObservableObject {
             session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in
                 self?.logger.logPrivacySafeError("Error sending quantity update confirmation to watch", error: error)
             }
+		} else {
+			session.transferUserInfo(["quantityUpdated": true])
         }
 		await sendMedicationsToWatch()
+		return true
     }
 }
 
@@ -284,8 +314,7 @@ extension WCReceiver: WCSessionDelegate {
         Task { @MainActor in
             self.logger.debug("Received message from watch with reply handler")
         }
-        handleMessage(message)
-        replyHandler(["received": true])
+		handleMessage(message, reply: WatchMessageReply(handler: replyHandler))
     }
 
     nonisolated func session(_: WCSession, didReceiveUserInfo userInfo: [String: Any]) {

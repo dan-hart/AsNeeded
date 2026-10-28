@@ -30,6 +30,7 @@ struct MedicationRowComponent: View {
     let medication: ANMedicationConcept
     var statusSummary: MedicationStatusSummaryService.Summary?
     var onLogTapped: () -> Void = {}
+	var onOpen: (() -> Void)?
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
     var onAppearanceChanged: ((String?, String?) -> Void)? = nil
@@ -38,18 +39,20 @@ struct MedicationRowComponent: View {
     @Environment(\.editMode) private var editMode
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var isLongPressing = false
     @State private var longPressWorkItem: DispatchWorkItem?
     @State private var hasTriggeredQuickLog = false
+	@State private var cancelledLogGesture = false
     @State private var showingAppearancePicker = false
     @State private var tempSelectedColor: String?
     @State private var tempSelectedSymbol: String?
     private let hapticsManager = HapticsManager.shared
     private let longPressDuration: TimeInterval = 0.5
 
-    @ScaledMetric private var rowPadding: CGFloat = 16
-    @ScaledMetric private var iconContentSpacing: CGFloat = 14
+    private let rowPadding: CGFloat = 16
+    private let iconContentSpacing: CGFloat = 14
     @ScaledMetric private var logButtonSize: CGFloat = 66
     @ScaledMetric private var medicationIconSize: CGFloat = 56
 
@@ -121,15 +124,18 @@ struct MedicationRowComponent: View {
                 )
         )
         .padding(.horizontal, 4)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
-        .accessibilityElement(children: .combine)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(statusSummary?.accessibilityLabel ?? "Medication: \(medication.displayName)")
         .accessibilityHint("Tap to view details or log dose")
+		.accessibilityAction { if editMode?.wrappedValue != .active { onOpen?() } }
+		.accessibilityAction(named: "View details") { if editMode?.wrappedValue != .active { onOpen?() } }
         .accessibilityAction(named: "Log custom dose") {
+			guard editMode?.wrappedValue != .active else { return }
             onLogTapped()
         }
         .accessibilityAction(named: "Quick log default dose") {
-            guard let onQuickLog else { return }
+            guard editMode?.wrappedValue != .active, let onQuickLog else { return }
             Task {
                 let success = await onQuickLog()
                 if success {
@@ -168,7 +174,6 @@ struct MedicationRowComponent: View {
                     .font(.title3.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(medication.displayColor)
-                    .symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
             }
         }
         .buttonStyle(.plain)
@@ -247,7 +252,7 @@ struct MedicationRowComponent: View {
     @ViewBuilder
     private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 6) {
+            HStack(alignment: .top, spacing: 6) {
                 Image(systemSymbol: summaryIcon(for: summary.severity))
                     .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
                     .foregroundStyle(summaryColor(for: summary.severity))
@@ -255,38 +260,34 @@ struct MedicationRowComponent: View {
 
                 Text(summary.badgeText)
                     .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(summaryColor(for: summary.severity))
 
-                Text(summary.headline)
-                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .background(
-                Capsule()
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(summaryColor(for: summary.severity).opacity(0.12))
             )
 
             Text(summary.timingText)
                 .font(.customFont(fontFamily, style: .caption2))
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
 
-            if let nextWindowText = summary.nextWindowText {
-                Text(nextWindowText)
+            Text(summary.headline)
                     .font(.customFont(fontFamily, style: .caption2))
                     .foregroundStyle(summaryColor(for: summary.severity))
-                    .lineLimit(1)
-            }
+                    .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(summary.accessibilityLabel)
     }
 
     private var enhancedLogButton: some View {
+		Button {
+			onLogTapped()
+		} label: {
         Group {
             if dynamicTypeSize.isAccessibilitySize {
                 // Full width button for accessibility
@@ -357,13 +358,24 @@ struct MedicationRowComponent: View {
                             lineWidth: 1
                         )
                 )
-                .scaleEffect(isPressed || isLongPressing ? 0.95 : 1.0)
+                .scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1.0))
             }
         }
+        }
+		.buttonStyle(.plain)
         .contentShape(Rectangle())
         .highPriorityGesture(
             DragGesture(minimumDistance: 0)
-                .onChanged { _ in
+				.onChanged { value in
+					guard !cancelledLogGesture else { return }
+					if abs(value.translation.width) > 10 || abs(value.translation.height) > 10 {
+						cancelledLogGesture = true
+						longPressWorkItem?.cancel()
+						longPressWorkItem = nil
+						isPressed = false
+						isLongPressing = false
+						return
+					}
                     // Only set up the timer on first change event
                     if longPressWorkItem == nil {
                         // Visual feedback - press started
@@ -412,7 +424,7 @@ struct MedicationRowComponent: View {
                     }
 
                     // Only trigger tap action if it was a short press (long press wasn't triggered)
-                    if !hasTriggeredQuickLog {
+                    if !hasTriggeredQuickLog && !cancelledLogGesture {
                         // Short press - show log sheet
                         hapticsManager.mediumImpact()
                         onLogTapped()
@@ -420,10 +432,19 @@ struct MedicationRowComponent: View {
 
                     // Reset for next interaction
                     hasTriggeredQuickLog = false
+					cancelledLogGesture = false
                 }
         )
         .accessibilityLabel("Log dose for \(medication.displayName)")
         .accessibilityHint("Tap to customize dose, hold to log default dose")
+		.onDisappear {
+			longPressWorkItem?.cancel()
+			longPressWorkItem = nil
+			hasTriggeredQuickLog = false
+			cancelledLogGesture = false
+			isPressed = false
+			isLongPressing = false
+		}
     }
 
     // MARK: - Helper Methods

@@ -4,8 +4,80 @@
 @testable import AsNeeded
 import SwiftUI
 import Testing
+import UIKit
 
 struct ColorContrastTests {
+	@Test("Opaque medium backgrounds receive an AA foreground")
+	@MainActor
+	func opaqueMediumForegroundMeetsAA() throws {
+		let backgrounds: [(String, Color)] = [
+			("Balanced gray", Color(.sRGB, red: 0.463, green: 0.463, blue: 0.463, opacity: 1)),
+			("Middle gray", Color(.sRGB, red: 0.5, green: 0.5, blue: 0.5, opacity: 1)),
+			("Medium green", Color(.sRGB, red: 0.25, green: 0.65, blue: 0.35, opacity: 1)),
+			("Medium orange", Color(.sRGB, red: 0.85, green: 0.45, blue: 0.2, opacity: 1)),
+			("Medium blue", Color(.sRGB, red: 0.3, green: 0.6, blue: 0.8, opacity: 1)),
+		]
+		for (name, background) in backgrounds {
+			for scheme in [ColorScheme.light, .dark] {
+				try expectAAForeground(on: background, named: name, scheme: scheme)
+			}
+		}
+	}
+
+	@Test("Every medication palette color receives an AA foreground")
+	@MainActor
+	func medicationPaletteForegroundMeetsAA() throws {
+		for entry in MedicationColors.colors {
+			for scheme in [ColorScheme.light, .dark] {
+				try expectAAForeground(on: entry.color, named: entry.name, scheme: scheme)
+			}
+		}
+	}
+
+	@Test("Adaptive backgrounds use the requested appearance for contrast")
+	@MainActor
+	func adaptiveForegroundUsesRequestedScheme() throws {
+		let background = Color(uiColor: UIColor { traits in
+			traits.userInterfaceStyle == .dark
+				? UIColor(red: 0.1, green: 0.1, blue: 0.1, alpha: 1)
+				: UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+		})
+		for scheme in [ColorScheme.light, .dark] {
+			try expectAAForeground(on: background, named: "Adaptive background", scheme: scheme)
+		}
+	}
+
+	// This independent calculation checks opaque color values, not rendered UI contrast.
+	@MainActor
+	private func expectAAForeground(on background: Color, named name: String, scheme: ColorScheme) throws {
+		let foreground = background.contrastingForegroundColor(for: scheme)
+		#expect(foreground == .black || foreground == .white)
+		let backgroundLuminance = try referenceLuminance(background, scheme: scheme)
+		let foregroundLuminance = try referenceLuminance(foreground, scheme: scheme)
+		let ratio = (max(backgroundLuminance, foregroundLuminance) + 0.05)
+			/ (min(backgroundLuminance, foregroundLuminance) + 0.05)
+		#expect(ratio >= 4.5, "\(name), \(String(describing: scheme)): foreground contrast is \(ratio):1")
+		let bestRatio = max((backgroundLuminance + 0.05) / 0.05, 1.05 / (backgroundLuminance + 0.05))
+		#expect(abs(ratio - bestRatio) < 0.000_001, "\(name): expected the higher black/white contrast ratio")
+	}
+
+	@MainActor
+	private func referenceLuminance(_ color: Color, scheme: ColorScheme) throws -> Double {
+		let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
+		let resolved = UIColor(color).resolvedColor(with: traits)
+		var red: CGFloat = 0
+		var green: CGFloat = 0
+		var blue: CGFloat = 0
+		var alpha: CGFloat = 0
+		try #require(resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+		try #require(abs(alpha - 1) < 0.000_001, "Contrast fixtures must be opaque")
+		let linear = [red, green, blue].map { component in
+			let value = Double(component)
+			return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+		}
+		return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+	}
+
     @Test("Color luminance calculation")
     func colorLuminance() {
         // Test well-known color values

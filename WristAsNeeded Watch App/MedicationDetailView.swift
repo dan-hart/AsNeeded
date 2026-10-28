@@ -9,7 +9,6 @@ struct MedicationDetailView: View {
 	@State private var showingDoseLogger = false
 	@State private var showingQuantityEditor = false
 	@State private var newQuantity: Double
-	@State private var currentQuantity: Double
 	@State private var now = Date()
 
 	private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -18,7 +17,6 @@ struct MedicationDetailView: View {
 		initialMedication = medication
 		_doseAmount = State(initialValue: medication.prescribedDoseAmount ?? 1.0)
 		_newQuantity = State(initialValue: medication.quantity)
-		_currentQuantity = State(initialValue: medication.quantity)
 	}
 
 	private var medication: WatchMedication {
@@ -41,11 +39,12 @@ struct MedicationDetailView: View {
 						Text("Quantity:")
 							.font(.caption)
 							.foregroundColor(.secondary)
-						Text("\(currentQuantity, specifier: "%.0f")")
+						Text(medication.quantity.formatted(.number.precision(.fractionLength(0...2))))
 							.font(.caption)
 							.fontWeight(.medium)
 						Spacer()
 						Button("Edit") {
+							newQuantity = medication.quantity
 							showingQuantityEditor = true
 						}
 						.font(.caption2)
@@ -84,6 +83,9 @@ struct MedicationDetailView: View {
 
 				// Quick Actions
 				VStack(spacing: 12) {
+					if let message = sender.actionMessage {
+						Text(message).font(.caption).fixedSize(horizontal: false, vertical: true)
+					}
 					Button(action: {
 						showingDoseLogger = true
 					}) {
@@ -98,6 +100,7 @@ struct MedicationDetailView: View {
 						.cornerRadius(12)
 					}
 					.buttonStyle(.plain)
+					.disabled(sender.isSendingAction)
 
 					Button(action: {
 						logQuickDose()
@@ -119,6 +122,8 @@ struct MedicationDetailView: View {
 						.cornerRadius(12)
 					}
 					.buttonStyle(.plain)
+					.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+					.disabled(sender.isSendingAction)
 				}
 			}
 			.padding()
@@ -127,12 +132,6 @@ struct MedicationDetailView: View {
 		.navigationBarTitleDisplayMode(.inline)
 		.sheet(isPresented: $showingDoseLogger) {
 			DoseLoggerView(medication: medication, doseAmount: $doseAmount)
-				.onDisappear {
-					// Update quantity after logging dose
-					if currentQuantity > 0 {
-						currentQuantity = max(0, currentQuantity - doseAmount)
-					}
-				}
 		}
 		.sheet(isPresented: $showingQuantityEditor) {
 			QuantityEditorView(medication: medication, quantity: $newQuantity)
@@ -151,15 +150,7 @@ struct MedicationDetailView: View {
 			"quantityConsumed": doseAmount,
 		]
 
-		sender.sendMessage(key: "logDose", value: eventData)
-
-		// Update local quantity immediately for better UX
-		if currentQuantity > 0 {
-			currentQuantity = max(0, currentQuantity - doseAmount)
-		}
-
-		// Provide subtle haptic feedback
-		WKInterfaceDevice.current().play(.click)
+		Task { await sender.sendAction(key: "logDose", value: eventData) }
 	}
 
 	private var statusBadge: some View {

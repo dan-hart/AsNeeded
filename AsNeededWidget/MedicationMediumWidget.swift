@@ -136,14 +136,7 @@ struct MediumWidgetView: View {
 
             // Medication rows
             ForEach(entry.medications, id: \.medication.id) { info in
-                if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
-                    Link(destination: url) {
-                        medicationRow(info: info)
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    medicationRow(info: info)
-                }
+				medicationRow(info: info)
             }
         }
         .padding()
@@ -151,6 +144,9 @@ struct MediumWidgetView: View {
 
     private func medicationRow(info: MedicationInfo) -> some View {
         HStack(spacing: 12) {
+			if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
+				Link(destination: url) {
+					HStack(spacing: 12) {
             // Medication icon
             ZStack {
                 Circle()
@@ -170,7 +166,7 @@ struct MediumWidgetView: View {
                     .lineLimit(1)
 
                 if info.canTakeNow {
-                    Text("Available now")
+					Text("Record a dose")
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.green)
                 } else if info.lowStock {
@@ -182,17 +178,21 @@ struct MediumWidgetView: View {
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.orange)
                 } else if let nextDoseTime = info.nextDoseTime {
-                    Text("Next: \(timeRemaining(until: nextDoseTime))")
+					Text(nextDoseTime, style: .relative)
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Spacer(minLength: 4)
+					}
+				}
+				.buttonStyle(.plain)
+			}
+			Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
             if #available(iOS 17.0, *), info.canTakeNow {
-                LogDoseIconButton(medicationID: info.medication.id.uuidString, color: info.medication.displayColor)
+				LogDoseIconButton(medicationID: info.medication.id.uuidString, medicationName: info.medication.displayName, doseDescription: "\((info.medication.prescribedDoseAmount ?? 1).formatted(.number)) \(info.medication.prescribedUnit?.displayName ?? "unit")", color: info.medication.displayColor)
             } else {
                 Image(systemName: "plus.circle.fill")
                     .font(.title2)
@@ -308,6 +308,8 @@ struct MedicationInfo {
 @available(iOS 17.0, *)
 struct LogDoseIconButton: View {
     let medicationID: String
+	let medicationName: String
+	let doseDescription: String
     let color: Color
 
     var body: some View {
@@ -321,5 +323,6 @@ struct LogDoseIconButton: View {
                 .foregroundStyle(color)
         }
         .buttonStyle(.plain)
+		.accessibilityLabel("Log \(doseDescription) of \(medicationName)")
     }
 }

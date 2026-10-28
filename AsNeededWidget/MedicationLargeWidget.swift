@@ -14,8 +14,8 @@ struct MedicationLargeWidget: Widget {
             LargeWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
-        .configurationDisplayName("Full Medication List")
-        .description("Shows all medications with quantities and status")
+		.configurationDisplayName("Medication Overview")
+		.description("Shows up to six medications with quantities and status")
         .supportedFamilies([.systemLarge])
     }
 }
@@ -125,14 +125,7 @@ struct LargeWidgetView: View {
                 // Medication list
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(entry.medications, id: \.medication.id) { info in
-                        if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
-                            Link(destination: url) {
-                                medicationRow(info: info)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            medicationRow(info: info)
-                        }
+						medicationRow(info: info)
                     }
                 }
 
@@ -205,6 +198,9 @@ struct LargeWidgetView: View {
 
     private func medicationRow(info: MedicationInfo) -> some View {
         HStack(spacing: 12) {
+			if let url = URL(string: "asneeded://log/\(info.medication.id.uuidString)") {
+				Link(destination: url) {
+					HStack(spacing: 12) {
             // Medication icon
             ZStack {
                 Circle()
@@ -232,7 +228,7 @@ struct LargeWidgetView: View {
                             Image(systemName: "square.stack.3d.up")
                                 .font(.caption2)
 
-                            Text("\(String(format: "%.0f", quantity)) \(unit.abbreviation)")
+							Text("\(quantity.formatted(.number.precision(.fractionLength(0...3)))) \(unit.abbreviation)")
                                 .font(.caption2.weight(.medium))
                         }
                         .foregroundStyle(quantityColor(for: quantity))
@@ -244,7 +240,7 @@ struct LargeWidgetView: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.caption2)
 
-                            Text("Available")
+							Text("Record a dose")
                                 .font(.caption2.weight(.medium))
                         }
                         .foregroundStyle(.green)
@@ -271,7 +267,7 @@ struct LargeWidgetView: View {
                             Image(systemName: "clock")
                                 .font(.caption2)
 
-                            Text(timeRemaining(until: nextDoseTime))
+							Text(nextDoseTime, style: .relative)
                                 .font(.caption2.weight(.medium))
                         }
                         .foregroundStyle(.secondary)
@@ -279,11 +275,15 @@ struct LargeWidgetView: View {
                 }
             }
 
-            Spacer(minLength: 4)
+					}
+				}
+				.buttonStyle(.plain)
+			}
+			Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
             if #available(iOS 17.0, *), info.canTakeNow {
-                LogDoseLargeIconButton(medicationID: info.medication.id.uuidString, color: info.medication.displayColor)
+				LogDoseLargeIconButton(medicationID: info.medication.id.uuidString, medicationName: info.medication.displayName, doseDescription: "\((info.medication.prescribedDoseAmount ?? 1).formatted(.number)) \(info.medication.prescribedUnit?.displayName ?? "unit")", color: info.medication.displayColor)
             } else {
                 Image(systemName: "plus.circle.fill")
                     .font(.title3)
@@ -404,6 +404,8 @@ struct FullMedicationListEntry: TimelineEntry {
 @available(iOS 17.0, *)
 struct LogDoseLargeIconButton: View {
     let medicationID: String
+	let medicationName: String
+	let doseDescription: String
     let color: Color
 
     var body: some View {
@@ -417,5 +419,6 @@ struct LogDoseLargeIconButton: View {
                 .foregroundStyle(color)
         }
         .buttonStyle(.plain)
+		.accessibilityLabel("Log \(doseDescription) of \(medicationName)")
     }
 }

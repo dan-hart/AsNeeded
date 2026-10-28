@@ -18,6 +18,15 @@ struct MedicationListView: View {
 						.font(.caption)
 						.foregroundColor(.secondary)
 				}
+			} else if let message = sender.loadErrorMessage, !sender.hasLoadedMedications, sender.medications.isEmpty {
+				ScrollView {
+					VStack(spacing: 12) {
+						Text("Medications Unavailable").font(.headline)
+						Text(message).font(.caption).multilineTextAlignment(.center)
+						Button("Refresh") { Task { await loadMedications() } }
+					}
+					.padding()
+				}
 			} else if sender.medications.isEmpty {
 				VStack(spacing: 12) {
 					Image(systemName: "pills")
@@ -46,7 +55,14 @@ struct MedicationListView: View {
 			} else if sender.medications.count == 1 {
 				// Single medication - show simplified view with quick actions
 				if let medication = sender.medications.first {
+					ScrollView {
 					VStack(spacing: 16) {
+						if let message = sender.loadErrorMessage {
+							Text("Showing the last received list. \(message)").font(.caption)
+						}
+						if let message = sender.actionMessage {
+							Text(message).font(.caption).fixedSize(horizontal: false, vertical: true)
+						}
 						NavigationLink(destination: MedicationDetailView(medication: medication)) {
 							VStack(spacing: 8) {
 								Text(medication.displayName)
@@ -55,7 +71,7 @@ struct MedicationListView: View {
 									.multilineTextAlignment(.center)
 
 								HStack {
-									Text("Qty: \(medication.quantity, specifier: "%.0f")")
+									Text("Quantity: \(medication.quantity.formatted(.number.precision(.fractionLength(0...2))))")
 										.font(.caption)
 										.foregroundColor(.secondary)
 
@@ -96,12 +112,15 @@ struct MedicationListView: View {
 							.cornerRadius(12)
 						}
 						.buttonStyle(.plain)
+						.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+						.disabled(sender.isSendingAction)
 
 						Spacer()
 					}
 					.padding()
 					.refreshable {
 						await loadMedications()
+					}
 					}
 				} else {
 					Text("Unable to load medication")
@@ -110,10 +129,14 @@ struct MedicationListView: View {
 			} else {
 				// Multiple medications - show list with quick log buttons
 				List {
+					if let message = sender.loadErrorMessage {
+						Text("Showing the last received list. \(message)").font(.caption)
+					}
+					if let message = sender.actionMessage {
+						Text(message).font(.caption)
+					}
 					ForEach(sender.medications) { medication in
-						NavigationLink(destination: MedicationDetailView(medication: medication)) {
-							MedicationRowView(medication: medication, now: now)
-						}
+						MedicationRowView(medication: medication, now: now)
 					}
 				}
 				.refreshable {
@@ -141,10 +164,7 @@ struct MedicationListView: View {
 			"quantityConsumed": doseAmount,
 		]
 
-		sender.sendMessage(key: "logDose", value: eventData)
-
-		// Provide subtle haptic feedback
-		WKInterfaceDevice.current().play(.click)
+		Task { await sender.sendAction(key: "logDose", value: eventData) }
 	}
 
 	@ViewBuilder
@@ -190,16 +210,26 @@ struct MedicationListView: View {
 
 	private func loadMedications() async {
 		isLoading = true
+		sender.hasLoadedMedications = false
+		sender.loadErrorMessage = nil
+		guard sender.isConnected else {
+			sender.loadErrorMessage = "Open AsNeeded on your nearby iPhone, then refresh."
+			isLoading = false
+			return
+		}
 		sender.sendMessage(key: "getMedications", value: "request")
 
 		// Wait for response with timeout
 		for _ in 0 ..< 30 { // 3 second timeout
 			try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-			if !sender.medications.isEmpty {
+			if sender.hasLoadedMedications || sender.loadErrorMessage != nil {
 				break
 			}
 		}
 
+		if !sender.hasLoadedMedications, sender.loadErrorMessage == nil {
+			sender.loadErrorMessage = "iPhone hasn’t responded. Open AsNeeded there, then refresh."
+		}
 		isLoading = false
 	}
 }
@@ -208,23 +238,22 @@ struct MedicationRowView: View {
 	let medication: WatchMedication
 	let now: Date
 	@EnvironmentObject var sender: WCSender
-	@State private var currentQuantity: Double
 
 	init(medication: WatchMedication, now: Date) {
 		self.medication = medication
 		self.now = now
-		_currentQuantity = State(initialValue: medication.quantity)
 	}
 
 	var body: some View {
 		HStack {
+			NavigationLink(destination: MedicationDetailView(medication: medication)) {
 			VStack(alignment: .leading, spacing: 4) {
 				Text(medication.displayName)
 					.font(.headline)
-					.lineLimit(2)
+					.fixedSize(horizontal: false, vertical: true)
 
 				HStack {
-					Text("Qty: \(currentQuantity, specifier: "%.0f")")
+					Text("Quantity: \(medication.quantity.formatted(.number.precision(.fractionLength(0...2))))")
 						.font(.caption)
 						.foregroundColor(.secondary)
 
@@ -241,6 +270,7 @@ struct MedicationRowView: View {
 
 				statusRow(for: medication, at: now)
 			}
+			}
 
 			Spacer()
 
@@ -249,9 +279,11 @@ struct MedicationRowView: View {
 				Image(systemName: "plus.circle.fill")
 					.font(.title3)
 					.foregroundColor(.accent)
+					.frame(minWidth: 44, minHeight: 44)
 			}
 			.buttonStyle(.plain)
-			.frame(width: 30, height: 30)
+			.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+			.disabled(sender.isSendingAction)
 		}
 		.padding(.vertical, 2)
 	}
@@ -267,15 +299,7 @@ struct MedicationRowView: View {
 			"quantityConsumed": doseAmount,
 		]
 
-		sender.sendMessage(key: "logDose", value: eventData)
-
-		// Update local quantity immediately for better UX
-		if currentQuantity > 0 {
-			currentQuantity = max(0, currentQuantity - doseAmount)
-		}
-
-		// Provide subtle haptic feedback
-		WKInterfaceDevice.current().play(.click)
+		Task { await sender.sendAction(key: "logDose", value: eventData) }
 	}
 
 	@ViewBuilder

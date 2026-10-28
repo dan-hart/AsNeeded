@@ -23,6 +23,7 @@ struct SupportView: View {
     @ScaledMetric private var tipButtonMinHeight: CGFloat = 100
 
     @Environment(\.openURL) private var openURL
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.fontFamily) private var fontFamily
     @EnvironmentObject private var revenueCatManager: RevenueCatManager
     @State private var isPurchasing = false
@@ -48,8 +49,7 @@ struct SupportView: View {
             .padding(.horizontal)
             .padding(.vertical)
         }
-        .navigationTitle("Support")
-        .navigationBarTitleDisplayMode(.large)
+		.customNavigationTitle("Support", displayMode: .large)
         .alert(alertTitle, isPresented: $showPurchaseAlert) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -86,15 +86,15 @@ struct SupportView: View {
             VStack(spacing: compactSpacing) {
                 HStack(spacing: compactSpacing) {
                     Image(systemSymbol: .heart)
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .foregroundColor(.red)
                     Text("Support As Needed")
-                        .font(.title)
+                        .font(.customFont(fontFamily, style: .title))
                         .fontWeight(.semibold)
                 }
 
-                Text("Help keep this app free, open source, and privacy-focused")
-                    .font(.subheadline)
+                Text("Optional support. Every feature stays free, with no ads.")
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -107,10 +107,18 @@ struct SupportView: View {
         VStack(alignment: .leading, spacing: subsectionSpacing) {
             // Support Section
             VStack(alignment: .leading, spacing: itemSpacing) {
-                Text("Support Development")
+                Text("Support Development (Optional)")
                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
                 // Tip Jar
+				if revenueCatManager.availableProducts.isEmpty {
+					Text(revenueCatManager.isLoadingProducts ? "Loading support options…" : "Purchase options are temporarily unavailable. You can keep using every feature.")
+						.font(.customFont(fontFamily, style: .callout))
+						.foregroundStyle(.secondary)
+					if !revenueCatManager.isLoadingProducts {
+						Button("Reload Prices") { Task { await revenueCatManager.reloadProducts() } }
+					}
+				}
                 tipJarGrid
 
                 // Buy Me a Coffee
@@ -138,7 +146,7 @@ struct SupportView: View {
 
             VStack(alignment: .leading, spacing: rowSpacing) {
                 Text("As Needed will always be free with all features available. No ads, no premium tiers, no subscriptions required. The app is open source - you can inspect the code or contribute improvements.")
-                    .font(.body)
+                    .font(.customFont(fontFamily, style: .body))
                     .foregroundStyle(.secondary)
 
                 Button {
@@ -148,24 +156,24 @@ struct SupportView: View {
                 } label: {
                     HStack(spacing: rowSpacing) {
                         Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                            .font(.title3)
+                            .font(.customFont(fontFamily, style: .title3))
                             .foregroundColor(.primary)
 
                         VStack(alignment: .leading, spacing: labelSpacing) {
                             Text("Contribute on GitHub")
-                                .font(.headline)
+                                .font(.customFont(fontFamily, style: .headline))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
 
                             Text("View source code, report issues, or contribute")
-                                .font(.subheadline)
+                                .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundColor(.secondary)
                         }
 
                         Spacer()
 
                         Image(systemSymbol: .arrowUpRight)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                     .padding(cardPadding)
@@ -194,24 +202,24 @@ struct SupportView: View {
         } label: {
             HStack(spacing: rowSpacing) {
                 Image(systemSymbol: .cupAndSaucerFill)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundColor(.orange)
 
                 VStack(alignment: .leading, spacing: labelSpacing) {
                     Text("Buy Me a Coffee")
-                        .font(.headline)
+                        .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
 
                     Text("Support development with a coffee")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemSymbol: .arrowUpRight)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
             }
             .padding(cardPadding)
@@ -228,24 +236,24 @@ struct SupportView: View {
         } label: {
             HStack(spacing: rowSpacing) {
                 Image(systemSymbol: .star)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundColor(.accent)
 
                 VStack(alignment: .leading, spacing: labelSpacing) {
                     Text("Rate & Review on App Store")
-                        .font(.headline)
+                        .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
 
                     Text("Share your experience and help others discover the app")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemSymbol: .arrowUpRight)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
             }
             .padding(cardPadding)
@@ -259,11 +267,11 @@ struct SupportView: View {
     private var tipJarGrid: some View {
         VStack(alignment: .leading, spacing: rowSpacing) {
             Text("One-time Tips")
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .fontWeight(.semibold)
                 .padding(.top, headerPaddingV)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: rowSpacing) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: dynamicTypeSize.isAccessibilitySize ? 1 : 3), spacing: rowSpacing) {
                 ForEach(tipTiers, id: \.title) { tip in
                     TipButton(tip: tip,
                               isPurchasing: $isPurchasing,
@@ -279,13 +287,13 @@ struct SupportView: View {
 
     private var subscriptionOptions: some View {
         VStack(alignment: .leading, spacing: rowSpacing) {
-            Text("Monthly Auto-Renewable Subscriptions")
-                .font(.headline)
+            Text("Monthly Support")
+                .font(.customFont(fontFamily, style: .headline))
                 .fontWeight(.semibold)
                 .padding(.top, headerPaddingV)
 
-            Text("Ongoing monthly support for development • Cancel anytime in Settings")
-                .font(.caption)
+            Text("Renews automatically each month. Cancel anytime in your App Store subscription settings.")
+                .font(.customFont(fontFamily, style: .caption))
                 .foregroundColor(.secondary)
 
             VStack(spacing: compactSpacing) {
@@ -326,9 +334,9 @@ struct SupportView: View {
         } label: {
             HStack {
                 Image(systemSymbol: .arrowClockwise)
-                    .font(.callout)
+                    .font(.customFont(fontFamily, style: .callout))
                 Text("Restore Purchases")
-                    .font(.callout)
+                    .font(.customFont(fontFamily, style: .callout))
                     .fontWeight(.medium)
             }
             .foregroundColor(.white)
@@ -352,8 +360,9 @@ struct SupportView: View {
                 }
             } label: {
                 Text("Terms of Use (EULA)")
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.accent)
+					.frame(minHeight: 44, alignment: .leading)
             }
 
             Button {
@@ -363,8 +372,9 @@ struct SupportView: View {
                 }
             } label: {
                 Text("Privacy Policy")
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.accent)
+					.frame(minHeight: 44, alignment: .leading)
             }
         }
         .padding(.top, legalLinksPaddingTop)
@@ -372,8 +382,8 @@ struct SupportView: View {
 
     private var subscriptionLegalInfo: some View {
         VStack(alignment: .leading, spacing: legalLinksSpacing) {
-            Text("Subscription automatically renews monthly unless canceled. Manage in Settings > Apple ID > Subscriptions.")
-                .font(.caption2)
+            Text("Manage or cancel in Settings > your name > Subscriptions.")
+                .font(.customFont(fontFamily, style: .caption2))
                 .foregroundColor(.secondary)
                 .padding(.top, headerPaddingV)
         }
@@ -381,21 +391,22 @@ struct SupportView: View {
     }
 
     private let tipTiers = [
-        (title: "Thanks", emoji: "👍", color: Color.green, price: "$0.99", productId: RevenueCatManager.ProductIdentifier.tipThanks),
-        (title: "Cheers", emoji: "🥂", color: Color.orange, price: "$2.99", productId: RevenueCatManager.ProductIdentifier.tipCheers),
-        (title: "Ovation", emoji: "👏", color: Color.purple, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.tipOvation),
+		(title: "Thanks", emoji: "👍", color: Color.green, productId: RevenueCatManager.ProductIdentifier.tipThanks),
+		(title: "Cheers", emoji: "🥂", color: Color.orange, productId: RevenueCatManager.ProductIdentifier.tipCheers),
+		(title: "Ovation", emoji: "👏", color: Color.purple, productId: RevenueCatManager.ProductIdentifier.tipOvation),
     ]
 
     private let subscriptionTiers = [
-        (title: "Supporter", description: "Basic monthly support", icon: SFSymbol.heart, color: .accent, price: "$1.99", productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
-        (title: "Advocate", description: "Enhanced monthly support", icon: SFSymbol.handRaisedFill, color: Color.green, price: "$4.99", productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
-        (title: "Champion", description: "Premium monthly support", icon: SFSymbol.crownFill, color: Color.purple, price: "$9.99", productId: RevenueCatManager.ProductIdentifier.subscriptionChampion),
+		(title: "Supporter", description: "Optional monthly contribution", icon: SFSymbol.heart, color: .accent, productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
+		(title: "Advocate", description: "Optional monthly contribution", icon: SFSymbol.handRaisedFill, color: Color.green, productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
+		(title: "Champion", description: "Optional monthly contribution", icon: SFSymbol.crownFill, color: Color.purple, productId: RevenueCatManager.ProductIdentifier.subscriptionChampion),
     ]
 }
 
 // MARK: - Tip Button
 
 private struct TipButton: View {
+	@Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var contentSpacing: CGFloat = 8
     @ScaledMetric private var paddingV: CGFloat = 16
     @ScaledMetric private var paddingH: CGFloat = 8
@@ -403,7 +414,7 @@ private struct TipButton: View {
     @ScaledMetric private var borderWidth: CGFloat = 1
     @ScaledMetric private var minHeight: CGFloat = 100
 
-    let tip: (title: String, emoji: String, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
+	let tip: (title: String, emoji: String, color: Color, productId: RevenueCatManager.ProductIdentifier)
     @EnvironmentObject private var revenueCatManager: RevenueCatManager
     @Binding var isPurchasing: Bool
     @Binding var showPurchaseAlert: Bool
@@ -412,8 +423,13 @@ private struct TipButton: View {
     @Binding var showThankYouView: Bool
     @Binding var purchaseType: ThankYouView.PurchaseType?
 
+	private var productPrice: String? {
+		revenueCatManager.availableProducts.first { $0.productIdentifier == tip.productId.rawValue }?.localizedPriceString
+	}
+
     var body: some View {
         Button {
+			guard let displayedPrice = productPrice else { return }
             Task {
                 isPurchasing = true
                 defer { isPurchasing = false }
@@ -421,7 +437,7 @@ private struct TipButton: View {
                 let success = await revenueCatManager.purchaseTip(tip.productId)
 
                 if success {
-                    purchaseType = .tip(amount: tip.price)
+					purchaseType = .tip(amount: displayedPrice)
                     showThankYouView = true
                 } else if let error = revenueCatManager.purchaseError {
                     alertTitle = "Purchase Failed"
@@ -432,16 +448,15 @@ private struct TipButton: View {
         } label: {
             VStack(spacing: contentSpacing) {
                 Text(tip.emoji)
-                    .font(.title2)
+                    .font(.customFont(fontFamily, style: .title2))
 
                 Text(tip.title)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)
-                    .lineLimit(1)
 
-                Text(tip.price)
-                    .font(.caption2)
+                Text(productPrice ?? (revenueCatManager.isLoadingProducts ? "Loading price…" : "Unavailable"))
+                    .font(.customFont(fontFamily, style: .caption2))
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: minHeight)
@@ -455,12 +470,15 @@ private struct TipButton: View {
             .cornerRadius(cardCornerRadius)
         }
         .buttonStyle(.plain)
+		.disabled(productPrice == nil)
     }
 }
 
 // MARK: - Subscription Button
 
 private struct SubscriptionButton: View {
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric private var contentSpacing: CGFloat = 12
     @ScaledMetric private var labelSpacing: CGFloat = 2
     @ScaledMetric private var cardPadding: CGFloat = 16
@@ -468,7 +486,7 @@ private struct SubscriptionButton: View {
     @ScaledMetric private var borderWidth: CGFloat = 1
     @ScaledMetric private var iconSize: CGFloat = 24
 
-    let subscription: (title: String, description: String, icon: SFSymbol, color: Color, price: String, productId: RevenueCatManager.ProductIdentifier)
+	let subscription: (title: String, description: String, icon: SFSymbol, color: Color, productId: RevenueCatManager.ProductIdentifier)
     @EnvironmentObject private var revenueCatManager: RevenueCatManager
     @Binding var isPurchasing: Bool
     @Binding var showPurchaseAlert: Bool
@@ -476,6 +494,10 @@ private struct SubscriptionButton: View {
     @Binding var alertMessage: String
     @Binding var showThankYouView: Bool
     @Binding var purchaseType: ThankYouView.PurchaseType?
+
+	private var productPrice: String? {
+		revenueCatManager.availableProducts.first { $0.productIdentifier == subscription.productId.rawValue }?.localizedPriceString
+	}
 
     var body: some View {
         Button {
@@ -495,25 +517,28 @@ private struct SubscriptionButton: View {
                 }
             }
         } label: {
-            HStack(spacing: contentSpacing) {
+			let layout = dynamicTypeSize.isAccessibilitySize
+				? AnyLayout(VStackLayout(alignment: .leading, spacing: contentSpacing))
+				: AnyLayout(HStackLayout(spacing: contentSpacing))
+			layout {
                 Image(systemSymbol: subscription.icon)
-                    .font(.callout.weight(.medium))
+                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
                     .frame(width: iconSize, height: iconSize)
                     .foregroundColor(subscription.color)
 
                 VStack(alignment: .leading, spacing: labelSpacing) {
                     Text(subscription.title)
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                     Text(subscription.description)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
-                Text(subscription.price + "/month")
-                    .font(.caption)
+                Text(productPrice.map { "\($0) / month" } ?? (revenueCatManager.isLoadingProducts ? "Loading price…" : "Unavailable"))
+                    .font(.customFont(fontFamily, style: .caption))
                     .fontWeight(.medium)
                     .foregroundColor(subscription.color)
             }
@@ -526,6 +551,7 @@ private struct SubscriptionButton: View {
             .cornerRadius(cardCornerRadius)
         }
         .buttonStyle(.plain)
+		.disabled(productPrice == nil)
     }
 }
 

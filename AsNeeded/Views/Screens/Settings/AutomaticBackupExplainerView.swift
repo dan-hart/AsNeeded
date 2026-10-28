@@ -8,7 +8,7 @@ struct AutomaticBackupExplainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontFamily) private var fontFamily
 
-    @ScaledMetric private var cornerRadius: CGFloat = 8
+	private let cornerRadius: CGFloat = 8
 
     var body: some View {
         NavigationStack {
@@ -24,8 +24,7 @@ struct AutomaticBackupExplainerView: View {
                 }
                 .padding()
             }
-            .navigationTitle("How It Works")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("How It Works")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -35,6 +34,7 @@ struct AutomaticBackupExplainerView: View {
                             .font(.customFont(fontFamily, style: .body, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Close Backup Information")
                 }
             }
         }
@@ -90,7 +90,7 @@ struct AutomaticBackupExplainerView: View {
 
     private var retentionPolicySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Retention Policy")
+            Text("Keep Backups")
                 .font(.customFont(fontFamily, style: .title2, weight: .bold))
 
             Text("Choose how long to keep backups (7 days to 1 year). Older backups are deleted daily to save space. Today's backup is always kept.")

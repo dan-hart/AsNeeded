@@ -126,10 +126,10 @@ struct LockScreenWidgetView: View {
                         .font(.title3.weight(.semibold))
 
                     if entry.canTakeNow {
-                        Text("Now")
+						Text("Log")
                             .font(.caption2.weight(.bold))
                     } else if let nextDoseTime = entry.nextDoseTime {
-                        Text(timeRemainingShort(until: nextDoseTime))
+						Text(nextDoseTime, style: .relative)
                             .font(.caption2.weight(.bold))
                     }
                 } else {
@@ -141,6 +141,8 @@ struct LockScreenWidgetView: View {
                 }
             }
         }
+		.accessibilityElement(children: .ignore)
+		.accessibilityLabel(entry.nextMedication.map { "\($0.displayName). Open AsNeeded to review timing or log a dose." } ?? "\(entry.medicationCount) medications")
     }
 
     // MARK: - Rectangular
@@ -160,6 +162,7 @@ struct LockScreenWidgetView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption2)
                         .foregroundStyle(.orange)
+						.accessibilityLabel("\(entry.lowQuantityCount) medications running low")
                 }
             }
 
@@ -174,11 +177,11 @@ struct LockScreenWidgetView: View {
                     Spacer()
 
                     if entry.canTakeNow {
-                        Text("Available")
+						Text("Log dose")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.green)
                     } else if let nextDoseTime = entry.nextDoseTime {
-                        Text(timeRemainingShort(until: nextDoseTime))
+						Text(nextDoseTime, style: .relative)
                             .font(.caption2.weight(.bold))
                     }
                 }
@@ -196,7 +199,7 @@ struct LockScreenWidgetView: View {
     private var inlineView: some View {
         if let nextMed = entry.nextMedication {
             if entry.canTakeNow {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName) • Now")
+				Text("\(Image(systemName: "pills")) \(nextMed.displayName) • Log dose")
             } else if let nextDoseTime = entry.nextDoseTime {
                 Text("\(Image(systemName: "pills")) \(nextMed.displayName) • \(timeRemainingShort(until: nextDoseTime))")
             } else {

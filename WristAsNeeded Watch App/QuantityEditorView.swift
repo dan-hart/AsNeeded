@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct QuantityEditorView: View {
     let medication: WatchMedication
@@ -6,6 +7,7 @@ struct QuantityEditorView: View {
     @EnvironmentObject var sender: WCSender
     @Environment(\.dismiss) private var dismiss
     @State private var isUpdating = false
+	@State private var isQueued = false
 
     var body: some View {
         NavigationStack {
@@ -22,7 +24,7 @@ struct QuantityEditorView: View {
                         Text("Current Quantity")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("\(medication.quantity, specifier: "%.0f")")
+						Text("\(medication.quantity.formatted(.number.precision(.fractionLength(0...2)))) \(medication.prescribedUnit ?? "units")")
                             .font(.title2)
                             .fontWeight(.semibold)
                     }
@@ -36,38 +38,37 @@ struct QuantityEditorView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
 
-                        HStack {
-                            Button("-") {
-                                if quantity > 0 {
-                                    quantity -= 1
-                                }
-                            }
+						Text(quantity.formatted(.number.precision(.fractionLength(0...3))))
+							.font(.title2)
+							.fontWeight(.semibold)
+							.frame(maxWidth: .infinity)
+						HStack {
+							Button {
+								quantity = max(0, quantity - 1)
+							} label: {
+								Image(systemName: "minus").frame(minWidth: 44, minHeight: 44)
+							}
+							.accessibilityLabel("Decrease quantity")
                             .font(.title2)
-                            .frame(width: 40, height: 40)
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(8)
 
                             Spacer()
 
-                            Text("\(quantity, specifier: "%.0f")")
-                                .font(.title)
-                                .fontWeight(.semibold)
-                                .frame(minWidth: 60)
-
-                            Spacer()
-
-                            Button("+") {
+							Button {
                                 quantity += 1
+							} label: {
+								Image(systemName: "plus").frame(minWidth: 44, minHeight: 44)
                             }
+							.accessibilityLabel("Increase quantity")
                             .font(.title2)
-                            .frame(width: 40, height: 40)
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(8)
                         }
 
                         // Quick adjustment buttons
-                        HStack(spacing: 8) {
-                            Button("+5") {
+						VStack(spacing: 8) {
+							Button("Add 5") {
                                 quantity += 5
                             }
                             .font(.caption)
@@ -76,7 +77,7 @@ struct QuantityEditorView: View {
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(8)
 
-                            Button("+10") {
+							Button("Add 10") {
                                 quantity += 10
                             }
                             .font(.caption)
@@ -85,9 +86,8 @@ struct QuantityEditorView: View {
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(8)
 
-                            Spacer()
 
-                            Button("Reset") {
+							Button("Reset Changes") {
                                 quantity = medication.quantity
                             }
                             .font(.caption)
@@ -102,8 +102,12 @@ struct QuantityEditorView: View {
                     .padding()
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(12)
+					.disabled(isUpdating || isQueued)
 
                     // Update button
+					if let message = sender.actionMessage {
+						Text(message).font(.caption).fixedSize(horizontal: false, vertical: true)
+					}
                     Button(action: updateQuantity) {
                         if isUpdating {
                             HStack {
@@ -114,16 +118,16 @@ struct QuantityEditorView: View {
                         } else {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
-                                Text("Update Quantity")
+								Text(isQueued ? "Waiting to Sync" : "Save Quantity")
                             }
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(isUpdating || quantity == medication.quantity ? Color.gray : Color.green)
+					.background(isUpdating || isQueued || quantity == medication.quantity ? Color.gray : Color.accent)
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(isUpdating || quantity == medication.quantity)
+					.disabled(isUpdating || isQueued || !quantity.isFinite || quantity < 0 || quantity == medication.quantity)
                 }
                 .padding()
             }
@@ -131,15 +135,18 @@ struct QuantityEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+					Button(isQueued ? "Close" : "Cancel") {
                         dismiss()
                     }
+					.disabled(isUpdating)
                 }
             }
         }
+		.onAppear { sender.actionMessage = nil }
     }
 
     private func updateQuantity() {
+		guard quantity.isFinite, quantity >= 0 else { return }
         isUpdating = true
 
         let quantityData: [String: Any] = [
@@ -147,15 +154,18 @@ struct QuantityEditorView: View {
             "quantity": quantity,
         ]
 
-        sender.sendMessage(key: "updateQuantity", value: quantityData)
-
-        // Provide haptic feedback
-        WKInterfaceDevice.current().play(.success)
-
-        // Dismiss after a short delay to show the loading state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+		Task {
+			let outcome = await sender.sendAction(key: "updateQuantity", value: quantityData)
             isUpdating = false
-            dismiss()
+			switch outcome {
+			case .saved:
+				WKInterfaceDevice.current().play(.success)
+				dismiss()
+			case .queued:
+				isQueued = true
+			case .failed:
+				break
+			}
         }
     }
 }

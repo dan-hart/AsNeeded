@@ -81,25 +81,20 @@ struct ThankYouView: View {
 
                     personalNoteSection
                         .opacity(buttonsOpacity)
-                        .animation(.easeInOut(duration: 0.8).delay(1.2), value: buttonsOpacity)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.8).delay(1.2), value: buttonsOpacity)
 
                     // MARK: - Dismiss Button
 
                     dismissButton
                         .opacity(buttonsOpacity)
-                        .animation(.easeInOut(duration: 0.8).delay(1.4), value: buttonsOpacity)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.8).delay(1.4), value: buttonsOpacity)
                 }
                 .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm) {
-                        dismiss()
-                    } label: {
-                        Image(systemSymbol: .checkmark)
-                            .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                    }
+					Button("Done") { dismiss() }
                     .tint(.accent)
                 }
             }
@@ -143,7 +138,7 @@ struct ThankYouView: View {
                     .blur(radius: heroBlurRadius)
 
                 Image(systemSymbol: .heartFill)
-                    .font(.largeTitle.weight(.semibold))
+                    .font(.customFont(fontFamily, style: .largeTitle, weight: .semibold))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.pink, .red],
@@ -153,21 +148,22 @@ struct ThankYouView: View {
                     )
                     .scaleEffect(heartScale)
                     .animation(
-                        .spring(response: 0.5, dampingFraction: 0.6)
+                        reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.6)
                             .repeatCount(3, autoreverses: true),
                         value: heartScale
                     )
             }
+            .accessibilityHidden(true)
             .padding(.top, heroSpacing)
 
             VStack(spacing: compactSpacing) {
                 Text(purchaseType.title)
-                    .font(.largeTitle)
+                    .font(.customFont(fontFamily, style: .largeTitle))
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
 
                 Text(purchaseType.subtitle)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -206,7 +202,7 @@ struct ThankYouView: View {
                 ImpactRow(
                     icon: .globeAmericasFill,
                     title: "Open Source Mission",
-                    description: "Maintaining free access to core features for everyone"
+                    description: "Keeping every feature free for everyone"
                 )
             }
             .padding()
@@ -220,7 +216,7 @@ struct ThankYouView: View {
     private var contributeSection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             Label {
-                Text("Want to Contribute More?")
+                Text("Other Ways to Help (Optional)")
                     .font(.customFont(fontFamily, style: .headline))
             } icon: {
                 Image(systemSymbol: .personCropCircleBadgePlus)
@@ -232,7 +228,7 @@ struct ThankYouView: View {
                 Button(action: openGitHub) {
                     HStack {
                         Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .foregroundColor(.white)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
@@ -246,18 +242,18 @@ struct ThankYouView: View {
 
                         VStack(alignment: .leading, spacing: labelSpacing) {
                             Text("View Source Code")
-                                .font(.callout)
+                                .font(.customFont(fontFamily, style: .callout))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             Text("Contribute on GitHub")
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
 
                         Spacer()
 
                         Image(systemSymbol: .arrowUpRight)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                     .padding()
@@ -272,7 +268,7 @@ struct ThankYouView: View {
                 Button(action: openGitHubIssues) {
                     HStack {
                         Image(systemSymbol: .exclamationmarkTriangleFill)
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .foregroundColor(.white)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
@@ -286,18 +282,18 @@ struct ThankYouView: View {
 
                         VStack(alignment: .leading, spacing: labelSpacing) {
                             Text("Report an Issue")
-                                .font(.callout)
+                                .font(.customFont(fontFamily, style: .callout))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             Text("Help improve the app")
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
 
                         Spacer()
 
                         Image(systemSymbol: .arrowUpRight)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                     .padding()
@@ -312,7 +308,7 @@ struct ThankYouView: View {
                 Button(action: sendFeedback) {
                     HStack {
                         Image(systemSymbol: .envelopeFill)
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .foregroundColor(.white)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
@@ -326,18 +322,18 @@ struct ThankYouView: View {
 
                         VStack(alignment: .leading, spacing: labelSpacing) {
                             Text("Send Feedback")
-                                .font(.callout)
+                                .font(.customFont(fontFamily, style: .callout))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             Text("asneeded@codedbydan.com")
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
 
                         Spacer()
 
                         Image(systemSymbol: .paperplaneFill)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                     .padding()
@@ -352,7 +348,7 @@ struct ThankYouView: View {
                 Button(action: openAppStoreReview) {
                     HStack {
                         Image(systemSymbol: .star)
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .foregroundColor(.white)
                             .frame(width: actionIconSize, height: actionIconSize)
                             .background(
@@ -366,18 +362,18 @@ struct ThankYouView: View {
 
                         VStack(alignment: .leading, spacing: labelSpacing) {
                             Text("Rate & Review")
-                                .font(.callout)
+                                .font(.customFont(fontFamily, style: .callout))
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                             Text("Share your experience on the App Store")
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
 
                         Spacer()
 
                         Image(systemSymbol: .arrowUpRight)
-                            .font(.caption)
+                            .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     }
                     .padding()
@@ -404,7 +400,7 @@ struct ThankYouView: View {
             }
 
             Text("Your support truly makes a difference. As an independent developer, contributions like yours allow me to dedicate time to making AsNeeded better for everyone. Thank you for believing in this project and being part of our community. 💙")
-                .font(.callout)
+                .font(.customFont(fontFamily, style: .callout))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding()
@@ -419,11 +415,11 @@ struct ThankYouView: View {
         Button(action: { dismiss() }) {
             HStack {
                 Spacer()
-                Text("Continue")
-                    .font(.headline)
+                Text("Done")
+                    .font(.customFont(fontFamily, style: .headline))
                     .foregroundColor(.white)
                 Image(systemSymbol: .arrowRight)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .foregroundColor(.white)
                 Spacer()
             }
@@ -472,6 +468,7 @@ struct ThankYouView: View {
 // MARK: - Supporting Views
 
 private struct ImpactRow: View {
+	@Environment(\.fontFamily) private var fontFamily
     @ScaledMetric private var rowSpacing: CGFloat = 12
     @ScaledMetric private var labelSpacing: CGFloat = 4
     @ScaledMetric private var iconWidth: CGFloat = 24
@@ -483,16 +480,16 @@ private struct ImpactRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: rowSpacing) {
             Image(systemSymbol: icon)
-                .font(.body)
+                .font(.customFont(fontFamily, style: .body))
                 .foregroundColor(.accent)
                 .frame(width: iconWidth)
 
             VStack(alignment: .leading, spacing: labelSpacing) {
                 Text(title)
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .fontWeight(.semibold)
                 Text(description)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -503,6 +500,8 @@ private struct ImpactRow: View {
 // MARK: - Confetti Modifier
 
 struct ConfettiModifier: ViewModifier {
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var confettiPieces: [ConfettiPiece] = []
     let isActive: Bool
 
@@ -514,14 +513,16 @@ struct ConfettiModifier: ViewModifier {
                         ForEach(confettiPieces) { piece in
                             Image(systemSymbol: piece.symbol)
                                 .foregroundColor(piece.color)
-                                .font(.callout)
+                                .font(.customFont(fontFamily, style: .callout))
                                 .position(piece.position)
                                 .opacity(piece.opacity)
                                 .rotationEffect(.degrees(piece.rotation))
                         }
                     }
+					.accessibilityHidden(true)
+					.allowsHitTesting(false)
                     .onAppear {
-                        if isActive {
+						if isActive && !reduceMotion {
                             createConfetti(in: geometry.size)
                         }
                     }

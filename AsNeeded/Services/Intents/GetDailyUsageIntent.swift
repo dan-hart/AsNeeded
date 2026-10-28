@@ -50,7 +50,7 @@ struct GetDailyUsageIntent: AppIntent {
 
         if todayUsage.totalAmount == 0 {
             logger.info("No daily usage found")
-            return .result(dialog: IntentDialog("You haven't taken any \(medicationDisplayName) today."))
+			return .result(dialog: IntentDialog("No doses of \(medicationDisplayName) are logged for today."))
         }
 
         // Format the response based on the unit and amount
@@ -58,15 +58,16 @@ struct GetDailyUsageIntent: AppIntent {
         let amount = todayUsage.totalAmount
         let doseCount = todayUsage.doseCount
 
-        let amountText = amount == 1.0 ? "1" : String(format: "%.1f", amount)
+		let amountText = amount.formatted(.number.precision(.fractionLength(0...3)))
         let unitText = unit.displayName(for: Int(amount.rounded()), locale: .current)
 
         var responseText: String
         if doseCount == 1 {
-            responseText = "You've taken \(amountText) \(unitText) of \(medicationDisplayName) today."
+			responseText = "You logged \(amountText) \(unitText) of \(medicationDisplayName) today."
         } else {
-            responseText = "You've taken \(amountText) \(unitText) of \(medicationDisplayName) today across \(doseCount) doses."
+			responseText = "You logged \(amountText) \(unitText) of \(medicationDisplayName) today across \(doseCount) doses."
         }
+		responseText += " This total includes doses recorded in \(unit.displayName) only."
 
         logger.info("Daily usage calculated")
         return .result(dialog: IntentDialog(stringLiteral: responseText))

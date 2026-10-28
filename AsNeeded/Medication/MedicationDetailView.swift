@@ -18,6 +18,7 @@ struct MedicationDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var showDeleteConfirm = false
     @State private var showLogDose = false
     @State private var showEditSheet = false
@@ -25,21 +26,17 @@ struct MedicationDetailView: View {
     @State private var showReminderList = false
     @State private var reminderCount = 0
     @State private var showAppearancePicker = false
-    @State private var heroIconScale: CGFloat = 1.0
     @State private var selectedColorHex: String?
     @State private var selectedSymbol: String?
-    @ScaledMetric private var contentSpacing: CGFloat = 20
-    @ScaledMetric private var cardSpacing: CGFloat = 16
-    @ScaledMetric private var heroIconSize: CGFloat = 100
-    @ScaledMetric private var heroSpacing: CGFloat = 12
-    @ScaledMetric private var heroNameSpacing: CGFloat = 4
-    @ScaledMetric private var cardPadding: CGFloat = 20
-    @ScaledMetric private var cardCornerRadius: CGFloat = 12
-    @ScaledMetric private var detailSpacing: CGFloat = 12
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 16
-    @ScaledMetric private var sectionSpacing: CGFloat = 16
-    @ScaledMetric private var rowSpacing: CGFloat = 10
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 8
+    private let contentSpacing: CGFloat = 20
+    private let cardSpacing: CGFloat = 16
+    private let cardPadding: CGFloat = 20
+    private let cardCornerRadius: CGFloat = 12
+    private let detailSpacing: CGFloat = 12
+    private let buttonVerticalPadding: CGFloat = 16
+    private let sectionSpacing: CGFloat = 16
+    private let rowSpacing: CGFloat = 10
+    private let buttonCornerRadius: CGFloat = 8
 
     // MARK: - Computed Properties
 
@@ -47,16 +44,19 @@ struct MedicationDetailView: View {
         horizontalSizeClass == .regular
     }
 
+	private var notificationsAllowed: Bool {
+		switch notificationManager.authorizationStatus {
+		case .authorized, .provisional, .ephemeral: return true
+		default: return false
+		}
+	}
+
     private var adaptiveContentSpacing: CGFloat {
         isRegularWidth ? 32 : contentSpacing
     }
 
     private var adaptiveCardPadding: CGFloat {
         isRegularWidth ? 32 : cardPadding
-    }
-
-    private var adaptiveHeroIconSize: CGFloat {
-        isRegularWidth ? 140 : heroIconSize
     }
 
     private var cardMaxWidth: CGFloat? {
@@ -75,14 +75,16 @@ struct MedicationDetailView: View {
             mainContent
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(medication.displayName)
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle(medication.displayName, displayMode: .inline)
         .toolbar {
             toolbarContent
         }
         .confirmationDialog("Delete \(medication.displayName)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete Medication", role: .destructive) {
-                Task { await viewModel.delete(medication); dismiss() }
+                Task {
+					await viewModel.delete(medication)
+					if viewModel.errorMessage == nil { dismiss() }
+				}
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -123,7 +125,7 @@ struct MedicationDetailView: View {
         }
         .sheet(isPresented: $showReminderSheet) {
             Group {
-                if notificationManager.authorizationStatus == .authorized {
+                if notificationsAllowed {
                     ReminderConfigurationView(medication: medication)
                         .onDisappear {
                             Task {
@@ -139,6 +141,8 @@ struct MedicationDetailView: View {
                             showReminderSheet = false
                         }
                     )
+                } else {
+					ReminderConfigurationView(medication: medication)
                 }
             }
         }
@@ -162,19 +166,36 @@ struct MedicationDetailView: View {
                         if let symbol = selectedSymbol {
                             updatedMedication.symbolInfo = ANSymbolInfo(name: symbol)
                         }
-                        await viewModel.save(updated: updatedMedication)
-                        medication = updatedMedication
+						if await viewModel.save(updated: updatedMedication) {
+							medication = updatedMedication
+							showAppearancePicker = false
+						}
                     }
-                    showAppearancePicker = false
                 },
                 onCancel: {
                     showAppearancePicker = false
                 }
             )
+			.alert("Appearance not saved", isPresented: Binding(
+				get: { viewModel.errorMessage != nil },
+				set: { if !$0 { viewModel.errorMessage = nil } }
+			)) {
+				Button("Keep Editing", role: .cancel) { viewModel.errorMessage = nil }
+			} message: {
+				Text("Your choices are still here. Please try saving again.")
+			}
         }
+		.alert("Changes not saved", isPresented: Binding(
+			get: { viewModel.errorMessage != nil && !showLogDose && !showEditSheet && !showAppearancePicker },
+			set: { if !$0 { viewModel.errorMessage = nil } }
+		)) {
+			Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+		} message: {
+			Text("Some changes may already be saved. Review this medication before trying again.")
+		}
         .task {
             await refreshMedication()
-            if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
+            if notificationsAllowed || notificationManager.authorizationStatus == .notDetermined {
                 await loadReminderCount()
             }
             // Initialize selected color and symbol
@@ -193,15 +214,6 @@ struct MedicationDetailView: View {
     private var mainContent: some View {
         VStack(spacing: adaptiveContentSpacing) {
             heroSection
-
-            QuickActionsComponent(
-                onEditTapped: { showEditSheet = true },
-                onHistoryTapped: {
-                    navigationManager.navigateToHistory(medicationID: medication.id.uuidString)
-                },
-                onDeleteTapped: { showDeleteConfirm = true }
-            )
-            .frame(maxWidth: cardMaxWidth)
 
             logDoseButton
 
@@ -245,14 +257,17 @@ struct MedicationDetailView: View {
         let summary = confidenceSummary(at: date)
 
         return VStack(alignment: .leading, spacing: sectionSpacing) {
-            HStack(alignment: .top, spacing: rowSpacing) {
+			let headerLayout = dynamicTypeSize.isAccessibilitySize
+				? AnyLayout(VStackLayout(alignment: .leading, spacing: rowSpacing))
+				: AnyLayout(HStackLayout(alignment: .top, spacing: rowSpacing))
+			headerLayout {
                 Image(systemSymbol: summaryIcon(for: summary.severity))
                     .font(.customFont(fontFamily, style: .title3, weight: .semibold))
                     .foregroundStyle(summaryColor(for: summary.severity))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Saved Dose Limits")
+                    Text("Dose Timing")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
 
@@ -262,11 +277,10 @@ struct MedicationDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
                 Text(summary.badgeText)
                     .font(.customFont(fontFamily, style: .caption, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(summaryColor(for: summary.severity))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -280,19 +294,15 @@ struct MedicationDetailView: View {
                 confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
 
 				if let hours = medication.minimumHoursBetweenDoses {
-					confidenceRow(icon: .clock, text: "Minimum interval: \(hours.formattedAmount) hours", color: .secondary)
+					confidenceRow(icon: .clock, text: "At least \(hours.formattedAmount) hours between doses", color: .secondary)
 				} else {
 					confidenceRow(icon: .clock, text: "No minimum interval saved", color: .secondary)
 				}
 				if let maximum = medication.maximumDailyDoseAmount {
-					confidenceRow(icon: .chartLineUptrendXyaxis, text: "Maximum in rolling 24 hours: \(maximum.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit missing)")", color: .secondary)
+					confidenceRow(icon: .chartLineUptrendXyaxis, text: "Maximum in any 24 hours: \(maximum.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit not set)")", color: .secondary)
 				} else {
 					confidenceRow(icon: .chartLineUptrendXyaxis, text: "No maximum amount in 24 hours saved", color: .secondary)
 				}
-
-                if let nextWindowText = summary.nextWindowText {
-                    confidenceRow(icon: .calendarBadgeClock, text: nextWindowText, color: summaryColor(for: summary.severity))
-                }
 
                 if let dailyText = summary.dailyText {
                     confidenceRow(icon: .chartLineUptrendXyaxis, text: dailyText, color: .secondary)
@@ -357,155 +367,42 @@ struct MedicationDetailView: View {
 
     // MARK: - View Components
 
-    private var heroSection: some View {
-        VStack(spacing: heroSpacing) {
-            // Liquid Glass hero icon with interactive tap
-            Button {
-                withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
-                    heroIconScale = 0.95
-                }
-                HapticsManager.shared.mediumImpact()
+	private var heroSection: some View {
+		HStack(alignment: .top, spacing: 12) {
+			Button {
+				selectedColorHex = medication.displayColorHex
+				selectedSymbol = medication.symbolInfo?.name
+				showAppearancePicker = true
+			} label: {
+				Image(systemName: medication.effectiveDisplaySymbol)
+					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+					.foregroundStyle(medication.displayColor)
+					.frame(width: 44, height: 44)
+					.background(medication.displayColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+			}
+			.buttonStyle(.plain)
+			.accessibilityLabel("Change appearance for \(medication.displayName)")
 
-                // Reset scale and show appearance picker
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.6)) {
-                        heroIconScale = 1.0
-                    }
-                }
-                showAppearancePicker = true
-            } label: {
-                ZStack {
-                    // Blur halo (more prominent)
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    medication.displayColor.opacity(0.4),
-                                    medication.displayColor.opacity(0.2),
-                                    medication.displayColor.opacity(0.05)
-                                ],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: (adaptiveHeroIconSize + 40) / 2
-                            )
-                        )
-                        .frame(width: adaptiveHeroIconSize + 40, height: adaptiveHeroIconSize + 40)
-                        .blur(radius: 30)
-
-                    // Glass circle base with color
-                    Circle()
-                        .fill(medication.displayColor.opacity(0.15))
-                        .frame(width: adaptiveHeroIconSize, height: adaptiveHeroIconSize)
-
-                    // Glass effect overlay
-                    Circle()
-                        .fill(.clear)
-                        .frame(width: adaptiveHeroIconSize, height: adaptiveHeroIconSize)
-                        .background {
-                            Circle()
-                                .fill(medication.displayColor.opacity(0.1))
-                                .glassEffect(.regular.tint(medication.displayColor.opacity(0.3)))
-                        }
-
-                    // Subtle inner highlight
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    .white.opacity(0.2),
-                                    .clear,
-                                    medication.displayColor.opacity(0.1)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: adaptiveHeroIconSize, height: adaptiveHeroIconSize)
-                        .blendMode(.overlay)
-
-                    // Icon with stronger presence
-                    Image(systemName: medication.effectiveDisplaySymbol)
-                        .font(.system(size: adaptiveHeroIconSize * 0.45).weight(.semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundStyle(medication.displayColor)
-                        .shadow(color: medication.displayColor.opacity(0.3), radius: 8, y: 2)
-                }
-                .scaleEffect(heroIconScale)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Customize appearance")
-            .accessibilityHint("Tap to change medication color and symbol")
-
-            // Medication names
-            VStack(spacing: heroNameSpacing) {
-                Text(medication.displayName)
-                    .font(.customFont(fontFamily, style: .title, weight: .bold))
-                    .multilineTextAlignment(.center)
-                    .noTruncate()
-
-                // Status indicators
-                let indicators = statusIndicators()
-                if !indicators.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(indicators) { indicator in
-                                statusPill(indicator)
-                            }
-                        }
-                        .padding(.horizontal, 1)
-                    }
-                    .padding(.top, 2)
-                }
-
-                // Clinical name (if different from nickname)
-                if medication.nickname != nil && medication.nickname != medication.clinicalName {
-                    CopyableText(
-                        medication.clinicalName,
-                        font: .subheadline,
-                        color: .secondary
-                    )
-                    .multilineTextAlignment(.center)
-                }
-
-                // Last dose timestamp
-                if let lastDose = lastDoseDate() {
-                    HStack(spacing: 4) {
-                        Image(systemSymbol: .clock)
-                            .font(.customFont(fontFamily, style: .caption2))
-                        Text("Last taken \(lastDose, style: .relative) ago")
-                            .font(.customFont(fontFamily, style: .caption))
-                    }
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-                }
-            }
-            .padding(.horizontal)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-    }
-
-    private func statusPill(_ indicator: StatusIndicator) -> some View {
-        HStack(spacing: 4) {
-            Image(systemSymbol: indicator.icon)
-                .font(.customFont(fontFamily, style: .caption2))
-            Text(indicator.text)
-                .font(.customFont(fontFamily, style: .caption, weight: .medium))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background {
-            Capsule()
-                .glassEffect(.regular.tint(indicator.color.opacity(0.3)))
-        }
-        .foregroundStyle(indicator.color)
-    }
+			VStack(alignment: .leading, spacing: 4) {
+				Text(medication.displayName)
+					.font(.customFont(fontFamily, style: .title2, weight: .bold))
+					.noTruncate()
+					.accessibilityAddTraits(.isHeader)
+				if medication.clinicalName != medication.displayName {
+					CopyableText(medication.clinicalName, font: .customFont(fontFamily, style: .subheadline), color: .secondary)
+				}
+			}
+			Spacer(minLength: 0)
+		}
+		.frame(maxWidth: cardMaxWidth, alignment: .leading)
+		.padding(.horizontal, isRegularWidth ? 32 : 20)
+	}
 
     private var medicationInfoCard: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
                 Label("Medication Info", systemSymbol: .info)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -514,7 +411,7 @@ struct MedicationDetailView: View {
                 // Custom row with copyable clinical name
                 HStack {
                     Text("Clinical Name")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                     Spacer()
                     CopyableText(
@@ -540,7 +437,7 @@ struct MedicationDetailView: View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
                 Label("Supply & Refills", systemSymbol: .pills)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -590,7 +487,7 @@ struct MedicationDetailView: View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
                 Label("Prescribed Dose", systemSymbol: .pill)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
                 Spacer()
             }
@@ -598,10 +495,10 @@ struct MedicationDetailView: View {
             if let amount = medication.prescribedDoseAmount, let unit = medication.prescribedUnit {
                 HStack {
                     Text("\(amount.formattedAmount)")
-                        .font(.title)
+                        .font(.customFont(fontFamily, style: .title))
                         .fontWeight(.semibold)
                     Text(unit.displayName(for: amount == 1 ? 1 : 2))
-                        .font(.title3)
+                        .font(.customFont(fontFamily, style: .title3))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -614,7 +511,7 @@ struct MedicationDetailView: View {
     private var remindersCard: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
             HStack {
-                Label("Reminders", systemSymbol: .bell)
+                Label("Scheduled Reminders", systemSymbol: .bell)
                     .font(.customFont(fontFamily, style: .headline))
                     .foregroundStyle(.primary)
                 Spacer()
@@ -626,7 +523,12 @@ struct MedicationDetailView: View {
                 }
             }
 
-            if notificationManager.authorizationStatus == .authorized || notificationManager.authorizationStatus == .notDetermined {
+			Text("Reminders for times you choose. Next-dose alerts are separate, in Edit Medication.")
+				.font(.customFont(fontFamily, style: .caption))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+
+            if notificationsAllowed || notificationManager.authorizationStatus == .notDetermined {
                 VStack(spacing: rowSpacing) {
                     if reminderCount > 0 {
                         Button {
@@ -671,7 +573,7 @@ struct MedicationDetailView: View {
                         Image(systemSymbol: .bellSlash)
                             .foregroundColor(.orange)
                         Text("Notifications Disabled")
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                     }
 
@@ -715,7 +617,7 @@ struct MedicationDetailView: View {
                     .glassEffect(.regular.tint(medication.displayColor.opacity(0.2)).interactive(true))
                     .shadow(color: medication.displayColor.opacity(0.3), radius: 12, y: 6)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(medication.displayColor.contrastingForegroundColor())
         }
         .buttonStyle(.plain)
         .frame(maxWidth: cardMaxWidth)
@@ -725,16 +627,20 @@ struct MedicationDetailView: View {
     // MARK: - Helper Views
 
     private func detailRow(label: String, value: String, valueColor: Color = .secondary) -> some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(valueColor)
-        }
+		let layout = dynamicTypeSize.isAccessibilitySize
+			? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+			: AnyLayout(HStackLayout(alignment: .top))
+		return layout {
+			Text(label)
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+			if !dynamicTypeSize.isAccessibilitySize { Spacer() }
+			Text(value)
+				.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+				.foregroundStyle(valueColor)
+				.fixedSize(horizontal: false, vertical: true)
+		}
+		.accessibilityElement(children: .combine)
     }
 
     private func confidenceRow(icon: SFSymbol, text: String, color: Color) -> some View {
@@ -793,62 +699,7 @@ struct MedicationDetailView: View {
         }
     }
 
-    private func lastDoseDate() -> Date? {
-        let events = DataStore.shared.events
-            .filter { $0.medication?.id == medication.id }
-            .sorted { $0.date > $1.date }
-        return events.first?.date
-    }
 
-    private func statusIndicators() -> [StatusIndicator] {
-        var indicators: [StatusIndicator] = []
-
-        // Low supply warning
-        if let quantity = medication.quantity {
-            if quantity < 10 {
-                indicators.append(StatusIndicator(
-                    icon: .exclamationmarkTriangle,
-                    text: "Low Supply",
-                    color: .red
-                ))
-            } else if quantity < 30 {
-                indicators.append(StatusIndicator(
-                    icon: .exclamationmarkTriangle,
-                    text: "Supply Low",
-                    color: .orange
-                ))
-            }
-        }
-
-        // Refill due soon
-        if let nextRefill = medication.nextRefillDate {
-            let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: nextRefill).day ?? 0
-            if daysUntil <= 7 && daysUntil >= 0 {
-                indicators.append(StatusIndicator(
-                    icon: .calendarBadgeClock,
-                    text: daysUntil == 0 ? "Refill Due" : "Refill in \(daysUntil)d",
-                    color: .orange
-                ))
-            } else if daysUntil < 0 {
-                indicators.append(StatusIndicator(
-                    icon: .calendarBadgeExclamationmark,
-                    text: "Refill Overdue",
-                    color: .red
-                ))
-            }
-        }
-
-        return indicators
-    }
-}
-
-// MARK: - Supporting Types
-
-struct StatusIndicator: Identifiable {
-    let id = UUID()
-    let icon: SFSymbol
-    let text: String
-    let color: Color
 }
 
 #Preview {

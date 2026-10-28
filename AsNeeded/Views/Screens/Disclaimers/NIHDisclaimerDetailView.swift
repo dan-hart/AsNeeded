@@ -2,14 +2,15 @@ import SFSafeSymbols
 import SwiftUI
 
 struct NIHDisclaimerDetailView: View {
-    @ScaledMetric private var mainSpacing: CGFloat = 24
-    @ScaledMetric private var sectionSpacing: CGFloat = 16
-    @ScaledMetric private var itemSpacing: CGFloat = 12
-    @ScaledMetric private var smallSpacing: CGFloat = 8
-    @ScaledMetric private var tinySpacing: CGFloat = 6
-    @ScaledMetric private var tightSpacing: CGFloat = 4
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
+	@Environment(\.fontFamily) private var fontFamily
+	private let mainSpacing: CGFloat = 24
+	private let sectionSpacing: CGFloat = 16
+	private let itemSpacing: CGFloat = 12
+	private let smallSpacing: CGFloat = 8
+	private let tinySpacing: CGFloat = 6
+	private let tightSpacing: CGFloat = 4
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
 
     var body: some View {
         ScrollView {
@@ -19,26 +20,26 @@ struct NIHDisclaimerDetailView: View {
                     HStack(spacing: itemSpacing) {
                         Image(systemSymbol: .buildingColumnsFill)
                             .foregroundStyle(.blue)
-                            .font(.title)
+                            .font(.customFont(fontFamily, style: .title))
 
                         Text("Medical Data Sources")
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .fontWeight(.bold)
                     }
 
                     Text("All medication information is sourced from official U.S. government databases:")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .multilineTextAlignment(.leading)
 
                     VStack(alignment: .leading, spacing: smallSpacing) {
                         Text("• U.S. National Library of Medicine (NLM)")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
                         Text("• National Institutes of Health")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
                         Text("• Department of Health and Human Services")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
                     }
 
@@ -48,19 +49,19 @@ struct NIHDisclaimerDetailView: View {
                         }
                     }) {
                         HStack(spacing: tightSpacing) {
-                            Text("Visit NIH Official Website")
-                                .font(.caption)
+                            Text("Visit the National Library of Medicine")
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundStyle(.accent)
                                 .underline()
                             Image(systemSymbol: .arrowUpRightSquare)
-                                .font(.caption2)
+                                .font(.customFont(fontFamily, style: .caption2))
                                 .foregroundStyle(.accent)
                         }
                     }
                     .buttonStyle(.plain)
 
                     Text("NLM is not responsible for the product and does not endorse or recommend this or any other product.")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
@@ -74,15 +75,15 @@ struct NIHDisclaimerDetailView: View {
                 // Medical Information Disclaimer
                 VStack(alignment: .leading, spacing: sectionSpacing) {
                     Text("Medical Information")
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .fontWeight(.bold)
 
                     Text("It is not the intention of NLM to provide specific medical advice, but rather to provide users with information to better understand their health and their medications.")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .multilineTextAlignment(.leading)
 
                     Text("NLM urges you to consult with a qualified physician for advice about medications.")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                         .multilineTextAlignment(.leading)
                 }
@@ -90,30 +91,30 @@ struct NIHDisclaimerDetailView: View {
                 // About RxNorm
                 VStack(alignment: .leading, spacing: sectionSpacing) {
                     Text("RxNorm Database Citation")
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .fontWeight(.bold)
 
                     Text("This app uses the RxNorm database, an authoritative medication terminology system maintained by the National Library of Medicine.")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .multilineTextAlignment(.leading)
 
                     Text("RxNorm provides:")
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
 
                     VStack(alignment: .leading, spacing: smallSpacing) {
                         Label("Medication search functionality", systemSymbol: .magnifyingglass)
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
 
                         Label("Standardized medication names", systemSymbol: .textBadgePlus)
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
 
                         Label("Drug information and relationships", systemSymbol: .linkCircle)
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                     }
 
                     VStack(alignment: .leading, spacing: tinySpacing) {
                         Text("Official Sources:")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
 
                         Button(action: {
@@ -123,11 +124,11 @@ struct NIHDisclaimerDetailView: View {
                         }) {
                             HStack(spacing: tightSpacing) {
                                 Text("RxNorm Database Homepage")
-                                    .font(.caption)
+                                    .font(.customFont(fontFamily, style: .caption))
                                     .foregroundStyle(.accent)
                                     .underline()
                                 Image(systemSymbol: .arrowUpRightSquare)
-                                    .font(.caption2)
+                                    .font(.customFont(fontFamily, style: .caption2))
                                     .foregroundStyle(.accent)
                             }
                         }
@@ -140,11 +141,11 @@ struct NIHDisclaimerDetailView: View {
                         }) {
                             HStack(spacing: tightSpacing) {
                                 Text("RxNorm API Documentation")
-                                    .font(.caption)
+                                    .font(.customFont(fontFamily, style: .caption))
                                     .foregroundStyle(.accent)
                                     .underline()
                                 Image(systemSymbol: .arrowUpRightSquare)
-                                    .font(.caption2)
+                                    .font(.customFont(fontFamily, style: .caption2))
                                     .foregroundStyle(.accent)
                             }
                         }
@@ -152,15 +153,14 @@ struct NIHDisclaimerDetailView: View {
                     }
 
                     Text("The RxNorm data is updated monthly by NLM and provides standardized names for clinical drugs and links its names to many of the drug vocabularies commonly used in pharmacy management and drug interaction software.")
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 }
             }
             .padding(padding)
         }
-        .navigationTitle("Data Attribution")
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle("Data Attribution", displayMode: .large)
     }
 }
 

@@ -243,10 +243,23 @@ struct MedicationListViewModelUnitTests {
         #expect(viewModel.showQuickLogToast) // Verify toast state change
         #expect(viewModel.quickLogMedicationName == medication.displayName)
 
-        // Simulate toast dismissal after delay
-        try await Task.sleep(nanoseconds: 3_100_000_000) // Slightly longer than toast duration
+        // Undo remains available until the person explicitly dismisses the confirmation.
+		#expect(viewModel.quickLogFeedback?.undoEventID != nil)
+		viewModel.dismissQuickLogToast()
         #expect(!viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogFeedback == nil)
     }
+
+	@Test("Quick log shows a next window based on the newly saved dose")
+	func quickLogUsesNewDoseForNextWindow() async throws {
+		var medication = createTestMedication(name: "Window Example")
+		medication.minimumHoursBetweenDoses = 4
+		#expect(await viewModel.add(medication))
+		#expect(await viewModel.quickLog(medication: medication))
+		let savedEvent = try #require(dataStore.events.first)
+		#expect(viewModel.quickLogFeedback?.nextDoseDate == savedEvent.date.addingTimeInterval(4 * 3600))
+		#expect(viewModel.quickLogFeedback?.undoEventID == savedEvent.id)
+	}
 
     @Test("Quick log preserves medication order")
     func quickLogPreservesMedicationOrder() async throws {

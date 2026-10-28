@@ -2,22 +2,22 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var featureToggleManager = FeatureToggleManager.shared
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var padding: CGFloat = 16
+	private let sectionSpacing: CGFloat = 24
+	private let padding: CGFloat = 16
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
-                    SettingsSupportSectionView()
-
-                    SettingsFeedbackSectionView()
+                    SettingsPreferencesSectionView()
 
                     SettingsDataSectionView()
 
                     SettingsAboutSectionView()
 
-                    SettingsPreferencesSectionView()
+                    SettingsSupportSectionView()
+
+                    SettingsFeedbackSectionView()
 
                     SettingsDisclaimersSectionView()
 
@@ -31,8 +31,7 @@ struct SettingsView: View {
                 .padding(.horizontal, padding)
                 .padding(.vertical, padding)
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
+            .customNavigationTitle("Settings", displayMode: .large)
         }
     }
 }

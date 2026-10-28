@@ -2,17 +2,17 @@ import SFSafeSymbols
 import SwiftUI
 
 struct AboutView: View {
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var subsectionSpacing: CGFloat = 16
-    @ScaledMetric private var groupSpacing: CGFloat = 12
-    @ScaledMetric private var itemSpacing: CGFloat = 8
-    @ScaledMetric private var mediumSpacing: CGFloat = 6
-    @ScaledMetric private var tightSpacing: CGFloat = 4
-    @ScaledMetric private var textSpacing: CGFloat = 2
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var smallPadding: CGFloat = 4
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var iconSize32: CGFloat = 32
+	private let sectionSpacing: CGFloat = 24
+	private let subsectionSpacing: CGFloat = 16
+	private let groupSpacing: CGFloat = 12
+	private let itemSpacing: CGFloat = 8
+	private let mediumSpacing: CGFloat = 6
+	private let tightSpacing: CGFloat = 4
+	private let textSpacing: CGFloat = 2
+	private let cardPadding: CGFloat = 16
+	private let smallPadding: CGFloat = 4
+	private let cornerRadius12: CGFloat = 12
+	private let iconSize32: CGFloat = 32
     @Environment(\.fontFamily) private var fontFamily
 
     private var appName: String {
@@ -54,25 +54,26 @@ struct AboutView: View {
             }
             .padding(.horizontal)
             .padding(.vertical)
-            .navigationTitle("About")
+            .customNavigationTitle("About")
         }
+        .font(.customFont(fontFamily, style: .body))
     }
 
     private var heroSection: some View {
         VStack(alignment: .center, spacing: subsectionSpacing) {
             VStack(spacing: itemSpacing) {
                 Text(appName)
-                    .font(.largeTitle)
+                    .font(.customFont(fontFamily, style: .largeTitle))
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
 
                 Text("Track as-needed medications with privacy and simplicity")
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
                 Text("Version \(version)")
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundStyle(.tertiary)
             }
         }
@@ -102,9 +103,9 @@ struct AboutView: View {
                         Link(destination: url) {
                             HStack(spacing: mediumSpacing) {
                                 Image(systemSymbol: .atCircle)
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                 Text("Dan Hart on Mastodon")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .fontWeight(.medium)
                             }
                             .foregroundStyle(.accent)
@@ -115,9 +116,9 @@ struct AboutView: View {
                         Link(destination: url) {
                             HStack(spacing: mediumSpacing) {
                                 Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                 Text("Dan Hart on GitHub")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .fontWeight(.medium)
                             }
                             .foregroundStyle(.accent)
@@ -132,24 +133,24 @@ struct AboutView: View {
             } label: {
                 HStack(spacing: groupSpacing) {
                     Image(systemSymbol: .heart)
-                        .font(.title3)
+                        .font(.customFont(fontFamily, style: .title3))
                         .foregroundColor(.red)
 
                     VStack(alignment: .leading, spacing: textSpacing) {
                         Text("Support As Needed")
-                            .font(.headline)
+                            .font(.customFont(fontFamily, style: .headline))
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
 
                         Text("Help keep this app free and open source")
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                     }
 
                     Spacer()
 
                     Image(systemSymbol: .chevronRight)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }
                 .padding(cardPadding)
@@ -176,18 +177,18 @@ struct AboutView: View {
 
                             VStack(alignment: .leading, spacing: tightSpacing) {
                                 Text("Christine Wang")
-                                    .font(.headline)
+                                    .font(.customFont(fontFamily, style: .headline))
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                                 Text("Design & Testing")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .foregroundColor(.secondary)
                             }
 
                             Spacer()
 
                             Image(systemSymbol: .arrowUpRightSquare)
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
                         .padding(cardPadding)
@@ -204,10 +205,10 @@ struct AboutView: View {
 
                         VStack(alignment: .leading, spacing: tightSpacing) {
                             Text("Christine Wang")
-                                .font(.headline)
+                                .font(.customFont(fontFamily, style: .headline))
                                 .fontWeight(.semibold)
                             Text("Design & Testing")
-                                .font(.subheadline)
+                                .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundColor(.secondary)
                         }
 
@@ -228,18 +229,18 @@ struct AboutView: View {
 
                             VStack(alignment: .leading, spacing: tightSpacing) {
                                 Text("Kevin Wang")
-                                    .font(.headline)
+                                    .font(.customFont(fontFamily, style: .headline))
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                                 Text("Vision & Details")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .foregroundColor(.secondary)
                             }
 
                             Spacer()
 
                             Image(systemSymbol: .arrowUpRightSquare)
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
                         .padding(cardPadding)
@@ -257,10 +258,10 @@ struct AboutView: View {
 
                     VStack(alignment: .leading, spacing: tightSpacing) {
                         Text("My Wife, Jesse")
-                            .font(.headline)
+                            .font(.customFont(fontFamily, style: .headline))
                             .fontWeight(.semibold)
                         Text("Support & Encouragement")
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                     }
 
@@ -338,24 +339,24 @@ struct AboutView: View {
         } label: {
             HStack(spacing: groupSpacing) {
                 Image(systemSymbol: .shippingboxFill)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundColor(.accent)
 
                 VStack(alignment: .leading, spacing: textSpacing) {
                     Text("App Dependencies")
-                        .font(.headline)
+                        .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
 
                     Text("Third-party libraries used in this app")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemSymbol: .chevronRight)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
             }
             .padding(cardPadding)
@@ -374,10 +375,10 @@ struct AboutView: View {
 
             VStack(alignment: .leading, spacing: tightSpacing) {
                 Text(title)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .fontWeight(.semibold)
                 Text(description)
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundColor(.secondary)
             }
 

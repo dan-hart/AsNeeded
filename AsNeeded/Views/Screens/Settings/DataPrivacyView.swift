@@ -4,13 +4,13 @@ import SwiftUI
 struct DataPrivacyView: View {
 	@Environment(\.fontFamily) private var fontFamily
 
-	@ScaledMetric private var sectionSpacing: CGFloat = 24
-	@ScaledMetric private var rowSpacing: CGFloat = 12
-	@ScaledMetric private var cardPadding: CGFloat = 16
-	@ScaledMetric private var cardCornerRadius: CGFloat = 12
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
-	@ScaledMetric private var innerSpacing: CGFloat = 4
+	private let sectionSpacing: CGFloat = 24
+	private let rowSpacing: CGFloat = 12
+	private let cardPadding: CGFloat = 16
+	private let cardCornerRadius: CGFloat = 12
+	private let iconSize: CGFloat = 24
+	private let borderWidth: CGFloat = 0.5
+	private let innerSpacing: CGFloat = 4
 
 	var body: some View {
 		ScrollView {
@@ -71,7 +71,7 @@ struct DataPrivacyView: View {
 					.foregroundStyle(.accent)
 			}
 
-			Text("Your medication data stays under your control. Backup, export, import, and destructive actions are grouped here so review-sensitive choices are in one place.")
+			Text("Manage backups, export or import your data, and choose your privacy settings.")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
@@ -92,38 +92,11 @@ struct DataPrivacyView: View {
 					NavigationLink {
 						row.destination
 					} label: {
-						HStack(spacing: rowSpacing) {
-							Image(systemSymbol: row.icon)
-								.font(.customFont(fontFamily, style: .callout, weight: .medium))
-								.frame(width: iconSize, height: iconSize)
-								.foregroundStyle(.accent)
-								.accessibilityHidden(true)
-
-							VStack(alignment: .leading, spacing: innerSpacing) {
-								Text(row.title)
-									.font(.customFont(fontFamily, style: .body, weight: .medium))
-									.foregroundStyle(.primary)
-
-								Text(row.subtitle)
-									.font(.customFont(fontFamily, style: .caption))
-									.foregroundStyle(.secondary)
-									.fixedSize(horizontal: false, vertical: true)
-							}
-
-							Spacer()
-
-							Image(systemSymbol: .chevronRight)
-								.font(.customFont(fontFamily, style: .caption, weight: .medium))
-								.foregroundStyle(.secondary)
-								.accessibilityHidden(true)
-						}
-						.padding(cardPadding)
-						.background(Color(.systemBackground))
-						.overlay(
-							RoundedRectangle(cornerRadius: cardCornerRadius)
-								.stroke(Color(.systemGray4), lineWidth: borderWidth)
+						SettingsNavigationRowLabel(
+							title: row.title,
+							subtitle: row.subtitle,
+							icon: row.icon
 						)
-						.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 					}
 					.buttonStyle(.plain)
 					.accessibilityLabel(row.title)

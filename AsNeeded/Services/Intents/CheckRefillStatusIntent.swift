@@ -65,7 +65,7 @@ struct CheckRefillStatusIntent: AppIntent {
         if needsRefill.isEmpty && lowQuantity.isEmpty {
             logger.info("No medications need refills")
             return .result(
-                dialog: IntentDialog("All your medications are well stocked. No refills needed right now."),
+				dialog: IntentDialog("No refill alerts based on your saved quantities, dates, and logged doses. Check any medications you aren’t tracking in AsNeeded."),
                 view: AllGoodRefillView()
             )
         }
@@ -227,11 +227,11 @@ struct AllGoodRefillView: View {
                 .font(.largeTitle)
                 .foregroundStyle(.green)
 
-            Text("All Medications Stocked")
+			Text("No Refill Alerts")
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            Text("No refills needed")
+			Text("Based on your saved information")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

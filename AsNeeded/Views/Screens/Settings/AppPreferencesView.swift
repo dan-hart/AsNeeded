@@ -11,16 +11,16 @@ struct AppPreferencesView: View {
     @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
     @AppStorage(UserDefaultsKeys.importSettingsDefaultBehavior) private var importSettingsDefaultBehavior: String = "keep"
     @State private var showingResetConfirmation = false
-    @ScaledMetric private var sectionSpacing: CGFloat = 32
-    @ScaledMetric private var itemSpacing: CGFloat = 16
-    @ScaledMetric private var headerSpacing: CGFloat = 12
-    @ScaledMetric private var iconSize: CGFloat = 24
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 0.5
-    @ScaledMetric private var textLeadingPadding: CGFloat = 36
-    @ScaledMetric private var stackItemSpacing: CGFloat = 2
-    @ScaledMetric private var innerSpacing: CGFloat = 4
+	private let sectionSpacing: CGFloat = 32
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
+	private let textLeadingPadding: CGFloat = 36
+	private let stackItemSpacing: CGFloat = 2
+	private let innerSpacing: CGFloat = 4
 
     var body: some View {
         ScrollView {
@@ -81,7 +81,7 @@ struct AppPreferencesView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: headerSpacing) {
-            Text("Configure how As Needed behaves and interacts with you. These settings control notifications, haptic feedback, and other app behaviors.")
+            Text("Choose how the app looks, feels, and notifies you.")
                 .font(.customFont(fontFamily, style: .body))
                 .foregroundStyle(.secondary)
         }
@@ -151,11 +151,11 @@ struct AppPreferencesView: View {
 
     private var typographyNavigationLink: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
-            Label("Typography", systemSymbol: .textformat)
+            Label("Text", systemSymbol: .textformat)
                 .font(.customFont(fontFamily, style: .title3, weight: .semibold))
                 .foregroundStyle(.accent)
 
-            Text("Choose an accessibility-focused font family to improve readability throughout the app.")
+            Text("Choose the font that is easiest for you to read.")
                 .font(.customFont(fontFamily, style: .subheadline))
                 .foregroundStyle(.secondary)
 
@@ -200,7 +200,7 @@ struct AppPreferencesView: View {
                 .font(.customFont(fontFamily, style: .title3, weight: .semibold))
                 .foregroundStyle(.accent)
 
-            Text("Control what information is shared and how the app requests feedback from you.")
+            Text("Choose whether to see support reminders and requests for a review.")
                 .font(.customFont(fontFamily, style: .subheadline))
                 .foregroundStyle(.secondary)
 
@@ -234,7 +234,7 @@ struct AppPreferencesView: View {
                             .font(.customFont(fontFamily, style: .body))
                             .tag("keep")
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .padding(.top, 8)
 
                     Text("This controls what happens when you import data that contains app settings. You can always change your choice during import.")
@@ -366,61 +366,79 @@ struct AppPreferencesView: View {
 // MARK: - Supporting Views
 
 private struct PreferenceRow: View {
-    let icon: SFSymbol
-    let title: String
-    let subtitle: String
-    let detail: String
-    @Binding var isOn: Bool
-    let onChange: (Bool) -> Void
-    @Environment(\.fontFamily) private var fontFamily
-    @ScaledMetric private var itemSpacing: CGFloat = 16
-    @ScaledMetric private var headerSpacing: CGFloat = 12
-    @ScaledMetric private var stackItemSpacing: CGFloat = 2
-    @ScaledMetric private var iconSize: CGFloat = 24
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 0.5
-    @ScaledMetric private var textLeadingPadding: CGFloat = 36
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	let icon: SFSymbol
+	let title: String
+	let subtitle: String
+	let detail: String
+	@Binding var isOn: Bool
+	let onChange: (Bool) -> Void
+	@Environment(\.fontFamily) private var fontFamily
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let stackItemSpacing: CGFloat = 2
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
+	private let textLeadingPadding: CGFloat = 36
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: itemSpacing) {
-            HStack(spacing: headerSpacing) {
-                Image(systemSymbol: icon)
-                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
-                    .frame(width: iconSize, height: iconSize)
-                    .foregroundStyle(.accent)
+	var body: some View {
+		VStack(alignment: .leading, spacing: itemSpacing) {
+			controlLayout {
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: icon)
+						.font(.system(size: 22, weight: .medium))
+						.frame(width: iconSize, height: iconSize)
+						.foregroundStyle(.accent)
+						.accessibilityHidden(true)
+				}
 
-                VStack(alignment: .leading, spacing: stackItemSpacing) {
-                    Text(title)
-                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+				VStack(alignment: .leading, spacing: stackItemSpacing) {
+					Text(title)
+						.font(.customFont(fontFamily, style: .body, weight: .medium))
+						.fixedSize(horizontal: false, vertical: true)
 
-                    Text(subtitle)
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                }
+					Text(subtitle)
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+				.frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize {
+					Spacer(minLength: 0)
+				}
 
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
-                    .onChange(of: isOn) { _, newValue in
-                        onChange(newValue)
-                    }
-            }
+				Toggle(title, isOn: $isOn)
+					.labelsHidden()
+					.frame(minHeight: 44)
+					.frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading)
+					.onChange(of: isOn) { _, newValue in
+						onChange(newValue)
+					}
+			}
 
-            Text(detail)
-                .font(.customFont(fontFamily, style: .caption))
-                .foregroundStyle(.secondary)
-                .padding(.leading, textLeadingPadding)
-        }
-        .padding(padding)
-        .background(Color(.systemBackground))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color(.systemGray4), lineWidth: borderWidth)
-        )
-        .cornerRadius(cornerRadius)
-    }
+			Text(detail)
+				.font(.customFont(fontFamily, style: .caption))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+				.padding(.leading, dynamicTypeSize.isAccessibilitySize ? 0 : textLeadingPadding)
+		}
+		.padding(padding)
+		.background(Color(.systemBackground))
+		.overlay(
+			RoundedRectangle(cornerRadius: cornerRadius)
+				.stroke(Color(.systemGray4), lineWidth: borderWidth)
+		)
+		.cornerRadius(cornerRadius)
+	}
+
+	private var controlLayout: AnyLayout {
+		dynamicTypeSize.isAccessibilitySize
+			? AnyLayout(VStackLayout(alignment: .leading, spacing: headerSpacing))
+			: AnyLayout(HStackLayout(spacing: headerSpacing))
+	}
 }
 
 // MARK: - Preview

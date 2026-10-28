@@ -13,6 +13,46 @@ final class WCSender: NSObject, ObservableObject {
 
     @Published var isConnected = false
     @Published var medications: [WatchMedication] = []
+	@Published var hasLoadedMedications = false
+	@Published var loadErrorMessage: String?
+	@Published var actionMessage: String?
+	@Published var isSendingAction = false
+
+	enum ActionOutcome {
+		case saved
+		case queued
+		case failed
+	}
+
+	/// A queued transfer is not a saved dose. Only the phone's persistence reply confirms saving.
+	@MainActor
+	func sendAction(key: String, value: Any) async -> ActionOutcome {
+		guard !isSendingAction else { return .failed }
+		guard session.activationState == .activated else {
+			actionMessage = "iPhone connection is starting. Try again shortly."
+			return .failed
+		}
+		let message = [key: value]
+		guard session.isReachable else {
+			session.transferUserInfo(message)
+			actionMessage = key == "logDose"
+				? "Waiting to sync with iPhone. Don’t log this dose again."
+				: "Quantity is waiting to sync with iPhone."
+			return .queued
+		}
+		isSendingAction = true
+		actionMessage = "Saving on iPhone…"
+		let saved: Bool = await withCheckedContinuation { continuation in
+			session.sendMessage(message, replyHandler: { reply in
+				continuation.resume(returning: reply["saved"] as? Bool == true)
+			}, errorHandler: { _ in
+				continuation.resume(returning: false)
+			})
+		}
+		isSendingAction = false
+		actionMessage = saved ? "Saved on iPhone." : "Couldn’t confirm saving. Check iPhone before trying again."
+		return saved ? .saved : .failed
+	}
 
     init(session: WCSession = .default) {
         self.session = session
@@ -31,6 +71,9 @@ final class WCSender: NSObject, ObservableObject {
         if session.isReachable {
             session.sendMessage(messages, replyHandler: nil) { error in
                 print("Error sending message: \(error)")
+				DispatchQueue.main.async {
+					self.loadErrorMessage = "Couldn’t load medications. Open AsNeeded on iPhone, then refresh."
+				}
             }
         } else {
             // Try to transfer user info when not reachable
@@ -44,18 +87,25 @@ final class WCSender: NSObject, ObservableObject {
         DispatchQueue.main.async {
             if let medicationsData = message["medications"] as? [[String: Any]] {
                 self.medications = medicationsData.map { WatchMedication(from: $0) }
+				self.hasLoadedMedications = true
+				self.loadErrorMessage = nil
             }
 
             // Handle confirmations from iPhone
             if let doseLogged = message["doseLogged"] as? Bool, doseLogged {
                 // Dose was successfully logged
                 WKInterfaceDevice.current().play(.notification)
+				self.actionMessage = "Dose saved on iPhone."
             }
 
             if let quantityUpdated = message["quantityUpdated"] as? Bool, quantityUpdated {
                 // Quantity was successfully updated
                 print("Quantity updated successfully")
+				self.actionMessage = "Quantity saved on iPhone."
             }
+			if message["saveFailed"] as? Bool == true {
+				self.actionMessage = "Couldn’t confirm saving. Check iPhone before trying again."
+			}
         }
     }
 }

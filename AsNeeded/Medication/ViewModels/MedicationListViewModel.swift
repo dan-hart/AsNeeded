@@ -277,6 +277,12 @@ final class MedicationListViewModel: ObservableObject {
                 dose: dose,
                 loggedEvent: event,
                 assessment: assessment,
+				nextDoseDate: guidanceService.nextEligibleDate(
+					for: medication,
+					at: loggedAt,
+					events: dataStore.events,
+					profile: safetyProfileStore.profile(for: medication.id)
+				),
                 at: loggedAt
             )
             showQuickLogToast(med: medication, dose: dose, feedback: feedback)
@@ -358,19 +364,7 @@ final class MedicationListViewModel: ObservableObject {
             showQuickLogToast = true
         }
 
-        Task {
-            let toastDuration: UInt64 = feedback?.tone == .caution || feedback?.tone == .warning ? 5_000_000_000 : 3_000_000_000
-            try? await Task.sleep(nanoseconds: toastDuration)
-            await MainActor.run {
-                guard self.quickLogFeedback?.undoEventID == feedback?.undoEventID else {
-                    return
-                }
-                self.quickLogFeedback = nil
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    self.showQuickLogToast = false
-                }
-            }
-        }
+		// Keep the confirmation and Undo available until the person dismisses it.
     }
 
     private func triggerSupportToast() {

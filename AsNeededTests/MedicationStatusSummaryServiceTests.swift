@@ -50,10 +50,10 @@ struct MedicationStatusSummaryServiceTests {
 
 		#expect(summary.timingText.contains("Last taken"))
 		#expect(summary.timingText.contains("10:00"))
-		#expect(summary.nextWindowText?.contains("Next saved window") == true)
+		#expect(summary.nextWindowText?.contains("Next dose window") == true)
 		#expect(summary.nextWindowText?.contains("2:00 PM") == true)
 		#expect(summary.severity == .warning)
-		#expect(summary.badgeText == "Review")
+		#expect(summary.badgeText == "Waiting")
 	}
 
 	@Test("Summary includes daily limit and refill pressure text")
@@ -70,7 +70,7 @@ struct MedicationStatusSummaryServiceTests {
 			profile: profile
 		)
 
-		#expect(summary.dailyText == "24h total would be 6 of 6 tab")
+		#expect(summary.dailyText == "With this dose: 6 of 6 tab in 24 hours")
 		#expect(summary.refillText.contains("Low stock"))
 		#expect(summary.refillText.contains("Refill prep"))
 	}

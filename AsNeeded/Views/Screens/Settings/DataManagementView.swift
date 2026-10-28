@@ -26,15 +26,15 @@ struct DataManagementView: View {
     @Environment(\.fontFamily) private var fontFamily
     private let logger = DHLogger(category: "DataManagementView")
 
-    @ScaledMetric private var sectionSpacing: CGFloat = 20
-    @ScaledMetric private var contentSpacing: CGFloat = 16
-    @ScaledMetric private var actionSpacing: CGFloat = 12
-    @ScaledMetric private var statSpacing: CGFloat = 4
-    @ScaledMetric private var toggleLabelSpacing: CGFloat = 2
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var cardCornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 0.5
-    @ScaledMetric private var actionIconSize: CGFloat = 24
+	private let sectionSpacing: CGFloat = 20
+	private let contentSpacing: CGFloat = 16
+	private let actionSpacing: CGFloat = 12
+	private let statSpacing: CGFloat = 4
+	private let toggleLabelSpacing: CGFloat = 2
+	private let cardPadding: CGFloat = 16
+	private let cardCornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
+	private let actionIconSize: CGFloat = 24
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -113,7 +113,7 @@ struct DataManagementView: View {
                                 try? FileManager.default.removeItem(at: url)
                             }
                             viewModel.exportedLogsURL = nil
-                            viewModel.alertMessage = "Logs exported successfully. No medication names are included - only technical information."
+                            viewModel.alertMessage = "Log file prepared. No medication names are included — only technical information."
                             viewModel.showingAlert = true
                         }
                 }
@@ -135,7 +135,7 @@ struct DataManagementView: View {
                     Form {
                         Section {
                             Text("Choose what information to include in the export")
-                                .font(.subheadline)
+                                .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundStyle(.secondary)
                         }
 
@@ -144,7 +144,7 @@ struct DataManagementView: View {
                                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Redact Medication Names")
                                     Text("Replace medication names with [REDACTED]")
-                                        .font(.caption)
+                                        .font(.customFont(fontFamily, style: .caption))
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -153,7 +153,7 @@ struct DataManagementView: View {
                                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Redact Notes")
                                     Text("Remove all notes from events")
-                                        .font(.caption)
+                                        .font(.customFont(fontFamily, style: .caption))
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -164,14 +164,13 @@ struct DataManagementView: View {
                                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                                     Text("Include App Settings")
                                     Text("Include preferences (fonts, haptics, privacy settings)")
-                                        .font(.caption)
+                                        .font(.customFont(fontFamily, style: .caption))
                                         .foregroundStyle(.secondary)
                                 }
                             }
                         }
                     }
-                    .navigationTitle("Export Options")
-                    .navigationBarTitleDisplayMode(.inline)
+                    .customNavigationTitle("Export Options")
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button {
@@ -179,9 +178,8 @@ struct DataManagementView: View {
                                 redactMedicationNames = false
                                 redactNotes = false
                             } label: {
-                                Image(systemSymbol: .xmark)
-                                    .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                    .foregroundStyle(.secondary)
+                                Text("Cancel")
+                                    .font(.customFont(fontFamily, style: .body))
                             }
                         }
                         ToolbarItem(placement: .confirmationAction) {
@@ -196,8 +194,8 @@ struct DataManagementView: View {
                                     redactNotes = false
                                 }
                             } label: {
-                                Image(systemSymbol: .checkmarkCircleFill)
-                                    .font(.customFont(fontFamily, style: .title2, weight: .semibold))
+                                Text("Export")
+                                    .font(.customFont(fontFamily, style: .body, weight: .semibold))
                                     .foregroundStyle(.accent)
                             }
                         }
@@ -328,7 +326,7 @@ struct DataManagementView: View {
             }
 
             SupportToastView(
-                message: "Data exported successfully",
+                message: "Export file prepared",
                 supportMessage: "Support As Needed",
                 isVisible: showSupportToast,
                 onDismiss: {
@@ -344,6 +342,7 @@ struct DataManagementView: View {
                 }
             )
         }
+        .font(.customFont(fontFamily, style: .body))
         .sheet(isPresented: $showSupportView) {
             NavigationView {
                 SupportView()
@@ -357,16 +356,16 @@ struct DataManagementView: View {
     private var dataOverviewSection: some View {
         VStack(alignment: .leading, spacing: actionSpacing) {
             Text("Data Overview")
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .fontWeight(.semibold)
 
             HStack {
                 VStack(alignment: .leading, spacing: statSpacing) {
                     Text("Medications")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                     Text("\(viewModel.medicationCount)")
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .fontWeight(.semibold)
                 }
 
@@ -374,10 +373,10 @@ struct DataManagementView: View {
 
                 VStack(alignment: .center, spacing: statSpacing) {
                     Text("Events")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                     Text("\(viewModel.eventCount)")
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .fontWeight(.semibold)
                 }
 
@@ -385,7 +384,7 @@ struct DataManagementView: View {
 
                 VStack(alignment: .trailing, spacing: statSpacing) {
                     Text("Logs (24h)")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundStyle(.secondary)
                     Group {
                         if viewModel.isLoadingLogCount {
@@ -395,7 +394,7 @@ struct DataManagementView: View {
                             Text("\(viewModel.logCount)")
                         }
                     }
-                    .font(.title2)
+                    .font(.customFont(fontFamily, style: .title2))
                     .fontWeight(.semibold)
                 }
             }
@@ -453,12 +452,12 @@ struct DataManagementView: View {
     private var recoverySection: some View {
         VStack(alignment: .leading, spacing: actionSpacing) {
             Text("Recovery & Trust")
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .fontWeight(.semibold)
 
             VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                 Text(viewModel.recoverySummaryText)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -477,7 +476,7 @@ struct DataManagementView: View {
                         }
 
                         Text(viewModel.isScanningRecovery ? "Scanning Recovery Sources..." : "Scan Recovery Sources")
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
                     }
                     .foregroundStyle(.accent)
@@ -494,7 +493,7 @@ struct DataManagementView: View {
     private var dataActionsSection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
             Text("Data Actions")
-                .font(.headline)
+                .font(.customFont(fontFamily, style: .headline))
                 .fontWeight(.semibold)
 
             VStack(spacing: actionSpacing) {
@@ -589,12 +588,12 @@ struct DataManagementView: View {
 
                 VStack(alignment: .leading, spacing: toggleLabelSpacing) {
                     Text(title)
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .fontWeight(.medium)
                         .foregroundStyle(isDestructive ? .red : .primary)
 
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                 }
 
@@ -602,7 +601,7 @@ struct DataManagementView: View {
 
                 if !isLoading {
                     Image(systemSymbol: .chevronRight)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                 }
             }

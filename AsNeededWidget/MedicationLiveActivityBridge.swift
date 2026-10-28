@@ -31,14 +31,14 @@ enum MedicationLiveActivityBridge {
 			let refillSoon = provider.refillDueSoon.contains { $0.id == medication.id }
 			let statusText = {
 				if canTakeNow {
-					return "Available now"
+					return "Record a dose"
 				}
 
 				guard let nextDoseDate else {
 					return "Check in the app"
 				}
 
-				return "Next dose \(nextDoseDate.formatted(date: .omitted, time: .shortened))"
+				return "Saved interval ends \(nextDoseDate.formatted(date: .omitted, time: .shortened))"
 			}()
 			let detailText = {
 				var parts: [String] = []

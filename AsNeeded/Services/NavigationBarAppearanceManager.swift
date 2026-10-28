@@ -52,7 +52,8 @@ enum NavigationBarAppearanceManager {
     /// Get or create a cached UIFont for the specified font family and style
     /// This avoids repeatedly creating the same fonts, improving performance
     private static func cachedFont(for fontFamily: FontFamily, style: UIFont.TextStyle) -> UIFont? {
-        let cacheKey = "\(fontFamily.rawValue)-\(style.rawValue)"
+		let traits = UITraitCollection.current
+		let cacheKey = "\(fontFamily.rawValue)-\(style.rawValue)-\(traits.preferredContentSizeCategory.rawValue)"
 
         if let cached = fontCache[cacheKey] {
             return cached
@@ -65,13 +66,18 @@ enum NavigationBarAppearanceManager {
             font = UIFont.preferredFont(forTextStyle: style)
 
         case .atkinsonHyperlegible, .openDyslexic:
-            let baseSize = UIFont.preferredFont(forTextStyle: style).pointSize
+			// UIFontMetrics applies the current category once. Starting from the
+			// already-scaled preferred font would multiply accessibility scaling.
+			let baseSize = UIFont.preferredFont(
+				forTextStyle: style,
+				compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
+			).pointSize
             let fontName = style.isBoldStyle ? fontFamily.boldFontName : fontFamily.fontName
 
             if let customFont = UIFont(name: fontName, size: baseSize) {
                 // Scale the font to maintain dynamic type
                 let metrics = UIFontMetrics(forTextStyle: style)
-                font = metrics.scaledFont(for: customFont)
+				font = metrics.scaledFont(for: customFont, compatibleWith: traits)
             } else {
                 // Fallback to system font if custom font not available
                 font = UIFont.preferredFont(forTextStyle: style)
