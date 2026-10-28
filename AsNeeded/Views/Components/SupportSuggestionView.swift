@@ -21,6 +21,7 @@ struct SupportSuggestionView: View {
 					label
 				}
 				.buttonStyle(.plain)
+				.navigationLinkIndicatorVisibility(.hidden)
 			}
 			.padding(.horizontal, 16)
 			.padding(.top, 8)
@@ -35,12 +36,12 @@ struct SupportBannerCard<SupportAction: View>: View {
 	let message: String
 	let onDismiss: () -> Void
 	let onHide: () -> Void
-	@ViewBuilder let supportAction: (SupportBannerLabel) -> SupportAction
+	@ViewBuilder let supportAction: (SupportBannerActionLabel) -> SupportAction
 
 	var body: some View {
 		VStack(spacing: 8) {
 			ZStack(alignment: .topTrailing) {
-				supportAction(SupportBannerLabel(message: message))
+				supportAction(SupportBannerActionLabel(content: .banner(message)))
 					.buttonStyle(.plain)
 
 				Button(action: onDismiss) {
@@ -55,12 +56,7 @@ struct SupportBannerCard<SupportAction: View>: View {
 				.padding(16)
 			}
 
-			Button(action: onDismiss) {
-				Text("Close")
-					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-					.frame(maxWidth: .infinity, minHeight: 44)
-					.contentShape(Rectangle())
-			}
+			supportAction(SupportBannerActionLabel(content: .callToAction))
 			.buttonStyle(.plain)
 			.foregroundStyle(.accent)
 			.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 10))
@@ -82,6 +78,29 @@ struct SupportBannerCard<SupportAction: View>: View {
 				RoundedRectangle(cornerRadius: 10)
 					.strokeBorder(Color.secondary, lineWidth: 1)
 			}
+		}
+	}
+}
+
+struct SupportBannerActionLabel: View {
+	@Environment(\.fontFamily) private var fontFamily
+
+	enum Content {
+		case banner(String)
+		case callToAction
+	}
+
+	let content: Content
+
+	var body: some View {
+		switch content {
+		case .banner(let message):
+			SupportBannerLabel(message: message)
+		case .callToAction:
+			Text("Support As Needed")
+				.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+				.frame(maxWidth: .infinity, minHeight: 44)
+				.contentShape(Rectangle())
 		}
 	}
 }
