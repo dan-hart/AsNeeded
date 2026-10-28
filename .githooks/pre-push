@@ -82,7 +82,7 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 			git cat-file -e "$commit:$file" 2>/dev/null || continue
 			# Remove only the two public AWS documentation examples before matching.
 			# Other credentials on the same line remain visible to the detector.
-			MATCHES=$(git show "$commit:$file" | sed \
+			MATCHES=$(git show "$commit:$file" | LC_ALL=C sed \
 				-e 's|AKIAIOSFODNN7EXAMPLE||g' \
 				-e 's|wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY||g' \
 				| LC_ALL=C grep -I -n -E "$PATTERN" || true)

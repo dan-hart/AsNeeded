@@ -62,6 +62,15 @@ class PushScannerTests(unittest.TestCase):
 		self.assertEqual(result.returncode, 0, result.stderr)
 		self.assertIn('317', (self.repo / 'AsNeeded.xcodeproj/project.pbxproj').read_text())
 
+	def test_binary_assets_do_not_produce_locale_errors(self):
+		path = self.repo / 'screenshot.png'
+		path.write_bytes(bytes(range(256)))
+		self.git('add', 'screenshot.png')
+		self.git('commit', '-m', 'Synthetic binary fixture')
+		result = self.scan()
+		self.assertEqual(result.returncode, 0, result.stderr)
+		self.assertNotIn('illegal byte sequence', result.stderr)
+
 	def test_exact_public_example_is_safe(self):
 		public_example = 'AKIA' + 'IOSFODNN7EXAMPLE'
 		self.commit_file('fixture.txt', public_example + '\n')
