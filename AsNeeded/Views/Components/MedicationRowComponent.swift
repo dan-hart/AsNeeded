@@ -54,43 +54,28 @@ struct MedicationRowComponent: View {
     @ScaledMetric private var medicationIconSize: CGFloat = 40
 
     var body: some View {
-        HStack(spacing: 0) {
-            if dynamicTypeSize.isAccessibilitySize {
-                // Accessibility Layout
-                VStack(alignment: .leading, spacing: 16) {
-                    medicationHeader
-                    if editMode?.wrappedValue != .active {
-                        medicationDetails
-                        enhancedLogButton
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(rowPadding)
-            } else {
-				VStack(alignment: .leading, spacing: 8) {
-					HStack(alignment: .center, spacing: 10) {
-						if editMode?.wrappedValue != .active {
-							medicationIcon
-								.frame(minWidth: 44, minHeight: 44)
-						}
-
-						medicationHeader
-							.frame(maxWidth: .infinity, alignment: .leading)
-							.layoutPriority(1)
-
-						if editMode?.wrappedValue != .active {
-							enhancedLogButton
-						}
+		HStack(alignment: .center, spacing: 12) {
+			VStack(alignment: .leading, spacing: 8) {
+				HStack(spacing: 10) {
+					if !dynamicTypeSize.isAccessibilitySize, editMode?.wrappedValue != .active {
+						medicationIcon
+							.frame(minWidth: 44, minHeight: 44)
 					}
-
-					if editMode?.wrappedValue != .active {
-						medicationDetails
-							.frame(maxWidth: .infinity, alignment: .leading)
-					}
+					medicationHeader
+						.frame(maxWidth: .infinity, alignment: .leading)
 				}
-				.padding(12)
-            }
-        }
+				if editMode?.wrappedValue != .active {
+					medicationDetails
+						.frame(maxWidth: .infinity, alignment: .leading)
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+
+			if editMode?.wrappedValue != .active {
+				enhancedLogButton
+			}
+		}
+		.padding(dynamicTypeSize.isAccessibilitySize ? rowPadding : 12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(colorScheme == .dark ?
@@ -239,86 +224,32 @@ struct MedicationRowComponent: View {
 		Button {
 			onLogTapped()
 		} label: {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                // Full width button for accessibility
-                HStack(spacing: 10) {
-                    Image(systemSymbol: .plusCircleFill)
-                        .font(.title3)
-                        .accessibilityHidden(true)
-                    Text("Log Dose")
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                }
-                .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-            } else {
-                // Compact button with icon and text
-                VStack(spacing: 4) {
-                    Image(systemSymbol: .plusCircleFill)
-                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                        .symbolRenderingMode(.monochrome)
-                        .accessibilityHidden(true)
-
-                    Text("Log")
-                        .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                        .textCase(.uppercase)
-                }
-                .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(minWidth: 60, minHeight: 60)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    medication.displayColor.dynamicFilledButtonBackground,
-                                    medication.displayColor.dynamicFilledButtonBackground,
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(
-                            color: medication.displayColor.opacity(0.4),
-                            radius: isPressed ? 2 : 8,
-                            x: 0,
-                            y: isPressed ? 1 : 4
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    medication.displayColor.dynamicFilledButtonForeground.opacity(0.3),
-                                    medication.displayColor.dynamicFilledButtonForeground.opacity(0.1),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1.0))
-            }
-        }
-        }
+			HStack(spacing: 6) {
+				Image(systemSymbol: .plusCircleFill)
+					.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+					.symbolRenderingMode(.monochrome)
+					.accessibilityHidden(true)
+				Text("Log")
+					.font(.customFont(fontFamily, style: .caption2, weight: .bold))
+					.lineLimit(1)
+			}
+			.fixedSize(horizontal: true, vertical: false)
+			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+			.padding(.horizontal, 16)
+			.padding(.vertical, 12)
+			.frame(minWidth: 60, minHeight: 60)
+			.background(medication.displayColor.dynamicFilledButtonBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+			.shadow(color: medication.displayColor.opacity(0.4), radius: isPressed ? 2 : 8, x: 0, y: isPressed ? 1 : 4)
+			.overlay {
+				RoundedRectangle(cornerRadius: 14, style: .continuous)
+					.strokeBorder(medication.displayColor.dynamicFilledButtonForeground.opacity(0.2), lineWidth: 1)
+			}
+			.scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1))
+		}
 		.buttonStyle(.plain)
         .contentShape(Rectangle())
 		.overlay {
-			RoundedRectangle(cornerRadius: dynamicTypeSize.isAccessibilitySize ? 12 : 14)
+			RoundedRectangle(cornerRadius: 14)
 				.trim(from: 0, to: holdProgress)
 				.stroke(medication.displayColor.dynamicFilledButtonForeground, style: StrokeStyle(lineWidth: 3, lineCap: .round))
 				.padding(2)
