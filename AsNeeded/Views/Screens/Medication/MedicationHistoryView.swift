@@ -74,6 +74,35 @@ struct MedicationHistoryView: View {
 		Spacer()
 	}
 
+	private func historyDoseDetails(for event: ANEventConcept) -> some View {
+		let time = event.date.formatted(date: .omitted, time: .shortened)
+		let details = event.dose.map { "\(time) – \($0.amount.formattedAmount) \($0.unit.abbreviation)" } ?? time
+		return ViewThatFits(in: .horizontal) {
+			HStack(alignment: .firstTextBaseline, spacing: 8) {
+				Text(details)
+					.font(.customFont(fontFamily, style: .subheadline))
+				if let relative = relativeShortIfToday(event.date) {
+					Text(relative)
+						.font(.customFont(fontFamily, style: .footnote))
+						.foregroundStyle(.secondary)
+				}
+			}
+			.fixedSize(horizontal: true, vertical: true)
+
+			VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+				Text(details)
+					.font(.customFont(fontFamily, style: .subheadline))
+					.noTruncate()
+				if let relative = relativeShortIfToday(event.date) {
+					Text(relative)
+						.font(.customFont(fontFamily, style: .footnote))
+						.foregroundStyle(.secondary)
+						.noTruncate()
+				}
+			}
+		}
+	}
+
 	@ViewBuilder
 	private func historyListView() -> some View {
 		ScrollViewReader { proxy in
@@ -82,10 +111,7 @@ struct MedicationHistoryView: View {
 					Section(header: sectionHeader(for: group)) {
 						ForEach(group.entries, id: \.id) { event in
 							VStack(alignment: .leading, spacing: entrySpacing) {
-								let entryLayout = dynamicTypeSize.isAccessibilitySize
-									? AnyLayout(VStackLayout(alignment: .leading, spacing: entrySpacing))
-									: AnyLayout(HStackLayout(alignment: .center, spacing: entrySpacing))
-								entryLayout {
+								HStack(alignment: .center, spacing: 8) {
 									Button {
 										editingEntryEvent = event
 										editingEntryDate = event.date
@@ -94,7 +120,7 @@ struct MedicationHistoryView: View {
 									} label: {
 										HStack(alignment: .center) {
 											// Medication color indicator on the left side
-											if viewModel.isShowingAllMedications, let eventMedication = event.medication {
+											if !dynamicTypeSize.isAccessibilitySize, viewModel.isShowingAllMedications, let eventMedication = event.medication {
 												// Look up current medication from viewModel to ensure we have the latest data
 												let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
 												let rowMedication = currentMedication ?? eventMedication
@@ -146,19 +172,7 @@ struct MedicationHistoryView: View {
 														.noTruncate()
 												}
 
-												if let dose = event.dose {
-													let unitName = dose.unit.abbreviation
-													Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
-														.font(.customFont(fontFamily, style: .subheadline))
-												} else {
-													Text(event.date.formatted(date: .omitted, time: .shortened))
-														.font(.customFont(fontFamily, style: .subheadline))
-												}
-												if let rel = relativeShortIfToday(event.date) {
-													Text(rel)
-														.font(.customFont(fontFamily, style: .footnote))
-														.foregroundStyle(.secondary)
-												}
+												historyDoseDetails(for: event)
 											}
 											.fixedSize(horizontal: false, vertical: true)
 											Spacer()

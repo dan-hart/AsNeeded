@@ -172,11 +172,6 @@ struct AddNoteButtonComponent: View {
 
 	@Environment(\.fontFamily) private var fontFamily
 
-	// Scaled metrics
-	@ScaledMetric private var horizontalPadding: CGFloat = 10
-	@ScaledMetric private var verticalPadding: CGFloat = 6
-	@ScaledMetric private var textSpacing: CGFloat = 4
-
 	private let hapticsManager = HapticsManager.shared
 
 	var body: some View {
@@ -184,19 +179,15 @@ struct AddNoteButtonComponent: View {
 			onTap()
 			hapticsManager.selectionChanged()
 		} label: {
-			HStack(spacing: textSpacing) {
-				Text("Add Note")
-					.font(.customFont(fontFamily, style: .subheadline))
-				Image(systemSymbol: .squareAndPencil)
-					.font(.customFont(fontFamily, style: .caption))
-			}
-			.foregroundStyle(medicationColor)
-			.padding(.horizontal, horizontalPadding)
-			.padding(.vertical, verticalPadding)
-			.frame(minHeight: 44)
+			Image(systemSymbol: .squareAndPencil)
+				.font(.customFont(fontFamily, style: .body))
+				.foregroundStyle(medicationColor)
+				.frame(minWidth: 44, minHeight: 44)
+				.contentShape(Rectangle())
 		}
 		.buttonStyle(.plain)
 		.contentShape(Rectangle())
+		.accessibilityLabel("Add note")
 	}
 }
 
