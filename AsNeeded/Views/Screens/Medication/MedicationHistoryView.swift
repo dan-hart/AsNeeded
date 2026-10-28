@@ -568,7 +568,9 @@ struct MedicationHistoryView: View {
 							isVisible: quickLogCoordinator.showQuickLogToast,
 							feedback: quickLogCoordinator.quickLogFeedback,
 							onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
-							onUndo: { Task { if !(await quickLogCoordinator.undoLastQuickLog()) { quickLogError = true } } })
+							onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } },
+						includesSupportSuggestion: quickLogCoordinator.confirmationIncludesSupport,
+						onSupportTapped: { quickLogCoordinator.dismissQuickLogToast(); showSupportPage = true })
 					}
 				}
 

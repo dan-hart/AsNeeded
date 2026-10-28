@@ -182,11 +182,13 @@ struct MedicationListView: View {
                             onDismiss: {
                                 viewModel.dismissQuickLogToast()
                             },
-                            onUndo: {
+                            onUndo: { eventID in
                                 Task {
-                                    if !(await viewModel.undoLastQuickLog()) { quickLogError = true }
+                                    if !(await viewModel.undoLastQuickLog(eventID: eventID)) { quickLogError = true }
                                 }
-                            }
+                            },
+                            includesSupportSuggestion: viewModel.confirmationIncludesSupport,
+                            onSupportTapped: { viewModel.dismissQuickLogToast(); showSupportPage = true }
                         )
                     }
 

@@ -22,7 +22,9 @@ struct QuickLogToastView: View {
 	let isVisible: Bool
 	var feedback: QuickLogFeedbackService.Feedback?
 	let onDismiss: () -> Void
-	var onUndo: (() -> Void)?
+	var onUndo: ((UUID) -> Void)?
+	var includesSupportSuggestion = false
+	var onSupportTapped: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -37,7 +39,8 @@ struct QuickLogToastView: View {
 		if isVisible {
 			GeometryReader { geometry in
 				let topInset = min(topPadding, geometry.size.height * 0.1)
-				VStack {
+				ScrollView {
+				VStack(spacing: 12) {
 					VStack(alignment: .leading, spacing: contentSpacing) {
 						HStack(alignment: .top, spacing: contentSpacing) {
 							Image(systemSymbol: toneIcon)
@@ -67,9 +70,9 @@ struct QuickLogToastView: View {
 						}
 						.frame(maxHeight: max(32, (geometry.size.height - topInset) * 0.5 - 100))
 
-						if feedback?.undoEventID != nil, let onUndo {
+						if let eventID = feedback?.undoEventID, let onUndo {
 							Button {
-								onUndo()
+								onUndo(eventID)
 							} label: {
 								Label("Undo log", systemSymbol: .arrowCounterclockwise)
 									.font(.customFont(fontFamily, style: .caption, weight: .semibold))
@@ -106,8 +109,12 @@ struct QuickLogToastView: View {
 					.padding(.horizontal, toastPadding)
 					.padding(.top, topInset)
 
-					Spacer()
+					if includesSupportSuggestion, let onSupportTapped {
+						SupportSuggestionView(onSupportTapped: onSupportTapped)
+					}
 				}
+				}
+				.scrollBounceBehavior(.basedOnSize)
 			}
 			.transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
 			.animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: isVisible)

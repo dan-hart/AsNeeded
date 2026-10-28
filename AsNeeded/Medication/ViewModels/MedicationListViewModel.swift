@@ -15,6 +15,7 @@ final class MedicationListViewModel: ObservableObject {
 	private var nextConfirmationSequence = 0
 	private var latestPresentedSequence = 0
 	private var committedChangesTask: Task<Void, Never>?
+	private var confirmationDismissTask: Task<Void, Never>?
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
     private let safetyProfileStore = MedicationSafetyProfileStore.shared
@@ -39,6 +40,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var quickLogDoseUnit = ""
     @Published var quickLogAccentColor: Color = .accent
     @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
+	@Published var confirmationIncludesSupport = false
     @Published var isLoading = true
 
     // MARK: - Computed Properties
@@ -97,7 +99,10 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-	deinit { committedChangesTask?.cancel() }
+	deinit {
+		committedChangesTask?.cancel()
+		confirmationDismissTask?.cancel()
+	}
 
     private func finishInitialLoad() async {
         do {
@@ -229,7 +234,7 @@ final class MedicationListViewModel: ObservableObject {
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
-			showQuickLogToast(med: med, dose: dose, sequence: confirmationSequence)
+			presentDoseConfirmation(med: med, dose: dose, event: eventToSave, sequence: confirmationSequence)
             return true
         }
 
@@ -281,7 +286,6 @@ final class MedicationListViewModel: ObservableObject {
 		let (updateSuccess, eventSuccess) = (saved, saved)
 
         if updateSuccess, eventSuccess {
-            hapticsManager.doseLogged()
             let feedback = feedbackService.feedback(
                 medication: medication,
                 dose: dose,
@@ -310,9 +314,8 @@ final class MedicationListViewModel: ObservableObject {
         return updateSuccess && eventSuccess
     }
 
-    func undoLastQuickLog() async -> Bool {
-        guard let feedback = quickLogFeedback,
-              let undoEventID = feedback.undoEventID,
+    func undoLastQuickLog(eventID: UUID? = nil) async -> Bool {
+        guard let undoEventID = eventID ?? quickLogFeedback?.undoEventID,
               let event = dataStore.events.first(where: { $0.id == undoEventID }),
 			  !undoingEventIDs.contains(undoEventID)
         else {
@@ -325,10 +328,7 @@ final class MedicationListViewModel: ObservableObject {
 			try await undoPersistence(event.id)
 			// The visible toast may have been replaced or dismissed while the write awaited.
 			if quickLogFeedback?.undoEventID == undoEventID {
-				quickLogFeedback = nil
-				withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-					showQuickLogToast = false
-				}
+				dismissQuickLogToast()
 			}
             return true
         } catch {
@@ -338,11 +338,31 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     func dismissQuickLogToast() {
+		confirmationDismissTask?.cancel()
+		confirmationDismissTask = nil
+		confirmationIncludesSupport = false
         quickLogFeedback = nil
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             showQuickLogToast = false
         }
     }
+
+	/// Confirm an already-persisted regular dose without saving it a second time.
+	func presentDoseConfirmation(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept, sequence: Int? = nil) {
+		let now = Date()
+		let assessment = guidanceService.assessment(
+			for: med, proposedDose: dose, at: event.date,
+			events: dataStore.events.filter { $0.id != event.id },
+			profile: safetyProfileStore.profile(for: med.id)
+		)
+		let feedback = feedbackService.feedback(
+			medication: med, dose: dose, loggedEvent: event, assessment: assessment,
+			nextDoseDate: guidanceService.nextEligibleDate(for: med, at: now, events: dataStore.events, profile: safetyProfileStore.profile(for: med.id)),
+			at: now
+		)
+		showQuickLogToast(med: med, dose: dose, feedback: feedback,
+			sequence: sequence ?? allocateConfirmationSequence(), includesSupport: true)
+	}
 
     func statusSummary(for medication: ANMedicationConcept) -> MedicationStatusSummaryService.Summary {
         statusSummaryService.summary(
@@ -361,7 +381,8 @@ final class MedicationListViewModel: ObservableObject {
         med: ANMedicationConcept,
         dose: ANDoseConcept,
         feedback: QuickLogFeedbackService.Feedback? = nil,
-		sequence: Int
+		sequence: Int,
+		includesSupport: Bool = false
     ) {
 		guard sequence > latestPresentedSequence else { return }
 		latestPresentedSequence = sequence
@@ -370,12 +391,20 @@ final class MedicationListViewModel: ObservableObject {
         quickLogDoseUnit = dose.unit.abbreviation
         quickLogAccentColor = med.displayColor
         quickLogFeedback = feedback
+		confirmationIncludesSupport = includesSupport
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             showQuickLogToast = true
         }
 
-		// Keep the confirmation and Undo available until the person dismisses it.
+		confirmationDismissTask?.cancel()
+		confirmationDismissTask = Task { [weak self] in
+			do { try await Task.sleep(for: .seconds(4)) }
+			catch { return }
+			guard !Task.isCancelled, let self,
+				self.latestPresentedSequence == sequence else { return }
+			self.dismissQuickLogToast()
+		}
     }
 
 

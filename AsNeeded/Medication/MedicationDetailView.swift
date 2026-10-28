@@ -8,6 +8,9 @@ import UIKit
 
 struct MedicationDetailView: View {
 	@StateObject private var doseLogSession = LogDoseView.Session()
+	@StateObject private var doseConfirmation = MedicationListViewModel()
+	@State private var showSupportPage = false
+	@State private var undoDoseError = false
     let medicationId: UUID
     @State private var medication: ANMedicationConcept
     @StateObject private var viewModel = MedicationDetailViewModel()
@@ -81,6 +84,31 @@ struct MedicationDetailView: View {
         }
         .background(Color(.systemGroupedBackground))
         .customNavigationTitle(medication.displayName, displayMode: .inline)
+		.navigationDestination(isPresented: $showSupportPage) { SupportView() }
+		.overlay(alignment: .top) {
+			if doseConfirmation.showQuickLogToast {
+				QuickLogToastView(
+					medicationName: doseConfirmation.quickLogMedicationName,
+					doseAmount: doseConfirmation.quickLogDoseAmount,
+					doseUnit: doseConfirmation.quickLogDoseUnit,
+					accentColor: doseConfirmation.quickLogAccentColor,
+					isVisible: doseConfirmation.showQuickLogToast,
+					feedback: doseConfirmation.quickLogFeedback,
+					onDismiss: { doseConfirmation.dismissQuickLogToast() },
+					onUndo: { eventID in
+						Task {
+							if await doseConfirmation.undoLastQuickLog(eventID: eventID) { await refreshMedication() }
+							else { undoDoseError = true }
+						}
+					},
+					includesSupportSuggestion: doseConfirmation.confirmationIncludesSupport,
+					onSupportTapped: { doseConfirmation.dismissQuickLogToast(); showSupportPage = true }
+				)
+			}
+		}
+		.alert("Couldn’t Undo Dose", isPresented: $undoDoseError) {
+			Button("OK", role: .cancel) {}
+		} message: { Text("Your dose could not be removed. Check History before trying again.") }
         .toolbar {
             toolbarContent
         }
@@ -111,6 +139,7 @@ struct MedicationDetailView: View {
 
                 if success {
                     await refreshMedication()
+					doseConfirmation.presentDoseConfirmation(med: medication, dose: dose, event: event)
                 }
 
                 return success

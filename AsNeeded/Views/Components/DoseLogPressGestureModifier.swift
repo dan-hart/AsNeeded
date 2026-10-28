@@ -31,27 +31,38 @@ struct DoseLogPressGestureModifier: ViewModifier {
 					isPressed = true
 					HapticsManager.shared.lightImpact()
 					guard let onQuickLog else { return }
-					withAnimation(reduceMotion ? nil : .linear(duration: longPressDuration)) {
-						holdProgress.wrappedValue = 1
+					if !reduceMotion {
+						withAnimation(.linear(duration: longPressDuration)) {
+							holdProgress.wrappedValue = 1
+						}
 					}
+					let clock = ContinuousClock()
+					let deadline = clock.now.advanced(by: .seconds(longPressDuration))
 					holdTask = Task { @MainActor in
-						do { try await Task.sleep(for: .seconds(longPressDuration)) }
-						catch { return }
+						do {
+							try await clock.sleep(until: deadline.advanced(by: .seconds(-longPressDuration / 2)))
+							guard !Task.isCancelled else { return }
+							HapticsManager.shared.mediumImpact()
+							try await clock.sleep(until: deadline)
+						} catch { return }
 						guard !Task.isCancelled, press.reachThreshold() else { return }
 						isLongPressing = true
 						isSaving = true
-						// Persistence completes even if the finger lifts or the view disappears.
-						Task { @MainActor in
-							let saved = await onQuickLog()
-							isSaving = false
-							if saved {
-								HapticsManager.shared.heavyImpact()
-								withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { showSuccess = true }
-								onQuickLogSuccess?()
-								Task { @MainActor in
-									try? await Task.sleep(for: .milliseconds(180))
-									withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { showSuccess = false }
-								}
+						// The ring and save share this deadline. No post-ring delay.
+						var transaction = Transaction()
+						transaction.disablesAnimations = true
+						withTransaction(transaction) { holdProgress.wrappedValue = 1 }
+						HapticsManager.shared.heavyImpact()
+						// Detach the completed hold from cancellation before persistence starts.
+						holdTask = nil
+						let saved = await onQuickLog()
+						isSaving = false
+						if saved {
+							withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { showSuccess = true }
+							onQuickLogSuccess?()
+							Task { @MainActor in
+								try? await Task.sleep(for: .milliseconds(180))
+								withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { showSuccess = false }
 							}
 						}
 					}
