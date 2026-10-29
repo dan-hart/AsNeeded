@@ -1,5 +1,7 @@
 # 1.2.0 release QA fixes — October 29, 2026
 
+Current follow-up: [Firefox and physical-device QA](2026-10-29-firefox-device-followup.md). That report supersedes this build-319 checkpoint and records the later privacy and editor corrections.
+
 Candidate: **1.2.0 (319)** on `task/v1.2.0`, based on pushed notification work at `867d023`. Work began only after that checkout was clean and pushed. Implementation used the original checkout; no additional implementation worktree was used.
 
 ## Corrected behavior

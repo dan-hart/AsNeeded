@@ -14,7 +14,7 @@ No AsNeeded account is required. All tracking features are free. The app has no 
 
 Medication lookup sends the search text you enter to the National Library of Medicine’s NIH RxNorm service. Searches can run as you type, even if you do not select a result. It does not include your saved dose history, notes or schedules. You can enter a medication manually without selecting a search result.
 
-Search requires a network connection. Requests also expose ordinary network information, such as your IP address, to the receiving service. See [RxNav terms](https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html) and [NLM privacy information](https://www.nlm.nih.gov/privacy.html).
+Search requires a network connection. Requests also expose ordinary network information, such as your IP address, to the receiving service. NLM’s published policy describes storing search terms and request information for service operation and usage analysis; it says searches are not associated with individual users. Its current public policy does not specify a separate retention period for RxNorm API queries. See [RxNav terms](https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html) and [NLM privacy information](https://www.nlm.nih.gov/web_policies.html#privacy_security).
 
 This product uses publicly available NLM/NIH data. NLM is not responsible for this product and does not endorse or recommend it.
 
@@ -22,7 +22,7 @@ This product uses publicly available NLM/NIH data. NLM is not responsible for th
 
 You can support development through optional tips or recurring support subscriptions. These do not unlock tracking features. Apple processes payments; AsNeeded does not receive your payment-card details.
 
-The app initializes RevenueCat to load support products, check purchase status and restore purchases. RevenueCat processes an SDK-generated anonymous app user ID, purchase and subscription records, and technical app/device information needed for this service. Initialization can make network requests even if you have not purchased anything. The app does not supply your medication records or a custom account identity to RevenueCat.
+The app initializes RevenueCat to load support products, check purchase status and restore purchases. RevenueCat processes an SDK-generated anonymous app user ID, purchase and subscription records, and technical app/device information needed for this service, including purchase validation and support-purchase reporting and analytics. Initialization can make network requests even if you have not purchased anything. The app does not supply your medication records or a custom account identity to RevenueCat.
 
 See [RevenueCat’s privacy policy](https://www.revenuecat.com/privacy) and [Apple’s privacy policy](https://www.apple.com/legal/privacy/). Manage or cancel recurring support through your Apple subscriptions settings. Deleting AsNeeded does not cancel a subscription.
 

@@ -66,3 +66,12 @@ Files: shipping privacy manifests, PRIVACY.md, in-app privacy descriptions when 
 - [x] Review git status/diff and land only this task's verified changes with sanitized descriptive commits.
 
 Verification evidence and remaining external/device gates: [release QA results](../../testing/2026-10-29-release-qa-fixes.md).
+
+## 7. Firefox and physical-device follow-up
+
+- [x] Use the confirmed fixture device; verify canonical backups and upgrades without uninstall/reset.
+- [x] Correct the published privacy label and align the app manifest/policy with provider disclosures.
+- [x] Accept the approved Developer Program agreement and inspect separate commercial terms without assuming approval.
+- [x] Reproduce and correct first-open editor values and quarter-dose display; preserve unchanged entries exactly.
+- [ ] Verify the final 321 archive/IPA, physical editor regression, processed build and draft linkage.
+- [ ] Record final evidence and push the reviewed follow-up.

@@ -32,11 +32,7 @@ struct MedicationHistoryView: View {
 	@State private var editingNoteText: String = ""
 	@FocusState private var isNoteFieldFocused: Bool
 	@State private var editingEntryEvent: ANEventConcept?
-	@State private var editingEntryDate: Date = .init()
-	@State private var editingEntryAmount: Double = 1.0
-	@State private var editingEntryUnit: ANUnitConcept = .unit
 	@State private var showDiscardNoteChanges = false
-	@State private var showDiscardEntryChanges = false
 
 	@ScaledMetric private var emptySectionSpacing: CGFloat = 24
 	@ScaledMetric private var supportViewPaddingH: CGFloat = 32
@@ -124,9 +120,6 @@ struct MedicationHistoryView: View {
 								HStack(alignment: .center, spacing: 8) {
 									Button {
 										editingEntryEvent = event
-										editingEntryDate = event.date
-										editingEntryAmount = event.dose?.amount ?? 1.0
-										editingEntryUnit = event.dose?.unit ?? .unit
 									} label: {
 										HStack(alignment: .center) {
 											// Medication color indicator on the left side
@@ -244,9 +237,6 @@ struct MedicationHistoryView: View {
 							.accessibilityElement(children: .contain)
 							.accessibilityAction(named: "Edit entry") {
 								editingEntryEvent = event
-								editingEntryDate = event.date
-								editingEntryAmount = event.dose?.amount ?? 1.0
-								editingEntryUnit = event.dose?.unit ?? .unit
 							}
 							.accessibilityAction(named: "Edit note") {
 								editingEvent = event
@@ -255,9 +245,6 @@ struct MedicationHistoryView: View {
 							.swipeActions(edge: .trailing) {
 								Button {
 									editingEntryEvent = event
-									editingEntryDate = event.date
-									editingEntryAmount = event.dose?.amount ?? 1.0
-									editingEntryUnit = event.dose?.unit ?? .unit
 								} label: {
 									Label("Edit", systemSymbol: .pencil)
 								}
@@ -430,12 +417,6 @@ struct MedicationHistoryView: View {
 		}
 
 		return event.medication?.demoDisplayName ?? "Medication"
-	}
-
-	private func entryHasChanges(for event: ANEventConcept) -> Bool {
-		editingEntryDate != event.date ||
-			editingEntryAmount != (event.dose?.amount ?? 1.0) ||
-			editingEntryUnit != (event.dose?.unit ?? .unit)
 	}
 
 	private var mutationErrorPresented: Binding<Bool> {
@@ -825,181 +806,9 @@ struct MedicationHistoryView: View {
 
 		}
 		.sheet(item: $editingEntryEvent) { event in
-			NavigationStack {
-				Form {
-					if let message = viewModel.mutationError {
-						Section("Update Incomplete") {
-							Text(message).font(.customFont(fontFamily, style: .body))
-						}
-					}
-					Section(header: Text("Dose Entry Details").font(.customFont(fontFamily, style: .subheadline))) {
-						HStack {
-							Text("Medication")
-							Spacer()
-							if let eventMedication = event.medication {
-								let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-								let medication = currentMedication ?? eventMedication
-								Text(medication.demoDisplayName)
-									.demoNameRedacted()
-									.foregroundStyle(.secondary)
-									.noTruncate()
-							}
-						}
-
-						VStack(alignment: .leading, spacing: rowSpacing) {
-							Text("Dose Amount")
-								.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-
-							HStack(spacing: rowSpacing) {
-								Button(action: {
-									if editingEntryAmount > 0.5 {
-										editingEntryAmount -= 0.5
-									}
-								}) {
-									Image(systemSymbol: .minusCircleFill)
-										.font(.customFont(fontFamily, style: .title2))
-										.foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
-										.frame(minWidth: 44, minHeight: 44)
-								}
-								.buttonStyle(.borderless)
-								.accessibilityLabel("Decrease dose amount")
-								.accessibilityHint("Decrease by 0.5 \(editingEntryUnit.displayName)")
-								.disabled(editingEntryAmount <= 0.5)
-
-								VStack(spacing: sectionHeaderSpacing) {
-									Text("\(editingEntryAmount, specifier: "%.1f")")
-										.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-										.noTruncate()
-										.contentTransition(.numericText())
-
-									Text(editingEntryUnit.displayName)
-										.font(.customFont(fontFamily, style: .caption))
-										.foregroundStyle(.secondary)
-										.textCase(.uppercase)
-										.noTruncate()
-								}
-								.frame(minWidth: 80)
-
-								Button(action: {
-									if editingEntryAmount < 100 {
-										editingEntryAmount += 0.5
-									}
-								}) {
-									Image(systemSymbol: .plusCircleFill)
-										.font(.customFont(fontFamily, style: .title2))
-										.foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
-										.frame(minWidth: 44, minHeight: 44)
-								}
-								.buttonStyle(.borderless)
-								.accessibilityLabel("Increase dose amount")
-								.accessibilityHint("Increase by 0.5 \(editingEntryUnit.displayName)")
-								.disabled(editingEntryAmount >= 100)
-							}
-							.frame(maxWidth: .infinity)
-
-							ScrollView(.horizontal, showsIndicators: false) {
-								HStack(spacing: entrySpacing) {
-									ForEach(ANUnitConcept.allCases, id: \.self) { unit in
-										Button(action: {
-											withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-												editingEntryUnit = unit
-											}
-										}) {
-											Text(unit.displayName)
-												.font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
-												.padding(.horizontal, rowSpacing)
-												.padding(.vertical, entrySpacing)
-												.frame(minHeight: 44)
-												.background(
-													Capsule()
-														.fill(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonBackground : Color.secondary.opacity(0.1))
-												)
-												.foregroundStyle(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
-										}
-										.buttonStyle(.borderless)
-										.accessibilityAddTraits(editingEntryUnit == unit ? [.isSelected] : [])
-									}
-								}
-							}
-						}
-
-						DatePicker(
-							"Time",
-							selection: $editingEntryDate,
-							displayedComponents: [.date, .hourAndMinute]
-						)
-					}
-
-					Section {
-						Button(role: .destructive) {
-							if let event = editingEntryEvent {
-								Task {
-									if await viewModel.deleteEvent(event) {
-										editingEntryEvent = nil
-									}
-								}
-							}
-						} label: {
-							Label("Delete Entry", systemSymbol: .trash)
-								.frame(maxWidth: .infinity)
-								.foregroundStyle(.red)
-						}
-						.disabled(viewModel.isMutating)
-					}
-				}
-				.font(.customFont(fontFamily, style: .body))
-				.disabled(viewModel.isMutating)
-				.customNavigationTitle("Edit Entry")
-				.toolbar {
-					ToolbarItem(placement: .cancellationAction) {
-						Button {
-							if entryHasChanges(for: event) {
-								showDiscardEntryChanges = true
-							} else {
-								editingEntryEvent = nil
-							}
-						} label: {
-							Image(systemSymbol: .xmark)
-						}
-						.accessibilityLabel("Close entry editor")
-						.disabled(viewModel.isMutating)
-					}
-					ToolbarItem(placement: .confirmationAction) {
-						Button {
-							if let event = editingEntryEvent {
-								Task {
-									// Update the event with new date, dose amount, and unit
-									let saved = await viewModel.updateEvent(
-										event,
-										newDate: editingEntryDate,
-										newAmount: editingEntryAmount,
-										newUnit: editingEntryUnit
-									)
-									if saved {
-										editingEntryEvent = nil
-									}
-								}
-							}
-						} label: {
-							Image(systemSymbol: .checkmark)
-						}
-						.accessibilityLabel("Save entry changes")
-						.disabled(viewModel.isMutating)
-					}
-				}
-				.tint(.accent)
-				.confirmationDialog("Discard entry changes?", isPresented: $showDiscardEntryChanges, titleVisibility: .visible) {
-					Button("Discard Changes", role: .destructive) { editingEntryEvent = nil }
-					Button("Keep Editing", role: .cancel) {}
-				}
+			HistoryEntryEditor(event: event, viewModel: viewModel) {
+				editingEntryEvent = nil
 			}
-			.dynamicDetent()
-			.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
-				Button("OK", role: .cancel) { viewModel.mutationError = nil }
-			} message: {
-				Text(viewModel.mutationError ?? "Review History before trying again.")
-			}
-			.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
 		}
 		.alert("Couldn’t Update History", isPresented: Binding(
 			get: { viewModel.mutationError != nil && editingEvent == nil && editingEntryEvent == nil },
@@ -1009,6 +818,225 @@ struct MedicationHistoryView: View {
 		} message: {
 			Text(viewModel.mutationError ?? "Review History before trying again.")
 		}
+	}
+}
+
+
+/// Edit state belongs to this presentation and starts from its exact saved event.
+/// Separate parent state can otherwise be captured before the first sheet renders.
+private struct HistoryEntryEditor: View {
+	let event: ANEventConcept
+	@ObservedObject var viewModel: MedicationHistoryViewModel
+	let onDismiss: () -> Void
+
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@State private var editingEntryDate: Date
+	@State private var editingEntryAmount: Double
+	@State private var editingEntryUnit: ANUnitConcept
+	@State private var showDiscardEntryChanges = false
+
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var entrySpacing: CGFloat = 8
+	@ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
+
+	init(event: ANEventConcept, viewModel: MedicationHistoryViewModel, onDismiss: @escaping () -> Void) {
+		self.event = event
+		self.viewModel = viewModel
+		self.onDismiss = onDismiss
+		_editingEntryDate = State(initialValue: event.date)
+		_editingEntryAmount = State(initialValue: event.dose?.amount ?? 1.0)
+		_editingEntryUnit = State(initialValue: event.dose?.unit ?? .unit)
+	}
+
+	private func entryHasChanges(for event: ANEventConcept) -> Bool {
+		editingEntryDate != event.date ||
+			editingEntryAmount != (event.dose?.amount ?? 1.0) ||
+			editingEntryUnit != (event.dose?.unit ?? .unit)
+	}
+
+	private var mutationErrorPresented: Binding<Bool> {
+		Binding(
+			get: { viewModel.mutationError != nil },
+			set: { if !$0 { viewModel.mutationError = nil } }
+		)
+	}
+
+	var body: some View {
+		NavigationStack {
+			Form {
+				if let message = viewModel.mutationError {
+					Section("Update Incomplete") {
+						Text(message).font(.customFont(fontFamily, style: .body))
+					}
+				}
+				Section(header: Text("Dose Entry Details").font(.customFont(fontFamily, style: .subheadline))) {
+					HStack {
+						Text("Medication")
+						Spacer()
+						if let eventMedication = event.medication {
+							let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+							let medication = currentMedication ?? eventMedication
+							Text(medication.demoDisplayName)
+								.demoNameRedacted()
+								.foregroundStyle(.secondary)
+								.noTruncate()
+						}
+					}
+
+					VStack(alignment: .leading, spacing: rowSpacing) {
+						Text("Dose Amount")
+							.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+
+						HStack(spacing: rowSpacing) {
+							Button(action: {
+								if editingEntryAmount > 0.5 {
+									editingEntryAmount -= 0.5
+								}
+							}) {
+								Image(systemSymbol: .minusCircleFill)
+									.font(.customFont(fontFamily, style: .title2))
+									.foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.frame(minWidth: 44, minHeight: 44)
+							}
+							.buttonStyle(.borderless)
+							.accessibilityLabel("Decrease dose amount")
+							.accessibilityHint("Decrease by 0.5 \(editingEntryUnit.displayName)")
+							.disabled(editingEntryAmount <= 0.5)
+
+							VStack(spacing: sectionHeaderSpacing) {
+								Text(editingEntryAmount.formattedAmount)
+									.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+									.noTruncate()
+									.contentTransition(.numericText())
+
+								Text(editingEntryUnit.displayName)
+									.font(.customFont(fontFamily, style: .caption))
+									.foregroundStyle(.secondary)
+									.textCase(.uppercase)
+									.noTruncate()
+							}
+							.frame(minWidth: 80)
+
+							Button(action: {
+								if editingEntryAmount < 100 {
+									editingEntryAmount += 0.5
+								}
+							}) {
+								Image(systemSymbol: .plusCircleFill)
+									.font(.customFont(fontFamily, style: .title2))
+									.foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.frame(minWidth: 44, minHeight: 44)
+							}
+							.buttonStyle(.borderless)
+							.accessibilityLabel("Increase dose amount")
+							.accessibilityHint("Increase by 0.5 \(editingEntryUnit.displayName)")
+							.disabled(editingEntryAmount >= 100)
+						}
+						.frame(maxWidth: .infinity)
+
+						ScrollView(.horizontal, showsIndicators: false) {
+							HStack(spacing: entrySpacing) {
+								ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+									Button(action: {
+										withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
+											editingEntryUnit = unit
+										}
+									}) {
+										Text(unit.displayName)
+											.font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
+											.padding(.horizontal, rowSpacing)
+											.padding(.vertical, entrySpacing)
+											.frame(minHeight: 44)
+											.background(
+												Capsule()
+													.fill(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonBackground : Color.secondary.opacity(0.1))
+											)
+											.foregroundStyle(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
+									}
+									.buttonStyle(.borderless)
+									.accessibilityAddTraits(editingEntryUnit == unit ? [.isSelected] : [])
+								}
+							}
+						}
+					}
+
+					DatePicker(
+						"Time",
+						selection: $editingEntryDate,
+						displayedComponents: [.date, .hourAndMinute]
+					)
+				}
+
+				Section {
+					Button(role: .destructive) {
+						Task {
+							if await viewModel.deleteEvent(event) {
+								onDismiss()
+							}
+						}
+					} label: {
+						Label("Delete Entry", systemSymbol: .trash)
+							.frame(maxWidth: .infinity)
+							.foregroundStyle(.red)
+					}
+					.disabled(viewModel.isMutating)
+				}
+			}
+			.font(.customFont(fontFamily, style: .body))
+			.disabled(viewModel.isMutating)
+			.customNavigationTitle("Edit Entry")
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button {
+						if entryHasChanges(for: event) {
+							showDiscardEntryChanges = true
+						} else {
+							onDismiss()
+						}
+					} label: {
+						Image(systemSymbol: .xmark)
+					}
+					.accessibilityLabel("Close entry editor")
+					.disabled(viewModel.isMutating)
+				}
+				ToolbarItem(placement: .confirmationAction) {
+					Button {
+						guard entryHasChanges(for: event) else {
+							onDismiss()
+							return
+						}
+						Task {
+							let saved = await viewModel.updateEvent(
+								event,
+								newDate: editingEntryDate,
+								newAmount: editingEntryAmount,
+								newUnit: editingEntryUnit
+							)
+							if saved {
+								onDismiss()
+							}
+						}
+					} label: {
+						Image(systemSymbol: .checkmark)
+					}
+					.accessibilityLabel("Save entry changes")
+					.disabled(viewModel.isMutating)
+				}
+			}
+			.tint(.accent)
+			.confirmationDialog("Discard entry changes?", isPresented: $showDiscardEntryChanges, titleVisibility: .visible) {
+				Button("Discard Changes", role: .destructive) { onDismiss() }
+				Button("Keep Editing", role: .cancel) {}
+			}
+		}
+		.dynamicDetent()
+		.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
+			Button("OK", role: .cancel) { viewModel.mutationError = nil }
+		} message: {
+			Text(viewModel.mutationError ?? "Review History before trying again.")
+		}
+		.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
 	}
 }
 
