@@ -22,10 +22,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 			actionIdentifier: response.actionIdentifier,
 			requestIdentifier: notification.request.identifier,
 			categoryIdentifier: notification.request.content.categoryIdentifier,
-			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String,
-			deliveredAt: notification.date
+			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String
 		) else { return }
 		await MainActor.run {
+			self.logger.info("Handling medication notification action")
 			MedicationNotificationActionDispatcher(navigationManager: .shared, removeDelivered: { identifier in
 				UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [identifier])
 			}).handle(action)

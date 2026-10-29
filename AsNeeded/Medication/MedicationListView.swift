@@ -198,21 +198,6 @@ struct MedicationListView: View {
                     }
 
                 }
-				.task(id: "notification|\(navigationManager.pendingNotificationActions.first?.id ?? "")|\(scenePhase)|\(viewModel.logMedication?.id.uuidString ?? "")|\(showLogDosePicker)|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
-					guard scenePhase == .active, let action = navigationManager.pendingNotificationActions.first,
-						viewModel.logMedication == nil, !showLogDosePicker, viewModel.editMedication == nil,
-						!viewModel.showAddSheet, !viewModel.showSupportView else { return }
-					do {
-						let outcome = try await viewModel.handleNotificationAction(action)
-						if outcome == .unavailable { navigationManager.showWidgetUnavailable = true }
-					} catch is CancellationError {
-						return // Preserve the queued response until the app is active and ready again.
-					} catch {
-						guard !Task.isCancelled else { return }
-						quickLogError = true
-					}
-					navigationManager.pendingNotificationActions.removeAll { $0.id == action.id }
-				}
 				.task(id: "chooser|\(navigationManager.shouldShowLogDoseChooser)|\(viewModel.logMedication?.id.uuidString ?? "")|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
 					guard navigationManager.shouldShowLogDoseChooser, viewModel.logMedication == nil,
 						viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
@@ -222,6 +207,7 @@ struct MedicationListView: View {
 					showLogDosePicker = true
 				}
 				.task(id: "\(navigationManager.pendingLogMedicationID ?? "")|\(viewModel.logMedication?.id.uuidString ?? "")|\(scenePhase)|\(showLogDosePicker)|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
+					guard scenePhase == .active else { return }
 					if let id = navigationManager.pendingLogMedicationID, viewModel.logMedication?.id.uuidString == id {
 						navigationManager.clearLogDoseNavigation()
 						return
@@ -232,7 +218,10 @@ struct MedicationListView: View {
 						guard !Task.isCancelled, navigationManager.pendingLogMedicationID == id else { return }
 						let medication = LogDosePickerModel.medication(forDeepLink: id, from: snapshot.medications)
 						navigationManager.clearLogDoseNavigation()
-						guard let medication else { return }
+						guard let medication else {
+							navigationManager.showWidgetUnavailable = true
+							return
+						}
 						navigationPath = NavigationPath()
 						viewModel.logMedication = medication
 					} catch {
