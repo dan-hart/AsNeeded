@@ -1,76 +1,45 @@
 # Privacy Policy
 
-## Complete Privacy - No Data Collection
+Updated October 29, 2026.
 
-**AsNeeded does not collect, transmit, or store any of your data outside of your device.**
+## Medication records
 
-### Local Storage
+AsNeeded stores medication names, dose history, quantities, reminders, notes and preferences in local app storage. Dose guidance and trends are calculated on the device. The app does not upload these records to an AsNeeded server or send medication history to RevenueCat.
 
-- All medication information stays on YOUR device only
-- No cloud servers or external databases
-- No internet connection required
-- Your data never leaves your phone
+Widgets read the app’s shared local storage. If you use the Watch app, selected medication information and dose events transfer between your paired devices through Apple’s WatchConnectivity service. Notification content follows your notification-name privacy setting.
 
-### We Don't Collect Anything
+No AsNeeded account is required. All tracking features are free. The app has no advertisements or advertising tracking. Local usage counters support app behavior, such as review prompts; they are not sent to a remote medication-usage analytics service.
 
-- **No analytics or tracking**
-- **No user accounts or registration**
-- **No data transmission to us or third parties**
-- **No advertisements or marketing data**
-- **No crash reports or usage statistics**
+## Optional medication search
 
-### Your Data Stays Yours
+Medication lookup sends the search text you enter to the National Library of Medicine’s NIH RxNorm service. Searches can run as you type, even if you do not select a result. It does not include your saved dose history, notes or schedules. You can enter a medication manually without selecting a search result.
 
-- **Medication Information**: Names, dosages, schedules, and notes remain private on your device
-- **Usage Records**: Time stamps and medication history stored locally only
-- **Settings**: All preferences saved on your device
+Search requires a network connection. Requests also expose ordinary network information, such as your IP address, to the receiving service. See [RxNav terms](https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html) and [NLM privacy information](https://www.nlm.nih.gov/privacy.html).
 
-### No Cloud Syncing
+This product uses publicly available NLM/NIH data. NLM is not responsible for this product and does not endorse or recommend it.
 
-AsNeeded does not use any cloud synchronization services. Your data exists only on the device where you enter it. If you delete the app, your data is permanently removed.
+## Optional support purchases
 
-### Third-Party Services
+You can support development through optional tips or recurring support subscriptions. These do not unlock tracking features. Apple processes payments; AsNeeded does not receive your payment-card details.
 
-#### NIH RxNorm API
-AsNeeded uses the National Institutes of Health (NIH) RxNorm API solely for medication name lookup and standardization. 
+The app initializes RevenueCat to load support products, check purchase status and restore purchases. RevenueCat processes an SDK-generated anonymous app user ID, purchase and subscription records, and technical app/device information needed for this service. Initialization can make network requests even if you have not purchased anything. The app does not supply your medication records or a custom account identity to RevenueCat.
 
-- **What is sent**: Only medication names you type when searching
-- **What is NOT sent**: Your personal information, dosages, schedules, or usage history
-- **Purpose**: To help identify and standardize medication names for accuracy
-- **Optional**: You can use the app without this feature
+See [RevenueCat’s privacy policy](https://www.revenuecat.com/privacy) and [Apple’s privacy policy](https://www.apple.com/legal/privacy/). Manage or cancel recurring support through your Apple subscriptions settings. Deleting AsNeeded does not cancel a subscription.
 
-**Important Disclaimer**: This product uses publicly available data from the U.S. National Library of Medicine (NLM), National Institutes of Health, Department of Health and Human Services; NLM is not responsible for the product and does not endorse or recommend this or any other product.
+## Exports, backups and feedback
 
-RxNorm API Terms: https://lhncbc.nlm.nih.gov/RxNav/TermsofService.html
+You choose whether to export records, create a clinician report, share technical logs or send feedback. A recipient receives the content you choose to share. Review files and attachments before sending them.
 
-No other third-party services are used that could access your personal health information.
+Automatic backups are optional and save to a folder you select. If you choose iCloud Drive or another cloud-backed folder, its provider may upload those backup files under your account. This is separate from app-managed medication sync, which AsNeeded does not provide. Device backups may also include app data according to your Apple backup settings.
 
-### Data Deletion
+Export redaction options remove the selected information from the exported copy. Redaction does not encrypt a file or make every remaining field anonymous. Notes can contain identifying information; redact them separately when appropriate. Demo Mode only changes on-screen presentation and does not redact exports, saved data, notifications or widgets.
 
-You can delete all app data at any time through the app settings or by uninstalling the application.
+## Retention and deletion
 
-### Changes to This Policy
+You can delete medications and dose history in the app or remove all medication records in Data Management. Previously exported files, selected-folder backups, files shared with other people and Apple device backups are separate copies; manage them at their destinations. Uninstalling removes the app’s local container but does not withdraw files already shared or cancel support subscriptions.
 
-We may update this privacy policy from time to time. Any changes will be reflected in the app and in this document.
+Apple and RevenueCat retain commerce records according to their policies and applicable requirements. Use the app’s Support/Feedback options for privacy questions, and avoid including medication records unless you intend to share them.
 
-### Contact
+## Protecting your data
 
-If you have questions about this privacy policy or the app's data practices, please contact us through the app's support channels.
-
-## Your Rights
-
-You have complete control over your data:
-- Access your data at any time within the app
-- Export your data for personal use
-- Delete your data permanently
-- Opt out of any optional features
-
-## Children's Privacy
-
-AsNeeded does not knowingly collect personal information from children under 13. The app is intended for personal medication management under appropriate supervision.
-
-## Security
-
-We implement appropriate security measures to protect your information within the app. However, no method of electronic storage is 100% secure, and we recommend keeping your device protected with a passcode or biometric authentication.
-
-Last Updated: September 2025
+Use a device passcode or biometric protection and review notification previews, backup destinations and file-sharing permissions. Local storage and redaction are not a guarantee against every form of unauthorized access. AsNeeded does not sell medication records or use them for advertising.
