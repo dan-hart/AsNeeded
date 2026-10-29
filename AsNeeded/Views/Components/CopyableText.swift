@@ -74,10 +74,19 @@ struct CopyableText: View {
 					}
 			)
 			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
-			.accessibilityHint(onTap == nil ? "Long press to copy name to clipboard" : "Tap to view medication details. Long press to copy name to clipboard")
+			.accessibilityHint(onTap == nil ? "Activate to copy name to clipboard" : "Activate to view medication details. Use Copy name to copy to clipboard")
 			.accessibilityAddTraits(.isButton)
-			.accessibilityAction { onTap?() }
+			.accessibilityAction { Self.activate(onTap: onTap, copy: copyToClipboard) }
 			.accessibilityAction(named: "Copy name") { copyToClipboard() }
+	}
+
+	/// Assistive activation must always perform the control's primary action.
+	static func activate(onTap: (() -> Void)?, copy: () -> Void) {
+		if let onTap {
+			onTap()
+		} else {
+			copy()
+		}
 	}
 
 	// MARK: - Private Methods

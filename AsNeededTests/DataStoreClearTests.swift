@@ -8,6 +8,21 @@ import Testing
 
 @MainActor
 struct DataStoreClearTests {
+	private let preferences: IsolatedTestPreferences
+	private let navigation: NavigationManager
+	private var defaults: UserDefaults { preferences.defaults }
+
+	init() throws {
+		let preferences = try IsolatedTestPreferences()
+		self.preferences = preferences
+		navigation = NavigationManager(defaults: preferences.defaults)
+	}
+
+	private func makeStore() -> DataStore {
+		DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: defaults, defaultsDomainName: preferences.name, navigationManager: navigation)
+	}
+
 	@Test("Reset preserves device storage version and legacy recovery paths")
 	func resetPreservesStorageRecoveryMetadata() throws {
 		let suite = "DataStoreClearTests.recovery.\(UUID().uuidString)"
@@ -18,24 +33,24 @@ struct DataStoreClearTests {
 			#expect(UserDefaultsKeys.keysToSkip.contains(key))
 			defaults.set("recovery metadata", forKey: key)
 		}
-		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: nil)
+		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: nil, navigationManager: navigation)
 		for key in recoveryKeys {
 			#expect(defaults.string(forKey: key) == "recovery metadata")
 		}
 	}
 
-	private func makeDefaults(suiteName: String) -> UserDefaults {
-		let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+	private func makeDefaults(suiteName: String) throws -> UserDefaults {
+		let defaults = try #require(UserDefaults(suiteName: suiteName))
 		defaults.removePersistentDomain(forName: suiteName)
 		return defaults
 	}
 
 	@Test("resetAppSettings clears mirrored safety profiles from shared defaults")
-	func resetAppSettingsClearsMirroredSafetyProfiles() {
+	func resetAppSettingsClearsMirroredSafetyProfiles() throws {
 		let defaultsSuite = "DataStoreClearTests.defaults.\(UUID().uuidString)"
 		let sharedSuite = "DataStoreClearTests.shared.\(UUID().uuidString)"
-		let defaults = makeDefaults(suiteName: defaultsSuite)
-		let sharedDefaults = makeDefaults(suiteName: sharedSuite)
+		let defaults = try makeDefaults(suiteName: defaultsSuite)
+		let sharedDefaults = try makeDefaults(suiteName: sharedSuite)
 		defer {
 			defaults.removePersistentDomain(forName: defaultsSuite)
 			sharedDefaults.removePersistentDomain(forName: sharedSuite)
@@ -53,7 +68,7 @@ struct DataStoreClearTests {
 		defaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
 		sharedDefaults.set(encoded, forKey: UserDefaultsKeys.medicationSafetyProfiles)
 
-		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults)
+		DataStore.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults, navigationManager: navigation)
 
 		#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
 		#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
@@ -62,7 +77,7 @@ struct DataStoreClearTests {
     @Test("clearAllData removes all AppStorage medication selections")
     func clearAllDataRemovesAppStorageSelections() async throws {
         // Given: Create test store
-        let store = DataStore(testIdentifier: "cleartest")
+        let store = makeStore()
 
         // Create and add test medications
         let med1 = ANMedicationConcept(clinicalName: "Test Med 1")
@@ -81,12 +96,12 @@ struct DataStoreClearTests {
         try await store.addEvent(event1)
 
         // Set AppStorage values to simulate user selections
-        UserDefaults.standard.set(med1.id.uuidString, forKey: "historySelectedMedicationID")
-        UserDefaults.standard.set(med2.id.uuidString, forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.set([med1.id.uuidString, med2.id.uuidString], forKey: "medicationOrder")
+        defaults.set(med1.id.uuidString, forKey: "historySelectedMedicationID")
+        defaults.set(med2.id.uuidString, forKey: "trendsSelectedMedicationID")
+        defaults.set([med1.id.uuidString, med2.id.uuidString], forKey: "medicationOrder")
 
         // Set navigation target
-        NavigationManager.shared.historyTargetMedicationID = med1.id.uuidString
+        navigation.historyTargetMedicationID = med1.id.uuidString
 
         // When: Clear all data
         try await store.clearAllData()
@@ -94,16 +109,16 @@ struct DataStoreClearTests {
         // Then: Verify all data and AppStorage values are cleared
         #expect(store.medications.isEmpty)
         #expect(store.events.isEmpty)
-        #expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == nil)
-        #expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == nil)
-        #expect(UserDefaults.standard.array(forKey: "medicationOrder") == nil)
-        #expect(NavigationManager.shared.historyTargetMedicationID == nil)
+        #expect(defaults.string(forKey: "historySelectedMedicationID") == nil)
+        #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil)
+        #expect(defaults.array(forKey: "medicationOrder") == nil)
+        #expect(navigation.historyTargetMedicationID == nil)
     }
 
     @Test("clearAllData properly synchronizes UserDefaults")
     func clearAllDataSynchronizesUserDefaults() async throws {
         // Given: Create test store
-        let store = DataStore(testIdentifier: "synctest")
+        let store = makeStore()
 
         // Create and add test medication
         let med = ANMedicationConcept(clinicalName: "Sync Test Med")
@@ -111,9 +126,9 @@ struct DataStoreClearTests {
 
         // Set multiple AppStorage values
         let medIDString = med.id.uuidString
-        UserDefaults.standard.set(medIDString, forKey: "historySelectedMedicationID")
-        UserDefaults.standard.set(medIDString, forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.set([medIDString], forKey: "medicationOrder")
+        defaults.set(medIDString, forKey: "historySelectedMedicationID")
+        defaults.set(medIDString, forKey: "trendsSelectedMedicationID")
+        defaults.set([medIDString], forKey: "medicationOrder")
 
         // When: Clear all data
         try await store.clearAllData()
@@ -122,9 +137,9 @@ struct DataStoreClearTests {
 
 
         // Then: Re-read values to ensure they're actually cleared
-        let historyID = UserDefaults.standard.string(forKey: "historySelectedMedicationID")
-        let trendsID = UserDefaults.standard.string(forKey: "trendsSelectedMedicationID")
-        let order = UserDefaults.standard.array(forKey: "medicationOrder")
+        let historyID = defaults.string(forKey: "historySelectedMedicationID")
+        let trendsID = defaults.string(forKey: "trendsSelectedMedicationID")
+        let order = defaults.array(forKey: "medicationOrder")
 
         #expect(historyID == nil)
         #expect(trendsID == nil)
@@ -138,45 +153,45 @@ struct DataStoreClearTests {
     @Test("clearAllData handles missing AppStorage values gracefully")
     func clearAllDataHandlesMissingValues() async throws {
         // Given: Create test store with no pre-existing AppStorage values
-        let store = DataStore(testIdentifier: "missingtest")
+        let store = makeStore()
 
         // Add a medication but don't set any AppStorage values
         let med = ANMedicationConcept(clinicalName: "Missing Test Med")
         try await store.addMedication(med)
 
         // Ensure AppStorage values don't exist
-        UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "medicationOrder")
+        defaults.removeObject(forKey: "historySelectedMedicationID")
+        defaults.removeObject(forKey: "trendsSelectedMedicationID")
+        defaults.removeObject(forKey: "medicationOrder")
 
         // When: Clear all data (should not throw even with missing values)
         try await store.clearAllData()
 
         // Then: Verify everything is cleared without errors
         #expect(store.medications.isEmpty)
-        #expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == nil)
-        #expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == nil)
-        #expect(UserDefaults.standard.array(forKey: "medicationOrder") == nil)
+        #expect(defaults.string(forKey: "historySelectedMedicationID") == nil)
+        #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil)
+        #expect(defaults.array(forKey: "medicationOrder") == nil)
     }
 
     @Test("clearAllData clears NavigationManager state")
     func clearAllDataClearsNavigationManager() async throws {
         // Given: Create test store
-        let store = DataStore(testIdentifier: "navtest")
+        let store = makeStore()
 
         // Create and add test medication
         let med = ANMedicationConcept(clinicalName: "Nav Test Med")
         try await store.addMedication(med)
 
         // Set NavigationManager state
-        NavigationManager.shared.historyTargetMedicationID = med.id.uuidString
-        NavigationManager.shared.historyTargetDate = Date()
+        navigation.historyTargetMedicationID = med.id.uuidString
+        navigation.historyTargetDate = Date()
 
         // When: Clear all data
         try await store.clearAllData()
 
         // Then: Verify NavigationManager state is cleared
-        #expect(NavigationManager.shared.historyTargetMedicationID == nil)
-        #expect(NavigationManager.shared.historyTargetDate == nil)
+        #expect(navigation.historyTargetMedicationID == nil)
+        #expect(navigation.historyTargetDate == nil)
     }
 }

@@ -12,12 +12,14 @@ import Testing
 struct DataStoreTests {
     private var dataStore: DataStore
 	private let preferences: IsolatedTestPreferences
+	private let navigation: NavigationManager
 	private var defaults: UserDefaults { preferences.defaults }
 
     init() async throws {
         // Create test instance with isolated storage
         preferences = try IsolatedTestPreferences()
-        dataStore = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name)
+		navigation = NavigationManager(defaults: preferences.defaults)
+        dataStore = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name, navigationManager: navigation)
         // Clear any existing test data
         try await dataStore.clearAllData()
         // Also clear any test UserDefaults
@@ -27,7 +29,7 @@ struct DataStoreTests {
 
 
         // Clear NavigationManager state
-        NavigationManager.shared.historyTargetMedicationID = nil
+        navigation.historyTargetMedicationID = nil
     }
 
     // MARK: - Medication Tests
@@ -160,16 +162,16 @@ struct DataStoreTests {
         try await dataStore.addMedication(medication)
 
         // Set as navigation target
-        NavigationManager.shared.historyTargetMedicationID = medication.id.uuidString
+        navigation.historyTargetMedicationID = medication.id.uuidString
 
         // Verify it was set
-        #expect(NavigationManager.shared.historyTargetMedicationID == medication.id.uuidString)
+        #expect(navigation.historyTargetMedicationID == medication.id.uuidString)
 
         // When
         try await dataStore.deleteMedication(medication)
 
         // Then
-        #expect(NavigationManager.shared.historyTargetMedicationID == nil,
+        #expect(navigation.historyTargetMedicationID == nil,
                 "Navigation target should be cleared when medication is deleted")
     }
 

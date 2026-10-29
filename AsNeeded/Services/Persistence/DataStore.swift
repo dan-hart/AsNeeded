@@ -14,6 +14,7 @@ public final class DataStore {
 	private let isTestStore: Bool
 	private let storageDirectory: URL
 	private let defaults: UserDefaults
+	private let navigationManager: NavigationManager
 	private let sharedDefaults: UserDefaults?
 	private let defaultsDomainName: String
 	private let sharedDefaultsDomainName: String
@@ -44,6 +45,7 @@ public final class DataStore {
 		isTestStore = false
 		reloadWidgets = { WidgetCenter.shared.reloadAllTimelines() }
 		defaults = .standard
+		navigationManager = .shared
 		defaultsDomainName = Bundle.main.bundleIdentifier ?? StorageConstants.Legacy.bundleIdentifier
 		sharedDefaultsDomainName = StorageConstants.appGroupIdentifier
 		sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
@@ -138,11 +140,12 @@ public final class DataStore {
 		self.init(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("AsNeededTests-\(UUID().uuidString)"))
 	}
 
-	init(storageDirectory: URL, defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil, defaultsDomainName: String? = nil, sharedDefaultsDomainName: String? = nil, transactionFault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, notificationCleanup: @escaping @MainActor (Set<UUID>) async -> Void = { _ in }, reminderAcknowledgement: @escaping @MainActor (UUID) async -> Void = { _ in }, widgetReload: @escaping () -> Void = {}) {
+	init(storageDirectory: URL, defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil, defaultsDomainName: String? = nil, sharedDefaultsDomainName: String? = nil, navigationManager: NavigationManager = .shared, transactionFault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, notificationCleanup: @escaping @MainActor (Set<UUID>) async -> Void = { _ in }, reminderAcknowledgement: @escaping @MainActor (UUID) async -> Void = { _ in }, widgetReload: @escaping () -> Void = {}) {
 		isTestStore = true
 		reloadWidgets = widgetReload
 		self.storageDirectory = storageDirectory
 		self.defaults = defaults
+		self.navigationManager = navigationManager
 		self.sharedDefaults = sharedDefaults
 		self.defaultsDomainName = defaultsDomainName ?? Bundle.main.bundleIdentifier ?? StorageConstants.Legacy.bundleIdentifier
 		self.sharedDefaultsDomainName = sharedDefaultsDomainName ?? StorageConstants.appGroupIdentifier
@@ -335,8 +338,8 @@ public final class DataStore {
             }
 
             // Clear from navigation manager if it matches
-            if NavigationManager.shared.historyTargetMedicationID == deletedIDString {
-                NavigationManager.shared.historyTargetMedicationID = nil
+            if navigationManager.historyTargetMedicationID == deletedIDString {
+                navigationManager.historyTargetMedicationID = nil
                 logger.info("Cleared deleted medication from navigation target")
             }
 
@@ -586,7 +589,7 @@ public final class DataStore {
 	public func resetAppSettings() async {
 		logger.warning("Resetting app settings to defaults")
 		await MainActor.run {
-			Self.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults)
+			Self.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults, navigationManager: navigationManager)
 			reloadWidgets()
 			logger.info("Successfully reset all app settings to defaults")
 		}
