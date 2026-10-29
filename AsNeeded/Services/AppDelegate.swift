@@ -22,29 +22,28 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 			actionIdentifier: response.actionIdentifier,
 			requestIdentifier: notification.request.identifier,
 			categoryIdentifier: notification.request.content.categoryIdentifier,
-			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String
+			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String,
+			deliveredAt: notification.date
 		)
 		Self.finishNotificationResponse(action, handleAction: { action in
 			self.logger.info("Handling medication notification action")
-			MedicationNotificationActionDispatcher(navigationManager: .shared, removeDelivered: { identifier in
-				UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [identifier])
-			}).handle(action)
+			await MedicationNotificationResponseHandler.live.handle(action)
 		}, completionHandler: completionHandler)
 	}
 
 	nonisolated static func finishNotificationResponse(_ action: MedicationNotificationAction?,
-		handleAction: @escaping @MainActor @Sendable (MedicationNotificationAction) -> Void,
+		handleAction: @escaping @MainActor @Sendable (MedicationNotificationAction) async -> Void,
 		completionHandler: @escaping @Sendable () -> Void) {
 		// UIKit may update its scene snapshot synchronously from this completion.
 		// Keep it on main too; an async delegate thunk completes on a background executor.
 		Task { @MainActor in
-			if let action { handleAction(action) }
+			if let action { await handleAction(action) }
 			completionHandler()
 		}
 	}
 
-	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-		[.banner, .list, .sound]
+	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping @Sendable (UNNotificationPresentationOptions) -> Void) {
+		Task { @MainActor in completionHandler([.banner, .list, .sound]) }
 	}
 
 	// MARK: - Quick Actions

@@ -212,33 +212,44 @@ public final class DataStore {
 	}
 
 	public func recordDose(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
+		_ = try await recordDose(shouldRecordForReview: shouldRecordForReview, makeEvent: { _ in event })
+	}
+
+	/// Resolve notification targets and guidance under the same lock as dose/stock mutation.
+	@discardableResult
+	func recordDose(shouldRecordForReview: Bool, makeEvent: (MedicationPersistenceSnapshot) throws -> ANEventConcept) async throws -> ANEventConcept {
 		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
 		var insertedNewDose = false
+		var savedEvent: ANEventConcept?
 		let didSave = try await transactions.perform(
 			preferenceKeys: ["application": [UserDefaultsKeys.lastLoggedDoseEventIDs]],
 			change: { snapshot in
+				let event = try makeEvent(snapshot)
+				savedEvent = event
 				insertedNewDose = !snapshot.events.contains { $0.id == event.id }
 				try snapshot.recordDose(event)
 			}, applyPreferences: { snapshot in
 				// The journal restores recording order with the records if commit fails.
 				// Replaying an older operation must never change recording recency.
-				if insertedNewDose {
+				if insertedNewDose, let event = savedEvent {
 					let validIDs = Set(snapshot.events.map { $0.id.uuidString })
 					let previous = defaults.stringArray(forKey: UserDefaultsKeys.lastLoggedDoseEventIDs) ?? []
 					let order = [event.id.uuidString] + previous.filter { $0 != event.id.uuidString && validIDs.contains($0) }
 					defaults.set(order, forKey: UserDefaultsKeys.lastLoggedDoseEventIDs)
 				}
 			})
+		guard let event = savedEvent else { throw PersistenceTransactionError.invalidDose }
 		// A successful retry can finish notification cleanup interrupted after the original commit.
 		if event.eventType == .doseTaken, let medicationID = event.medication?.id {
 			await reminderAcknowledgement(medicationID)
 		}
-		guard didSave, insertedNewDose else { return }
+		guard didSave, insertedNewDose else { return event }
 		await refreshDoseAvailability()
 		if !isTestStore {
 			if shouldRecordForReview { AppReviewManager.shared.recordMedicationEvent() }
 			AutomaticBackupManager.shared.triggerBackup()
 		}
+		return event
 	}
 
 	public func updateEvent(_ event: ANEventConcept) async throws {

@@ -294,7 +294,9 @@ final class NotificationManager: ObservableObject {
 	}
 
 	private static func medicationID(for request: UNNotificationRequest) -> UUID? {
-		guard [MedicationReminderRequest.categoryIdentifier, MedicationAvailabilityNotificationPlanner.categoryIdentifier].contains(request.content.categoryIdentifier) else { return nil }
+		guard [MedicationReminderRequest.categoryIdentifier, MedicationAvailabilityNotificationPlanner.categoryIdentifier,
+			MedicationNotificationAction.confirmationCategoryIdentifier, MedicationNotificationAction.reviewCategoryIdentifier]
+			.contains(request.content.categoryIdentifier) else { return nil }
 		let raw = request.content.userInfo[MedicationReminderRequest.medicationIDKey]
 		return (raw as? UUID) ?? (raw as? String).flatMap(UUID.init(uuidString:))
 	}

@@ -7,6 +7,20 @@ import UserNotifications
 @MainActor
 @Suite("Scheduled reminder reliability", .tags(.service, .notifications, .unit))
 struct ScheduledReminderReliabilityTests {
+	@Test("Deleting medication removes its success and review feedback without touching unrelated categories")
+	func removeFeedback() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanUp() }
+		let success = fixture.request(identifier: "success", category: MedicationNotificationAction.confirmationCategoryIdentifier)
+		let review = fixture.request(identifier: "review", category: MedicationNotificationAction.reviewCategoryIdentifier)
+		let unrelated = fixture.request(identifier: "unrelated", category: "unrelated")
+		fixture.client.pending = [success, review, unrelated]
+		fixture.client.delivered = [success, review, unrelated]
+		await fixture.manager.removeMedicationNotificationArtifacts(for: [fixture.medication.id])
+		#expect(fixture.client.pending.map(\.identifier) == ["unrelated"])
+		#expect(fixture.client.delivered.map(\.identifier) == ["unrelated"])
+	}
+
 	@Test("Equivalent schedules replace instead of duplicating and keep ordinary priority")
 	func stableSchedule() async throws {
 		let fixture = try Fixture()
