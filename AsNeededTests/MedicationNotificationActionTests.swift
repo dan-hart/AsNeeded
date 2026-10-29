@@ -97,4 +97,23 @@ struct MedicationNotificationActionTests {
 	func notificationDelegateSelector() {
 		#expect(AppDelegate().responds(to: NSSelectorFromString("userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:")))
 	}
+
+	@Test("Background notification responses finish on main after routing, including ignored payloads", arguments: [true, false])
+	func responseCompletionOnMain(valid: Bool) async throws {
+		let preferences = try IsolatedTestPreferences()
+		let navigation = NavigationManager(defaults: preferences.defaults)
+		let id = UUID()
+		let responseAction = valid ? try action(medicationID: id) : nil
+		let completedOnMain = await withCheckedContinuation { continuation in
+			Task.detached {
+				AppDelegate.finishNotificationResponse(responseAction, handleAction: { action in
+					MedicationNotificationActionDispatcher(navigationManager: navigation, removeDelivered: { _ in }).handle(action)
+				}, completionHandler: {
+					continuation.resume(returning: Thread.isMainThread)
+				})
+			}
+		}
+		#expect(completedOnMain)
+		#expect(navigation.pendingLogMedicationID == (valid ? id.uuidString : nil))
+	}
 }

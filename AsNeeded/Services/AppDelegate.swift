@@ -16,19 +16,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 		return true
 	}
 
-	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping @Sendable () -> Void) {
 		let notification = response.notification
-		guard let action = MedicationNotificationAction(
+		let action = MedicationNotificationAction(
 			actionIdentifier: response.actionIdentifier,
 			requestIdentifier: notification.request.identifier,
 			categoryIdentifier: notification.request.content.categoryIdentifier,
 			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String
-		) else { return }
-		await MainActor.run {
+		)
+		Self.finishNotificationResponse(action, handleAction: { action in
 			self.logger.info("Handling medication notification action")
 			MedicationNotificationActionDispatcher(navigationManager: .shared, removeDelivered: { identifier in
 				UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [identifier])
 			}).handle(action)
+		}, completionHandler: completionHandler)
+	}
+
+	nonisolated static func finishNotificationResponse(_ action: MedicationNotificationAction?,
+		handleAction: @escaping @MainActor @Sendable (MedicationNotificationAction) -> Void,
+		completionHandler: @escaping @Sendable () -> Void) {
+		// UIKit may update its scene snapshot synchronously from this completion.
+		// Keep it on main too; an async delegate thunk completes on a background executor.
+		Task { @MainActor in
+			if let action { handleAction(action) }
+			completionHandler()
 		}
 	}
 
