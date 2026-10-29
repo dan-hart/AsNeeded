@@ -434,13 +434,9 @@ struct MedicationTrendsView: View {
 			)
 	}
 
-	private var chartAxisStrideDays: Int {
-		switch daysWindow {
-		case ...7: return 2
-		case ...14: return 3
-		case ...30: return 5
-		default: return 15
-		}
+	private var chartAxisLabelCount: Int {
+		if dynamicTypeSize.isAccessibilitySize { return 2 }
+		return dynamicTypeSize >= .xxLarge ? 3 : 4
 	}
 
 	private func visualizationHeader(_ title: String, medication: ANMedicationConcept) -> some View {
@@ -465,6 +461,11 @@ struct MedicationTrendsView: View {
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
+			let labelCount = min(data.count, chartAxisLabelCount)
+			// Keep both ends of the range visible, with evenly spaced dates between them.
+			let axisDates = (0 ..< labelCount).map { index in
+				data[index * (data.count - 1) / max(1, labelCount - 1)].day
+			}
 			VStack(alignment: .leading, spacing: controlsSpacing) {
 				visualizationHeader("Daily Usage", medication: med)
 
@@ -500,11 +501,29 @@ struct MedicationTrendsView: View {
 					}
 				}
 				.chartXAxis {
-					AxisMarks(values: .stride(by: .day, count: chartAxisStrideDays)) { _ in
+					AxisMarks(values: axisDates) { value in
 						AxisGridLine()
 							.foregroundStyle(.secondary.opacity(0.3))
-						AxisValueLabel(format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : daysWindow <= 14 ? .dateTime.weekday(.abbreviated).day() : .dateTime.day().month(.abbreviated))
-							.foregroundStyle(.secondary)
+						AxisValueLabel(
+							anchor: value.index == 0 ? .topLeading : value.index == axisDates.count - 1 ? .topTrailing : .top,
+							collisionResolution: .greedy(minimumSpacing: 12)
+						) {
+							if let date = value.as(Date.self) {
+								Group {
+									if dynamicTypeSize.isAccessibilitySize && daysWindow > 7 {
+										VStack(spacing: 0) {
+											Text(date, format: .dateTime.month(.abbreviated))
+											Text(date, format: .dateTime.day())
+										}
+									} else {
+										Text(date, format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
+									}
+								}
+								.font(.customFont(fontFamily, style: .caption))
+								.foregroundStyle(.secondary)
+								.fixedSize()
+							}
+						}
 					}
 				}
 				.chartYAxis {
