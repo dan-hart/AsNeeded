@@ -1,0 +1,39 @@
+{
+  "background": "#F1D89C",
+  "backgroundSource": "AsNeeded/AppIcon.icon/icon.json fill.solid",
+  "font": "Atkinson Hyperlegible Regular and Bold, bundled TTF outlines; no font substitution",
+  "assets": [
+    {
+      "file": "header.png",
+      "width": 3840,
+      "height": 1646
+    },
+    {
+      "file": "search-results.png",
+      "width": 3840,
+      "height": 2560
+    }
+  ],
+  "format": "Opaque RGB PNG, sRGB",
+  "specification": "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications",
+  "sourceArtwork": "Original AppIcon.icon layers, referenced from assets/ without modifying source files",
+  "status": "Uploaded and assigned to 1.2.0 en-US; images prepare for submission",
+  "appStoreConnect": {
+    "appID": "6714469235",
+    "locale": "en-US",
+    "localizationID": "6560ff30-83fa-42e6-b8fc-9da8b313cebd",
+    "verifiedAt": "2026-10-29",
+    "header": {
+      "imageID": "81800019-036a-8b73-800d-6cd0cbd80a47",
+      "placementID": "b3400019-036a-8b73-8f3e-7d94ca79ffe6",
+      "placementState": "ACTIVE",
+      "imageState": "PREPARE_FOR_SUBMISSION"
+    },
+    "searchResults": {
+      "imageID": "26000019-036a-8b73-801a-8f8c435b2294",
+      "placementID": "0f400019-036a-8b73-8f1f-e5d1816b5f2c",
+      "placementState": "ACTIVE",
+      "imageState": "PREPARE_FOR_SUBMISSION"
+    }
+  }
+}
