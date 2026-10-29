@@ -56,13 +56,19 @@ An unsigned simulator experiment could not access the App Group. Final UI checks
 - Applied accurate description, promotional text, release notes and keyword cleanup; no locale deletions.
 - Completed the missing social-media age-rating answers without changing the medical/health classification.
 - Published the reviewed privacy policy at the existing `develop/PRIVACY.md` URL; served repository content matched the local SHA-256.
-- Uploaded the signed 319 IPA with explicit upgrade, persistence, logging, backup/import, notification, Watch/widget, accessibility and purchase test instructions. Processing/attachment verification is pending below.
+- Uploaded the signed 319 IPA with explicit upgrade, persistence, logging, backup/import, notification, Watch/widget, accessibility and purchase test instructions. Apple processed it as **VALID / APP_STORE_ELIGIBLE**, and the exact build is attached to the 1.2.0 draft, replacing expired 298. Internal build state is IN_BETA_TESTING; no beta group was assigned by this work, and external state is READY_FOR_BETA_SUBMISSION.
+
+Final IPA-based readiness validation returned **0 errors and 0 blocking findings**. Its four warnings are three optional subscription promotional images and the expired Apple web session. The three web-only checks below remain unverified; a public-API pass does not establish full release readiness. Required iPad screenshots and public metadata URLs passed this validation.
+
+IPA SHA-256: `bc37096170c78ca9dd986ca7c9998c52e9547a6240ac7f358ff630a8b8526943`. Shipping source is committed in `2e4b9fe`; later documentation-only commits do not change the artifact.
 
 No public review submission or release was performed. No tester audience was changed.
+
+GitHub security and storage checks passed. Both automatic clean-clone builds on Xcode 26.4.1 passed for shipping source `2e4b9fe`: the push build with the configured purchase key and the pull-request build with no key.
 
 ## Remaining release gates
 
 - Apple web sign-in is required to verify App Privacy publication (including RevenueCat Purchases disclosure), active agreements and first-subscription attachment. The cached session is expired; the browser handoff remains at sign-in.
-- A physical upgrade from the live app must preserve real records and settings. Repeat authenticated notification Log and locked-device delivery, permission/privacy changes, paired Watch/widget behavior, cold Siri execution, VoiceOver and StoreKit purchase/restore flows on devices.
+- Confirm the physical QA device and fixture data before installation. A physical upgrade from the live app must preserve real records and settings. Repeat authenticated notification Log and locked-device delivery, permission/privacy changes, paired Watch/widget behavior, cold Siri execution, VoiceOver and StoreKit purchase/restore flows on devices.
 - Critical Alerts entitlement approval remains pending; ordinary/time-sensitive reminders are separate.
 - Optional subscription promotional images remain recommendations, not submission blockers unless those promotions are used.

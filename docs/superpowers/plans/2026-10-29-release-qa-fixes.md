@@ -62,7 +62,7 @@ Files: shipping privacy manifests, PRIVACY.md, in-app privacy descriptions when 
 - [x] Run Release build, review logs, inspect coherent app/widget/watch versions and privacy resources.
 - [x] Repeat simulator smoke/UI checks with synthetic data, including relaunch persistence and the previously failed scenarios.
 - [x] Independently review the final diff for requirements, correctness, privacy, accessibility and concurrent-work preservation.
-- [ ] Build/archive and stage a new candidate when gates permit. Verify read-only store readiness and report physical upgrade, notification delivery, Watch/widget, assistive and purchase checks separately; do not invent passes or submit publicly.
-- [ ] Review git status/diff and land only this task's verified changes with sanitized descriptive commits.
+- [x] Build/archive and stage a new candidate when gates permit. Verify read-only store readiness and report physical upgrade, notification delivery, Watch/widget, assistive and purchase checks separately; do not invent passes or submit publicly.
+- [x] Review git status/diff and land only this task's verified changes with sanitized descriptive commits.
 
 Verification evidence and remaining external/device gates: [release QA results](../../testing/2026-10-29-release-qa-fixes.md).
