@@ -7,7 +7,8 @@ struct TrendsView: View {
     @EnvironmentObject private var navigationManager: NavigationManager
 
     var body: some View {
-        MedicationTrendsView()
+        MedicationTrendsView(widgetScope: navigationManager.widgetTrendsScope)
+			.id(navigationManager.widgetTrendsScope)
             .environmentObject(navigationManager)
     }
 }

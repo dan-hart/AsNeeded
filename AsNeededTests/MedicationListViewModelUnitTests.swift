@@ -204,8 +204,11 @@ struct MedicationListViewModelUnitTests {
 
         // When: Delete B (at index 1)
         viewModel.deleteMedications(at: IndexSet(integer: 1))
-        // Allow async deletion to complete
-        try await Task.sleep(nanoseconds: 100_000_000)
+		// Observe completion instead of assuming disk persistence finishes in 100 ms.
+		let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+		while viewModel.items.contains(where: { $0.id == med2.id }), ContinuousClock.now < deadline {
+			try await Task.sleep(for: .milliseconds(10))
+		}
 
         // Then: A, C
         #expect(viewModel.sortedMedications.map { $0.clinicalName } == ["A", "C"])

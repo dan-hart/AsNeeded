@@ -3,6 +3,8 @@ import ANModelKit
 
 struct MedicationView: View {
     @State private var navigationPath = NavigationPath()
+	@State private var lastRootRequestID: UUID?
+	@Environment(\.scenePhase) private var scenePhase
     @StateObject private var navigationManager = NavigationManager.shared
 
     var body: some View {
@@ -11,15 +13,23 @@ struct MedicationView: View {
                 .navigationDestination(for: ANMedicationConcept.self) { medication in
                     MedicationDetailView(medication: medication)
                 }
-                .onChange(of: navigationManager.pendingMedicationDetail) { _, medicationID in
-                    guard let medicationID = medicationID else { return }
-
-                    // Find medication by ID and navigate to it
-                    if let medication = DataStore.shared.medications.first(where: { $0.id.uuidString == medicationID }) {
-                        navigationPath.append(medication)
-                        navigationManager.clearMedicationDetailNavigation()
-                    }
-                }
+				.task(id: "\(navigationManager.medicationRootRequestID)|\(scenePhase)") {
+					if lastRootRequestID != navigationManager.medicationRootRequestID {
+						navigationPath = NavigationPath()
+						lastRootRequestID = navigationManager.medicationRootRequestID
+					}
+					guard scenePhase == .active, let medicationID = navigationManager.pendingMedicationDetail else { return }
+					do {
+						let snapshot = try await DataStore.shared.prepareForAccess()
+						guard !Task.isCancelled, navigationManager.pendingMedicationDetail == medicationID else { return }
+						navigationManager.clearMedicationDetailNavigation()
+						if let medication = LogDosePickerModel.medication(forDeepLink: medicationID, from: snapshot.medications) {
+							navigationPath.append(medication)
+						} else { navigationManager.showWidgetUnavailable = true }
+					} catch {
+						// Leave the destination pending until the app can read committed data.
+					}
+				}
         }
 		.onChange(of: navigationManager.pendingLogMedicationID) { _, medicationID in
 			guard medicationID != nil else { return }

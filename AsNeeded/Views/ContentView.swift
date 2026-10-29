@@ -46,7 +46,8 @@ struct ContentView: View {
 					.tag(3)
 			}
 			.tint(.accent)
-			.onChange(of: navigationManager.selectedTab) { _, _ in
+			.onChange(of: navigationManager.selectedTab) { _, tab in
+				if tab != 2 { navigationManager.widgetTrendsScope = nil }
 				hapticsManager.selectionChanged()
 			}
 			.environmentObject(navigationManager)
@@ -81,6 +82,19 @@ struct ContentView: View {
 		.onQuickAction { action in
 			handleQuickAction(action)
 		}
+		.task(id: "\(String(describing: navigationManager.pendingWidgetRoute))|\(scenePhase)") {
+			guard scenePhase == .active, let route = navigationManager.pendingWidgetRoute else { return }
+			do {
+				let snapshot = try await DataStore.shared.prepareForAccess()
+				guard !Task.isCancelled, navigationManager.pendingWidgetRoute == route else { return }
+				navigationManager.applyWidgetRoute(route, medications: snapshot.medications)
+			} catch {
+				// Preserve the exact pending identity for a later foreground retry.
+			}
+		}
+		.alert("Medication unavailable", isPresented: $navigationManager.showWidgetUnavailable) {
+			Button("OK", role: .cancel) {}
+		} message: { Text("This medication may have been archived or deleted. Choose another medication in Edit Widget.") }
 		.fontFamily(currentFontFamily)
 	}
 
@@ -115,6 +129,8 @@ struct ContentView: View {
 
 		case .viewTrends:
 			navigationManager.selectedTab = 2
+		case let .widget(route):
+			navigationManager.pendingWidgetRoute = route
 		}
 
 		// Clear the action after handling

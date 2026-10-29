@@ -40,6 +40,13 @@
 		A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000105 /* MedicationReminderRequest.swift */; };
 		A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */; };
 		A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */; };
+		A12000000000000000000401 /* WidgetNavigationRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000301 /* WidgetNavigationRoute.swift */; };
+		A12000000000000000000402 /* WidgetExperienceProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000302 /* WidgetExperienceProjection.swift */; };
+		A12000000000000000000403 /* Font+CustomFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000303 /* Font+CustomFonts.swift */; };
+		A12000000000000000000404 /* FontFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000304 /* FontFamily.swift */; };
+		A12000000000000000000405 /* View+NoTruncate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000305 /* View+NoTruncate.swift */; };
+		A12000000000000000000501 /* LogDoseWidgetIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000502 /* LogDoseWidgetIntent.swift */; };
+		A12000000000000000000503 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,6 +131,12 @@
 		A12000000000000000000105 /* MedicationReminderRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationReminderRequest.swift; sourceTree = SOURCE_ROOT; };
 		A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseRecordingPolicy.swift; sourceTree = SOURCE_ROOT; };
 		A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseNotificationReconciler.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000301 /* WidgetNavigationRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Services/WidgetNavigationRoute.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000302 /* WidgetExperienceProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Services/WidgetExperienceProjection.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000303 /* Font+CustomFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/Font+CustomFonts.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000304 /* FontFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Constants/FontFamily.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000305 /* View+NoTruncate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/View+NoTruncate.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000502 /* LogDoseWidgetIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededWidget/LogDoseWidgetIntent.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -164,6 +177,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12000000000000000000503 /* SFSafeSymbols in Frameworks */,
 				52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */,
 				52133A292E9DB8D60055E06D /* Boutique in Frameworks */,
 				52133A2B2E9DBAF00055E06D /* ANModelKit in Frameworks */,
@@ -275,6 +289,7 @@
 			);
 			name = AsNeededWidgetExtension;
 			packageProductDependencies = (
+				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52133A282E9DB8D60055E06D /* Boutique */,
 				52133A2A2E9DBAF00055E06D /* ANModelKit */,
 			);
@@ -464,6 +479,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */,
+				A12000000000000000000405 /* View+NoTruncate.swift in Sources */,
+				A12000000000000000000404 /* FontFamily.swift in Sources */,
+				A12000000000000000000403 /* Font+CustomFonts.swift in Sources */,
+				A12000000000000000000402 /* WidgetExperienceProjection.swift in Sources */,
+				A12000000000000000000401 /* WidgetNavigationRoute.swift in Sources */,
 				A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */,
 				A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */,
 				A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */,
@@ -485,6 +505,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12000000000000000000501 /* LogDoseWidgetIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -552,7 +573,7 @@
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited) ASNEEDED_WIDGET_EXTENSION";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -568,6 +589,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ASNEEDED_WIDGET_EXTENSION";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 318;
 				ENABLE_APP_SANDBOX = YES;

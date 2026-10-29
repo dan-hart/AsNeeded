@@ -1,17 +1,20 @@
 import Foundation
+import WidgetKit
 
 final class MedicationSafetyProfileStore {
 	@MainActor static let shared = MedicationSafetyProfileStore()
 
 	private let defaults: UserDefaults
 	private let sharedDefaults: UserDefaults?
+	private let reloadWidgets: () -> Void
 	private let encoder = JSONEncoder()
 	private let decoder = JSONDecoder()
 
-	init(defaults: UserDefaults = .standard, mirrorToSharedDefaults: Bool? = nil) {
+	init(defaults: UserDefaults = .standard, mirrorToSharedDefaults: Bool? = nil, widgetReload: (() -> Void)? = nil) {
 		self.defaults = defaults
 		let shouldMirror = mirrorToSharedDefaults ?? (defaults === UserDefaults.standard)
 		sharedDefaults = shouldMirror ? UserDefaults(suiteName: StorageConstants.appGroupIdentifier) : nil
+		reloadWidgets = widgetReload ?? { if shouldMirror { WidgetCenter.shared.reloadAllTimelines() } }
 	}
 
 	func profile(for medicationID: UUID) -> MedicationSafetyProfile {
@@ -61,6 +64,7 @@ final class MedicationSafetyProfileStore {
 		guard !profiles.isEmpty else {
 			defaults.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
 			sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+			reloadWidgets()
 			return
 		}
 
@@ -70,5 +74,6 @@ final class MedicationSafetyProfileStore {
 
 		defaults.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
 		sharedDefaults?.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		reloadWidgets()
 	}
 }

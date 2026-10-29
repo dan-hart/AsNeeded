@@ -1,3 +1,4 @@
+import ANModelKit
 import Combine
 import SwiftUI
 
@@ -12,24 +13,78 @@ final class NavigationManager: ObservableObject {
         }
     }
 
+    @Published var historyRequestID = UUID()
     @Published var historyTargetDate: Date?
     @Published var historyTargetMedicationID: String?
     @Published var pendingLogMedicationID: String?
     @Published var shouldShowAddMedication = false
     @Published var pendingMedicationDetail: String?
 
-    private init() {}
+	struct WidgetTrendsScope: Hashable {
+		let medicationID: UUID
+		let days: Int
+	}
+
+	@Published var pendingWidgetRoute: WidgetNavigationRoute?
+	@Published var widgetTrendsScope: WidgetTrendsScope?
+	@Published var showWidgetUnavailable = false
+	@Published var shouldShowLogDoseChooser = false
+	@Published var medicationRootRequestID = UUID()
+
+	init(defaults: UserDefaults = .standard) {
+		_selectedTab = AppStorage(wrappedValue: 0, UserDefaultsKeys.selectedTab, store: defaults)
+	}
+
+	/// Resolve against a fresh committed snapshot before opening UI. This never writes medication data.
+	@discardableResult
+	func applyWidgetRoute(_ route: WidgetNavigationRoute, medications: [ANMedicationConcept]) -> Bool {
+		// The newest destination replaces deferred actions, including ones blocked behind a sheet.
+		pendingLogMedicationID = nil
+		shouldShowLogDoseChooser = false
+		pendingMedicationDetail = nil
+		clearHistoryNavigation()
+		showWidgetUnavailable = false
+		if let id = route.medicationID, !medications.contains(where: { $0.id == id && !$0.isArchived }) {
+			pendingWidgetRoute = nil
+			showWidgetUnavailable = true
+			return false
+		}
+		pendingWidgetRoute = nil
+		switch route {
+		case .medications:
+			pendingMedicationDetail = nil
+			selectedTab = 0
+			medicationRootRequestID = UUID()
+		case let .medication(id): navigateToMedicationDetail(medicationID: id.uuidString)
+		case let .logDose(id):
+			if let id { navigateToLogDose(medicationID: id.uuidString) }
+			else {
+				selectedTab = 0
+				shouldShowLogDoseChooser = true
+				medicationRootRequestID = UUID()
+			}
+		case let .history(id): navigateToHistory(medicationID: id.uuidString)
+		case let .trends(id, days):
+			guard days == 7 else { return false }
+			widgetTrendsScope = WidgetTrendsScope(medicationID: id, days: days)
+			selectedTab = 2
+		}
+		return true
+	}
 
     /// Navigate to history tab with optional date and medication filter
     func navigateToHistory(date: Date? = nil, medicationID: String? = nil) {
         historyTargetDate = date
         historyTargetMedicationID = medicationID
+		historyRequestID = UUID()
         selectedTab = 1 // History tab index
     }
 
     /// Navigate to medication tab to log a dose for a specific medication
     func navigateToLogDose(medicationID: String) {
+        pendingMedicationDetail = nil
         pendingLogMedicationID = medicationID
+		medicationRootRequestID = UUID()
         selectedTab = 0 // Medication tab index
     }
 
@@ -58,6 +113,7 @@ final class NavigationManager: ObservableObject {
     /// Navigate to medication detail view for a specific medication
     func navigateToMedicationDetail(medicationID: String) {
         pendingMedicationDetail = medicationID
+		medicationRootRequestID = UUID()
         selectedTab = 0 // Medication tab index
     }
 

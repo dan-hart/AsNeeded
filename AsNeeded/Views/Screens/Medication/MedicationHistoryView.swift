@@ -456,6 +456,21 @@ struct MedicationHistoryView: View {
 
 	// MARK: - Private Methods
 
+	private func applyHistoryNavigation() {
+		if let targetDate = navigationManager.historyTargetDate {
+			scrollTarget = Calendar.current.startOfDay(for: targetDate)
+		}
+		if let id = navigationManager.historyTargetMedicationID, let uuid = UUID(uuidString: id) {
+			guard DataStore.shared.medications.contains(where: { $0.id == uuid }) else {
+				navigationManager.clearHistoryNavigation()
+				navigationManager.showWidgetUnavailable = true
+				return
+			}
+			viewModel.selectedMedicationID = uuid.uuidString
+			navigationManager.clearHistoryNavigation()
+		} else { viewModel.ensureValidSelection() }
+	}
+
 	private var floatingQuickLogMedication: ANMedicationConcept? {
 		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
 			useLastLogged: viewModel.isShowingAllMedications,
@@ -582,24 +597,8 @@ struct MedicationHistoryView: View {
 					}
 				}
 
-				.onAppear {
-					// Handle navigation from trends or medication detail
-					if let targetDate = navigationManager.historyTargetDate {
-						scrollTarget = Calendar.current.startOfDay(for: targetDate)
-					}
-
-					if let medicationID = navigationManager.historyTargetMedicationID,
-					   let uuid = UUID(uuidString: medicationID)
-					{
-						// Set the selected medication from navigation
-						viewModel.selectedMedicationID = uuid.uuidString
-						// Clear navigation state after use
-						navigationManager.clearHistoryNavigation()
-					} else {
-						// Ensure we have a valid selection (will default to "all" if needed)
-						viewModel.ensureValidSelection()
-					}
-				}
+				.onAppear { applyHistoryNavigation() }
+				.onChange(of: navigationManager.historyRequestID) { _, _ in applyHistoryNavigation() }
 				.onReceive(timer) { _ in
 					currentTime = Date()
 				}

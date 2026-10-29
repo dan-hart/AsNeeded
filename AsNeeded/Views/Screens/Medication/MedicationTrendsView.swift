@@ -37,7 +37,23 @@ struct MedicationTrendsView: View {
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
-	@AppStorage(UserDefaultsKeys.trendsDaysWindow) private var daysWindow: Int = 14
+	@AppStorage(UserDefaultsKeys.trendsDaysWindow) private var savedDaysWindow: Int = 14
+	@State private var temporaryDaysWindow: Int?
+	private let widgetScope: NavigationManager.WidgetTrendsScope?
+	private var daysWindow: Int { temporaryDaysWindow ?? savedDaysWindow }
+	private var daysWindowSelection: Binding<Int> {
+		Binding(get: { daysWindow }, set: { value in
+			if widgetScope != nil { temporaryDaysWindow = value }
+			else { savedDaysWindow = value }
+		})
+	}
+
+	init(widgetScope: NavigationManager.WidgetTrendsScope? = nil) {
+		self.widgetScope = widgetScope
+		_viewModel = StateObject(wrappedValue: MedicationTrendsViewModel(
+			selectedMedicationID: widgetScope?.medicationID, transientSelection: widgetScope != nil))
+		_temporaryDaysWindow = State(initialValue: widgetScope?.days)
+	}
 	@AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
 
 	@ScaledMetric private var sectionSpacing: CGFloat = 16
@@ -82,7 +98,7 @@ struct MedicationTrendsView: View {
 						metricsView(for: med)
 					} else {
 						controlsSection
-						Text(viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication in the toolbar to see its trends.")
+						Text(widgetScope != nil ? "This medication is unavailable. Choose another medication in Edit Widget." : viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication in the toolbar to see its trends.")
 							.font(.customFont(fontFamily, style: .body))
 							.foregroundStyle(.secondary)
 							.frame(maxWidth: .infinity, alignment: .leading)
@@ -238,7 +254,7 @@ struct MedicationTrendsView: View {
 
 	private var timeRangeMenu: some View {
 		Menu {
-			Picker("Time Range", selection: $daysWindow) {
+			Picker("Time Range", selection: daysWindowSelection) {
 				ForEach([14, 30, 90], id: \.self) { days in
 					Text("\(days) Days")
 						.font(.customFont(fontFamily, style: .body))

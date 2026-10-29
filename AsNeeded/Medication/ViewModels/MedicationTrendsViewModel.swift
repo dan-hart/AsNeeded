@@ -11,13 +11,18 @@ import UIKit
 final class MedicationTrendsViewModel: ObservableObject {
 	@AppStorage(UserDefaultsKeys.trendsSelectedMedicationID) var selectedMedicationIDString: String = ""
 
+	private let usesTransientSelection: Bool
+	private var transientMedicationID: UUID?
+
 	var selectedMedicationID: UUID? {
 		get {
-			selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
+			if usesTransientSelection { return transientMedicationID }
+			return selectedMedicationIDString.isEmpty ? nil : UUID(uuidString: selectedMedicationIDString)
 		}
 		set {
 			objectWillChange.send()
-			selectedMedicationIDString = newValue?.uuidString ?? ""
+			if usesTransientSelection { transientMedicationID = newValue }
+			else { selectedMedicationIDString = newValue?.uuidString ?? "" }
 		}
 	}
 
@@ -41,13 +46,17 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	init(
 		dataStore: DataStore = .shared,
+		defaults: UserDefaults = .standard,
 		selectedMedicationID: UUID? = nil,
+		transientSelection: Bool = false,
 		safetyProfileStore: MedicationSafetyProfileStore = .shared,
 		doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService(),
 		notificationCenter: NotificationCenter = .default,
 		calendar: @escaping () -> Calendar = { .current },
 		now: @escaping () -> Date = Date.init
 	) {
+		self.usesTransientSelection = transientSelection
+		_selectedMedicationIDString = AppStorage(wrappedValue: "", UserDefaultsKeys.trendsSelectedMedicationID, store: defaults)
 		self.dataStore = dataStore
 		self.notificationCenter = notificationCenter
 		self.safetyProfileStore = safetyProfileStore
@@ -161,6 +170,8 @@ final class MedicationTrendsViewModel: ObservableObject {
 	/// Ensures we always have a valid medication selected
 	/// This prevents picker errors when selection is nil
 	func ensureValidSelection() {
+		// Widget scopes never replace a missing explicit identity with another medication.
+		guard !usesTransientSelection else { return }
 		// If no medications are loaded yet, wait
 		guard !medications.isEmpty else { return }
 
@@ -180,7 +191,7 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	var selectedMedication: ANMedicationConcept? {
 		guard let id = selectedMedicationID else { return nil }
-		return medications.first { $0.id == id }
+		return medications.first { $0.id == id && (!usesTransientSelection || !$0.isArchived) }
 	}
 
 	var safetyProfile: MedicationSafetyProfile {

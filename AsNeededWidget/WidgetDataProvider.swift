@@ -69,6 +69,12 @@ final class WidgetDataProvider {
 		}
 	}
 
+	func projection(selectedID: UUID? = nil, showNames: Bool = true, at date: Date = .now) -> WidgetExperienceProjection {
+		WidgetExperienceProjection(medications: snapshot?.medications ?? [], events: snapshot?.events ?? [],
+			profiles: safetyProfiles, selectedID: selectedID, showNames: showNames,
+			storageAvailable: snapshot != nil, at: date)
+	}
+
 	func recordDose(medicationID: UUID) async throws {
 		guard let transactions else { throw PersistenceTransactionError.storageUnavailable }
 		let recorder = WidgetDoseRecorder(commit: { id, date in

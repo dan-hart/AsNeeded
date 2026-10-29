@@ -1,30 +1,39 @@
-// LogDoseWidgetIntent.swift
-// App Intent for logging medication doses directly from widgets (iOS 17+)
-
-import ANModelKit
 import AppIntents
 import Foundation
-import WidgetKit
 
-@available(iOS 17.0, *)
+/// Preserve cached intent identity. Compiled into both targets so foreground execution belongs to the app.
 struct LogDoseWidgetIntent: AppIntent {
-    static let title: LocalizedStringResource = "Log Dose"
-    static let description = IntentDescription("Log a dose directly from widget")
-    static let openAppWhenRun: Bool = false
+	static let title: LocalizedStringResource = "Log Dose"
+	static let description = IntentDescription("Open the dose form to review and save a dose.")
+	static let isDiscoverable = false
+	static let openAppWhenRun = true
 
-    @Parameter(title: "Medication ID")
-    var medicationID: String
+	@Parameter(title: "Medication ID")
+	var medicationID: String
 
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        // Parse medication ID
-        guard let id = UUID(uuidString: medicationID) else {
+	private let navigate: @MainActor @Sendable (UUID) throws -> Void
+
+	init() {
+		navigate = { id in
+			#if ASNEEDED_WIDGET_EXTENSION
+			// Fail closed if a stale archive is dispatched to the extension instead of the foreground app.
+			throw WidgetLogError.reviewInApp
+			#else
+			NavigationManager.shared.pendingWidgetRoute = .logDose(id)
+			#endif
+		}
+	}
+
+	init(navigate: @escaping @MainActor @Sendable (UUID) throws -> Void) {
+		self.navigate = navigate
+	}
+
+	@MainActor
+	func perform() async throws -> some IntentResult & ReturnsValue<URL> {
+		guard let id = UUID(uuidString: medicationID), let url = WidgetNavigationRoute.logDose(id).url else {
 			throw WidgetLogError.medicationUnavailable
-        }
-
-		try await WidgetDataProvider.shared.recordDose(medicationID: id)
-		WidgetCenter.shared.reloadAllTimelines()
-		return .result()
-
-    }
+		}
+		try navigate(id)
+		return .result(value: url)
+	}
 }

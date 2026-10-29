@@ -1,302 +1,57 @@
-// MedicationLockScreenWidget.swift
-// Lock screen widgets for iOS 16+ showing medication count and status
-
-import ANModelKit
+import Foundation
+import SFSafeSymbols
 import SwiftUI
 import WidgetKit
 
 struct MedicationLockScreenWidget: Widget {
-    let kind: String = "MedicationLockScreenWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: LockScreenWidgetProvider()) { entry in
-            LockScreenWidgetView(entry: entry)
-        }
-        .configurationDisplayName("Medication Status")
-        .description("Shows medication count and next dose on lock screen")
-        .supportedFamilies([
-            .accessoryCircular,
-            .accessoryRectangular,
-            .accessoryInline,
-        ])
-    }
+	let kind = "MedicationLockScreenWidget"
+	var body: some WidgetConfiguration {
+		AppIntentConfiguration(kind: kind, intent: MedicationWidgetConfiguration.self, provider: WidgetExperienceProvider()) { entry in
+			LockScreenExperienceView(entry: entry)
+				.containerBackground(for: .widget) {}
+		}
+		.configurationDisplayName("Medication")
+		.description("Check recorded timing and open the dose form.")
+		.supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
+	}
 }
 
-// MARK: - Timeline Provider
-
-struct LockScreenWidgetProvider: TimelineProvider {
-    typealias Entry = LockScreenEntry
-
-    func placeholder(in _: Context) -> LockScreenEntry {
-        LockScreenEntry(
-            date: Date(),
-            medicationCount: 3,
-            nextMedication: ANMedicationConcept(
-                clinicalName: "Medication",
-                quantity: 30,
-                prescribedUnit: .tablet
-            ),
-            nextDoseTime: Date().addingTimeInterval(3600),
-            canTakeNow: false,
-            lowQuantityCount: 1
-        )
-    }
-
-    func getSnapshot(in _: Context, completion: @escaping (LockScreenEntry) -> Void) {
-        Task { @MainActor in
-            let entry = await createEntry()
-            completion(entry)
-        }
-    }
-
-    func getTimeline(in _: Context, completion: @escaping (Timeline<LockScreenEntry>) -> Void) {
-        Task { @MainActor in
-            let entry = await createEntry()
-
-            // Update every 15 minutes
-            let nextUpdate = Calendar.current.date(
-                byAdding: .minute,
-                value: 15,
-                to: Date()
-            ) ?? Date()
-
-            let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-            completion(timeline)
-        }
-    }
-
-    @MainActor
-    private func createEntry() async -> LockScreenEntry {
-        let provider = WidgetDataProvider()
-		await provider.loadSnapshot()
-        let medications = provider.medications
-
-        guard let nextMed = provider.nextMedicationDue else {
-            return LockScreenEntry(
-                date: Date(),
-                medicationCount: medications.count,
-                nextMedication: nil,
-                nextDoseTime: nil,
-                canTakeNow: false,
-                lowQuantityCount: provider.lowQuantityMedications.count,
-				unavailable: provider.isUnavailable
-            )
-        }
-
-        let nextDoseTime = provider.nextDoseTime(for: nextMed)
-        let canTakeNow = provider.canTakeNow(nextMed)
-
-        return LockScreenEntry(
-            date: Date(),
-            medicationCount: medications.count,
-            nextMedication: nextMed,
-            nextDoseTime: nextDoseTime,
-            canTakeNow: canTakeNow,
-            lowQuantityCount: provider.lowQuantityMedications.count
-        )
-    }
-}
-
-// MARK: - Widget View
-
-struct LockScreenWidgetView: View {
-    @Environment(\.widgetFamily) private var family
-    let entry: LockScreenEntry
-
-    var body: some View {
-        Group {
-            switch family {
-            case .accessoryCircular: circularView
-            case .accessoryRectangular: rectangularView
-            case .accessoryInline: inlineView
-            default: Text("Unsupported")
-            }
-        }
-		.widgetURL(entry.nextMedication.flatMap { URL(string: "asneeded://log/\($0.id.uuidString)") })
-    }
-
-    // MARK: - Circular (Watch-style complication)
-
-    private var circularView: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-
-            VStack(spacing: 2) {
-                if let nextMed = entry.nextMedication {
-                    Image(systemName: nextMed.effectiveDisplaySymbol)
-                        .font(.title3.weight(.semibold))
-
-                    if entry.canTakeNow {
-						Text("Log")
-                            .font(.caption2.weight(.bold))
-                    } else if let nextDoseTime = entry.nextDoseTime {
-						Text(nextDoseTime, style: .relative)
-                            .font(.caption2.weight(.bold))
-                    }
-                } else {
-                    Image(systemName: "pills")
-                        .font(.title2)
-
-                    Text(entry.unavailable ? "Open app" : "\(entry.medicationCount)")
-                        .font(.caption.weight(.bold))
-                }
-            }
-        }
-		.accessibilityElement(children: .ignore)
-		.accessibilityLabel(entry.unavailable ? "Medication data unavailable. Open AsNeeded." : entry.nextMedication.map { "\($0.displayName). Open AsNeeded to review timing or log a dose." } ?? "\(entry.medicationCount) medications")
-    }
-
-    // MARK: - Rectangular
-
-    private var rectangularView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                Image(systemName: "pills.fill")
-                    .font(.caption.weight(.semibold))
-
-                Text("Medications")
-                    .font(.caption.weight(.semibold))
-
-                Spacer()
-
-                if entry.lowQuantityCount > 0 {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-						.accessibilityLabel("\(entry.lowQuantityCount) medications running low")
-                }
-            }
-
-            Divider()
-
-            if let nextMed = entry.nextMedication {
-                HStack {
-                    Text(nextMed.displayName)
-                        .font(.caption2.weight(.medium))
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if entry.canTakeNow {
-						Text("Log dose")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.green)
-                    } else if let nextDoseTime = entry.nextDoseTime {
-						Text(nextDoseTime, style: .relative)
-                            .font(.caption2.weight(.bold))
-                    }
-                }
-            } else {
-                Text(entry.unavailable ? "Open AsNeeded" : "No medications")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - Inline
-
-    private var inlineView: some View {
-        if let nextMed = entry.nextMedication {
-            if entry.canTakeNow {
-				Text("\(Image(systemName: "pills")) \(nextMed.displayName) • Log dose")
-            } else if let nextDoseTime = entry.nextDoseTime {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName) • \(timeRemainingShort(until: nextDoseTime))")
-            } else {
-                Text("\(Image(systemName: "pills")) \(nextMed.displayName)")
-            }
-        } else if entry.unavailable {
-			Text("Open AsNeeded")
-        } else {
-            Text("\(Image(systemName: "pills")) \(entry.medicationCount) medications")
-        }
-    }
-
-    // MARK: - Helper
-
-    private func timeRemainingShort(until date: Date) -> String {
-        let interval = date.timeIntervalSince(Date())
-
-        if interval <= 0 {
-            return "Now"
-        }
-
-        let hours = Int(interval) / 3600
-        let minutes = (Int(interval) % 3600) / 60
-
-        if hours > 24 {
-            let days = hours / 24
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h"
-        } else {
-            return "\(minutes)m"
-        }
-    }
-}
-
-// MARK: - Timeline Entry
-
-struct LockScreenEntry: TimelineEntry {
-    let date: Date
-    let medicationCount: Int
-    let nextMedication: ANMedicationConcept?
-    let nextDoseTime: Date?
-    let canTakeNow: Bool
-    let lowQuantityCount: Int
-	var unavailable: Bool = false
-}
-
-// MARK: - Previews
-
-#Preview(as: .accessoryCircular) {
-    MedicationLockScreenWidget()
-} timeline: {
-    LockScreenEntry(
-        date: Date(),
-        medicationCount: 3,
-        nextMedication: ANMedicationConcept(
-            clinicalName: "Lisinopril",
-            quantity: 28,
-            prescribedUnit: .tablet
-        ),
-        nextDoseTime: Date().addingTimeInterval(3600),
-        canTakeNow: false,
-        lowQuantityCount: 1
-    )
-}
-
-#Preview(as: .accessoryRectangular) {
-    MedicationLockScreenWidget()
-} timeline: {
-    LockScreenEntry(
-        date: Date(),
-        medicationCount: 3,
-        nextMedication: ANMedicationConcept(
-            clinicalName: "Lisinopril",
-            quantity: 28,
-            prescribedUnit: .tablet
-        ),
-        nextDoseTime: Date(),
-        canTakeNow: true,
-        lowQuantityCount: 0
-    )
-}
-
-#Preview(as: .accessoryInline) {
-    MedicationLockScreenWidget()
-} timeline: {
-    LockScreenEntry(
-        date: Date(),
-        medicationCount: 3,
-        nextMedication: ANMedicationConcept(
-            clinicalName: "Lisinopril",
-            quantity: 28,
-            prescribedUnit: .tablet
-        ),
-        nextDoseTime: Date().addingTimeInterval(3600),
-        canTakeNow: false,
-        lowQuantityCount: 1
-    )
+struct LockScreenExperienceView: View {
+	let entry: WidgetExperienceEntry
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.widgetFamily) private var family
+	var body: some View {
+		if let medication = entry.projection.medications.first(where: { $0.id == (entry.selectedID ?? entry.projection.automaticID) }) {
+			Group {
+				if family == .accessoryCircular {
+					Image(systemSymbol: SFSymbol(rawValue: medication.symbol))
+						.font(.customFont(fontFamily, style: .title2))
+						.accessibilityLabel("Open dose form for \(entry.projection.visibleName(for: medication))")
+				} else if family == .accessoryInline {
+					if let last = medication.lastDose {
+						Text("\(entry.projection.visibleName(for: medication)) · logged \(last, style: .relative) ago")
+					} else { Text("\(entry.projection.visibleName(for: medication)) · no logs") }
+				} else {
+					VStack(alignment: .leading, spacing: 2) {
+						Text(entry.projection.visibleName(for: medication))
+							.font(.customFont(fontFamily, style: .headline)).noTruncate()
+						if let last = medication.lastDose {
+							Text("Logged \(last, style: .relative) ago")
+						} else { Text("No doses logged") }
+						if let next = medication.nextWindow {
+							if Calendar.current.isDate(next, inSameDayAs: entry.date) { Text("Window \(next, style: .time)") }
+							else { Text("Window \(next, format: .dateTime.weekday(.abbreviated).hour().minute())") }
+						}
+					}
+					.font(.customFont(fontFamily, style: .caption))
+				}
+			}
+			.privacySensitive()
+			.widgetURL(WidgetNavigationRoute.logDose(medication.id).url)
+		} else {
+			Text(entry.projection.state == .empty ? "No medications" : "Unavailable")
+				.font(.customFont(fontFamily, style: .caption))
+				.widgetURL(WidgetNavigationRoute.medications.url)
+		}
+	}
 }

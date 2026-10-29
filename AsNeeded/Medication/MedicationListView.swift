@@ -198,7 +198,19 @@ struct MedicationListView: View {
                     }
 
                 }
+				.task(id: "chooser|\(navigationManager.shouldShowLogDoseChooser)|\(viewModel.logMedication?.id.uuidString ?? "")|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
+					guard navigationManager.shouldShowLogDoseChooser, viewModel.logMedication == nil,
+						viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
+					navigationManager.shouldShowLogDoseChooser = false
+					pendingPickerMedication = nil
+					logDoseSearchQuery = ""
+					showLogDosePicker = true
+				}
 				.task(id: "\(navigationManager.pendingLogMedicationID ?? "")|\(viewModel.logMedication?.id.uuidString ?? "")|\(scenePhase)|\(showLogDosePicker)|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
+					if let id = navigationManager.pendingLogMedicationID, viewModel.logMedication?.id.uuidString == id {
+						navigationManager.clearLogDoseNavigation()
+						return
+					}
 					guard let id = navigationManager.pendingLogMedicationID, viewModel.logMedication == nil, !showLogDosePicker, viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
 					do {
 						let snapshot = try await DataStore.shared.prepareForAccess()

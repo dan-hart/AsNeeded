@@ -17,7 +17,8 @@ public final class HapticsManager: ObservableObject {
     private let selection = UISelectionFeedbackGenerator()
     private let notification = UINotificationFeedbackGenerator()
 
-    private init() {
+    init(defaults: UserDefaults = .standard) {
+		_hapticsEnabled = AppStorage(wrappedValue: true, UserDefaultsKeys.hapticsEnabled, store: defaults)
         // Prepare generators for immediate use
         impactLight.prepare()
         impactMedium.prepare()

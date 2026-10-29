@@ -5,6 +5,7 @@ import ANModelKit
 import Boutique
 import DHLoggingKit
 import Foundation
+import WidgetKit
 
 @MainActor
 public final class DataStore {
@@ -19,6 +20,8 @@ public final class DataStore {
 	private var snapshotObservers: [UUID: AsyncStream<MedicationPersistenceSnapshot>.Continuation] = [:]
 	private let transactionFault: (PersistenceTransactionPhase) throws -> Void
 	private let notificationCleanup: @MainActor (Set<UUID>) async -> Void
+	private let reloadWidgets: () -> Void
+	private lazy var widgetRefreshObserver = WidgetRefreshObserver(reload: reloadWidgets)
 	private let reminderAcknowledgement: @MainActor (UUID) async -> Void
 
     // Underlying Boutique stores
@@ -39,6 +42,7 @@ public final class DataStore {
 
     private init() {
 		isTestStore = false
+		reloadWidgets = { WidgetCenter.shared.reloadAllTimelines() }
 		defaults = .standard
 		defaultsDomainName = Bundle.main.bundleIdentifier ?? StorageConstants.Legacy.bundleIdentifier
 		sharedDefaultsDomainName = StorageConstants.appGroupIdentifier
@@ -134,8 +138,9 @@ public final class DataStore {
 		self.init(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("AsNeededTests-\(UUID().uuidString)"))
 	}
 
-	init(storageDirectory: URL, defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil, defaultsDomainName: String? = nil, sharedDefaultsDomainName: String? = nil, transactionFault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, notificationCleanup: @escaping @MainActor (Set<UUID>) async -> Void = { _ in }, reminderAcknowledgement: @escaping @MainActor (UUID) async -> Void = { _ in }) {
+	init(storageDirectory: URL, defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil, defaultsDomainName: String? = nil, sharedDefaultsDomainName: String? = nil, transactionFault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, notificationCleanup: @escaping @MainActor (Set<UUID>) async -> Void = { _ in }, reminderAcknowledgement: @escaping @MainActor (UUID) async -> Void = { _ in }, widgetReload: @escaping () -> Void = {}) {
 		isTestStore = true
+		reloadWidgets = widgetReload
 		self.storageDirectory = storageDirectory
 		self.defaults = defaults
 		self.sharedDefaults = sharedDefaults
@@ -175,6 +180,7 @@ public final class DataStore {
 	}
 
 	private func publishCommittedSnapshot(_ snapshot: MedicationPersistenceSnapshot) {
+		widgetRefreshObserver.receive(snapshot, profileData: sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) ?? defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles))
 		for observer in snapshotObservers.values { observer.yield(snapshot) }
 	}
 
@@ -581,6 +587,7 @@ public final class DataStore {
 		logger.warning("Resetting app settings to defaults")
 		await MainActor.run {
 			Self.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults)
+			reloadWidgets()
 			logger.info("Successfully reset all app settings to defaults")
 		}
 	}
