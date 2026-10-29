@@ -73,5 +73,5 @@ Verification evidence and remaining external/device gates: [release QA results](
 - [x] Correct the published privacy label and align the app manifest/policy with provider disclosures.
 - [x] Accept the approved Developer Program agreement and inspect separate commercial terms without assuming approval.
 - [x] Reproduce and correct first-open editor values and quarter-dose display; preserve unchanged entries exactly.
-- [ ] Verify the final 321 archive/IPA, physical editor regression, processed build and draft linkage.
-- [ ] Record final evidence and push the reviewed follow-up.
+- [x] Verify the final 321 archive/IPA, physical editor regression, processed build and draft linkage.
+- [x] Record final evidence and push the reviewed follow-up.

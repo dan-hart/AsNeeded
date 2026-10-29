@@ -13,7 +13,7 @@ Search History disclosure is based on [NLM's published logging policy](https://w
 ## Account and commerce checks
 
 - Accepted the updated Apple Developer Program License Agreement only after explicit maintainer approval. Apple returned to the account page with the updated-agreement warning removed and acceptance recorded October 29, 2026.
-- A separate new Paid Applications Agreement is available; its acceptance is pending separate approval at this checkpoint.
+- A separate new Paid Applications Agreement is available. The maintainer chose to review and accept it personally; it was left unchecked/open and was not accepted by this work.
 - All three existing support subscriptions are APPROVED. This is not a first-subscription submission requiring attachment of new products.
 - The physical Support screen loaded all six products with localized prices, renewal/cancellation language, Restore Purchases, and policy/EULA links. No purchase or restore transaction was attempted.
 - Business displays missing banking-information warnings that may delay payments. No banking information was entered or changed. Apple also requests a regulated-medical-device declaration by early 2027; classification requires an owner decision, not an inferred code classification.
@@ -32,11 +32,25 @@ Physical History displayed a saved milligram dose, but its first Edit Entry pres
 
 The existing editor is now a private child view that initializes its local date, amount and unit directly from the exact sheet event. Formatting uses the existing amount formatter. Save/Delete keep the existing view-model mutation owner, error behavior and stock adjustment. Cancel/discard writes nothing. Unchanged Save dismisses without rewriting the event or regenerating its nested dose identifier.
 
-Simulator verification passed first opening a half-tablet entry, switching to a quarter-tablet entry on another date, editing and discarding, reopening, and unchanged Save. The final no-op comparison found every medication, event, nested dose ID, order and exported setting exactly unchanged. Independent code review found no blocker. Thirty focused History/formatting tests passed. The final complete plan after the no-op safeguard passed **967 tests, 0 failed, 0 skipped**, with 1,056 dynamic runs and no runtime warnings (`Test-AsNeeded-2026.10.29_12-34-03--0500.xcresult`). Exact final candidate and physical regression results are recorded below when complete.
+Simulator verification passed first opening a half-tablet entry, switching to a quarter-tablet entry on another date, editing and discarding, reopening, and unchanged Save. The final no-op comparison found every medication, event, nested dose ID, order and exported setting exactly unchanged. Independent code review found no blocker. Thirty focused History/formatting tests passed. The final complete plan after the no-op safeguard passed **967 tests, 0 failed, 0 skipped**, with 1,056 dynamic runs and no runtime warnings (`Test-AsNeeded-2026.10.29_12-34-03--0500.xcresult`). Final candidate and physical regression results follow.
+
+## Final 321 evidence
+
+- Shipping source: `09d3a47`, pushed to `task/v1.2.0` after staged safety and secret checks passed.
+- Final signed Release archive and export passed; distribution signature verification passed. The app, widget and Watch all report 1.2.0 (321), and the collected-data manifest matches the published label. Purchase configuration resolved without exposing the key.
+- IPA SHA-256: `2dbdf80d3dbbaee652a554ab78036911d2fbf64be9d6479693c387f38aa82189`.
+- Physical SE 320 → 321 passed. First opening, cancel/reopen and switching between original 1 mg and 3 mg entries retained the correct amount, milligram unit and historical date.
+- After unchanged Save and a cold launch, every medication and event, nested dose ID, record order and exported setting exactly matched the original 317 backup. The entire export excluding exportDate was equal. Stock and Automatic Backup Active remained intact; no test entry remains.
+- The final iPad editor was visually inspected with a long medication name in expanded portrait and landscape. Controls remained usable and content fit the sheet; no data was changed.
+- Apple processed build 321 (`cc18432e-a533-42f6-ab23-007d98c6ecfc`) as VALID / APP_STORE_ELIGIBLE. Readback confirmed that exact build is attached to the 1.2.0 draft, still PREPARE_FOR_SUBMISSION with MANUAL release.
+- Final validation against the exact exported IPA, including required iPad screenshots and public metadata URLs, returned **0 errors and 0 blockers**. The three warnings concern optional subscription promotional images. The API's privacy-publication information item is covered by the independent Firefox publication check above.
+- Both automatic Xcode 26.4.1 clean-clone builds passed for shipping source `09d3a47`: the push build with the configured purchase key and the pull-request build without a key. Gitleaks, TruffleHog and custom secret-pattern checks also passed.
+- Build-specific What to Test notes cover the editor corrections, upgrade/data preservation, dose/Undo, notification delivery/privacy, backups/import, system surfaces, accessibility and commerce. Internal state is IN_BETA_TESTING; the existing all-builds internal group has access. External state is READY_FOR_BETA_SUBMISSION, with no external beta submission or new tester audience created.
 
 ## Remaining verification boundaries
 
 - A live 1.1.2 → 1.2.0 physical upgrade has not been tested: the SE started at 317.
 - Physical Undo is unverified. Its 4-second toast can expire while the experimental physical accessibility channel traverses controls. Simulator and service coverage passed; a dispatched late physical activation was not reported as either a pass or an app defect.
 - Locked/authenticated notification actions and delivery, Siri execution, system widgets, a paired physical Watch, spoken VoiceOver and purchase/restore transactions remain manual checks. The physical channel cannot operate system apps, hardware gestures, typing, swipes or holds.
+- Critical Alerts entitlement approval remains pending; ordinary/time-sensitive reminders are separate.
 - No public review submission, release, new tester audience, purchase or banking change was performed.
