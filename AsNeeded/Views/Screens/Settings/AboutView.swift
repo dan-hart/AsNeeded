@@ -6,14 +6,13 @@ struct AboutView: View {
 	private let subsectionSpacing: CGFloat = 16
 	private let groupSpacing: CGFloat = 12
 	private let itemSpacing: CGFloat = 8
-	private let mediumSpacing: CGFloat = 6
 	private let tightSpacing: CGFloat = 4
 	private let textSpacing: CGFloat = 2
 	private let cardPadding: CGFloat = 16
-	private let smallPadding: CGFloat = 4
 	private let cornerRadius12: CGFloat = 12
 	private let iconSize32: CGFloat = 32
     @Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -40,9 +39,11 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 heroSection
 
+                developerSection
+
                 coreValuesSection
 
-                developerAndSupportSection
+                supportSection
 
                 specialThanksSection
 
@@ -95,39 +96,49 @@ struct AboutView: View {
         }
     }
 
-    private var developerAndSupportSection: some View {
+	private var developerSection: some View {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
+			Text("About the Developer")
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
+
+			if let url = mastodonURL {
+				developerLink("Dan Hart on Mastodon", symbol: .atCircle, destination: url)
+			}
+			if let url = githubProfileURL {
+				developerLink("Dan Hart on GitHub", symbol: .chevronLeftForwardslashChevronRight, destination: url)
+			}
+		}
+	}
+
+	private func developerLink(_ title: LocalizedStringKey, symbol: SFSymbol, destination: URL) -> some View {
+		Link(destination: destination) {
+			HStack(spacing: groupSpacing) {
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: symbol)
+						.accessibilityHidden(true)
+				}
+				Text(title)
+					.multilineTextAlignment(.leading)
+					.fixedSize(horizontal: false, vertical: true)
+					.frame(maxWidth: .infinity, alignment: .leading)
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: .arrowUpRight)
+						.accessibilityHidden(true)
+				}
+			}
+			.font(.customFont(fontFamily, style: .headline))
+			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+			.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+		}
+		.buttonStyle(.borderedProminent)
+		.buttonBorderShape(.roundedRectangle(radius: cornerRadius12))
+		.controlSize(.large)
+		.tint(.accent)
+	}
+
+    private var supportSection: some View {
         VStack(alignment: .leading, spacing: subsectionSpacing) {
-            VStack(alignment: .leading, spacing: itemSpacing) {
-                HStack(spacing: subsectionSpacing) {
-                    if let url = mastodonURL {
-                        Link(destination: url) {
-                            HStack(spacing: mediumSpacing) {
-                                Image(systemSymbol: .atCircle)
-                                    .font(.customFont(fontFamily, style: .subheadline))
-                                Text("Dan Hart on Mastodon")
-                                    .font(.customFont(fontFamily, style: .subheadline))
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundStyle(.accent)
-                        }
-                    }
-
-                    if let url = githubProfileURL {
-                        Link(destination: url) {
-                            HStack(spacing: mediumSpacing) {
-                                Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                                    .font(.customFont(fontFamily, style: .subheadline))
-                                Text("Dan Hart on GitHub")
-                                    .font(.customFont(fontFamily, style: .subheadline))
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundStyle(.accent)
-                        }
-                    }
-                }
-                .padding(.top, smallPadding)
-            }
-
             NavigationLink {
                 SupportView()
             } label: {
