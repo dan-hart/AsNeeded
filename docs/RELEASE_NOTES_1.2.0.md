@@ -12,6 +12,8 @@ Timing is based on saved limits and recorded doses. Follow prescription and care
 
 ## TestFlight verification
 
+Use [the approved What to Test text](testing/1.2.0-testflight-notes.txt) for subsequent 1.2.0 TestFlight builds. The maintainer approved this baseline on October 29, 2026. Keep it unchanged unless the maintainer requests revisions; confirm that its feature claims remain accurate for each uploaded build.
+
 1. Upgrade with existing medication/history data and legacy guardrails; verify timing/quantity values and other settings survive two launches.
 2. Save an interval alone, a quantity maximum alone, and both. Confirm limits remain optional and are clearable.
 3. Log varying quantities and verify the next full saved dose waits until both limits allow it, including across midnight and the exact rolling 24-hour boundary.
