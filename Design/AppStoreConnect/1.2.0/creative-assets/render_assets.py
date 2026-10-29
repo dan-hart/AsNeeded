@@ -79,11 +79,11 @@ selection = parser.parse_args().only
 
 if selection in ['header', 'all']:
     # Apple's PSD Art Safe Area: (1097, 493), 1646 x 661.
-    # The original pill layers and exact font ink occupy x=1109..2731,
+    # The original pill layers and exact font ink occupy x=1109..2732,
     # centered vertically, retaining 12 px of horizontal breathing room.
     render('header', 3840, 1646,
-           pills(1109, 592, 589)
-           + text('As Needed', 1721, 888, 198, 'Bold'), decorated=False)
+           pills(1109, 598, 574)
+           + text('As Needed', 1747, 886, 193, 'Bold'), decorated=False)
 
 if selection in ['search-results', 'all']:
     render('search-results', 3840, 2560,
@@ -108,6 +108,6 @@ manifest_path.write_text(json.dumps({
     'status': f'Locally regenerated {selection}; verify upload status before publication',
     'headerLayout': {'subtitle': False, 'safeArea': {'x': 1097, 'y': 493, 'width': 1646, 'height': 661},
                      'safeAreaSource': 'Apple creative_assets-product_page_header_template-static.psd, Art Safe Area layer',
-                     'brandingBounds': {'left': 1109, 'top': 592, 'right': 2731, 'bottom': 1055},
-                     'pillWidth': 589, 'wordmarkFontSize': 198}
+                     'brandingBounds': {'left': 1109, 'top': 598, 'right': 2732, 'bottom': 1049},
+                     'pillWidth': 574, 'wordmarkFontSize': 193, 'gap': 64}
 }, indent=2) + '\n')

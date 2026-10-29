@@ -24,13 +24,13 @@
     "localizationID": "6560ff30-83fa-42e6-b8fc-9da8b313cebd",
     "verifiedAt": "2026-10-29",
     "header": {
-      "imageID": "9b000019-036a-8b73-8035-f590ff43eb68",
-      "placementID": "47800019-036a-8b73-8f2f-2276a5cf60e0",
+      "imageID": "52000019-036a-8b73-8007-bb590a35bdac",
+      "placementID": "2c000019-036a-8b73-8f39-f8325d14a66b",
       "placementState": "ACTIVE",
       "imageState": "PREPARE_FOR_SUBMISSION",
-      "previousImageID": "81800019-036a-8b73-800d-6cd0cbd80a47",
-      "replacedPlacementID": "b3400019-036a-8b73-8f3e-7d94ca79ffe6",
-      "sha256": "0a84045561ce18bba946570618d98d7383e64a281f6f6553c5e5b30430efdef7"
+      "previousImageID": "9b000019-036a-8b73-8035-f590ff43eb68",
+      "replacedPlacementID": "47800019-036a-8b73-8f2f-2276a5cf60e0",
+      "sha256": "a61fd48f1b4b44867c03a32e6fd6547ec5e734ce2eaa79ebbe463eb0937c912a"
     },
     "searchResults": {
       "imageID": "26000019-036a-8b73-801a-8f8c435b2294",
@@ -50,11 +50,12 @@
     "safeAreaSource": "Apple creative_assets-product_page_header_template-static.psd, Art Safe Area layer",
     "brandingBounds": {
       "left": 1109,
-      "top": 592,
-      "right": 2731,
-      "bottom": 1055
+      "top": 598,
+      "right": 2732,
+      "bottom": 1049
     },
-    "pillWidth": 589,
-    "wordmarkFontSize": 198
+    "pillWidth": 574,
+    "wordmarkFontSize": 193,
+    "gap": 64
   }
 }
