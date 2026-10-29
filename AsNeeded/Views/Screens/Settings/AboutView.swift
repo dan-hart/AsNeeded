@@ -13,6 +13,13 @@ struct AboutView: View {
 	private let iconSize32: CGFloat = 32
     @Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@State private var isPurchasingTip = false
+	@State private var showTipAlert = false
+	@State private var tipAlertTitle = ""
+	@State private var tipAlertMessage = ""
+	@State private var showTipThankYou = false
+	@State private var tipPurchaseType: ThankYouView.PurchaseType?
+
 
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -58,6 +65,29 @@ struct AboutView: View {
             .customNavigationTitle("About")
         }
         .font(.customFont(fontFamily, style: .body))
+		.alert(tipAlertTitle, isPresented: $showTipAlert) {
+			Button("OK", role: .cancel) {}
+		} message: {
+			Text(tipAlertMessage)
+		}
+		.sheet(isPresented: $showTipThankYou) {
+			if let tipPurchaseType {
+				ThankYouView(purchaseType: tipPurchaseType)
+					.environmentObject(FeedbackService.shared)
+			}
+		}
+		.disabled(isPurchasingTip)
+		.overlay {
+			if isPurchasingTip {
+				Color.black.opacity(0.3)
+					.ignoresSafeArea()
+					.overlay {
+						ProgressView("Processing...")
+							.padding()
+							.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius12))
+					}
+			}
+		}
     }
 
     private var heroSection: some View {
@@ -108,6 +138,16 @@ struct AboutView: View {
 			if let url = githubProfileURL {
 				developerLink("Dan Hart on GitHub", symbol: .chevronLeftForwardslashChevronRight, destination: url)
 			}
+			TipJarSection(
+				title: "Tip Dan",
+				subtitle: "Optional one-time support",
+				isPurchasing: $isPurchasingTip,
+				showPurchaseAlert: $showTipAlert,
+				alertTitle: $tipAlertTitle,
+				alertMessage: $tipAlertMessage,
+				showThankYouView: $showTipThankYou,
+				purchaseType: $tipPurchaseType
+			)
 			BuyMeACoffeeButton(
 				title: "Buy Dan a Coffee",
 				subtitle: "Support Dan’s work on As Needed"
@@ -416,6 +456,6 @@ struct AboutView: View {
 
 #if DEBUG
     #Preview {
-        NavigationView { AboutView() }
+        NavigationView { AboutView().environmentObject(RevenueCatManager()) }
     }
 #endif

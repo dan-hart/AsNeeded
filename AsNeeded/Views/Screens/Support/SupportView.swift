@@ -23,7 +23,6 @@ struct SupportView: View {
     @ScaledMetric private var tipButtonMinHeight: CGFloat = 100
 
     @Environment(\.openURL) private var openURL
-	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.fontFamily) private var fontFamily
     @EnvironmentObject private var revenueCatManager: RevenueCatManager
     @State private var isPurchasing = false
@@ -110,16 +109,14 @@ struct SupportView: View {
                 Text("Support Development (Optional)")
                     .font(.customFont(fontFamily, style: .title2, weight: .semibold))
 
-                // Tip Jar
-				if revenueCatManager.availableProducts.isEmpty {
-					Text(!revenueCatManager.isConfigured ? "Support options are not available in this build. You can keep using every feature." : (revenueCatManager.isLoadingProducts ? "Loading support options…" : "Purchase options are temporarily unavailable. You can keep using every feature."))
-						.font(.customFont(fontFamily, style: .callout))
-						.foregroundStyle(.secondary)
-					if revenueCatManager.isConfigured && !revenueCatManager.isLoadingProducts {
-						Button("Reload Prices") { Task { await revenueCatManager.reloadProducts() } }
-					}
-				}
-                tipJarGrid
+				TipJarSection(
+					isPurchasing: $isPurchasing,
+					showPurchaseAlert: $showPurchaseAlert,
+					alertTitle: $alertTitle,
+					alertMessage: $alertMessage,
+					showThankYouView: $showThankYouView,
+					purchaseType: $purchaseType
+				)
 
                 // Buy Me a Coffee
                 BuyMeACoffeeButton()
@@ -263,27 +260,6 @@ struct SupportView: View {
 		.padding(.top, headerPaddingV)
 	}
 
-    private var tipJarGrid: some View {
-        VStack(alignment: .leading, spacing: rowSpacing) {
-            Text("One-time Tips")
-                .font(.customFont(fontFamily, style: .headline))
-                .fontWeight(.semibold)
-                .padding(.top, headerPaddingV)
-
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: dynamicTypeSize.isAccessibilitySize ? 1 : 3), spacing: rowSpacing) {
-                ForEach(tipTiers, id: \.title) { tip in
-                    TipButton(tip: tip,
-                              isPurchasing: $isPurchasing,
-                              showPurchaseAlert: $showPurchaseAlert,
-                              alertTitle: $alertTitle,
-                              alertMessage: $alertMessage,
-                              showThankYouView: $showThankYouView,
-                              purchaseType: $purchaseType)
-                }
-            }
-        }
-    }
-
     private var subscriptionOptions: some View {
         VStack(alignment: .leading, spacing: rowSpacing) {
             Text("Monthly Support")
@@ -389,88 +365,11 @@ struct SupportView: View {
         .padding(.horizontal, subscriptionInfoSpacing)
     }
 
-    private let tipTiers = [
-		(title: "Thanks", emoji: "👍", color: Color.green, productId: RevenueCatManager.ProductIdentifier.tipThanks),
-		(title: "Cheers", emoji: "🥂", color: Color.orange, productId: RevenueCatManager.ProductIdentifier.tipCheers),
-		(title: "Ovation", emoji: "👏", color: Color.purple, productId: RevenueCatManager.ProductIdentifier.tipOvation),
-    ]
-
     private let subscriptionTiers = [
 		(title: "Supporter", description: "Optional monthly contribution", icon: SFSymbol.heart, color: .accent, productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
 		(title: "Advocate", description: "Optional monthly contribution", icon: SFSymbol.handRaisedFill, color: Color.green, productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
 		(title: "Champion", description: "Optional monthly contribution", icon: SFSymbol.crownFill, color: Color.purple, productId: RevenueCatManager.ProductIdentifier.subscriptionChampion),
     ]
-}
-
-// MARK: - Tip Button
-
-private struct TipButton: View {
-	@Environment(\.fontFamily) private var fontFamily
-    @ScaledMetric private var contentSpacing: CGFloat = 8
-    @ScaledMetric private var paddingV: CGFloat = 16
-    @ScaledMetric private var paddingH: CGFloat = 8
-    @ScaledMetric private var cardCornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 1
-    @ScaledMetric private var minHeight: CGFloat = 100
-
-	let tip: (title: String, emoji: String, color: Color, productId: RevenueCatManager.ProductIdentifier)
-    @EnvironmentObject private var revenueCatManager: RevenueCatManager
-    @Binding var isPurchasing: Bool
-    @Binding var showPurchaseAlert: Bool
-    @Binding var alertTitle: String
-    @Binding var alertMessage: String
-    @Binding var showThankYouView: Bool
-    @Binding var purchaseType: ThankYouView.PurchaseType?
-
-	private var productPrice: String? {
-		revenueCatManager.availableProducts.first { $0.productIdentifier == tip.productId.rawValue }?.localizedPriceString
-	}
-
-    var body: some View {
-        Button {
-			guard let displayedPrice = productPrice else { return }
-            Task {
-                isPurchasing = true
-                defer { isPurchasing = false }
-
-                let success = await revenueCatManager.purchaseTip(tip.productId)
-
-                if success {
-					purchaseType = .tip(amount: displayedPrice)
-                    showThankYouView = true
-                } else if let error = revenueCatManager.purchaseError {
-                    alertTitle = "Purchase Failed"
-                    alertMessage = error
-                    showPurchaseAlert = true
-                }
-            }
-        } label: {
-            VStack(spacing: contentSpacing) {
-                Text(tip.emoji)
-                    .font(.customFont(fontFamily, style: .title2))
-
-                Text(tip.title)
-                    .font(.customFont(fontFamily, style: .caption))
-                    .fontWeight(.medium)
-                    .multilineTextAlignment(.center)
-
-                Text(productPrice ?? (revenueCatManager.isLoadingProducts ? "Loading price…" : "Unavailable"))
-                    .font(.customFont(fontFamily, style: .caption2))
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity, minHeight: minHeight)
-            .padding(.vertical, paddingV)
-            .padding(.horizontal, paddingH)
-            .background(tip.color.opacity(0.1))
-            .overlay(
-                RoundedRectangle(cornerRadius: cardCornerRadius)
-                    .stroke(tip.color, lineWidth: borderWidth)
-            )
-            .cornerRadius(cardCornerRadius)
-        }
-        .buttonStyle(.plain)
-		.disabled(productPrice == nil)
-    }
 }
 
 // MARK: - Subscription Button
