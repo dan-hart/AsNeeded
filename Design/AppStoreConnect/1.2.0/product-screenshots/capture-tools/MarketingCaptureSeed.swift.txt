@@ -1,0 +1,85 @@
+import ANModelKit
+@testable import AsNeeded
+import Foundation
+import Testing
+import TipKit
+
+/// Temporary capture harness. Run only on the newly created AsNeeded Marketing simulators.
+@MainActor
+struct MarketingCaptureSeed {
+	@Test
+	func seed() async throws {
+		let deviceName = ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] ?? ""
+		try #require(deviceName.hasPrefix("AsNeeded Marketing"), "Never seed personal or QA devices")
+		await MigrationCoordinator.shared.runMigrationIfNeeded()
+		for _ in 0..<300 where !MigrationCoordinator.shared.isComplete && !MigrationCoordinator.shared.hasFailed {
+			try await Task.sleep(for: .milliseconds(100))
+		}
+		try #require(MigrationCoordinator.shared.isComplete)
+		let store = DataStore.shared
+		let calendar = Calendar.current
+		let now = Date()
+		let today = calendar.startOfDay(for: now)
+		let definitions: [(String, String, String, String, Double, ANUnitConcept, Double, Double, Double)] = [
+			("Headache Help", "Pain Relief", "#BD4763", "brain.head.profile", 1, .tablet, 42, 6, 4),
+			("Breathe Easy", "Rescue Inhaler", "#008A96", "wind", 2, .puff, 72, 4, 8),
+			("Wind Down", "Sleep Support", "#7253A3", "moon.stars.fill", 0.5, .tablet, 14, 18, 1)
+		]
+		let medications = definitions.enumerated().map { index, row in
+			ANMedicationConcept(clinicalName: row.1, nickname: row.0, quantity: row.6,
+				initialQuantity: index == 1 ? 120 : 60, displayColorHex: row.2,
+				lastRefillDate: today.addingTimeInterval(Double(-12 - index * 5) * 86400),
+				nextRefillDate: today.addingTimeInterval(Double(16 + index * 4) * 86400),
+				prescribedUnit: row.5, prescribedDoseAmount: row.4, symbolInfo: ANSymbolInfo(name: row.3),
+				minimumHoursBetweenDoses: row.7, maximumDailyDoseAmount: row.8)
+		}
+		var events: [ANEventConcept] = []
+		for day in 1...90 {
+			for index in 0..<3 {
+				let include = index == 0 ? (day % 3 == 0 || day < 14 && day % 2 == 1)
+					: index == 1 ? (day % 4 == 0 || day < 12 && day % 3 == 1)
+					: (day % 3 == 1 || day < 10 && day % 2 == 0)
+				guard include else { continue }
+				let medication = medications[index]
+				let hour = index == 0 ? 9 + day % 5 : index == 1 ? 11 + day % 4 : 21
+				let date = today.addingTimeInterval(Double(-day * 86400 + hour * 3600 + (day % 4) * 900))
+				let reflection: DoseReflection? = day % 7 == 0
+					? DoseReflection(reason: ["Tension headache", "Breathing discomfort", "Trouble settling down"][index],
+						symptomSeverityBefore: 3 + day % 3, symptomSeverityAfter: 1 + day % 2,
+						effectiveness: 3 + day % 2, note: ["Back to my afternoon.", "A comfortable walk home.", "A quieter evening."][index])
+					: day % 5 == 0 ? DoseReflection(note: ["Busy afternoon at my desk.", "After an outdoor walk.", "Settled in with a book."][index]) : nil
+				events.append(ANEventConcept(eventType: .doseTaken, medication: medication,
+					dose: ANDoseConcept(amount: index == 0 && day % 9 == 0 ? 2 : (medication.prescribedDoseAmount ?? 1), unit: medication.prescribedUnit ?? .unit),
+					date: date, note: try DoseReflectionCodec.encode(reflection)))
+			}
+		}
+		events.append(ANEventConcept(eventType: .doseTaken, medication: medications[0],
+			dose: ANDoseConcept(amount: 1, unit: .tablet), date: now.addingTimeInterval(-7 * 3600),
+			note: try DoseReflectionCodec.encode(DoseReflection(reason: "Tension headache", symptomSeverityBefore: 4,
+				symptomSeverityAfter: 2, effectiveness: 4, note: "Feeling more like myself."))))
+		events.append(ANEventConcept(eventType: .doseTaken, medication: medications[1],
+			dose: ANDoseConcept(amount: 2, unit: .puff), date: now.addingTimeInterval(-90 * 60)))
+		let export = DataExport(medications: medications, events: events.sorted { $0.date < $1.date },
+			exportDate: now, appVersion: "1.2.0", dataVersion: "1.0", settings: nil)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		let data = try encoder.encode(export)
+		try await store.importDataFromJSON(data)
+		let defaults = UserDefaults.standard
+		defaults.set(true, forKey: UserDefaultsKeys.hasSeenWelcome)
+		defaults.set(true, forKey: UserDefaultsKeys.hideSupportBanners)
+		defaults.set(true, forKey: UserDefaultsKeys.hasUserOptedOutOfReviews)
+		defaults.set(true, forKey: UserDefaultsKeys.hasDiscoveredQuickLog)
+		defaults.set(10, forKey: UserDefaultsKeys.quickLogHintImpressions)
+		defaults.set(FontFamily.atkinsonHyperlegible.rawValue, forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(30, forKey: UserDefaultsKeys.trendsDaysWindow)
+		defaults.set(0, forKey: UserDefaultsKeys.selectedTab)
+		defaults.set(medications.map { $0.id.uuidString }, forKey: UserDefaultsKeys.medicationOrder)
+		LogDoseTip().invalidate(reason: .actionPerformed)
+		HistoryFilterTip().invalidate(reason: .actionPerformed)
+		let documents = try #require(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)
+		try data.write(to: documents.appendingPathComponent("MarketingDemo.json"))
+		#expect(store.medications.count == 3)
+		#expect(store.events.count > 90)
+	}
+}
