@@ -88,34 +88,7 @@ final class NotificationManager: ObservableObject {
 	func removalGeneration(for medicationID: UUID) -> UInt { removalGenerations[medicationID, default: 0] }
 
 	private func setupNotificationCategories() async {
-		let takenAction = UNNotificationAction(
-			identifier: "TAKEN_ACTION",
-			title: "Mark as Taken",
-			options: [.foreground]
-		)
-
-		let skipAction = UNNotificationAction(
-			identifier: "SKIP_ACTION",
-			title: "Skip",
-			options: []
-		)
-
-		let medicationCategory = UNNotificationCategory(
-			identifier: "MEDICATION_REMINDER",
-			actions: [takenAction, skipAction],
-			intentIdentifiers: [],
-			hiddenPreviewsBodyPlaceholder: "Medication reminder",
-			options: []
-		)
-
-		let availabilityCategory = UNNotificationCategory(
-			identifier: MedicationAvailabilityNotificationPlanner.categoryIdentifier,
-			actions: [],
-			intentIdentifiers: [],
-			hiddenPreviewsBodyPlaceholder: "Next dose availability",
-			options: []
-		)
-		notificationCenter?.setNotificationCategories([medicationCategory, availabilityCategory])
+		notificationCenter?.setNotificationCategories(MedicationNotificationAction.categories)
 		logger.debug("Notification categories configured")
 	}
 

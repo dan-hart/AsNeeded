@@ -244,14 +244,13 @@ final class MedicationListViewModel: ObservableObject {
         return false
     }
 
-    func quickLog(medication: ANMedicationConcept) async -> Bool {
+    func quickLog(medication: ANMedicationConcept, eventID: UUID = UUID(), at loggedAt: Date = .now, source: String = "list_quick_log") async -> Bool {
 		guard let medication = dataStore.medications.first(where: { $0.id == medication.id }) else {
 			logger.warning("Skipped quick log for a medication that is no longer available")
 			return false
 		}
         let confirmationSequence = allocateConfirmationSequence()
         let operationID = UUID()
-        let loggedAt = Date()
         let dose = ANDoseConcept(
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
@@ -267,6 +266,7 @@ final class MedicationListViewModel: ObservableObject {
         let eventCountBefore = dataStore.events.count
 
         let event = ANEventConcept(
+			id: eventID,
             eventType: .doseTaken,
             medication: medication,
             dose: dose,
@@ -276,7 +276,7 @@ final class MedicationListViewModel: ObservableObject {
 
         logger.logDoseOperation(
             "Starting",
-            source: "list_quick_log",
+            source: source,
             operationID: operationID,
             eventCountBefore: eventCountBefore,
             details: quantityDetails(quantityWasPresent: medication.quantity != nil)
@@ -304,17 +304,45 @@ final class MedicationListViewModel: ObservableObject {
             showQuickLogToast(med: medication, dose: dose, feedback: feedback, sequence: confirmationSequence)
             logger.logDoseOperation(
                 "Succeeded",
-                source: "list_quick_log",
+                source: source,
                 operationID: operationID,
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
         } else {
-            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+            logger.error("Failed quick dose log: source=\(source), operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
         }
         
         return updateSuccess && eventSuccess
     }
+
+	enum NotificationActionOutcome { case handled, unavailable }
+	enum NotificationActionError: Error, Equatable { case saveFailed }
+
+	func handleNotificationAction(_ action: MedicationNotificationAction) async throws -> NotificationActionOutcome {
+		guard action.kind != .skip else { return .handled }
+		let snapshot = try await dataStore.prepareForAccess()
+		try Task.checkCancellation()
+		guard let medication = snapshot.medications.first(where: { $0.id == action.medicationID && !$0.isArchived }) else {
+			return .unavailable
+		}
+		if action.kind == .open {
+			logMedication = medication
+			return .handled
+		}
+		// A replay after relaunch must not create a second dose or overwrite a newer Undo toast.
+		if let existing = snapshot.events.first(where: { $0.id == action.eventID }) {
+			// Complete reminder cleanup if the app stopped after committing the original dose.
+			try await dataStore.recordDose(existing, shouldRecordForReview: false)
+			return .handled
+		}
+		guard await quickLog(medication: medication, eventID: action.eventID, at: action.respondedAt, source: "notification") else {
+			// Persistence may translate an interrupted save into recoveryRequired.
+			try Task.checkCancellation()
+			throw NotificationActionError.saveFailed
+		}
+		return .handled
+	}
 
     func undoLastQuickLog(eventID: UUID? = nil) async -> Bool {
         guard let undoEventID = eventID ?? quickLogFeedback?.undoEventID,

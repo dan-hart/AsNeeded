@@ -94,7 +94,7 @@ struct ContentView: View {
 		}
 		.alert("Medication unavailable", isPresented: $navigationManager.showWidgetUnavailable) {
 			Button("OK", role: .cancel) {}
-		} message: { Text("This medication may have been archived or deleted. Choose another medication in Edit Widget.") }
+		} message: { Text("This medication may have been archived or deleted. Choose another medication.") }
 		.fontFamily(currentFontFamily)
 	}
 

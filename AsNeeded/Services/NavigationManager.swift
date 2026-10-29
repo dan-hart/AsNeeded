@@ -25,6 +25,19 @@ final class NavigationManager: ObservableObject {
 		let days: Int
 	}
 
+	@Published var pendingNotificationActions: [MedicationNotificationAction] = []
+
+	func enqueueNotificationAction(_ action: MedicationNotificationAction) {
+		guard !pendingNotificationActions.contains(where: { $0.id == action.id }) else { return }
+		pendingWidgetRoute = nil
+		pendingLogMedicationID = nil
+		pendingMedicationDetail = nil
+		shouldShowLogDoseChooser = false
+		pendingNotificationActions.append(action)
+		selectedTab = 0
+		medicationRootRequestID = UUID()
+	}
+
 	@Published var pendingWidgetRoute: WidgetNavigationRoute?
 	@Published var widgetTrendsScope: WidgetTrendsScope?
 	@Published var showWidgetUnavailable = false

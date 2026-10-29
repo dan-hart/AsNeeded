@@ -3,9 +3,38 @@
 
 import DHLoggingKit
 import UIKit
+import UserNotifications
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 	private let logger = DHLogger(category: "AppDelegate")
+
+	// MARK: - Medication Notifications
+	func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+		let center = UNUserNotificationCenter.current()
+		center.delegate = self
+		center.setNotificationCategories(MedicationNotificationAction.categories)
+		return true
+	}
+
+	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+		let notification = response.notification
+		guard let action = MedicationNotificationAction(
+			actionIdentifier: response.actionIdentifier,
+			requestIdentifier: notification.request.identifier,
+			categoryIdentifier: notification.request.content.categoryIdentifier,
+			medicationID: notification.request.content.userInfo[MedicationReminderRequest.medicationIDKey] as? String,
+			deliveredAt: notification.date
+		) else { return }
+		await MainActor.run {
+			MedicationNotificationActionDispatcher(navigationManager: .shared, removeDelivered: { identifier in
+				UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [identifier])
+			}).handle(action)
+		}
+	}
+
+	nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+		[.banner, .list, .sound]
+	}
 
 	// MARK: - Quick Actions
 
