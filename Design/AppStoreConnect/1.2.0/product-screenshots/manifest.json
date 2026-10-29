@@ -13,7 +13,7 @@
     "iPhone/iPadTrend": "decreasing",
     "DuoTrend": "increasing"
   },
-  "status": "Local review assets; not uploaded",
+  "status": "Uploaded to App Store Connect 1.2.0 en-US; all approved images COMPLETE",
   "images": [
     {
       "file": "iphone/01-medication.png",
@@ -135,5 +135,6 @@
       "height": 496,
       "sha256": "c752a6776a184de7bcf81acdd5f3d4dff8c5aa0f7a8d33a19bf5b6c9b0139d1e"
     }
-  ]
+  ],
+  "uploadReceipt": "upload-receipt.json"
 }

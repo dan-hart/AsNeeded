@@ -1,8 +1,10 @@
 # Product-page screenshots — 1.2.0
 
-Local review assets. Nothing in this folder has been uploaded to App Store Connect.
+Approved assets uploaded to App Store Connect for **1.2.0, en-US**. All images were read back as **COMPLETE**, with matching checksums, dimensions, and order. See `upload-receipt.json` for asset IDs and verification. The version remains in Prepare for Submission; this upload did not submit or release the app.
 
 Open `preview.jpg` for the contact sheet. The device folders contain opaque RGB PNGs for upload; `raw/` contains the corresponding unframed UI captures.
+
+The 20 approved images occupy four device families: iPhone (4), Duo (8, outer then inner), iPad (4), and Watch (4). Another eight size-matched copies replace the existing 6.5-inch iPhone and Watch Ultra slots. Those copies preserve aspect ratio and add the same yellow at the edges; they do not stretch the device artwork. The previous ten remote images were backed up outside Git before replacement.
 
 ## Design
 
