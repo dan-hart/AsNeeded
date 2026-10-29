@@ -16,8 +16,8 @@ final class PackageDependencyManager: Sendable {
                 name: "ANModelKit",
                 description: "Domain models and business logic for medication tracking",
                 repositoryURL: URL(string: "https://github.com/dan-hart/ANModelKit")!,
-                versionInfo: .branch("main"),
-                commitHash: "02380bee063a136dd6ed7fce7cee047b4f8d4d6e",
+                versionInfo: .revision("ee9eb9e1603f1832cace9dea4a5fa07247d5de51"),
+                commitHash: "ee9eb9e1603f1832cace9dea4a5fa07247d5de51",
                 license: .gpl3,
                 isDirect: true
             ),
@@ -66,8 +66,8 @@ final class PackageDependencyManager: Sendable {
                 name: "RevenueCat",
                 description: "In-app purchase and subscription management",
                 repositoryURL: URL(string: "https://github.com/RevenueCat/purchases-ios")!,
-                versionInfo: .version("5.37.0"),
-                commitHash: "7abf1505551da3d8c33d4306a80c1e1cc450e47e",
+                versionInfo: .version("5.78.0"),
+                commitHash: "629a56ecef190469914b8f0914bf0446363eb09f",
                 license: .mit,
                 isDirect: true
             ),

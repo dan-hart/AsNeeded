@@ -91,6 +91,7 @@ struct LargeWidgetProvider: TimelineProvider {
                 medication: medication,
                 nextDoseTime: provider.nextDoseTime(for: medication),
                 canTakeNow: provider.canTakeNow(medication),
+				canLogDose: provider.canLogDose(medication),
                 lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
                 refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
             )
@@ -284,7 +285,7 @@ struct LargeWidgetView: View {
 			Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
-            if #available(iOS 17.0, *), info.canTakeNow {
+            if #available(iOS 17.0, *), info.canLogDose {
 				LogDoseLargeIconButton(medicationID: info.medication.id.uuidString, medicationName: info.medication.displayName, doseDescription: "\((info.medication.prescribedDoseAmount ?? 1).formatted(.number)) \(info.medication.prescribedUnit?.displayName ?? "unit")", color: info.medication.displayColor)
             } else {
                 Image(systemName: "plus.circle.fill")

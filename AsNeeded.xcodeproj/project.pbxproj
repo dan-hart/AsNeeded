@@ -33,6 +33,13 @@
 		52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE375E2E5531B100DD3B1A /* ANModelKit */; };
 		52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE37602E5531B100DD3B1A /* SwiftRxNorm */; };
 		52F6AE322E67A9F6005CF0A1 /* DHLoggingKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52F6AE312E67A9F6005CF0A1 /* DHLoggingKit */; };
+		A12000000000000000000201 /* MedicationSafetyProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000101 /* MedicationSafetyProfile.swift */; };
+		A12000000000000000000202 /* MedicationDoseGuidanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000102 /* MedicationDoseGuidanceService.swift */; };
+		A12000000000000000000203 /* MedicationNotificationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000103 /* MedicationNotificationClient.swift */; };
+		A12000000000000000000204 /* MedicationAvailabilityNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000104 /* MedicationAvailabilityNotificationPlanner.swift */; };
+		A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000105 /* MedicationReminderRequest.swift */; };
+		A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */; };
+		A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,6 +117,13 @@
 		52A90B992E60F6C10016124C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		52B3784C2E4E77FD008EC5F2 /* AsNeededTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AsNeededTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EC0F16A0000000000000002 /* AsNeeded.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/AsNeeded.xcconfig; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000101 /* MedicationSafetyProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Models/MedicationSafetyProfile.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000102 /* MedicationDoseGuidanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationDoseGuidanceService.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000103 /* MedicationNotificationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationNotificationClient.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000104 /* MedicationAvailabilityNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationAvailabilityNotificationPlanner.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000105 /* MedicationReminderRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationReminderRequest.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseRecordingPolicy.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseNotificationReconciler.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -450,6 +464,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */,
+				A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */,
+				A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */,
+				A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */,
+				A12000000000000000000204 /* MedicationAvailabilityNotificationPlanner.swift in Sources */,
+				A12000000000000000000203 /* MedicationNotificationClient.swift in Sources */,
+				A12000000000000000000202 /* MedicationDoseGuidanceService.swift in Sources */,
+				A12000000000000000000201 /* MedicationSafetyProfile.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

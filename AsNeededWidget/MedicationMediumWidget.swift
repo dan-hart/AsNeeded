@@ -89,6 +89,7 @@ struct MediumWidgetProvider: TimelineProvider {
                 medication: medication,
                 nextDoseTime: provider.nextDoseTime(for: medication),
                 canTakeNow: provider.canTakeNow(medication),
+				canLogDose: provider.canLogDose(medication),
                 lowStock: provider.lowQuantityMedications.contains(where: { $0.id == medication.id }),
                 refillSoon: provider.refillDueSoon.contains(where: { $0.id == medication.id })
             )
@@ -192,7 +193,7 @@ struct MediumWidgetView: View {
 			Spacer(minLength: 4)
 
             // Quick log button - interactive on iOS 17+
-            if #available(iOS 17.0, *), info.canTakeNow {
+            if #available(iOS 17.0, *), info.canLogDose {
 				LogDoseIconButton(medicationID: info.medication.id.uuidString, medicationName: info.medication.displayName, doseDescription: "\((info.medication.prescribedDoseAmount ?? 1).formatted(.number)) \(info.medication.prescribedUnit?.displayName ?? "unit")", color: info.medication.displayColor)
             } else {
                 Image(systemName: "plus.circle.fill")
@@ -254,6 +255,7 @@ struct MedicationInfo {
     let medication: ANMedicationConcept
     let nextDoseTime: Date?
     let canTakeNow: Bool
+	let canLogDose: Bool
     let lowStock: Bool
     let refillSoon: Bool
     let statusMessage: String?
@@ -262,6 +264,7 @@ struct MedicationInfo {
         medication: ANMedicationConcept,
         nextDoseTime: Date?,
         canTakeNow: Bool,
+		canLogDose: Bool? = nil,
         lowStock: Bool = false,
         refillSoon: Bool = false,
         statusMessage: String? = nil
@@ -269,6 +272,7 @@ struct MedicationInfo {
         self.medication = medication
         self.nextDoseTime = nextDoseTime
         self.canTakeNow = canTakeNow
+		self.canLogDose = canLogDose ?? canTakeNow
         self.lowStock = lowStock
         self.refillSoon = refillSoon
         self.statusMessage = statusMessage

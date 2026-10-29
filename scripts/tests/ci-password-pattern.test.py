@@ -11,6 +11,14 @@ PATTERN = ast.literal_eval(next(line.strip() for line in WORKFLOW.read_text().sp
 
 
 class HostedPatternTests(unittest.TestCase):
+	def test_match_output_never_echoes_credential_content(self):
+		line = next(line.strip() for line in WORKFLOW.read_text().splitlines() if '"$MATCHES" | sed' in line)
+		value = 'synthetic-credential-value'
+		for location in ['Config/settings.json:12', 'Config/old:settings.json:12', 'unparsed', 'Config/line\nother.json:12']:
+			result = subprocess.run(['bash', '-c', line],
+				env={'MATCHES': location + ': credential=' + value}, text=True, capture_output=True, check=True)
+			self.assertNotIn(value, result.stdout)
+
 	def matches(self, text):
 		return subprocess.run(['grep', '-E', '-i', PATTERN], input=text, text=True, capture_output=True).returncode == 0
 

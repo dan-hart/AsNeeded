@@ -28,17 +28,3 @@ struct LogDoseWidgetIntent: AppIntent {
 
     }
 }
-
-enum WidgetLogError: LocalizedError {
-	case medicationUnavailable
-	case reviewInApp
-
-	var errorDescription: String? {
-		switch self {
-		case .medicationUnavailable:
-			"This medication is no longer available. Open AsNeeded to choose a medication."
-		case .reviewInApp:
-			"The saved interval hasn’t elapsed. Open AsNeeded to review your limits or record a dose."
-		}
-	}
-}

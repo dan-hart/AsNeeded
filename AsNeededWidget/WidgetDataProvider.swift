@@ -5,6 +5,7 @@ import ANModelKit
 import Boutique
 import Foundation
 import WidgetKit
+import UserNotifications
 
 /// Provides medication data to widgets via App Group shared storage
 @MainActor
@@ -70,22 +71,17 @@ final class WidgetDataProvider {
 
 	func recordDose(medicationID: UUID) async throws {
 		guard let transactions else { throw PersistenceTransactionError.storageUnavailable }
-		try await transactions.perform { snapshot in
-			guard let medication = snapshot.medications.first(where: { $0.id == medicationID && !$0.isArchived }) else {
-				throw WidgetLogError.medicationUnavailable
+		let recorder = WidgetDoseRecorder(commit: { id, date in
+			try await transactions.perform { snapshot in
+				try WidgetDoseRecordingPolicy.recordDose(medicationID: id, in: &snapshot,
+					at: date, profile: self.safetyProfiles[id.uuidString] ?? .empty)
 			}
-			let now = Date()
-			if let nextDate = guidanceService.nextEligibleDate(for: medication, events: snapshot.events, profile: safetyProfile(for: medication)), nextDate > now {
-				throw WidgetLogError.reviewInApp
-			}
-			let event = ANEventConcept(
-				eventType: .doseTaken,
-				medication: medication,
-				dose: ANDoseConcept(amount: medication.prescribedDoseAmount ?? 1, unit: medication.prescribedUnit ?? .unit),
-				date: now
-			)
-			try snapshot.recordDose(event)
-		}
+		}, reconcile: { id in
+			await WidgetDoseNotificationReconciler(client: .live(UNUserNotificationCenter.current()),
+				readSnapshot: { try await transactions.read() }, profiles: { self.safetyProfiles })
+				.reconcile(afterLogging: id)
+		})
+		try await recorder.recordDose(medicationID: medicationID)
 	}
 
     /// Get all active medications
@@ -103,10 +99,10 @@ final class WidgetDataProvider {
         medications.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
     }
 
-    private var safetyProfiles: [String: WidgetMedicationSafetyProfile] {
+    private var safetyProfiles: [String: MedicationSafetyProfile] {
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
               let data = defaults.data(forKey: "medicationSafetyProfiles"),
-              let profiles = try? decoder.decode([String: WidgetMedicationSafetyProfile].self, from: data)
+              let profiles = try? decoder.decode([String: MedicationSafetyProfile].self, from: data)
         else {
             return [:]
         }
@@ -114,7 +110,7 @@ final class WidgetDataProvider {
         return profiles
     }
 
-    private func safetyProfile(for medication: ANMedicationConcept) -> WidgetMedicationSafetyProfile {
+    private func safetyProfile(for medication: ANMedicationConcept) -> MedicationSafetyProfile {
         safetyProfiles[medication.id.uuidString] ?? .empty
     }
 
@@ -134,20 +130,21 @@ final class WidgetDataProvider {
 
     /// Calculate next dose time for a medication using the saved safety profile when available
     func nextDoseTime(for medication: ANMedicationConcept) -> Date? {
-        guidanceService.nextEligibleDate(
-            for: medication,
-            events: events,
-            profile: safetyProfile(for: medication)
-        )
+		MedicationDoseGuidanceService().nextEligibleDate(for: medication,
+			events: events, profile: safetyProfile(for: medication))
     }
 
     /// Check if medication can be taken now
     func canTakeNow(_ medication: ANMedicationConcept) -> Bool {
-        guard let nextTime = nextDoseTime(for: medication) else {
-            return true
-        }
-        return nextTime <= Date()
+		MedicationDoseGuidanceService().canTakeNow(medication: medication,
+			events: events, profile: safetyProfile(for: medication))
     }
+
+	/// Logging remains available without claiming that unknown guidance is clearance.
+	func canLogDose(_ medication: ANMedicationConcept) -> Bool {
+		!isUnavailable && WidgetDoseRecordingPolicy.canLogDose(medication: medication,
+			events: events, profile: safetyProfile(for: medication))
+	}
 
     /// Get time remaining until next dose
     func timeUntilNextDose(for medication: ANMedicationConcept) -> TimeInterval? {
@@ -273,30 +270,6 @@ extension Color {
     }
 }
 
-private struct WidgetMedicationSafetyProfile: Codable {
-    static let empty = WidgetMedicationSafetyProfile()
-
-    var minimumHoursBetweenDoses: Double?
-    var maxDailyAmount: Double?
-    var duplicateDoseWindowMinutes: Int
-    var lowStockThreshold: Double?
-    var refillLeadDays: Int
-
-    init(
-        minimumHoursBetweenDoses: Double? = nil,
-        maxDailyAmount: Double? = nil,
-        duplicateDoseWindowMinutes: Int = 30,
-        lowStockThreshold: Double? = nil,
-        refillLeadDays: Int = 5
-    ) {
-        self.minimumHoursBetweenDoses = minimumHoursBetweenDoses
-        self.maxDailyAmount = maxDailyAmount
-        self.duplicateDoseWindowMinutes = duplicateDoseWindowMinutes
-        self.lowStockThreshold = lowStockThreshold
-        self.refillLeadDays = refillLeadDays
-    }
-}
-
 private struct WidgetMedicationGuidanceService {
     struct RefillProjection {
         let lowStock: Bool
@@ -306,31 +279,10 @@ private struct WidgetMedicationGuidanceService {
 
     private let calendar = Calendar.current
 
-    func nextEligibleDate(
-        for medication: ANMedicationConcept,
-        events: [ANEventConcept],
-        profile: WidgetMedicationSafetyProfile
-    ) -> Date? {
-        guard let minimumHoursBetweenDoses = profile.minimumHoursBetweenDoses else {
-            return nil
-        }
-
-        let lastEvent = events
-            .filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
-            .sorted { $0.date > $1.date }
-            .first
-
-        guard let lastEvent else {
-            return nil
-        }
-
-        return lastEvent.date.addingTimeInterval(minimumHoursBetweenDoses * 3600)
-    }
-
     func refillProjection(
         for medication: ANMedicationConcept,
         events: [ANEventConcept],
-        profile: WidgetMedicationSafetyProfile
+        profile: MedicationSafetyProfile
     ) -> RefillProjection {
         let threshold = profile.lowStockThreshold ?? 10
         let lowStock = medication.quantity != nil && (medication.quantity ?? 0) <= threshold

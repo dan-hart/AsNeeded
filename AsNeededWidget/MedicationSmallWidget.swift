@@ -77,7 +77,8 @@ struct SmallWidgetProvider: TimelineProvider {
             date: Date(),
             medication: medication,
             nextDoseTime: nextDoseTime,
-            canTakeNow: canTakeNow
+            canTakeNow: canTakeNow,
+			canLogDose: provider.canLogDose(medication)
         )
     }
 }
@@ -107,7 +108,7 @@ struct SmallWidgetView: View {
                 Spacer()
 
                 // Status and countdown
-                if entry.canTakeNow {
+                if entry.canLogDose ?? entry.canTakeNow {
                     if #available(iOS 17.0, *) {
                         // Interactive button for iOS 17+
 						LogDoseButton(medicationID: medication.id.uuidString, medicationName: medication.displayName, doseDescription: "\((medication.prescribedDoseAmount ?? 1).formatted(.number)) \(medication.prescribedUnit?.displayName ?? "unit")")
@@ -185,6 +186,7 @@ struct MedicationEntry: TimelineEntry {
     let medication: ANMedicationConcept?
     let nextDoseTime: Date?
     let canTakeNow: Bool
+	var canLogDose: Bool? = nil
 	var unavailable: Bool = false
 }
 

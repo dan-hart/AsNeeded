@@ -106,7 +106,7 @@ jobs:
             if [ -n "$MATCHES" ]; then
               echo "::error::Found potential secret matching pattern: $pattern"
               # Keep credential values out of hosted logs; report locations only.
-              echo "$MATCHES" | sed -E 's/^([^:]+:[0-9]+):.*/\1: [content redacted]/'
+              echo "$MATCHES" | sed -nE 's/^([^:]+:[0-9]+):.*/\1: [content redacted]/p'
               FOUND=1
             fi
           done
