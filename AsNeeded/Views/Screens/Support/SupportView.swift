@@ -122,7 +122,7 @@ struct SupportView: View {
                 tipJarGrid
 
                 // Buy Me a Coffee
-                buyMeACoffeeButton
+                BuyMeACoffeeButton()
 
                 // Rate & Review CTA (between tips and subscriptions)
                 rateAndReviewButton
@@ -194,42 +194,6 @@ struct SupportView: View {
 
             TestFlightAccessComponent()
         }
-    }
-
-    private var buyMeACoffeeButton: some View {
-        Button {
-            if let url = AppURLs.buyMeACoffee {
-                openURL(url)
-            }
-        } label: {
-            HStack(spacing: rowSpacing) {
-                Image(systemSymbol: .cupAndSaucerFill)
-                    .font(.customFont(fontFamily, style: .title3))
-                    .foregroundColor(.orange)
-
-                VStack(alignment: .leading, spacing: labelSpacing) {
-                    Text("Buy Me a Coffee")
-                        .font(.customFont(fontFamily, style: .headline))
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-
-                    Text("Support development with a coffee")
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemSymbol: .arrowUpRight)
-                    .font(.customFont(fontFamily, style: .caption))
-                    .foregroundColor(.secondary)
-            }
-            .padding(cardPadding)
-            .background(.regularMaterial)
-            .cornerRadius(cardCornerRadius)
-        }
-        .buttonStyle(.plain)
-        .padding(.top, headerPaddingV)
     }
 
     private var rateAndReviewButton: some View {

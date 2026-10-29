@@ -108,6 +108,10 @@ struct AboutView: View {
 			if let url = githubProfileURL {
 				developerLink("Dan Hart on GitHub", symbol: .chevronLeftForwardslashChevronRight, destination: url)
 			}
+			BuyMeACoffeeButton(
+				title: "Buy Dan a Coffee",
+				subtitle: "Support Dan’s work on As Needed"
+			)
 		}
 	}
 
