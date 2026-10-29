@@ -5,6 +5,7 @@ import subprocess
 import hashlib
 import os
 from PIL import Image, ImageDraw, ImageFont
+from frame_duo import frame_duo
 
 ROOT = Path.cwd()
 OUT = ROOT / 'Design/AppStoreConnect/1.2.0/product-screenshots'
@@ -29,7 +30,7 @@ for family, device in [('iphone', 'iphone-17'), ('ipad', 'ipad-pro-13')]:
             '--font', str(FONT), '--title', title, '--subtitle', subtitle,
             '--output-path', str(OUT/family/(name+'.png')), '--output', 'json'], check=True)
 
-# No invented Duo hardware: retain each real display's full aspect ratio in a simple inset.
+# Genuine AppleFramer hardware surrounds the complete native display capture.
 for family in ['duo-inner', 'duo-outer']:
     (OUT/family).mkdir(exist_ok=True)
     for name, title, subtitle in COPY:
@@ -44,27 +45,21 @@ for family in ['duo-inner', 'duo-outer']:
             font = ImageFont.truetype(str(FONT), size)
         draw.text((w/2,h*.055), title, font=font, fill='#252A2D', anchor='mt')
         draw.text((w/2,h*.125), subtitle, font=ImageFont.truetype(str(REGULAR),int(w*.023)), fill='#555040', anchor='mt')
-        scale = min(w*.92/source.width, h*.78/source.height)
-        screen = source.resize((round(source.width*scale), round(source.height*scale)), Image.Resampling.LANCZOS)
-        x, y = (w-screen.width)//2, round(h*.19)
-        draw.rounded_rectangle((x-5,y-5,x+screen.width+5,y+screen.height+5), radius=24, fill='#252A2D')
-        canvas.paste(screen,(x,y))
+        hardware = frame_duo(OUT/'raw'/family/(name+'.png'), family)
+        scale = min(w*.94/hardware.width, h*.78/hardware.height)
+        hardware = hardware.resize((round(hardware.width*scale), round(hardware.height*scale)), Image.Resampling.LANCZOS)
+        x, y = (w-hardware.width)//2, round(h*.19)
+        canvas.paste(hardware,(x,y),hardware)
         canvas.save(OUT/family/(name+'.png'))
 
 watch_copy = ['Keep it close.', 'Know what’s left.', 'Log from your wrist.', 'Keep stock in sight.']
 watch_sources = sorted((OUT/'raw/watch').glob('*.png'))
 (OUT/'watch').mkdir(exist_ok=True)
 for path,title in zip(watch_sources,watch_copy):
-    source=Image.open(path).convert('RGB')
-    canvas=Image.new('RGB',source.size,YELLOW)
-    draw=ImageDraw.Draw(canvas)
-    draw.text((208,18),title,font=ImageFont.truetype(str(FONT),27),fill='#252A2D',anchor='mt')
-    source.thumbnail((358,427),Image.Resampling.LANCZOS)
-    x,y=(416-source.width)//2,60
-    mask=Image.new('L',source.size,0)
-    ImageDraw.Draw(mask).rounded_rectangle((0,0,source.width-1,source.height-1),radius=43,fill=255)
-    canvas.paste(source,(x,y),mask)
-    canvas.save(OUT/'watch'/path.name)
+    subprocess.run(['asc', 'screenshots', 'frame', '--input', str(path),
+        '--device', 'watch-series-11', '--frame-color', 'aluminum-jet-black-sport-band-black',
+        '--bg-color', YELLOW, '--title-color', '#252A2D', '--font', str(FONT),
+        '--title', title, '--output-path', str(OUT/'watch'/path.name), '--output', 'json'], check=True)
 
 records=[]
 for family in ['iphone','ipad','duo-inner','duo-outer','watch']:
@@ -74,7 +69,11 @@ for family in ['iphone','ipad','duo-inner','duo-outer','watch']:
         records.append({'file':str(path.relative_to(OUT)), 'width':image.width,'height':image.height,
                         'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
 (OUT/'manifest.json').write_text(json.dumps({'version':'1.2.0 (321)', 'background':YELLOW,
-    'font':'Atkinson Hyperlegible', 'source':'Real simulator UI; fictional records only',
+    'font':'Atkinson Hyperlegible',
+    'source':'Running app on iPhone/iPad/Duo; unchanged production Watch views in capture harness; fictional records only',
+    'frames': {'iphone/iPad/Watch':'Koubou 0.20.0 device assets',
+               'Duo':'AppleFramer ad533b08fa6ce995b88f36c68a997d7293736cf7 (MIT)'},
+    'demoHistory': {'days':90, 'events':496, 'iPhone/iPadTrend':'decreasing', 'DuoTrend':'increasing'},
     'status':'Local review assets; not uploaded', 'images':records},indent=2)+'\n')
 
 # A compact visual proof sheet, separate from upload assets.

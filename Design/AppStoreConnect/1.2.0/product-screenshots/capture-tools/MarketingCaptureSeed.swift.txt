@@ -36,21 +36,24 @@ struct MarketingCaptureSeed {
 		var events: [ANEventConcept] = []
 		for day in 1...90 {
 			for index in 0..<3 {
-				let include = index == 0 ? (day % 3 == 0 || day < 14 && day % 2 == 1)
-					: index == 1 ? (day % 4 == 0 || day < 12 && day % 3 == 1)
-					: (day % 3 == 1 || day < 10 && day % 2 == 0)
-				guard include else { continue }
+				// Fictional daily totals form a visible 30-day trajectory, with modest variation.
+				let phase = min(day, 30)
+				let baseline = index == 0 ? 1 + (phase - 1) / 8
+					: index == 1 ? max(1, 4 - (phase - 1) / 8) : (day % 4 == 0 ? 0 : 1)
+				let count = index == 2 ? baseline : max(0, baseline - (day % 7 == 0 ? 1 : 0))
 				let medication = medications[index]
-				let hour = index == 0 ? 9 + day % 5 : index == 1 ? 11 + day % 4 : 21
-				let date = today.addingTimeInterval(Double(-day * 86400 + hour * 3600 + (day % 4) * 900))
-				let reflection: DoseReflection? = day % 7 == 0
-					? DoseReflection(reason: ["Tension headache", "Breathing discomfort", "Trouble settling down"][index],
-						symptomSeverityBefore: 3 + day % 3, symptomSeverityAfter: 1 + day % 2,
-						effectiveness: 3 + day % 2, note: ["Back to my afternoon.", "A comfortable walk home.", "A quieter evening."][index])
-					: day % 5 == 0 ? DoseReflection(note: ["Busy afternoon at my desk.", "After an outdoor walk.", "Settled in with a book."][index]) : nil
-				events.append(ANEventConcept(eventType: .doseTaken, medication: medication,
-					dose: ANDoseConcept(amount: index == 0 && day % 9 == 0 ? 2 : (medication.prescribedDoseAmount ?? 1), unit: medication.prescribedUnit ?? .unit),
-					date: date, note: try DoseReflectionCodec.encode(reflection)))
+				for slot in 0..<count {
+					let hour = index == 0 ? 4 + slot * 6 : index == 1 ? 6 + slot * 4 : 21
+					let date = today.addingTimeInterval(Double(-day * 86400 + hour * 3600 + (day % 4) * 900))
+					let reflection: DoseReflection? = slot == 0 && day % 7 == 0
+						? DoseReflection(reason: ["Tension headache", "Breathing discomfort", "Trouble settling down"][index],
+							symptomSeverityBefore: 3 + day % 3, symptomSeverityAfter: 1 + day % 2,
+							effectiveness: 3 + day % 2, note: ["Back to my afternoon.", "A comfortable walk home.", "A quieter evening."][index])
+						: slot == 0 && day % 5 == 0 ? DoseReflection(note: ["Busy afternoon at my desk.", "After an outdoor walk.", "Settled in with a book."][index]) : nil
+					events.append(ANEventConcept(eventType: .doseTaken, medication: medication,
+						dose: ANDoseConcept(amount: medication.prescribedDoseAmount ?? 1, unit: medication.prescribedUnit ?? .unit),
+						date: date, note: try DoseReflectionCodec.encode(reflection)))
+				}
 			}
 		}
 		events.append(ANEventConcept(eventType: .doseTaken, medication: medications[0],
@@ -73,6 +76,7 @@ struct MarketingCaptureSeed {
 		defaults.set(10, forKey: UserDefaultsKeys.quickLogHintImpressions)
 		defaults.set(FontFamily.atkinsonHyperlegible.rawValue, forKey: UserDefaultsKeys.selectedFontFamily)
 		defaults.set(30, forKey: UserDefaultsKeys.trendsDaysWindow)
+		defaults.set(medications[0].id.uuidString, forKey: UserDefaultsKeys.trendsSelectedMedicationID)
 		defaults.set(0, forKey: UserDefaultsKeys.selectedTab)
 		defaults.set(medications.map { $0.id.uuidString }, forKey: UserDefaultsKeys.medicationOrder)
 		LogDoseTip().invalidate(reason: .actionPerformed)

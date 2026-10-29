@@ -10,11 +10,11 @@ Open `preview.jpg` for the contact sheet. The device folders contain opaque RGB 
 - Marketing text: bundled **Atkinson Hyperlegible** font.
 - Four scenes for iPhone, iPad, and both Duo displays: Medication, History, Trends, Log Dose.
 - Watch uses its actual Medications, Medication Details, Log Dose, and Update Quantity views. Watch does not offer History or Trends.
-- iPhone and iPad hardware frames come from Koubou 0.20.0. Duo uses an inset display capture without invented hardware artwork.
+- iPhone, iPad, and Watch hardware frames come from Koubou 0.20.0. Duo inner and outer hardware frames come from MIT-licensed AppleFramer, pinned to revision `ad533b08fa6ce995b88f36c68a997d7293736cf7`; bundled assets, license, and hashes are under `capture-tools/duo-frames/`.
 
 ## Fictional records
 
-The examples are Headache Help / Pain Relief (coral, brain icon), Breathe Easy / Rescue Inhaler (teal, wind icon), and Wind Down / Sleep Support (purple, moon icon). Ninety days of synthetic history include varying amounts, notes, and symptom/effectiveness ratings. These are fictional demonstrations, not dosing recommendations. No personal records are included.
+The examples are Headache Help / Pain Relief (coral, brain icon), Breathe Easy / Rescue Inhaler (teal, wind icon), and Wind Down / Sleep Support (purple, moon icon). Ninety days of synthetic history contain 496 entries, notes, and symptom/effectiveness ratings. Headache Help decreases across the recent month; Breathe Easy increases, with modest variation in both. Phone and iPad Trends show the decrease; Duo Trends show the increase. These are fictional demonstrations, not dosing recommendations or claims that the app changes medication use. No personal records are included.
 
 `sample-data.json` is a normal app export generated with the real models and imported through the existing importer. The capture-only bootstrap is retained as `capture-tools/MarketingCaptureSeed.swift.txt`; it is deliberately outside app and test targets. Its simulator-name guard restricts it to dedicated marketing simulators.
 
@@ -30,6 +30,6 @@ Source: 1.2.0 (321), commit bc3802e. No shipping UI changes were made for these 
 
 Phone, iPad, and Duo images are captures of the running app with imported synthetic data. Watch simulator companion registration failed despite an active pair; its capture-only harness renders unchanged production SwiftUI views with an in-memory fixture. These Watch captures demonstrate the actual views, but do not establish live WatchConnectivity sync.
 
-`capture-tools/render.py` creates the marketing compositions and manifest. It needs Pillow and `asc` with Koubou 0.20.0 on PATH. Set `SKIP_FRAMES=1` to reuse existing phone/iPad frame renders. `manifest.json` records final dimensions and SHA-256 hashes. Simulator UI was inspected for each capture; no device runtime regression testing is implied.
+`capture-tools/render.py` creates the marketing compositions and manifest. It needs Pillow and `asc` with Koubou 0.20.0 on PATH. Set `SKIP_FRAMES=1` to reuse existing phone/iPad frame renders. `capture-tools/frame_duo.py` composes the full native captures with the original frame assets/masks before proportional resizing onto yellow. It can also export transparent intermediates to the ignored `intermediate/` folder. `manifest.json` records final dimensions and SHA-256 hashes. Simulator UI was inspected for each capture; no device runtime regression testing is implied.
 
 Screenshot dimensions: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications

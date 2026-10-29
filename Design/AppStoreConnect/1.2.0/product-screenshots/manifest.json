@@ -2,128 +2,138 @@
   "version": "1.2.0 (321)",
   "background": "#F1D89C",
   "font": "Atkinson Hyperlegible",
-  "source": "Real simulator UI; fictional records only",
+  "source": "Running app on iPhone/iPad/Duo; unchanged production Watch views in capture harness; fictional records only",
+  "frames": {
+    "iphone/iPad/Watch": "Koubou 0.20.0 device assets",
+    "Duo": "AppleFramer ad533b08fa6ce995b88f36c68a997d7293736cf7 (MIT)"
+  },
+  "demoHistory": {
+    "days": 90,
+    "events": 496,
+    "iPhone/iPadTrend": "decreasing",
+    "DuoTrend": "increasing"
+  },
   "status": "Local review assets; not uploaded",
   "images": [
     {
       "file": "iphone/01-medication.png",
       "width": 1206,
       "height": 2622,
-      "sha256": "3cccd66bac387e940614604470cf25231787f5c471b2dd26f6ba142643f6d85c"
+      "sha256": "eada1a0e9103e85cac17f5f3678ee0c493865f4f0724d0199c90090f6b7da0c1"
     },
     {
       "file": "iphone/02-history.png",
       "width": 1206,
       "height": 2622,
-      "sha256": "2cceec08bed0b4f538ea09d9f0bd18e0dd3fd9f0a06f0242becc35f546d54e0a"
+      "sha256": "b4144f72c41c925109768b824c2fc97a5f961ecbee947e4fd6a9f8ac41a84740"
     },
     {
       "file": "iphone/03-trends.png",
       "width": 1206,
       "height": 2622,
-      "sha256": "9f68c4857424aa0731f24b9fa7eea7f306c2560432cc19204fe98f6cd9a22893"
+      "sha256": "b40dd0a16782d8e4a67425451f6b94db11685bbddca8c8dfb00b245aef7e6fa0"
     },
     {
       "file": "iphone/04-log-dose.png",
       "width": 1206,
       "height": 2622,
-      "sha256": "b142c5bdd65e8defe178aac91b005b38b72a48791e34f15554e3a77eac0c1901"
+      "sha256": "f0e97fc0a3c717c7f693da9b6c639827baeb894228816a48e02e0bef293576c3"
     },
     {
       "file": "ipad/01-medication.png",
       "width": 2064,
       "height": 2752,
-      "sha256": "d2bd659ea3e51d3a3057759714936e059985fd55ea956d4f773faa0b1bd690c5"
+      "sha256": "6f677b8098c047dc749a16571744b5531ccdc4b0f48ed177d8848d8a7fb6e56d"
     },
     {
       "file": "ipad/02-history.png",
       "width": 2064,
       "height": 2752,
-      "sha256": "1c727f865cd27d6eb49ae0bd2da02ccb96d230f4547176b0e0e7e2388fda346a"
+      "sha256": "4418b877a114426a13f405e9893d07b8c80a0323042a4addbe2f41508aafd015"
     },
     {
       "file": "ipad/03-trends.png",
       "width": 2064,
       "height": 2752,
-      "sha256": "b963c3f1a4b4b3c79b4d1ec2c0749376597c8fb33574e71e45d8a79034a81ee0"
+      "sha256": "a71578f5d9946f1d9431bd8695fb99a2864ec8b366117f529350a790740e1a64"
     },
     {
       "file": "ipad/04-log-dose.png",
       "width": 2064,
       "height": 2752,
-      "sha256": "e8ed02e6b1881849007834a5aadd58221d7a177ec26d5f428da4a6edec75d5d2"
+      "sha256": "3bc7e217f04e8aa109d8fe85c5a05d71e41f3b89d4586de15120d9169730f6a0"
     },
     {
       "file": "duo-inner/01-medication.png",
       "width": 2853,
       "height": 2007,
-      "sha256": "f9167e52a54bcd0d5dabe73ee3accc039ff3a3fdc1ed9a34411fd1473601cd81"
+      "sha256": "31dae9b23ca54aca5b33cc1bec2b919782719555d1d5ed66da12594ea52e1de4"
     },
     {
       "file": "duo-inner/02-history.png",
       "width": 2853,
       "height": 2007,
-      "sha256": "1d2d0ae7e5320009128a1cf0ad44f21fb4d0efbc0d9889692f2d66fb29ab7a5e"
+      "sha256": "f13349c6bc3a01fa569e2031f55c006b1ee817f674a0131cb46191604b7de98d"
     },
     {
       "file": "duo-inner/03-trends.png",
       "width": 2853,
       "height": 2007,
-      "sha256": "404d7ef6f77a2659d4114a6ef798d91e4658617563a410530a47feef9d112d11"
+      "sha256": "8a240d034241c50f956809f219db5c1f21a205db9f8b2436aaae2ab92db6f640"
     },
     {
       "file": "duo-inner/04-log-dose.png",
       "width": 2853,
       "height": 2007,
-      "sha256": "e08271c8a239df9559391c53947c5ad6a439a06d6a337b827b28714389dd135c"
+      "sha256": "320de5903213772546658adf4e9365a8e7236d4fc1dab1487b68671472798816"
     },
     {
       "file": "duo-outer/01-medication.png",
       "width": 1398,
       "height": 2034,
-      "sha256": "e13425a3607201c8bb528953bd86f4dcf97da75803f8f31b7c4549717e240c7e"
+      "sha256": "52a79a47febcc3812e63ffbade287a8dabe0124ca1b555b4448dc0d0256ba305"
     },
     {
       "file": "duo-outer/02-history.png",
       "width": 1398,
       "height": 2034,
-      "sha256": "1a83f48899abe7b439d9b635b80901552ae22e745b6a0d95033441fa65ef04da"
+      "sha256": "70e04c5f51196735a929b7a5d9fb682c3f3ddd3393c8806e11d31fcc83da0810"
     },
     {
       "file": "duo-outer/03-trends.png",
       "width": 1398,
       "height": 2034,
-      "sha256": "f180dc0fc617a8feb0536ed581e75d453681056b70f6cdd8c032570a2da31cb5"
+      "sha256": "d6843caa5fe9ea0432043789c23500a56de4a114ea020de14858c50fd37b28d9"
     },
     {
       "file": "duo-outer/04-log-dose.png",
       "width": 1398,
       "height": 2034,
-      "sha256": "f129a8a858622966082885c3db97191ccb89929e83cf37c1b7878ea9daf9da5f"
+      "sha256": "2cbcec72c783745b4829ddcc8fb52ff38c766fa796792ff355c31d4cc6e29b8f"
     },
     {
       "file": "watch/01-medications.png",
       "width": 416,
       "height": 496,
-      "sha256": "83ae2a738af3006f002f0d9a44b2fabed204be2dc9605330ff1ac18221a558d8"
+      "sha256": "0c0c70f78c9a612bfd81ac540bf821dc1e9514b907cfc89ccf65fbbb66a85b51"
     },
     {
       "file": "watch/02-medication-details.png",
       "width": 416,
       "height": 496,
-      "sha256": "8a114b7d95f84b2eccc17ab02d2cff393b8ed2085ec684d3dedd3074b2014a32"
+      "sha256": "7bd6d49d6e452fc2d3ff09cc23d2ff48cc58f92abe2560d3f5a1ea89dcb876dc"
     },
     {
       "file": "watch/03-log-dose.png",
       "width": 416,
       "height": 496,
-      "sha256": "a1b325c0263ad644367b2ff344aaa5ad1e0d382480edd618677a8e81d3583a5e"
+      "sha256": "c81a85e1344dd12495772dfcddf312751d7d1062f93ec083c78fc1693d2d602c"
     },
     {
       "file": "watch/04-update-quantity.png",
       "width": 416,
       "height": 496,
-      "sha256": "7468b919b0d5a786195e793ec1edb008cdc660756fb52862b42f46b193305a7e"
+      "sha256": "c752a6776a184de7bcf81acdd5f3d4dff8c5aa0f7a8d33a19bf5b6c9b0139d1e"
     }
   ]
 }
