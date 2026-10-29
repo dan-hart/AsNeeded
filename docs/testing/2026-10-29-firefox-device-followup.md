@@ -1,5 +1,7 @@
 # Firefox and physical-device release QA follow-up
 
+Latest checkpoint: [final SE QA and submission checklist](2026-10-29-final-se-qa-and-submission-checklist.md) records the additional fractional-edit/cleanup checks, refreshed Active agreements and exact remaining hands-on steps.
+
 This continues [the release QA fixes](2026-10-29-release-qa-fixes.md). The maintainer selected the physical iPhone SE and confirmed its records are test fixtures. Build 321 supersedes the 319/320 candidates because physical testing found another editor defect.
 
 ## Privacy publication
