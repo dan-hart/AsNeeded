@@ -39,13 +39,13 @@ struct AboutView: View {
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 heroSection
 
-                developerSection
-
                 coreValuesSection
 
                 supportSection
 
                 specialThanksSection
+
+                developerSection
 
                 technicalInfoSection
 
@@ -98,7 +98,7 @@ struct AboutView: View {
 
 	private var developerSection: some View {
 		VStack(alignment: .leading, spacing: subsectionSpacing) {
-			Text("About the Developer")
+			Text("Connect with the Developer")
 				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
 				.accessibilityAddTraits(.isHeader)
 
