@@ -38,6 +38,59 @@ struct MedicationDoseGuidanceServiceTests {
 		)
 	}
 
+	@Test("Unrepresentable refill estimates stay unavailable", arguments: [1e30, Double(Int.max), Double.greatestFiniteMagnitude, Double.infinity, Double.nan])
+	func refillProjectionHandlesUnrepresentableQuantity(quantity: Double) {
+		let medication = medication(quantity: quantity)
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 1, unit: .tablet), date: date)
+		let projection = MedicationDoseGuidanceService().refillProjection(for: medication, at: date, events: [dose])
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+	}
+
+	@Test("Nonfinite recent usage does not produce a refill estimate", arguments: [Double.infinity, Double.nan, Double.greatestFiniteMagnitude])
+	func refillProjectionHandlesNonfiniteUsage(amount: Double) {
+		let medication = medication()
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: amount, unit: .tablet), date: date)
+		let projection = MedicationDoseGuidanceService().refillProjection(for: medication, at: date, events: [dose, dose])
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+	}
+
+	@Test("Overflowing refill quotient stays unavailable")
+	func refillProjectionHandlesOverflowingQuotient() {
+		let medication = medication(quantity: Double.greatestFiniteMagnitude)
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: Double.leastNonzeroMagnitude, unit: .tablet), date: date)
+		let projection = MedicationDoseGuidanceService().refillProjection(for: medication, at: date, events: [dose])
+		#expect(projection.estimatedDaysRemaining == nil)
+		#expect(projection.projectedRunOutDate == nil)
+	}
+
+	@Test("Optional and fractional stock retain refill behavior")
+	func refillProjectionPreservesOptionalAndFractionalStock() {
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		for quantity: Double? in [nil, 0, 0.25, 0.75] {
+			let medication = medication(quantity: quantity)
+			let dose = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 0.5, unit: .tablet), date: date)
+			let projection = MedicationDoseGuidanceService().refillProjection(for: medication, at: date, events: [dose])
+			let expectedDays = quantity.flatMap { $0 > 0 ? Int($0 / 0.5) : nil }
+			#expect(projection.estimatedDaysRemaining == expectedDays)
+			#expect((projection.projectedRunOutDate != nil) == (expectedDays != nil))
+		}
+	}
+
+	@Test("Refill dates outside calendar arithmetic remain unavailable")
+	func refillProjectionRejectsUnsupportedDate() {
+		let medication = medication(quantity: 1e12)
+		let date = Date(timeIntervalSince1970: 1_700_000_000)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 1, unit: .tablet), date: date)
+		let projection = MedicationDoseGuidanceService().refillProjection(for: medication, at: date, events: [dose])
+		#expect(projection.estimatedDaysRemaining == 1_000_000_000_000)
+		#expect(projection.projectedRunOutDate == nil)
+	}
+
 	@Test("Assessment warns when minimum interval has not elapsed")
 	func assessmentWarnsWhenMinimumIntervalNotElapsed() {
 		let medication = medication()

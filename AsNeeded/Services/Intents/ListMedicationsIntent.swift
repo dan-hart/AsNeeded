@@ -12,13 +12,20 @@ struct ListMedicationsIntent: AppIntent {
     static let description = IntentDescription("List all medications in AsNeeded")
     static let openAppWhenRun: Bool = false
 
+	// System-created intents use the shared store; callers can supply an isolated store.
+	var dataStore: DataStore?
+
+	init() {}
+
+	init(dataStore: DataStore) { self.dataStore = dataStore }
+
     private let logger = DHLogger(category: "ListMedicationsIntent")
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         logger.info("Performing ListMedicationsIntent")
 
-        let medications = DataStore.shared.medications
+        let medications = try await (dataStore ?? .shared).prepareForAccess().medications
 
         guard !medications.isEmpty else {
             logger.info("No medications found")

@@ -20,10 +20,11 @@ struct VerticalOnlyScrollView<Content: View>: View {
 	@ViewBuilder let content: () -> Content
 
 	var body: some View {
-		ScrollView(.vertical, showsIndicators: showsIndicators) {
-			content()
-				.frame(maxWidth: .infinity)
-				.containerRelativeFrame(.horizontal)
+		GeometryReader { viewport in
+			ScrollView(.vertical, showsIndicators: showsIndicators) {
+				content()
+					.frame(width: max(0, viewport.size.width), alignment: .topLeading)
+			}
 		}
 	}
 }

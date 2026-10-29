@@ -25,6 +25,7 @@ struct SupportToastView: View {
 	}
 
 	var body: some View {
+		Group {
 		if isVisible && !hideSupportBanners {
 			ViewThatFits(in: .vertical) {
 				banner
@@ -39,6 +40,8 @@ struct SupportToastView: View {
 			.transition(.opacity)
 			.zIndex(999)
 		}
+		}
+		.modifier(EstablishedUseSupportModifier())
 	}
 
 	private var banner: some View {

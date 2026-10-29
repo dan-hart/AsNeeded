@@ -32,6 +32,22 @@ struct DataStoreTests {
         navigation.historyTargetMedicationID = nil
     }
 
+	@Test("Name redaction omits recent searches without changing stored settings")
+	func nameRedactionOmitsRecentSearches() async throws {
+		let searches = ["Synthetic Medication", "Synthetic Nickname"]
+		defaults.set(searches, forKey: UserDefaultsKeys.recentMedicationSearches)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		let data = try await dataStore.exportDataAsJSON(redactNames: true, includeSettings: true)
+		let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+		let settings = try #require(json["settings"] as? [String: Any])
+		#expect(settings["recentMedicationSearches"] == nil)
+		#expect(settings["hapticsEnabled"] as? Bool == false)
+		#expect(defaults.stringArray(forKey: UserDefaultsKeys.recentMedicationSearches) == searches)
+		let unredacted = try await dataStore.exportDataAsJSON(includeSettings: true)
+		let unredactedJSON = try #require(JSONSerialization.jsonObject(with: unredacted) as? [String: Any])
+		#expect((unredactedJSON["settings"] as? [String: Any])?["recentMedicationSearches"] as? [String] == searches)
+	}
+
     // MARK: - Medication Tests
 
     @Test("Add medication to data store")

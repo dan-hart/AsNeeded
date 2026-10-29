@@ -182,6 +182,26 @@ struct MedicationReminderRequestTests {
 		#expect(MedicationReminderRequest.deliveredIdentifiers(for: medication.id, in: [delivered]) == ["delivered"])
 	}
 
+	@Test("Name privacy round trip rebuilds current medication content without changing schedule")
+	func namesRoundTripUsesCurrentMedication() throws {
+		var medication = makeMedication()
+		let original = recurringRequest(for: medication)
+		medication.nickname = "Renamed synthetic"
+		let shown = try #require(MedicationReminderRequest.reconciliationPlans(in: [original], showMedicationNames: true, medicationsByID: [medication.id: medication]).first?.requestToAdd)
+		#expect(shown.content.title == medication.displayName)
+		let hidden = try #require(MedicationReminderRequest.reconciliationPlans(in: [shown], showMedicationNames: false, medicationsByID: [medication.id: medication]).first?.requestToAdd)
+		#expect(hidden.content.title == "Medication Reminder")
+		let restored = try #require(MedicationReminderRequest.reconciliationPlans(in: [hidden], showMedicationNames: true, medicationsByID: [medication.id: medication]).first?.requestToAdd)
+		#expect(restored.content.title == medication.displayName)
+		#expect(restored.content.body == "It's time to take \(medication.displayName)")
+		#expect(restored.identifier == original.identifier)
+		#expect(restored.content.categoryIdentifier == original.content.categoryIdentifier)
+		#expect(restored.content.interruptionLevel == original.content.interruptionLevel)
+		#expect((restored.trigger as? UNCalendarNotificationTrigger)?.dateComponents == (original.trigger as? UNCalendarNotificationTrigger)?.dateComponents)
+		#expect((restored.trigger as? UNCalendarNotificationTrigger)?.repeats == true)
+		#expect(MedicationReminderRequest.reconciliationPlans(in: [restored], showMedicationNames: true, medicationsByID: [medication.id: medication]).isEmpty)
+	}
+
 	private func makeRequest(showMedicationNames: Bool = false) -> UNNotificationRequest {
 		makeRequest(for: makeMedication(), showMedicationNames: showMedicationNames)
 	}

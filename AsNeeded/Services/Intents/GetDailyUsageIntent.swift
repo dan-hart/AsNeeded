@@ -18,19 +18,31 @@ struct GetDailyUsageIntent: AppIntent {
     @Parameter(title: "Medication Name", description: "The name of the medication to check")
     var medicationName: String?
 
+	// System-created intents use the shared store; callers can supply an isolated store.
+	var dataStore: DataStore?
+
+	init() {}
+
+	init(dataStore: DataStore) { self.dataStore = dataStore }
+
     private let logger = DHLogger(category: "GetDailyUsageIntent")
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        let snapshot = try await (dataStore ?? .shared).prepareForAccess()
+
         // Determine which medication to query
         let targetMedication: ANMedicationConcept
 
-        if let providedMedication = medication {
-            targetMedication = providedMedication.medication
+        if medication != nil {
+            guard let current = resolveMedication(in: snapshot.medications) else {
+				return .result(dialog: IntentDialog("That medication is no longer available. Choose a different medication in AsNeeded."))
+			}
+			targetMedication = current
             logger.info("Using entity medication for daily usage")
         } else if let name = medicationName, !name.isEmpty {
             logger.info("Searching for medication by provided name for daily usage")
-            guard let foundMedication = findBestMatch(for: name) else {
+            guard let foundMedication = resolveMedication(in: snapshot.medications) else {
                 logger.warning("No medication found for provided name")
                 return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
             }
@@ -41,7 +53,7 @@ struct GetDailyUsageIntent: AppIntent {
         }
 
         // Calculate today's usage
-        let todayUsage = calculateTodayUsage(for: targetMedication)
+        let todayUsage = calculateTodayUsage(for: targetMedication, events: snapshot.events)
         let medicationDisplayName = if let nickname = targetMedication.nickname, !nickname.isEmpty {
             nickname
         } else {
@@ -59,7 +71,7 @@ struct GetDailyUsageIntent: AppIntent {
         let doseCount = todayUsage.doseCount
 
 		let amountText = amount.formatted(.number.precision(.fractionLength(0...3)))
-        let unitText = unit.displayName(for: Int(amount.rounded()), locale: .current)
+        let unitText = unit.displayName(for: amount == 1 ? 1 : 2, locale: .current)
 
         var responseText: String
         if doseCount == 1 {
@@ -73,15 +85,25 @@ struct GetDailyUsageIntent: AppIntent {
         return .result(dialog: IntentDialog(stringLiteral: responseText))
     }
 
+	@MainActor
+	func resolveMedication(in medications: [ANMedicationConcept]) -> ANMedicationConcept? {
+		if let medication {
+			guard let id = UUID(uuidString: medication.id) else { return nil }
+			return medications.first { $0.id == id }
+		}
+		guard let medicationName else { return nil }
+		return MedicationSearchUtility.findBestMatch(for: medicationName, in: medications)
+	}
+
     /// Calculate today's total usage for a medication
     @MainActor
-    func calculateTodayUsage(for medication: ANMedicationConcept) -> (totalAmount: Double, unit: ANUnitConcept, doseCount: Int) {
+    func calculateTodayUsage(for medication: ANMedicationConcept, events: [ANEventConcept] = [], at now: Date = Date()) -> (totalAmount: Double, unit: ANUnitConcept, doseCount: Int) {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
+        let today = calendar.startOfDay(for: now)
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? now
 
         // Get today's events for this medication
-        let todayEvents = DataStore.shared.events.filter { event in
+        let todayEvents = events.filter { event in
             guard event.eventType == .doseTaken,
                   event.medication?.id == medication.id,
                   event.dose != nil
@@ -118,9 +140,4 @@ struct GetDailyUsageIntent: AppIntent {
         return (totalAmount: totalAmount, unit: primaryUnit, doseCount: eventsWithPrimaryUnit.count)
     }
 
-    /// Find the best matching medication for the given name
-    @MainActor
-    private func findBestMatch(for name: String) -> ANMedicationConcept? {
-        return MedicationSearchUtility.findBestMatch(for: name)
-    }
 }

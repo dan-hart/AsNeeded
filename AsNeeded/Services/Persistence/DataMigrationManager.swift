@@ -592,7 +592,6 @@ public final class DataMigrationManager {
 	/// Paths are stored in UserDefaults for potential future recovery
 	/// - Throws: `MigrationError.archivalFailed` if archival fails - migration will retry on next launch
 	private func archiveLegacyDatabases(_ paths: (medications: URL?, events: URL?)) throws {
-		let fileManager = FileManager.default
 		let dateSuffix = DateFormatter.migrationDateFormatter.string(from: Date())
 
 		logger.info("=== Beginning Legacy Database Archival ===")

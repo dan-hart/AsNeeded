@@ -27,18 +27,25 @@ struct MedicationEntity: AppEntity {
 
 @available(iOS 16.0, *)
 struct MedicationQuery: EntityQuery {
+	var dataStore: DataStore?
+
+	init() {}
+
+	init(dataStore: DataStore) { self.dataStore = dataStore }
+
     @MainActor
     func entities(for identifiers: [String]) async throws -> [MedicationEntity] {
-        let medications = DataStore.shared.medications
+        let medications = try await (dataStore ?? .shared).prepareForAccess().medications
+        let requestedIDs = Set(identifiers.compactMap(UUID.init(uuidString:)))
         return medications.compactMap { medication in
-            guard identifiers.contains(medication.id.uuidString) else { return nil }
+            guard requestedIDs.contains(medication.id) else { return nil }
             return MedicationEntity(medication: medication)
         }
     }
 
     @MainActor
     func entities(matching string: String) async throws -> [MedicationEntity] {
-        let medications = DataStore.shared.medications
+        let medications = try await (dataStore ?? .shared).prepareForAccess().medications
         let searchTerm = string.lowercased()
 
         return medications.compactMap { medication in
@@ -54,23 +61,19 @@ struct MedicationQuery: EntityQuery {
 
     @MainActor
     func suggestedEntities() async throws -> [MedicationEntity] {
-        // Return all user medications, most recently used first
-        let medications = DataStore.shared.medications.sorted { med1, med2 in
-            // Sort by last event date if available, otherwise by creation date
-            let events = DataStore.shared.events
-            let med1LastEvent = events.filter { $0.medication?.id == med1.id }.max(by: { $0.date < $1.date })
-            let med2LastEvent = events.filter { $0.medication?.id == med2.id }.max(by: { $0.date < $1.date })
-
-            if let date1 = med1LastEvent?.date, let date2 = med2LastEvent?.date {
-                return date1 > date2
-            } else if med1LastEvent != nil {
-                return true
-            } else if med2LastEvent != nil {
-                return false
-            } else {
-                return med1.clinicalName < med2.clinicalName
-            }
-        }
+		let snapshot = try await (dataStore ?? .shared).prepareForAccess()
+		// Precompute from one loaded snapshot; sorting never rereads mutable storage.
+		var lastEventDates: [UUID: Date] = [:]
+		for event in snapshot.events {
+			guard let id = event.medication?.id else { continue }
+			lastEventDates[id] = max(lastEventDates[id] ?? .distantPast, event.date)
+		}
+		let medications = snapshot.medications.sorted { left, right in
+			let leftDate = lastEventDates[left.id] ?? .distantPast
+			let rightDate = lastEventDates[right.id] ?? .distantPast
+			if leftDate != rightDate { return leftDate > rightDate }
+			return left.clinicalName < right.clinicalName
+		}
 
         return medications.map { MedicationEntity(medication: $0) }
     }

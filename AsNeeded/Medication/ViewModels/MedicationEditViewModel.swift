@@ -110,10 +110,24 @@ final class MedicationEditViewModel: ObservableObject {
 			return false // Next refill date cannot be in the past (allowing today)
 		}
 
-		guard doseLimitValidationMessage == nil else { return false }
+		guard stockValidationMessage == nil, doseLimitValidationMessage == nil else { return false }
 		if doseText.isEmpty && prescribedUnit == nil { return nameOK }
 		guard let amount = Double(doseText), amount.isFinite, amount > 0 else { return false }
 		return nameOK && prescribedUnit != nil
+	}
+
+	var stockValidationMessage: String? {
+		for (text, label) in [
+			(quantityText, "Current stock"),
+			(initialQuantityText, "Refill quantity")
+		] {
+			let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+			guard !trimmed.isEmpty else { continue }
+			guard let value = Double(trimmed), value.isFinite, value >= 0 else {
+				return "\(label) must be zero or a positive, finite number. Leave it blank if unknown."
+			}
+		}
+		return nil
 	}
 
 	var doseLimitValidationMessage: String? {

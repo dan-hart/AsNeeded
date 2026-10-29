@@ -436,9 +436,9 @@ final class DataManagementViewModel: ObservableObject {
         let report = await DataRecoveryManager.shared.scanForOrphanedData()
 
         if report.hasOrphanedData {
-            recoverySummaryText = "Found \(report.totalMedicationsFound) medications and \(report.totalEventsFound) events across historical storage locations."
+            recoverySummaryText = "Found \(report.totalMedicationsFound) medication records and \(report.totalEventsFound) event records in historical sources. Some may already be in current storage or another source."
         } else {
-            recoverySummaryText = "No orphaned data was found across the scanned storage locations."
+            recoverySummaryText = "No records were found in the historical sources scanned."
         }
     }
 

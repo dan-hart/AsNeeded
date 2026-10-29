@@ -148,7 +148,7 @@ final class QuickActionHandler: ObservableObject {
     }
 
     private func handleLogDoseAction(medicationID: UUID?) {
-        if let medicationID = medicationID {
+        if medicationID != nil {
             // Navigate to log dose for specific medication
             // This will be handled by the UI layer setting up state
             logger.info("Navigate to log dose for medication")

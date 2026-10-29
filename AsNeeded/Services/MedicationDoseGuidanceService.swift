@@ -243,12 +243,21 @@ struct MedicationDoseGuidanceService {
 		let projectedRunOutDate: Date?
 
 		if let quantity = medication.quantity,
-		   quantity > 0,
-		   averageDailyUsage > 0
+		   quantity.isFinite, quantity > 0,
+		   averageDailyUsage.isFinite, averageDailyUsage > 0,
+		   let remainingDays = Int(exactly: (quantity / averageDailyUsage).rounded(.down))
 		{
-			let remainingDays = max(0, Int((quantity / averageDailyUsage).rounded(.down)))
 			estimatedDaysRemaining = remainingDays
-			projectedRunOutDate = calendar.date(byAdding: .day, value: remainingDays, to: date)
+			// Calendar can return a date whose components are clamped outside its supported range.
+			// Keep the supply estimate, but only show a date that represents the requested day count.
+			if date.timeIntervalSinceReferenceDate.isFinite,
+			   let projectedDate = calendar.date(byAdding: .day, value: remainingDays, to: date),
+			   projectedDate.timeIntervalSinceReferenceDate.isFinite,
+			   calendar.dateComponents([.day], from: date, to: projectedDate).day == remainingDays {
+				projectedRunOutDate = projectedDate
+			} else {
+				projectedRunOutDate = nil
+			}
 		} else {
 			estimatedDaysRemaining = nil
 			projectedRunOutDate = nil

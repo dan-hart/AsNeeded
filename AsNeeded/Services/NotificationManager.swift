@@ -12,7 +12,9 @@ final class NotificationManager: ObservableObject {
 		let center = UNUserNotificationCenter.current()
 		return NotificationManager(notificationClient: .live(center), medicationExists: { id in
 			try await DataStore.shared.prepareForAccess().medications.contains { $0.id == id }
-		}, notificationCenter: center)
+		}, notificationCenter: center, currentMedications: {
+			try await DataStore.shared.prepareForAccess().medications
+		})
 	}()
 	private let logger = DHLogger(category: "NotificationManager")
 
@@ -31,7 +33,7 @@ final class NotificationManager: ObservableObject {
 	@Published var showMedicationNames: Bool = false {
 		didSet {
 			defaults.set(showMedicationNames, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
-			if notificationCenter != nil {
+			if oldValue != showMedicationNames {
 				Task {
 					await reconcileScheduledReminders()
 					await refreshAvailabilityNotifications()
@@ -45,6 +47,7 @@ final class NotificationManager: ObservableObject {
 	private let notificationClient: MedicationNotificationClient
 	private let urgencyStore: MedicationNotificationUrgencyStore
 	private let defaults: UserDefaults
+	private let currentMedications: (@MainActor () async throws -> [ANMedicationConcept])?
 	private let medicationExists: @MainActor (UUID) async throws -> Bool
 	private var reminderMutationTail: Task<Void, Never>?
 	private var removalGenerations: [UUID: UInt] = [:]
@@ -62,12 +65,14 @@ final class NotificationManager: ObservableObject {
 		defaults: UserDefaults = .standard,
 		medicationExists: @escaping @MainActor (UUID) async throws -> Bool,
 		notificationCenter: UNUserNotificationCenter? = nil,
-		urgencyStore: MedicationNotificationUrgencyStore? = nil
+		urgencyStore: MedicationNotificationUrgencyStore? = nil,
+		currentMedications: (@MainActor () async throws -> [ANMedicationConcept])? = nil
 	) {
 		self.notificationClient = notificationClient
 		self.defaults = defaults
 		self.urgencyStore = urgencyStore ?? MedicationNotificationUrgencyStore(defaults: defaults)
 		self.medicationExists = medicationExists
+		self.currentMedications = currentMedications
 		self.notificationCenter = notificationCenter
 		showMedicationNames = defaults.object(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) as? Bool ?? false
 	}
@@ -149,7 +154,9 @@ final class NotificationManager: ObservableObject {
 			guard try await self.medicationExists(medication.id), self.removalGeneration(for: medication.id) == generation else {
 				throw OperationError.medicationNotFound
 			}
-			let request = MedicationReminderRequest.make(medication: medication, date: date, isRecurring: isRecurring, repeatInterval: repeatInterval, isUrgent: self.isUrgent(for: medication.id), showMedicationNames: self.showMedicationNames)
+			let currentMedication = try await self.currentMedications?().first { $0.id == medication.id }
+			if self.currentMedications != nil && currentMedication == nil { throw OperationError.medicationNotFound }
+			let request = MedicationReminderRequest.make(medication: currentMedication ?? medication, date: date, isRecurring: isRecurring, repeatInterval: repeatInterval, isUrgent: self.isUrgent(for: medication.id), showMedicationNames: self.showMedicationNames)
 			let pending = await self.notificationClient.pendingRequests()
 			guard try await self.medicationExists(medication.id), self.removalGeneration(for: medication.id) == generation else {
 				throw OperationError.medicationNotFound
@@ -169,18 +176,29 @@ final class NotificationManager: ObservableObject {
 	/// Pending requests are the existing schedule source; the pinned model has no schedule fields.
 	/// Keep legacy requests until their canonical replacement has been accepted by the system.
 	func reconcileScheduledReminders() async {
-		_ = await enqueueReminderMutation {
+		_ = await reconcileScheduledReminderNames()
+	}
+
+	/// Return the names used to build requests, rather than the snapshot that woke
+	/// the observer: committed snapshots can coalesce while an add is suspended.
+	private func reconcileScheduledReminderNames() async -> [UUID: String]? {
+		let result: Result<[UUID: String]?, Error> = await enqueueReminderMutation {
 			let pending = await self.notificationClient.pendingRequests()
 			let delivered = await self.notificationClient.deliveredRequests()
 			var missingIDs: Set<UUID> = []
+			var medicationsByID: [UUID: ANMedicationConcept] = [:]
 			let ids = Set((pending + delivered).filter { $0.content.categoryIdentifier == MedicationReminderRequest.categoryIdentifier }.compactMap { Self.medicationID(for: $0) })
 			do {
+				if let currentMedications = self.currentMedications {
+					for medication in try await currentMedications() { medicationsByID[medication.id] = medication }
+				}
 				for id in ids {
-					if try await self.medicationExists(id) == false { missingIDs.insert(id) }
+					let exists = try await self.medicationExists(id)
+					if (self.currentMedications != nil && medicationsByID[id] == nil) || !exists { missingIDs.insert(id) }
 				}
 			} catch {
 				self.logger.logPrivacySafeError("Unable to read medication inventory for reminders", error: error)
-				return
+				return nil
 			}
 			if !missingIDs.isEmpty {
 				self.notificationClient.removePending(pending.filter { Self.belongsToMedication($0, ids: missingIDs) }.map(\.identifier))
@@ -189,7 +207,7 @@ final class NotificationManager: ObservableObject {
 			let current = pending.filter { !Self.belongsToMedication($0, ids: missingIDs) }
 			guard var preferences = self.urgencyStore.allPreferences() else {
 				self.logger.error("Unable to read reminder priority preferences")
-				return
+				return nil
 			}
 			let scheduled = current.filter { MedicationReminderRequest.identity(for: $0) != nil }
 			for id in Set(scheduled.compactMap { Self.medicationID(for: $0) }) where preferences[id.uuidString] == nil {
@@ -197,10 +215,10 @@ final class NotificationManager: ObservableObject {
 				preferences[id.uuidString] = scheduled.contains { Self.medicationID(for: $0) == id && $0.content.interruptionLevel == .timeSensitive }
 			}
 			for id in missingIDs { preferences.removeValue(forKey: id.uuidString) }
-			guard self.urgencyStore.replaceAll(with: preferences) else { return }
+			guard self.urgencyStore.replaceAll(with: preferences) else { return nil }
 			self.urgencyRevision &+= 1
 			let urgencyByID = Dictionary(uniqueKeysWithValues: preferences.compactMap { key, value in UUID(uuidString: key).map { ($0, value) } })
-			for plan in MedicationReminderRequest.reconciliationPlans(in: current, showMedicationNames: self.showMedicationNames, urgencyByMedicationID: urgencyByID) {
+			for plan in MedicationReminderRequest.reconciliationPlans(in: current, showMedicationNames: self.showMedicationNames, urgencyByMedicationID: urgencyByID, medicationsByID: medicationsByID) {
 				guard let id = MedicationReminderRequest.identity(for: plan.requestToAdd)?.medicationID else { continue }
 				let generation = self.removalGeneration(for: id)
 				do {
@@ -221,7 +239,10 @@ final class NotificationManager: ObservableObject {
 					self.logger.logPrivacySafeError("Unable to reconcile scheduled reminder", error: error)
 				}
 			}
+			guard self.currentMedications != nil else { return nil }
+			return medicationsByID.mapValues(\.displayName)
 		}
+		return try? result.get()
 	}
 
 	func isUrgent(for medicationID: UUID) -> Bool { urgencyStore.isUrgent(for: medicationID) }
@@ -373,10 +394,28 @@ final class NotificationManager: ObservableObject {
 		guard !availabilityObservationStarted else { return }
 		try await dataStore.medicationsStore.itemsHaveLoaded()
 		try await dataStore.eventsStore.itemsHaveLoaded()
+		// Subscribe before the recovered read so startup and concurrent saves cannot
+		// leave reminder names behind a newer committed medication record.
+		let committedSnapshots = dataStore.committedSnapshots()
+		try await dataStore.prepareForAccess()
 		guard !availabilityObservationStarted else { return }
 		availabilityObservationStarted = true
 		availabilityDataStore = dataStore
 		availabilityObservationTasks = [
+			Task { [weak self] in
+				var previousNames: [UUID: String]?
+				for await snapshot in committedSnapshots {
+					guard !Task.isCancelled else { return }
+					let names = Dictionary(snapshot.medications.map { ($0.id, $0.displayName) }, uniquingKeysWith: { _, current in current })
+					// Reconciliation reads also publish snapshots. Only changed names/IDs
+					// schedule another pass, after the owning transaction has committed.
+					guard names != previousNames else { continue }
+					// A later inventory read may have built requests with different names
+					// than this wake-up snapshot. Compare the next buffered snapshot with
+					// those actual request names so A → B → A cannot be skipped.
+					previousNames = await self?.reconcileScheduledReminderNames() ?? names
+				}
+			},
 			Task { [weak self] in
 				for await _ in dataStore.medicationsStore.events {
 					guard !Task.isCancelled else { return }

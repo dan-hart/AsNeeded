@@ -1,3 +1,4 @@
+import ANModelKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -10,6 +11,7 @@ struct SupportSuggestionView: View {
 	let onSupportTapped: () -> Void
 
 	var body: some View {
+		Group {
 		if !hideSupportBanners && !isDismissed {
 			SupportBannerCard(
 				message: message,
@@ -24,6 +26,8 @@ struct SupportSuggestionView: View {
 			.padding(.horizontal, 16)
 			.padding(.top, 8)
 		}
+		}
+		.modifier(EstablishedUseSupportModifier())
 	}
 }
 
@@ -154,3 +158,39 @@ struct SupportBannerLabel: View {
 		}
 	}
 #endif
+
+/// Optional support prompts follow established use, independently of review requests.
+enum SupportPromptPolicy {
+	static func shouldShow(launchCount: Int, doseDates: [Date], at date: Date = .now, calendar: Calendar = .current) -> Bool {
+		let recordedDates = doseDates.filter { $0 <= date }
+		return launchCount >= 3 && recordedDates.count >= 3 &&
+			Set(recordedDates.map { calendar.startOfDay(for: $0) }).count >= 2
+	}
+}
+
+struct EstablishedUseSupportModifier: ViewModifier {
+	@AppStorage(UserDefaultsKeys.appLaunchCount) private var launchCount = 0
+	@State private var doseDates: [Date] = []
+
+	func body(content: Content) -> some View {
+		VStack(spacing: 0) {
+			if SupportPromptPolicy.shouldShow(launchCount: launchCount, doseDates: doseDates) {
+				content
+			}
+		}
+		.task {
+			let store = DataStore.shared
+			let snapshots = store.committedSnapshots()
+			do {
+				let snapshot = try await store.prepareForAccess()
+				doseDates = snapshot.events.filter { $0.eventType == .doseTaken }.map(\.date)
+				for await snapshot in snapshots {
+					guard !Task.isCancelled else { return }
+					doseDates = snapshot.events.filter { $0.eventType == .doseTaken }.map(\.date)
+				}
+			} catch {
+				doseDates = []
+			}
+		}
+	}
+}

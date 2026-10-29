@@ -8,6 +8,30 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
+	@Test("Stock inputs reject invalid, negative and nonfinite numbers", arguments: ["word", "-1", "nan", "inf", "1e999"])
+	@MainActor
+	func invalidStockInputs(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.quantityText = value
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.stockValidationMessage?.contains("Current stock") == true)
+		viewModel.quantityText = ""
+		viewModel.initialQuantityText = value
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.stockValidationMessage?.contains("Refill quantity") == true)
+	}
+
+	@Test("Stock stays optional and accepts finite fractional or large quantities", arguments: ["", "  ", "0", "0.25", "1e30"])
+	@MainActor
+	func validStockInputs(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.quantityText = value
+		viewModel.initialQuantityText = value
+		#expect(viewModel.isFormValid)
+	}
+
 	@Test("Dose timing rejects invalid and nonfinite values", arguments: ["0", "-1", "nan", "inf", "word"])
 	@MainActor
 	func invalidDoseTiming(value: String) {

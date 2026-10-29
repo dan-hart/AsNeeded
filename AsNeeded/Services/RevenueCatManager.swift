@@ -54,7 +54,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             return
         }
 
-        Purchases.logLevel = .debug
+        Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: rcPublicKey)
         isConfigured = true
 

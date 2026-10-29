@@ -6,10 +6,8 @@ import SwiftUI
 extension Color {
 	/// Preserve the exact fill; switch only the label for Increase Contrast.
 	func filledButtonColors(for colorScheme: ColorScheme, contrast: ColorSchemeContrast) -> FilledButtonColors {
-		let traits = UITraitCollection(traitsFrom: [
-			UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light),
-			UITraitCollection(accessibilityContrast: contrast == .increased ? .high : .normal),
-		])
+		let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+			.replacing(UITraitAccessibilityContrast.self, value: contrast == .increased ? .high : .normal)
 		return filledButtonColors(resolvedWith: traits)
 	}
 

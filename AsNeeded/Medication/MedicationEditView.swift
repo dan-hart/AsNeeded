@@ -127,6 +127,7 @@ struct MedicationEditView: View {
 		if viewModel.clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 			return "Enter a medication name to save."
 		}
+		if let message = viewModel.stockValidationMessage { return message }
 		if let lastRefill = viewModel.lastRefillDate, lastRefill > Date() {
 			return "Last refill must be today or earlier."
 		}
@@ -918,7 +919,7 @@ struct MedicationEditView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: mainContentSpacing) {
-					Text("Medication name is required. Everything else is optional. If you add a prescribed dose, enter both an amount and a unit.")
+					Text("Name required. Other fields optional. Enter dose amount and unit together.")
 						.font(.customFont(fontFamily, style: .subheadline))
 						.foregroundStyle(.secondary)
 						.frame(maxWidth: .infinity, alignment: .leading)

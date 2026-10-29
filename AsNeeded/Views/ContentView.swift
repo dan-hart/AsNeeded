@@ -75,7 +75,7 @@ struct ContentView: View {
 			guard newPhase == .active else { return }
 
 			Task {
-				try? await DataStore.shared.prepareForAccess()
+				_ = try? await DataStore.shared.prepareForAccess()
 				await NotificationManager.shared.checkAuthorizationStatus()
 			}
 		}

@@ -245,7 +245,7 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     func quickLog(medication: ANMedicationConcept) async -> Bool {
-		guard let medication = dataStore.medications.first(where: { $0.id == medication.id }) else {
+		guard let medication = dataStore.medications.first(where: { $0.id == medication.id && !$0.isArchived }) else {
 			logger.warning("Skipped quick log for a medication that is no longer available")
 			return false
 		}

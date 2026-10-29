@@ -78,7 +78,7 @@ struct WelcomeView: View {
                 .frame(maxWidth: .infinity)
 
             VStack(spacing: itemSpacing) {
-                valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
+                valueRow(icon: .lockShield, title: "Privacy First", description: "Local medication history, with sharing and backups you control")
                 valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
                 valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
             }

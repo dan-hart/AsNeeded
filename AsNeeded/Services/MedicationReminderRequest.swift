@@ -101,7 +101,7 @@ struct MedicationReminderRequest {
 		}.sorted()
 	}
 
-	static func reconciliationPlans(in requests: [UNNotificationRequest], showMedicationNames: Bool = true, urgencyByMedicationID: [UUID: Bool] = [:]) -> [ReconciliationPlan] {
+	static func reconciliationPlans(in requests: [UNNotificationRequest], showMedicationNames: Bool = true, urgencyByMedicationID: [UUID: Bool] = [:], medicationsByID: [UUID: ANMedicationConcept] = [:]) -> [ReconciliationPlan] {
 		let groupedRequests = Dictionary(grouping: requests.compactMap { request -> (Identity, UNNotificationRequest)? in
 			guard let identity = identity(for: request) else {
 				return nil
@@ -115,13 +115,14 @@ struct MedicationReminderRequest {
 				return nil
 			}
 			let identifiersToRemove = requests.map(\.identifier).filter { $0 != identity.identifier }.sorted()
-			guard let canonicalRequest = canonicalRequest(from: source, identity: identity, showMedicationNames: showMedicationNames, isUrgent: urgencyByMedicationID[identity.medicationID]) else {
+			guard let canonicalRequest = canonicalRequest(from: source, identity: identity, showMedicationNames: showMedicationNames, isUrgent: urgencyByMedicationID[identity.medicationID], medication: medicationsByID[identity.medicationID]) else {
 				return nil
 			}
 			let isCurrentCanonical = source.identifier == identity.identifier
 				&& identifiersToRemove.isEmpty
 				&& canonicalRequest.content.interruptionLevel == source.content.interruptionLevel
-				&& (showMedicationNames || (source.content.title == "Medication Reminder" && source.content.body == "It's time to take your medication"))
+				&& canonicalRequest.content.title == source.content.title
+				&& canonicalRequest.content.body == source.content.body
 				&& source.trigger is UNCalendarNotificationTrigger
 				&& (source.trigger as? UNCalendarNotificationTrigger)?.dateComponents == components(for: identity)
 			guard !isCurrentCanonical else {
@@ -206,12 +207,15 @@ struct MedicationReminderRequest {
 		return DateComponents(year: identity.year, month: identity.month, day: identity.day, hour: identity.hour, minute: identity.minute)
 	}
 
-	private static func canonicalRequest(from source: UNNotificationRequest, identity: Identity, showMedicationNames: Bool, isUrgent: Bool?) -> UNNotificationRequest? {
+	private static func canonicalRequest(from source: UNNotificationRequest, identity: Identity, showMedicationNames: Bool, isUrgent: Bool?, medication: ANMedicationConcept?) -> UNNotificationRequest? {
 		guard let content = source.content.mutableCopy() as? UNMutableNotificationContent else {
 			return nil
 		}
 		if let isUrgent { content.interruptionLevel = isUrgent ? .timeSensitive : .active }
-		if !showMedicationNames {
+		if showMedicationNames, let medication {
+			content.title = medication.displayName
+			content.body = "It's time to take \(medication.displayName)"
+		} else if !showMedicationNames {
 			content.title = "Medication Reminder"
 			content.body = "It's time to take your medication"
 		}

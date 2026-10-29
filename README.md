@@ -1,7 +1,7 @@
 # AsNeeded
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2018.0%2B-blue.svg)](https://developer.apple.com/ios/)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2026.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 
 Track as-needed medications with privacy and clarity.
@@ -25,7 +25,7 @@ AsNeeded is a privacy-first iOS app designed to help people track as-needed medi
 
 AsNeeded is built on three fundamental principles:
 
-- **Privacy First**: Your health data stays private, local, and secure
+- **Privacy First**: Local medication records, with sharing and backups you control
 - **Always Free**: All features free forever, no ads, no subscriptions required
 - **Open Source**: Transparent, inspectable, and community-driven
 
@@ -50,8 +50,8 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 ## Getting Started
 
 ### Requirements
-- macOS 14.0+ with Xcode 16+
-- iOS 18.0+ device or simulator
+- Xcode 26 or later, with the macOS version required by that Xcode release
+- iOS 26.0+ device or simulator
 - Swift 6
 
 ### Installation
@@ -77,7 +77,7 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
    - Select your development team
 
 4. **Build and run**
-   - Select target device/simulator (iOS 18+)
+   - Select target device/simulator (iOS 26+)
    - Press ⌘R or click the Run button
 
 5. **First launch**
@@ -213,7 +213,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Privacy
 
-Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. Your health data belongs to you.
+Medication records and insights are stored and calculated locally. Optional medication searches use NIH RxNorm; support purchases use Apple and RevenueCat. You control exports and backup destinations. There are no ads or remote medication-usage analytics. See [the privacy policy](PRIVACY.md) for data handling and third-party services.
 
 ---
 
@@ -245,7 +245,7 @@ AsNeeded is designed to be a standalone medication tracking platform. Adding Hea
 Apple does not allow third-party apps to write medication data to HealthKit. This would force users to log doses in the Health app but view trends in AsNeeded—a poor and confusing user experience.
 
 ### 3. Privacy & Data Control
-Users choose AsNeeded for its simplicity and complete data privacy. Your medication data stays entirely on your device, never touching the cloud or external services. You have full control over your sensitive health information.
+Medication records use local app storage. Paired Watch features transfer selected records between devices, and exports or backups go to destinations you choose, including cloud-backed folders. Medication lookup and support purchases use external services as described in [the privacy policy](PRIVACY.md).
 
 ---
 

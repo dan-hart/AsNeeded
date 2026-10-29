@@ -7,7 +7,7 @@ struct SettingsView: View {
 	private let padding: CGFloat = 16
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VerticalOnlyScrollView {
                 VStack(alignment: .leading, spacing: sectionSpacing) {
 					if demoMode.isEnabled { DemoModeBanner() }

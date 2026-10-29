@@ -248,11 +248,13 @@ struct MedicationListView: View {
 			pendingPickerMedication = nil
 			logDoseSearchQuery = ""
 			showLogDosePicker = true
-		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
+		}, onQuickLog: medication.map { medication in {
+			guard floatingQuickLogMedication?.id == medication.id else { return false }
+			return await quickLog(medication)
+		} })
 	}
 
 	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
-		guard floatingQuickLogMedication?.id == medication.id else { return false }
 		let saved = await viewModel.quickLog(medication: medication)
 		if !saved { quickLogError = true }
 		return saved

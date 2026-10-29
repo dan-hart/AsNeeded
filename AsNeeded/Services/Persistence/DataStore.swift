@@ -447,7 +447,10 @@ public final class DataStore {
         }
 
         // Export settings if requested
-        let exportedSettings: AppSettings? = includeSettings ? exportSettings() : nil
+        var exportedSettings: AppSettings? = includeSettings ? exportSettings() : nil
+		if redactNames {
+			exportedSettings?.recentMedicationSearches = nil
+		}
         if let settings = exportedSettings {
             logger.info("Including app settings in export: \(settings.settingsCategories.joined(separator: ", "))")
         }

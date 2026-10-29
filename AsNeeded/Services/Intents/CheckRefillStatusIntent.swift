@@ -13,14 +13,22 @@ struct CheckRefillStatusIntent: AppIntent {
     static let description = IntentDescription("Check which medications need refills soon")
     static let openAppWhenRun: Bool = false
 
+	// System-created intents use the shared store; callers can supply an isolated store.
+	var dataStore: DataStore?
+
+	init() {}
+
+	init(dataStore: DataStore) { self.dataStore = dataStore }
+
     private let logger = DHLogger(category: "CheckRefillStatusIntent")
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         logger.info("Performing CheckRefillStatusIntent")
 
-        let medications = DataStore.shared.medications
-        let events = DataStore.shared.events
+        let snapshot = try await (dataStore ?? .shared).prepareForAccess()
+        let medications = snapshot.medications
+        let events = snapshot.events
         let safetyProfileStore = MedicationSafetyProfileStore.shared
         let guidanceService = MedicationDoseGuidanceService()
 
