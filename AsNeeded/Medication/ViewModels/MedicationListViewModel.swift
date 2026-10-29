@@ -11,11 +11,12 @@ final class MedicationListViewModel: ObservableObject {
     // MARK: - Properties
     private let dataStore: DataStore
 	private let undoPersistence: (UUID) async throws -> Void
+	private let confirmationSleep: (Duration) async throws -> Void
 	private var undoingEventIDs: Set<UUID> = []
 	private var nextConfirmationSequence = 0
 	private var latestPresentedSequence = 0
 	private var committedChangesTask: Task<Void, Never>?
-	private var confirmationDismissTask: Task<Void, Never>?
+	private(set) var confirmationDismissTask: Task<Void, Never>?
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
     private let safetyProfileStore = MedicationSafetyProfileStore.shared
@@ -77,8 +78,10 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(dataStore: DataStore = .shared, undoPersistence: ((UUID) async throws -> Void)? = nil) {
+    init(dataStore: DataStore = .shared, defaults: UserDefaults = .standard, undoPersistence: ((UUID) async throws -> Void)? = nil, confirmationSleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.dataStore = dataStore
+		_medicationOrder = AppStorage(wrappedValue: [], UserDefaultsKeys.medicationOrder, store: defaults)
+		self.confirmationSleep = confirmationSleep
 		self.undoPersistence = undoPersistence ?? { eventID in try await dataStore.deleteEvents(ids: [eventID]) }
 
         if medicationOrder.isEmpty && !items.isEmpty {
@@ -394,8 +397,9 @@ final class MedicationListViewModel: ObservableObject {
         }
 
 		confirmationDismissTask?.cancel()
+		let sleep = confirmationSleep
 		confirmationDismissTask = Task { [weak self] in
-			do { try await Task.sleep(for: .seconds(4)) }
+			do { try await sleep(.seconds(4)) }
 			catch { return }
 			guard !Task.isCancelled, let self,
 				self.latestPresentedSequence == sequence else { return }

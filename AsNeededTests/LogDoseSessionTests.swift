@@ -17,6 +17,9 @@ struct LogDoseSessionTests {
 		draft.note = "Demo note"
 		draft.selectedDate = Date(timeIntervalSince1970: 1_700_000_000)
 		draft.symptomSeverityBefore = 3
+		draft.symptomSeverityAfter = 2
+		draft.effectiveness = 4
+		draft.sideEffectsText = "Synthetic effect"
 		draft.isLogging = true
 		let rehosted = session.draft(for: medication)
 		#expect(rehosted === draft)
@@ -25,6 +28,9 @@ struct LogDoseSessionTests {
 		#expect(rehosted.note == "Demo note")
 		#expect(rehosted.selectedDate == Date(timeIntervalSince1970: 1_700_000_000))
 		#expect(rehosted.symptomSeverityBefore == 3)
+		#expect(rehosted.symptomSeverityAfter == 2)
+		#expect(rehosted.effectiveness == 4)
+		#expect(rehosted.sideEffectsText == "Synthetic effect")
 		#expect(rehosted.isLogging)
 	}
 

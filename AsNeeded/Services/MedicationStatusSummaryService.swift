@@ -13,14 +13,17 @@ struct MedicationStatusSummaryService {
 		let accessibilityLabel: String
 	}
 
+	private let locale: Locale
 	private let calendar: Calendar
 	private let guidanceService: MedicationDoseGuidanceService
 
 	init(
 		calendar: Calendar = .current,
+		locale: Locale = .autoupdatingCurrent,
 		guidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
 	) {
 		self.calendar = calendar
+		self.locale = locale
 		self.guidanceService = guidanceService
 	}
 
@@ -157,7 +160,8 @@ struct MedicationStatusSummaryService {
 
 	private var timeFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = .autoupdatingCurrent
+		formatter.locale = locale
+		formatter.timeZone = calendar.timeZone
 		formatter.dateStyle = .none
 		formatter.timeStyle = .short
 		return formatter
@@ -165,7 +169,8 @@ struct MedicationStatusSummaryService {
 
 	private var dateFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = .autoupdatingCurrent
+		formatter.locale = locale
+		formatter.timeZone = calendar.timeZone
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .none
 		return formatter

@@ -178,8 +178,8 @@ struct MedicationTrendsView: View {
 	}
 
 	private var floatingQuickLogMedication: ANMedicationConcept? {
-		guard let selected = viewModel.selectedMedication else { return nil }
-		return loggableMedications.first { $0.id == selected.id }
+		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
+			useLastLogged: false, lastLoggedID: nil, from: loggableMedications)
 	}
 
 	private var primaryLogDoseButton: some View {

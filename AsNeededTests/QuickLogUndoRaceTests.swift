@@ -27,13 +27,15 @@ struct QuickLogUndoRaceTests {
 
 	@Test("An older Undo cannot clear a newer toast or alter its dose stock")
 	func replacementToastSurvivesUndo() async throws {
-		let store = DataStore(testIdentifier: UUID().uuidString)
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
 		let first = ANMedicationConcept(clinicalName: "Synthetic A", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
 		let second = ANMedicationConcept(clinicalName: "Synthetic B", quantity: 8, prescribedUnit: .tablet, prescribedDoseAmount: 2)
 		try await store.addMedication(first)
 		try await store.addMedication(second)
 		let gate = Gate()
-		let model = MedicationListViewModel(dataStore: store, undoPersistence: { id in
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults, undoPersistence: { id in
 			await gate.pause()
 			try await store.deleteEvents(ids: [id])
 		})
@@ -53,12 +55,14 @@ struct QuickLogUndoRaceTests {
 
 	@Test("A repeated Undo tap does not start another write for the same dose")
 	func repeatUndoDoesNotOverlap() async throws {
-		let store = DataStore(testIdentifier: UUID().uuidString)
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
 		let medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
 		try await store.addMedication(medication)
 		let gate = Gate()
 		var attempts = 0
-		let model = MedicationListViewModel(dataStore: store, undoPersistence: { id in
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults, undoPersistence: { id in
 			attempts += 1
 			if attempts == 1 { await gate.pause() }
 			try await store.deleteEvents(ids: [id])
@@ -79,12 +83,13 @@ struct QuickLogUndoRaceTests {
 		let first = ANMedicationConcept(clinicalName: "Synthetic A", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
 		let second = ANMedicationConcept(clinicalName: "Synthetic B", quantity: 8, prescribedUnit: .tablet, prescribedDoseAmount: 2)
 		let gate = Gate()
-		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), reminderAcknowledgement: { id in
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name, reminderAcknowledgement: { id in
 			if id == first.id { await gate.pause() }
 		})
 		try await store.addMedication(first)
 		try await store.addMedication(second)
-		let model = MedicationListViewModel(dataStore: store)
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults)
 		let older = Task { await model.quickLog(medication: first) }
 		await gate.wait()
 		#expect(await model.quickLog(medication: second))
@@ -101,11 +106,13 @@ struct QuickLogUndoRaceTests {
 	@Test("Failed Undo retains its confirmation and can be retried")
 	func failedUndoCanRetry() async throws {
 		enum Failure: Error { case injected }
-		let store = DataStore(testIdentifier: UUID().uuidString)
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
 		let medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
 		try await store.addMedication(medication)
 		var attempts = 0
-		let model = MedicationListViewModel(dataStore: store, undoPersistence: { id in
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults, undoPersistence: { id in
 			attempts += 1
 			if attempts == 1 { throw Failure.injected }
 			try await store.deleteEvents(ids: [id])

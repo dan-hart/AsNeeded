@@ -2,6 +2,9 @@ import ANModelKit
 import Foundation
 
 struct QuickLogFeedbackService {
+	var locale: Locale = .autoupdatingCurrent
+	var timeZone: TimeZone = .autoupdatingCurrent
+
 	enum Tone: Equatable {
 		case success
 		case caution
@@ -72,10 +75,14 @@ struct QuickLogFeedbackService {
 			return nil
 		}
 
-		if Calendar.current.isDate(nextDoseDate, inSameDayAs: date) {
+		var calendar = Calendar.current
+		calendar.timeZone = timeZone
+		if calendar.isDate(nextDoseDate, inSameDayAs: date) {
 			return "Next dose window: \(timeFormatter.string(from: nextDoseDate))"
 		}
 		let formatter = DateFormatter()
+		formatter.locale = locale
+		formatter.timeZone = timeZone
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .short
 		return "Next dose window: \(formatter.string(from: nextDoseDate))"
@@ -83,7 +90,8 @@ struct QuickLogFeedbackService {
 
 	private var timeFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = .autoupdatingCurrent
+		formatter.locale = locale
+		formatter.timeZone = timeZone
 		formatter.dateStyle = .none
 		formatter.timeStyle = .short
 		return formatter

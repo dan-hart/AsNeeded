@@ -15,8 +15,16 @@ import Testing
 struct SettingsExportImportTests {
 	// MARK: - Test Helpers
 
+	private let suite = "SettingsExportImport-\(UUID().uuidString)"
+	private let defaults: UserDefaults
+
+	init() throws {
+		defaults = try #require(UserDefaults(suiteName: suite))
+	}
+
 	func createTestDataStore() -> DataStore {
-		return DataStore(testIdentifier: UUID().uuidString)
+		DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: defaults, defaultsDomainName: suite)
 	}
 
 	func createTestSettings() -> AppSettings {
@@ -45,11 +53,27 @@ struct SettingsExportImportTests {
 		)
 	}
 
+	@Test("Support banner opt-out survives settings export and import", arguments: [true, false])
+	func supportBannerOptOut(_ applySettings: Bool) async throws {
+		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
+		defaults.set(true, forKey: UserDefaultsKeys.hideSupportBanners)
+		let exported = try await dataStore.exportDataAsJSON(includeSettings: true)
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let decoded = try decoder.decode(DataExport.self, from: exported)
+		#expect(decoded.settings?.hideSupportBanners == true)
+		defaults.set(false, forKey: UserDefaultsKeys.hideSupportBanners)
+		try await dataStore.importDataFromJSON(exported, applySettings: applySettings)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hideSupportBanners) == applySettings)
+	}
+
 	// MARK: - Export Tests
 
 	@Test("Export without settings should not include settings field")
 	func exportWithoutSettings() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 		try await dataStore.clearAllData()
 
 		let testMedication = createTestMedication()
@@ -68,11 +92,12 @@ struct SettingsExportImportTests {
 	@Test("Export with settings should include settings field")
 	func exportWithSettings() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 		try await dataStore.clearAllData()
 
 		// Set some test settings in UserDefaults
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
 
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
 
@@ -88,10 +113,12 @@ struct SettingsExportImportTests {
 	@Test("Export should never include sensitive keys from blocklist")
 	func exportShouldNotIncludeSensitiveKeys() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Set sensitive keys that should never be exported
-		UserDefaults.standard.set(Data(), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-		UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.analyticsFirstLaunchDate)
+		defaults.set(Data(), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+		defaults.set(Date(), forKey: UserDefaultsKeys.analyticsFirstLaunchDate)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
 
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
 
@@ -105,7 +132,11 @@ struct SettingsExportImportTests {
 		// This test verifies they're not present by checking the struct only has safe fields
 
 		// Verify safe fields are exported
-		#expect(settings.hapticsEnabled != nil || settings.selectedFontFamily != nil || settings.trendsVisualizationType != nil)
+		#expect(settings.hapticsEnabled == false)
+		let object = try #require(JSONSerialization.jsonObject(with: exportData) as? [String: Any])
+		let exportedSettings = try #require(object["settings"] as? [String: Any])
+		#expect(exportedSettings[UserDefaultsKeys.automaticBackupLocationBookmark] == nil)
+		#expect(exportedSettings[UserDefaultsKeys.analyticsFirstLaunchDate] == nil)
 	}
 
 	// MARK: - Import Tests
@@ -113,7 +144,7 @@ struct SettingsExportImportTests {
 	@Test("Import without settings should not modify user defaults")
 	func importWithoutSettingsShouldNotModifyDefaults() async throws {
 		let dataStore = createTestDataStore()
-		let defaults = UserDefaults.standard
+		defer { defaults.removePersistentDomain(forName: suite) }
 		let previousHaptics = defaults.object(forKey: UserDefaultsKeys.hapticsEnabled)
 		defer { defaults.set(previousHaptics, forKey: UserDefaultsKeys.hapticsEnabled) }
 
@@ -127,54 +158,56 @@ struct SettingsExportImportTests {
 		try await dataStore.importDataFromJSON(exportData, applySettings: false)
 
 		// Verify setting unchanged
-		let hapticsEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+		let hapticsEnabled = defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled)
 		#expect(hapticsEnabled == false)
 	}
 
 	@Test("Import with applySettings=false should keep current settings")
 	func importWithApplySettingsFalseShouldKeepSettings() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Set current settings
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
 
 		// Create export with different settings
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
 
 		// Reset to original
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
 
 		// Import without applying settings
 		try await dataStore.importDataFromJSON(exportData, applySettings: false)
 
 		// Verify original settings preserved
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled) == true)
-		#expect(UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedFontFamily) == "System")
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled) == true)
+		#expect(defaults.string(forKey: UserDefaultsKeys.selectedFontFamily) == "System")
 	}
 
 	@Test("Import with applySettings=true should apply imported settings")
 	func importWithApplySettingsTrueShouldApplySettings() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Set test settings
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("OpenDyslexic", forKey: UserDefaultsKeys.selectedFontFamily)
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
 
 		// Change settings
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
-		UserDefaults.standard.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
+		defaults.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
+		defaults.set("System", forKey: UserDefaultsKeys.selectedFontFamily)
 
 		// Import and apply settings
 		try await dataStore.importDataFromJSON(exportData, applySettings: true)
 
 		// Verify imported settings applied
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled) == false)
-		#expect(UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedFontFamily) == "OpenDyslexic")
+		#expect(defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled) == false)
+		#expect(defaults.string(forKey: UserDefaultsKeys.selectedFontFamily) == "OpenDyslexic")
 	}
 
 	// MARK: - Medication ID Validation Tests
@@ -182,6 +215,7 @@ struct SettingsExportImportTests {
 	@Test("Import should validate and clear invalid medication ID references")
 	func importShouldValidateAndClearInvalidMedicationIDs() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 		try await dataStore.clearAllData()
 
 		// Create medication with specific ID
@@ -211,13 +245,14 @@ struct SettingsExportImportTests {
 		try await dataStore.importDataFromJSON(data, applySettings: true)
 
 		// Verify invalid ID was cleared
-		let storedID = UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		let storedID = defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
 		#expect(storedID == nil)
 	}
 
 	@Test("Import should preserve valid medication ID references")
 	func importShouldPreserveValidMedicationIDs() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 		try await dataStore.clearAllData()
 
 		// Create medication with specific ID
@@ -247,7 +282,7 @@ struct SettingsExportImportTests {
 		try await dataStore.importDataFromJSON(data, applySettings: true)
 
 		// Verify valid ID was preserved
-		let storedID = UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		let storedID = defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
 		#expect(storedID == validMedID.uuidString)
 	}
 
@@ -256,6 +291,7 @@ struct SettingsExportImportTests {
 	@Test("Import of data without settings field should work (backward compatibility)")
 	func importWithoutSettingsFieldShouldWork() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 		try await dataStore.clearAllData()
 
 		let testMed = createTestMedication()
@@ -303,10 +339,11 @@ struct SettingsExportImportTests {
 	@Test("Import with automatic backups enabled should not break backups if settings not applied")
 	func importWithBackupsEnabledShouldNotBreakIfSettingsNotApplied() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Setup: Enable automatic backups with bookmark
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
-		UserDefaults.standard.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+		defaults.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
+		defaults.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
 		// Create export
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
@@ -315,30 +352,31 @@ struct SettingsExportImportTests {
 		try await dataStore.importDataFromJSON(exportData, applySettings: false)
 
 		// Verify backups still enabled with bookmark
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled) == true)
-		#expect(UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled) == true)
+		#expect(defaults.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil)
 	}
 
 	@Test("Import applying settings preserves this device's backup bookmark")
 	func importApplyingSettingsPreservesBookmark() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Setup: Enable automatic backups with bookmark
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
-		UserDefaults.standard.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+		defaults.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
+		defaults.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
 		// Create export with backups enabled (but bookmark won't be exported due to blocklist)
-		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
+		defaults.set(true, forKey: UserDefaultsKeys.automaticBackupEnabled)
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
 
 		// Add bookmark back for test
-		UserDefaults.standard.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+		defaults.set(Data([1, 2, 3]), forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
 		// Import and apply settings
 		try await dataStore.importDataFromJSON(exportData, applySettings: true)
 
 		// Verify: the bookmark is device-specific and must not be replaced by import.
-		let hasBookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil
+		let hasBookmark = defaults.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark) != nil
 		#expect(hasBookmark == true) // Bookmark should remain because it's not overwritten by import
 
 		// Note: The alert logic triggers when both enabled AND bookmark are present before,
@@ -348,10 +386,11 @@ struct SettingsExportImportTests {
 	@Test("Import with backups disabled should not trigger alert")
 	func importWithBackupsDisabledShouldNotTriggerAlert() async throws {
 		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
 
 		// Setup: Backups disabled
-		UserDefaults.standard.set(false, forKey: UserDefaultsKeys.automaticBackupEnabled)
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+		defaults.set(false, forKey: UserDefaultsKeys.automaticBackupEnabled)
+		defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
 		// Create export
 		let exportData = try await dataStore.exportDataAsJSON(includeSettings: true)
@@ -360,6 +399,6 @@ struct SettingsExportImportTests {
 		try await dataStore.importDataFromJSON(exportData, applySettings: true)
 
 		// Verify: No change (backups were already disabled)
-		#expect(UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled) == false)
+		#expect(defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled) == false)
 	}
 }

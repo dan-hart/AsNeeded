@@ -11,16 +11,19 @@ import Testing
 @MainActor
 struct DataStoreTests {
     private var dataStore: DataStore
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
 
     init() async throws {
         // Create test instance with isolated storage
-        dataStore = DataStore(testIdentifier: "DataStoreTests")
+        preferences = try IsolatedTestPreferences()
+        dataStore = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name)
         // Clear any existing test data
         try await dataStore.clearAllData()
         // Also clear any test UserDefaults
-        UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "medicationOrder")
+        defaults.removeObject(forKey: "historySelectedMedicationID")
+        defaults.removeObject(forKey: "trendsSelectedMedicationID")
+        defaults.removeObject(forKey: "medicationOrder")
 
 
         // Clear NavigationManager state
@@ -116,9 +119,9 @@ struct DataStoreTests {
     @Test("Delete medication clears AppStorage selections")
     func deleteMedicationClearsAppStorageSelections() async throws {
         // Clean up any existing state
-        UserDefaults.standard.removeObject(forKey: "historySelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.removeObject(forKey: "medicationOrder")
+        defaults.removeObject(forKey: "historySelectedMedicationID")
+        defaults.removeObject(forKey: "trendsSelectedMedicationID")
+        defaults.removeObject(forKey: "medicationOrder")
 
 
         // Given
@@ -127,26 +130,26 @@ struct DataStoreTests {
 
         // Set the medication as selected in various AppStorage keys
         let medicationIDString = medication.id.uuidString
-        UserDefaults.standard.set(medicationIDString, forKey: "historySelectedMedicationID")
-        UserDefaults.standard.set(medicationIDString, forKey: "trendsSelectedMedicationID")
-        UserDefaults.standard.set([medicationIDString, "other-id"], forKey: "medicationOrder")
+        defaults.set(medicationIDString, forKey: "historySelectedMedicationID")
+        defaults.set(medicationIDString, forKey: "trendsSelectedMedicationID")
+        defaults.set([medicationIDString, "other-id"], forKey: "medicationOrder")
 
         // Verify they were set
-        #expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == medicationIDString)
-        #expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == medicationIDString)
-        #expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) == true)
+        #expect(defaults.string(forKey: "historySelectedMedicationID") == medicationIDString)
+        #expect(defaults.string(forKey: "trendsSelectedMedicationID") == medicationIDString)
+        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) == true)
 
         // When
         try await dataStore.deleteMedication(medication)
 
         // Then
-        #expect(UserDefaults.standard.string(forKey: "historySelectedMedicationID") == nil,
+        #expect(defaults.string(forKey: "historySelectedMedicationID") == nil,
                 "History selection should be cleared")
-        #expect(UserDefaults.standard.string(forKey: "trendsSelectedMedicationID") == nil,
+        #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil,
                 "Trends selection should be cleared")
-        #expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) != true,
+        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) != true,
                 "Medication should be removed from order array")
-        #expect((UserDefaults.standard.array(forKey: "medicationOrder") as? [String])?.contains("other-id") == true,
+        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains("other-id") == true,
                 "Other IDs should remain in order array")
     }
 

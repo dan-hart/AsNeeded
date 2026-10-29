@@ -9,16 +9,19 @@ import SwiftUI
 struct MedicationListViewModelUnitTests {
     private var viewModel: MedicationListViewModel
     private var dataStore: DataStore
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
 
     init() async throws {
         // Create test instance with isolated storage
-        dataStore = DataStore(testIdentifier: "MedicationListViewModelUnitTests")
-        viewModel = MedicationListViewModel(dataStore: dataStore)
+        preferences = try IsolatedTestPreferences()
+        dataStore = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name)
+        viewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
         // Clear any existing test data
         try await dataStore.clearAllData()
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.medicationOrder)
+        defaults.removeObject(forKey: UserDefaultsKeys.medicationOrder)
         // Ensure hideSupportBanners is false by default for this test suite
-        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hideSupportBanners)
+        defaults.set(false, forKey: UserDefaultsKeys.hideSupportBanners)
     }
 
     @Test("ViewModel initializes with correct data from DataStore")
@@ -30,7 +33,7 @@ struct MedicationListViewModelUnitTests {
         try await dataStore.addMedication(med2)
 
         // When
-        let newViewModel = MedicationListViewModel(dataStore: dataStore)
+        let newViewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
 
         // Then
         #expect(newViewModel.items.count == 2)
@@ -151,8 +154,8 @@ struct MedicationListViewModelUnitTests {
         _ = await viewModel.add(med3)
 
         // Set a custom order (e.g., med3, med1, med2)
-        UserDefaults.standard.set([med3.id.uuidString, med1.id.uuidString].rawValue, forKey: UserDefaultsKeys.medicationOrder)
-        viewModel = MedicationListViewModel(dataStore: dataStore)
+        defaults.set([med3.id.uuidString, med1.id.uuidString].rawValue, forKey: UserDefaultsKeys.medicationOrder)
+        viewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
         
         // When
         let sorted = viewModel.sortedMedications
@@ -206,7 +209,7 @@ struct MedicationListViewModelUnitTests {
 
         // Then: A, C
         #expect(viewModel.sortedMedications.map { $0.clinicalName } == ["A", "C"])
-        let medicationOrder = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:)) ?? []
+        let medicationOrder = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:)) ?? []
         #expect(!medicationOrder.contains(med2.id.uuidString))
     }
 
@@ -269,11 +272,11 @@ struct MedicationListViewModelUnitTests {
         _ = await viewModel.add(firstMedication)
         _ = await viewModel.add(secondMedication)
         let originalOrder = viewModel.sortedMedications.map(\.id)
-        let storedOrderBeforeQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+        let storedOrderBeforeQuickLog = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
 
         // When
         let success = await viewModel.quickLog(medication: firstMedication)
-        let storedOrderAfterQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+        let storedOrderAfterQuickLog = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
 
         // Then
         #expect(success)
@@ -307,7 +310,7 @@ struct MedicationListViewModelUnitTests {
 
     @Test("Form logging confirms the dose without a promotional overlay", arguments: [false, true])
     func logDoseCorrectlyLogsDose(hideBanners: Bool) async throws {
-		let defaults = UserDefaults.standard
+		let defaults = preferences.defaults
 		let previous = defaults.object(forKey: UserDefaultsKeys.hideSupportBanners)
 		defer {
 			if let previous { defaults.set(previous, forKey: UserDefaultsKeys.hideSupportBanners) }

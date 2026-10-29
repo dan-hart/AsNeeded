@@ -457,9 +457,9 @@ struct MedicationHistoryView: View {
 	// MARK: - Private Methods
 
 	private var floatingQuickLogMedication: ANMedicationConcept? {
-		if viewModel.isShowingAllMedications { return DataStore.shared.lastLoggedMedication }
-		guard let selected = viewModel.selectedMedication else { return nil }
-		return viewModel.logDosePickerMedications.first { $0.id == selected.id }
+		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
+			useLastLogged: viewModel.isShowingAllMedications,
+			lastLoggedID: DataStore.shared.lastLoggedMedication?.id, from: viewModel.logDosePickerMedications)
 	}
 
 	private var primaryLogDoseButton: some View {

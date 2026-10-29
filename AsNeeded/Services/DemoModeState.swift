@@ -8,10 +8,18 @@ final class DemoModeState: ObservableObject {
 	static let shared = DemoModeState()
 	@Published private(set) var isEnabled = false
 
-	private init() {}
+	private let medicationNames: () -> [String]
+
+	init(medicationNames: @escaping () -> [String] = {
+		DataStore.shared.medications.flatMap { [$0.clinicalName, $0.nickname ?? ""] }
+	}) {
+		self.medicationNames = medicationNames
+	}
 
 	func enable() { isEnabled = true }
-	fileprivate func disableAfterConfirmation() { isEnabled = false }
+	func confirmDisable(_ confirmed: Bool) {
+		if confirmed { isEnabled = false }
+	}
 
 	func name(_ original: String) -> String {
 		isEnabled && !original.isEmpty ? "Hidden medication" : original
@@ -19,11 +27,16 @@ final class DemoModeState: ObservableObject {
 
 	func text(_ original: String) -> String {
 		guard isEnabled else { return original }
-		let names = DataStore.shared.medications.flatMap { [$0.clinicalName, $0.nickname ?? ""] }
-			.filter { !$0.isEmpty }.sorted { $0.count > $1.count }
-		return names.reduce(original) { result, name in
-			result.replacingOccurrences(of: name, with: "Hidden medication", options: .caseInsensitive)
-		}
+		let names = medicationNames().map(\.precomposedStringWithCanonicalMapping).filter { !$0.isEmpty }.sorted { $0.count > $1.count }
+		guard !names.isEmpty,
+			let expression = try? NSRegularExpression(
+				pattern: names.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|"),
+				options: .caseInsensitive
+			) else { return original }
+		let normalized = original.precomposedStringWithCanonicalMapping
+		// Match the original once so a short name cannot redact the replacement itself.
+		return expression.stringByReplacingMatches(in: normalized,
+			range: NSRange(normalized.startIndex..., in: normalized), withTemplate: "Hidden medication")
 	}
 }
 
@@ -80,7 +93,7 @@ private struct DemoModeDisableConfirmation: ViewModifier {
 			Button("No", role: .cancel) {}
 				.keyboardShortcut(.defaultAction)
 			Button("Yes") {
-				demoMode.disableAfterConfirmation()
+				demoMode.confirmDisable(true)
 			}
 		}
 		.tint(.accent)

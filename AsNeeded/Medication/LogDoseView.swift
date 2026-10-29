@@ -122,7 +122,7 @@ struct LogDoseView: View {
     private let reflectionGridSpacing: CGFloat = 10
     @ScaledMetric private var scaleButtonMinWidth: CGFloat = 36
 
-	private static let quickTimeSelections: [(label: String, secondsAgo: TimeInterval)] = [
+	static let quickTimeSelections: [(label: String, secondsAgo: TimeInterval)] = [
 		("Now", 0),
 		("15 min ago", 900),
 		("30 min ago", 1_800),
@@ -144,11 +144,7 @@ struct LogDoseView: View {
 			get: { amountInput ?? draft.amount.formatted(.number.grouping(.never)) },
 			set: { text in
 				amountInput = text
-				let separator = Locale.current.decimalSeparator ?? "."
-				let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
-					.replacingOccurrences(of: separator, with: ".")
-				let parsed = Double(normalized)
-				draft.amount = parsed.flatMap { $0.isFinite ? $0 : nil } ?? 0
+				draft.amount = DoseAmountInput.parse(text)
 			}
 		)
 	}
