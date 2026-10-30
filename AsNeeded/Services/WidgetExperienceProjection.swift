@@ -14,7 +14,7 @@ struct WidgetExperienceProjection: Sendable {
 		let automaticPriorityDate: Date?
 		let timingUnknown: Bool
 		let supply: Double?
-		let supplyUnit: String?
+		let supplyUnit: ANUnitConcept?
 		let refillDate: Date?
 	}
 	struct Day: Identifiable, Equatable, Sendable {
@@ -25,7 +25,7 @@ struct WidgetExperienceProjection: Sendable {
 	}
 	struct Usage: Sendable {
 		let days: [Day]
-		let unit: String?
+		let unit: ANUnitConcept?
 		let quantitiesComplete: Bool
 		let previousTotal: Double?
 		var total: Double { days.reduce(0) { $0 + $1.quantity } }
@@ -39,7 +39,7 @@ struct WidgetExperienceProjection: Sendable {
 	let usage: Usage?
 	let timelineDates: [Date]
 
-	func visibleName(for medication: Medication) -> String { showNames ? medication.name : "Medication" }
+	func visibleName(for medication: Medication) -> String { showNames ? medication.name : String(localized: "Medication") }
 
 	init(medications: [ANMedicationConcept], events: [ANEventConcept], profiles: [String: MedicationSafetyProfile] = [:], selectedID: UUID? = nil, showNames: Bool = true, storageAvailable: Bool = true, at date: Date, calendar: Calendar = .current) {
 		self.date = date
@@ -64,7 +64,7 @@ struct WidgetExperienceProjection: Sendable {
 				lastDose: doses.map(\.date).max(), nextWindow: next.flatMap { $0 > date ? $0 : nil }, automaticPriorityDate: next,
 				timingUnknown: { if case .unavailable = availability { return true }; return false }(),
 				supply: medication.quantity.flatMap { $0.isFinite && $0 >= 0 ? $0 : nil },
-				supplyUnit: medication.prescribedUnit?.abbreviation, refillDate: medication.nextRefillDate)
+				supplyUnit: medication.prescribedUnit, refillDate: medication.nextRefillDate)
 		} : []
 		self.medications = rows
 		automaticID = rows.min {
@@ -105,7 +105,7 @@ struct WidgetExperienceProjection: Sendable {
 		let previous = doses.filter { $0.date >= previousStart && $0.date < start }
 		let total = days.reduce(0) { $0 + $1.quantity }
 		let previousSum = previous.compactMap { $0.dose?.amount }.reduce(0, +)
-		return Usage(days: days, unit: unit?.abbreviation, quantitiesComplete: isComplete && total.isFinite,
+		return Usage(days: days, unit: unit, quantitiesComplete: isComplete && total.isFinite,
 			previousTotal: isComplete && complete(previous) && !previous.isEmpty && previousSum.isFinite ? previousSum : nil)
 	}
 }

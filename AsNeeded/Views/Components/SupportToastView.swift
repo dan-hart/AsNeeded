@@ -12,7 +12,7 @@ struct SupportToastView: View {
 
 	init(
 		message: String,
-		supportMessage: String = "Support As Needed",
+		supportMessage: String = String(localized: "Support As Needed"),
 		isVisible: Bool,
 		onDismiss: @escaping () -> Void,
 		onSupportTapped: @escaping () -> Void

@@ -213,7 +213,7 @@ struct DataManagementViewModelTests {
         // Verify success
         #expect(viewModel.isImporting == false)
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
         #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
@@ -307,7 +307,7 @@ struct DataManagementViewModelTests {
         // Verify import succeeded
         #expect(viewModel.isImporting == false)
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
         #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
@@ -577,6 +577,6 @@ struct DataManagementViewModelTests {
         #expect(viewModel.medicationCount == 1)
         #expect(dataStore.medications.first?.clinicalName == "Test Medication")
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
     }
 }

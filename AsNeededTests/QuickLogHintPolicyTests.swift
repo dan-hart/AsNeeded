@@ -20,8 +20,8 @@ struct QuickLogHintPolicyTests {
 	@Test("Hint describes exactly the default dose including fallback")
 	func doseDescription() {
 		let medication = ANMedicationConcept(clinicalName: "Synthetic", prescribedUnit: .tablet, prescribedDoseAmount: 2)
-		#expect(QuickLogHintPolicy.hintText(for: medication) == "Hold to log 2 tab")
+		#expect(QuickLogHintPolicy.hintText(for: medication) == "Hold to log 2 tablets")
 		let fallback = ANMedicationConcept(clinicalName: "Synthetic fallback")
-		#expect(QuickLogHintPolicy.hintText(for: fallback) == "Hold to log 1 \(ANUnitConcept.unit.abbreviation)")
+		#expect(QuickLogHintPolicy.hintText(for: fallback) == "Hold to log 1 unit")
 	}
 }

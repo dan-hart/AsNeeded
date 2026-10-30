@@ -53,11 +53,11 @@ struct TestFlightAccessComponent: View {
                     .cornerRadius(cornerRadius10)
 
                 VStack(alignment: .leading, spacing: textSpacing) {
-                    Text(String(localized: "Join TestFlight Beta"))
+                    Text("Join TestFlight Beta")
                         .font(.customFont(fontFamily, style: .callout, weight: .semibold))
                         .foregroundColor(.primary)
 
-                    Text(String(localized: "Get early access to new features and updates"))
+                    Text("Get early access to new features and updates")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }

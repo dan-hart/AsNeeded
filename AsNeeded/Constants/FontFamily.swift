@@ -83,6 +83,6 @@ enum FontFamily: String, CaseIterable, Identifiable {
 
     /// Sample text to demonstrate the font in the settings UI
     var sampleText: String {
-        return "The quick brown fox jumps over the lazy dog. 0123456789"
+        return String(localized: "The quick brown fox jumps over the lazy dog. 0123456789")
     }
 }

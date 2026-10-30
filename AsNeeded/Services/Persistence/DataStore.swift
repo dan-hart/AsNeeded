@@ -741,11 +741,11 @@ public enum DataImportError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidFormat:
-            return "The import file format is invalid or corrupted"
+            return String(localized: "The import file format is invalid or corrupted")
         case let .versionMismatch(expected, actual):
-            return "Data version mismatch: expected \(expected), got \(actual)"
+            return String(localized: "Data version mismatch: expected \(expected), got \(actual)")
         case let .partialImport(imported, failed):
-            return "Partial import: \(imported) items imported, \(failed) failed"
+            return String(localized: "Partial import: \(imported) items imported, \(failed) failed")
         }
     }
 }

@@ -44,7 +44,7 @@ struct FloatingLogDoseButton: View {
 			},
 			onQuickLogSuccess: succeeded)
 		.accessibilityLabel("Log dose")
-		.accessibilityHint(quickLogMedication.map { "Choose a medication, or hold to log the default dose for \($0.demoDisplayName)" } ?? "Choose a medication to record a dose")
+		.accessibilityHint(quickLogMedication.map { String(localized: "Choose a medication, or hold to log the default dose for \($0.demoDisplayName)") } ?? String(localized: "Choose a medication to record a dose"))
 		.accessibilityActions {
 			if let medication = quickLogMedication, let onQuickLog {
 				Button("Quick log default dose for \(medication.demoDisplayName)") {

@@ -59,12 +59,12 @@ struct MedicationListView: View {
                     if viewModel.items.count > 1 || !viewModel.items.archived.isEmpty {
                         ToolbarItemGroup(placement: .topBarLeading) {
                             if viewModel.items.count > 1 {
-                                Button(viewModel.editMode == .inactive ? "Edit" : "Done") {
+                                Button(viewModel.editMode == .inactive ? String(localized: "Edit") : String(localized: "Done")) {
                                     viewModel.toggleEditMode()
                                 }
                                 .font(.customFont(fontFamily, style: .body))
-                                .accessibilityLabel(viewModel.editMode == .inactive ? "Edit medication list" : "Done editing")
-                                .accessibilityHint(viewModel.editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
+                                .accessibilityLabel(viewModel.editMode == .inactive ? String(localized: "Edit medication list") : String(localized: "Done editing"))
+                                .accessibilityHint(viewModel.editMode == .inactive ? String(localized: "Enter edit mode to reorder or delete medications") : String(localized: "Exit edit mode"))
                             }
 
                             // Show archived toggle if there are any archived medications
@@ -74,7 +74,7 @@ struct MedicationListView: View {
                                 }) {
                                     Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
                                 }
-                                .accessibilityLabel(viewModel.showArchivedMedications ? "Hide archived medications" : "Show archived medications")
+                                .accessibilityLabel(viewModel.showArchivedMedications ? String(localized: "Hide archived medications") : String(localized: "Show archived medications"))
                                 .accessibilityHint("Toggle visibility of archived medications in the list")
                             }
                         }

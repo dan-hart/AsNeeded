@@ -148,9 +148,9 @@ enum StorageHealthError: LocalizedError {
 		switch self {
 		case let .unhealthyStorage(issues):
 			if issues.isEmpty {
-				return "Storage system is unhealthy"
+				return String(localized: "Storage system is unhealthy")
 			}
-			return "Storage system issues detected:\n" + issues.map { "• \($0)" }.joined(separator: "\n")
+			return String(localized: "Storage system issues detected:\n") + issues.map { String(localized: "• \($0)") }.joined(separator: "\n")
 		}
 	}
 }
@@ -161,8 +161,8 @@ struct MigrationBackupFailure: LocalizedError {
 
 	var errorDescription: String? {
 		if let underlying = underlyingError {
-			return "Pre-migration backup failed: \(underlying.localizedDescription). Migration cannot proceed without backup protection."
+			return String(localized: "Pre-migration backup failed: \(underlying.localizedDescription). Migration cannot proceed without backup protection.")
 		}
-		return "Pre-migration backup failed. Migration cannot proceed without backup protection."
+		return String(localized: "Pre-migration backup failed. Migration cannot proceed without backup protection.")
 	}
 }

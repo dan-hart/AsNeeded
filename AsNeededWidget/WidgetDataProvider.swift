@@ -310,13 +310,13 @@ private struct WidgetMedicationGuidanceService {
         let statusMessage: String
 
         if lowStock {
-            statusMessage = "Refill prep would be timely."
+            statusMessage = String(localized: "Refill prep would be timely.")
         } else if refillSoon {
-            statusMessage = "You’re approaching your refill window."
+            statusMessage = String(localized: "You’re approaching your refill window.")
         } else if let estimatedDaysRemaining {
-            statusMessage = "About \(estimatedDaysRemaining)d of supply at your recent pace."
+            statusMessage = String(localized: "About \(estimatedDaysRemaining)d of supply at your recent pace.")
         } else {
-            statusMessage = "Log more doses to estimate your run-out date."
+            statusMessage = String(localized: "Log more doses to estimate your run-out date.")
         }
 
         return RefillProjection(

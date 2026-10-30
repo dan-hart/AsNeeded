@@ -335,11 +335,11 @@ enum MigrationBackupError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .appGroupUnavailable:
-			return "App Group container is unavailable"
+			return String(localized: "App Group container is unavailable")
 		case .backupNotFound:
-			return "Backup not found at specified location"
+			return String(localized: "Backup not found at specified location")
 		case let .restoreFailed(reason):
-			return "Restore failed: \(reason)"
+			return String(localized: "Restore failed: \(reason)")
 		}
 	}
 }

@@ -22,7 +22,7 @@ final class DemoModeState: ObservableObject {
 	}
 
 	func name(_ original: String) -> String {
-		isEnabled && !original.isEmpty ? "Hidden medication" : original
+		isEnabled && !original.isEmpty ? String(localized: "Hidden medication") : original
 	}
 
 	func text(_ original: String) -> String {
@@ -36,7 +36,7 @@ final class DemoModeState: ObservableObject {
 		let normalized = original.precomposedStringWithCanonicalMapping
 		// Match the original once so a short name cannot redact the replacement itself.
 		return expression.stringByReplacingMatches(in: normalized,
-			range: NSRange(normalized.startIndex..., in: normalized), withTemplate: "Hidden medication")
+			range: NSRange(normalized.startIndex..., in: normalized), withTemplate: NSRegularExpression.escapedTemplate(for: String(localized: "Hidden medication")))
 	}
 }
 

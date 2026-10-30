@@ -25,7 +25,7 @@ struct QuantityEditorView: View {
                         Text("Current Quantity")
                             .font(.caption)
                             .foregroundColor(.secondary)
-						Text("\(medication.quantity.formatted(.number.precision(.fractionLength(0...2)))) \(medication.prescribedUnit ?? "units")")
+						Text(WatchMedication.localizedAmount(medication.quantity, unit: medication.prescribedUnit ?? "units"))
                             .font(.title2)
                             .fontWeight(.semibold)
                     }
@@ -119,7 +119,7 @@ struct QuantityEditorView: View {
                         } else {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
-								Text(isQueued ? "Waiting to Sync" : "Save Quantity")
+								Text(isQueued ? String(localized: "Waiting to Sync") : String(localized: "Save Quantity"))
                             }
                         }
                     }
@@ -136,7 +136,7 @@ struct QuantityEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-					Button(isQueued ? "Close" : "Cancel") {
+					Button(isQueued ? String(localized: "Close") : String(localized: "Cancel")) {
                         dismiss()
                     }
 					.disabled(isUpdating)

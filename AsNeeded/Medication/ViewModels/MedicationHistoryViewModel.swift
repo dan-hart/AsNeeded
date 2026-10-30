@@ -212,7 +212,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			// Filter events for selected medication only
 			guard let selection = selectedMedicationID,
 			      let uuid = UUID(uuidString: selection) else {
-				mutationError = "Choose a medication, then try deleting the entry again."
+				mutationError = String(localized: "Choose a medication, then try deleting the entry again.")
 				return false
 			}
 			filtered = events.filter { event in
@@ -230,7 +230,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			return true
 		} catch {
 			loadData()
-			mutationError = "Couldn’t finish deleting the entries. Some changes may have been saved. Review History and the medication quantity before trying again."
+			mutationError = String(localized: "Couldn’t finish deleting the entries. Some changes may have been saved. Review History and the medication quantity before trying again.")
 			return false
 		}
 	}
@@ -242,7 +242,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 		mutationError = nil
 		defer { isMutating = false }
 		guard let existingEvent = dataStore.events.first(where: { $0.id == event.id }) else {
-			mutationError = "This entry is no longer available. Close the editor and review History."
+			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
 			return false
 		}
 
@@ -258,7 +258,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			return true
 		} catch {
 			loadData()
-			mutationError = "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again."
+			mutationError = String(localized: "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")
 			return false
 		}
 	}
@@ -271,7 +271,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 		defer { isMutating = false }
 		// Legacy method for updating just the note without dose changes
 		guard let currentEvent = dataStore.events.first(where: { $0.id == event.id }) else {
-			mutationError = "This entry is no longer available. Close the editor and review History."
+			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
 			return false
 		}
 		do {
@@ -282,7 +282,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			return true
 		} catch {
 			loadData()
-			mutationError = "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again."
+			mutationError = String(localized: "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again.")
 			return false
 		}
 	}
@@ -294,7 +294,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 		mutationError = nil
 		defer { isMutating = false }
 		guard dataStore.events.contains(where: { $0.id == event.id }) else {
-			mutationError = "This entry is no longer available. Review History before trying again."
+			mutationError = String(localized: "This entry is no longer available. Review History before trying again.")
 			return false
 		}
 		// Delete the event and restore medication quantity if needed
@@ -304,7 +304,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			return true
 		} catch {
 			loadData()
-			mutationError = "Couldn’t finish deleting the entry. Some changes may have been saved. Review History and the medication quantity before trying again."
+			mutationError = String(localized: "Couldn’t finish deleting the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")
 			return false
 		}
 	}

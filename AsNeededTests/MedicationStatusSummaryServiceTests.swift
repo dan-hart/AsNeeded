@@ -72,7 +72,7 @@ struct MedicationStatusSummaryServiceTests {
 			profile: profile
 		)
 
-		#expect(summary.dailyText == "With this dose: 6 of 6 tab in 24 hours")
+		#expect(summary.dailyText == "With this dose: 6 tablets of 6 tablets in 24 hours")
 		#expect(summary.refillText.contains("Low stock"))
 		#expect(summary.refillText.contains("Refill prep"))
 	}

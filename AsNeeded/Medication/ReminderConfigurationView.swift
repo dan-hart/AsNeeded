@@ -59,6 +59,15 @@ struct ReminderConfigurationView: View {
         case weekly = "Weekly"
         case custom = "Custom Days"
 
+		var localizedTitle: String {
+			switch self {
+			case .oneTime: String(localized: "One Time")
+			case .daily: String(localized: "Daily")
+			case .weekly: String(localized: "Weekly")
+			case .custom: String(localized: "Custom Days")
+			}
+		}
+
         var systemImage: SFSymbol {
             switch self {
             case .oneTime: return .clock
@@ -70,23 +79,18 @@ struct ReminderConfigurationView: View {
 
         var description: String {
             switch self {
-            case .oneTime: return "Set a single reminder"
-            case .daily: return "Remind me every day"
-            case .weekly: return "Remind me weekly"
-            case .custom: return "Choose specific days"
+            case .oneTime: return String(localized: "Set a single reminder")
+            case .daily: return String(localized: "Remind me every day")
+            case .weekly: return String(localized: "Remind me weekly")
+            case .custom: return String(localized: "Choose specific days")
             }
         }
     }
 
-    private let weekdays = [
-        (1, "Sunday", "Sun"),
-        (2, "Monday", "Mon"),
-        (3, "Tuesday", "Tue"),
-        (4, "Wednesday", "Wed"),
-        (5, "Thursday", "Thu"),
-        (6, "Friday", "Fri"),
-        (7, "Saturday", "Sat"),
-    ]
+	private var weekdays: [(Int, String, String)] {
+		let calendar = Calendar.current
+		return (1...7).map { ($0, calendar.weekdaySymbols[$0 - 1], calendar.shortWeekdaySymbols[$0 - 1]) }
+	}
 
     var body: some View {
         NavigationStack {
@@ -185,12 +189,12 @@ struct ReminderConfigurationView: View {
                     .foregroundStyle(notificationManager.authorizationStatus == .denied ? .red : .accent)
 
                 VStack(alignment: .leading, spacing: quickButtonSpacing) {
-                    Text(notificationManager.authorizationStatus == .denied ? "Notifications Disabled" : "Notifications Required")
+                    Text(notificationManager.authorizationStatus == .denied ? String(localized: "Notifications Disabled") : String(localized: "Notifications Required"))
                         .font(.customFont(fontFamily, style: .headline))
 
                     Text(notificationManager.authorizationStatus == .denied ?
-                        "Enable notifications in Settings to set reminders." :
-                        "To set medication reminders, enable notifications.")
+                        String(localized: "Enable notifications in Settings to set reminders.") :
+                        String(localized: "To set medication reminders, enable notifications."))
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                 }
@@ -209,7 +213,7 @@ struct ReminderConfigurationView: View {
             } label: {
                 HStack {
                     Image(systemSymbol: notificationManager.authorizationStatus == .denied ? .gear : .bellBadgeFill)
-                    Text(notificationManager.authorizationStatus == .denied ? "Open Settings" : "Enable Notifications")
+                    Text(notificationManager.authorizationStatus == .denied ? String(localized: "Open Settings") : String(localized: "Enable Notifications"))
                 }
                 .font(.callout.weight(.semibold))
                 .frame(maxWidth: .infinity)
@@ -252,7 +256,7 @@ struct ReminderConfigurationView: View {
                                 .font(.customFont(fontFamily, style: .title2))
                                 .foregroundStyle(reminderType == type ? Color.accent.dynamicFilledButtonForeground : .accent)
 
-                            Text(type.rawValue)
+                            Text(type.localizedTitle)
                                 .font(.customFont(fontFamily, style: .subheadline))
                                 .fontWeight(.medium)
                                 .foregroundStyle(reminderType == type ? Color.accent.dynamicFilledButtonForeground : .primary)
@@ -290,7 +294,7 @@ struct ReminderConfigurationView: View {
                         )
                     }
                     .buttonStyle(.plain)
-					.accessibilityLabel(type.rawValue)
+					.accessibilityLabel(type.localizedTitle)
 					.accessibilityHint(type.description)
 					.accessibilityAddTraits(reminderType == type ? .isSelected : [])
                 }
@@ -310,7 +314,7 @@ struct ReminderConfigurationView: View {
                 switch reminderType {
                 case .oneTime:
                     dateTimePickerCard(
-                        title: "Date & Time",
+                        title: String(localized: "Date & Time"),
                         selection: $reminderDate,
                         dateRange: Date()...,
                         components: [.date, .hourAndMinute],
@@ -319,7 +323,7 @@ struct ReminderConfigurationView: View {
 
                 case .daily:
                     dateTimePickerCard(
-                        title: "Daily Time",
+                        title: String(localized: "Daily Time"),
                         selection: $reminderDate,
                         dateRange: nil,
                         components: .hourAndMinute,
@@ -329,7 +333,7 @@ struct ReminderConfigurationView: View {
                 case .weekly:
                     VStack(spacing: gridSpacing) {
                         dateTimePickerCard(
-                            title: "Starting Date & Time",
+                            title: String(localized: "Starting Date & Time"),
                             selection: $reminderDate,
                             dateRange: Date()...,
                             components: [.date, .hourAndMinute],
@@ -413,7 +417,7 @@ struct ReminderConfigurationView: View {
 
                         // Time Selection
                         dateTimePickerCard(
-                            title: "Time for Selected Days",
+                            title: String(localized: "Time for Selected Days"),
                             selection: $reminderDate,
                             dateRange: nil,
                             components: .hourAndMinute,
@@ -425,7 +429,7 @@ struct ReminderConfigurationView: View {
                                 Image(systemSymbol: .checkmarkCircleFill)
                                     .font(.customFont(fontFamily, style: .caption))
                                     .foregroundColor(.green)
-                                Text("\(selectedDays.count) day\(selectedDays.count == 1 ? "" : "s") selected")
+                                Text("\(selectedDays.count) days selected")
                                     .font(.customFont(fontFamily, style: .caption))
                                     .foregroundStyle(.secondary)
                             }
@@ -615,7 +619,7 @@ struct ReminderConfigurationView: View {
 
         } catch {
             logger.logPrivacySafeError("Failed to schedule reminder", error: error)
-            errorMessage = "Failed to schedule reminder: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to schedule reminder: \(error.localizedDescription)")
             showingError = true
         }
     }

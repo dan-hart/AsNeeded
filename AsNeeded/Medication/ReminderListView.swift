@@ -60,7 +60,7 @@ struct ReminderListView: View {
             .refreshable {
                 await loadReminders()
             }
-            .alert(reminderToDelete == nil ? "Delete All Reminders?" : "Delete Reminder?", isPresented: $showingDeleteConfirm) {
+            .alert(reminderToDelete == nil ? String(localized: "Delete All Reminders?") : String(localized: "Delete Reminder?"), isPresented: $showingDeleteConfirm) {
                 if let reminder = reminderToDelete {
                     Button("Delete", role: .destructive) {
                         Task {
@@ -219,7 +219,7 @@ struct ReminderRow: View {
 
                 if reminder.isRepeating {
                     Label {
-                        Text(reminder.repeatInfo ?? "Recurring")
+                        Text(reminder.repeatInfo ?? String(localized: "Recurring"))
                             .font(.customFont(fontFamily, style: .caption))
                             .foregroundColor(.secondary)
                     } icon: {
@@ -240,13 +240,13 @@ struct ReminderRow: View {
         if calendar.isDate(reminder.nextFireDate, inSameDayAs: now) {
             let formatter = DateFormatter()
             formatter.timeStyle = .short
-            return "Today at \(formatter.string(from: reminder.nextFireDate))"
+            return String(localized: "Today at \(formatter.string(from: reminder.nextFireDate))")
         } else if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
                   calendar.isDate(reminder.nextFireDate, inSameDayAs: tomorrow)
         {
             let formatter = DateFormatter()
             formatter.timeStyle = .short
-            return "Tomorrow at \(formatter.string(from: reminder.nextFireDate))"
+            return String(localized: "Tomorrow at \(formatter.string(from: reminder.nextFireDate))")
         } else if calendar.isDate(reminder.nextFireDate, equalTo: now, toGranularity: .weekOfYear) {
             let formatter = DateFormatter()
             formatter.locale = .autoupdatingCurrent

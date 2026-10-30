@@ -54,7 +54,7 @@ struct QuickLogFeedbackServiceTests {
 		#expect(feedback.tone == .success)
 		#expect(feedback.title == "Dose logged")
 		let expectedTime = DateFormatter.localizedString(from: referenceDate, dateStyle: .none, timeStyle: .short)
-		#expect(feedback.message == "Logged 2 tab of Ibuprofen at \(expectedTime).")
+		#expect(feedback.message == "Dose logged: 2 tablets · Ibuprofen · \(expectedTime)")
 		#expect(feedback.undoEventID != nil)
 		#expect(feedback.nextDoseDate == nil)
 	}

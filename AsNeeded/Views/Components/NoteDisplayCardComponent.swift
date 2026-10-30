@@ -122,8 +122,8 @@ struct NoteDisplayCardComponent: View {
 			}
 			.buttonStyle(.plain)
 			.accessibilityLabel("Note: \(displayText)")
-			.accessibilityValue(isLongNote ? (isExpanded ? "Expanded" : "Collapsed") : "")
-			.accessibilityHint(isLongNote ? "Activate to \(isExpanded ? "collapse" : "expand") note" : "")
+			.accessibilityValue(isLongNote ? (isExpanded ? String(localized: "Expanded") : String(localized: "Collapsed")) : "")
+			.accessibilityHint(isLongNote ? (isExpanded ? String(localized: "Activate to collapse note") : String(localized: "Activate to expand note")) : "")
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.frame(minHeight: 44)
 			.background(

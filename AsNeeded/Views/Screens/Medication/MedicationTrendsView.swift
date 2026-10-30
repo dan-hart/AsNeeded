@@ -10,8 +10,8 @@ enum VisualizationType: String, CaseIterable {
 
 	var displayName: String {
 		switch self {
-		case .chart: return "Chart"
-		case .heatmap: return "Calendar"
+		case .chart: return String(localized: "Chart")
+		case .heatmap: return String(localized: "Calendar")
 		}
 	}
 
@@ -98,7 +98,7 @@ struct MedicationTrendsView: View {
 						metricsView(for: med)
 					} else {
 						controlsSection
-						Text(widgetScope != nil ? "This medication is unavailable. Choose another medication in Edit Widget." : viewModel.medications.isEmpty ? "Add a medication in the Medication tab to see its recorded doses and trends." : "Select a medication in the toolbar to see its trends.")
+						Text(widgetScope != nil ? String(localized: "This medication is unavailable. Choose another medication in Edit Widget.") : viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to see its recorded doses and trends.") : String(localized: "Select a medication in the toolbar to see its trends."))
 							.font(.customFont(fontFamily, style: .body))
 							.foregroundStyle(.secondary)
 							.frame(maxWidth: .infinity, alignment: .leading)
@@ -121,7 +121,7 @@ struct MedicationTrendsView: View {
 			}
 			.customNavigationTitle("Trends", displayMode: .large)
 			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
-			.navigationSubtitle(Text("\(viewModel.selectedMedication?.demoDisplayName ?? "Select Medication") · \(daysWindow) Days")
+			.navigationSubtitle(Text("\(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Select Medication")) · \(daysWindow) Days")
 				.font(.customFont(fontFamily, style: .subheadline)))
 			.toolbar {
 				ToolbarItemGroup(placement: .topBarTrailing) {
@@ -249,7 +249,7 @@ struct MedicationTrendsView: View {
 		}
 		.disabled(viewModel.medications.isEmpty)
 		.accessibilityLabel("Trends medication filter")
-		.accessibilityValue(viewModel.selectedMedication?.demoDisplayName ?? "Not selected")
+		.accessibilityValue(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Not selected"))
 	}
 
 	private var timeRangeMenu: some View {
@@ -304,9 +304,9 @@ struct MedicationTrendsView: View {
 					let availability = viewModel.doseAvailability(at: context.date)
 					if let nextDate = availability.eligibleDate {
 						if nextDate > context.date {
-							insightBadge(text: "Next saved window \(nextDate.formatted(date: .abbreviated, time: .shortened))", tint: .orange)
+							insightBadge(text: String(localized: "Next saved window \(nextDate.formatted(date: .abbreviated, time: .shortened))"), tint: .orange)
 						} else {
-							insightBadge(text: "Saved limits met", tint: med.displayColor)
+							insightBadge(text: String(localized: "Saved limits met"), tint: med.displayColor)
 						}
 					} else {
 						insightBadge(text: availability.message, tint: .secondary)
@@ -344,24 +344,24 @@ struct MedicationTrendsView: View {
 
 	@ViewBuilder
 	private func metricsView(for med: ANMedicationConcept) -> some View {
-		let unitAbbrev = viewModel.preferredUnit?.abbreviation
+		let preferredUnit = viewModel.preferredUnit
 		let qtyText: String = {
-			guard let qty = med.quantity, let unit = unitAbbrev else { return "—" }
-			return "\(qty.formattedAmount) \(unit) left"
+			guard let qty = med.quantity, let unit = preferredUnit else { return "—" }
+			return unit.localizedCompactAmount(for: qty)
 		}()
 		let refillText: String = {
 			guard let days = viewModel.daysUntilRefill else { return "—" }
-			if days == 0 { return "Refill today" }
-			return days > 0 ? "Refill in \(days) days" : "Refill \(-days) days ago"
+			if days == 0 { return String(localized: "Refill today") }
+			return days > 0 ? String(localized: "Refill in \(days) days") : String(localized: "Refill \(-days) days ago")
 		}()
 		let avg7 = viewModel.averagePerDay(window: 7)
 		let avgText: String = {
-			guard avg7 > 0, let unit = unitAbbrev else { return "—" }
-			return "\(avg7.formattedAmount) \(unit)/day"
+			guard avg7 > 0, let unit = preferredUnit else { return "—" }
+			return String(localized: "\(unit.localizedCompactAmount(for: avg7))/day", comment: "Daily average rate. The interpolation is a full quantity with a plural-aware unit.")
 		}()
 		let etaText: String = {
 			guard let days = viewModel.estimatedDaysRemaining else { return "—" }
-			return "About \(days) days left"
+			return String(localized: "About \(days) days left")
 		}()
 
 		// Usage progress text (optional - only if initialQuantity is available)
@@ -375,19 +375,19 @@ struct MedicationTrendsView: View {
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: controlsSpacing), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: controlsSpacing) {
-				metricCard(title: "Daily Average (7 Days)", value: avgText, systemImage: .chartLineUptrendXyaxis)
-				metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
+				metricCard(title: String(localized: "Daily Average (7 Days)"), value: avgText, systemImage: .chartLineUptrendXyaxis)
+				metricCard(title: String(localized: "Quantity"), value: qtyText, systemImage: .pill)
 
 				if viewModel.usagePercentage != nil {
-					metricCard(title: "Usage", value: usageText, systemImage: .chartPieFill)
+					metricCard(title: String(localized: "Usage"), value: usageText, systemImage: .chartPieFill)
 						.accessibilityLabel("Medication usage progress: \(usageText)")
 				}
 
-				metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
-				metricCard(title: "Estimated Supply", value: etaText, systemImage: .hourglass)
+				metricCard(title: String(localized: "Until Refill"), value: refillText, systemImage: .calendar)
+				metricCard(title: String(localized: "Estimated Supply"), value: etaText, systemImage: .hourglass)
 
 				if viewModel.refillCycleStatus != .unknown {
-					metricCard(title: "Refill Status", value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
+					metricCard(title: String(localized: "Refill Status"), value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
 						.accessibilityLabel("Refill cycle status: \(cycleStatusText)")
 				}
 			}
@@ -467,7 +467,7 @@ struct MedicationTrendsView: View {
 				data[index * (data.count - 1) / max(1, labelCount - 1)].day
 			}
 			VStack(alignment: .leading, spacing: controlsSpacing) {
-				visualizationHeader("Daily Usage", medication: med)
+				visualizationHeader(String(localized: "Daily Usage"), medication: med)
 
 				Chart(data, id: \.day) { item in
 					// Area mark for visual appeal
@@ -574,7 +574,7 @@ struct MedicationTrendsView: View {
 				.frame(maxWidth: .infinity, alignment: .leading)
 		} else {
 			VStack(alignment: .leading, spacing: controlsSpacing) {
-				visualizationHeader("Usage Calendar", medication: med)
+				visualizationHeader(String(localized: "Usage Calendar"), medication: med)
 
 				CalendarHeatmapGrid(
 					data: data,
@@ -632,7 +632,7 @@ struct CalendarHeatmapGrid: View {
 							VStack(alignment: .leading, spacing: heatmapCellSpacing) {
 								Text(day.date.formatted(date: .abbreviated, time: .omitted))
 									.font(.customFont(fontFamily, style: .body, weight: .medium))
-								Text(day.total > 0 ? "\(day.total.formattedAmount) logged" : "No doses logged")
+								Text(day.total > 0 ? String(localized: "\(day.total.formattedAmount) logged") : String(localized: "No doses logged"))
 									.font(.customFont(fontFamily, style: .subheadline))
 									.foregroundStyle(.secondary)
 							}
@@ -751,14 +751,14 @@ struct CalendarHeatmapGrid: View {
 	private func accessibilityLabel(for day: CalendarDay) -> String {
 		let dateText = day.date.formatted(date: .abbreviated, time: .omitted)
 		guard day.intensity >= 0 else {
-			return "Empty calendar cell"
+			return String(localized: "Empty calendar cell")
 		}
 
 		if day.total > 0 {
-			return "\(dateText), \(medicationName), \(day.total.formattedAmount) logged"
+			return String(localized: "\(dateText), \(medicationName), \(day.total.formattedAmount) logged")
 		}
 
-		return "\(dateText), \(medicationName), no doses logged"
+		return String(localized: "\(dateText), \(medicationName), no doses logged")
 	}
 }
 

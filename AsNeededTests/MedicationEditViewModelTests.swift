@@ -98,15 +98,16 @@ struct MedicationEditViewModelTests {
 	@Test("Model limits override legacy profile values and can be removed")
 	@MainActor
 	func modelLimitsTakePrecedenceAndCanBeRemoved() {
+		let locale = Locale(identifier: "fr_FR")
 		let defaults = UserDefaults(suiteName: "MedicationLimitPrecedence.\(UUID().uuidString)") ?? .standard
 		let store = MedicationSafetyProfileStore(defaults: defaults)
 		var medication = ANMedicationConcept(clinicalName: "Medication")
 		medication.minimumHoursBetweenDoses = 6
 		medication.maximumDailyDoseAmount = 10
 		store.save(MedicationSafetyProfile(minimumHoursBetweenDoses: 4, maxDailyAmount: 8), for: medication.id)
-		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: store)
-		#expect(viewModel.minimumHoursBetweenDosesText == "6.0")
-		#expect(viewModel.maxDailyAmountText == "10.0")
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: store, locale: locale)
+		#expect(DoseAmountInput.value(from: viewModel.minimumHoursBetweenDosesText, locale: locale) == 6)
+		#expect(DoseAmountInput.value(from: viewModel.maxDailyAmountText, locale: locale) == 10)
 		#expect(!viewModel.nextDoseNotificationEnabled)
 		viewModel.minimumHoursBetweenDosesText = ""
 		viewModel.maxDailyAmountText = ""
@@ -173,6 +174,7 @@ struct MedicationEditViewModelTests {
     @Test("Initialize with existing medication populates fields")
     @MainActor
     func initWithExistingMedication() {
+        let locale = Locale(identifier: "fr_FR")
         let lastRefill = Date().addingTimeInterval(-86400 * 7) // 7 days ago
         let nextRefill = Date().addingTimeInterval(86400 * 23) // 23 days from now
 
@@ -187,16 +189,22 @@ struct MedicationEditViewModelTests {
             prescribedDoseAmount: 200
         )
 
-        let viewModel = MedicationEditViewModel(medication: medication)
+        let viewModel = MedicationEditViewModel(medication: medication, locale: locale)
 
         #expect(viewModel.clinicalName == "Ibuprofen")
         #expect(viewModel.nickname == "Pain Relief")
-        #expect(viewModel.initialQuantityText == "200.0")
-        #expect(viewModel.quantityText == "100.0")
-        #expect(viewModel.prescribedDoseText == "200.0")
+        #expect(DoseAmountInput.value(from: viewModel.initialQuantityText, locale: locale) == 200)
+        #expect(DoseAmountInput.value(from: viewModel.quantityText, locale: locale) == 100)
+        #expect(DoseAmountInput.value(from: viewModel.prescribedDoseText, locale: locale) == 200)
         #expect(viewModel.prescribedUnit == ANUnitConcept.milligram)
         #expect(viewModel.lastRefillDate == lastRefill)
         #expect(viewModel.nextRefillDate == nextRefill)
+
+        let saved = viewModel.buildMedication()
+        #expect(saved.id == medication.id)
+        #expect(saved.prescribedDoseAmount == medication.prescribedDoseAmount)
+        #expect(saved.quantity == medication.quantity)
+        #expect(saved.initialQuantity == medication.initialQuantity)
     }
 
     // MARK: - Form Validation Tests
@@ -430,6 +438,7 @@ struct MedicationEditViewModelTests {
     @Test("Initialize with stored safety profile populates guidance fields")
     @MainActor
     func initWithStoredSafetyProfile() {
+        let locale = Locale(identifier: "fr_FR")
         let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
         let profileStore = MedicationSafetyProfileStore(defaults: defaults)
         let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
@@ -446,13 +455,13 @@ struct MedicationEditViewModelTests {
             for: medication.id
         )
 
-        let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profileStore)
+        let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profileStore, locale: locale)
 
-        #expect(viewModel.minimumHoursBetweenDosesText == "4.0")
-        #expect(viewModel.cautionHoursBetweenDosesText == "6.0")
-        #expect(viewModel.maxDailyAmountText == "8.0")
+        #expect(DoseAmountInput.value(from: viewModel.minimumHoursBetweenDosesText, locale: locale) == 4)
+        #expect(DoseAmountInput.value(from: viewModel.cautionHoursBetweenDosesText, locale: locale) == 6)
+        #expect(DoseAmountInput.value(from: viewModel.maxDailyAmountText, locale: locale) == 8)
         #expect(viewModel.duplicateDoseWindowMinutes == 45)
-        #expect(viewModel.lowStockThresholdText == "10.0")
+        #expect(DoseAmountInput.value(from: viewModel.lowStockThresholdText, locale: locale) == 10)
         #expect(viewModel.refillLeadDays == 7)
     }
 
@@ -546,4 +555,40 @@ struct MedicationEditViewModelTests {
 
         #expect(elapsed < 0.5) // Should complete 1000 builds in less than 500ms
     }
+
+	@Test("Medication edits parse localized dose, stock and limits without changing their values")
+	@MainActor
+	func localizedMedicationEdit() {
+		let viewModel = MedicationEditViewModel(medication: nil, locale: Locale(identifier: "fr_FR"))
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedUnit = .tablet
+		viewModel.prescribedDoseText = "0,25"
+		viewModel.quantityText = "10,5"
+		viewModel.initialQuantityText = "20,5"
+		viewModel.minimumHoursBetweenDosesText = "1,5"
+		viewModel.maxDailyAmountText = "2,5"
+		#expect(viewModel.isFormValid)
+		let medication = viewModel.buildMedication()
+		#expect(medication.prescribedDoseAmount == 0.25)
+		#expect(medication.quantity == 10.5)
+		#expect(medication.initialQuantity == 20.5)
+		#expect(medication.minimumHoursBetweenDoses == 1.5)
+		#expect(medication.maximumDailyDoseAmount == 2.5)
+	}
+
+	@Test("Opening and saving a localized edit preserves dose precision and medication identity")
+	@MainActor
+	func localizedEditRoundTrip() {
+		var original = ANMedicationConcept(clinicalName: "Medication")
+		original.prescribedDoseAmount = 0.12345678901234566
+		original.prescribedUnit = .tablet
+		original.quantity = 123456.78901234567
+		let viewModel = MedicationEditViewModel(medication: original, locale: Locale(identifier: "ar_EG"))
+		#expect(viewModel.isFormValid)
+		let edited = viewModel.buildMedication()
+		#expect(edited.id == original.id)
+		#expect(edited.prescribedDoseAmount == original.prescribedDoseAmount)
+		#expect(edited.prescribedUnit == original.prescribedUnit)
+		#expect(edited.quantity == original.quantity)
+	}
 }

@@ -47,6 +47,9 @@
 		A12000000000000000000405 /* View+NoTruncate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000305 /* View+NoTruncate.swift */; };
 		A12000000000000000000501 /* LogDoseWidgetIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000502 /* LogDoseWidgetIntent.swift */; };
 		A12000000000000000000503 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
+		A12900000000000000000002 /* Localizable.xcstrings in Widget Resources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000001 /* Localizable.xcstrings */; };
+		A12900000000000000000003 /* Localizable.xcstrings in Watch Resources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000001 /* Localizable.xcstrings */; };
+		A12900000000000000000005 /* ANUnitConcept+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000004 /* ANUnitConcept+Localization.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -137,6 +140,8 @@
 		A12000000000000000000304 /* FontFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Constants/FontFamily.swift"; sourceTree = SOURCE_ROOT; };
 		A12000000000000000000305 /* View+NoTruncate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/View+NoTruncate.swift"; sourceTree = SOURCE_ROOT; };
 		A12000000000000000000502 /* LogDoseWidgetIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededWidget/LogDoseWidgetIntent.swift; sourceTree = SOURCE_ROOT; };
+		A12900000000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AsNeeded/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		A12900000000000000000004 /* ANUnitConcept+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/ANUnitConcept+Localization.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -159,7 +164,6 @@
 			membershipExceptions = (
 				AppIcon.icon,
 				"Extensions/DoubleExtensions/Double+roundToPlaces.swift",
-				Localizable.xcstrings,
 			);
 			target = 524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */;
 		};
@@ -225,6 +229,8 @@
 		524942CB2CA2C999004DB0EC /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
+				A12900000000000000000001 /* Localizable.xcstrings */,
+				A12900000000000000000004 /* ANUnitConcept+Localization.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -441,6 +447,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000002 /* Localizable.xcstrings in Widget Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,6 +455,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000003 /* Localizable.xcstrings in Watch Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,6 +486,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000005 /* ANUnitConcept+Localization.swift in Sources */,
 				A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */,
 				A12000000000000000000405 /* View+NoTruncate.swift in Sources */,
 				A12000000000000000000404 /* FontFamily.swift in Sources */,
@@ -544,7 +553,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -591,7 +600,7 @@
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ASNEEDED_WIDGET_EXTENSION";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -637,7 +646,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -676,7 +685,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -836,7 +845,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -881,7 +890,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -923,7 +932,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -948,7 +957,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 321;
+				CURRENT_PROJECT_VERSION = 322;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;

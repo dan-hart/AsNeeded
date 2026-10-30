@@ -213,7 +213,7 @@ struct ColorPickerComponent: View {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.customFont(fontFamily, style: .title3))
 
-				Text(selectedColorHex != nil ? "Save Color Choice" : "Save Default Color")
+				Text(selectedColorHex != nil ? String(localized: "Save Color Choice") : String(localized: "Save Default Color"))
 					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 				Spacer()

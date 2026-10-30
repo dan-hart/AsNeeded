@@ -22,7 +22,7 @@ import SwiftUI
 struct ExpandableNoteEditorComponent: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
 	@Binding var noteText: String
-	var placeholder: String = "How are you feeling? Any side effects?"
+	var placeholder: String = String(localized: "How are you feeling? Any side effects?")
 	var medicationName: String?
 	var accentColor: Color = .accent
 	var onSave: (() -> Void)?
@@ -256,7 +256,7 @@ struct ExpandableNoteEditorComponent: View {
 				// Empty state
 				ExpandableNoteEditorComponent(
 					noteText: .constant(""),
-					placeholder: "How are you feeling?",
+					placeholder: String(localized: "How are you feeling?"),
 					medicationName: "Ibuprofen"
 				)
 

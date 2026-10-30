@@ -45,7 +45,7 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
 
 			EnhancedMedicationSearchField(
 				text: $clinicalName,
-				placeholder: "Enter medication name",
+				placeholder: String(localized: "Enter medication name"),
 				scrollID: searchFieldScrollID,
 				onMedicationSelected: { name, nickname in
 					onMedicationSelected(name, nickname)

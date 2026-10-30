@@ -19,8 +19,8 @@ struct SettingsDisclaimersSectionView: View {
 					MedicalDisclaimerDetailView()
 				} label: {
 					SettingsNavigationRowLabel(
-						title: "Medical Disclaimer",
-						subtitle: "Important medical advice information",
+						title: String(localized: "Medical Disclaimer"),
+						subtitle: String(localized: "Important medical advice information"),
 						icon: .exclamationmarkTriangle,
 						iconColor: .yellow
 					)
@@ -32,8 +32,8 @@ struct SettingsDisclaimersSectionView: View {
 					NIHDisclaimerDetailView()
 				} label: {
 					SettingsNavigationRowLabel(
-						title: "Medical Data Sources",
-						subtitle: "NIH/NLM RxNorm database citations",
+						title: String(localized: "Medical Data Sources"),
+						subtitle: String(localized: "NIH/NLM RxNorm database citations"),
 						icon: .buildingColumns,
 						iconColor: .accent
 					)

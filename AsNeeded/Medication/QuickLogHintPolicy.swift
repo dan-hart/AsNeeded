@@ -22,8 +22,8 @@ enum QuickLogHintPolicy {
 
 	/// The hint text, naming the dose the hold will log so the user knows what to expect.
 	static func hintText(for medication: ANMedicationConcept) -> String {
-		let amount = (medication.prescribedDoseAmount ?? 1).formattedAmount
+		let amount = medication.prescribedDoseAmount ?? 1
 		let unit = medication.prescribedUnit ?? .unit
-		return String(localized: "Hold to log \(amount) \(unit.abbreviation)")
+		return String(localized: "Hold to log \(unit.localizedCompactAmount(for: amount))")
 	}
 }

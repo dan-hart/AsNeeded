@@ -10,7 +10,7 @@ struct AlternativeFeedbackView: View {
 
 	let feedbackType: FeedbackType
 	@State private var showingCopiedConfirmation = false
-	@State private var copiedMessage = "Copied to clipboard!"
+	@State private var copiedMessage = String(localized: "Copied to clipboard!")
 
 	@ScaledMetric private var mainSpacing: CGFloat = 24
 	@ScaledMetric private var headerIconSpacing: CGFloat = 16
@@ -100,8 +100,8 @@ struct AlternativeFeedbackView: View {
 			// Open in Any Email App
 			feedbackOptionButton(
 				icon: .envelope,
-				title: "Open Email App",
-				subtitle: "Open your default email app with pre-filled content",
+				title: String(localized: "Open Email App"),
+				subtitle: String(localized: "Open your default email app with pre-filled content"),
 				iconColor: .green
 			) {
 				openEmailApp()

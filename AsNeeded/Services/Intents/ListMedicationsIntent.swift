@@ -58,13 +58,13 @@ struct ListMedicationsIntent: AppIntent {
             guard let first = names[doesExistAt: 0], let second = names[doesExistAt: 1] else {
                 return names.joined(separator: ", ")
             }
-            return "\(first) and \(second)"
+            return String(localized: "\(first) and \(second)")
         } else {
             let allButLast = names.dropLast().joined(separator: ", ")
             guard let last = names.last else {
                 return allButLast
             }
-            return "\(allButLast), and \(last)"
+            return String(localized: "\(allButLast), and \(last)")
         }
     }
 }

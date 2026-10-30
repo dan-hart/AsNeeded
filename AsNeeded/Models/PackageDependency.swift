@@ -23,7 +23,7 @@ struct PackageDependency: Identifiable, Hashable, Sendable {
             case let .branch(branch):
                 return branch
 			case let .revision(revision):
-				return "Revision \(revision.prefix(7))"
+				return String(localized: "Revision \(revision.prefix(7))")
             }
         }
     }
@@ -37,7 +37,7 @@ struct PackageDependency: Identifiable, Hashable, Sendable {
         case unknown = "Unknown"
 
         var displayName: String {
-            rawValue
+			self == .unknown ? String(localized: "Unknown") : rawValue
         }
     }
 

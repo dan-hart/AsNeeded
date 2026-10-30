@@ -118,13 +118,13 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 									prescribedUnit = unit
 								}
 							} label: {
-								Text(unit.displayName)
+								Text(unit.localizedDisplayName)
 									.font(.customFont(fontFamily, style: .body))
 							}
 						}
 					} label: {
 						HStack {
-							Text(prescribedUnit?.displayName ?? "Select")
+							Text(prescribedUnit?.localizedDisplayName ?? String(localized: "Select"))
 								.font(.customFont(fontFamily, style: .body))
 								.foregroundStyle(prescribedUnit == nil ? .secondary : .primary)
 								.noTruncate()
@@ -143,7 +143,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 					}
 					.accessibilityLabel("Dose unit")
 					.accessibilityHint("Select the unit for the prescribed dose")
-					.accessibilityValue(prescribedUnit?.displayName ?? "Not selected")
+					.accessibilityValue(prescribedUnit?.localizedDisplayName ?? String(localized: "Not selected"))
 				}
 				.frame(maxWidth: .infinity)
 			}

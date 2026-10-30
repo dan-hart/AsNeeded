@@ -186,8 +186,10 @@ if "${DIFF_EXCLUDE_CMD[@]}" | grep -nE '(GRUB_CMDLINE|/etc/default/grub|grub2-mk
 fi
 
 # 6) Display/graphics changes
+# Localized prose can contain driver names; catalog files remain in all secret scans.
+DISPLAY_DIFF_CMD=("${DIFF_EXCLUDE_CMD[@]}" ":(exclude,glob)**/*.xcstrings")
 DISPLAY_HIT=false
-if "${DIFF_EXCLUDE_CMD[@]}" | grep -nE '(gdm|sddm|xorg|wayland|nvidia|nouveau|akmod-nvidia|display manager)' >/dev/null; then
+if "${DISPLAY_DIFF_CMD[@]}" | grep -nE '(gdm|sddm|xorg|wayland|nvidia|nouveau|akmod-nvidia|display manager)' >/dev/null; then
   DISPLAY_HIT=true
 fi
 

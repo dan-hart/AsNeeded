@@ -318,8 +318,8 @@ final class MedicationTrendsViewModel: ObservableObject {
 			return nil
 		}
 		let used = initial - current
-		return String(format: "%.0f%% used (%.0f/%.0f %@)",
-					  percentage, used, initial, unit.abbreviation)
+		let formattedPercentage = (percentage / 100).formatted(.percent.precision(.fractionLength(0)))
+		return String(localized: "Usage: \(unit.localizedCompactAmount(for: used)) / \(unit.localizedCompactAmount(for: initial)) (\(formattedPercentage))")
 	}
 
 	/// Enum representing whether usage is on track with refill schedule
@@ -392,7 +392,7 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	var patternSummary: String {
 		guard !completeDayEvents.isEmpty else {
-			return "Log a few doses to see timing patterns after the day is complete."
+			return String(localized: "Log a few doses to see timing patterns after the day is complete.")
 		}
 
 		let preferredTimeBucket = mostCommonTimeBucket()
@@ -400,14 +400,14 @@ final class MedicationTrendsViewModel: ObservableObject {
 		let priorAverage = averagePerDay(daysEnding: 7, window: 7)
 
 		var fragments: [String] = []
-		fragments.append("Use is most often clustered in the \(preferredTimeBucket).")
+		fragments.append(String(localized: "Use is most often clustered in the \(preferredTimeBucket)."))
 
 		if recentAverage > priorAverage * 1.2, priorAverage > 0 {
-			fragments.append("Your recent pace is higher than the week before.")
+			fragments.append(String(localized: "Your recent pace is higher than the week before."))
 		} else if priorAverage > recentAverage * 1.2, recentAverage > 0 {
-			fragments.append("Your recent pace is lighter than the week before.")
+			fragments.append(String(localized: "Your recent pace is lighter than the week before."))
 		} else {
-			fragments.append("Your recent pace looks fairly steady.")
+			fragments.append(String(localized: "Your recent pace looks fairly steady."))
 		}
 
 		if let refillProjection {
@@ -439,19 +439,19 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 			switch hour {
 			case 5 ..< 12:
-				bucket = "morning"
+				bucket = String(localized: "morning")
 			case 12 ..< 17:
-				bucket = "afternoon"
+				bucket = String(localized: "afternoon")
 			case 17 ..< 22:
-				bucket = "evening"
+				bucket = String(localized: "evening")
 			default:
-				bucket = "night"
+				bucket = String(localized: "night")
 			}
 
 			counts[bucket, default: 0] += 1
 		}
 
-		return bucketCounts.max { $0.value < $1.value }?.key ?? "day"
+		return bucketCounts.max { $0.value < $1.value }?.key ?? String(localized: "day")
 	}
 }
 

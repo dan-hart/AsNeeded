@@ -17,8 +17,8 @@ struct SettingsFeedbackSectionView: View {
 				FeedbackView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Send Feedback",
-					subtitle: "Report bugs, request features, or share ideas",
+					title: String(localized: "Send Feedback"),
+					subtitle: String(localized: "Report bugs, request features, or share ideas"),
 					icon: .bubbleLeftAndBubbleRight,
 					iconColor: .accent
 				)

@@ -76,7 +76,7 @@ struct MedicationHistoryView: View {
 
 	private func historyDoseDetails(for event: ANEventConcept) -> some View {
 		let time = event.date.formatted(date: .omitted, time: .shortened)
-		let details = event.dose.map { "\(time) – \($0.amount.formattedAmount) \($0.unit.abbreviation)" } ?? time
+		let details = event.dose.map { "\(time) – \($0.unit.localizedCompactAmount(for: $0.amount))" } ?? time
 		return ViewThatFits(in: .horizontal) {
 			HStack(alignment: .firstTextBaseline, spacing: 8) {
 				Text(details)
@@ -312,7 +312,7 @@ struct MedicationHistoryView: View {
 		let dayOfWeek = dayFormatter.string(from: date)
 
 		let dateString = date.formatted(date: .abbreviated, time: .omitted)
-		return "\(dayOfWeek), \(dateString)"
+		return String(localized: "\(dayOfWeek), \(dateString)")
 	}
 
 	private func dayTotalText(for entries: [ANEventConcept]) -> String? {
@@ -325,7 +325,7 @@ struct MedicationHistoryView: View {
 				guard let dose = ev.dose, dose.unit == unit else { return nil }
 				return dose.amount
 			}.reduce(0, +)
-			return total > 0 ? "\(total.formattedAmount) \(unit.abbreviation)" : nil
+			return total > 0 ? unit.localizedCompactAmount(for: total) : nil
 		} else {
 			let total = entries.compactMap { $0.dose?.amount }.reduce(0, +)
 			return total > 0 ? "\(total.formattedAmount)" : nil
@@ -334,8 +334,8 @@ struct MedicationHistoryView: View {
 
 	private func dayRelativeLabel(for date: Date) -> String? {
 		let cal = Calendar.current
-		if cal.isDateInToday(date) { return "Today" }
-		if cal.isDateInYesterday(date) { return "Yesterday" }
+		if cal.isDateInToday(date) { return String(localized: "Today") }
+		if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
 
 		// Use our centralized relative formatting for other dates
 		let daysDiff = cal.dateComponents([.day], from: date, to: Date()).day ?? 0
@@ -349,11 +349,11 @@ struct MedicationHistoryView: View {
 		let cal = Calendar.current
 		guard cal.isDateInToday(date) else { return nil }
 		let diff = Int(Date().timeIntervalSince(date))
-		if diff <= 60 { return "Logged just now" }
+		if diff <= 60 { return String(localized: "Logged just now") }
 		let mins = diff / 60
-		if mins < 60 { return "\(mins)m ago" }
+		if mins < 60 { return String(localized: "\(mins)m ago") }
 		let hrs = mins / 60
-		return "\(hrs)h ago"
+		return String(localized: "\(hrs)h ago")
 	}
 
 	private func displayNote(for event: ANEventConcept) -> String? {
@@ -372,11 +372,11 @@ struct MedicationHistoryView: View {
 		}
 
 		if let effectiveness = reflection.effectiveness {
-			highlights.append("Effect \(effectiveness)/5")
+			highlights.append(String(localized: "Effect \(effectiveness)/5"))
 		}
 
 		if let before = reflection.symptomSeverityBefore, let after = reflection.symptomSeverityAfter {
-			highlights.append("Before \(before)/5 to \(after)/5")
+			highlights.append(String(localized: "Before \(before)/5 to \(after)/5"))
 		}
 
 		if let sideEffect = reflection.sideEffects.first {
@@ -390,33 +390,33 @@ struct MedicationHistoryView: View {
 		let medicationText = eventMedicationName(for: event)
 		let doseText: String = {
 			guard let dose = event.dose else {
-				return "dose amount not recorded"
+				return String(localized: "dose amount not recorded")
 			}
 
-			return "\(dose.amount.formattedAmount) \(dose.unit.abbreviation)"
+			return dose.unit.localizedCompactAmount(for: dose.amount)
 		}()
 		let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
 		let noteText: String = {
 			guard let note = displayNote(for: event), !note.isEmpty else {
-				return "No note"
+				return String(localized: "No note")
 			}
 
-			return "Has note"
+			return String(localized: "Has note")
 		}()
 
-		return "\(medicationText), \(doseText), logged \(timeText). \(noteText)."
+		return String(localized: "\(medicationText), \(doseText), logged \(timeText). \(noteText).")
 	}
 
 	private func eventMedicationName(for event: ANEventConcept) -> String {
 		guard let medicationID = event.medication?.id else {
-			return "Medication"
+			return String(localized: "Medication")
 		}
 
 		if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
 			return currentMedication.demoDisplayName
 		}
 
-		return event.medication?.demoDisplayName ?? "Medication"
+		return event.medication?.demoDisplayName ?? String(localized: "Medication")
 	}
 
 	private var mutationErrorPresented: Binding<Bool> {
@@ -497,7 +497,7 @@ struct MedicationHistoryView: View {
 	}
 
 	private var historyScopeTitle: String {
-		viewModel.isShowingAllMedications ? "All medications" : (viewModel.selectedMedication?.demoDisplayName ?? "All medications")
+		viewModel.isShowingAllMedications ? String(localized: "All medications") : (viewModel.selectedMedication?.demoDisplayName ?? String(localized: "All medications"))
 	}
 
 	// MARK: - Body
@@ -517,7 +517,7 @@ struct MedicationHistoryView: View {
 										.foregroundStyle(.secondary)
 										.frame(maxWidth: .infinity, alignment: .center)
 
-									Text(viewModel.medications.isEmpty ? "Add a medication in the Medication tab to start recording doses." : "Use Log Dose to choose a medication and record a dose you have taken.")
+									Text(viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to start recording doses.") : String(localized: "Use Log Dose to choose a medication and record a dose you have taken."))
 										.font(.customFont(fontFamily, style: .subheadline))
 										.foregroundStyle(.secondary)
 										.multilineTextAlignment(.center)
@@ -669,7 +669,7 @@ struct MedicationHistoryView: View {
 										HStack {
 											Text("Dose")
 											Spacer()
-											Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
+											Text(dose.unit.localizedCompactAmount(for: dose.amount))
 												.foregroundStyle(.secondary)
 												.noTruncate()
 										}
@@ -786,7 +786,7 @@ struct MedicationHistoryView: View {
 					.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
 						Button("OK", role: .cancel) { viewModel.mutationError = nil }
 					} message: {
-						Text(viewModel.mutationError ?? "Review History before trying again.")
+						Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
 					}
 					.interactiveDismissDisabled(viewModel.isMutating || editingNoteText != (displayNote(for: event) ?? ""))
 					.onAppear {
@@ -816,7 +816,7 @@ struct MedicationHistoryView: View {
 		)) {
 			Button("OK", role: .cancel) { viewModel.mutationError = nil }
 		} message: {
-			Text(viewModel.mutationError ?? "Review History before trying again.")
+			Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
 		}
 	}
 }
@@ -901,7 +901,7 @@ private struct HistoryEntryEditor: View {
 							}
 							.buttonStyle(.borderless)
 							.accessibilityLabel("Decrease dose amount")
-							.accessibilityHint("Decrease by 0.5 \(editingEntryUnit.displayName)")
+							.accessibilityHint("Decrease by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
 							.disabled(editingEntryAmount <= 0.5)
 
 							VStack(spacing: sectionHeaderSpacing) {
@@ -910,7 +910,7 @@ private struct HistoryEntryEditor: View {
 									.noTruncate()
 									.contentTransition(.numericText())
 
-								Text(editingEntryUnit.displayName)
+								Text(editingEntryUnit.localizedDisplayName)
 									.font(.customFont(fontFamily, style: .caption))
 									.foregroundStyle(.secondary)
 									.textCase(.uppercase)
@@ -930,7 +930,7 @@ private struct HistoryEntryEditor: View {
 							}
 							.buttonStyle(.borderless)
 							.accessibilityLabel("Increase dose amount")
-							.accessibilityHint("Increase by 0.5 \(editingEntryUnit.displayName)")
+							.accessibilityHint("Increase by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
 							.disabled(editingEntryAmount >= 100)
 						}
 						.frame(maxWidth: .infinity)
@@ -943,7 +943,7 @@ private struct HistoryEntryEditor: View {
 											editingEntryUnit = unit
 										}
 									}) {
-										Text(unit.displayName)
+										Text(unit.localizedDisplayName)
 											.font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
 											.padding(.horizontal, rowSpacing)
 											.padding(.vertical, entrySpacing)
@@ -1034,7 +1034,7 @@ private struct HistoryEntryEditor: View {
 		.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
 			Button("OK", role: .cancel) { viewModel.mutationError = nil }
 		} message: {
-			Text(viewModel.mutationError ?? "Review History before trying again.")
+			Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
 		}
 		.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
 	}

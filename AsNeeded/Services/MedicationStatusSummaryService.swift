@@ -60,27 +60,29 @@ struct MedicationStatusSummaryService {
 			guard nextDate > date else { return nil as String? }
 			let time = timeFormatter.string(from: nextDate)
 			let window = calendar.isDate(nextDate, inSameDayAs: date)
-				? time : "\(dateFormatter.string(from: nextDate)) at \(time)"
-			return "Next dose window: \(window)"
+				? time : String(localized: "\(dateFormatter.string(from: nextDate)) at \(time)")
+			return String(localized: "Next dose window: \(window)")
 		}
 		let dailyText: String?
 		if availability.eligibleDate != nil {
 			dailyText = self.dailyText(from: assessment, unit: proposedDose.unit)
 		} else {
-			dailyText = (medication.maximumDailyDoseAmount ?? profile.maxDailyAmount).map {
-				"Saved rolling 24-hour maximum: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit missing)")"
+			dailyText = (medication.maximumDailyDoseAmount ?? profile.maxDailyAmount).map { maximum in
+				let quantity = medication.prescribedUnit.map { $0.localizedCompactAmount(for: maximum, locale: locale) }
+					?? String(localized: "\(maximum.formattedAmount(locale: locale)) \(String(localized: "(unit missing)"))")
+				return String(localized: "Saved rolling 24-hour maximum: \(quantity)")
 			}
 		}
 		let refillText = refillText(from: projection)
 		let badgeText: String
 		switch availability {
-		case .notConfigured: badgeText = "No dose limits"
-		case .noDoseHistory: badgeText = "No history"
-		case .unavailable: badgeText = "Review"
+		case .notConfigured: badgeText = String(localized: "No dose limits")
+		case .noDoseHistory: badgeText = String(localized: "No history")
+		case .unavailable: badgeText = String(localized: "Review")
 		case let .eligible(nextDate):
-			badgeText = nextDate > date ? "Waiting" : assessment.severity == .warning ? "Review" : assessment.severity == .caution ? "Caution" : "Limits met"
+			badgeText = nextDate > date ? String(localized: "Waiting") : assessment.severity == .warning ? String(localized: "Review") : assessment.severity == .caution ? String(localized: "Caution") : String(localized: "Within saved limits", comment: "The user-saved timing/quantity constraints are satisfied based on recorded doses. This does not mean a maximum was reached or provide medical clearance.")
 		}
-		let headline = nextWindowText ?? (availability.eligibleDate != nil ? "Saved limits met" : availability.message)
+		let headline = nextWindowText ?? (availability.eligibleDate != nil ? String(localized: "Saved limits met") : availability.message)
 		let accessibilityLabel = [
 			medication.displayName,
 			timingText,
@@ -110,15 +112,15 @@ struct MedicationStatusSummaryService {
 		events: [ANEventConcept]
 	) -> String {
 		guard let lastDose = doseEvents(for: medication, through: date, events: events).last else {
-			return "No doses logged yet"
+			return String(localized: "No doses logged yet")
 		}
 
 		let timeText = timeFormatter.string(from: lastDose.date)
 		if calendar.isDate(lastDose.date, inSameDayAs: date) {
-			return "Last taken \(timeText)"
+			return String(localized: "Last taken \(timeText)")
 		}
 
-		return "Last taken \(dateFormatter.string(from: lastDose.date)) at \(timeText)"
+		return String(localized: "Last taken \(dateFormatter.string(from: lastDose.date)) at \(timeText)")
 	}
 
 	private func dailyText(
@@ -129,12 +131,12 @@ struct MedicationStatusSummaryService {
 			return nil
 		}
 
-		return "With this dose: \(assessment.projectedDailyTotal.formattedAmount) of \(maxDailyAmount.formattedAmount) \(unit.abbreviation) in 24 hours"
+		return String(localized: "With this dose: \(unit.localizedCompactAmount(for: assessment.projectedDailyTotal, locale: locale)) of \(unit.localizedCompactAmount(for: maxDailyAmount, locale: locale)) in 24 hours")
 	}
 
 	private func refillText(from projection: MedicationDoseGuidanceService.RefillProjection) -> String {
 		if projection.lowStock {
-			return "Low stock: \(projection.statusMessage)"
+			return String(localized: "Low stock: \(projection.statusMessage)")
 		}
 
 		if projection.refillSoon {

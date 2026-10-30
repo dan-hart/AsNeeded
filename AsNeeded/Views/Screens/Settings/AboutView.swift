@@ -119,9 +119,9 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity)
 
             VStack(spacing: groupSpacing) {
-                valueRow(icon: .lockShield, title: "Privacy First", description: "Local medication history, with sharing and backups you control")
-                valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
-                valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
+                valueRow(icon: .lockShield, title: String(localized: "Privacy First"), description: String(localized: "Local medication history, with sharing and backups you control"))
+                valueRow(icon: .giftFill, title: String(localized: "Always Free"), description: String(localized: "All features free forever, no ads, no subscriptions required"))
+                valueRow(icon: .chevronLeftForwardslashChevronRight, title: String(localized: "Open Source"), description: String(localized: "Transparent, inspectable, and community-driven"))
             }
         }
     }

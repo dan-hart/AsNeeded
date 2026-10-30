@@ -243,30 +243,30 @@ struct AppSettings: Codable {
 
 		// Check which categories have non-nil values
 		if hapticsEnabled != nil || selectedTab != nil {
-			categories.append("App Preferences")
+			categories.append(String(localized: "App Preferences"))
 		}
 		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil {
-			categories.append("Display Settings")
+			categories.append(String(localized: "Display Settings"))
 		}
 		if medicationSafetyProfiles != nil {
-			categories.append("Clinical Guidance")
+			categories.append(String(localized: "Clinical Guidance"))
 		}
 		if showMedicationNamesInNotifications != nil {
-			categories.append("Notification Settings")
+			categories.append(String(localized: "Notification Settings"))
 		}
 		if selectedFontFamily != nil {
-			categories.append("Typography")
+			categories.append(String(localized: "Typography"))
 		}
 		if automaticBackupEnabled != nil || automaticBackupRedactMedicationNames != nil ||
 			automaticBackupRedactNotes != nil || automaticBackupRetentionDays != nil
 		{
-			categories.append("Automatic Backup Settings")
+			categories.append(String(localized: "Automatic Backup Settings"))
 		}
 		if historySelectedMedicationID != nil || trendsSelectedMedicationID != nil || medicationOrder != nil {
-			categories.append("View Selections")
+			categories.append(String(localized: "View Selections"))
 		}
 		if recentMedicationSearches != nil {
-			categories.append("Search History")
+			categories.append(String(localized: "Search History"))
 		}
 
 		return categories

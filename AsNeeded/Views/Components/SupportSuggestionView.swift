@@ -7,7 +7,7 @@ struct SupportSuggestionView: View {
 	@AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 	@State private var isDismissed = false
 
-	var message: String = "Consider supporting continued development"
+	var message: String = String(localized: "Consider supporting continued development")
 	let onSupportTapped: () -> Void
 
 	var body: some View {

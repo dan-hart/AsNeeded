@@ -42,11 +42,11 @@ struct DoseLoggerView: View {
 						.padding(.bottom, 8)
 
 					if !canTakeNow {
-						Label(medication.nextDoseDate == nil ? medication.statusMessage ?? "Review saved limits" : nextDoseLabel, systemImage: "clock.fill")
+						Label(medication.nextDoseDate == nil ? medication.statusMessage ?? String(localized: "Review saved limits") : nextDoseLabel, systemImage: "clock.fill")
 							.font(.caption)
 							.foregroundColor(.orange)
 					} else if medication.lowStock || medication.refillSoon {
-						Label(medication.lowStock ? "Low stock" : "Refill soon", systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
+						Label(medication.lowStock ? String(localized: "Low stock") : String(localized: "Refill soon"), systemImage: medication.lowStock ? "exclamationmark.triangle.fill" : "shippingbox.fill")
 							.font(.caption)
 							.foregroundColor(medication.lowStock ? .orange : .yellow)
 					}
@@ -112,7 +112,7 @@ struct DoseLoggerView: View {
 
 								Picker("Unit", selection: $selectedUnit) {
 									ForEach(availableUnits, id: \.self) { unit in
-										Text(unit).tag(unit)
+										Text(WatchMedication.localizedUnit(unit)).tag(unit)
 									}
 								}
 								.pickerStyle(WheelPickerStyle())
@@ -125,7 +125,7 @@ struct DoseLoggerView: View {
 									.font(.caption)
 									.foregroundColor(.secondary)
 								Spacer()
-								Text(selectedUnit)
+								Text(WatchMedication.localizedUnit(selectedUnit))
 									.font(.headline)
 							}
 						}
@@ -151,7 +151,7 @@ struct DoseLoggerView: View {
 						} else {
 							HStack {
 								Image(systemName: "checkmark.circle.fill")
-								Text(isQueued ? "Waiting to Sync" : "Log Dose")
+								Text(isQueued ? String(localized: "Waiting to Sync") : String(localized: "Log Dose"))
 							}
 						}
 					}
@@ -168,7 +168,7 @@ struct DoseLoggerView: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
-						Button(isQueued ? "Close" : "Cancel") {
+						Button(isQueued ? String(localized: "Close") : String(localized: "Cancel")) {
 						dismiss()
 					}
 					.disabled(isLogging)
@@ -210,12 +210,12 @@ struct DoseLoggerView: View {
 
 	private var nextDoseLabel: String {
 		guard let nextDoseDate = medication.nextDoseDate else {
-			return "This medication is not ready yet."
+			return String(localized: "This medication is not ready yet.")
 		}
 
 		let formatter = RelativeDateTimeFormatter()
 		formatter.unitsStyle = .short
-		return "Saved interval ends \(formatter.localizedString(for: nextDoseDate, relativeTo: now))"
+		return String(localized: "Saved interval ends \(formatter.localizedString(for: nextDoseDate, relativeTo: now))")
 	}
 }
 

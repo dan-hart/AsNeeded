@@ -153,8 +153,13 @@ extension View {
 	///   - title: The title text to display
 	///   - displayMode: The navigation bar title display mode (.inline or .large)
 	/// - Returns: A view with a custom navigation title that respects font family
-	func customNavigationTitle(_ title: String, displayMode: NavigationBarItem.TitleDisplayMode = .inline) -> some View {
-		modifier(CustomNavigationTitleModifier(title: title, displayMode: displayMode))
+	func customNavigationTitle(_ title: LocalizedStringKey, displayMode: NavigationBarItem.TitleDisplayMode = .inline) -> some View {
+		modifier(CustomNavigationTitleModifier(title: Text(title), displayMode: displayMode))
+	}
+
+	/// Displays user-entered names without treating them as localization keys.
+	func customNavigationTitle(verbatim title: String, displayMode: NavigationBarItem.TitleDisplayMode = .inline) -> some View {
+		modifier(CustomNavigationTitleModifier(title: Text(verbatim: title), displayMode: displayMode))
 	}
 }
 
@@ -172,7 +177,7 @@ private struct CustomFontModifier: ViewModifier {
 /// View modifier that creates a custom navigation title respecting the font family environment
 private struct CustomNavigationTitleModifier: ViewModifier {
 	@Environment(\.fontFamily) private var fontFamily
-	let title: String
+	let title: Text
 	let displayMode: NavigationBarItem.TitleDisplayMode
 
 	func body(content: Content) -> some View {
@@ -182,7 +187,7 @@ private struct CustomNavigationTitleModifier: ViewModifier {
 				.navigationBarTitleDisplayMode(.inline)
 				.toolbar {
 					ToolbarItem(placement: .principal) {
-						Text(title)
+						title
 							.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 					}
 				}

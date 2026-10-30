@@ -60,41 +60,43 @@ struct GetMedicationInfoIntent: AppIntent {
 
 		// Build dialog response
 		var dialogParts: [String] = []
-		dialogParts.append("Here's information about \(targetMedication.displayName):")
+		dialogParts.append(String(localized: "Here's information about \(targetMedication.displayName):"))
 
 		if let dose = targetMedication.prescribedDoseAmount,
 		   let unit = targetMedication.prescribedUnit
 		{
-			dialogParts.append("Prescribed dose is \(dose.formattedAmount) \(unit.displayName)")
+			dialogParts.append(String(localized: "\(String(localized: "Prescribed Dose")): \(unit.localizedCompactAmount(for: dose))"))
 		}
 
 		if let quantity = targetMedication.quantity,
 		   let unit = targetMedication.prescribedUnit
 		{
-			dialogParts.append("You have \(quantity.formattedAmount) \(unit.displayName) remaining")
+			dialogParts.append(String(localized: "\(String(localized: "Remaining")): \(unit.localizedCompactAmount(for: quantity))"))
 		}
 
 		if let nextRefill = targetMedication.nextRefillDate {
 			let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: nextRefill).day ?? 0
 			if daysUntil > 0 {
-				dialogParts.append("Next refill in \(daysUntil) days")
+				dialogParts.append(String(localized: "Next refill in \(daysUntil) days"))
 			} else {
-				dialogParts.append("Refill is due")
+				dialogParts.append(String(localized: "Refill is due"))
 			}
 		}
 
 		if let hours = targetMedication.minimumHoursBetweenDoses {
-			dialogParts.append("Saved minimum interval is \(hours.formattedAmount) hours")
+			dialogParts.append(String(localized: "Saved minimum interval is \(hours.formattedAmount) hours"))
 		} else {
-			dialogParts.append("No minimum interval saved")
+			dialogParts.append(String(localized: "No minimum interval saved"))
 		}
 		if let maximum = targetMedication.maximumDailyDoseAmount {
-			dialogParts.append("Saved maximum in a rolling 24 hours is \(maximum.formattedAmount) \(targetMedication.prescribedUnit?.displayName ?? "(unit missing)")")
+			let amount = targetMedication.prescribedUnit.map { $0.localizedCompactAmount(for: maximum) }
+				?? String(localized: "\(maximum.formattedAmount) \(String(localized: "(unit missing)"))")
+			dialogParts.append(String(localized: "Saved rolling 24-hour maximum: \(amount)"))
 		} else {
-			dialogParts.append("No maximum amount in 24 hours saved")
+			dialogParts.append(String(localized: "No maximum amount in 24 hours saved"))
 		}
 		dialogParts.append(info.availabilityText)
-		let dialog = dialogParts.joined(separator: ". ") + ". Follow your prescription and care instructions."
+		let dialog = dialogParts.joined(separator: ". ") + String(localized: ". Follow your prescription and care instructions.")
 
 		logger.info("Retrieved medication info")
 
@@ -140,9 +142,9 @@ struct GetMedicationInfoIntent: AppIntent {
 		let now = Date()
 		let availability = MedicationDoseGuidanceService().availability(for: medication, at: now, events: DataStore.shared.events, profile: MedicationSafetyProfileStore.shared.profile(for: medication.id))
 		if let nextDate = availability.eligibleDate, nextDate > now {
-			return "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened))"
+			return String(localized: "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened))")
 		}
-		return availability.eligibleDate != nil ? "Saved limits met based on logged doses" : availability.message
+		return availability.eligibleDate != nil ? String(localized: "Saved limits met based on logged doses") : availability.message
 	}
 
 }
@@ -200,13 +202,13 @@ struct MedicationInfoView: View {
 				{
 					InfoRow(
 						icon: .pills,
-						label: "Prescribed Dose",
-						value: "\(dose.formattedAmount) \(unit.displayName)"
+						label: String(localized: "Prescribed Dose"),
+						value: unit.localizedCompactAmount(for: dose)
 					)
 				}
 
-				InfoRow(icon: .clock, label: "Minimum interval", value: info.minimumInterval.map { "\(($0 / 3600).formattedAmount) hours" } ?? "Not saved")
-				InfoRow(icon: .chartBar, label: "Rolling 24h maximum", value: info.maximumDailyAmount.map { "\($0.formattedAmount) \(info.prescribedUnit?.abbreviation ?? "(unit missing)")" } ?? "Not saved")
+				InfoRow(icon: .clock, label: String(localized: "Minimum interval"), value: info.minimumInterval.map { String(localized: "\(($0 / 3600).formattedAmount) hours") } ?? String(localized: "Not saved"))
+				InfoRow(icon: .chartBar, label: String(localized: "Rolling 24h maximum"), value: info.maximumDailyAmount.map { maximum in info.prescribedUnit.map { $0.localizedCompactAmount(for: maximum) } ?? String(localized: "\(maximum.formattedAmount) \(String(localized: "(unit missing)"))") } ?? String(localized: "Not saved"))
 				Text(info.availabilityText)
 					.font(.customFont(fontFamily, style: .caption))
 
@@ -216,8 +218,8 @@ struct MedicationInfoView: View {
 				{
 					InfoRow(
 						icon: .squareStack3dUp,
-						label: "Remaining",
-						value: "\(quantity.formattedAmount) \(unit.displayName)",
+						label: String(localized: "Remaining"),
+						value: unit.localizedCompactAmount(for: quantity),
 						valueColor: quantityColor(for: quantity)
 					)
 				}
@@ -226,7 +228,7 @@ struct MedicationInfoView: View {
 				if let lastTaken = info.lastTaken {
 					InfoRow(
 						icon: .clock,
-						label: "Last Taken",
+						label: String(localized: "Last Taken"),
 						value: lastTaken.formatted(date: .abbreviated, time: .shortened)
 					)
 				}
@@ -235,8 +237,8 @@ struct MedicationInfoView: View {
 				if let daysUntil = info.daysUntilRefill {
 					InfoRow(
 						icon: .calendar,
-						label: "Refill",
-						value: daysUntil > 0 ? "in \(daysUntil) days" : "due now",
+						label: String(localized: "Refill"),
+						value: daysUntil > 0 ? String(localized: "in \(daysUntil) days") : String(localized: "due now"),
 						valueColor: daysUntil <= 7 ? .orange : .primary
 					)
 				}
@@ -244,8 +246,8 @@ struct MedicationInfoView: View {
 				// Recent activity
 				InfoRow(
 					icon: .chartBar,
-					label: "Last 7 Days",
-					value: "\(info.recentDosesCount) dose\(info.recentDosesCount == 1 ? "" : "s")"
+					label: String(localized: "Last 7 Days"),
+					value: String(localized: "Doses: \(info.recentDosesCount)")
 				)
 			}
 		}

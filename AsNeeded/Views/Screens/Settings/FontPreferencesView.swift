@@ -252,7 +252,7 @@ private struct FontFamilyRow: View {
 			}
 			.buttonStyle(.plain)
 			.accessibilityElement(children: .combine)
-			.accessibilityLabel("\(fontFamily.displayName). \(fontFamily.shortDescription). \(isSelected ? String(localized: "Selected", comment: "Accessibility label indicating this option is currently selected") : String(localized: "Not selected", comment: "Accessibility label indicating this option is not currently selected"))")
+			.accessibilityLabel(String(localized: "\(fontFamily.displayName). \(fontFamily.shortDescription). \(isSelected ? String(localized: "Selected", comment: "Accessibility label indicating this option is currently selected") : String(localized: "Not selected", comment: "Accessibility label indicating this option is not currently selected"))"))
 			.accessibilityHint("Double tap to select this font for the app")
 			.accessibilityAddTraits(isSelected ? .isSelected : [])
 

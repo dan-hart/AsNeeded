@@ -24,13 +24,13 @@ struct FeedbackView: View {
 
     private var loadingMessage: String {
         if feedbackService.showingLogConsentDialog {
-            return "Awaiting user consent..."
+            return String(localized: "Awaiting user consent...")
         } else if feedbackService.isCollectingLogs {
-            return "Preparing mail with logs..."
+            return String(localized: "Preparing mail with logs...")
         } else if feedbackService.isPreparingFeedback {
-            return "Preparing feedback..."
+            return String(localized: "Preparing feedback...")
         } else {
-            return "Loading..."
+            return String(localized: "Loading...")
         }
     }
 
@@ -118,8 +118,8 @@ struct FeedbackView: View {
 
             VStack(spacing: itemSpacing) {
                 feedbackTypeButton(
-                    title: "Report a Bug",
-                    subtitle: "Something isn't working correctly",
+                    title: String(localized: "Report a Bug"),
+                    subtitle: String(localized: "Something isn't working correctly"),
                     systemImage: .exclamationmarkTriangle,
                     color: .red,
                     action: {
@@ -129,8 +129,8 @@ struct FeedbackView: View {
                 )
 
                 feedbackTypeButton(
-                    title: "Request a Feature",
-                    subtitle: "Suggest new functionality or improvements",
+                    title: String(localized: "Request a Feature"),
+                    subtitle: String(localized: "Suggest new functionality or improvements"),
                     systemImage: .lightbulb,
                     color: .orange,
                     action: {
@@ -140,8 +140,8 @@ struct FeedbackView: View {
                 )
 
                 feedbackTypeButton(
-                    title: "General Feedback",
-                    subtitle: "Share your thoughts and experiences",
+                    title: String(localized: "General Feedback"),
+                    subtitle: String(localized: "Share your thoughts and experiences"),
                     systemImage: .heart,
                     color: .green,
                     action: {
@@ -159,8 +159,8 @@ struct FeedbackView: View {
                 .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
             feedbackTypeButton(
-                title: "Rate & Review on App Store",
-                subtitle: "Share your experience and help others discover the app",
+                title: String(localized: "Rate & Review on App Store"),
+                subtitle: String(localized: "Share your experience and help others discover the app"),
                 systemImage: .star,
                 color: .accent,
                 action: {

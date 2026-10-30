@@ -41,18 +41,18 @@ struct ThankYouView: View {
         var title: String {
             switch self {
             case .tip:
-                return "Thank You for Your Tip!"
+                return String(localized: "Thank You for Your Tip!")
             case .subscription:
-                return "Thank You for Your Continued Support!"
+                return String(localized: "Thank You for Your Continued Support!")
             }
         }
 
         var subtitle: String {
             switch self {
             case let .tip(amount):
-                return "Your \(amount) tip means the world"
+                return String(localized: "Your \(amount) tip means the world")
             case let .subscription(plan):
-                return "You're now subscribed to \(plan)"
+                return String(localized: "You're now subscribed to \(plan)")
             }
         }
     }
@@ -184,26 +184,26 @@ struct ThankYouView: View {
             VStack(alignment: .leading, spacing: itemSpacing) {
                 ImpactRow(
                     icon: .hammerFill,
-                    title: "Continuous Development",
-                    description: "Regular updates with new features and improvements"
+                    title: String(localized: "Continuous Development"),
+                    description: String(localized: "Regular updates with new features and improvements")
                 )
 
                 ImpactRow(
                     icon: .shieldLefthalfFilled,
-                    title: "Privacy-First Approach",
-                    description: "Keeping the app ad-free and your data private"
+                    title: String(localized: "Privacy-First Approach"),
+                    description: String(localized: "Keeping the app ad-free and your data private")
                 )
 
                 ImpactRow(
                     icon: .heartTextSquareFill,
-                    title: "Community Support",
-                    description: "Responding to feedback and helping users"
+                    title: String(localized: "Community Support"),
+                    description: String(localized: "Responding to feedback and helping users")
                 )
 
                 ImpactRow(
                     icon: .globeAmericasFill,
-                    title: "Open Source Mission",
-                    description: "Keeping every feature free for everyone"
+                    title: String(localized: "Open Source Mission"),
+                    description: String(localized: "Keeping every feature free for everyone")
                 )
             }
             .padding()

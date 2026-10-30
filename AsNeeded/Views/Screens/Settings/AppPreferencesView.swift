@@ -125,8 +125,8 @@ struct AppPreferencesView: View {
     private var medicationNamesToggle: some View {
         PreferenceRow(
             icon: .pills,
-            title: "Show Medication Names",
-            subtitle: "Display medication names in notification content",
+            title: String(localized: "Show Medication Names"),
+            subtitle: String(localized: "Display medication names in notification content"),
             detail: "When enabled, medication reminders will show the specific medication name. When disabled, reminders will show generic text like 'Time for your medication' for privacy.",
             isOn: $showMedicationNames
         ) { newValue in
@@ -137,8 +137,8 @@ struct AppPreferencesView: View {
     private var hapticsToggle: some View {
         PreferenceRow(
             icon: .iphoneRadiowavesLeftAndRight,
-            title: "Haptic Feedback",
-            subtitle: "Feel touches and actions throughout the app",
+            title: String(localized: "Haptic Feedback"),
+            subtitle: String(localized: "Feel touches and actions throughout the app"),
             detail: "Provides tactile feedback when you interact with buttons, complete actions, or receive confirmations. Helps confirm your actions with subtle vibrations.",
             isOn: $hapticsManager.hapticsEnabled
         ) { _ in
@@ -253,8 +253,8 @@ struct AppPreferencesView: View {
     private var hideSupportBannersToggle: some View {
         PreferenceRow(
             icon: .eyeSlash,
-            title: "Hide Support Banners",
-            subtitle: "Disable support reminders throughout the app",
+            title: String(localized: "Hide Support Banners"),
+            subtitle: String(localized: "Disable support reminders throughout the app"),
             detail: "When enabled, support banners and donation prompts will be hidden from the app interface. You can still access support options through the Settings tab.",
             isOn: $hideSupportBanners
         ) { _ in }
@@ -263,8 +263,8 @@ struct AppPreferencesView: View {
     private var disableReviewRequestsToggle: some View {
         PreferenceRow(
             icon: .starSlash,
-            title: "Disable Review Requests",
-            subtitle: "Opt out of automatic app review prompts",
+            title: String(localized: "Disable Review Requests"),
+            subtitle: String(localized: "Opt out of automatic app review prompts"),
             detail: "When enabled, the app will not automatically ask you to rate and review. Manual review buttons in Support and Feedback screens will also be hidden.",
             isOn: $appReviewManager.hasOptedOutOfReviews
         ) { _ in }

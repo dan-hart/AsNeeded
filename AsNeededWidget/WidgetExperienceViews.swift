@@ -1,7 +1,12 @@
+import ANModelKit
 import Foundation
 import SFSafeSymbols
 import SwiftUI
 import WidgetKit
+
+private func widgetQuantity(_ amount: Double, unit: ANUnitConcept?) -> String {
+	unit?.localizedCompactAmount(for: amount) ?? amount.formatted(.number.precision(.fractionLength(0...2)))
+}
 
 struct MedicationExperienceView: View {
 	let entry: WidgetExperienceEntry
@@ -26,7 +31,7 @@ struct MedicationExperienceView: View {
 			} else {
 				VStack(alignment: .leading, spacing: 8) {
 					HStack {
-						Text(entry.selectedID == nil ? "Medications" : "Medication")
+						Text(entry.selectedID == nil ? String(localized: "Medications") : String(localized: "Medication"))
 							.font(.customFont(fontFamily, style: .headline))
 						Spacer(minLength: 0)
 						WidgetRouteLink(route: .logDose(entry.selectedID)) {
@@ -101,7 +106,7 @@ struct WidgetMedicationFacts: View {
 			} else if medication.timingUnknown {
 				Text("Review timing in app")
 			} else if let supply = medication.supply {
-				Text("\(supply.formatted(.number.precision(.fractionLength(0...2)))) \(medication.supplyUnit ?? "units") remaining")
+				Text("\(String(localized: "Remaining")): \(widgetQuantity(supply, unit: medication.supplyUnit))")
 			}
 			if !compact, let refill = medication.refillDate {
 				Text("Refill \(refill, style: .date)")
@@ -119,9 +124,9 @@ struct WidgetEmptyView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 8) {
 			Image(systemSymbol: .pillsFill).foregroundStyle(.secondary).accessibilityHidden(true)
-			Text(state == .empty ? "No medications" : "Medication unavailable")
+			Text(state == .empty ? String(localized: "No medications") : String(localized: "Medication unavailable"))
 				.font(.customFont(fontFamily, style: .headline))
-			Text(state == .empty ? "Add a medication in AsNeeded." : "Open AsNeeded to review.")
+			Text(state == .empty ? String(localized: "Add a medication in AsNeeded.") : String(localized: "Open AsNeeded to review."))
 				.font(.customFont(fontFamily, style: .caption))
 				.foregroundStyle(.secondary)
 		}
@@ -153,11 +158,11 @@ struct UsageExperienceView: View {
 				Text("7 complete days · ending yesterday")
 					.font(.customFont(fontFamily, style: .caption2)).foregroundStyle(.secondary)
 				if usage.quantitiesComplete {
-					Text("\(usage.total.formatted(.number.precision(.fractionLength(0...2)))) \(usage.unit ?? "") logged")
+					Text("\(String(localized: "Logged")): \(widgetQuantity(usage.total, unit: usage.unit))")
 						.font(.customFont(fontFamily, style: family == .systemSmall ? .headline : .title2, weight: .semibold))
-					if !typeSize.isAccessibilitySize { WidgetUsageBars(days: usage.days, unit: usage.unit ?? "", showLabels: family != .systemSmall) }
+					if !typeSize.isAccessibilitySize { WidgetUsageBars(days: usage.days, unit: usage.unit, showLabels: family != .systemSmall) }
 					if family == .systemLarge, let previous = usage.previousTotal {
-						Text("Previous 7 days: \(previous.formatted(.number.precision(.fractionLength(0...2)))) \(usage.unit ?? "")")
+						Text("Previous 7 days: \(widgetQuantity(previous, unit: usage.unit))")
 							.font(.customFont(fontFamily, style: .caption)).foregroundStyle(.secondary)
 					}
 				} else if usage.count > 0 {
@@ -181,13 +186,15 @@ struct UsageExperienceView: View {
 
 struct WidgetUsageBars: View {
 	let days: [WidgetExperienceProjection.Day]
-	let unit: String
+	let unit: ANUnitConcept?
 	let showLabels: Bool
 	@Environment(\.fontFamily) private var fontFamily
 	var body: some View {
 		GeometryReader { geometry in
 			HStack(alignment: .bottom, spacing: 6) {
 				ForEach(days) { day in
+					let quantity = widgetQuantity(day.quantity, unit: unit)
+					let loggedQuantity = String(localized: "\(String(localized: "Logged")): \(quantity)")
 					VStack(spacing: 4) {
 						Spacer(minLength: 0)
 						RoundedRectangle(cornerRadius: 3)
@@ -201,7 +208,7 @@ struct WidgetUsageBars: View {
 					}
 						.frame(maxWidth: .infinity)
 						.accessibilityElement(children: .ignore)
-						.accessibilityLabel("\(day.date.formatted(date: .abbreviated, time: .omitted)): \(day.quantity.formatted()) \(unit) logged")
+						.accessibilityLabel("\(day.date.formatted(date: .abbreviated, time: .omitted)): \(loggedQuantity)")
 				}
 			}
 		}

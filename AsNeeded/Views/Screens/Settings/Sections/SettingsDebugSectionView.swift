@@ -19,8 +19,8 @@ struct SettingsDebugSectionView: View {
 				showThankYouView = true
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Test Thank You View",
-					subtitle: "Preview the thank you screen",
+					title: String(localized: "Test Thank You View"),
+					subtitle: String(localized: "Preview the thank you screen"),
 					icon: .heartFill,
 					iconColor: .accent
 				)
@@ -35,8 +35,8 @@ struct SettingsDebugSectionView: View {
 				showWelcomeView = true
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Test Welcome View",
-					subtitle: "Preview the welcome screen",
+					title: String(localized: "Test Welcome View"),
+					subtitle: String(localized: "Preview the welcome screen"),
 					icon: .handWave,
 					iconColor: .accent
 				)
@@ -50,8 +50,8 @@ struct SettingsDebugSectionView: View {
 				FontTestView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Test Custom Fonts",
-					subtitle: "Check font loading and availability",
+					title: String(localized: "Test Custom Fonts"),
+					subtitle: String(localized: "Check font loading and availability"),
 					icon: .textformat,
 					iconColor: .accent
 				)

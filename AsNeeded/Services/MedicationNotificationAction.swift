@@ -47,19 +47,19 @@ struct MedicationNotificationAction: Equatable, Sendable {
 	}
 
 	static var categories: Set<UNNotificationCategory> {
-		let log = UNNotificationAction(identifier: "LOG_ACTION", title: "Log", options: [.authenticationRequired])
-		let skip = UNNotificationAction(identifier: "SKIP_ACTION", title: "Skip", options: [])
+		let log = UNNotificationAction(identifier: "LOG_ACTION", title: String(localized: "Log"), options: [.authenticationRequired])
+		let skip = UNNotificationAction(identifier: "SKIP_ACTION", title: String(localized: "Skip"), options: [])
 		return [
 			UNNotificationCategory(identifier: MedicationReminderRequest.categoryIdentifier,
-				actions: [log, skip], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: "Medication reminder", options: []),
+				actions: [log, skip], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: String(localized: "Medication reminder"), options: []),
 			UNNotificationCategory(identifier: MedicationAvailabilityNotificationPlanner.categoryIdentifier,
-				actions: [log], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: "Next dose availability", options: []),
+				actions: [log], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: String(localized: "Next dose availability"), options: []),
 			UNNotificationCategory(identifier: confirmationCategoryIdentifier,
-				actions: [UNNotificationAction(identifier: "VIEW_LOG_ACTION", title: "View Log", options: [.foreground])],
-				intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: "Dose logged", options: []),
+				actions: [UNNotificationAction(identifier: "VIEW_LOG_ACTION", title: String(localized: "View Log"), options: [.foreground])],
+				intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: String(localized: "Dose logged"), options: []),
 			UNNotificationCategory(identifier: reviewCategoryIdentifier,
-				actions: [UNNotificationAction(identifier: "REVIEW_DOSE_ACTION", title: "Review Dose", options: [.foreground])],
-				intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: "Dose not logged", options: []),
+				actions: [UNNotificationAction(identifier: "REVIEW_DOSE_ACTION", title: String(localized: "Review Dose"), options: [.foreground])],
+				intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: String(localized: "Dose not logged"), options: []),
 		]
 	}
 }

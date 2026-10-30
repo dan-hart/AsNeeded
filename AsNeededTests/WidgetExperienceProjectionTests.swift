@@ -122,8 +122,27 @@ struct WidgetExperienceProjectionTests {
 			event(other, try date("2026-10-27T18:00:00Z"), amount: 100)]
 		let usage = try #require(WidgetExperienceProjection(medications: [other, medication], events: Array(events.reversed()), selectedID: medication.id, at: now).usage)
 		#expect(usage.quantitiesComplete)
-		#expect(usage.unit == ANUnitConcept.capsule.abbreviation)
+		#expect(usage.unit == .capsule)
 		#expect(usage.total == 0.5)
+	}
+
+
+	@Test("Read-only supply projection retains unit identity and original quantities")
+	func supplyUnitIdentity() throws {
+		let now = try date("2026-10-28T18:00:00Z")
+		let medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 14.125, prescribedUnit: .puff)
+		let projection = WidgetExperienceProjection(medications: [medication], events: [], at: now)
+		let row = try #require(projection.medications.first)
+		#expect(row.supply == 14.125)
+		#expect(row.supplyUnit == .puff)
+		#expect(medication.quantity == 14.125)
+		#expect(medication.prescribedUnit == .puff)
+
+		let unprescribed = ANMedicationConcept(clinicalName: "Unprescribed", quantity: 2.5)
+		let unknown = WidgetExperienceProjection(medications: [unprescribed], events: [], at: now)
+		#expect(unknown.medications.first?.supply == 2.5)
+		#expect(unknown.medications.first?.supplyUnit == nil)
+		#expect(unknown.usage?.unit == nil)
 	}
 
 	@Test("Comparison uses preceding seven complete days only when quantities are complete")

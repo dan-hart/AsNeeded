@@ -18,7 +18,7 @@ extension ANMedicationConcept {
         } else if !clinicalName.isEmpty {
             return clinicalName
         } else {
-            return "Unknown"
+            return String(localized: "Unknown")
         }
     }
 

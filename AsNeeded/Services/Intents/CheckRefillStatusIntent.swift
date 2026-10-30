@@ -82,12 +82,12 @@ struct CheckRefillStatusIntent: AppIntent {
 
         if !needsRefill.isEmpty {
             let names = needsRefill.map { $0.name }.joined(separator: ", ")
-            dialogParts.append("\(needsRefill.count) medication\(needsRefill.count == 1 ? "" : "s") need refills soon: \(names)")
+            dialogParts.append(String(localized: "Medications needing refills soon: \(needsRefill.count). \(names)"))
         }
 
         if !lowQuantity.isEmpty {
             let names = lowQuantity.map { $0.name }.joined(separator: ", ")
-            dialogParts.append("\(lowQuantity.count) medication\(lowQuantity.count == 1 ? " is" : "s are") running low: \(names)")
+            dialogParts.append(String(localized: "Medications running low: \(lowQuantity.count). \(names)"))
         }
 
         let dialog = dialogParts.joined(separator: ". ")

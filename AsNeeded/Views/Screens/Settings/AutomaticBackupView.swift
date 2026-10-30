@@ -62,7 +62,7 @@ struct AutomaticBackupView: View {
                     await viewModel.saveBackupLocation(url: url)
                 }
             case let .failure(error):
-                viewModel.alertMessage = "Location selection failed: \(error.localizedDescription)"
+                viewModel.alertMessage = String(localized: "Location selection failed: \(error.localizedDescription)")
                 viewModel.showingAlert = true
             }
         }
@@ -273,13 +273,13 @@ struct AutomaticBackupView: View {
     private var statusTitle: String {
         switch viewModel.statusCardState {
         case .active:
-            return "Active"
+            return String(localized: "Active")
         case .warning:
-            return "Warning"
+            return String(localized: "Warning")
         case .error:
-            return "Error"
+            return String(localized: "Error")
         case .disabled:
-            return "Not Configured"
+            return String(localized: "Not Configured")
         }
     }
 
@@ -327,7 +327,7 @@ struct AutomaticBackupView: View {
                     .foregroundStyle(.accent)
                     .font(.customFont(fontFamily, style: .body))
 
-                Text(viewModel.locationName ?? "Not selected")
+                Text(viewModel.locationName ?? String(localized: "Not selected"))
                     .font(.customFont(fontFamily, style: .body))
 
                 Spacer()
@@ -535,7 +535,7 @@ struct AutomaticBackupView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(showAllBackups ? "Show Less" : "Show All (\(viewModel.backupHistory.count))")
+                            Text(showAllBackups ? String(localized: "Show Less") : String(localized: "Show All (\(viewModel.backupHistory.count))"))
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
                                 .foregroundStyle(.accent)
                             Image(systemSymbol: showAllBackups ? .chevronUp : .chevronDown)

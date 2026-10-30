@@ -43,21 +43,21 @@ enum BackupError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noLocationConfigured:
-            return "No backup location configured"
+            return String(localized: "No backup location configured")
         case .bookmarkStale:
-            return "Backup location is no longer accessible"
+            return String(localized: "Backup location is no longer accessible")
         case .accessDenied:
-            return "Permission denied to access backup location"
+            return String(localized: "Permission denied to access backup location")
         case let .insufficientStorage(needed, available):
             let neededMB = ByteCountFormatter.string(fromByteCount: needed, countStyle: .file)
             let availableMB = ByteCountFormatter.string(fromByteCount: available, countStyle: .file)
-            return "Not enough storage space. Need \(neededMB), but only \(availableMB) available"
+            return String(localized: "Not enough storage space. Need \(neededMB), but only \(availableMB) available")
         case .validationFailed:
-            return "Backup file validation failed"
+            return String(localized: "Backup file validation failed")
         case let .exportFailed(message):
-            return "Export failed: \(message)"
+            return String(localized: "Export failed: \(message)")
         case let .writeFailed(message):
-            return "Write failed: \(message)"
+            return String(localized: "Write failed: \(message)")
         }
     }
 }
@@ -377,7 +377,7 @@ final class AutomaticBackupManager: ObservableObject {
         logger.info("Performing automatic backup (redactNames: \(redactMedicationNames), redactNotes: \(redactNotes), includeSettings: \(includeSettings))")
 
         guard let bookmark = bookmarkData else {
-            let error = "No backup location configured"
+            let error = String(localized: "No backup location configured")
             logger.error("No backup location configured")
             lastError = error
             lastBackupStatus = .failed(error)
@@ -389,7 +389,7 @@ final class AutomaticBackupManager: ObservableObject {
         let resolved = await resolveBackupDirectory(bookmark)
         guard configurationIsCurrent() else { return }
         guard let backupDirectory = resolved.url else {
-            let error = "Failed to access backup location"
+            let error = String(localized: "Failed to access backup location")
             logger.error("Failed to access backup location")
             lastError = error
             lastBackupStatus = .accessDenied
@@ -398,7 +398,7 @@ final class AutomaticBackupManager: ObservableObject {
 
         // ✅ Check bookmark staleness
         if resolved.isStale {
-            let error = "Backup location is no longer accessible (bookmark stale)"
+            let error = String(localized: "Backup location is no longer accessible (bookmark stale)")
             logger.warning("Backup location is no longer accessible (bookmark stale)")
             lastError = error
             lastBackupStatus = .bookmarkStale
@@ -407,7 +407,7 @@ final class AutomaticBackupManager: ObservableObject {
 
         // Start accessing security-scoped resource
         guard backupDirectory.startAccessingSecurityScopedResource() else {
-            let error = "Permission denied to access backup location"
+            let error = String(localized: "Permission denied to access backup location")
             logger.error("Permission denied to access backup location")
             lastError = error
             lastBackupStatus = .accessDenied
@@ -465,7 +465,7 @@ final class AutomaticBackupManager: ObservableObject {
 
         } catch let error as BackupError {
             guard configurationIsCurrent() else { return }
-            let errorMessage = error.errorDescription ?? "Backup failed"
+            let errorMessage = error.errorDescription ?? String(localized: "Backup failed")
             logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
 
@@ -481,7 +481,7 @@ final class AutomaticBackupManager: ObservableObject {
             }
         } catch {
             guard configurationIsCurrent() else { return }
-            let errorMessage = "Backup failed: \(error.localizedDescription)"
+            let errorMessage = String(localized: "Backup failed: \(error.localizedDescription)")
             logger.logPrivacySafeError("Automatic backup failed", error: error)
             lastError = errorMessage
             lastBackupStatus = .failed(errorMessage)

@@ -60,7 +60,10 @@ struct MedicationAppearancePickerComponent: View {
 		case symbol = "Symbol"
 
 		var localizedName: LocalizedStringKey {
-			LocalizedStringKey(rawValue)
+			switch self {
+			case .color: "Color"
+			case .symbol: "Symbol"
+			}
 		}
 	}
 
@@ -161,7 +164,7 @@ struct MedicationAppearancePickerComponent: View {
 
 					// Current selection indicator
 					if !dynamicTypeSize.isAccessibilitySize {
-						Text(selectedTab == .color ? "Color" : "Symbol")
+						Text(selectedTab == .color ? String(localized: "Color") : String(localized: "Symbol"))
 							.font(.customFont(fontFamily, style: .caption2))
 							.foregroundStyle(.secondary)
 					}

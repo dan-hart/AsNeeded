@@ -22,17 +22,17 @@ struct DataPrivacyView: View {
 
 
 				section(
-					title: "Backup & Recovery",
+					title: String(localized: "Backup & Recovery"),
 					rows: [
 						.init(
-							title: "Automatic Backup",
-							subtitle: "Choose backup location and privacy options",
+							title: String(localized: "Automatic Backup"),
+							subtitle: String(localized: "Choose backup location and privacy options"),
 							icon: .externaldriveConnectedToLineBelow,
 							destination: AnyView(AutomaticBackupView())
 						),
 						.init(
-							title: "Export, Import & Clear",
-							subtitle: "Export data, import backups, or remove stored records",
+							title: String(localized: "Export, Import & Clear"),
+							subtitle: String(localized: "Export data, import backups, or remove stored records"),
 							icon: .squareAndArrowUp,
 							destination: AnyView(DataManagementView().customNavigationTitle("Data Management"))
 						)
@@ -40,17 +40,17 @@ struct DataPrivacyView: View {
 				)
 
 				section(
-					title: "Privacy Choices",
+					title: String(localized: "Privacy Choices"),
 					rows: [
 						.init(
-							title: "App Preferences",
-							subtitle: "Review feedback prompts, haptics, and import behavior",
+							title: String(localized: "App Preferences"),
+							subtitle: String(localized: "Review feedback prompts, haptics, and import behavior"),
 							icon: .gearshapeFill,
 							destination: AnyView(AppPreferencesView())
 						),
 						.init(
-							title: "Medical Disclaimer",
-							subtitle: "Review the app's medical and safety limitations",
+							title: String(localized: "Medical Disclaimer"),
+							subtitle: String(localized: "Review the app's medical and safety limitations"),
 							icon: .exclamationmarkTriangleFill,
 							destination: AnyView(MedicalDisclaimerDetailView())
 						)

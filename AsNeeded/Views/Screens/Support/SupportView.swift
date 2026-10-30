@@ -297,11 +297,11 @@ struct SupportView: View {
                 let success = await revenueCatManager.restorePurchases()
 
                 if success {
-                    alertTitle = "Restore Complete"
-                    alertMessage = "Your purchases have been restored successfully."
+                    alertTitle = String(localized: "Restore Complete")
+                    alertMessage = String(localized: "Your purchases have been restored successfully.")
                 } else {
-                    alertTitle = "Restore Failed"
-                    alertMessage = revenueCatManager.purchaseError ?? "Unable to restore purchases. Please try again later."
+                    alertTitle = String(localized: "Restore Failed")
+                    alertMessage = revenueCatManager.purchaseError ?? String(localized: "Unable to restore purchases. Please try again later.")
                 }
 
                 showPurchaseAlert = true
@@ -366,9 +366,9 @@ struct SupportView: View {
     }
 
     private let subscriptionTiers = [
-		(title: "Supporter", description: "Optional monthly contribution", icon: SFSymbol.heart, color: .accent, productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
-		(title: "Advocate", description: "Optional monthly contribution", icon: SFSymbol.handRaisedFill, color: Color.green, productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
-		(title: "Champion", description: "Optional monthly contribution", icon: SFSymbol.crownFill, color: Color.purple, productId: RevenueCatManager.ProductIdentifier.subscriptionChampion),
+		(title: String(localized: "Supporter"), description: String(localized: "Optional monthly contribution"), icon: SFSymbol.heart, color: .accent, productId: RevenueCatManager.ProductIdentifier.subscriptionSupporter),
+		(title: String(localized: "Advocate"), description: String(localized: "Optional monthly contribution"), icon: SFSymbol.handRaisedFill, color: Color.green, productId: RevenueCatManager.ProductIdentifier.subscriptionAdvocate),
+		(title: String(localized: "Champion"), description: String(localized: "Optional monthly contribution"), icon: SFSymbol.crownFill, color: Color.purple, productId: RevenueCatManager.ProductIdentifier.subscriptionChampion),
     ]
 }
 
@@ -409,7 +409,7 @@ private struct SubscriptionButton: View {
                     purchaseType = .subscription(plan: subscription.title)
                     showThankYouView = true
                 } else if let error = revenueCatManager.purchaseError {
-                    alertTitle = "Subscription Failed"
+                    alertTitle = String(localized: "Subscription Failed")
                     alertMessage = error
                     showPurchaseAlert = true
                 }
@@ -435,7 +435,7 @@ private struct SubscriptionButton: View {
 
 				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
-                Text(productPrice.map { "\($0) / month" } ?? (revenueCatManager.isLoadingProducts ? "Loading price…" : "Unavailable"))
+                Text(productPrice.map { String(localized: "\($0) / month") } ?? (revenueCatManager.isLoadingProducts ? String(localized: "Loading price…") : String(localized: "Unavailable")))
                     .font(.customFont(fontFamily, style: .caption))
                     .fontWeight(.medium)
                     .foregroundColor(subscription.color)

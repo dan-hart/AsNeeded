@@ -68,16 +68,16 @@ struct SettingsRowComponent: View {
         VStack(spacing: 16) {
             SettingsRowComponent(
                 icon: .externaldriveConnectedToLineBelow,
-                title: "Data Management",
-                subtitle: "Export, import, and clear your data"
+                title: String(localized: "Data Management"),
+                subtitle: String(localized: "Export, import, and clear your data")
             ) {
                 print("Data Management tapped")
             }
 
             SettingsRowComponent(
                 icon: .infoCircle,
-                title: "About",
-                subtitle: "Version info and acknowledgments",
+                title: String(localized: "About"),
+                subtitle: String(localized: "Version info and acknowledgments"),
                 iconColor: .accent
             ) {
                 print("About tapped")

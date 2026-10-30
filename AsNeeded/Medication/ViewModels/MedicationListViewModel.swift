@@ -38,7 +38,7 @@ final class MedicationListViewModel: ObservableObject {
     @Published var showQuickLogToast = false
     @Published var quickLogMedicationName = ""
     @Published var quickLogDoseAmount: Double = 0
-    @Published var quickLogDoseUnit = ""
+    @Published var quickLogDoseUnit: ANUnitConcept = .unit
     @Published var quickLogAccentColor: Color = .accent
     @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
     @Published var isLoading = true
@@ -388,7 +388,7 @@ final class MedicationListViewModel: ObservableObject {
 		latestPresentedSequence = sequence
         quickLogMedicationName = med.displayName
         quickLogDoseAmount = dose.amount
-        quickLogDoseUnit = dose.unit.abbreviation
+        quickLogDoseUnit = dose.unit
         quickLogAccentColor = med.displayColor
         quickLogFeedback = feedback
 

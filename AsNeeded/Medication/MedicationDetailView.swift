@@ -84,7 +84,7 @@ struct MedicationDetailView: View {
             mainContent
         }
         .background(Color(.systemGroupedBackground))
-		.customNavigationTitle(medication.demoDisplayName, displayMode: .inline)
+		.customNavigationTitle(verbatim: medication.demoDisplayName, displayMode: .inline)
 		.navigationDestination(isPresented: $showSupportPage) { SupportView() }
 		.overlay(alignment: .top) {
 			if doseConfirmation.showQuickLogToast {
@@ -257,7 +257,7 @@ struct MedicationDetailView: View {
 		)) {
 			Button("OK", role: .cancel) { notificationUrgencyError = nil }
 		} message: {
-			Text(notificationUrgencyError ?? "Please try again.")
+			Text(notificationUrgencyError ?? String(localized: "Please try again."))
 		}
     }
 
@@ -360,10 +360,10 @@ struct MedicationDetailView: View {
                 confidenceRow(icon: .clock, text: summary.timingText, color: .secondary)
 
 				if let hours = doseInterval {
-					confidenceRow(icon: .clock, text: "At least \(hours.formattedAmount) hours between doses", color: .secondary)
+					confidenceRow(icon: .clock, text: String(localized: "At least \(hours.formattedAmount) hours between doses"), color: .secondary)
 				}
 				if let maximum = dailyDoseLimit {
-					confidenceRow(icon: .chartLineUptrendXyaxis, text: "Maximum in any 24 hours: \(maximum.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "(unit not set)")", color: .secondary)
+					confidenceRow(icon: .chartLineUptrendXyaxis, text: String(localized: "Maximum in any 24 hours: \(maximumDoseText(maximum, missingUnit: String(localized: "(unit not set)")))"), color: .secondary)
 				}
 
                 if let dailyText = summary.dailyText {
@@ -381,7 +381,7 @@ struct MedicationDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel([summary.accessibilityLabel, doseInterval.map { "Minimum interval: \($0.formattedAmount) hours" }, dailyDoseLimit.map { "Maximum in rolling 24 hours: \($0.formattedAmount) \(medication.prescribedUnit?.abbreviation ?? "unit missing")" }, "Follow your prescription and care instructions."].compactMap { $0 }.joined(separator: ". "))
+        .accessibilityLabel([summary.accessibilityLabel, doseInterval.map { String(localized: "Minimum interval: \($0.formattedAmount) hours") }, dailyDoseLimit.map { maximum in String(localized: "Maximum in rolling 24 hours: \(maximumDoseText(maximum, missingUnit: String(localized: "unit missing")))") }, String(localized: "Follow your prescription and care instructions.")].compactMap { $0 }.joined(separator: ". "))
     }
 
     @ToolbarContentBuilder
@@ -491,7 +491,7 @@ struct MedicationDetailView: View {
 
                 if let nickname = medication.nickname {
                     Divider()
-                    detailRow(label: "Nickname", value: demoMode.name(nickname))
+                    detailRow(label: String(localized: "Nickname"), value: demoMode.name(nickname))
 						.demoNameRedacted()
                 }
             }
@@ -514,13 +514,13 @@ struct MedicationDetailView: View {
                 if let quantity = medication.quantity {
                     let supplyValue: String = {
                         if let unit = medication.prescribedUnit {
-                            return "\(quantity.formattedAmount) \(unit.abbreviation)"
+                            return unit.localizedCompactAmount(for: quantity)
                         } else {
                             return quantity.formattedAmount
                         }
                     }()
                     detailRow(
-                        label: "Current Supply",
+                        label: String(localized: "Current Supply"),
                         value: supplyValue
                     )
                 }
@@ -530,7 +530,7 @@ struct MedicationDetailView: View {
 
                     if let lastRefill = medication.lastRefillDate {
                         detailRow(
-                            label: "Last Refill",
+                            label: String(localized: "Last Refill"),
                             value: lastRefill.formatted(date: .abbreviated, time: .omitted)
                         )
                     }
@@ -538,7 +538,7 @@ struct MedicationDetailView: View {
                     if let nextRefill = medication.nextRefillDate {
                         if medication.lastRefillDate != nil { Divider() }
                         detailRow(
-                            label: "Next Refill",
+                            label: String(localized: "Next Refill"),
                             value: nextRefill.formatted(date: .abbreviated, time: .omitted),
                             valueColor: isRefillSoon(nextRefill) ? .orange : .secondary
                         )
@@ -561,14 +561,9 @@ struct MedicationDetailView: View {
             }
 
             if let amount = medication.prescribedDoseAmount, let unit = medication.prescribedUnit {
-                HStack {
-                    Text("\(amount.formattedAmount)")
-                        .font(.customFont(fontFamily, style: .title))
-                        .fontWeight(.semibold)
-                    Text(unit.displayName(for: amount == 1 ? 1 : 2))
-                        .font(.customFont(fontFamily, style: .title3))
-                        .foregroundStyle(.secondary)
-                }
+				Text(unit.localizedCompactAmount(for: amount))
+					.font(.customFont(fontFamily, style: .title, weight: .semibold))
+					.fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(adaptiveCardPadding)
@@ -677,7 +672,7 @@ struct MedicationDetailView: View {
 					Task {
 						defer { isUpdatingNotificationUrgency = false }
 						do { try await notificationManager.setUrgent(requested, for: medicationId) }
-						catch { notificationUrgencyError = "Your reminder settings could not be updated. Please try again." }
+						catch { notificationUrgencyError = String(localized: "Your reminder settings could not be updated. Please try again.") }
 					}
 				}
 			)) {
@@ -697,7 +692,7 @@ struct MedicationDetailView: View {
 					.font(.customFont(fontFamily, style: .caption))
 			}
 			if notificationManager.isUrgent(for: medicationId), notificationManager.timeSensitiveSetting != .enabled {
-				Text(notificationManager.timeSensitiveSetting == .disabled ? "Time Sensitive alerts are off in iOS Settings." : "Time Sensitive delivery is unavailable for this build or device.")
+				Text(notificationManager.timeSensitiveSetting == .disabled ? String(localized: "Time Sensitive alerts are off in iOS Settings.") : String(localized: "Time Sensitive delivery is unavailable for this build or device."))
 					.font(.customFont(fontFamily, style: .caption))
 					.foregroundStyle(.secondary)
 					.fixedSize(horizontal: false, vertical: true)
@@ -715,14 +710,14 @@ struct MedicationDetailView: View {
 	}
 
 	private var logDoseButton: some View {
-		detailActionButton("Log Dose", icon: .plusCircleFill) {
+		detailActionButton(String(localized: "Log Dose"), icon: .plusCircleFill) {
 			HapticsManager.shared.mediumImpact()
 			showLogDose = true
 		}
 	}
 
 	private var editMedicationButton: some View {
-		detailActionButton("Edit Medication", icon: .pencil, isSecondary: true) {
+		detailActionButton(String(localized: "Edit Medication"), icon: .pencil, isSecondary: true) {
 			HapticsManager.shared.mediumImpact()
 			showEditSheet = true
 		}
@@ -746,6 +741,13 @@ struct MedicationDetailView: View {
 		}
 		.buttonStyle(.borderedProminent)
 		.tint(isSecondary ? Color(.secondarySystemFill) : medication.displayColor.dynamicFilledButtonBackground)
+	}
+
+	private func maximumDoseText(_ amount: Double, missingUnit: String) -> String {
+		if let unit = medication.prescribedUnit {
+			return unit.localizedCompactAmount(for: amount)
+		}
+		return String(localized: "\(amount.formattedAmount) \(missingUnit)")
 	}
 
     // MARK: - Helper Views

@@ -29,10 +29,10 @@ struct MedicationAvailabilityNotificationPlanner {
 				identifier: Self.identifierPrefix + candidate.medicationID.uuidString,
 				medicationID: candidate.medicationID,
 				date: date,
-				title: showMedicationNames ? candidate.medicationName : "Next Dose Availability",
+				title: showMedicationNames ? candidate.medicationName : String(localized: "Next Dose Availability"),
 				body: showMedicationNames
-					? "The saved dose limits for \(candidate.medicationName) have elapsed. Review your instructions before taking a dose."
-					: "Your saved dose limits have elapsed. Review your medication instructions before taking a dose."
+					? String(localized: "The waiting time based on your saved dose guidance for \(candidate.medicationName) has passed. Review your instructions before taking a dose.")
+					: String(localized: "The waiting time based on your saved dose guidance has passed. Review your medication instructions before taking a dose.")
 			)
 		}
 	}

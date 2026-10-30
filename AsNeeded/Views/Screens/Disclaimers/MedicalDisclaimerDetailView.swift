@@ -85,32 +85,32 @@ struct MedicalDisclaimerDetailView: View {
 
                     VStack(alignment: .leading, spacing: itemSpacing) {
                         medicalSourceLink(
-                            title: "MedlinePlus",
-                            subtitle: "National Library of Medicine - Consumer health information",
+                            title: String(localized: "MedlinePlus"),
+                            subtitle: String(localized: "National Library of Medicine - Consumer health information"),
                             url: "https://medlineplus.gov/"
                         )
 
                         medicalSourceLink(
-                            title: "CDC",
-                            subtitle: "Centers for Disease Control and Prevention",
+                            title: String(localized: "CDC"),
+                            subtitle: String(localized: "Centers for Disease Control and Prevention"),
                             url: "https://www.cdc.gov/"
                         )
 
                         medicalSourceLink(
-                            title: "FDA",
-                            subtitle: "U.S. Food and Drug Administration - Drug safety and approvals",
+                            title: String(localized: "FDA"),
+                            subtitle: String(localized: "U.S. Food and Drug Administration - Drug safety and approvals"),
                             url: "https://www.fda.gov/"
                         )
 
                         medicalSourceLink(
-                            title: "Mayo Clinic",
-                            subtitle: "Leading medical institution with patient education resources",
+                            title: String(localized: "Mayo Clinic"),
+                            subtitle: String(localized: "Leading medical institution with patient education resources"),
                             url: "https://www.mayoclinic.org/"
                         )
 
                         medicalSourceLink(
-                            title: "WHO",
-                            subtitle: "World Health Organization - Global health authority",
+                            title: String(localized: "WHO"),
+                            subtitle: String(localized: "World Health Organization - Global health authority"),
                             url: "https://www.who.int/"
                         )
                     }

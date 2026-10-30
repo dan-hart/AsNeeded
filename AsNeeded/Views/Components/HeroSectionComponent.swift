@@ -40,8 +40,8 @@ struct HeroSectionComponent: View {
     ) {
         self.isEditing = isEditing
         self.icon = icon ?? (isEditing ? .pills : .pillsFill)
-        self.title = title ?? (isEditing ? "Edit Medication" : "Add New Medication")
-        self.subtitle = subtitle ?? (isEditing ? "Update medication details" : "Set up a new medication to track")
+        self.title = title ?? (isEditing ? String(localized: "Edit Medication") : String(localized: "Add New Medication"))
+        self.subtitle = subtitle ?? (isEditing ? String(localized: "Update medication details") : String(localized: "Set up a new medication to track"))
     }
 
     var body: some View {

@@ -125,17 +125,17 @@ struct MedicationEditView: View {
 	private var validationMessage: String? {
 		guard !isFormValid else { return nil }
 		if viewModel.clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-			return "Enter a medication name to save."
+			return String(localized: "Enter a medication name to save.")
 		}
 		if let message = viewModel.stockValidationMessage { return message }
 		if let lastRefill = viewModel.lastRefillDate, lastRefill > Date() {
-			return "Last refill must be today or earlier."
+			return String(localized: "Last refill must be today or earlier.")
 		}
 		if let nextRefill = viewModel.nextRefillDate, nextRefill < Calendar.current.startOfDay(for: Date()) {
-			return "Update or clear the past next-refill date in Supply & Refills."
+			return String(localized: "Update or clear the past next-refill date in Supply & Refills.")
 		}
 		if let message = viewModel.doseLimitValidationMessage { return message }
-		return "Add a positive dose amount and a unit, or leave both blank."
+		return String(localized: "Add a positive dose amount and a unit, or leave both blank.")
 	}
 
     private func hideKeyboard() {
@@ -309,7 +309,7 @@ struct MedicationEditView: View {
                 VStack(spacing: cardSpacing) {
                     // Last Refill Date Card
                     DateCardComponent(
-                        title: "Last Refill",
+                        title: String(localized: "Last Refill"),
                         icon: .clockArrowTriangleheadCounterclockwiseRotate90,
                         date: viewModel.lastRefillDate,
                         color: .accent,
@@ -326,7 +326,7 @@ struct MedicationEditView: View {
 
                     // Next Refill Date Card
                     DateCardComponent(
-                        title: "Next Refill",
+                        title: String(localized: "Next Refill"),
                         icon: .calendarBadgePlus,
                         date: viewModel.nextRefillDate,
                         color: .green,
@@ -376,34 +376,34 @@ struct MedicationEditView: View {
 
             VStack(alignment: .leading, spacing: sectionSpacing) {
                 guidanceField(
-                    title: "Minimum Hours Between Doses",
-                    subtitle: "Use the interval from your prescription or care instructions.",
+                    title: String(localized: "Minimum Hours Between Doses"),
+                    subtitle: String(localized: "Use the interval from your prescription or care instructions."),
                     text: $viewModel.minimumHoursBetweenDosesText,
-                    placeholder: "Example: 4",
+                    placeholder: String(localized: "Example: 4"),
                     field: .minimumHoursBetweenDoses
                 )
 
                 guidanceField(
-                    title: "Extra Caution Period (Hours)",
-                    subtitle: "Show a caution message while a dose is still close to the last one.",
+                    title: String(localized: "Extra Caution Period (Hours)"),
+                    subtitle: String(localized: "Show a caution message while a dose is still close to the last one."),
                     text: $viewModel.cautionHoursBetweenDosesText,
-                    placeholder: "Example: 6",
+                    placeholder: String(localized: "Example: 6"),
                     field: .cautionHoursBetweenDoses
                 )
 
                 guidanceField(
-                    title: "Maximum in 24 Hours\(viewModel.prescribedUnit.map { " (\($0.abbreviation))" } ?? "")",
-                    subtitle: "The total allowed in any 24 hours, including the next dose. This does not reset at midnight.",
+                    title: String(localized: "Maximum in 24 Hours\(viewModel.prescribedUnit.map { " (\($0.localizedAbbreviation))" } ?? "")"),
+                    subtitle: String(localized: "The total allowed in any 24 hours, including the next dose. This does not reset at midnight."),
                     text: $viewModel.maxDailyAmountText,
-                    placeholder: "Example: 6",
+                    placeholder: String(localized: "Example: 6"),
                     field: .maxDailyAmount
                 )
 
                 guidanceField(
-                    title: "Low-Stock Threshold",
-                    subtitle: "Highlight when the remaining quantity falls to this amount.",
+                    title: String(localized: "Low-Stock Threshold"),
+                    subtitle: String(localized: "Highlight when the remaining quantity falls to this amount."),
                     text: $viewModel.lowStockThresholdText,
-                    placeholder: "Example: 10",
+                    placeholder: String(localized: "Example: 10"),
                     field: .lowStockThreshold
                 )
             }
@@ -440,10 +440,10 @@ struct MedicationEditView: View {
 
             VStack(spacing: cardSpacing) {
                 counterCard(
-                    title: "Check for Duplicate Logs",
-                    subtitle: "Flag matching doses logged within this many minutes.",
+                    title: String(localized: "Check for Duplicate Logs"),
+                    subtitle: String(localized: "Flag matching doses logged within this many minutes."),
                     value: viewModel.duplicateDoseWindowMinutes,
-                    valueLabel: "\(viewModel.duplicateDoseWindowMinutes) min",
+                    valueLabel: String(localized: "\(viewModel.duplicateDoseWindowMinutes) min"),
                     step: 5,
                     range: 5 ... 180,
                     decrement: { viewModel.duplicateDoseWindowMinutes = max(5, viewModel.duplicateDoseWindowMinutes - 5) },
@@ -451,10 +451,10 @@ struct MedicationEditView: View {
                 )
 
                 counterCard(
-                    title: "Refill Lead Time",
-                    subtitle: "Show refill guidance this many days before your saved refill date or estimated run-out date.",
+                    title: String(localized: "Refill Lead Time"),
+                    subtitle: String(localized: "Show refill guidance this many days before your saved refill date or estimated run-out date."),
                     value: viewModel.refillLeadDays,
-                    valueLabel: "\(viewModel.refillLeadDays) days",
+                    valueLabel: String(localized: "\(viewModel.refillLeadDays) days"),
                     step: 1,
                     range: 1 ... 30,
                     decrement: { viewModel.refillLeadDays = max(1, viewModel.refillLeadDays - 1) },
@@ -777,7 +777,7 @@ struct MedicationEditView: View {
                             .foregroundStyle(datePickerType == .lastRefill ? Color.accent : Color.green)
                     }
 
-                    Text(datePickerType == .lastRefill ? "Last Refill Date" : "Next Refill Date")
+                    Text(datePickerType == .lastRefill ? String(localized: "Last Refill Date") : String(localized: "Next Refill Date"))
                         .font(.title3)
                         .fontWeight(.bold)
 
@@ -957,13 +957,13 @@ struct MedicationEditView: View {
 	private var availabilityNotificationStatus: String {
 		switch notificationManager.authorizationStatus {
 		case .denied:
-			return "Notifications are off. Open Settings to turn on next-dose alerts."
+			return String(localized: "Notifications are off. Open Settings to turn on next-dose alerts.")
 		case .authorized, .provisional, .ephemeral:
-			return "Notifications are on. Add a dose limit and log a dose to start receiving alerts."
+			return String(localized: "Notifications are on. Add a dose limit and log a dose to start receiving alerts.")
 		case .notDetermined:
-			return "Notification permission is required."
+			return String(localized: "Notification permission is required.")
 		case .unknown:
-			return "Notification permission status is unavailable."
+			return String(localized: "Notification permission status is unavailable.")
 		}
 	}
 

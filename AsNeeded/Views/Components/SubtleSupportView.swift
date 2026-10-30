@@ -4,7 +4,7 @@ struct SubtleSupportView: View {
 	let message: String
 	let onSupportTapped: () -> Void
 
-	init(message: String = "If As Needed is helpful, consider supporting development", onSupportTapped: @escaping () -> Void) {
+	init(message: String = String(localized: "If As Needed is helpful, consider supporting development"), onSupportTapped: @escaping () -> Void) {
 		self.message = message
 		self.onSupportTapped = onSupportTapped
 	}

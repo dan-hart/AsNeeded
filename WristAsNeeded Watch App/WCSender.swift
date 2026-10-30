@@ -29,7 +29,7 @@ final class WCSender: NSObject, ObservableObject {
 	func sendAction(key: String, value: Any) async -> ActionOutcome {
 		guard !isSendingAction else { return .failed }
 		guard session.activationState == .activated else {
-			actionMessage = "iPhone connection is starting. Try again shortly."
+			actionMessage = String(localized: "iPhone connection is starting. Try again shortly.")
 			return .failed
 		}
 		var payload = value
@@ -42,12 +42,12 @@ final class WCSender: NSObject, ObservableObject {
 		guard session.isReachable else {
 			session.transferUserInfo(message)
 			actionMessage = key == "logDose"
-				? "Waiting to sync with iPhone. Don’t log this dose again."
-				: "Quantity is waiting to sync with iPhone."
+				? String(localized: "Waiting to sync with iPhone. Don’t log this dose again.")
+				: String(localized: "Quantity is waiting to sync with iPhone.")
 			return .queued
 		}
 		isSendingAction = true
-		actionMessage = "Saving on iPhone…"
+		actionMessage = String(localized: "Saving on iPhone…")
 		let saved: Bool = await withCheckedContinuation { continuation in
 			session.sendMessage(message, replyHandler: { reply in
 				continuation.resume(returning: reply["saved"] as? Bool == true)
@@ -56,7 +56,7 @@ final class WCSender: NSObject, ObservableObject {
 			})
 		}
 		isSendingAction = false
-		actionMessage = saved ? "Saved on iPhone." : "Couldn’t confirm saving. Check iPhone before trying again."
+		actionMessage = saved ? String(localized: "Saved on iPhone.") : String(localized: "Couldn’t confirm saving. Check iPhone before trying again.")
 		return saved ? .saved : .failed
 	}
 
@@ -78,7 +78,7 @@ final class WCSender: NSObject, ObservableObject {
             session.sendMessage(messages, replyHandler: nil) { error in
                 print("Error sending message: \(error)")
 				DispatchQueue.main.async {
-					self.loadErrorMessage = "Couldn’t load medications. Open AsNeeded on iPhone, then refresh."
+					self.loadErrorMessage = String(localized: "Couldn’t load medications. Open AsNeeded on iPhone, then refresh.")
 				}
             }
         } else {
@@ -101,16 +101,16 @@ final class WCSender: NSObject, ObservableObject {
             if let doseLogged = message["doseLogged"] as? Bool, doseLogged {
                 // Dose was successfully logged
                 WKInterfaceDevice.current().play(.notification)
-				self.actionMessage = "Dose saved on iPhone."
+				self.actionMessage = String(localized: "Dose saved on iPhone.")
             }
 
             if let quantityUpdated = message["quantityUpdated"] as? Bool, quantityUpdated {
                 // Quantity was successfully updated
                 print("Quantity updated successfully")
-				self.actionMessage = "Quantity saved on iPhone."
+				self.actionMessage = String(localized: "Quantity saved on iPhone.")
             }
 			if message["saveFailed"] as? Bool == true {
-				self.actionMessage = "Couldn’t confirm saving. Check iPhone before trying again."
+				self.actionMessage = String(localized: "Couldn’t confirm saving. Check iPhone before trying again.")
 			}
         }
     }

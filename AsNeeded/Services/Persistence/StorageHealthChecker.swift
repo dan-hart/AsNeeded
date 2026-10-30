@@ -93,7 +93,7 @@ public final class StorageHealthChecker {
 		guard let appGroupURL = FileManager.default.containerURL(
 			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
 		) else {
-			let issue = "App Group container is unavailable: \(StorageConstants.appGroupIdentifier)"
+			let issue = String(localized: "App Group container is unavailable: \(StorageConstants.appGroupIdentifier)")
 			issues.append(HealthIssue(message: issue, severity: .error))
 			logger.error("❌ \(issue)")
 
@@ -118,7 +118,7 @@ public final class StorageHealthChecker {
 			appGroupWritable = true
 			logger.info("✅ App Group is writable")
 		} catch {
-			let issue = "App Group is not writable: errorType=\(DHLogger.privacySafeErrorType(error))"
+			let issue = String(localized: "App Group is not writable: errorType=\(DHLogger.privacySafeErrorType(error))")
 			issues.append(HealthIssue(message: issue, severity: .error))
 			logger.error("❌ \(issue)")
 		}
@@ -134,14 +134,14 @@ public final class StorageHealthChecker {
 				logger.info("✅ Sufficient disk space: \(String(format: "%.2f", capacityMB)) MB")
 			} else {
 				// Low disk space is a WARNING, not an error - users should still access their data
-				let issue = "Low disk space: \(String(format: "%.2f", capacityMB)) MB (minimum \(StorageConstants.minimumDiskSpaceMB) MB recommended)"
+				let issue = String(localized: "Low disk space: \(String(format: "%.2f", capacityMB)) MB (minimum \(StorageConstants.minimumDiskSpaceMB) MB recommended)")
 				issues.append(HealthIssue(message: issue, severity: .warning))
 				logger.warning("⚠️ \(issue)")
 				// Still mark as "sufficient" for health determination since it's non-blocking
 				sufficientDiskSpace = true
 			}
 		} else {
-			let issue = "Unable to determine available disk space"
+			let issue = String(localized: "Unable to determine available disk space")
 			issues.append(HealthIssue(message: issue, severity: .warning))
 			logger.warning("⚠️ \(issue)")
 			// Unknown disk space is a warning, not blocking
@@ -189,7 +189,7 @@ public final class StorageHealthChecker {
 			if fileManager.isReadableFile(atPath: medicationsPath.path) {
 				logger.info("✅ Medications database is readable")
 			} else {
-				let issue = "Medications database exists but is not readable"
+				let issue = String(localized: "Medications database exists but is not readable")
 				issues.append(HealthIssue(message: issue, severity: .error))
 				logger.error("❌ \(issue)")
 			}
@@ -197,20 +197,20 @@ public final class StorageHealthChecker {
 			if fileManager.isWritableFile(atPath: medicationsPath.path) {
 				logger.info("✅ Medications database is writable")
 			} else {
-				let issue = "Medications database exists but is not writable"
+				let issue = String(localized: "Medications database exists but is not writable")
 				issues.append(HealthIssue(message: issue, severity: .error))
 				logger.error("❌ \(issue)")
 			}
 
 			// Run SQLite integrity check
-			validateSQLiteIntegrity(at: medicationsPath, name: "Medications", issues: &issues)
+			validateSQLiteIntegrity(at: medicationsPath, name: String(localized: "Medications"), issues: &issues)
 		}
 
 		if eventsExists {
 			if fileManager.isReadableFile(atPath: eventsPath.path) {
 				logger.info("✅ Events database is readable")
 			} else {
-				let issue = "Events database exists but is not readable"
+				let issue = String(localized: "Events database exists but is not readable")
 				issues.append(HealthIssue(message: issue, severity: .error))
 				logger.error("❌ \(issue)")
 			}
@@ -218,13 +218,13 @@ public final class StorageHealthChecker {
 			if fileManager.isWritableFile(atPath: eventsPath.path) {
 				logger.info("✅ Events database is writable")
 			} else {
-				let issue = "Events database exists but is not writable"
+				let issue = String(localized: "Events database exists but is not writable")
 				issues.append(HealthIssue(message: issue, severity: .error))
 				logger.error("❌ \(issue)")
 			}
 
 			// Run SQLite integrity check
-			validateSQLiteIntegrity(at: eventsPath, name: "Events", issues: &issues)
+			validateSQLiteIntegrity(at: eventsPath, name: String(localized: "Events"), issues: &issues)
 		}
 
 		// Check for file size anomalies (WARNING - may indicate empty database)
@@ -232,7 +232,7 @@ public final class StorageHealthChecker {
 			if let attributes = try? fileManager.attributesOfItem(atPath: medicationsPath.path),
 			   let size = attributes[.size] as? Int64 {
 				if size == 0 {
-					let issue = "Medications database exists but has 0 bytes (likely corrupted)"
+					let issue = String(localized: "Medications database exists but has 0 bytes (likely corrupted)")
 					issues.append(HealthIssue(message: issue, severity: .error))
 					logger.error("❌ \(issue)")
 				}
@@ -243,7 +243,7 @@ public final class StorageHealthChecker {
 			if let attributes = try? fileManager.attributesOfItem(atPath: eventsPath.path),
 			   let size = attributes[.size] as? Int64 {
 				if size == 0 {
-					let issue = "Events database exists but has 0 bytes (likely corrupted)"
+					let issue = String(localized: "Events database exists but has 0 bytes (likely corrupted)")
 					issues.append(HealthIssue(message: issue, severity: .error))
 					logger.error("❌ \(issue)")
 				}
@@ -258,7 +258,7 @@ public final class StorageHealthChecker {
 		let openResult = sqlite3_open_v2(path.path, &db, SQLITE_OPEN_READONLY, nil)
 
 		guard openResult == SQLITE_OK, let database = db else {
-			let issue = "\(name) database cannot be opened for integrity check"
+			let issue = String(localized: "\(name) database cannot be opened for integrity check")
 			issues.append(HealthIssue(message: issue, severity: .warning))
 			logger.warning("⚠️ \(issue)")
 			if let database = db {
@@ -274,7 +274,7 @@ public final class StorageHealthChecker {
 		let query = "PRAGMA quick_check"
 
 		guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else {
-			let issue = "\(name) database integrity check failed to prepare"
+			let issue = String(localized: "\(name) database integrity check failed to prepare")
 			issues.append(HealthIssue(message: issue, severity: .warning))
 			logger.warning("⚠️ \(issue)")
 			return
@@ -296,7 +296,7 @@ public final class StorageHealthChecker {
 		if isIntact {
 			logger.info("✅ \(name) database passed integrity check")
 		} else {
-			let issue = "\(name) database failed integrity check (may be corrupted)"
+			let issue = String(localized: "\(name) database failed integrity check (may be corrupted)")
 			issues.append(HealthIssue(message: issue, severity: .error))
 		}
 	}

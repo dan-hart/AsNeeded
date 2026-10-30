@@ -52,7 +52,7 @@ struct CopyableText: View {
 	}
 
 	var body: some View {
-		Text(showCopiedMessage ? "Copied to Clipboard!" : text)
+		Text(showCopiedMessage ? String(localized: "Copied to Clipboard!") : text)
 			.font(font)
 			.fontWeight(weight)
 			.foregroundStyle(showCopiedMessage ? .accent : color)
@@ -73,8 +73,8 @@ struct CopyableText: View {
 						}
 					}
 			)
-			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
-			.accessibilityHint(onTap == nil ? "Activate to copy name to clipboard" : "Activate to view medication details. Use Copy name to copy to clipboard")
+			.accessibilityLabel(showCopiedMessage ? String(localized: "Copied to Clipboard") : text)
+			.accessibilityHint(onTap == nil ? String(localized: "Activate to copy name to clipboard") : String(localized: "Activate to view medication details. Use Copy name to copy to clipboard"))
 			.accessibilityAddTraits(.isButton)
 			.accessibilityAction { Self.activate(onTap: onTap, copy: copyToClipboard) }
 			.accessibilityAction(named: "Copy name") { copyToClipboard() }

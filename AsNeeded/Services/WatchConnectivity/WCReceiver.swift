@@ -182,14 +182,15 @@ final class WCReceiver: NSObject, ObservableObject {
 	/// Wire fields retain unknown states instead of interpreting a missing date as clearance.
 	static func availabilityFields(for availability: MedicationDoseGuidanceService.Availability, at date: Date) -> [String: Any] {
 		guard let nextDate = availability.eligibleDate else {
-			return ["canTakeNow": false, "statusMessage": availability.message]
+			return ["canTakeNow": false, "statusMessage": availability.message, "statusMessageKey": availability.messageKey]
 		}
 		return [
 			"canTakeNow": nextDate <= date,
 			"nextDoseDate": nextDate,
+			"statusMessageKey": nextDate > date ? "" : "Saved limits met based on logged doses. Follow your prescription and care instructions.",
 			"statusMessage": nextDate > date
-				? "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened)). Follow your prescription and care instructions."
-				: "Saved limits met based on logged doses. Follow your prescription and care instructions."
+				? String(localized: "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened)). Follow your prescription and care instructions.")
+				: String(localized: "Saved limits met based on logged doses. Follow your prescription and care instructions.")
 		]
 	}
 

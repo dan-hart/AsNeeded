@@ -55,17 +55,20 @@ final class MedicationEditViewModel: ObservableObject {
 	// Editing existing or adding new
 	let originalMedication: ANMedicationConcept?
 	private let safetyProfileStore: MedicationSafetyProfileStore
+	private let locale: Locale
 
 	init(
 		medication: ANMedicationConcept?,
-		safetyProfileStore: MedicationSafetyProfileStore = .shared
+		safetyProfileStore: MedicationSafetyProfileStore = .shared,
+		locale: Locale = .current
 	) {
 		self.safetyProfileStore = safetyProfileStore
+		self.locale = locale
 		originalMedication = medication
 		clinicalName = medication?.clinicalName ?? ""
 		nickname = medication?.nickname ?? ""
-		initialQuantityText = medication?.initialQuantity.map { String(describing: $0) } ?? ""
-		quantityText = medication?.quantity.map { String(describing: $0) } ?? ""
+		initialQuantityText = medication?.initialQuantity.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
+		quantityText = medication?.quantity.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		// Set dates from existing medication or nil for new medication
 		if let medication = medication {
 			lastRefillDate = medication.lastRefillDate
@@ -74,7 +77,7 @@ final class MedicationEditViewModel: ObservableObject {
 			lastRefillDate = nil
 			nextRefillDate = nil
 		}
-		prescribedDoseText = medication?.prescribedDoseAmount.map { String(describing: $0) } ?? ""
+		prescribedDoseText = medication?.prescribedDoseAmount.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		prescribedUnit = medication?.prescribedUnit
 		displayColorHex = medication?.displayColorHex
 		displaySymbol = medication?.symbolInfo?.name
@@ -82,10 +85,10 @@ final class MedicationEditViewModel: ObservableObject {
 
 		let safetyProfile = medication.map { safetyProfileStore.profile(for: $0.id) } ?? .empty
 		nextDoseNotificationEnabled = medication?.nextDoseNotificationEnabled ?? false
-		minimumHoursBetweenDosesText = (medication?.minimumHoursBetweenDoses ?? safetyProfile.minimumHoursBetweenDoses).map { String(describing: $0) } ?? ""
-		cautionHoursBetweenDosesText = safetyProfile.cautionHoursBetweenDoses.map { String(describing: $0) } ?? ""
-		maxDailyAmountText = (medication?.maximumDailyDoseAmount ?? safetyProfile.maxDailyAmount).map { String(describing: $0) } ?? ""
-		lowStockThresholdText = safetyProfile.lowStockThreshold.map { String(describing: $0) } ?? ""
+		minimumHoursBetweenDosesText = (medication?.minimumHoursBetweenDoses ?? safetyProfile.minimumHoursBetweenDoses).map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
+		cautionHoursBetweenDosesText = safetyProfile.cautionHoursBetweenDoses.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
+		maxDailyAmountText = (medication?.maximumDailyDoseAmount ?? safetyProfile.maxDailyAmount).map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
+		lowStockThresholdText = safetyProfile.lowStockThreshold.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		duplicateDoseWindowMinutes = safetyProfile.duplicateDoseWindowMinutes
 		refillLeadDays = safetyProfile.refillLeadDays
 	}
@@ -112,19 +115,19 @@ final class MedicationEditViewModel: ObservableObject {
 
 		guard stockValidationMessage == nil, doseLimitValidationMessage == nil else { return false }
 		if doseText.isEmpty && prescribedUnit == nil { return nameOK }
-		guard let amount = Double(doseText), amount.isFinite, amount > 0 else { return false }
+		guard let amount = DoseAmountInput.value(from: doseText, locale: locale), amount.isFinite, amount > 0 else { return false }
 		return nameOK && prescribedUnit != nil
 	}
 
 	var stockValidationMessage: String? {
 		for (text, label) in [
-			(quantityText, "Current stock"),
-			(initialQuantityText, "Refill quantity")
+			(quantityText, String(localized: "Current stock")),
+			(initialQuantityText, String(localized: "Refill quantity"))
 		] {
 			let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 			guard !trimmed.isEmpty else { continue }
-			guard let value = Double(trimmed), value.isFinite, value >= 0 else {
-				return "\(label) must be zero or a positive, finite number. Leave it blank if unknown."
+			guard let value = DoseAmountInput.value(from: trimmed, locale: locale), value.isFinite, value >= 0 else {
+				return String(localized: "\(label) must be zero or a positive, finite number. Leave it blank if unknown.")
 			}
 		}
 		return nil
@@ -132,30 +135,30 @@ final class MedicationEditViewModel: ObservableObject {
 
 	var doseLimitValidationMessage: String? {
 		for (text, label) in [
-			(minimumHoursBetweenDosesText, "Minimum hours between doses"),
-			(maxDailyAmountText, "Maximum amount in 24 hours")
+			(minimumHoursBetweenDosesText, String(localized: "Minimum hours between doses")),
+			(maxDailyAmountText, String(localized: "Maximum amount in 24 hours"))
 		] {
 			if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
 			   normalizedNumber(from: text) == nil {
-				return "\(label) must be a positive, finite number."
+				return String(localized: "\(label) must be a positive, finite number.")
 			}
 		}
 		if let maximum = normalizedNumber(from: maxDailyAmountText) {
 			guard let dose = normalizedNumber(from: prescribedDoseText), prescribedUnit != nil else {
-				return "Add a prescribed dose and unit to use a maximum amount in 24 hours."
+				return String(localized: "Add a prescribed dose and unit to use a maximum amount in 24 hours.")
 			}
 			if dose > maximum {
-				return "The prescribed dose cannot exceed the maximum amount in 24 hours."
+				return String(localized: "The prescribed dose cannot exceed the maximum amount in 24 hours.")
 			}
 		}
 		return nil
 	}
 
 	func buildMedication() -> ANMedicationConcept {
-		let initialQuantity = Double(initialQuantityText.trimmingCharacters(in: .whitespacesAndNewlines))
-		let quantity = Double(quantityText.trimmingCharacters(in: .whitespacesAndNewlines))
+		let initialQuantity = DoseAmountInput.value(from: initialQuantityText, locale: locale)
+		let quantity = DoseAmountInput.value(from: quantityText, locale: locale)
 		let doseText = prescribedDoseText.trimmingCharacters(in: .whitespacesAndNewlines)
-		let amount = (Double(doseText).flatMap { $0.isFinite && $0 > 0 ? $0 : nil })
+		let amount = (DoseAmountInput.value(from: doseText, locale: locale).flatMap { $0.isFinite && $0 > 0 ? $0 : nil })
 		let unit = (amount != nil) ? prescribedUnit : nil
 		var medication = originalMedication ?? ANMedicationConcept(clinicalName: "")
 		medication.clinicalName = clinicalName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -203,7 +206,7 @@ final class MedicationEditViewModel: ObservableObject {
 
 	private func normalizedNumber(from text: String) -> Double? {
 		let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard let value = Double(trimmed), value.isFinite, value > 0 else {
+		guard let value = DoseAmountInput.value(from: trimmed, locale: locale), value.isFinite, value > 0 else {
 			return nil
 		}
 

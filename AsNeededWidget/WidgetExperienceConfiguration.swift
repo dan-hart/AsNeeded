@@ -15,7 +15,7 @@ struct WidgetMedicationQuery: EntityQuery {
 	func entities(for identifiers: [UUID]) async throws -> [WidgetMedicationEntity] {
 		let current = await available()
 		// Retain an unresolved stored UUID so the provider can show unavailable instead of Automatic.
-		return identifiers.map { id in current.first { $0.id == id } ?? WidgetMedicationEntity(id: id, name: "Unavailable medication") }
+		return identifiers.map { id in current.first { $0.id == id } ?? WidgetMedicationEntity(id: id, name: String(localized: "Unavailable medication")) }
 	}
 	func suggestedEntities() async throws -> [WidgetMedicationEntity] { await available() }
 	@MainActor private func available() async -> [WidgetMedicationEntity] {
@@ -68,17 +68,17 @@ struct WidgetExperienceProvider: AppIntentTimelineProvider {
 	}
 	static func sample(showNames: Bool = true) -> WidgetExperienceEntry {
 		let date = Date()
-		let medication = ANMedicationConcept(clinicalName: "Example medication", quantity: 24, prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		let medication = ANMedicationConcept(clinicalName: String(localized: "Example medication"), quantity: 24, prescribedUnit: .tablet, prescribedDoseAmount: 1)
 		var events = (1...7).map { day in
 			ANEventConcept(eventType: .doseTaken, medication: medication,
 				dose: ANDoseConcept(amount: day.isMultiple(of: 3) ? 0.5 : 1, unit: .tablet),
 				date: Calendar.current.date(byAdding: .day, value: -day, to: date) ?? date)
 		}
 		let examples = [
-			ANMedicationConcept(clinicalName: "Allergy relief", quantity: 12, displayColorHex: "8E44AD", prescribedUnit: .tablet, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 8),
-			ANMedicationConcept(clinicalName: "Rescue inhaler", quantity: 20, displayColorHex: "16A085", prescribedUnit: .puff, prescribedDoseAmount: 2, minimumHoursBetweenDoses: 4),
-			ANMedicationConcept(clinicalName: "Muscle relief", quantity: 8, displayColorHex: "D35400", prescribedUnit: .tablet, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 6),
-			ANMedicationConcept(clinicalName: "Sleep support", quantity: 10, displayColorHex: "2980B9", prescribedUnit: .capsule, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 24),
+			ANMedicationConcept(clinicalName: String(localized: "Allergy relief"), quantity: 12, displayColorHex: "8E44AD", prescribedUnit: .tablet, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 8),
+			ANMedicationConcept(clinicalName: String(localized: "Rescue inhaler"), quantity: 20, displayColorHex: "16A085", prescribedUnit: .puff, prescribedDoseAmount: 2, minimumHoursBetweenDoses: 4),
+			ANMedicationConcept(clinicalName: String(localized: "Muscle relief"), quantity: 8, displayColorHex: "D35400", prescribedUnit: .tablet, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 6),
+			ANMedicationConcept(clinicalName: String(localized: "Sleep support"), quantity: 10, displayColorHex: "2980B9", prescribedUnit: .capsule, prescribedDoseAmount: 1, minimumHoursBetweenDoses: 24),
 		]
 		for example in examples {
 			events.append(ANEventConcept(eventType: .doseTaken, medication: example,

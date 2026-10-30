@@ -35,11 +35,12 @@ struct MedicationNotificationResponseHandler {
 			let event = try await logDose(action)
 			notifications.removeDelivered([action.requestIdentifier])
 			let content = UNMutableNotificationContent()
-			content.title = "Dose logged"
+			content.title = String(localized: "Dose logged")
 			if showNames(), let medication = event.medication, let dose = event.dose {
-				content.body = "Logged \(dose.amount.formattedAmount) \(dose.unit.abbreviation) of \(medication.displayName). Tap to view History."
+				let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount))")
+				content.body = String(localized: "\(recordedDose) · \(medication.displayName). Tap to view History.")
 			} else {
-				content.body = "Your dose was saved. Tap to view History."
+				content.body = String(localized: "Your dose was saved. Tap to view History.")
 			}
 			content.categoryIdentifier = MedicationNotificationAction.confirmationCategoryIdentifier
 			content.userInfo = [MedicationReminderRequest.medicationIDKey: action.medicationID.uuidString]
@@ -47,8 +48,8 @@ struct MedicationNotificationResponseHandler {
 		} catch {
 			logger.logPrivacySafeError("Notification dose was not saved", error: error)
 			let content = UNMutableNotificationContent()
-			content.title = "Dose not logged"
-			content.body = "Open AsNeeded to review the medication, dose, and saved guidance before logging."
+			content.title = String(localized: "Dose not logged")
+			content.body = String(localized: "Open AsNeeded to review the medication, dose, and saved guidance before logging.")
 			content.categoryIdentifier = MedicationNotificationAction.reviewCategoryIdentifier
 			content.userInfo = [MedicationReminderRequest.medicationIDKey: action.medicationID.uuidString]
 			request = UNNotificationRequest(identifier: feedbackID, content: content, trigger: nil)

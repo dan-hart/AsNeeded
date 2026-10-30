@@ -79,11 +79,11 @@ enum PersistenceTransactionError: LocalizedError {
 
 	var errorDescription: String? {
 		switch self {
-		case .storageUnavailable: "Medication storage is unavailable. Please try again."
-		case .busy: "Another save is finishing. Please try again."
-		case .recoveryRequired: "Open AsNeeded to finish recovering the previous save before making more changes."
-		case .invalidDose: "Check the medication, dose amount, and unit, then try again."
-		case .recordUnavailable: "This record is no longer available. Review your history."
+		case .storageUnavailable: String(localized: "Medication storage is unavailable. Please try again.")
+		case .busy: String(localized: "Another save is finishing. Please try again.")
+		case .recoveryRequired: String(localized: "Open AsNeeded to finish recovering the previous save before making more changes.")
+		case .invalidDose: String(localized: "Check the medication, dose amount, and unit, then try again.")
+		case .recordUnavailable: String(localized: "This record is no longer available. Review your history.")
 		}
 	}
 }

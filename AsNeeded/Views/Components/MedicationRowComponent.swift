@@ -212,7 +212,7 @@ struct MedicationRowComponent: View {
 				.padding(.horizontal, 10)
 				.padding(.vertical, 5)
 				.background(Capsule().fill(quantityColor(for: quantity).opacity(0.12)))
-				.accessibilityLabel("Quantity: \(quantityText(for: quantity))")
+				.accessibilityLabel(quantityText(for: quantity))
 			}
 
 			if let nextWindowText = statusSummary?.nextWindowText {
@@ -284,12 +284,8 @@ struct MedicationRowComponent: View {
     }
 
     private func quantityText(for quantity: Double) -> String {
-        let quantityStr = quantity.formattedAmount
-        if let unit = medication.prescribedUnit {
-            return "\(quantityStr) \(unit.abbreviation) left"
-        } else {
-            return "\(quantityStr) left"
-        }
+		let value = medication.prescribedUnit.map { $0.localizedCompactAmount(for: quantity) } ?? quantity.formattedAmount
+		return String(localized: "\(String(localized: "Remaining")): \(value)", comment: "Stock quantity label. The second interpolation is the complete localized quantity and unit. Use a count-neutral category label, not a verb agreeing with the hidden quantity.")
     }
 
     // MARK: - Medication Appearance Sheet

@@ -56,9 +56,9 @@ enum WidgetLogError: LocalizedError, Equatable {
 	var errorDescription: String? {
 		switch self {
 		case .medicationUnavailable:
-			"This medication is no longer available. Open AsNeeded to choose a medication."
+			String(localized: "This medication is no longer available. Open AsNeeded to choose a medication.")
 		case .reviewInApp:
-			"Open AsNeeded to review your saved dose limits and history before logging this dose."
+			String(localized: "Open AsNeeded to review your saved dose limits and history before logging this dose.")
 		}
 	}
 }

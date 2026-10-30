@@ -131,6 +131,19 @@ struct LogDoseView: View {
 		("1 day ago", 86_400),
 	]
 
+	/// Keep selection identifiers stable while translating their display labels.
+	private func quickTimeLabel(_ identifier: String) -> String {
+		switch identifier {
+		case "Now": String(localized: "Now")
+		case "15 min ago": String(localized: "15 min ago")
+		case "30 min ago": String(localized: "30 min ago")
+		case "1 hour ago": String(localized: "1 hour ago")
+		case "4 hours ago": String(localized: "4 hours ago")
+		case "1 day ago": String(localized: "1 day ago")
+		default: identifier
+		}
+	}
+
     private var safetyProfile: MedicationSafetyProfile {
         safetyProfileStore.profile(for: medication.id)
     }
@@ -141,7 +154,7 @@ struct LogDoseView: View {
 
 	private var amountText: Binding<String> {
 		Binding(
-			get: { amountInput ?? draft.amount.formatted(.number.grouping(.never)) },
+			get: { amountInput ?? DoseAmountInput.text(for: draft.amount) },
 			set: { text in
 				amountInput = text
 				draft.amount = DoseAmountInput.parse(text)
@@ -257,11 +270,11 @@ struct LogDoseView: View {
         var parts = [assessment.headline, assessment.detail]
 
         if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > draft.selectedDate {
-            parts.append("Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened)).")
+            parts.append(String(localized: "Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened))."))
         }
 
         if let maxDailyAmount = assessment.maxDailyAmount {
-            parts.append("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(draft.selectedUnit.abbreviation).")
+            parts.append(String(localized: "Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(draft.selectedUnit.localizedCompactAmount(for: maxDailyAmount))."))
         }
 
         parts.append(contentsOf: assessment.reasons)
@@ -342,7 +355,7 @@ struct LogDoseView: View {
                     .disabled(draft.amount <= 0.5)
 					.frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Decrease dose amount")
-                    .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
+                    .accessibilityValue(draft.selectedUnit.localizedCompactAmount(for: draft.amount))
 
                     VStack(spacing: smallSpacing) {
 						TextField("Amount", text: amountText)
@@ -351,9 +364,9 @@ struct LogDoseView: View {
 							.multilineTextAlignment(.center)
 							.focused($amountIsFocused)
 							.accessibilityLabel("Dose amount")
-							.accessibilityHint("Enter the amount in \(draft.selectedUnit.displayName)")
+							.accessibilityHint("Enter the amount in \(draft.selectedUnit.localizedDisplayName)")
 
-                        Text(draft.selectedUnit.displayName)
+                        Text(draft.selectedUnit.localizedDisplayName)
                             .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundStyle(.secondary)
                             .textCase(.uppercase)
@@ -385,7 +398,7 @@ struct LogDoseView: View {
                     .disabled(draft.amount >= 100)
 					.frame(minWidth: 44, minHeight: 44)
                     .accessibilityLabel("Increase dose amount")
-                    .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
+                    .accessibilityValue(draft.selectedUnit.localizedCompactAmount(for: draft.amount))
                 }
                 .accessibilityElement(children: .contain)
 
@@ -399,7 +412,7 @@ struct LogDoseView: View {
                                     hapticsManager.selectionChanged()
                                 }
                             }) {
-                                Text(unit.displayName)
+                                Text(unit.localizedDisplayName)
                                     .font(.customFont(fontFamily, style: .subheadline, weight: draft.selectedUnit == unit ? .semibold : .regular))
                                     .padding(.horizontal, unitHorizontalPadding)
                                     .padding(.vertical, unitVerticalPadding)
@@ -414,8 +427,8 @@ struct LogDoseView: View {
                                     }
                                     .foregroundStyle(draft.selectedUnit == unit ? medication.displayColor.dynamicFilledButtonForeground : medication.displayColor)
                             }
-                            .accessibilityLabel(unit.displayName)
-                            .accessibilityValue(draft.selectedUnit == unit ? "Selected" : "Not selected")
+                            .accessibilityLabel(unit.localizedDisplayName)
+                            .accessibilityValue(draft.selectedUnit == unit ? String(localized: "Selected") : String(localized: "Not selected"))
                         }
                     }
                     .padding(.horizontal, unitScrollPadding)
@@ -510,7 +523,7 @@ struct LogDoseView: View {
                                 hapticsManager.selectionChanged()
                             }
                         }) {
-                            Text(label)
+                            Text(quickTimeLabel(label))
                                 .font(.customFont(fontFamily, style: .caption, weight: .medium))
                                 .padding(.horizontal, quickButtonHorizontalPadding)
                                 .padding(.vertical, quickButtonVerticalPadding)
@@ -527,8 +540,8 @@ struct LogDoseView: View {
                                 }
                                 .foregroundStyle(draft.selectedQuickOption == label ? medication.displayColor.dynamicFilledButtonForeground : medication.displayColor)
                         }
-                        .accessibilityLabel(label)
-                        .accessibilityValue(draft.selectedQuickOption == label ? "Selected" : "Not selected")
+                        .accessibilityLabel(Text(quickTimeLabel(label)))
+                        .accessibilityValue(draft.selectedQuickOption == label ? String(localized: "Selected") : String(localized: "Not selected"))
                     }
                 }
             }
@@ -559,7 +572,7 @@ struct LogDoseView: View {
 
 				if !dynamicTypeSize.isAccessibilitySize { Spacer() }
 
-                Text(assessment.severity == .clear ? "Saved Guidance" : "Review")
+                Text(assessment.severity == .clear ? String(localized: "Saved Guidance") : String(localized: "Review"))
                     .font(.customFont(fontFamily, style: .caption, weight: .medium))
                     .foregroundStyle(tint)
                     .padding(.horizontal, guidanceBadgePaddingH)
@@ -600,7 +613,7 @@ struct LogDoseView: View {
                         .foregroundStyle(tint)
                         .padding(.top, smallSpacing)
 
-                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(maxDailyAmount.formattedAmount) \(draft.selectedUnit.abbreviation).")
+                    Text("Daily total would be \(assessment.projectedDailyTotal.formattedAmount) out of \(draft.selectedUnit.localizedCompactAmount(for: maxDailyAmount)).")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -704,20 +717,20 @@ struct LogDoseView: View {
 				? [GridItem(.flexible())]
 				: [GridItem(.adaptive(minimum: 220), spacing: reflectionGridSpacing)], spacing: reflectionGridSpacing) {
                 scalePickerCard(
-                    title: "Before",
-                    subtitle: "Symptom level before logging",
+                    title: String(localized: "Before"),
+                    subtitle: String(localized: "Symptom level before logging"),
                     selection: $draft.symptomSeverityBefore
                 )
 
                 scalePickerCard(
-                    title: "After",
-                    subtitle: "How you feel afterward",
+                    title: String(localized: "After"),
+                    subtitle: String(localized: "How you feel afterward"),
                     selection: $draft.symptomSeverityAfter
                 )
 
                 scalePickerCard(
-                    title: "Effect",
-                    subtitle: "How helpful this dose feels",
+                    title: String(localized: "Effect"),
+                    subtitle: String(localized: "How helpful this dose feels"),
                     selection: $draft.effectiveness
                 )
 
@@ -763,7 +776,7 @@ struct LogDoseView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-			Text(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+			Text(selection.wrappedValue == 0 ? String(localized: "Not rated") : String(localized: "\(selection.wrappedValue) of 5"))
 				.font(.customFont(fontFamily, style: .body, weight: .medium))
 				.foregroundStyle(.primary)
 
@@ -778,7 +791,7 @@ struct LogDoseView: View {
 				Text("\(title): \(subtitle)")
 					.font(.customFont(fontFamily, style: .body))
 			} currentValueLabel: {
-				Text(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+				Text(selection.wrappedValue == 0 ? String(localized: "Not rated") : String(localized: "\(selection.wrappedValue) of 5"))
 					.font(.customFont(fontFamily, style: .body))
 			} minimumValueLabel: {
 				Text("Not rated")
@@ -791,7 +804,7 @@ struct LogDoseView: View {
 			.tint(medication.displayColor)
 			.accessibilityElement(children: .ignore)
 			.accessibilityLabel("\(title): \(subtitle)")
-			.accessibilityValue(selection.wrappedValue == 0 ? "Not rated" : "\(selection.wrappedValue) of 5")
+			.accessibilityValue(selection.wrappedValue == 0 ? String(localized: "Not rated") : String(localized: "\(selection.wrappedValue) of 5"))
 			.accessibilityAdjustableAction { direction in
 				switch direction {
 				case .increment: selection.wrappedValue = min(5, selection.wrappedValue + 1)
@@ -831,7 +844,7 @@ struct LogDoseView: View {
             // Use the new expandable note editor component
             ExpandableNoteEditorComponent(
                 noteText: $draft.note,
-                placeholder: "How are you feeling? Any side effects?",
+                placeholder: String(localized: "How are you feeling? Any side effects?"),
                 medicationName: medication.demoDisplayName,
 				accentColor: medication.displayColor,
                 onSave: {
@@ -864,7 +877,7 @@ struct LogDoseView: View {
                         .font(.customFont(fontFamily, style: .title3))
                 }
 
-                Text(draft.isLogging ? "Logging" : "Log Dose")
+                Text(draft.isLogging ? String(localized: "Logging") : String(localized: "Log Dose"))
                     .font(.customFont(fontFamily, style: .headline))
 					.fixedSize(horizontal: false, vertical: true)
 					.multilineTextAlignment(.center)
@@ -897,9 +910,9 @@ struct LogDoseView: View {
         }
         .disabled(!draft.amount.isFinite || draft.amount <= 0 || draft.isLogging)
         .opacity(draft.amount <= 0 || draft.isLogging ? 0.6 : 1.0)
-        .accessibilityLabel(draft.isLogging ? "Logging dose" : "Log dose")
-        .accessibilityValue("\(draft.amount.formattedAmount) \(draft.selectedUnit.displayName)")
-        .accessibilityHint(assessment.severity == .clear ? "Saves this dose entry" : "Saves this dose entry with the shown guidance warning")
+        .accessibilityLabel(draft.isLogging ? String(localized: "Logging dose") : String(localized: "Log dose"))
+        .accessibilityValue(draft.selectedUnit.localizedCompactAmount(for: draft.amount))
+        .accessibilityHint(assessment.severity == .clear ? String(localized: "Saves this dose entry") : String(localized: "Saves this dose entry with the shown guidance warning"))
     }
 
     var body: some View {

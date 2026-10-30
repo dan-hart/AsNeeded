@@ -32,7 +32,7 @@ struct NextMedicationProvider: TimelineProvider {
 		NextMedicationEntry(
 			date: Date(),
 			medication: ANMedicationConcept(
-				clinicalName: "Medication",
+				clinicalName: String(localized: "Medication"),
 				quantity: 30,
 				prescribedUnit: .tablet
 			)

@@ -35,7 +35,7 @@ final class MedicationDetailViewModel: ObservableObject {
 			return true
         } catch {
             logger.logPrivacySafeError("Failed to save medication", error: error)
-            errorMessage = "Failed to save medication: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to save medication: \(error.localizedDescription)")
 			return false
         }
     }
@@ -52,7 +52,7 @@ final class MedicationDetailViewModel: ObservableObject {
             logger.logMedicationOperation("Successfully deleted", id: medication.id)
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
-            errorMessage = "Failed to delete medication: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to delete medication: \(error.localizedDescription)")
         }
     }
 
@@ -76,7 +76,7 @@ final class MedicationDetailViewModel: ObservableObject {
         defer { isLoading = false }
 
 		guard let medication = dataStore.medications.first(where: { $0.id == medication.id }) else {
-			errorMessage = "This medication is no longer available. Close this sheet and review your medications."
+			errorMessage = String(localized: "This medication is no longer available. Close this sheet and review your medications.")
 			return false
 		}
         let eventCountBefore = dataStore.events.count
@@ -108,7 +108,7 @@ final class MedicationDetailViewModel: ObservableObject {
             return true
         } catch {
             logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), errorType=\(DHLogger.privacySafeErrorType(error))")
-            errorMessage = "Failed to log dose: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to log dose: \(error.localizedDescription)")
             return false
         }
     }
@@ -125,7 +125,7 @@ final class MedicationDetailViewModel: ObservableObject {
             logger.info("Successfully logged event record")
         } catch {
             logger.logPrivacySafeError("Failed to log event", error: error)
-            errorMessage = "Failed to log event: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to log event: \(error.localizedDescription)")
         }
     }
 

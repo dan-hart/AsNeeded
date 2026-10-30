@@ -71,7 +71,14 @@ struct SymbolPickerComponent: View {
 		case suggested = "Suggested"
 
 		var localizedName: LocalizedStringKey {
-			LocalizedStringKey(rawValue)
+			switch self {
+			case .medical: "Medical"
+			case .nature: "Nature"
+			case .objects: "Objects"
+			case .wellness: "Wellness"
+			case .time: "Time"
+			case .suggested: "Suggested"
+			}
 		}
 
 		var symbols: [String] {
@@ -188,7 +195,7 @@ struct SymbolPickerComponent: View {
 						.frame(width: 24, height: 24)
 				}
 
-				Text(selectedSymbol != nil ? "Symbol Selected" : "Choose Symbol")
+				Text(selectedSymbol != nil ? String(localized: "Symbol Selected") : String(localized: "Choose Symbol"))
 					.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
 					.foregroundStyle(.primary)
 					.fixedSize(horizontal: false, vertical: true)
@@ -242,7 +249,7 @@ struct SymbolPickerComponent: View {
 				}
 		}
 		.buttonStyle(.plain)
-		.accessibilityLabel("\(category.rawValue) symbols")
+		.accessibilityLabel(Text("\(Text(category.localizedName)) symbols"))
 		.accessibilityAddTraits(selectedCategory == category ? [.isSelected] : [])
 	}
 
@@ -358,7 +365,7 @@ struct SymbolPickerComponent: View {
 				Image(systemSymbol: .checkmarkCircleFill)
 					.font(.customFont(fontFamily, style: .title3))
 
-				Text(selectedSymbol != nil ? "Save Symbol Choice" : "Save Default Symbol")
+				Text(selectedSymbol != nil ? String(localized: "Save Symbol Choice") : String(localized: "Save Default Symbol"))
 					.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 				Spacer()

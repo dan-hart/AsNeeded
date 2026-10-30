@@ -17,8 +17,8 @@ struct SettingsSupportSectionView: View {
 				SupportView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Support As Needed",
-					subtitle: "Tips, donations, and ways to help",
+					title: String(localized: "Support As Needed"),
+					subtitle: String(localized: "Tips, donations, and ways to help"),
 					icon: .heart,
 					iconColor: .red
 				)

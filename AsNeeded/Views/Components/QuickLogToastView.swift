@@ -1,3 +1,4 @@
+import ANModelKit
 import SFSafeSymbols
 import SwiftUI
 
@@ -18,7 +19,7 @@ struct QuickLogToastView: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
 	let medicationName: String
 	let doseAmount: Double
-	let doseUnit: String
+	let doseUnit: ANUnitConcept
 	let accentColor: Color
 	let isVisible: Bool
 	var feedback: QuickLogFeedbackService.Feedback?
@@ -147,16 +148,15 @@ struct QuickLogToastView: View {
 	}
 
 	private var formattedDose: String {
-		let amountStr = doseAmount.formattedAmount
-		return "\(amountStr) \(doseUnit)"
+		doseUnit.localizedCompactAmount(for: doseAmount)
 	}
 
 	private var titleText: String {
-		feedback?.title ?? "Logged"
+		feedback?.title ?? String(localized: "Logged")
 	}
 
 	private var messageText: String {
-		demoMode.isEnabled ? "\(formattedDose) logged" : (feedback?.message ?? formattedDose)
+		demoMode.isEnabled ? formattedDose : (feedback?.message ?? formattedDose)
 	}
 
 	private var detailText: String {
@@ -203,7 +203,7 @@ struct QuickLogToastView: View {
 			QuickLogToastView(
 				medicationName: "Lisinopril",
 				doseAmount: 2,
-				doseUnit: "tablets",
+				doseUnit: .tablet,
 				accentColor: .blue,
 				isVisible: true,
 				onDismiss: {}
@@ -219,7 +219,7 @@ struct QuickLogToastView: View {
 			QuickLogToastView(
 				medicationName: "Albuterol Inhaler",
 				doseAmount: 1.5,
-				doseUnit: "puffs",
+				doseUnit: .puff,
 				accentColor: .purple,
 				isVisible: true,
 				onDismiss: {}

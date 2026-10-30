@@ -17,8 +17,8 @@ struct SettingsDataSectionView: View {
 				DataPrivacyView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "Data & Privacy",
-					subtitle: "Backup, export, import, and privacy choices",
+					title: String(localized: "Data & Privacy"),
+					subtitle: String(localized: "Backup, export, import, and privacy choices"),
 					icon: .lockShield,
 					iconColor: .accent
 				)

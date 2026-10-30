@@ -49,7 +49,7 @@ struct LockScreenExperienceView: View {
 			.privacySensitive()
 			.widgetURL(WidgetNavigationRoute.logDose(medication.id).url)
 		} else {
-			Text(entry.projection.state == .empty ? "No medications" : "Unavailable")
+			Text(entry.projection.state == .empty ? String(localized: "No medications") : String(localized: "Unavailable"))
 				.font(.customFont(fontFamily, style: .caption))
 				.widgetURL(WidgetNavigationRoute.medications.url)
 		}

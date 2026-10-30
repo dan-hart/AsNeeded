@@ -561,11 +561,11 @@ struct ReminderDetail: Identifiable {
 				let time = nextFireDate.formatted(date: .omitted, time: .shortened)
 				if let weekday = components.weekday, components.hour != nil, components.minute != nil {
 					let weekdayName = Calendar.current.weekdaySymbols[weekday - 1]
-					repeatInfo = "Weekly on \(weekdayName) at \(time)"
+					repeatInfo = String(localized: "Weekly on \(weekdayName) at \(time)")
 				} else if components.hour != nil, components.minute != nil {
-					repeatInfo = "Daily at \(time)"
+					repeatInfo = String(localized: "Daily at \(time)")
 				} else {
-					repeatInfo = "Recurring"
+					repeatInfo = String(localized: "Recurring")
 				}
 			} else {
 				repeatInfo = nil

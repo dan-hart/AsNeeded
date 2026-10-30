@@ -95,15 +95,15 @@ final class AutomaticBackupViewModel: ObservableObject {
             if let lastBackup = lastBackupDate {
                 let formatter = RelativeDateTimeFormatter()
                 formatter.unitsStyle = .abbreviated
-                return "Last backup: \(formatter.localizedString(for: lastBackup, relativeTo: Date()))"
+                return String(localized: "Last backup: \(formatter.localizedString(for: lastBackup, relativeTo: Date()))")
             }
-            return "Ready for backup"
+            return String(localized: "Ready for backup")
         case .warning:
-            return "Location may be inaccessible"
+            return String(localized: "Location may be inaccessible")
         case .error:
-            return manager.lastError ?? "Backup error occurred"
+            return manager.lastError ?? String(localized: "Backup error occurred")
         case .disabled:
-            return "Not configured"
+            return String(localized: "Not configured")
         }
     }
 
@@ -270,34 +270,34 @@ final class AutomaticBackupViewModel: ObservableObject {
 
             switch status {
             case .success:
-                successMessage = "Automatic backup enabled and initial backup completed successfully"
+                successMessage = String(localized: "Automatic backup enabled and initial backup completed successfully")
                 showingSuccess = true
                 await loadBackupHistory()
             case let .failed(message):
-                alertMessage = "Automatic backup enabled, but initial backup failed: \(message)"
+                alertMessage = String(localized: "Automatic backup enabled, but initial backup failed: \(message)")
                 showingAlert = true
             case .bookmarkStale:
-                alertMessage = "Backup location is no longer accessible. Please select a new location."
+                alertMessage = String(localized: "Backup location is no longer accessible. Please select a new location.")
                 showingAlert = true
             case let .storageFull(bytes):
                 let needed = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-                alertMessage = "Not enough storage space. Need \(needed) to complete backup."
+                alertMessage = String(localized: "Not enough storage space. Need \(needed) to complete backup.")
                 showingAlert = true
             case .accessDenied:
-                alertMessage = "Permission denied to access backup location."
+                alertMessage = String(localized: "Permission denied to access backup location.")
                 showingAlert = true
             case .none:
-                alertMessage = "Backup location not configured."
+                alertMessage = String(localized: "Backup location not configured.")
                 showingAlert = true
             }
         } catch {
-            alertMessage = "Failed to save backup location: \(error.localizedDescription)"
+            alertMessage = String(localized: "Failed to save backup location: \(error.localizedDescription)")
             showingAlert = true
         }
     }
 
     private func showLocationChangeUnavailable() {
-        alertMessage = "Backup settings changed or a backup is in progress. Please try selecting the location again."
+        alertMessage = String(localized: "Backup settings changed or a backup is in progress. Please try selecting the location again.")
         showingAlert = true
     }
 
@@ -311,24 +311,24 @@ final class AutomaticBackupViewModel: ObservableObject {
 
         switch status {
         case .success:
-            successMessage = "Backup completed successfully"
+            successMessage = String(localized: "Backup completed successfully")
             showingSuccess = true
             await loadBackupHistory()
         case let .failed(message):
             alertMessage = message
             showingAlert = true
         case .bookmarkStale:
-            alertMessage = "Backup location is no longer accessible. Please select a new location."
+            alertMessage = String(localized: "Backup location is no longer accessible. Please select a new location.")
             showingAlert = true
         case let .storageFull(bytes):
             let needed = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
-            alertMessage = "Not enough storage space. Need \(needed) to complete backup."
+            alertMessage = String(localized: "Not enough storage space. Need \(needed) to complete backup.")
             showingAlert = true
         case .accessDenied:
-            alertMessage = "Permission denied to access backup location."
+            alertMessage = String(localized: "Permission denied to access backup location.")
             showingAlert = true
         case .none:
-            alertMessage = "Backup location not configured."
+            alertMessage = String(localized: "Backup location not configured.")
             showingAlert = true
         }
     }
@@ -342,7 +342,7 @@ final class AutomaticBackupViewModel: ObservableObject {
                     try FileManager.default.removeItem(at: url)
                 }.value
             } catch {
-                alertMessage = "Failed to delete backup: \(error.localizedDescription)"
+                alertMessage = String(localized: "Failed to delete backup: \(error.localizedDescription)")
                 showingAlert = true
             }
         }
@@ -352,11 +352,11 @@ final class AutomaticBackupViewModel: ObservableObject {
     func clearAllBackups() async {
         do {
             try await manager.clearAllBackups()
-            successMessage = "All backups cleared successfully"
+            successMessage = String(localized: "All backups cleared successfully")
             showingSuccess = true
             await loadBackupHistory()
         } catch {
-            alertMessage = "Failed to clear backups: \(error.localizedDescription)"
+            alertMessage = String(localized: "Failed to clear backups: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -385,12 +385,12 @@ final class AutomaticBackupViewModel: ObservableObject {
                 showingBackupReconfigAlert = true
             }
 
-            successMessage = "Data restored successfully from backup"
+            successMessage = String(localized: "Data restored successfully from backup")
             showingSuccess = true
             selectedBackup = nil
             showingRestoreSheet = false
         } catch {
-            alertMessage = "Failed to restore backup: \(error.localizedDescription)"
+            alertMessage = String(localized: "Failed to restore backup: \(error.localizedDescription)")
             showingAlert = true
         }
     }

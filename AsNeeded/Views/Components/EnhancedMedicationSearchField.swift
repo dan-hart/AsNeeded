@@ -95,7 +95,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 					SecureField("Medication name", text: $text)
 						.demoNameRedacted()
 				} else {
-					TextField(dynamicTypeSize.isAccessibilitySize ? "Name" : placeholder, text: $text)
+					TextField(dynamicTypeSize.isAccessibilitySize ? String(localized: "Name") : placeholder, text: $text)
 				}
 			}
 				.accessibilityLabel("Medication name, required")
@@ -209,7 +209,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 		VStack(alignment: .leading, spacing: 0) {
 			// Recent Searches
 			if !searchService.recentSearches.isEmpty {
-				sectionHeader("Recent Searches")
+				sectionHeader(String(localized: "Recent Searches"))
 				ForEach(searchService.recentSearches.prefix(3), id: \.self) { recent in
 					suggestionRow(
 						title: recent,
@@ -223,7 +223,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			}
 
 			// Popular Medications
-			sectionHeader("Popular Medications")
+			sectionHeader(String(localized: "Popular Medications"))
 			ForEach(searchService.popularMedications.prefix(5), id: \.rxCUI) { drug in
 				suggestionRow(
 					title: drug.name,
@@ -241,7 +241,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 	private var searchResultsView: some View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 0) {
-				sectionHeader("Search Results")
+				sectionHeader(String(localized: "Search Results"))
 				ForEach(suggestions, id: \.drug.rxCUI) { result in
 					drugResultRow(result)
 				}
@@ -417,7 +417,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			)
 		}
 		.buttonStyle(SuggestionButtonStyle())
-		.accessibilityLabel(demoMode.name(result.drug.name) + (result.isExactMatch ? ", exact match" : "") + (result.score >= 0.95 ? ", high confidence" : ""))
+		.accessibilityLabel(demoMode.name(result.drug.name) + (result.isExactMatch ? String(localized: ", exact match") : "") + (result.score >= 0.95 ? String(localized: ", high confidence") : ""))
 		.accessibilityHint("Double tap to select this medication")
 		.accessibilityAddTraits(.isButton)
 	}

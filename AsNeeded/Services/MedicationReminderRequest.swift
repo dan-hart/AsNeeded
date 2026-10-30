@@ -56,10 +56,10 @@ struct MedicationReminderRequest {
 		let content = UNMutableNotificationContent()
 		if showMedicationNames {
 			content.title = medication.displayName
-			content.body = "It's time to take \(medication.displayName)"
+			content.body = String(localized: "It's time to take \(medication.displayName)")
 		} else {
-			content.title = "Medication Reminder"
-			content.body = "It's time to take your medication"
+			content.title = String(localized: "Medication Reminder")
+			content.body = String(localized: "It's time to take your medication")
 		}
 		content.interruptionLevel = isUrgent ? .timeSensitive : .active
 		content.sound = .default
@@ -214,10 +214,10 @@ struct MedicationReminderRequest {
 		if let isUrgent { content.interruptionLevel = isUrgent ? .timeSensitive : .active }
 		if showMedicationNames, let medication {
 			content.title = medication.displayName
-			content.body = "It's time to take \(medication.displayName)"
+			content.body = String(localized: "It's time to take \(medication.displayName)")
 		} else if !showMedicationNames {
-			content.title = "Medication Reminder"
-			content.body = "It's time to take your medication"
+			content.title = String(localized: "Medication Reminder")
+			content.body = String(localized: "It's time to take your medication")
 		}
 		let trigger = UNCalendarNotificationTrigger(dateMatching: components(for: identity), repeats: identity.repeats)
 		return UNNotificationRequest(identifier: identity.identifier, content: content, trigger: trigger)

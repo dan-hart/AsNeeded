@@ -19,6 +19,11 @@ struct DoseEntryRegressionTests {
 		#expect(DoseAmountInput.parse("0", locale: locale) == 0)
 	}
 
+	@Test("Arabic decimal keyboard digits remain a valid dose")
+	func arabicDecimalInput() {
+		#expect(DoseAmountInput.parse("١٫٢٥", locale: Locale(identifier: "ar_SA")) == 1.25)
+	}
+
 	@Test("Empty, incomplete, and nonfinite entry cannot become a valid dose", arguments: ["", ".", "-", "nan", "inf", "1e999", "one", "1.2.3"])
 	func invalidInput(_ text: String) {
 		#expect(DoseAmountInput.parse(text, locale: Locale(identifier: "en_US")) == 0)

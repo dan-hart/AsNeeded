@@ -17,8 +17,8 @@ struct SettingsAboutSectionView: View {
 				AboutView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "About This App",
-					subtitle: "Version, build, and overview",
+					title: String(localized: "About This App"),
+					subtitle: String(localized: "Version, build, and overview"),
 					icon: .infoCircle,
 					iconColor: .accent
 				)

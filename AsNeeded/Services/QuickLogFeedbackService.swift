@@ -31,7 +31,8 @@ struct QuickLogFeedbackService {
 	) -> Feedback {
 		let tone = tone(for: assessment.severity)
 		let title = title(for: tone)
-		let message = "Logged \(dose.amount.formattedAmount) \(dose.unit.abbreviation) of \(medication.displayName) at \(timeFormatter.string(from: loggedEvent.date))."
+		let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount, locale: locale))")
+		let message = String(localized: "\(recordedDose) · \(medication.displayName) · \(timeFormatter.string(from: loggedEvent.date))")
 		let nextWindowText = nextWindowText(from: nextDoseDate, at: date)
 
 		return Feedback(
@@ -59,11 +60,11 @@ struct QuickLogFeedbackService {
 	private func title(for tone: Tone) -> String {
 		switch tone {
 		case .success:
-			return "Dose logged"
+			return String(localized: "Dose logged")
 		case .caution:
-			return "Dose logged. Check timing."
+			return String(localized: "Dose logged. Check timing.")
 		case .warning:
-			return "Dose logged. Review limits."
+			return String(localized: "Dose logged. Review limits.")
 		}
 	}
 
@@ -78,14 +79,14 @@ struct QuickLogFeedbackService {
 		var calendar = Calendar.current
 		calendar.timeZone = timeZone
 		if calendar.isDate(nextDoseDate, inSameDayAs: date) {
-			return "Next dose window: \(timeFormatter.string(from: nextDoseDate))"
+			return String(localized: "Next dose window: \(timeFormatter.string(from: nextDoseDate))")
 		}
 		let formatter = DateFormatter()
 		formatter.locale = locale
 		formatter.timeZone = timeZone
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .short
-		return "Next dose window: \(formatter.string(from: nextDoseDate))"
+		return String(localized: "Next dose window: \(formatter.string(from: nextDoseDate))")
 	}
 
 	private var timeFormatter: DateFormatter {

@@ -101,10 +101,10 @@ struct DateCardComponent: View {
 			}
 			.buttonStyle(.plain)
 			.accessibilityLabel(
-				date.map { "\(title): \($0.formatted(date: .abbreviated, time: .omitted))" }
-					?? "Add \(title.lowercased())"
+				date.map { String(localized: "\(title): \($0.formatted(date: .abbreviated, time: .omitted))") }
+					?? String(localized: "Add \(title.lowercased())")
 			)
-			.accessibilityHint(date != nil ? "Edit \(title.lowercased())" : "Add \(title.lowercased())")
+			.accessibilityHint(date != nil ? String(localized: "Edit \(title.lowercased())") : String(localized: "Add \(title.lowercased())"))
 
 			// Remove is separate from the date-editing action.
 			if date != nil, let onRemove {

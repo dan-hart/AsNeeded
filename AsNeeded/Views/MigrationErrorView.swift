@@ -84,16 +84,16 @@ struct MigrationErrorView: View {
 		if let migrationError = error as? MigrationError {
 			switch migrationError {
 			case .appGroupUnavailable:
-				return "Unable to access secure data storage. This may be a configuration issue. Please try again or contact support if the problem persists."
+				return String(localized: "Unable to access secure data storage. This may be a configuration issue. Please try again or contact support if the problem persists.")
 			case .invalidPath:
-				return "Unable to locate your medication data. Please try again or contact support if the problem persists."
+				return String(localized: "Unable to locate your medication data. Please try again or contact support if the problem persists.")
 			case let .verificationFailed(expected, actual, type):
-				return "Data verification failed after migration. Expected \(expected) \(type) but found \(actual). Please retry or contact support immediately."
+				return String(localized: "Data verification failed after migration. Expected \(expected) \(type) but found \(actual). Please retry or contact support immediately.")
 			case .archivalFailed:
-				return "Your data was migrated successfully, but we couldn't complete the cleanup. The app will retry automatically on next launch. Your data is safe."
+				return String(localized: "Your data was migrated successfully, but we couldn't complete the cleanup. The app will retry automatically on next launch. Your data is safe.")
 			}
 		}
-		return "An unexpected error occurred while loading your data. Please try again or contact support if the problem persists."
+		return String(localized: "An unexpected error occurred while loading your data. Please try again or contact support if the problem persists.")
 	}
 }
 

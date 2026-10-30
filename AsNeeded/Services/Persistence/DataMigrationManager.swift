@@ -747,13 +747,13 @@ enum MigrationError: LocalizedError {
 	var errorDescription: String? {
 		switch self {
 		case .invalidPath:
-			return "Unable to determine database paths for migration"
+			return String(localized: "Unable to determine database paths for migration")
 		case .appGroupUnavailable:
-			return "App Group container is unavailable. Please check app signing."
+			return String(localized: "App Group container is unavailable. Please check app signing.")
 		case let .verificationFailed(expected, actual, type):
-			return "Migration verification failed for \(type): expected \(expected) but found \(actual)"
+			return String(localized: "Migration verification failed for \(type): expected \(expected) but found \(actual)")
 		case let .archivalFailed(reason):
-			return "Failed to archive legacy databases: \(reason). Migration will retry on next launch."
+			return String(localized: "Failed to archive legacy databases: \(reason). Migration will retry on next launch.")
 		}
 	}
 }

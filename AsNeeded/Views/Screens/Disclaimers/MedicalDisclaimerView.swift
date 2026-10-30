@@ -119,32 +119,32 @@ struct MoreDisclaimerInfoView: View {
 
                             VStack(alignment: .leading, spacing: listSpacing) {
                                 medicalSourceLink(
-                                    title: "MedlinePlus (NIH)",
-                                    subtitle: "Reliable health information from the National Library of Medicine",
+                                    title: String(localized: "MedlinePlus (NIH)"),
+                                    subtitle: String(localized: "Reliable health information from the National Library of Medicine"),
                                     url: "https://medlineplus.gov/"
                                 )
 
                                 medicalSourceLink(
-                                    title: "CDC - Centers for Disease Control",
-                                    subtitle: "Public health information and disease prevention",
+                                    title: String(localized: "CDC - Centers for Disease Control"),
+                                    subtitle: String(localized: "Public health information and disease prevention"),
                                     url: "https://www.cdc.gov/"
                                 )
 
                                 medicalSourceLink(
-                                    title: "FDA - U.S. Food & Drug Administration",
-                                    subtitle: "Drug safety and approved medications",
+                                    title: String(localized: "FDA - U.S. Food & Drug Administration"),
+                                    subtitle: String(localized: "Drug safety and approved medications"),
                                     url: "https://www.fda.gov/"
                                 )
 
                                 medicalSourceLink(
-                                    title: "Mayo Clinic",
-                                    subtitle: "Trusted medical information and health resources",
+                                    title: String(localized: "Mayo Clinic"),
+                                    subtitle: String(localized: "Trusted medical information and health resources"),
                                     url: "https://www.mayoclinic.org/"
                                 )
 
                                 medicalSourceLink(
-                                    title: "WHO - World Health Organization",
-                                    subtitle: "Global health information and guidelines",
+                                    title: String(localized: "WHO - World Health Organization"),
+                                    subtitle: String(localized: "Global health information and guidelines"),
                                     url: "https://www.who.int/"
                                 )
                             }

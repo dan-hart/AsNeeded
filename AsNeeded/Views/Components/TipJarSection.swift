@@ -28,7 +28,7 @@ struct TipJarSection: View {
 					.foregroundStyle(.secondary)
 			}
 			if revenueCatManager.availableProducts.isEmpty {
-				Text(!revenueCatManager.isConfigured ? "Support options are not available in this build. You can keep using every feature." : (revenueCatManager.isLoadingProducts ? "Loading support options…" : "Purchase options are temporarily unavailable. You can keep using every feature."))
+				Text(!revenueCatManager.isConfigured ? String(localized: "Support options are not available in this build. You can keep using every feature.") : (revenueCatManager.isLoadingProducts ? String(localized: "Loading support options…") : String(localized: "Purchase options are temporarily unavailable. You can keep using every feature.")))
 					.font(.customFont(fontFamily, style: .callout))
 					.foregroundStyle(.secondary)
 				if revenueCatManager.isConfigured && !revenueCatManager.isLoadingProducts {
@@ -50,9 +50,9 @@ struct TipJarSection: View {
 	}
 
 	private let tipTiers = [
-		(title: "Thanks", emoji: "👍", color: Color.green, productId: RevenueCatManager.ProductIdentifier.tipThanks),
-		(title: "Cheers", emoji: "🥂", color: Color.orange, productId: RevenueCatManager.ProductIdentifier.tipCheers),
-		(title: "Ovation", emoji: "👏", color: Color.purple, productId: RevenueCatManager.ProductIdentifier.tipOvation),
+		(title: String(localized: "Thanks"), emoji: "👍", color: Color.green, productId: RevenueCatManager.ProductIdentifier.tipThanks),
+		(title: String(localized: "Cheers"), emoji: "🥂", color: Color.orange, productId: RevenueCatManager.ProductIdentifier.tipCheers),
+		(title: String(localized: "Ovation"), emoji: "👏", color: Color.purple, productId: RevenueCatManager.ProductIdentifier.tipOvation),
 	]
 
 }
@@ -93,7 +93,7 @@ private struct TipButton: View {
 					purchaseType = .tip(amount: displayedPrice)
 					showThankYouView = true
 				} else if let error = revenueCatManager.purchaseError {
-					alertTitle = "Purchase Failed"
+					alertTitle = String(localized: "Purchase Failed")
 					alertMessage = error
 					showPurchaseAlert = true
 				}
@@ -108,7 +108,7 @@ private struct TipButton: View {
 					.fontWeight(.medium)
 					.multilineTextAlignment(.center)
 
-				Text(productPrice ?? (revenueCatManager.isLoadingProducts ? "Loading price…" : "Unavailable"))
+				Text(productPrice ?? (revenueCatManager.isLoadingProducts ? String(localized: "Loading price…") : String(localized: "Unavailable")))
 					.font(.customFont(fontFamily, style: .caption2))
 					.foregroundColor(.secondary)
 			}

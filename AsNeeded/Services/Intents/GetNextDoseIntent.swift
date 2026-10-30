@@ -31,7 +31,7 @@ struct GetNextDoseIntent: AppIntent {
 		}
 		guard let target else {
 			return .result(
-				dialog: IntentDialog(stringLiteral: medication == nil ? "No active medications are available. Open AsNeeded to add one." : "That medication is no longer active. Choose a different medication in AsNeeded."),
+				dialog: IntentDialog(stringLiteral: medication == nil ? String(localized: "No active medications are available. Open AsNeeded to add one.") : String(localized: "That medication is no longer active. Choose a different medication in AsNeeded.")),
 				view: EmptyMedicationsView()
 			)
 		}
@@ -41,12 +41,12 @@ struct GetNextDoseIntent: AppIntent {
 		let nextDate = availability.eligibleDate
 		let status: String
 		if let nextDate, nextDate > now {
-			status = "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened))."
+			status = String(localized: "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened)).")
 		} else {
-			status = nextDate != nil ? "Saved limits met based on logged doses." : availability.message
+			status = nextDate != nil ? String(localized: "Saved limits met based on logged doses.") : availability.message
 		}
 		return .result(
-			dialog: IntentDialog(stringLiteral: "\(target.displayName): \(status) Follow your prescription and care instructions."),
+			dialog: IntentDialog("\(target.displayName): \(status) Follow your prescription and care instructions."),
 			view: NextDoseView(medicationName: target.displayName, statusText: status)
 		)
 	}

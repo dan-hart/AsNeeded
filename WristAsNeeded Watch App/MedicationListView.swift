@@ -79,7 +79,7 @@ struct MedicationListView: View {
 									if let prescribedDoseAmount = medication.prescribedDoseAmount,
 									   let prescribedUnit = medication.prescribedUnit
 									{
-										Text("| \(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
+										Text(verbatim: "| " + WatchMedication.localizedAmount(prescribedDoseAmount, unit: prescribedUnit))
 											.font(.caption)
 											.foregroundColor(.secondary)
 									}
@@ -102,7 +102,7 @@ struct MedicationListView: View {
 									if let amount = medication.prescribedDoseAmount,
 									   let unit = medication.prescribedUnit
 									{
-										Text("(\(amount, specifier: "%.1f") \(unit))")
+										Text(verbatim: "(" + WatchMedication.localizedAmount(amount, unit: unit) + ")")
 											.font(.caption)
 									}
 							}
@@ -113,7 +113,7 @@ struct MedicationListView: View {
 							.cornerRadius(12)
 						}
 						.buttonStyle(.plain)
-						.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+						.accessibilityLabel(medication.quickLogAccessibilityLabel)
 						.disabled(sender.isSendingAction)
 
 						Spacer()
@@ -201,7 +201,7 @@ struct MedicationListView: View {
 
 	private func nextDoseLabel(for medication: WatchMedication, relativeTo date: Date) -> String {
 		guard let nextDoseDate = medication.nextDoseDate else {
-			return "Review saved limits"
+			return String(localized: "Review saved limits")
 		}
 
 		let formatter = RelativeDateTimeFormatter()
@@ -214,7 +214,7 @@ struct MedicationListView: View {
 		sender.hasLoadedMedications = false
 		sender.loadErrorMessage = nil
 		guard sender.isConnected else {
-			sender.loadErrorMessage = "Open AsNeeded on your nearby iPhone, then refresh."
+			sender.loadErrorMessage = String(localized: "Open AsNeeded on your nearby iPhone, then refresh.")
 			isLoading = false
 			return
 		}
@@ -229,7 +229,7 @@ struct MedicationListView: View {
 		}
 
 		if !sender.hasLoadedMedications, sender.loadErrorMessage == nil {
-			sender.loadErrorMessage = "iPhone hasn’t responded. Open AsNeeded there, then refresh."
+			sender.loadErrorMessage = String(localized: "iPhone hasn’t responded. Open AsNeeded there, then refresh.")
 		}
 		isLoading = false
 	}
@@ -263,7 +263,7 @@ struct MedicationRowView: View {
 					if let prescribedDoseAmount = medication.prescribedDoseAmount,
 					   let prescribedUnit = medication.prescribedUnit
 					{
-						Text("\(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
+						Text(WatchMedication.localizedAmount(prescribedDoseAmount, unit: prescribedUnit))
 							.font(.caption)
 							.foregroundColor(.secondary)
 					}
@@ -283,7 +283,7 @@ struct MedicationRowView: View {
 					.frame(minWidth: 44, minHeight: 44)
 			}
 			.buttonStyle(.plain)
-			.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+			.accessibilityLabel(medication.quickLogAccessibilityLabel)
 			.disabled(sender.isSendingAction)
 		}
 		.padding(.vertical, 2)
@@ -336,7 +336,7 @@ struct MedicationRowView: View {
 
 	private func nextDoseLabel(for medication: WatchMedication, relativeTo date: Date) -> String {
 		guard let nextDoseDate = medication.nextDoseDate else {
-			return "Review saved limits"
+			return String(localized: "Review saved limits")
 		}
 
 		let formatter = RelativeDateTimeFormatter()

@@ -97,7 +97,7 @@ struct DataManagementView: View {
                         await viewModel.importData(from: url)
                     }
                 case let .failure(error):
-                    viewModel.alertMessage = "Import selection failed: \(error.localizedDescription)"
+                    viewModel.alertMessage = String(localized: "Import selection failed: \(error.localizedDescription)")
                     viewModel.showingAlert = true
                 }
             }
@@ -113,7 +113,7 @@ struct DataManagementView: View {
                                 try? FileManager.default.removeItem(at: url)
                             }
                             viewModel.exportedLogsURL = nil
-                            viewModel.alertMessage = "Log file prepared. No medication names are included — only technical information."
+                            viewModel.alertMessage = String(localized: "Log file prepared. No medication names are included — only technical information.")
                             viewModel.showingAlert = true
                         }
                 }
@@ -326,7 +326,7 @@ struct DataManagementView: View {
             }
 
             SupportToastView(
-                message: "Export file prepared",
+                message: String(localized: "Export file prepared"),
                 supportMessage: "Support As Needed",
                 isVisible: showSupportToast,
                 onDismiss: {
@@ -481,7 +481,7 @@ struct DataManagementView: View {
                                 .font(.callout.weight(.medium))
                         }
 
-                        Text(viewModel.isScanningRecovery ? "Scanning Recovery Sources..." : "Scan Recovery Sources")
+                        Text(viewModel.isScanningRecovery ? String(localized: "Scanning Recovery Sources...") : String(localized: "Scan Recovery Sources"))
                             .font(.customFont(fontFamily, style: .body))
                             .fontWeight(.medium)
                     }
@@ -504,8 +504,8 @@ struct DataManagementView: View {
 
             VStack(spacing: actionSpacing) {
                 dataActionButton(
-                    title: "Export Data",
-                    subtitle: "Save all your data as a JSON file",
+                    title: String(localized: "Export Data"),
+                    subtitle: String(localized: "Save all your data as a JSON file"),
                     systemImage: .squareAndArrowUp,
                     isLoading: viewModel.isExporting,
                     action: {
@@ -514,8 +514,8 @@ struct DataManagementView: View {
                 )
 
                 dataActionButton(
-                    title: "Import Data",
-                    subtitle: "Replace current data with a JSON file",
+                    title: String(localized: "Import Data"),
+                    subtitle: String(localized: "Replace current data with a JSON file"),
                     systemImage: .squareAndArrowDown,
                     isLoading: viewModel.isImporting,
                     action: {
@@ -524,8 +524,8 @@ struct DataManagementView: View {
                 )
 
                 dataActionButton(
-                    title: "Export Clinician Report",
-                    subtitle: "Create a shareable PDF summary of medications and recent logs",
+                    title: String(localized: "Export Clinician Report"),
+                    subtitle: String(localized: "Create a shareable PDF summary of medications and recent logs"),
                     systemImage: .textDocument,
                     isLoading: viewModel.isExportingClinicianReport,
                     action: {
@@ -536,8 +536,8 @@ struct DataManagementView: View {
                 )
 
                 dataActionButton(
-                    title: "Export App Logs",
-                    subtitle: "Export technical logs (no medication names)",
+                    title: String(localized: "Export App Logs"),
+                    subtitle: String(localized: "Export technical logs (no medication names)"),
                     systemImage: .textDocument,
                     isLoading: viewModel.isExportingLogs,
                     action: {
@@ -546,8 +546,8 @@ struct DataManagementView: View {
                 )
 
                 dataActionButton(
-                    title: "Clear All Data",
-                    subtitle: "Delete all medications and events",
+                    title: String(localized: "Clear All Data"),
+                    subtitle: String(localized: "Delete all medications and events"),
                     systemImage: .trash,
                     isLoading: viewModel.isClearingUserData,
                     isDestructive: true,
@@ -557,8 +557,8 @@ struct DataManagementView: View {
                 )
 
                 dataActionButton(
-                    title: "Reset App Preferences",
-                    subtitle: "Restore all app preferences to defaults",
+                    title: String(localized: "Reset App Preferences"),
+                    subtitle: String(localized: "Restore all app preferences to defaults"),
                     systemImage: .arrowCounterclockwise,
                     isLoading: viewModel.isResettingSettings,
                     isDestructive: true,

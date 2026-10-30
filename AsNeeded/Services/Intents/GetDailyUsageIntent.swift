@@ -70,16 +70,15 @@ struct GetDailyUsageIntent: AppIntent {
         let amount = todayUsage.totalAmount
         let doseCount = todayUsage.doseCount
 
-		let amountText = amount.formatted(.number.precision(.fractionLength(0...3)))
-        let unitText = unit.displayName(for: amount == 1 ? 1 : 2, locale: .current)
+		let amountText = unit.localizedCompactAmount(for: amount)
 
         var responseText: String
         if doseCount == 1 {
-			responseText = "You logged \(amountText) \(unitText) of \(medicationDisplayName) today."
+			responseText = String(localized: "You logged \(amountText) of \(medicationDisplayName) today.")
         } else {
-			responseText = "You logged \(amountText) \(unitText) of \(medicationDisplayName) today across \(doseCount) doses."
+			responseText = String(localized: "You logged \(amountText) of \(medicationDisplayName) today across \(doseCount) doses.")
         }
-		responseText += " This total includes doses recorded in \(unit.displayName) only."
+		responseText += String(localized: " This total includes doses recorded in \(unit.localizedDisplayName) only.")
 
         logger.info("Daily usage calculated")
         return .result(dialog: IntentDialog(stringLiteral: responseText))

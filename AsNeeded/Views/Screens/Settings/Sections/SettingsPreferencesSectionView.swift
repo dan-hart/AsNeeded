@@ -17,8 +17,8 @@ struct SettingsPreferencesSectionView: View {
 				AppPreferencesView()
 			} label: {
 				SettingsNavigationRowLabel(
-					title: "App Preferences",
-					subtitle: "Notifications, haptics, and app behavior",
+					title: String(localized: "App Preferences"),
+					subtitle: String(localized: "Notifications, haptics, and app behavior"),
 					icon: .gearshape,
 					iconColor: .accent
 				)

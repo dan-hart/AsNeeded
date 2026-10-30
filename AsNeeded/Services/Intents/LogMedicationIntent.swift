@@ -80,15 +80,15 @@ struct LogMedicationIntent: AppIntent {
             logger.info("Successfully logged medication dose from intent")
 
             // Format response message
-			let amountText = doseAmount.formatted(.number.precision(.fractionLength(0...3)))
-            let unitText = selectedUnit.displayName
+			let amountText = selectedUnit.localizedCompactAmount(for: doseAmount)
             let medicationText = if let nickname = targetMedication.nickname, !nickname.isEmpty {
                 nickname
             } else {
                 targetMedication.clinicalName
             }
 
-            return .result(dialog: IntentDialog("Logged \(amountText) \(unitText) of \(medicationText)"))
+            let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(amountText)")
+            return .result(dialog: IntentDialog("\(recordedDose) · \(medicationText)"))
 
         } catch {
             logger.logPrivacySafeError("Failed to log medication dose", error: error)

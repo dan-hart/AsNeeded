@@ -59,7 +59,7 @@ struct MedicationDetailView: View {
 							Text("Prescribed:")
 								.font(.caption)
 								.foregroundColor(.secondary)
-							Text("\(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
+							Text(WatchMedication.localizedAmount(prescribedDoseAmount, unit: prescribedUnit))
 								.font(.caption)
 								.fontWeight(.medium)
 						}
@@ -112,7 +112,7 @@ struct MedicationDetailView: View {
 								if let amount = medication.prescribedDoseAmount,
 								   let unit = medication.prescribedUnit
 								{
-									Text("(\(amount, specifier: "%.1f") \(unit))")
+									Text(verbatim: "(" + WatchMedication.localizedAmount(amount, unit: unit) + ")")
 										.font(.caption)
 								}
 						}
@@ -123,7 +123,7 @@ struct MedicationDetailView: View {
 						.cornerRadius(12)
 					}
 					.buttonStyle(.plain)
-					.accessibilityLabel("Log \(medication.prescribedDoseAmount ?? 1) \(medication.prescribedUnit ?? "dose") of \(medication.displayName)")
+					.accessibilityLabel(medication.quickLogAccessibilityLabel)
 					.disabled(sender.isSendingAction)
 				}
 			}
@@ -172,7 +172,7 @@ struct MedicationDetailView: View {
 
 	private var nextDoseLabel: String {
 		guard let nextDoseDate = medication.nextDoseDate else {
-			return "Review saved limits"
+			return String(localized: "Review saved limits")
 		}
 
 		let formatter = RelativeDateTimeFormatter()

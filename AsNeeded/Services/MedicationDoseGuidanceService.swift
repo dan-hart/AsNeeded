@@ -40,7 +40,7 @@ struct MedicationDoseGuidanceService {
 	enum Availability: Equatable {
 		case notConfigured
 		case noDoseHistory
-		case unavailable(String)
+		case unavailable(LocalizedStringResource)
 		case eligible(Date)
 
 		var eligibleDate: Date? {
@@ -48,12 +48,22 @@ struct MedicationDoseGuidanceService {
 			return nil
 		}
 
-		var message: String {
+		/// Stable catalog key for a receiving device to resolve using its own language.
+		var messageKey: String {
 			switch self {
 			case .notConfigured: return "No dose limits saved. Add dose timing or a 24-hour quantity limit in medication settings."
 			case .noDoseHistory: return "Log a dose to calculate the next saved window."
-			case let .unavailable(reason): return reason
+			case let .unavailable(reason): return reason.key
 			case .eligible: return "Based on your saved limits and logged doses."
+			}
+		}
+
+		var message: String {
+			switch self {
+			case .notConfigured: return String(localized: "No dose limits saved. Add dose timing or a 24-hour quantity limit in medication settings.")
+			case .noDoseHistory: return String(localized: "Log a dose to calculate the next saved window.")
+			case let .unavailable(reason): return String(localized: reason)
+			case .eligible: return String(localized: "Based on your saved limits and logged doses.")
 			}
 		}
 	}
@@ -168,33 +178,33 @@ struct MedicationDoseGuidanceService {
 		)
 
 		if duplicateCandidate {
-			reasons.append("This looks close to a recent duplicate log.")
+			reasons.append(String(localized: "This looks close to a recent duplicate log."))
 			severity = .warning
 		}
 
 		if case let .unavailable(reason) = availability {
-			reasons.append(reason)
+			reasons.append(String(localized: reason))
 			severity = .warning
 		}
 
 		let minimumHours = medication.minimumHoursBetweenDoses ?? profile.minimumHoursBetweenDoses
 		if let minimumHours, let lastDoseDate, date.timeIntervalSince(lastDoseDate) < minimumHours * 3600 {
-			reasons.append("This is earlier than your saved minimum interval.")
+			reasons.append(String(localized: "This is earlier than your saved minimum interval."))
 			severity = .warning
 		} else if let cautionHoursBetweenDoses = profile.normalizedCautionHoursBetweenDoses,
 		          let lastDoseDate,
 		          date.timeIntervalSince(lastDoseDate) < cautionHoursBetweenDoses * 3600
 		{
-			reasons.append("This is still inside your caution window.")
+			reasons.append(String(localized: "This is still inside your caution window."))
 			severity = max(severity, .caution)
 		}
 
 		if let maxDailyAmount = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount {
 			if !quantityFits(projectedDailyTotal, maximum: maxDailyAmount) {
-				reasons.append("This would exceed your saved daily limit.")
+				reasons.append(String(localized: "This would exceed your saved daily limit."))
 				severity = .warning
 			} else if projectedDailyTotal >= maxDailyAmount * 0.8 {
-				reasons.append("This would bring you close to your saved daily limit.")
+				reasons.append(String(localized: "This would bring you close to your saved daily limit."))
 				severity = max(severity, .caution)
 			}
 		}
@@ -204,17 +214,17 @@ struct MedicationDoseGuidanceService {
 
 		switch severity {
 		case .warning:
-			headline = "Review before logging"
-			detail = reasons.first ?? "This dose is outside your saved guidance."
+			headline = String(localized: "Review before logging")
+			detail = reasons.first ?? String(localized: "This dose is outside your saved guidance.")
 		case .caution:
-			headline = "Close to a saved guardrail"
-			detail = reasons.first ?? "This dose is still worth a second look."
+			headline = String(localized: "Close to a saved guardrail")
+			detail = reasons.first ?? String(localized: "This dose is still worth a second look.")
 		case .clear:
 			let hasGuidance = !profile.isEmpty || medication.minimumHoursBetweenDoses != nil || medication.maximumDailyDoseAmount != nil
-			headline = hasGuidance ? "Within saved guidance" : "No saved guardrails"
+			headline = hasGuidance ? String(localized: "Within saved guidance") : String(localized: "No saved guardrails")
 			detail = !hasGuidance
-				? "Add dose timing or refill guardrails in medication settings if you want more guidance."
-				: "Recent timing and daily use look within the guidance you saved for this medication."
+				? String(localized: "Add dose timing or refill guardrails in medication settings if you want more guidance.")
+				: String(localized: "Recent timing and daily use look within the guidance you saved for this medication.")
 		}
 
 		return Assessment(
@@ -279,13 +289,13 @@ struct MedicationDoseGuidanceService {
 
 		let statusMessage: String
 		if urgent {
-			statusMessage = "Refill prep would be timely."
+			statusMessage = String(localized: "Refill prep would be timely.")
 		} else if refillSoon {
-			statusMessage = "You’re approaching your refill window."
+			statusMessage = String(localized: "You’re approaching your refill window.")
 		} else if let estimatedDaysRemaining {
-			statusMessage = "About \(estimatedDaysRemaining)d of supply at your recent pace."
+			statusMessage = String(localized: "About \(estimatedDaysRemaining)d of supply at your recent pace.")
 		} else {
-			statusMessage = "Log more doses to estimate your run-out date."
+			statusMessage = String(localized: "Log more doses to estimate your run-out date.")
 		}
 
 		return RefillProjection(
