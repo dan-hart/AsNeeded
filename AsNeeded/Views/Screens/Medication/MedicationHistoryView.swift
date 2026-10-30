@@ -1,1054 +1,1054 @@
 import ANModelKit
+import Combine
 import Foundation
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 struct MedicationHistoryView: View {
-    @StateObject private var viewModel = MedicationHistoryViewModel()
-    @EnvironmentObject private var navigationManager: NavigationManager
-    @Environment(\.fontFamily) private var fontFamily
-    @State private var logMedication: ANMedicationConcept?
-    @State private var showLogDosePicker = false
-    /// Medication chosen in the picker; the Log Dose sheet opens for it once the picker has dismissed.
-    @State private var pendingPickerMedication: ANMedicationConcept?
-    @State private var isLogButtonPressed = false
-    @State private var isLogButtonLongPressing = false
-    /// 0 to 1 while the Log Dose button is held; drives the ring that shows the quick log building up.
-    @State private var logButtonHoldProgress: Double = 0
-    /// Briefly true after a quick log succeeds so the button can pop.
-    @State private var isLogButtonCelebrating = false
-    @State private var showQuickLogHint = false
-    @AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showSupportToast = false
-    @State private var showSupportView = false
-    @State private var currentTime = Date()
-    @State private var scrollTarget: Date?
-    @State private var showDatePicker = false
-    @State private var selectedDate = Date()
-    @State private var selectedEventNote: String?
-    @State private var editingEvent: ANEventConcept?
-    @State private var editingNoteText: String = ""
-    @FocusState private var isNoteFieldFocused: Bool
-    @State private var editingEntryEvent: ANEventConcept?
-    @State private var editingEntryDate: Date = .init()
-    @State private var editingEntryAmount: Double = 1.0
-    @State private var editingEntryUnit: ANUnitConcept = .unit
-
-    @ScaledMetric private var emptySectionSpacing: CGFloat = 24
-    @ScaledMetric private var supportViewPaddingH: CGFloat = 32
-    @ScaledMetric private var rowSpacing: CGFloat = 12
-    @ScaledMetric private var entrySpacing: CGFloat = 8
-    @ScaledMetric private var noteTopSpacing: CGFloat = 4
-    @ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
-    @ScaledMetric private var medicationColorCircleSize: CGFloat = 26
-    @ScaledMetric private var colorCircleShadowRadius: CGFloat = 3
-    @ScaledMetric private var colorCircleStrokeWidth: CGFloat = 0.5
-    @ScaledMetric private var unitPickerItemPaddingH: CGFloat = 12
-    @ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
-    @ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
-    @ScaledMetric private var fabPaddingH: CGFloat = 24
-    @ScaledMetric private var fabPaddingV: CGFloat = 16
-    @ScaledMetric private var fabTrailingPadding: CGFloat = 20
-    @ScaledMetric private var fabBottomPadding: CGFloat = 20
-    @ScaledMetric private var fabShadowRadius: CGFloat = 4
-    @ScaledMetric private var datePickerSpacing: CGFloat = 20
-    @ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
-    @ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
-    @ScaledMetric private var holdRingLineWidth: CGFloat = 3
-    @ScaledMetric private var quickLogHintSpacing: CGFloat = 10
-
-    let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
-
-    // MARK: - Private ViewBuilders
-
-    @ViewBuilder
-    private func emptyHistoryView(for selected: ANMedicationConcept) -> some View {
-        Spacer()
-        VStack(spacing: emptySectionSpacing) {
-            Text("No history for \(selected.displayName).")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            SubtleSupportView(message: "If As Needed helps you manage medications, consider supporting its development")
-                .padding(.horizontal, supportViewPaddingH)
-        }
-        Spacer()
-    }
-
-    @ViewBuilder
-    private func historyListView() -> some View {
-        ScrollViewReader { proxy in
-            List {
-                ForEach(viewModel.groupedHistory, id: \.day) { group in
-                    Section(header: sectionHeader(for: group)) {
-                        ForEach(group.entries, id: \.id) { event in
-                            // Decode the note once per row; the codec parses structured reflections from JSON.
-                            let note = displayNote(for: event)
-                            let highlights = reflectionHighlights(for: event)
-                            VStack(alignment: .leading, spacing: entrySpacing) {
-                                HStack(alignment: .center) {
-                                    // Medication color indicator on the left side
-                                    if viewModel.isShowingAllMedications, let eventMedication = event.medication {
-                                        // Look up current medication from viewModel to ensure we have the latest data
-                                        let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-                                        let rowMedication = currentMedication ?? eventMedication
-
-                                        let medicationColor: Color = {
-                                            // First try the medication's custom color
-                                            if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
-                                                return Color(hex: hexColor) ?? .accent
-                                            }
-                                            // Use app accent color as default
-                                            return .accent
-                                        }()
-
-                                        ZStack {
-                                            Circle()
-                                                .fill(medicationColor.opacity(0.15))
-                                                .frame(width: medicationColorCircleSize, height: medicationColorCircleSize)
-                                                .shadow(color: medicationColor.opacity(0.4), radius: colorCircleShadowRadius, x: 0, y: 1)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(.white.opacity(0.3), lineWidth: colorCircleStrokeWidth)
-                                                )
-
-                                            // Add medication symbol
-                                            if viewModel.isShowingAllMedications {
-                                                Image(systemName: rowMedication.effectiveDisplaySymbol)
-                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                    .symbolRenderingMode(.hierarchical)
-                                                    .foregroundStyle(medicationColor)
-                                            } else if !viewModel.isShowingAllMedications,
-                                                      let medication = viewModel.selectedMedication
-                                            {
-                                                Image(systemName: medication.effectiveDisplaySymbol)
-                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                    .symbolRenderingMode(.hierarchical)
-                                                    .foregroundStyle(medicationColor)
-                                            }
-                                        }
-                                    }
-
-                                    VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
-                                        // Show medication name when viewing all medications
-                                        if viewModel.isShowingAllMedications, let eventMedication = event.medication {
-                                            let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-                                            let rowMedication = currentMedication ?? eventMedication
-                                            Text(rowMedication.displayName)
-                                                .font(.headline)
-                                                .foregroundStyle(.primary)
-                                        }
-
-                                        if let dose = event.dose {
-                                            let unitName = dose.unit.abbreviation
-                                            Text("\(event.date.formatted(date: .omitted, time: .shortened)) – \(dose.amount.formattedAmount) \(unitName)")
-                                                .font(.customFont(fontFamily, style: .subheadline))
-                                        } else {
-                                            Text(event.date.formatted(date: .omitted, time: .shortened))
-                                                .font(.customFont(fontFamily, style: .subheadline))
-                                        }
-                                        if let rel = relativeShortIfToday(event.date) {
-                                            Text(rel)
-                                                .font(.customFont(fontFamily, style: .footnote))
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-
-                                    // Show add note button on trailing side if no note exists
-                                    if note?.isEmpty != false {
-                                        AddNoteButtonComponent(
-                                            medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
-                                            onTap: {
-                                                editingEvent = event
-                                                editingNoteText = ""
-                                            }
-                                        )
-                                    }
-                                }
-
-                                if !highlights.isEmpty {
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: sectionHeaderSpacing) {
-                                            ForEach(highlights, id: \.self) { highlight in
-                                                Text(highlight)
-                                                    .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                    .foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
-                                                    .padding(.horizontal, reflectionBadgePaddingH)
-                                                    .padding(.vertical, reflectionBadgePaddingV)
-                                                    .background(
-                                                        Capsule()
-                                                            .fill((viewModel.isShowingAllMedications ? Color.accent : (viewModel.selectedMedication?.displayColor ?? .accent)).opacity(0.12))
-                                                    )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Show enhanced note display below if it exists
-                                if let note, !note.isEmpty {
-                                    NoteDisplayCardComponent(
-                                        noteText: note,
-                                        medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
-                                        onEdit: {
-                                            editingEvent = event
-                                            editingNoteText = note
-                                        }
-                                    )
-                                    .padding(.top, noteTopSpacing)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel(historyAccessibilityLabel(for: event))
-                            .accessibilityHint("Tap to edit this dose entry")
-                            .accessibilityAction(named: "Edit entry") {
-                                editingEntryEvent = event
-                                editingEntryDate = event.date
-                                editingEntryAmount = event.dose?.amount ?? 1.0
-                                editingEntryUnit = event.dose?.unit ?? .unit
-                            }
-                            .accessibilityAction(named: "Edit note") {
-                                editingEvent = event
-                                editingNoteText = note ?? ""
-                            }
-                            .onTapGesture {
-                                editingEntryEvent = event
-                                editingEntryDate = event.date
-                                editingEntryAmount = event.dose?.amount ?? 1.0
-                                editingEntryUnit = event.dose?.unit ?? .unit
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button {
-                                    editingEntryEvent = event
-                                    editingEntryDate = event.date
-                                    editingEntryAmount = event.dose?.amount ?? 1.0
-                                    editingEntryUnit = event.dose?.unit ?? .unit
-                                } label: {
-                                    Label("Edit", systemSymbol: .pencil)
-                                }
-                                .tint(viewModel.selectedMedication?.displayColor ?? .accent)
-
-                                Button(role: .destructive) {
-                                    Task { await viewModel.deleteEvent(event) }
-                                } label: {
-                                    Label("Delete", systemSymbol: .trash)
-                                }
-                                .tint(.red)
-                            }
-                        }
-                    }
-                    .id(group.day)
-                }
-            }
-            .listStyle(.insetGrouped)
-            .onChange(of: scrollTarget) { _, newTarget in
-                if let target = newTarget {
-                    withAnimation {
-                        proxy.scrollTo(target, anchor: .top)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Section Header Helpers
-
-    @ViewBuilder
-    private func sectionHeader(for group: MedicationHistoryViewModel.DayGroup) -> some View {
-        VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
-            HStack {
-                Text(formatDateWithDayOfWeek(group.day))
-                    .font(.customFont(fontFamily, style: .headline))
-                Spacer()
-                if let totalText = dayTotalText(for: group.entries) {
-                    Text(totalText)
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            if let rel = dayRelativeLabel(for: group.day) {
-                Text(rel)
-                    .font(.customFont(fontFamily, style: .footnote))
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func formatDateWithDayOfWeek(_ date: Date) -> String {
-        // Mon, Tue, Wed, etc. Uses the system's cached formatter instead of allocating one per header.
-        let dayOfWeek = date.formatted(.dateTime.weekday(.abbreviated))
-
-        let dateString = date.formatted(date: .abbreviated, time: .omitted)
-        return "\(dayOfWeek), \(dateString)"
-    }
-
-    private func dayTotalText(for entries: [ANEventConcept]) -> String? {
-        // Don't show totals when showing all medications
-        guard !viewModel.isShowingAllMedications else { return nil }
-
-        let preferredUnit = viewModel.selectedMedication?.prescribedUnit ?? entries.compactMap { $0.dose?.unit }.first
-        if let unit = preferredUnit {
-            let total = entries.compactMap { ev -> Double? in
-                guard let dose = ev.dose, dose.unit == unit else { return nil }
-                return dose.amount
-            }.reduce(0, +)
-            return total > 0 ? "\(total.formattedAmount) \(unit.abbreviation)" : nil
-        } else {
-            let total = entries.compactMap { $0.dose?.amount }.reduce(0, +)
-            return total > 0 ? "\(total.formattedAmount)" : nil
-        }
-    }
-
-    private func dayRelativeLabel(for date: Date) -> String? {
-        let cal = Calendar.current
-        if cal.isDateInToday(date) { return "Today" }
-        if cal.isDateInYesterday(date) { return "Yesterday" }
-
-        // Use our centralized relative formatting for other dates
-        let daysDiff = cal.dateComponents([.day], from: date, to: Date()).day ?? 0
-        if daysDiff > 1 && daysDiff <= 7 {
-            return date.relativeFormattedAsPast.capitalized
-        }
-        return nil
-    }
-
-    private func relativeShortIfToday(_ date: Date) -> String? {
-        let cal = Calendar.current
-        guard cal.isDateInToday(date) else { return nil }
-        let diff = Int(Date().timeIntervalSince(date))
-        if diff <= 60 { return "Logged just now" }
-        let mins = diff / 60
-        if mins < 60 { return "\(mins)m ago" }
-        let hrs = mins / 60
-        return "\(hrs)h ago"
-    }
-
-    private func displayNote(for event: ANEventConcept) -> String? {
-        DoseReflectionCodec.displayNote(from: event.note)
-    }
-
-    private func reflectionHighlights(for event: ANEventConcept) -> [String] {
-        guard let reflection = DoseReflectionCodec.reflection(from: event.note) else {
-            return []
-        }
-
-        var highlights: [String] = []
-
-        if let reason = reflection.reason {
-            highlights.append(reason)
-        }
-
-        if let effectiveness = reflection.effectiveness {
-            highlights.append("Effect \(effectiveness)/5")
-        }
-
-        if let before = reflection.symptomSeverityBefore, let after = reflection.symptomSeverityAfter {
-            highlights.append("Before \(before)/5 to \(after)/5")
-        }
-
-        if let sideEffect = reflection.sideEffects.first {
-            highlights.append(sideEffect)
-        }
-
-        return Array(highlights.prefix(3))
-    }
-
-    private func historyAccessibilityLabel(for event: ANEventConcept) -> String {
-        let medicationText = eventMedicationName(for: event)
-        let doseText: String = {
-            guard let dose = event.dose else {
-                return "dose amount not recorded"
-            }
-
-            return "\(dose.amount.formattedAmount) \(dose.unit.abbreviation)"
-        }()
-        let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
-        let noteText: String = {
-            guard let note = displayNote(for: event), !note.isEmpty else {
-                return "No note"
-            }
-
-            return "Has note"
-        }()
-
-        return "\(medicationText), \(doseText), logged \(timeText). \(noteText)."
-    }
-
-    private func eventMedicationName(for event: ANEventConcept) -> String {
-        guard let medicationID = event.medication?.id else {
-            return "Medication"
-        }
-
-        if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
-            return currentMedication.displayName
-        }
-
-        return event.medication?.displayName ?? "Medication"
-    }
-
-    @ViewBuilder
-    private func selectionPromptView() -> some View {
-        Spacer()
-        Text("Select a medication to see history.")
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-        Spacer()
-    }
-
-    // MARK: - Private Methods
-
-    /// Floating Log Dose control. Short press opens the Log Dose sheet; holding quick logs the default dose,
-    /// mirroring the row button on the Medication tab. While held, a ring draws around the capsule so the
-    /// hold is visible as it builds, and a successful quick log pops the button.
-    private func floatingLogButton(for medication: ANMedicationConcept) -> some View {
-        Label("Log Dose", systemSymbol: .plus)
-            .labelStyle(.titleAndIcon)
-            .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, fabPaddingH)
-            .padding(.vertical, fabPaddingV)
-            .background(
-                Capsule()
-                    .fill(medication.displayColor)
-                    .shadow(
-                        color: .black.opacity(0.3),
-                        radius: isLogButtonPressed ? fabShadowRadius / 2 : fabShadowRadius,
-                        x: 0,
-                        y: isLogButtonPressed ? 1 : 2
-                    )
-            )
-            .overlay(
-                // Hold progress ring: traces the capsule over the hold duration, then vanishes on release.
-                Capsule()
-                    .trim(from: 0, to: logButtonHoldProgress)
-                    .stroke(
-                        .white.opacity(0.95),
-                        style: StrokeStyle(lineWidth: holdRingLineWidth, lineCap: .round)
-                    )
-                    .opacity(logButtonHoldProgress > 0 ? 1 : 0)
-            )
-            .scaleEffect(logButtonScale)
-            .doseLogPressGesture(
-                isPressed: $isLogButtonPressed,
-                isLongPressing: $isLogButtonLongPressing,
-                holdProgress: $logButtonHoldProgress,
-                onTap: {
-                    logMedication = medication
-                },
-                onQuickLog: {
-                    await viewModel.quickLog(medication: medication)
-                },
-                onQuickLogSuccess: {
-                    celebrateQuickLog()
-                }
-            )
-            .accessibilityElement(children: .ignore)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityLabel("Log dose for \(medication.displayName)")
-            .accessibilityHint("Tap to customize dose, hold to log default dose")
-            .accessibilityAction {
-                logMedication = medication
-            }
-            .accessibilityAction(named: "Quick log default dose") {
-                Task {
-                    _ = await viewModel.quickLog(medication: medication)
-                }
-            }
-    }
-
-    /// Medication-agnostic Log Dose button for the All view. Mirrors the Medication tab's: an accent capsule
-    /// in the same spot, opening the picker to choose which medication to log.
-    private var allMedicationsLogButton: some View {
-        Button {
-            HapticsManager.shared.mediumImpact()
-            showLogDosePicker = true
-        } label: {
-            Label("Log Dose", systemSymbol: .plus)
-                .labelStyle(.titleAndIcon)
-                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, fabPaddingH)
-                .padding(.vertical, fabPaddingV)
-                .background(
-                    Capsule()
-                        .fill(.accent)
-                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
-                )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Log a dose")
-        .accessibilityHint("Opens a list of your medications to choose which one to log")
-    }
-
-    private var logButtonScale: CGFloat {
-        if isLogButtonCelebrating {
-            return 1.08
-        }
-        return isLogButtonPressed || isLogButtonLongPressing ? 0.95 : 1.0
-    }
-
-    /// The user closed the pill: retire the hint for good and hide it.
-    private func dismissQuickLogHint() {
-        QuickLogHintPolicy.dismissForever()
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            showQuickLogHint = false
-        }
-    }
-
-    /// Marks the gesture as discovered, retires the hint, and pops the button once (skipped under Reduce Motion).
-    private func celebrateQuickLog() {
-        hasDiscoveredQuickLog = true
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
-            showQuickLogHint = false
-        }
-
-        guard !reduceMotion else { return }
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
-            isLogButtonCelebrating = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                isLogButtonCelebrating = false
-            }
-        }
-    }
-
-    // MARK: - Body
-
-    var body: some View {
-        ZStack {
-            NavigationStack {
-                ZStack(alignment: .bottomTrailing) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Medication picker and date button
-                        HStack(alignment: .center, spacing: rowSpacing) {
-                            Menu {
-                                Button {
-                                    viewModel.selectedMedicationID = "all"
-                                } label: {
-                                    Text("All", comment: "Option to view all medications in history")
-                                }
-                                ForEach(viewModel.medications, id: \.id) { medication in
-                                    Button {
-                                        viewModel.selectedMedicationID = medication.id.uuidString
-                                    } label: {
-                                        Text(medication.displayName)
-                                    }
-                                }
-                            } label: {
-                                HStack {
-                                    Text(viewModel.isShowingAllMedications ? "All" : (viewModel.selectedMedication?.displayName ?? "All"))
-                                        .font(.customFont(fontFamily, style: .body))
-                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                                    Image(systemSymbol: .chevronUpChevronDown)
-                                        .font(.customFont(fontFamily, style: .caption2))
-                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                                }
-                            }
-
-                            Spacer()
-
-                            Button {
-                                showDatePicker = true
-                            } label: {
-                                Label("Jump to Date", systemSymbol: .calendar)
-                                    .labelStyle(.titleAndIcon)
-                                    .font(.callout)
-                                    .foregroundStyle(viewModel.groupedHistory.isEmpty ? Color.secondary : (viewModel.selectedMedication?.displayColor ?? .accent))
-                            }
-                            .disabled(viewModel.groupedHistory.isEmpty)
-                            .accessibilityLabel("Jump to date")
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, pickerContainerPaddingV)
-
-                        Divider()
-
-                        if viewModel.isShowingAllMedications {
-                            if viewModel.groupedHistory.isEmpty {
-                                Spacer()
-                                VStack(spacing: emptySectionSpacing) {
-                                    Text("No dose history found.")
-                                        .foregroundStyle(.secondary)
-                                        .frame(maxWidth: .infinity, alignment: .center)
-
-                                    SubtleSupportView(message: "If As Needed helps you manage medications, consider supporting its development")
-                                        .padding(.horizontal, supportViewPaddingH)
-                                }
-                                Spacer()
-                            } else {
-                                historyListView()
-                            }
-                        } else if let selected = viewModel.selectedMedication {
-                            if viewModel.groupedHistory.isEmpty {
-                                emptyHistoryView(for: selected)
-                            } else {
-                                historyListView()
-                            }
-                        } else {
-                            selectionPromptView()
-                        }
-                    }
-
-                    // Floating Action Button for Log Dose: tap opens the sheet, hold quick logs the default dose
-                    if let selectedMedication = viewModel.selectedMedication, !viewModel.isShowingAllMedications {
-                        VStack(alignment: .trailing, spacing: quickLogHintSpacing) {
-                            if showQuickLogHint {
-                                QuickLogHintPill(
-                                    text: QuickLogHintPolicy.hintText(for: selectedMedication),
-                                    onDismiss: dismissQuickLogHint
-                                )
-                            }
-                            floatingLogButton(for: selectedMedication)
-                        }
-                        .padding(.trailing, fabTrailingPadding)
-                        .padding(.bottom, fabBottomPadding)
-                        .quickLogHint(isPresented: $showQuickLogHint)
-                    } else if viewModel.isShowingAllMedications, !viewModel.medications.active.isEmpty {
-                        // Same medication-agnostic Log Dose button as the Medication tab: accent because it
-                        // asks which medication, then the picker takes over in medication colors.
-                        allMedicationsLogButton
-                            .padding(.trailing, fabTrailingPadding)
-                            .padding(.bottom, fabBottomPadding)
-                    }
-                }
-                .navigationTitle("History")
-                .onAppear {
-                    // Handle navigation from trends or medication detail
-                    if let targetDate = navigationManager.historyTargetDate {
-                        scrollTarget = Calendar.current.startOfDay(for: targetDate)
-                    }
-
-                    if let medicationID = navigationManager.historyTargetMedicationID,
-                       let uuid = UUID(uuidString: medicationID)
-                    {
-                        // Set the selected medication from navigation
-                        viewModel.selectedMedicationID = uuid.uuidString
-                        // Clear navigation state after use
-                        navigationManager.clearHistoryNavigation()
-                    } else {
-                        // Ensure we have a valid selection (will default to "all" if needed)
-                        viewModel.ensureValidSelection()
-                    }
-                }
-                .onReceive(timer) { _ in
-                    currentTime = Date()
-                }
-                .sheet(isPresented: $showDatePicker) {
-                    NavigationStack {
-                        VStack(spacing: sectionHeaderSpacing) {
-                            DatePicker(
-                                "Select Date",
-                                selection: $selectedDate,
-                                displayedComponents: [.date]
-                            )
-                            .datePickerStyle(.graphical)
-                            .padding(.horizontal)
-
-                            Spacer()
-                        }
-                        .navigationTitle("Jump to Date")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button {
-                                    showDatePicker = false
-                                } label: {
-                                    Image(systemSymbol: .xmark)
-                                        .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button {
-                                    scrollTarget = Calendar.current.startOfDay(for: selectedDate)
-                                    showDatePicker = false
-                                } label: {
-                                    Image(systemSymbol: .checkmarkCircleFill)
-                                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                        .foregroundStyle(.accent)
-                                }
-                            }
-                        }
-                    }
-                    .dynamicDetent()
-                }
-                .sheet(isPresented: $showLogDosePicker, onDismiss: {
-                    // Present the Log Dose sheet only after the picker is fully gone, so the two never overlap.
-                    if let medication = pendingPickerMedication {
-                        pendingPickerMedication = nil
-                        logMedication = medication
-                    }
-                }) {
-                    LogDosePickerSheet(
-                        items: viewModel.logDosePickerItems,
-                        onSelect: { medication in
-                            pendingPickerMedication = medication
-                            showLogDosePicker = false
-                        },
-                        onQuickLog: { medication in
-                            await viewModel.quickLog(medication: medication)
-                        },
-                        onQuickLogSuccess: { _ in
-                            hasDiscoveredQuickLog = true
-                            showLogDosePicker = false
-                        }
-                    )
-                }
-                .sheet(item: $logMedication) { med in
-                    LogDoseView(medication: med, source: "history_sheet") { dose, event, operationID in
-                        // Sequential, compensating writes: if the event write fails the quantity is restored.
-                        let success = await viewModel.logDose(
-                            medication: med,
-                            dose: dose,
-                            event: event,
-                            operationID: operationID
-                        )
-                        guard success else {
-                            return false
-                        }
-
-                        logMedication = nil
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                showSupportToast = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    showSupportToast = false
-                                }
-                            }
-                        }
-
-                        return true
-                    }
-                }
-                .sheet(item: $editingEvent) { event in
-                    NavigationStack {
-                        VStack(spacing: 0) {
-                            Form {
-                                Section(header: Text("Event Details").font(.customFont(fontFamily, style: .subheadline))) {
-                                    HStack {
-                                        Text("Date")
-                                        Spacer()
-                                        Text(event.date.formatted(date: .abbreviated, time: .shortened))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    if let dose = event.dose {
-                                        HStack {
-                                            Text("Dose")
-                                            Spacer()
-                                            Text("\(dose.amount.formattedAmount) \(dose.unit.abbreviation)")
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                }
-
-                                Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
-                                    if !reflectionHighlights(for: event).isEmpty {
-                                        VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
-                                            Text("Saved context from this dose stays attached when you update the note.")
-                                                .font(.customFont(fontFamily, style: .caption))
-                                                .foregroundStyle(.secondary)
-
-                                            HStack(spacing: sectionHeaderSpacing) {
-                                                ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
-                                                    Text(highlight)
-                                                        .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                        .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                                                        .padding(.horizontal, reflectionBadgePaddingH)
-                                                        .padding(.vertical, reflectionBadgePaddingV)
-                                                        .background(
-                                                            Capsule()
-                                                                .fill((viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.12))
-                                                        )
-                                                }
-                                            }
-                                        }
-                                        .padding(.bottom, sectionHeaderSpacing)
-                                    }
-
-                                    TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
-                                        .lineLimit(4 ... 8)
-                                        .font(.customFont(fontFamily, style: .body))
-                                        .focused($isNoteFieldFocused)
-                                }
-                            }
-                            .scrollDismissesKeyboard(.interactively)
-
-                            // Sticky save button container
-                            VStack(spacing: 0) {
-                                Divider()
-                                    .background(.separator.opacity(0.5))
-
-                                Button(action: {
-                                    if let event = editingEvent {
-                                        Task {
-                                            var updatedEvent = event
-                                            updatedEvent.note = (try? DoseReflectionCodec.updatingNote(in: event.note, with: editingNoteText)) ??
-                                                editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-                                            await viewModel.updateEventNote(updatedEvent)
-                                            editingEvent = nil
-                                            editingNoteText = ""
-                                        }
-                                    }
-                                }) {
-                                    HStack(spacing: entrySpacing) {
-                                        Image(systemSymbol: .checkmarkCircle)
-                                            .font(.customFont(fontFamily, style: .body))
-                                        Text("Save Note")
-                                            .font(.customFont(fontFamily, style: .headline))
-                                    }
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                            .fill(LinearGradient(
-                                                colors: [
-                                                    viewModel.selectedMedication?.displayColor ?? .accent,
-                                                    (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.9),
-                                                ],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ))
-                                            .shadow(color: (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.3), radius: 4, x: 0, y: 2)
-                                    )
-                                }
-                                .padding(.horizontal, fabPaddingH)
-                                .padding(.vertical, pickerContainerPaddingV)
-                            }
-                            .background(.regularMaterial)
-                        }
-                        .navigationTitle("Edit Note")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button {
-                                    editingEvent = nil
-                                    editingNoteText = ""
-                                } label: {
-                                    Image(systemSymbol: .xmark)
-                                        .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    .presentationDetents([.large])
-                    .onAppear {
-                        editingNoteText = displayNote(for: event) ?? ""
-                        // Auto-focus the note field when sheet opens - increased delay for reliability
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-                            isNoteFieldFocused = true
-                        }
-                    }
-                }
-            }
-            .onAppear {
-                // Ensure we have a valid medication selected
-                viewModel.ensureValidSelection()
-            }
-
-            // Quick Log Toast (long press on the floating Log Dose button)
-            if viewModel.showQuickLogToast {
-                QuickLogToastView(
-                    medicationName: viewModel.quickLogMedicationName,
-                    doseAmount: viewModel.quickLogDoseAmount,
-                    doseUnit: viewModel.quickLogDoseUnit,
-                    accentColor: viewModel.quickLogAccentColor,
-                    isVisible: viewModel.showQuickLogToast,
-                    feedback: viewModel.quickLogFeedback,
-                    onDismiss: {
-                        viewModel.dismissQuickLogToast()
-                    },
-                    onUndo: {
-                        Task {
-                            _ = await viewModel.undoLastQuickLog()
-                        }
-                    }
-                )
-            }
-
-            // Support toast positioned outside NavigationStack to avoid layout interference
-            SupportToastView(
-                message: "Dose logged successfully",
-                supportMessage: "Support As Needed",
-                isVisible: showSupportToast,
-                onDismiss: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showSupportToast = false
-                    }
-                },
-                onSupportTapped: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showSupportToast = false
-                        showSupportView = true
-                    }
-                }
-            )
-        }
-        .sheet(item: $editingEntryEvent) { event in
-            NavigationStack {
-                Form {
-                    Section(header: Text("Dose Entry Details").font(.customFont(fontFamily, style: .subheadline))) {
-                        HStack {
-                            Text("Medication")
-                            Spacer()
-                            if let eventMedication = event.medication {
-                                let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-                                let medication = currentMedication ?? eventMedication
-                                Text(medication.displayName)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        VStack(alignment: .leading, spacing: rowSpacing) {
-                            Text("Dose Amount")
-                                .font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-
-                            HStack(spacing: rowSpacing) {
-                                Button(action: {
-                                    if editingEntryAmount > 0.5 {
-                                        editingEntryAmount -= 0.5
-                                    }
-                                }) {
-                                    Image(systemSymbol: .minusCircleFill)
-                                        .font(.customFont(fontFamily, style: .title2))
-                                        .foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
-                                }
-                                .buttonStyle(.borderless)
-                                .disabled(editingEntryAmount <= 0.5)
-
-                                VStack(spacing: sectionHeaderSpacing) {
-                                    Text("\(editingEntryAmount, specifier: "%.1f")")
-                                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                        .contentTransition(.numericText())
-
-                                    Text(editingEntryUnit.displayName)
-                                        .font(.customFont(fontFamily, style: .caption))
-                                        .foregroundStyle(.secondary)
-                                        .textCase(.uppercase)
-                                }
-                                .frame(minWidth: 80)
-
-                                Button(action: {
-                                    if editingEntryAmount < 100 {
-                                        editingEntryAmount += 0.5
-                                    }
-                                }) {
-                                    Image(systemSymbol: .plusCircleFill)
-                                        .font(.customFont(fontFamily, style: .title2))
-                                        .foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
-                                }
-                                .buttonStyle(.borderless)
-                                .disabled(editingEntryAmount >= 100)
-                            }
-                            .frame(maxWidth: .infinity)
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: entrySpacing) {
-                                    ForEach(ANUnitConcept.allCases, id: \.self) { unit in
-                                        Button(action: {
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                                editingEntryUnit = unit
-                                            }
-                                        }) {
-                                            Text(unit.displayName)
-                                                .font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
-                                                .padding(.horizontal, rowSpacing)
-                                                .padding(.vertical, entrySpacing)
-                                                .background(
-                                                    Capsule()
-                                                        .fill(editingEntryUnit == unit ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.1))
-                                                )
-                                                .foregroundStyle(editingEntryUnit == unit ? .white : .primary)
-                                        }
-                                        .buttonStyle(.borderless)
-                                    }
-                                }
-                            }
-                        }
-
-                        DatePicker(
-                            "Time",
-                            selection: $editingEntryDate,
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
-                    }
-
-                    Section {
-                        Button(role: .destructive) {
-                            if let event = editingEntryEvent {
-                                Task {
-                                    await viewModel.deleteEvent(event)
-                                    editingEntryEvent = nil
-                                }
-                            }
-                        } label: {
-                            Label("Delete Entry", systemSymbol: .trash)
-                                .frame(maxWidth: .infinity)
-                                .foregroundStyle(.red)
-                        }
-                    }
-                }
-                .navigationTitle("Edit Entry")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                            editingEntryEvent = nil
-                        } label: {
-                            Image(systemSymbol: .xmark)
-                                .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            if let event = editingEntryEvent {
-                                Task {
-                                    // Update the event with new date, dose amount, and unit
-                                    await viewModel.updateEvent(
-                                        event,
-                                        newDate: editingEntryDate,
-                                        newAmount: editingEntryAmount,
-                                        newUnit: editingEntryUnit
-                                    )
-                                    editingEntryEvent = nil
-                                }
-                            }
-                        } label: {
-                            Image(systemSymbol: .checkmarkCircleFill)
-                                .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                                .foregroundStyle(.accent)
-                        }
-                    }
-                }
-            }
-            .dynamicDetent()
-        }
-        .sheet(isPresented: $showSupportView) {
-            NavigationView {
-                SupportView()
-            }
-        }
-    }
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@State private var showSupportPage = false
+	@StateObject private var doseLogSession = LogDoseView.Session()
+	@StateObject private var viewModel = MedicationHistoryViewModel()
+	// Reuse the existing atomic dose/Undo coordinator on both tabs.
+	@StateObject private var quickLogCoordinator = MedicationListViewModel()
+	@State private var quickLogError = false
+	@State private var showLogDosePicker = false
+	@State private var pickerQuery = ""
+	@State private var pendingPickerMedication: ANMedicationConcept?
+
+	@EnvironmentObject private var navigationManager: NavigationManager
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@State private var logMedication: ANMedicationConcept?
+	@State private var currentTime = Date()
+	@State private var scrollTarget: Date?
+	@State private var showDatePicker = false
+	@State private var selectedDate = Date()
+	@State private var selectedEventNote: String?
+	@State private var editingEvent: ANEventConcept?
+	@State private var editingNoteText: String = ""
+	@FocusState private var isNoteFieldFocused: Bool
+	@State private var editingEntryEvent: ANEventConcept?
+	@State private var showDiscardNoteChanges = false
+
+	@ScaledMetric private var emptySectionSpacing: CGFloat = 24
+	@ScaledMetric private var supportViewPaddingH: CGFloat = 32
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var entrySpacing: CGFloat = 8
+	@ScaledMetric private var noteTopSpacing: CGFloat = 4
+	@ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
+	@ScaledMetric private var medicationColorCircleSize: CGFloat = 26
+	@ScaledMetric private var colorCircleShadowRadius: CGFloat = 3
+	@ScaledMetric private var colorCircleStrokeWidth: CGFloat = 0.5
+	@ScaledMetric private var unitPickerItemPaddingH: CGFloat = 12
+	@ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
+	@ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
+	@ScaledMetric private var fabPaddingH: CGFloat = 24
+	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
+	@ScaledMetric private var datePickerSpacing: CGFloat = 20
+	@ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
+	@ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
+
+	let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
+	// MARK: - Private ViewBuilders
+
+	@ViewBuilder
+	private func emptyHistoryView(for selected: ANMedicationConcept) -> some View {
+		Spacer()
+		VStack(spacing: emptySectionSpacing) {
+			Text("No history for \(selected.demoDisplayName).")
+				.demoNameRedacted()
+				.font(.customFont(fontFamily, style: .body))
+				.foregroundStyle(.secondary)
+				.frame(maxWidth: .infinity, alignment: .center)
+				.noTruncate()
+			Text("Use Log Dose to record a dose you have taken.")
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+				.multilineTextAlignment(.center)
+		}
+		Spacer()
+	}
+
+	private func historyDoseDetails(for event: ANEventConcept) -> some View {
+		let time = event.date.formatted(date: .omitted, time: .shortened)
+		let details = event.dose.map { "\(time) – \($0.unit.localizedCompactAmount(for: $0.amount))" } ?? time
+		return ViewThatFits(in: .horizontal) {
+			HStack(alignment: .firstTextBaseline, spacing: 8) {
+				Text(details)
+					.font(.customFont(fontFamily, style: .subheadline))
+				if let relative = relativeShortIfToday(event.date) {
+					Text(relative)
+						.font(.customFont(fontFamily, style: .footnote))
+						.foregroundStyle(.secondary)
+				}
+			}
+			.fixedSize(horizontal: true, vertical: true)
+
+			VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+				Text(details)
+					.font(.customFont(fontFamily, style: .subheadline))
+					.noTruncate()
+				if let relative = relativeShortIfToday(event.date) {
+					Text(relative)
+						.font(.customFont(fontFamily, style: .footnote))
+						.foregroundStyle(.secondary)
+						.noTruncate()
+				}
+			}
+		}
+	}
+
+	@ViewBuilder
+	private func historyListView() -> some View {
+		ScrollViewReader { proxy in
+			List {
+				if demoMode.isEnabled {
+					DemoModeBanner()
+						.listRowInsets(EdgeInsets())
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+				}
+				ForEach(viewModel.groupedHistory, id: \.day) { group in
+					Section(header: sectionHeader(for: group)) {
+						ForEach(group.entries, id: \.id) { event in
+							VStack(alignment: .leading, spacing: entrySpacing) {
+								HStack(alignment: .center, spacing: 8) {
+									Button {
+										editingEntryEvent = event
+									} label: {
+										HStack(alignment: .center) {
+											// Medication color indicator on the left side
+											if !dynamicTypeSize.isAccessibilitySize, viewModel.isShowingAllMedications, let eventMedication = event.medication {
+												// Look up current medication from viewModel to ensure we have the latest data
+												let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+												let rowMedication = currentMedication ?? eventMedication
+
+												let medicationColor: Color = {
+													// First try the medication's custom color
+													if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
+														return Color(hex: hexColor) ?? .accent
+													}
+													// Use app accent color as default
+													return .accent
+												}()
+
+												ZStack {
+													Circle()
+														.fill(medicationColor.opacity(0.15))
+														.frame(width: medicationColorCircleSize, height: medicationColorCircleSize)
+														.shadow(color: medicationColor.opacity(0.4), radius: colorCircleShadowRadius, x: 0, y: 1)
+														.overlay(
+															Circle()
+																.stroke(.white.opacity(0.3), lineWidth: colorCircleStrokeWidth)
+														)
+
+													// Add medication symbol
+													if viewModel.isShowingAllMedications {
+														Image(systemName: rowMedication.effectiveDisplaySymbol)
+															.font(.customFont(fontFamily, style: .caption, weight: .medium))
+															.symbolRenderingMode(.hierarchical)
+															.foregroundStyle(medicationColor)
+													} else if !viewModel.isShowingAllMedications,
+													          let medication = viewModel.selectedMedication
+													{
+														Image(systemName: medication.effectiveDisplaySymbol)
+															.font(.customFont(fontFamily, style: .caption, weight: .medium))
+															.symbolRenderingMode(.hierarchical)
+															.foregroundStyle(medicationColor)
+													}
+												}
+											}
+
+											VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+												// Show medication name when viewing all medications
+												if viewModel.isShowingAllMedications, let eventMedication = event.medication {
+													let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+													let rowMedication = currentMedication ?? eventMedication
+													Text(rowMedication.demoDisplayName)
+														.demoNameRedacted()
+														.font(.customFont(fontFamily, style: .headline))
+														.foregroundStyle(.primary)
+														.noTruncate()
+												}
+
+												historyDoseDetails(for: event)
+											}
+											.fixedSize(horizontal: false, vertical: true)
+											Spacer()
+										}
+										.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+										.contentShape(Rectangle())
+									}
+									.buttonStyle(.plain)
+									.accessibilityLabel(historyAccessibilityLabel(for: event))
+									.accessibilityHint("Edit this dose entry")
+
+									// Show add note button on trailing side if no note exists
+									if displayNote(for: event)?.isEmpty != false {
+										AddNoteButtonComponent(
+											medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
+											onTap: {
+												editingEvent = event
+												editingNoteText = ""
+											}
+										)
+									}
+								}
+
+								if !reflectionHighlights(for: event).isEmpty {
+									let reflectionLayout = dynamicTypeSize.isAccessibilitySize
+										? AnyLayout(VStackLayout(alignment: .leading, spacing: entrySpacing))
+										: AnyLayout(HStackLayout(spacing: sectionHeaderSpacing))
+									reflectionLayout {
+										ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+											Text(highlight)
+												.font(.customFont(fontFamily, style: .caption, weight: .medium))
+												.noTruncate()
+												.foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
+												.padding(.horizontal, reflectionBadgePaddingH)
+												.padding(.vertical, reflectionBadgePaddingV)
+												.background(
+													Capsule()
+														.fill((viewModel.isShowingAllMedications ? Color.accent : (viewModel.selectedMedication?.displayColor ?? .accent)).opacity(0.12))
+												)
+										}
+									}
+								}
+
+								// Show enhanced note display below if it exists
+								if let note = displayNote(for: event), !note.isEmpty {
+									NoteDisplayCardComponent(
+										noteText: note,
+										medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
+										onEdit: {
+											editingEvent = event
+											editingNoteText = displayNote(for: event) ?? ""
+										}
+									)
+									.padding(.top, noteTopSpacing)
+								}
+							}
+							.contentShape(Rectangle())
+							.accessibilityElement(children: .contain)
+							.accessibilityAction(named: "Edit entry") {
+								editingEntryEvent = event
+							}
+							.accessibilityAction(named: "Edit note") {
+								editingEvent = event
+								editingNoteText = displayNote(for: event) ?? ""
+							}
+							.swipeActions(edge: .trailing) {
+								Button {
+									editingEntryEvent = event
+								} label: {
+									Label("Edit", systemSymbol: .pencil)
+								}
+								.tint(.accent)
+
+								Button(role: .destructive) {
+									Task { await viewModel.deleteEvent(event) }
+								} label: {
+									Label("Delete", systemSymbol: .trash)
+								}
+								.tint(.red)
+								.disabled(viewModel.isMutating)
+							}
+						}
+					}
+					.id(group.day)
+				}
+				SupportSuggestionView(onSupportTapped: { showSupportPage = true })
+					.listRowInsets(EdgeInsets())
+					.listRowBackground(Color.clear)
+					.listRowSeparator(.hidden)
+					.environment(\.defaultMinListRowHeight, 0)
+			}
+			.listStyle(.insetGrouped)
+			.onChange(of: scrollTarget) { _, newTarget in
+				if let target = newTarget {
+					withAnimation(reduceMotion ? nil : .default) {
+						proxy.scrollTo(target, anchor: .top)
+					}
+				}
+			}
+		}
+	}
+
+	// MARK: - Section Header Helpers
+
+	@ViewBuilder
+	private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
+		VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+			let headerLayout = dynamicTypeSize.isAccessibilitySize
+				? AnyLayout(VStackLayout(alignment: .leading, spacing: sectionHeaderSpacing))
+				: AnyLayout(HStackLayout())
+			headerLayout {
+				Text(formatDateWithDayOfWeek(group.day))
+					.font(.customFont(fontFamily, style: .headline))
+				Spacer()
+				if let totalText = dayTotalText(for: group.entries) {
+					Text(totalText)
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundStyle(.secondary)
+						.noTruncate()
+				}
+			}
+			if let rel = dayRelativeLabel(for: group.day) {
+				Text(rel)
+					.font(.customFont(fontFamily, style: .footnote))
+					.foregroundStyle(.secondary)
+			}
+		}
+	}
+
+	private func formatDateWithDayOfWeek(_ date: Date) -> String {
+		let dayFormatter = DateFormatter()
+		dayFormatter.dateFormat = "EEE" // Mon, Tue, Wed, etc.
+		let dayOfWeek = dayFormatter.string(from: date)
+
+		let dateString = date.formatted(date: .abbreviated, time: .omitted)
+		return String(localized: "\(dayOfWeek), \(dateString)")
+	}
+
+	private func dayTotalText(for entries: [ANEventConcept]) -> String? {
+		// Don't show totals when showing all medications
+		guard !viewModel.isShowingAllMedications else { return nil }
+
+		let preferredUnit = viewModel.selectedMedication?.prescribedUnit ?? entries.compactMap { $0.dose?.unit }.first
+		if let unit = preferredUnit {
+			let total = entries.compactMap { ev -> Double? in
+				guard let dose = ev.dose, dose.unit == unit else { return nil }
+				return dose.amount
+			}.reduce(0, +)
+			return total > 0 ? unit.localizedCompactAmount(for: total) : nil
+		} else {
+			let total = entries.compactMap { $0.dose?.amount }.reduce(0, +)
+			return total > 0 ? "\(total.formattedAmount)" : nil
+		}
+	}
+
+	private func dayRelativeLabel(for date: Date) -> String? {
+		let cal = Calendar.current
+		if cal.isDateInToday(date) { return String(localized: "Today") }
+		if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
+
+		// Use our centralized relative formatting for other dates
+		let daysDiff = cal.dateComponents([.day], from: date, to: Date()).day ?? 0
+		if daysDiff > 1 && daysDiff <= 7 {
+			return date.relativeFormattedAsPast.capitalized
+		}
+		return nil
+	}
+
+	private func relativeShortIfToday(_ date: Date) -> String? {
+		let cal = Calendar.current
+		guard cal.isDateInToday(date) else { return nil }
+		let diff = Int(Date().timeIntervalSince(date))
+		if diff <= 60 { return String(localized: "Logged just now") }
+		let mins = diff / 60
+		if mins < 60 { return String(localized: "\(mins)m ago") }
+		let hrs = mins / 60
+		return String(localized: "\(hrs)h ago")
+	}
+
+	private func displayNote(for event: ANEventConcept) -> String? {
+		DoseReflectionCodec.displayNote(from: event.note)
+	}
+
+	private func reflectionHighlights(for event: ANEventConcept) -> [String] {
+		guard let reflection = DoseReflectionCodec.reflection(from: event.note) else {
+			return []
+		}
+
+		var highlights: [String] = []
+
+		if let reason = reflection.reason {
+			highlights.append(reason)
+		}
+
+		if let effectiveness = reflection.effectiveness {
+			highlights.append(String(localized: "Effect \(effectiveness)/5"))
+		}
+
+		if let before = reflection.symptomSeverityBefore, let after = reflection.symptomSeverityAfter {
+			highlights.append(String(localized: "Before \(before)/5 to \(after)/5"))
+		}
+
+		if let sideEffect = reflection.sideEffects.first {
+			highlights.append(sideEffect)
+		}
+
+		return Array(highlights.prefix(3))
+	}
+
+	private func historyAccessibilityLabel(for event: ANEventConcept) -> String {
+		let medicationText = eventMedicationName(for: event)
+		let doseText: String = {
+			guard let dose = event.dose else {
+				return String(localized: "dose amount not recorded")
+			}
+
+			return dose.unit.localizedCompactAmount(for: dose.amount)
+		}()
+		let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
+		let noteText: String = {
+			guard let note = displayNote(for: event), !note.isEmpty else {
+				return String(localized: "No note")
+			}
+
+			return String(localized: "Has note")
+		}()
+
+		return String(localized: "\(medicationText), \(doseText), logged \(timeText). \(noteText).")
+	}
+
+	private func eventMedicationName(for event: ANEventConcept) -> String {
+		guard let medicationID = event.medication?.id else {
+			return String(localized: "Medication")
+		}
+
+		if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
+			return currentMedication.demoDisplayName
+		}
+
+		return event.medication?.demoDisplayName ?? String(localized: "Medication")
+	}
+
+	private var mutationErrorPresented: Binding<Bool> {
+		Binding(
+			get: { viewModel.mutationError != nil },
+			set: { if !$0 { viewModel.mutationError = nil } }
+		)
+	}
+
+	@ViewBuilder
+	private func selectionPromptView() -> some View {
+		Spacer()
+		Text("Select a medication to see history.")
+			.font(.customFont(fontFamily, style: .body))
+			.foregroundStyle(.secondary)
+			.frame(maxWidth: .infinity, alignment: .center)
+		Spacer()
+	}
+
+	// MARK: - Private Methods
+
+	private func applyHistoryNavigation() {
+		if let targetDate = navigationManager.historyTargetDate {
+			scrollTarget = Calendar.current.startOfDay(for: targetDate)
+		}
+		if let id = navigationManager.historyTargetMedicationID, let uuid = UUID(uuidString: id) {
+			guard DataStore.shared.medications.contains(where: { $0.id == uuid }) else {
+				navigationManager.clearHistoryNavigation()
+				navigationManager.showWidgetUnavailable = true
+				return
+			}
+			viewModel.selectedMedicationID = uuid.uuidString
+			navigationManager.clearHistoryNavigation()
+		} else { viewModel.ensureValidSelection() }
+	}
+
+	private var floatingQuickLogMedication: ANMedicationConcept? {
+		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
+			useLastLogged: viewModel.isShowingAllMedications,
+			lastLoggedID: DataStore.shared.lastLoggedMedication?.id, from: viewModel.logDosePickerMedications)
+	}
+
+	private var primaryLogDoseButton: some View {
+		let medication = floatingQuickLogMedication
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
+			pendingPickerMedication = nil
+			pickerQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
+	}
+
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		guard floatingQuickLogMedication?.id == medication.id else { return false }
+		let saved = await quickLogCoordinator.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
+	}
+
+	private var historyMedicationMenu: some View {
+		Menu {
+			Picker("Medication", selection: $viewModel.selectedMedicationID) {
+				Text("All medications")
+					.font(.customFont(fontFamily, style: .body))
+					.tag(Optional("all"))
+				ForEach(viewModel.medications, id: \.id) { medication in
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
+						.font(.customFont(fontFamily, style: .body))
+						.tag(Optional(medication.id.uuidString))
+				}
+			}
+		} label: {
+			Label("Filter Medications", systemSymbol: .line3HorizontalDecrease)
+		}
+		.popoverTip(AppTips.isConfigured ? HistoryFilterTip() : nil)
+		.accessibilityLabel("History medication filter")
+		.accessibilityValue(historyScopeTitle)
+	}
+
+	private var historyScopeTitle: String {
+		viewModel.isShowingAllMedications ? String(localized: "All medications") : (viewModel.selectedMedication?.demoDisplayName ?? String(localized: "All medications"))
+	}
+
+	// MARK: - Body
+
+	var body: some View {
+		ZStack {
+			NavigationStack {
+				ZStack(alignment: .bottomTrailing) {
+					VStack(alignment: .leading, spacing: 0) {
+						if demoMode.isEnabled && viewModel.groupedHistory.isEmpty { DemoModeBanner().padding(.horizontal) }
+						if viewModel.isShowingAllMedications {
+							if viewModel.groupedHistory.isEmpty {
+								Spacer()
+								VStack(spacing: emptySectionSpacing) {
+									Text("No dose history found.")
+										.font(.customFont(fontFamily, style: .body))
+										.foregroundStyle(.secondary)
+										.frame(maxWidth: .infinity, alignment: .center)
+
+									Text(viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to start recording doses.") : String(localized: "Use Log Dose to choose a medication and record a dose you have taken."))
+										.font(.customFont(fontFamily, style: .subheadline))
+										.foregroundStyle(.secondary)
+										.multilineTextAlignment(.center)
+										.padding(.horizontal)
+								}
+								Spacer()
+							} else {
+								historyListView()
+							}
+						} else if let selected = viewModel.selectedMedication {
+							if viewModel.groupedHistory.isEmpty {
+								emptyHistoryView(for: selected)
+							} else {
+								historyListView()
+							}
+						} else {
+							selectionPromptView()
+						}
+					}
+					.safeAreaInset(edge: .bottom, spacing: 0) {
+						if !viewModel.logDosePickerMedications.isEmpty {
+							Color.clear.frame(height: floatingButtonClearance)
+						}
+					}
+
+					if !viewModel.logDosePickerMedications.isEmpty {
+						primaryLogDoseButton
+					}
+
+				}
+				.customNavigationTitle("History", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
+				.navigationSubtitle(Text(historyScopeTitle).font(.customFont(fontFamily, style: .subheadline)))
+				.toolbar {
+					ToolbarItemGroup(placement: .topBarTrailing) {
+						historyMedicationMenu
+						Button {
+							showDatePicker = true
+						} label: {
+							Label("Jump to Date", systemSymbol: .calendar)
+						}
+						.disabled(viewModel.groupedHistory.isEmpty)
+						.accessibilityLabel("Jump to date")
+					}
+				}
+				.tint(.accent)
+				.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
+				.overlay(alignment: .top) {
+					if quickLogCoordinator.showQuickLogToast {
+						QuickLogToastView(
+							medicationName: quickLogCoordinator.quickLogMedicationName,
+							doseAmount: quickLogCoordinator.quickLogDoseAmount,
+							doseUnit: quickLogCoordinator.quickLogDoseUnit,
+							accentColor: quickLogCoordinator.quickLogAccentColor,
+							isVisible: quickLogCoordinator.showQuickLogToast,
+							feedback: quickLogCoordinator.quickLogFeedback,
+							onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
+							onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
+					}
+				}
+
+				.onAppear { applyHistoryNavigation() }
+				.onChange(of: navigationManager.historyRequestID) { _, _ in applyHistoryNavigation() }
+				.onReceive(timer) { _ in
+					currentTime = Date()
+				}
+				.sheet(isPresented: $showDatePicker) {
+					NavigationStack {
+						ScrollView {
+							DatePicker(
+								"Select Date",
+								selection: $selectedDate,
+								displayedComponents: [.date]
+							)
+							.datePickerStyle(.graphical)
+							.padding(.horizontal)
+
+						}
+						.customNavigationTitle("Jump to Date")
+						.toolbar {
+							ToolbarItem(placement: .cancellationAction) {
+								Button {
+									showDatePicker = false
+								} label: {
+									Image(systemSymbol: .xmark)
+								}
+								.accessibilityLabel("Cancel date selection")
+							}
+
+							ToolbarItem(placement: .confirmationAction) {
+								Button {
+									scrollTarget = Calendar.current.startOfDay(for: selectedDate)
+									showDatePicker = false
+								} label: {
+									Image(systemSymbol: .checkmark)
+								}
+								.accessibilityLabel("Jump to selected date")
+							}
+						}
+						.tint(.accent)
+					}
+					.dynamicDetent()
+				}
+				.sheet(isPresented: $showLogDosePicker, onDismiss: {
+					pickerQuery = ""
+					if let medication = pendingPickerMedication {
+						pendingPickerMedication = nil
+						logMedication = viewModel.logDosePickerMedications.first { $0.id == medication.id }
+					}
+				}) {
+					LogDosePickerSheet(medications: viewModel.logDosePickerMedications, query: $pickerQuery,
+						onSelect: { medication in
+							pendingPickerMedication = medication
+							showLogDosePicker = false
+						}, onQuickLog: { medication in
+							await quickLogCoordinator.quickLog(medication: medication)
+						}, onQuickLogSuccess: { _ in
+							AppTips.didQuickLog()
+							showLogDosePicker = false
+						})
+				}
+				.sheet(item: $logMedication, onDismiss: {
+					if logMedication == nil { doseLogSession.reset() }
+				}) { med in
+					LogDoseView(medication: med, source: "history_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+						let saved = await quickLogCoordinator.logDose(med: med, dose: dose, event: event, source: "history_sheet", operationID: operationID)
+						if saved { logMedication = nil }
+						return saved
+					}
+				}
+				.sheet(item: $editingEvent) { event in
+					NavigationStack {
+						VStack(spacing: 0) {
+							Form {
+								if let message = viewModel.mutationError {
+									Section("Update Incomplete") {
+										Text(message).font(.customFont(fontFamily, style: .body))
+									}
+								}
+								Section(header: Text("Event Details").font(.customFont(fontFamily, style: .subheadline))) {
+									HStack {
+										Text("Date")
+										Spacer()
+										Text(event.date.formatted(date: .abbreviated, time: .shortened))
+											.foregroundStyle(.secondary)
+											.noTruncate()
+									}
+									if let dose = event.dose {
+										HStack {
+											Text("Dose")
+											Spacer()
+											Text(dose.unit.localizedCompactAmount(for: dose.amount))
+												.foregroundStyle(.secondary)
+												.noTruncate()
+										}
+									}
+								}
+
+								Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
+									if !reflectionHighlights(for: event).isEmpty {
+										VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+											Text("Saved context from this dose stays attached when you update the note.")
+												.font(.customFont(fontFamily, style: .caption))
+												.foregroundStyle(.secondary)
+
+											VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+												ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
+													Text(highlight)
+														.font(.customFont(fontFamily, style: .caption, weight: .medium))
+														.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+														.padding(.horizontal, reflectionBadgePaddingH)
+														.padding(.vertical, reflectionBadgePaddingV)
+														.background(
+															Capsule()
+																.fill((viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.12))
+														)
+												}
+											}
+										}
+										.padding(.bottom, sectionHeaderSpacing)
+									}
+
+									TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
+										.lineLimit(4 ... 8)
+										.font(.customFont(fontFamily, style: .body))
+										.focused($isNoteFieldFocused)
+								}
+							}
+							.scrollDismissesKeyboard(.interactively)
+							.disabled(viewModel.isMutating)
+							.font(.customFont(fontFamily, style: .body))
+
+							// Sticky save button container
+							VStack(spacing: 0) {
+								Divider()
+									.background(.separator.opacity(0.5))
+
+								Button(action: {
+									if let event = editingEvent {
+										Task {
+											var updatedEvent = event
+											updatedEvent.note = (try? DoseReflectionCodec.updatingNote(in: event.note, with: editingNoteText)) ??
+												editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+											if await viewModel.updateEventNote(updatedEvent) {
+												editingEvent = nil
+												editingNoteText = ""
+											}
+										}
+									}
+								}) {
+									HStack(spacing: entrySpacing) {
+										Image(systemSymbol: .checkmarkCircle)
+											.font(.customFont(fontFamily, style: .body))
+										Text("Save Note")
+											.font(.customFont(fontFamily, style: .headline))
+									}
+									.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+									.frame(maxWidth: .infinity)
+									.padding(.vertical, 14)
+									.background(
+										RoundedRectangle(cornerRadius: 12, style: .continuous)
+											.fill(LinearGradient(
+												colors: [
+													Color.accent.dynamicFilledButtonBackground,
+													Color.accent.dynamicFilledButtonBackground,
+												],
+												startPoint: .topLeading,
+												endPoint: .bottomTrailing
+											))
+											.shadow(color: (viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.3), radius: 4, x: 0, y: 2)
+									)
+								}
+								.padding(.horizontal, fabPaddingH)
+								.disabled(viewModel.isMutating)
+								.padding(.vertical, pickerContainerPaddingV)
+							}
+							.background(.regularMaterial)
+						}
+						.customNavigationTitle("Edit Note")
+						.toolbar {
+							ToolbarItem(placement: .topBarTrailing) {
+								Button {
+									if editingNoteText != (displayNote(for: event) ?? "") {
+										showDiscardNoteChanges = true
+									} else {
+										editingEvent = nil
+										editingNoteText = ""
+									}
+								} label: {
+									Image(systemSymbol: .xmark)
+								}
+								.accessibilityLabel("Close note editor")
+								.disabled(viewModel.isMutating)
+							}
+						}
+						.tint(.accent)
+						.confirmationDialog("Discard note changes?", isPresented: $showDiscardNoteChanges, titleVisibility: .visible) {
+							Button("Discard Changes", role: .destructive) {
+								editingEvent = nil
+								editingNoteText = ""
+							}
+							Button("Keep Editing", role: .cancel) {}
+						}
+					}
+					.presentationDetents([.large])
+					.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
+						Button("OK", role: .cancel) { viewModel.mutationError = nil }
+					} message: {
+						Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
+					}
+					.interactiveDismissDisabled(viewModel.isMutating || editingNoteText != (displayNote(for: event) ?? ""))
+					.onAppear {
+						editingNoteText = displayNote(for: event) ?? ""
+						// Auto-focus the note field when sheet opens - increased delay for reliability
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+							isNoteFieldFocused = true
+						}
+					}
+				}
+			}
+			.onAppear {
+				// Ensure we have a valid medication selected
+				viewModel.ensureValidSelection()
+			}
+
+
+		}
+		.sheet(item: $editingEntryEvent) { event in
+			HistoryEntryEditor(event: event, viewModel: viewModel) {
+				editingEntryEvent = nil
+			}
+		}
+		.alert("Couldn’t Update History", isPresented: Binding(
+			get: { viewModel.mutationError != nil && editingEvent == nil && editingEntryEvent == nil },
+			set: { if !$0 { viewModel.mutationError = nil } }
+		)) {
+			Button("OK", role: .cancel) { viewModel.mutationError = nil }
+		} message: {
+			Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
+		}
+	}
+}
+
+
+/// Edit state belongs to this presentation and starts from its exact saved event.
+/// Separate parent state can otherwise be captured before the first sheet renders.
+private struct HistoryEntryEditor: View {
+	let event: ANEventConcept
+	@ObservedObject var viewModel: MedicationHistoryViewModel
+	let onDismiss: () -> Void
+
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@State private var editingEntryDate: Date
+	@State private var editingEntryAmount: Double
+	@State private var editingEntryUnit: ANUnitConcept
+	@State private var showDiscardEntryChanges = false
+
+	@ScaledMetric private var rowSpacing: CGFloat = 12
+	@ScaledMetric private var entrySpacing: CGFloat = 8
+	@ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
+
+	init(event: ANEventConcept, viewModel: MedicationHistoryViewModel, onDismiss: @escaping () -> Void) {
+		self.event = event
+		self.viewModel = viewModel
+		self.onDismiss = onDismiss
+		_editingEntryDate = State(initialValue: event.date)
+		_editingEntryAmount = State(initialValue: event.dose?.amount ?? 1.0)
+		_editingEntryUnit = State(initialValue: event.dose?.unit ?? .unit)
+	}
+
+	private func entryHasChanges(for event: ANEventConcept) -> Bool {
+		editingEntryDate != event.date ||
+			editingEntryAmount != (event.dose?.amount ?? 1.0) ||
+			editingEntryUnit != (event.dose?.unit ?? .unit)
+	}
+
+	private var mutationErrorPresented: Binding<Bool> {
+		Binding(
+			get: { viewModel.mutationError != nil },
+			set: { if !$0 { viewModel.mutationError = nil } }
+		)
+	}
+
+	var body: some View {
+		NavigationStack {
+			Form {
+				if let message = viewModel.mutationError {
+					Section("Update Incomplete") {
+						Text(message).font(.customFont(fontFamily, style: .body))
+					}
+				}
+				Section(header: Text("Dose Entry Details").font(.customFont(fontFamily, style: .subheadline))) {
+					HStack {
+						Text("Medication")
+						Spacer()
+						if let eventMedication = event.medication {
+							let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
+							let medication = currentMedication ?? eventMedication
+							Text(medication.demoDisplayName)
+								.demoNameRedacted()
+								.foregroundStyle(.secondary)
+								.noTruncate()
+						}
+					}
+
+					VStack(alignment: .leading, spacing: rowSpacing) {
+						Text("Dose Amount")
+							.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+
+						HStack(spacing: rowSpacing) {
+							Button(action: {
+								if editingEntryAmount > 0.5 {
+									editingEntryAmount -= 0.5
+								}
+							}) {
+								Image(systemSymbol: .minusCircleFill)
+									.font(.customFont(fontFamily, style: .title2))
+									.foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.frame(minWidth: 44, minHeight: 44)
+							}
+							.buttonStyle(.borderless)
+							.accessibilityLabel("Decrease dose amount")
+							.accessibilityHint("Decrease by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
+							.disabled(editingEntryAmount <= 0.5)
+
+							VStack(spacing: sectionHeaderSpacing) {
+								Text(editingEntryAmount.formattedAmount)
+									.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+									.noTruncate()
+									.contentTransition(.numericText())
+
+								Text(editingEntryUnit.localizedDisplayName)
+									.font(.customFont(fontFamily, style: .caption))
+									.foregroundStyle(.secondary)
+									.textCase(.uppercase)
+									.noTruncate()
+							}
+							.frame(minWidth: 80)
+
+							Button(action: {
+								if editingEntryAmount < 100 {
+									editingEntryAmount += 0.5
+								}
+							}) {
+								Image(systemSymbol: .plusCircleFill)
+									.font(.customFont(fontFamily, style: .title2))
+									.foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.frame(minWidth: 44, minHeight: 44)
+							}
+							.buttonStyle(.borderless)
+							.accessibilityLabel("Increase dose amount")
+							.accessibilityHint("Increase by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
+							.disabled(editingEntryAmount >= 100)
+						}
+						.frame(maxWidth: .infinity)
+
+						ScrollView(.horizontal, showsIndicators: false) {
+							HStack(spacing: entrySpacing) {
+								ForEach(ANUnitConcept.allCases, id: \.self) { unit in
+									Button(action: {
+										withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
+											editingEntryUnit = unit
+										}
+									}) {
+										Text(unit.localizedDisplayName)
+											.font(.customFont(fontFamily, style: .caption, weight: editingEntryUnit == unit ? .semibold : .regular))
+											.padding(.horizontal, rowSpacing)
+											.padding(.vertical, entrySpacing)
+											.frame(minHeight: 44)
+											.background(
+												Capsule()
+													.fill(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonBackground : Color.secondary.opacity(0.1))
+											)
+											.foregroundStyle(editingEntryUnit == unit ? Color.accent.dynamicFilledButtonForeground : .primary)
+									}
+									.buttonStyle(.borderless)
+									.accessibilityAddTraits(editingEntryUnit == unit ? [.isSelected] : [])
+								}
+							}
+						}
+					}
+
+					DatePicker(
+						"Time",
+						selection: $editingEntryDate,
+						displayedComponents: [.date, .hourAndMinute]
+					)
+				}
+
+				Section {
+					Button(role: .destructive) {
+						Task {
+							if await viewModel.deleteEvent(event) {
+								onDismiss()
+							}
+						}
+					} label: {
+						Label("Delete Entry", systemSymbol: .trash)
+							.frame(maxWidth: .infinity)
+							.foregroundStyle(.red)
+					}
+					.disabled(viewModel.isMutating)
+				}
+			}
+			.font(.customFont(fontFamily, style: .body))
+			.disabled(viewModel.isMutating)
+			.customNavigationTitle("Edit Entry")
+			.toolbar {
+				ToolbarItem(placement: .cancellationAction) {
+					Button {
+						if entryHasChanges(for: event) {
+							showDiscardEntryChanges = true
+						} else {
+							onDismiss()
+						}
+					} label: {
+						Image(systemSymbol: .xmark)
+					}
+					.accessibilityLabel("Close entry editor")
+					.disabled(viewModel.isMutating)
+				}
+				ToolbarItem(placement: .confirmationAction) {
+					Button {
+						guard entryHasChanges(for: event) else {
+							onDismiss()
+							return
+						}
+						Task {
+							let saved = await viewModel.updateEvent(
+								event,
+								newDate: editingEntryDate,
+								newAmount: editingEntryAmount,
+								newUnit: editingEntryUnit
+							)
+							if saved {
+								onDismiss()
+							}
+						}
+					} label: {
+						Image(systemSymbol: .checkmark)
+					}
+					.accessibilityLabel("Save entry changes")
+					.disabled(viewModel.isMutating)
+				}
+			}
+			.tint(.accent)
+			.confirmationDialog("Discard entry changes?", isPresented: $showDiscardEntryChanges, titleVisibility: .visible) {
+				Button("Discard Changes", role: .destructive) { onDismiss() }
+				Button("Keep Editing", role: .cancel) {}
+			}
+		}
+		.dynamicDetent()
+		.alert("Couldn’t Update History", isPresented: mutationErrorPresented) {
+			Button("OK", role: .cancel) { viewModel.mutationError = nil }
+		} message: {
+			Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
+		}
+		.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
+	}
 }
 
 private extension String {
-    var nilIfEmpty: String? {
-        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
+	var nilIfEmpty: String? {
+		let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+		return trimmed.isEmpty ? nil : trimmed
+	}
 }
 
 #if DEBUG
-    #Preview {
-        MedicationHistoryView()
-    }
+	#Preview {
+		MedicationHistoryView()
+	}
 #endif

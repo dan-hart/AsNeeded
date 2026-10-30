@@ -1,0 +1,45 @@
+import SwiftUI
+import Combine
+
+extension Color {
+	static var accent: Color { Color("AccentColor") }
+}
+
+final class WCSender: ObservableObject {
+	@Published var isConnected = true
+	@Published var medications: [WatchMedication] = [
+		WatchMedication(id: UUID(uuidString: "10000000-0000-0000-0000-000000000001") ?? UUID(), displayName: "Headache Help", quantity: 42, prescribedDoseAmount: 1, prescribedUnit: "tablet", canTakeNow: true, statusMessage: "Saved limits met based on logged doses. Follow your prescription and care instructions."),
+		WatchMedication(id: UUID(uuidString: "10000000-0000-0000-0000-000000000002") ?? UUID(), displayName: "Breathe Easy", quantity: 72, prescribedDoseAmount: 2, prescribedUnit: "puff", canTakeNow: false, nextDoseDate: Date().addingTimeInterval(150 * 60)),
+		WatchMedication(id: UUID(uuidString: "10000000-0000-0000-0000-000000000003") ?? UUID(), displayName: "Wind Down", quantity: 14, prescribedDoseAmount: 0.5, prescribedUnit: "tablet", canTakeNow: true, statusMessage: "Saved limits met based on logged doses. Follow your prescription and care instructions.")
+	]
+	@Published var hasLoadedMedications = true
+	@Published var loadErrorMessage: String?
+	@Published var actionMessage: String?
+	@Published var isSendingAction = false
+	enum ActionOutcome { case saved, queued, failed }
+	func sendMessage(key: String, value: Any) { hasLoadedMedications = true }
+	@MainActor func sendAction(key: String, value: Any) async -> ActionOutcome { .failed }
+}
+
+@main
+struct CaptureApp: App {
+	@StateObject private var sender = WCSender()
+	@State private var amount = 1.0
+	@State private var quantity = 42.0
+	private var shot: String { ProcessInfo.processInfo.arguments.last ?? "medications" }
+	var body: some Scene {
+		WindowGroup {
+			Group {
+				if let medication = sender.medications.first {
+					switch shot {
+					case "details": NavigationStack { MedicationDetailView(medication: medication) }
+					case "dose": DoseLoggerView(medication: medication, doseAmount: $amount)
+					case "quantity": QuantityEditorView(medication: medication, quantity: $quantity)
+					default: MedicationListView()
+					}
+				}
+			}
+			.environmentObject(sender)
+		}
+	}
+}

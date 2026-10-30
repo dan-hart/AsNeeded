@@ -28,11 +28,16 @@ struct LogMedicationIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+		try await DataStore.shared.prepareForAccess()
+		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
         // Determine which medication to use
         let targetMedication: ANMedicationConcept
 
         if let providedMedication = medication {
-            targetMedication = providedMedication.medication
+			guard let current = DataStore.shared.medications.first(where: { $0.id == providedMedication.medication.id }) else {
+				return .result(dialog: IntentDialog("That medication is no longer available."))
+			}
+			targetMedication = current
             logger.info("Using entity medication")
         } else if let name = medicationName, !name.isEmpty {
             logger.info("Searching for medication by provided name")
@@ -70,20 +75,20 @@ struct LogMedicationIntent: AppIntent {
             )
 
             // Log the dose
-            try await DataStore.shared.addEvent(event)
+            try await DataStore.shared.recordDose(event)
 
             logger.info("Successfully logged medication dose from intent")
 
             // Format response message
-            let amountText = doseAmount == 1.0 ? "1" : String(format: "%.1f", doseAmount)
-            let unitText = selectedUnit.displayName
+			let amountText = selectedUnit.localizedCompactAmount(for: doseAmount)
             let medicationText = if let nickname = targetMedication.nickname, !nickname.isEmpty {
                 nickname
             } else {
                 targetMedication.clinicalName
             }
 
-            return .result(dialog: IntentDialog("Logged \(amountText) \(unitText) of \(medicationText)"))
+            let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(amountText)")
+            return .result(dialog: IntentDialog("\(recordedDose) · \(medicationText)"))
 
         } catch {
             logger.logPrivacySafeError("Failed to log medication dose", error: error)
@@ -137,6 +142,17 @@ struct AsNeededShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Check Daily Usage",
             systemImageName: "chart.bar.fill"
+        )
+        AppShortcut(
+            intent: GetNextDoseIntent(),
+            phrases: [
+                "When can I take my medication in \(.applicationName)",
+                "When is my next dose in \(.applicationName)",
+                "When do I need to take \(\.$medication) in \(.applicationName)",
+                "Check my next dose in \(.applicationName)",
+            ],
+            shortTitle: "Check Next Dose",
+            systemImageName: "clock.fill"
         )
         AppShortcut(
             intent: CheckRefillStatusIntent(),

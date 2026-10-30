@@ -1,0 +1,39 @@
+{
+	"appId": "6714469235",
+	"versionId": "31449f69-4ebe-47a5-aad1-0191cde0595c",
+	"appInfoId": "34d88d62-9e48-4df9-9f53-d0f117c12a0e",
+	"version": "1.2.0",
+	"build": "323",
+	"storeCopyTranslatedLocales": 37,
+	"listingLocales": 38,
+	"exactFieldMatches": 342,
+	"englishName": "As Needed.",
+	"englishUnchanged": true,
+	"machineAssistedNotNativeSpeakerCertification": true,
+	"canonicalMetadataValidation": {
+		"errors": 0,
+		"warnings": 0
+	},
+	"submissionPublicApi": {
+		"errors": 0,
+		"warnings": 3,
+		"infos": 2,
+		"blocking": 0
+	},
+	"remainingAdvisories": [
+		"Optional subscription promotional images are absent for Advocate, Champion and Supporter."
+	],
+	"manualFirefoxVerification": {
+		"appPrivacyPublished": true,
+		"freeAndPaidAgreementsActive": true,
+		"bankingTaxAndDSAActive": true
+	},
+	"genericPublicApiPrivacyAdvisoryResolvedBy": "Signed-in Firefox App Privacy page visibly shows publication. The CLI\u2019s separate cached web session remains expired; no cookie export/import was used.",
+	"firstSubscriptionReviewAttachment": "Not required; all three existing products are already APPROVED.",
+	"readyForSubmission": true,
+	"submittedForReview": false,
+	"released": false,
+	"verifiedAt": "2026-10-30T16:23:19.743230+00:00",
+	"screenshotsPreserved": 1064,
+	"creativePlacementsPreserved": 76
+}

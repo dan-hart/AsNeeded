@@ -1,12 +1,12 @@
 # AsNeeded
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2018.0%2B-blue.svg)](https://developer.apple.com/ios/)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2026.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
 
 Track as-needed medications with privacy and clarity.
 
-AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, configurable low-stock and refill awareness, last-dose history, and clear insights into how medication use changes over time.
+AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, saved safety guardrails, refill awareness, and clear insights so you always know what you took, when you took it, when you may be able to take more, and how your patterns are changing over time.
 
 ## Table of Contents
 - [Core Values](#core-values)
@@ -25,7 +25,7 @@ AsNeeded is a privacy-first iOS app designed to help people track as-needed medi
 
 AsNeeded is built on three fundamental principles:
 
-- **Privacy First**: Your health data stays private, local, and secure
+- **Privacy First**: Local medication records, with sharing and backups you control
 - **Always Free**: All features free forever, no ads, no subscriptions required
 - **Open Source**: Transparent, inspectable, and community-driven
 
@@ -37,10 +37,11 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 
 ### Key Features
 
-- **Privacy-first storage and insights**: Local-first data, no tracking, full export/import, and on-device Trends questions that never send your logs off-device for processing
+- **Privacy-first storage and insights**: Local-first data, no tracking, and full export/import
+- **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
 - **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
-- **Refill awareness**: Inventory tracking, configurable low-stock warnings, refill status, and projected run-out dates
-- **History and insights**: Last-dose summaries, visual charts, searchable history, clinician-friendly export, and private question-based exploration of your data
+- **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
+- **Usage insights**: Visual charts, searchable history, and clinician-friendly export
 - **Ambient access**: Home Screen widgets, Lock Screen widgets, interactive quick actions, and watchOS support
 - **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
 
@@ -49,8 +50,8 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
 ## Getting Started
 
 ### Requirements
-- macOS 14.0+ with Xcode 16+
-- iOS 18.0+ device or simulator
+- Xcode 26 or later, with the macOS version required by that Xcode release
+- iOS 26.0+ device or simulator
 - Swift 6
 
 ### Installation
@@ -75,24 +76,20 @@ Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro
    - Go to Signing & Capabilities
    - Select your development team
 
-4. **Optional: enable tipping and subscriptions**
-   - The app builds and runs from a clean clone with no secrets. Without a key the Support screen reports that
-     tipping is unavailable.
-   - To exercise RevenueCat, copy `Config/Secrets.example.xcconfig` to `Config/Secrets.xcconfig` (gitignored) and
-     paste your RevenueCat public SDK key, or set `REVENUECAT_API_KEY` as an environment variable on the scheme.
-
-5. **Build and run**
-   - Select target device/simulator (iOS 18+)
+4. **Build and run**
+   - Select target device/simulator (iOS 26+)
    - Press ⌘R or click the Run button
 
-6. **First launch**
+5. **First launch**
    - Add your first medication from the Home or Medications screen
-   - Configure its typical dose and low-stock threshold (optional)
-   - Log your first dose to see last-dose history and usage insights in action
+   - Configure its typical dose, interval, and refill settings (optional)
+   - Log your first dose to see the next-dose guidance and history summaries in action
 
 ---
 
 ## Development
+
+**1.2.0 is feature-frozen as of October 27, 2026.** Remaining work is testing, bug fixes, and restrained refinement of existing flows. See the [stabilization checklist](docs/testing/1.2.0-stabilization.md).
 
 ### Building from Command Line
 ```bash
@@ -112,6 +109,14 @@ xcodebuild test -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=
 - Colors: Use `.accent` for interactive elements
 
 ---
+
+### Optional purchase configuration
+
+A clean checkout builds without private packages or purchase configuration. To enable tips and subscriptions, copy `Config/Secrets.example.xcconfig` to the gitignored `Config/Secrets.xcconfig` and replace its placeholder with your RevenueCat public SDK key. Without a usable key, the Support screen explains that purchases are unavailable; medication tracking continues to work.
+
+Before a release, run `./scripts/verify-release-key.sh --local`, then verify the exported `.app`, `.xcarchive`, or `.ipa` with the same script. `scripts/prod-build.sh` requires configuration unless `SKIP_REVENUECAT_KEY_CHECK=1` is explicitly set for a keyless build.
+
+The Build workflow compiles the Debug iOS simulator scheme from a fresh checkout on pushes and pull requests targeting `main`, `develop`, or `task/v1.2.0`, and checks configuration in the built app. Pull requests exercise the keyless path. This compile check does not run tests or verify release signing and distribution.
 
 ## Project Structure
 
@@ -208,7 +213,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## Privacy
 
-Privacy-first design: local storage only, no data collection, no analytics, no ads, full export control, open source transparency. When supported and enabled, question-based Trends exploration is processed entirely on device. Your health data belongs to you.
+Medication records and insights are stored and calculated locally. Optional medication searches use NIH RxNorm; support purchases use Apple and RevenueCat. You control exports and backup destinations. There are no ads or remote medication-usage analytics. See [the privacy policy](PRIVACY.md) for data handling and third-party services.
 
 ---
 
@@ -240,7 +245,7 @@ AsNeeded is designed to be a standalone medication tracking platform. Adding Hea
 Apple does not allow third-party apps to write medication data to HealthKit. This would force users to log doses in the Health app but view trends in AsNeeded—a poor and confusing user experience.
 
 ### 3. Privacy & Data Control
-Users choose AsNeeded for its simplicity and complete data privacy. Your medication data stays entirely on your device, never touching the cloud or external services. You have full control over your sensitive health information.
+Medication records use local app storage. Paired Watch features transfer selected records between devices, and exports or backups go to destinations you choose, including cloud-backed folders. Medication lookup and support purchases use external services as described in [the privacy policy](PRIVACY.md).
 
 ---
 

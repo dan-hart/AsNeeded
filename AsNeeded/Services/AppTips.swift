@@ -1,0 +1,88 @@
+import DHLoggingKit
+import SFSafeSymbols
+import SwiftUI
+import TipKit
+
+/// Native, dismissible onboarding. No medication names or dose history enter the tip store.
+struct LogDoseTip: Tip {
+	@Parameter static var hasLearnedQuickLog: Bool = false
+	@Parameter static var hasOpenedDosePicker: Bool = false
+
+	var title: Text { Text("Two ways to log a dose") }
+	var message: Text? {
+		Text("Tap to choose a medication. Hold to log a default dose: History and Trends use your selected medication; otherwise, the last medication you logged.")
+	}
+	var image: Image? { Image(systemSymbol: .handTapFill) }
+	var rules: [Rule] {
+		#Rule(Self.$hasLearnedQuickLog) { $0 == false }
+	}
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct HistoryFilterTip: Tip {
+	var title: Text { Text("Find a medication's history") }
+	var message: Text? { Text("Choose a medication here, or use All to see every recorded dose.") }
+	var rules: [Rule] {
+		#Rule(LogDoseTip.$hasOpenedDosePicker) { $0 == true }
+	}
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct MedicationAppearanceTip: Tip {
+	var title: Text { Text("Make it yours") }
+	var message: Text? { Text("Tap here to choose a color and icon for this medication. Customizing is optional.") }
+	var image: Image? { Image(systemSymbol: .paintbrushPointedFill) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct TrendsRangeTip: Tip {
+	var title: Text { Text("Choose the bigger picture") }
+	var message: Text? { Text("Switch between 14, 30, and 90 complete days to explore your recorded doses.") }
+	var rules: [Rule] {
+		#Rule(LogDoseTip.$hasOpenedDosePicker) { $0 == true }
+	}
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct DoseTimeTip: Tip {
+	var title: Text { Text("Logging an earlier dose?") }
+	var message: Text? { Text("Tap the date and time to choose when you took it, or use a quick time below.") }
+	var image: Image? { Image(systemSymbol: .clock) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+struct BackupDiscoveryTip: Tip {
+	var title: Text { Text("Keep a copy of your records") }
+	var message: Text? { Text("Find automatic backups and export options in Data & Privacy. You choose where to save them.") }
+	var image: Image? { Image(systemSymbol: .externaldrive) }
+	var options: [any TipOption] { MaxDisplayCount(1) }
+}
+
+@MainActor
+enum AppTips {
+	private(set) static var isConfigured = false
+
+	static func configure(defaults: UserDefaults = .standard) {
+		guard !isConfigured else { return }
+		do {
+			try Tips.configure([.displayFrequency(.daily)])
+			isConfigured = true
+			// Existing users who learned or dismissed the former hint are not taught it again.
+			LogDoseTip.hasLearnedQuickLog = defaults.bool(forKey: UserDefaultsKeys.hasDiscoveredQuickLog)
+		} catch {
+			DHLogger.ui.logPrivacySafeError("Unable to configure onboarding tips", error: error)
+		}
+	}
+
+	static func didOpenDosePicker() {
+		guard isConfigured else { return }
+		LogDoseTip.hasOpenedDosePicker = true
+	}
+
+	static func didQuickLog() {
+		UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hasDiscoveredQuickLog)
+		guard isConfigured else { return }
+		LogDoseTip.hasLearnedQuickLog = true
+		LogDoseTip().invalidate(reason: .actionPerformed)
+	}
+}

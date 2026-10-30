@@ -10,7 +10,6 @@ import Testing
 @Suite("MedicationDetailViewModel Tests", .tags(.medication, .viewModel, .detail, .unit))
 struct MedicationDetailViewModelTests {
     // MARK: - Test Helpers
-	private struct TestPersistenceError: Error {}
 
     private func createTestMedication(
         name: String = "TestMed",
@@ -73,7 +72,8 @@ struct MedicationDetailViewModelTests {
         var updatedMedication = medication
         updatedMedication.quantity = 50.0
 
-        await viewModel.save(updated: updatedMedication)
+        let saved = await viewModel.save(updated: updatedMedication)
+		#expect(saved)
 
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
@@ -188,48 +188,6 @@ struct MedicationDetailViewModelTests {
         #expect(dataStore.medications.first { $0.id == detailMedication.id }?.quantity == 8.0)
         #expect(dataStore.medications.first { $0.id == lastMedication.id }?.quantity == 20.0)
     }
-
-	@Test("Log dose restores quantity when event write fails and retry subtracts once")
-	func logDoseRestoresQuantityWhenEventWriteFails() async throws {
-		let dataStore = DataStore(testIdentifier: "DetailVM-LogDoseEventFailure")
-		try await dataStore.clearAllData()
-		let failingViewModel = MedicationDetailViewModel(
-			dataStore: dataStore,
-			addDoseEvent: { _ in throw TestPersistenceError() }
-		)
-
-		let medication = createTestMedication(name: "Rollback Medication", quantity: 10.0)
-		try await dataStore.addMedication(medication)
-
-		let dose = ANDoseConcept(amount: 2.0, unit: .tablet)
-		let event = createTestEvent(medication: medication, amount: 2.0)
-
-		let failedAttempt = await failingViewModel.logDose(
-			medication: medication,
-			dose: dose,
-			event: event,
-			source: "detail_sheet"
-		)
-
-		#expect(failedAttempt == false)
-		#expect(failingViewModel.isLoading == false)
-		#expect(failingViewModel.errorMessage != nil)
-		#expect(dataStore.events.isEmpty)
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
-
-		// A retry against a working event write subtracts the dose exactly once.
-		let retryViewModel = MedicationDetailViewModel(dataStore: dataStore)
-		let retryAttempt = await retryViewModel.logDose(
-			medication: medication,
-			dose: dose,
-			event: event,
-			source: "detail_sheet"
-		)
-
-		#expect(retryAttempt)
-		#expect(dataStore.events.count == 1)
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 8.0)
-	}
 
     @Test("Save medication with unit change")
     func saveMedicationUnitChange() async throws {

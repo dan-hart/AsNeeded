@@ -76,21 +76,6 @@ final class MedicationNotificationUrgencyStore {
 		return persistVerified(preferences)
 	}
 
-	var migrationCompleted: Bool {
-		defaults.object(
-			forKey: UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted
-		) as? Bool == true
-	}
-
-	@discardableResult
-	func markMigrationCompleted() -> Bool {
-		defaults.set(
-			true,
-			forKey: UserDefaultsKeys.medicationNotificationUrgencyMigrationCompleted
-		)
-		return migrationCompleted
-	}
-
 	static func filteredPreferences(
 		_ preferences: [String: Bool],
 		validMedicationIDs: some Sequence<UUID>

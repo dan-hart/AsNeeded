@@ -6,69 +6,76 @@ import SFSafeSymbols
 import SwiftUI
 
 struct MedicationListView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@State private var showSupportPage = false
+	@StateObject private var doseLogSession = LogDoseView.Session()
+	@StateObject private var navigationManager = NavigationManager.shared
     @Binding var navigationPath: NavigationPath
     @StateObject private var viewModel = MedicationListViewModel()
+	@StateObject private var medicationEditSession = MedicationEditViewModel.Session()
+	@Environment(\.scenePhase) private var scenePhase
     @Environment(\.fontFamily) private var fontFamily
-    @AppStorage(UserDefaultsKeys.hasDiscoveredQuickLog) private var hasDiscoveredQuickLog = false
-    @State private var showLogDosePicker = false
-    /// Medication chosen in the picker; the Log Dose sheet opens for it once the picker has dismissed.
-    @State private var pendingPickerMedication: ANMedicationConcept?
-    @State private var showQuickLogHint = false
+	@State private var quickLogError = false
+	@State private var showLogDosePicker = false
+	@State private var pendingPickerMedication: ANMedicationConcept?
+	@State private var logDoseSearchQuery = ""
     private let hapticsManager = HapticsManager.shared
 
-    @ScaledMetric private var emptyStateSpacing: CGFloat = 32
-    @ScaledMetric private var emptyStateInnerSpacing: CGFloat = 16
-    @ScaledMetric private var emptyStateSubSpacing: CGFloat = 8
+    private let emptyStateSpacing: CGFloat = 32
+    private let emptyStateInnerSpacing: CGFloat = 16
+    private let emptyStateSubSpacing: CGFloat = 8
     @ScaledMetric private var iconSize: CGFloat = 80
-    @ScaledMetric private var iconCornerRadius: CGFloat = 18
-    @ScaledMetric private var shadowRadius: CGFloat = 8
-    @ScaledMetric private var shadowY: CGFloat = 4
-    @ScaledMetric private var emptyHorizontalPadding: CGFloat = 24
-    @ScaledMetric private var buttonVerticalPadding: CGFloat = 16
-    @ScaledMetric private var buttonHorizontalPadding: CGFloat = 32
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 16
-    @ScaledMetric private var buttonShadowRadius: CGFloat = 8
-    @ScaledMetric private var listRowTopPadding: CGFloat = 8
-    @ScaledMetric private var listRowLeadingPadding: CGFloat = 12
-    @ScaledMetric private var listRowBottomPadding: CGFloat = 8
-    @ScaledMetric private var listRowTrailingPadding: CGFloat = 12
-    @ScaledMetric private var supportViewBottomPadding: CGFloat = 16
-    @ScaledMetric private var fabPaddingH: CGFloat = 24
-    @ScaledMetric private var fabPaddingV: CGFloat = 16
-    @ScaledMetric private var fabTrailingPadding: CGFloat = 20
-    @ScaledMetric private var fabBottomPadding: CGFloat = 20
-    @ScaledMetric private var fabShadowRadius: CGFloat = 4
-    /// Extra scroll room so the last row is never hidden behind the floating Log Dose button.
-    @ScaledMetric private var listBottomClearance: CGFloat = 88
+    private let iconCornerRadius: CGFloat = 18
+    private let shadowRadius: CGFloat = 8
+    private let shadowY: CGFloat = 4
+    private let emptyHorizontalPadding: CGFloat = 24
+    private let buttonVerticalPadding: CGFloat = 16
+    private let buttonHorizontalPadding: CGFloat = 32
+    private let buttonCornerRadius: CGFloat = 16
+    private let buttonShadowRadius: CGFloat = 8
+    private let listRowTopPadding: CGFloat = 5
+    private let listRowLeadingPadding: CGFloat = 12
+    private let listRowBottomPadding: CGFloat = 5
+    private let listRowTrailingPadding: CGFloat = 12
+	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
+    private let supportViewBottomPadding: CGFloat = 16
 
     var body: some View {
         mainContent
-            .navigationTitle("Medication")
+			.alert("Couldn’t Log Dose", isPresented: $quickLogError) { Button("OK", role: .cancel) {} } message: { Text("We couldn’t save this change. Please try again.") }
+			.customNavigationTitle("Medication", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
+			.safeAreaInset(edge: .bottom, spacing: 0) {
+				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
+					Color.clear.frame(height: floatingButtonClearance)
+				}
+			}
+			.overlay(alignment: .bottomTrailing) {
+				if !loggableMedications.isEmpty && viewModel.editMode == .inactive {
+					primaryLogDoseButton
+				}
+			}
                 .toolbar {
                     if viewModel.items.count > 1 || !viewModel.items.archived.isEmpty {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            HStack(spacing: 12) {
-                                if viewModel.items.count > 1 {
-                                    Button(viewModel.editMode == .inactive ? "Edit" : "Done") {
-                                        viewModel.toggleEditMode()
-                                    }
-                                    .font(.customFont(fontFamily, style: .body, weight: .bold))
-                                    .accessibilityLabel(viewModel.editMode == .inactive ? "Edit medication list" : "Done editing")
-                                    .accessibilityHint(viewModel.editMode == .inactive ? "Enter edit mode to reorder or delete medications" : "Exit edit mode")
+                        ToolbarItemGroup(placement: .topBarLeading) {
+                            if viewModel.items.count > 1 {
+                                Button(viewModel.editMode == .inactive ? String(localized: "Edit") : String(localized: "Done")) {
+                                    viewModel.toggleEditMode()
                                 }
+                                .font(.customFont(fontFamily, style: .body))
+                                .accessibilityLabel(viewModel.editMode == .inactive ? String(localized: "Edit medication list") : String(localized: "Done editing"))
+                                .accessibilityHint(viewModel.editMode == .inactive ? String(localized: "Enter edit mode to reorder or delete medications") : String(localized: "Exit edit mode"))
+                            }
 
-                                // Show archived toggle if there are any archived medications
-                                if !viewModel.items.archived.isEmpty && viewModel.editMode == .inactive {
-                                    Button(action: {
-                                        viewModel.toggleArchivedMedications()
-                                    }) {
-                                        Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
-                                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .accessibilityLabel(viewModel.showArchivedMedications ? "Hide archived medications" : "Show archived medications")
-                                    .accessibilityHint("Toggle visibility of archived medications in the list")
+                            // Show archived toggle if there are any archived medications
+                            if !viewModel.items.archived.isEmpty && viewModel.editMode == .inactive {
+                                Button(action: {
+                                    viewModel.toggleArchivedMedications()
+                                }) {
+                                    Image(systemSymbol: viewModel.showArchivedMedications ? .archiveboxFill : .archivebox)
                                 }
+                                .accessibilityLabel(viewModel.showArchivedMedications ? String(localized: "Hide archived medications") : String(localized: "Show archived medications"))
+                                .accessibilityHint("Toggle visibility of archived medications in the list")
                             }
                         }
                     }
@@ -78,63 +85,62 @@ struct MedicationListView: View {
                             viewModel.showAddSheet = true
                         }) {
                             Label("Add Medication", systemSymbol: .plus)
-                                .font(.customFont(fontFamily, style: .body, weight: .medium))
-                                .foregroundColor(.accent)
                         }
                         .accessibilityLabel("Add new medication")
                         .accessibilityHint("Opens form to add a new medication to your list")
                     }
                 }
-                .sheet(item: $viewModel.editMedication) { med in
+                .tint(.accent)
+                .sheet(item: $viewModel.editMedication, onDismiss: {
+					if viewModel.editMedication == nil { medicationEditSession.reset() }
+				}) { med in
                     MedicationEditView(
                         medication: med,
+						draft: medicationEditSession.draft(for: med),
                         onSave: { updated in
-                            Task {
-                                if await viewModel.update(updated) {
-                                    viewModel.editMedication = nil
-                                }
-                            }
+							let saved = await viewModel.update(updated, original: medicationEditSession.draft(for: med).originalMedication)
+							if saved { viewModel.editMedication = nil }
+							return saved
                         },
                         onCancel: { viewModel.editMedication = nil }
                     )
                 }
-                .sheet(isPresented: $viewModel.showAddSheet) {
+                .sheet(isPresented: $viewModel.showAddSheet, onDismiss: {
+					if !viewModel.showAddSheet { medicationEditSession.reset() }
+				}) {
                     MedicationEditView(
                         medication: nil,
+						draft: medicationEditSession.draft(for: nil),
                         onSave: { newMed in
-                            Task {
-                                if await viewModel.add(newMed) {
-                                    viewModel.showAddSheet = false
-                                }
-                            }
+							let saved = await viewModel.add(newMed)
+							if saved { viewModel.showAddSheet = false }
+							return saved
                         },
                         onCancel: { viewModel.showAddSheet = false }
                     )
                 }
-                .sheet(isPresented: $showLogDosePicker, onDismiss: {
-                    // Present the Log Dose sheet only after the picker is fully gone, so the two never overlap.
-                    if let medication = pendingPickerMedication {
-                        pendingPickerMedication = nil
-                        viewModel.logMedication = medication
-                    }
-                }) {
-                    LogDosePickerSheet(
-                        items: viewModel.logDosePickerItems,
-                        onSelect: { medication in
-                            pendingPickerMedication = medication
-                            showLogDosePicker = false
-                        },
-                        onQuickLog: { medication in
-                            await viewModel.quickLog(medication: medication)
-                        },
-                        onQuickLogSuccess: { _ in
-                            retireQuickLogHint()
-                            showLogDosePicker = false
-                        }
-                    )
-                }
-                .sheet(item: $viewModel.logMedication) { med in
-                    LogDoseView(medication: med, source: "list_sheet") { dose, event, operationID in
+				.sheet(isPresented: $showLogDosePicker, onDismiss: {
+					guard !showLogDosePicker else { return }
+					logDoseSearchQuery = ""
+					guard let selected = pendingPickerMedication else { return }
+					pendingPickerMedication = nil
+					// Revalidate after dismissal so deleted/archived items cannot open a stale dose form.
+					viewModel.logMedication = loggableMedications.first { $0.id == selected.id }
+				}) {
+					LogDosePickerSheet(medications: loggableMedications, query: $logDoseSearchQuery, onSelect: { medication in
+						pendingPickerMedication = medication
+						showLogDosePicker = false
+					}, onQuickLog: { medication in
+						await viewModel.quickLog(medication: medication)
+					}, onQuickLogSuccess: { _ in
+						AppTips.didQuickLog()
+						showLogDosePicker = false
+					})
+				}
+                .sheet(item: $viewModel.logMedication, onDismiss: {
+					if viewModel.logMedication == nil { doseLogSession.reset() }
+				}) { med in
+                    LogDoseView(medication: med, source: "list_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
                         await viewModel.logDose(
                             med: med,
                             dose: dose,
@@ -157,11 +163,17 @@ struct MedicationListView: View {
                     }
                     Button("Cancel", role: .cancel) { viewModel.pendingDelete = nil }
                 } message: {
-                    Text("This action cannot be undone.")
+                    Text("This deletes the medication, its dose history, and its reminders. This cannot be undone.")
                 }
                 .sheet(isPresented: $viewModel.showSupportView) {
                     NavigationView {
                         SupportView()
+							.toolbar {
+								ToolbarItem(placement: .topBarTrailing) {
+									Button(role: .close) { viewModel.showSupportView = false }
+										.accessibilityLabel("Close support")
+								}
+							}
                     }
                 }
                 .overlay(alignment: .top) {
@@ -177,39 +189,76 @@ struct MedicationListView: View {
                             onDismiss: {
                                 viewModel.dismissQuickLogToast()
                             },
-                            onUndo: {
+                            onUndo: { eventID in
                                 Task {
-                                    _ = await viewModel.undoLastQuickLog()
+                                    if !(await viewModel.undoLastQuickLog(eventID: eventID)) { quickLogError = true }
                                 }
                             }
                         )
                     }
 
-                    // Support Toast
-                    SupportToastView(
-                        message: "Dose logged successfully",
-                        supportMessage: "Support As Needed",
-                        isVisible: viewModel.showSupportToast,
-                        onDismiss: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.showSupportToast = false
-                            }
-                        },
-                        onSupportTapped: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.showSupportToast = false
-                                viewModel.showSupportView = true
-                            }
-                        }
-                    )
                 }
-                .task {
-                    // Initialize medication order if empty to ensure stable sorting
-                    // This is now handled in the ViewModel's init
-                }
+				.task(id: "chooser|\(navigationManager.shouldShowLogDoseChooser)|\(viewModel.logMedication?.id.uuidString ?? "")|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
+					guard navigationManager.shouldShowLogDoseChooser, viewModel.logMedication == nil,
+						viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
+					navigationManager.shouldShowLogDoseChooser = false
+					pendingPickerMedication = nil
+					logDoseSearchQuery = ""
+					showLogDosePicker = true
+				}
+				.task(id: "\(navigationManager.pendingLogMedicationID ?? "")|\(viewModel.logMedication?.id.uuidString ?? "")|\(scenePhase)|\(showLogDosePicker)|\(viewModel.editMedication?.id.uuidString ?? "")|\(viewModel.showAddSheet)|\(viewModel.showSupportView)") {
+					guard scenePhase == .active else { return }
+					if let id = navigationManager.pendingLogMedicationID, viewModel.logMedication?.id.uuidString == id {
+						navigationManager.clearLogDoseNavigation()
+						return
+					}
+					guard let id = navigationManager.pendingLogMedicationID, viewModel.logMedication == nil, !showLogDosePicker, viewModel.editMedication == nil, !viewModel.showAddSheet, !viewModel.showSupportView else { return }
+					do {
+						let snapshot = try await DataStore.shared.prepareForAccess()
+						guard !Task.isCancelled, navigationManager.pendingLogMedicationID == id else { return }
+						let medication = LogDosePickerModel.medication(forDeepLink: id, from: snapshot.medications)
+						navigationManager.clearLogDoseNavigation()
+						guard let medication else {
+							navigationManager.showWidgetUnavailable = true
+							return
+						}
+						navigationPath = NavigationPath()
+						viewModel.logMedication = medication
+					} catch {
+						// Retain the pending identity so a later foreground retry can recover.
+					}
+				}
+
     }
 
     // MARK: - Computed Properties
+
+	private var loggableMedications: [ANMedicationConcept] {
+		LogDosePickerModel.medications(from: viewModel.sortedMedications)
+	}
+
+	private var floatingQuickLogMedication: ANMedicationConcept? {
+		LogDosePickerModel.quickLogMedication(selectedID: nil, useLastLogged: true,
+			lastLoggedID: DataStore.shared.lastLoggedMedication?.id, from: loggableMedications)
+	}
+
+	private var primaryLogDoseButton: some View {
+		let medication = floatingQuickLogMedication
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: .accent, onChoose: {
+			pendingPickerMedication = nil
+			logDoseSearchQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in {
+			guard floatingQuickLogMedication?.id == medication.id else { return false }
+			return await quickLog(medication)
+		} })
+	}
+
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		let saved = await viewModel.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
+	}
 
     @ViewBuilder
     private var mainContent: some View {
@@ -229,6 +278,7 @@ struct MedicationListView: View {
     @ViewBuilder
     private var emptyStateView: some View {
         VStack(spacing: emptyStateSpacing) {
+			if demoMode.isEnabled { DemoModeBanner().padding(.horizontal, 16) }
             Spacer()
 
             VStack(spacing: emptyStateInnerSpacing) {
@@ -258,12 +308,12 @@ struct MedicationListView: View {
             }) {
                 Label("Add Your First Medication", systemSymbol: .plusCircleFill)
                     .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                    .foregroundColor(.white)
+                    .filledButtonForeground(against: .accent)
                     .padding(.vertical, buttonVerticalPadding)
                     .padding(.horizontal, buttonHorizontalPadding)
                     .background(
                         RoundedRectangle(cornerRadius: buttonCornerRadius)
-                            .fill(.accent.gradient)
+                            .fill(Color.accent.dynamicFilledButtonBackground)
                     )
                     .shadow(color: .accent.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
             }
@@ -279,164 +329,87 @@ struct MedicationListView: View {
 
     @ViewBuilder
     private var medicationListContent: some View {
-        ZStack(alignment: .bottomTrailing) {
-            medicationList
-
-            if viewModel.editMode == .inactive {
-                logDoseButton
-                    .padding(.trailing, fabTrailingPadding)
-                    .padding(.bottom, fabBottomPadding)
-                    .transition(.scale.combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.editMode)
-        .quickLogHint(isPresented: $showQuickLogHint)
-    }
-
-    /// Medication-agnostic Log Dose button. It is app-accent rather than any medication's color because it
-    /// asks "which medication?"; color switches to the chosen medication inside the picker. Same size and
-    /// position as the History tab's button so the two tabs feel alike.
-    private var logDoseButton: some View {
-        Button {
-            hapticsManager.mediumImpact()
-            showLogDosePicker = true
-        } label: {
-            Label("Log Dose", systemSymbol: .plus)
-                .labelStyle(.titleAndIcon)
-                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, fabPaddingH)
-                .padding(.vertical, fabPaddingV)
-                .background(
-                    Capsule()
-                        .fill(.accent)
-                        .shadow(color: .black.opacity(0.3), radius: fabShadowRadius, x: 0, y: 2)
-                )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Log a dose")
-        .accessibilityHint("Opens a list of your medications to choose which one to log")
-    }
-
-    /// Marks the hold as learned and hides the hint on this tab.
-    private func retireQuickLogHint() {
-        hasDiscoveredQuickLog = true
-        withAnimation(.easeOut(duration: 0.25)) {
-            showQuickLogHint = false
-        }
-    }
-
-    /// The medication whose LOG button carries the "Hold to log …" pill while the hint is up: the first
-    /// one, so it is on screen.
-    private var quickLogHintMedication: ANMedicationConcept? {
-        showQuickLogHint ? viewModel.sortedMedications.first : nil
-    }
-
-    private var quickLogHintMedicationID: UUID? {
-        quickLogHintMedication?.id
-    }
-
-    /// The user closed the pill: retire the hint for good and hide it.
-    private func dismissQuickLogHint() {
-        QuickLogHintPolicy.dismissForever()
-        withAnimation(.easeOut(duration: 0.2)) {
-            showQuickLogHint = false
-        }
-    }
-
-    @ViewBuilder
-    private var medicationList: some View {
         VStack(spacing: 0) {
             List {
+				if demoMode.isEnabled {
+					DemoModeBanner()
+						.listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+				}
                 ForEach(viewModel.sortedMedications, id: \.id) { med in
-                    medicationRow(for: med)
+                    HStack {
+                        MedicationRowComponent(
+                            medication: med,
+                            statusSummary: viewModel.statusSummary(for: med),
+                            onLogTapped: {
+                                viewModel.logMedication = med
+                            },
+							onOpen: { navigationPath.append(med) },
+                            onQuickLog: {
+                                await quickLog(med)
+                            },
+                            onQuickLogSuccess: { AppTips.didQuickLog() },
+                            onAppearanceChanged: { newColorHex, newSymbol in
+                                Task {
+                                    var updatedMed = med
+                                    updatedMed.displayColorHex = newColorHex
+                                    updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
+                                    _ = await viewModel.update(updatedMed, original: med)
+                                }
+                            }
+                        )
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if viewModel.editMode == .inactive {
+                            navigationPath.append(med)
+                        }
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: viewModel.editMode == .inactive) {
+                        if viewModel.editMode == .inactive {
+                            Button {
+                                hapticsManager.lightImpact()
+                                viewModel.editMedication = med
+                            } label: {
+                                Label("Edit", systemSymbol: .pencil)
+                            }
+                            .tint(.accent)
+                            .accessibilityLabel("Edit \(med.demoDisplayName)")
+                            .accessibilityHint("Opens edit form for this medication")
+
+                            Button(role: .destructive) {
+                                hapticsManager.mediumImpact()
+                                viewModel.pendingDelete = med
+                            } label: {
+                                Label("Delete", systemSymbol: .trash)
+                            }
+                            .tint(.red)
+                            .accessibilityLabel("Delete \(med.demoDisplayName)")
+                            .accessibilityHint("Removes this medication permanently")
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: listRowLeadingPadding, bottom: listRowBottomPadding, trailing: listRowTrailingPadding))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 }
                 .onMove(perform: viewModel.moveMedications)
                 .onDelete(perform: viewModel.deleteMedications)
 
-                // Scrolls with the rows so the floating Log Dose button never covers it.
-                SupportSuggestionView()
-                    .padding(.bottom, supportViewBottomPadding)
-                    .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: 0, bottom: 0, trailing: 0))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .moveDisabled(true)
-                    .deleteDisabled(true)
+				if viewModel.editMode == .inactive {
+					SupportSuggestionView(onSupportTapped: { showSupportPage = true })
+						.listRowInsets(EdgeInsets())
+						.listRowBackground(Color.clear)
+						.listRowSeparator(.hidden)
+						.environment(\.defaultMinListRowHeight, 0)
+				}
             }
             .listStyle(.plain)
-            .contentMargins(.bottom, listBottomClearance, for: .scrollContent)
-            .quickLogHintOverlay(
-                isPresented: showQuickLogHint && quickLogHintMedication != nil,
-                text: quickLogHintMedication.map { QuickLogHintPolicy.hintText(for: $0) } ?? "",
-                onDismiss: dismissQuickLogHint
-            )
             .environment(\.editMode, $viewModel.editMode)
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
-        }
-    }
 
-    /// One list row: the medication card with its tap-to-detail gesture, swipe actions and row styling.
-    /// Kept separate from the List so the type checker handles each expression on its own.
-    @ViewBuilder
-    private func medicationRow(for med: ANMedicationConcept) -> some View {
-        HStack {
-            MedicationRowComponent(
-                medication: med,
-                statusSummary: viewModel.statusSummary(for: med),
-                onLogTapped: {
-                    viewModel.logMedication = med
-                },
-                onQuickLog: {
-                    await viewModel.quickLog(medication: med)
-                },
-                onQuickLogSuccess: {
-                    // Toast is handled by the view model; the hint retires once the hold is learned.
-                    retireQuickLogHint()
-                },
-                onAppearanceChanged: { newColorHex, newSymbol in
-                    Task {
-                        var updatedMed = med
-                        updatedMed.displayColorHex = newColorHex
-                        updatedMed.symbolInfo = ANMedicationConcept.createSymbolInfo(from: newSymbol)
-                        _ = await viewModel.update(updatedMed)
-                    }
-                },
-                showsQuickLogHint: med.id == quickLogHintMedicationID
-            )
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if viewModel.editMode == .inactive {
-                navigationPath.append(med)
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: viewModel.editMode == .inactive) {
-            if viewModel.editMode == .inactive {
-                Button {
-                    hapticsManager.lightImpact()
-                    viewModel.editMedication = med
-                } label: {
-                    Label("Edit", systemSymbol: .pencil)
-                }
-                .tint(.accent)
-                .accessibilityLabel("Edit \(med.displayName)")
-                .accessibilityHint("Opens edit form for this medication")
-
-                Button(role: .destructive) {
-                    hapticsManager.mediumImpact()
-                    viewModel.pendingDelete = med
-                } label: {
-                    Label("Delete", systemSymbol: .trash)
-                }
-                .tint(.red)
-                .accessibilityLabel("Delete \(med.displayName)")
-                .accessibilityHint("Removes this medication permanently")
-            }
-        }
-        .listRowInsets(EdgeInsets(top: listRowTopPadding, leading: listRowLeadingPadding, bottom: listRowBottomPadding, trailing: listRowTrailingPadding))
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
     }
 
     @ViewBuilder

@@ -2,603 +2,768 @@ import ANModelKit
 import Charts
 import SFSafeSymbols
 import SwiftUI
+import TipKit
 
 enum VisualizationType: String, CaseIterable {
-    case chart
-    case heatmap
+	case chart
+	case heatmap
 
-    var displayName: String {
-        switch self {
-        case .chart: return "Chart"
-        case .heatmap: return "Calendar"
-        }
-    }
+	var displayName: String {
+		switch self {
+		case .chart: return String(localized: "Chart")
+		case .heatmap: return String(localized: "Calendar")
+		}
+	}
 
-    var systemImage: String {
-        switch self {
-        case .chart: return "chart.xyaxis.line"
-        case .heatmap: return "calendar"
-        }
-    }
+	var systemImage: String {
+		switch self {
+		case .chart: return "chart.xyaxis.line"
+		case .heatmap: return "calendar"
+		}
+	}
 }
 
 struct MedicationTrendsView: View {
-    @StateObject private var viewModel = MedicationTrendsViewModel()
-    @EnvironmentObject private var navigationManager: NavigationManager
-    @Environment(\.fontFamily) private var fontFamily
-    @AppStorage(UserDefaultsKeys.trendsDaysWindow) private var daysWindow: Int = 14
-    @AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
-    @State private var questionText = ""
-    @State private var showingDisclaimer = false
-	@FocusState private var isQuestionFieldFocused: Bool
-
-    @ScaledMetric private var sectionSpacing: CGFloat = 16
-    @ScaledMetric private var controlsSpacing: CGFloat = 12
-    @ScaledMetric private var heatmapSpacing: CGFloat = 8
-    @ScaledMetric private var metricLabelSpacing: CGFloat = 6
-    @ScaledMetric private var metricTitleSpacing: CGFloat = 4
-    @ScaledMetric private var heatmapCellSpacing: CGFloat = 2
-    @ScaledMetric private var pickerMaxWidth: CGFloat = 200
-    @ScaledMetric private var metricCardPadding: CGFloat = 12
-    @ScaledMetric private var metricCardMinHeight: CGFloat = 90
-    @ScaledMetric private var metricCardCornerRadius: CGFloat = 10
-    @ScaledMetric private var chartHeight: CGFloat = 280
-    @ScaledMetric private var chartPaddingH: CGFloat = 4
-    @ScaledMetric private var chartContainerPadding: CGFloat = 16
-    @ScaledMetric private var chartContainerCornerRadius: CGFloat = 12
-    @ScaledMetric private var heatmapCellHeight: CGFloat = 20
-    @ScaledMetric private var heatmapCellCornerRadius: CGFloat = 3
-    @ScaledMetric private var heatmapCellBorderWidth: CGFloat = 0.5
-    @ScaledMetric private var legendSquareCornerRadius: CGFloat = 2
-    @ScaledMetric private var legendSquareSize: CGFloat = 12
-    @ScaledMetric private var chartLineWidth: CGFloat = 2
-    @ScaledMetric private var chartSymbolSize: CGFloat = 30
-    @ScaledMetric private var clinicalCardPadding: CGFloat = 18
-    @ScaledMetric private var smallSpacing: CGFloat = 4
-    @ScaledMetric private var mediumSpacing: CGFloat = 8
-	@ScaledMetric private var medicationDotSize: CGFloat = 10
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: sectionSpacing) {
-                    if let med = viewModel.selectedMedication {
-						// The visualization leads so the trend is readable at a glance; controls sit under it.
-                        switch visualizationType {
-                        case .chart:
-                            usageChart(for: med)
-                        case .heatmap:
-                            calendarHeatmap(for: med)
-                        }
-
-						controlsSection
-
-                        summaryCard(for: med)
-
-                        metricsView(for: med)
-
-						TrendsQuestionsSection(
-							viewModel: viewModel,
-							medication: med,
-							daysWindow: daysWindow,
-							questionText: $questionText,
-							isFieldFocused: $isQuestionFieldFocused,
-							showingDisclaimer: $showingDisclaimer
-						)
-                    } else {
-						controlsSection
-
-                        Text("Select a medication to see trends.")
-                            .font(.customFont(fontFamily, style: .body))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    SupportSuggestionView()
-                        .padding(.bottom, chartContainerPadding)
-                }
-                .padding(.horizontal)
-                .padding(.vertical)
-				.contentShape(Rectangle())
-				.onTapGesture {
-					// Tapping anywhere outside the question field dismisses the keyboard.
-					isQuestionFieldFocused = false
-				}
-            }
-			.scrollDismissesKeyboard(.interactively)
-            .customNavigationTitle("Trends")
-			.toolbar {
-				ToolbarItemGroup(placement: .keyboard) {
-					Spacer()
-					Button("Done") {
-						isQuestionFieldFocused = false
-					}
-					.font(.customFont(fontFamily, style: .body, weight: .semibold))
-				}
-			}
-            .onAppear {
-                viewModel.ensureValidSelection()
-				viewModel.refreshQuestionAvailability()
-            }
-			.onChange(of: viewModel.selectedMedicationIDString) { _, _ in
-				viewModel.resetQuestion()
-				questionText = ""
-			}
-            .sheet(isPresented: $showingDisclaimer) {
-                NavigationStack {
-                    MedicalDisclaimerDetailView()
-                }
-            }
-        }
-    }
-
-    private var controlsSection: some View {
-        VStack(alignment: .leading, spacing: controlsSpacing) {
-            HStack(alignment: .center, spacing: controlsSpacing) {
-                Menu {
-                    ForEach(viewModel.medications, id: \.id) { med in
-                        Button {
-                            viewModel.selectedMedicationID = med.id
-                        } label: {
-                            Text(med.displayName)
-                                .font(.customFont(fontFamily, style: .body))
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Text(viewModel.selectedMedication?.displayName ?? "Select Medication")
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                            .noTruncate()
-
-                        Image(systemSymbol: .chevronUpChevronDown)
-                            .font(.customFont(fontFamily, style: .caption2))
-                            .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                Picker("Range", selection: $daysWindow) {
-                    Text("14d")
-                        .font(.customFont(fontFamily, style: .body))
-                        .tag(14)
-                    Text("30d")
-                        .font(.customFont(fontFamily, style: .body))
-                        .tag(30)
-                    Text("90d")
-                        .font(.customFont(fontFamily, style: .body))
-                        .tag(90)
-                }
-                .font(.customFont(fontFamily, style: .body))
-                .pickerStyle(.segmented)
-                .tint(viewModel.selectedMedication?.displayColor ?? .accent)
-                .frame(maxWidth: pickerMaxWidth)
-            }
-
-            Picker("Visualization", selection: $visualizationType) {
-                ForEach(VisualizationType.allCases, id: \.self) { type in
-                    Text(type.displayName)
-                        .font(.customFont(fontFamily, style: .body))
-                        .tag(type)
-                }
-            }
-            .font(.customFont(fontFamily, style: .body))
-            .pickerStyle(.segmented)
-            .tint(viewModel.selectedMedication?.displayColor ?? .accent)
-        }
-        .padding(clinicalCardPadding)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func summaryCard(for med: ANMedicationConcept) -> some View {
-        VStack(alignment: .leading, spacing: controlsSpacing) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: metricTitleSpacing) {
-                    Text(med.displayName)
-                        .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .noTruncate()
-
-                    Text(viewModel.patternSummary)
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            if let refillProjection = viewModel.refillProjection {
-                HStack(alignment: .top, spacing: controlsSpacing) {
-                    Image(systemSymbol: refillProjection.urgent ? .exclamationmarkTriangleFill : .shippingboxFill)
-                        .foregroundStyle(refillProjection.urgent ? .orange : med.displayColor)
-                    Text(refillProjection.statusMessage)
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(clinicalCardPadding)
-        .background(
-            LinearGradient(
-                colors: [med.displayColor.opacity(0.12), med.displayColor.opacity(0.04)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
-                .strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(viewModel.summaryAccessibilityLabel)
-    }
-
-    @ViewBuilder
-    private func metricsView(for med: ANMedicationConcept) -> some View {
-        let unitAbbrev = viewModel.preferredUnit?.abbreviation
-        let qtyText: String = {
-            guard let qty = med.quantity, let unit = unitAbbrev else { return "—" }
-            return "\(qty.formattedAmount) \(unit) left"
-        }()
-        let refillText: String = {
-            guard let days = viewModel.daysUntilRefill else { return "—" }
-            if days == 0 { return "Refill today" }
-            return days > 0 ? "Refill in \(days)d" : "Refill \(-days)d ago"
-        }()
-        let avg7 = viewModel.averagePerDay(window: 7)
-        let avgText: String = {
-            guard avg7 > 0, let unit = unitAbbrev else { return "—" }
-            return "\(avg7.formattedAmount) \(unit)/day"
-        }()
-        let etaText: String = {
-            guard let days = viewModel.estimatedDaysRemaining else { return "—" }
-            return "~\(days)d remaining"
-        }()
-
-        // Usage progress text (optional - only if initialQuantity is available)
-        let usageText: String = viewModel.usageProgressText ?? "—"
-
-        // Refill cycle status (optional)
-        let cycleStatusText: String = viewModel.refillCycleStatusText
-
-        VStack(alignment: .leading, spacing: controlsSpacing) {
-            Text("Overview")
-                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: controlsSpacing), GridItem(.flexible(), spacing: controlsSpacing)], spacing: controlsSpacing) {
-                metricCard(title: "Avg (7d)", value: avgText, systemImage: .chartLineUptrendXyaxis)
-                metricCard(title: "Quantity", value: qtyText, systemImage: .pill)
-
-                if viewModel.usagePercentage != nil {
-                    metricCard(title: "Usage", value: usageText, systemImage: .chartPieFill)
-                        .accessibilityLabel("Medication usage progress: \(usageText)")
-                }
-
-                metricCard(title: "Until Refill", value: refillText, systemImage: .calendar)
-                metricCard(title: "Run-out ETA", value: etaText, systemImage: .hourglass)
-
-                if viewModel.refillCycleStatus != .unknown {
-                    metricCard(title: "Refill Status", value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
-                        .accessibilityLabel("Refill cycle status: \(cycleStatusText)")
-                }
-            }
-        }
-    }
-
-    private func metricCard(title: String, value: String, systemImage: SFSymbol) -> some View {
-        VStack(alignment: .leading, spacing: metricTitleSpacing) {
-            HStack(spacing: metricLabelSpacing) {
-                Image(systemSymbol: systemImage)
-                    .foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-                Text(title)
-                    .font(.customFont(fontFamily, style: .caption))
-                    .foregroundStyle(.secondary)
-            }
-            Text(value)
-                .font(.customFont(fontFamily, style: .headline))
-        }
-        .padding(metricCardPadding)
-        .frame(maxWidth: .infinity, minHeight: metricCardMinHeight, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(value)")
-    }
-
-	/// Medication identity and window above the visualization, so the chart reads at a glance.
-	private func visualizationHeader(for med: ANMedicationConcept, title: LocalizedStringKey) -> some View {
-		HStack(spacing: mediumSpacing) {
-			Circle()
-				.fill(med.displayColor)
-				.frame(width: medicationDotSize, height: medicationDotSize)
-			Text(med.displayName)
-				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
-				.noTruncate()
-			Spacer(minLength: mediumSpacing)
-			Text(title)
-				.font(.customFont(fontFamily, style: .caption, weight: .medium))
-				.foregroundStyle(.secondary)
-			Text("· \(daysWindow)d")
-				.font(.customFont(fontFamily, style: .caption, weight: .medium))
-				.foregroundStyle(.secondary)
-		}
-		.accessibilityElement(children: .combine)
-		.accessibilityLabel("\(med.displayName), last \(daysWindow) days")
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@State private var showSupportPage = false
+	@StateObject private var viewModel = MedicationTrendsViewModel()
+	@StateObject private var quickLogCoordinator = MedicationListViewModel()
+	@StateObject private var doseLogSession = LogDoseView.Session()
+	@State private var showLogDosePicker = false
+	@State private var pickerQuery = ""
+	@State private var pendingPickerMedication: ANMedicationConcept?
+	@State private var quickLogError = false
+	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
+	@EnvironmentObject private var navigationManager: NavigationManager
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@AppStorage(UserDefaultsKeys.trendsDaysWindow) private var savedDaysWindow: Int = 14
+	@State private var temporaryDaysWindow: Int?
+	private let widgetScope: NavigationManager.WidgetTrendsScope?
+	private var daysWindow: Int { temporaryDaysWindow ?? savedDaysWindow }
+	private var daysWindowSelection: Binding<Int> {
+		Binding(get: { daysWindow }, set: { value in
+			if widgetScope != nil { temporaryDaysWindow = value }
+			else { savedDaysWindow = value }
+		})
 	}
 
-	private func emptyVisualizationCard(for med: ANMedicationConcept) -> some View {
+	init(widgetScope: NavigationManager.WidgetTrendsScope? = nil) {
+		self.widgetScope = widgetScope
+		_viewModel = StateObject(wrappedValue: MedicationTrendsViewModel(
+			selectedMedicationID: widgetScope?.medicationID, transientSelection: widgetScope != nil))
+		_temporaryDaysWindow = State(initialValue: widgetScope?.days)
+	}
+	@AppStorage(UserDefaultsKeys.trendsVisualizationType) private var visualizationType: VisualizationType = .chart
+
+	@ScaledMetric private var sectionSpacing: CGFloat = 16
+	@ScaledMetric private var controlsSpacing: CGFloat = 12
+	@ScaledMetric private var heatmapSpacing: CGFloat = 8
+	@ScaledMetric private var metricLabelSpacing: CGFloat = 6
+	@ScaledMetric private var metricTitleSpacing: CGFloat = 4
+	@ScaledMetric private var heatmapCellSpacing: CGFloat = 2
+	@ScaledMetric private var pickerMaxWidth: CGFloat = 160
+	private let metricCardPadding: CGFloat = 12
+	@ScaledMetric private var metricCardCornerRadius: CGFloat = 10
+	@ScaledMetric private var chartHeight: CGFloat = 280
+	@ScaledMetric private var chartPaddingH: CGFloat = 4
+	@ScaledMetric private var chartContainerPadding: CGFloat = 16
+	@ScaledMetric private var chartContainerCornerRadius: CGFloat = 12
+	@ScaledMetric private var heatmapCellHeight: CGFloat = 20
+	@ScaledMetric private var heatmapCellCornerRadius: CGFloat = 3
+	@ScaledMetric private var heatmapCellBorderWidth: CGFloat = 0.5
+	@ScaledMetric private var legendSquareCornerRadius: CGFloat = 2
+	@ScaledMetric private var legendSquareSize: CGFloat = 12
+	@ScaledMetric private var chartLineWidth: CGFloat = 2
+	@ScaledMetric private var chartSymbolSize: CGFloat = 30
+	@ScaledMetric private var clinicalCardPadding: CGFloat = 18
+	@ScaledMetric private var insightBadgePaddingH: CGFloat = 10
+	@ScaledMetric private var insightBadgePaddingV: CGFloat = 6
+
+	var body: some View {
+		NavigationStack {
+			ScrollView {
+				VStack(alignment: .leading, spacing: sectionSpacing) {
+					if demoMode.isEnabled { DemoModeBanner() }
+					if let med = viewModel.selectedMedication {
+						switch visualizationType {
+						case .chart:
+							usageChart(for: med)
+						case .heatmap:
+							calendarHeatmap(for: med)
+						}
+
+						controlsSection
+						summaryCard(for: med)
+						metricsView(for: med)
+					} else {
+						controlsSection
+						Text(widgetScope != nil ? String(localized: "This medication is unavailable. Choose another medication in Edit Widget.") : viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to see its recorded doses and trends.") : String(localized: "Select a medication in the toolbar to see its trends."))
+							.font(.customFont(fontFamily, style: .body))
+							.foregroundStyle(.secondary)
+							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+
+					if viewModel.selectedMedication != nil,
+					   viewModel.dailyTotals(last: daysWindow).contains(where: { $0.total > 0 }) {
+						SupportSuggestionView(onSupportTapped: { showSupportPage = true })
+							.padding(.bottom, chartContainerPadding)
+					}
+				}
+				.padding(.horizontal)
+				.padding(.vertical)
+			}
+			.safeAreaInset(edge: .bottom, spacing: 0) {
+				if !loggableMedications.isEmpty { Color.clear.frame(height: floatingButtonClearance) }
+			}
+			.overlay(alignment: .bottomTrailing) {
+				if !loggableMedications.isEmpty { primaryLogDoseButton }
+			}
+			.customNavigationTitle("Trends", displayMode: .large)
+			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
+			.navigationSubtitle(Text("\(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Select Medication")) · \(daysWindow) Days")
+				.font(.customFont(fontFamily, style: .subheadline)))
+			.toolbar {
+				ToolbarItemGroup(placement: .topBarTrailing) {
+					medicationMenu
+					timeRangeMenu
+				}
+			}
+			.tint(.accent)
+			.alert("Couldn’t Log Dose", isPresented: $quickLogError) {
+				Button("OK", role: .cancel) {}
+			} message: { Text("We couldn’t save this change. Please try again.") }
+			.overlay(alignment: .top) {
+				if quickLogCoordinator.showQuickLogToast {
+					QuickLogToastView(
+						medicationName: quickLogCoordinator.quickLogMedicationName,
+						doseAmount: quickLogCoordinator.quickLogDoseAmount,
+						doseUnit: quickLogCoordinator.quickLogDoseUnit,
+						accentColor: quickLogCoordinator.quickLogAccentColor,
+						isVisible: quickLogCoordinator.showQuickLogToast,
+						feedback: quickLogCoordinator.quickLogFeedback,
+						onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
+						onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
+				}
+
+			}
+			.sheet(isPresented: $quickLogCoordinator.showSupportView) {
+				NavigationStack {
+					SupportView()
+						.toolbar {
+							ToolbarItem(placement: .topBarTrailing) {
+								Button(role: .close) { quickLogCoordinator.showSupportView = false }
+									.accessibilityLabel("Close support")
+							}
+						}
+				}
+			}
+			.sheet(isPresented: $showLogDosePicker, onDismiss: {
+				pickerQuery = ""
+				guard let medication = pendingPickerMedication else { return }
+				pendingPickerMedication = nil
+				quickLogCoordinator.logMedication = loggableMedications.first { $0.id == medication.id }
+			}) {
+				LogDosePickerSheet(medications: loggableMedications, query: $pickerQuery,
+					onSelect: { medication in
+						pendingPickerMedication = medication
+						showLogDosePicker = false
+					}, onQuickLog: { medication in
+						await quickLogCoordinator.quickLog(medication: medication)
+					}, onQuickLogSuccess: { _ in
+						AppTips.didQuickLog()
+						showLogDosePicker = false
+					})
+			}
+			.sheet(item: $quickLogCoordinator.logMedication, onDismiss: {
+				if quickLogCoordinator.logMedication == nil { doseLogSession.reset() }
+			}) { med in
+				LogDoseView(medication: med, source: "trends_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+					await quickLogCoordinator.logDose(med: med, dose: dose, event: event,
+						source: "trends_sheet", operationID: operationID)
+				}
+			}
+			.onAppear {
+				viewModel.ensureValidSelection()
+			}
+		}
+	}
+
+	private var loggableMedications: [ANMedicationConcept] {
+		LogDosePickerModel.medications(from: quickLogCoordinator.sortedMedications)
+	}
+
+	private var floatingQuickLogMedication: ANMedicationConcept? {
+		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
+			useLastLogged: false, lastLoggedID: nil, from: loggableMedications)
+	}
+
+	private var primaryLogDoseButton: some View {
+		let medication = floatingQuickLogMedication
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
+			pendingPickerMedication = nil
+			pickerQuery = ""
+			showLogDosePicker = true
+		}, onQuickLog: medication.map { medication in { await quickLog(medication) } })
+	}
+
+	private func quickLog(_ medication: ANMedicationConcept) async -> Bool {
+		guard floatingQuickLogMedication?.id == medication.id else { return false }
+		let saved = await quickLogCoordinator.quickLog(medication: medication)
+		if !saved { quickLogError = true }
+		return saved
+	}
+
+	private var controlsSection: some View {
 		VStack(alignment: .leading, spacing: controlsSpacing) {
-			visualizationHeader(for: med, title: "Daily Usage")
-			Text("No doses logged in the last \(daysWindow) days. Log a dose to start seeing the trend here.")
+			Text("Showing complete days through yesterday. Today’s doses appear after the day is complete.")
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+
+
+			if dynamicTypeSize.isAccessibilitySize {
+				visualizationPicker
+					.pickerStyle(.menu)
+			} else {
+				visualizationPicker
+					.pickerStyle(.segmented)
+			}
+		}
+		.padding(clinicalCardPadding)
+		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous))
+	}
+
+	private var medicationMenu: some View {
+		Menu {
+			Picker("Medication", selection: $viewModel.selectedMedicationID) {
+				ForEach(viewModel.medications, id: \.id) { medication in
+					Text(medication.demoDisplayName)
+						.demoNameRedacted()
+						.font(.customFont(fontFamily, style: .body))
+						.tag(Optional(medication.id))
+				}
+			}
+		} label: {
+			Label("Filter Medications", systemSymbol: .line3HorizontalDecrease)
+		}
+		.disabled(viewModel.medications.isEmpty)
+		.accessibilityLabel("Trends medication filter")
+		.accessibilityValue(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Not selected"))
+	}
+
+	private var timeRangeMenu: some View {
+		Menu {
+			Picker("Time Range", selection: daysWindowSelection) {
+				ForEach([14, 30, 90], id: \.self) { days in
+					Text("\(days) Days")
+						.font(.customFont(fontFamily, style: .body))
+						.tag(days)
+				}
+			}
+		} label: {
+			Label("\(daysWindow) Days", systemSymbol: .calendar)
+		}
+		.accessibilityLabel("Trends time range")
+		.accessibilityValue("\(daysWindow) days")
+		.popoverTip(AppTips.isConfigured ? TrendsRangeTip() : nil)
+	}
+
+	private var visualizationPicker: some View {
+		Picker("View", selection: $visualizationType) {
+			ForEach(VisualizationType.allCases, id: \.self) { type in
+				Text(type.displayName)
+					.font(.customFont(fontFamily, style: .body))
+					.tag(type)
+			}
+		}
+		.font(.customFont(fontFamily, style: .body))
+		.tint(.accent)
+		.frame(minHeight: 44)
+	}
+
+	@ViewBuilder
+	private func summaryCard(for med: ANMedicationConcept) -> some View {
+		VStack(alignment: .leading, spacing: controlsSpacing) {
+			VStack(alignment: .leading, spacing: controlsSpacing) {
+				VStack(alignment: .leading, spacing: metricTitleSpacing) {
+					Text(med.demoDisplayName)
+						.demoNameRedacted()
+						.font(.customFont(fontFamily, style: .title3, weight: .semibold))
+						.foregroundStyle(.primary)
+						.noTruncate()
+
+					Text(viewModel.patternSummary)
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+
+
+				TimelineView(.periodic(from: .now, by: 1)) { context in
+					let availability = viewModel.doseAvailability(at: context.date)
+					if let nextDate = availability.eligibleDate {
+						if nextDate > context.date {
+							insightBadge(text: String(localized: "Next saved window \(nextDate.formatted(date: .abbreviated, time: .shortened))"), tint: .orange)
+						} else {
+							insightBadge(text: String(localized: "Saved limits met"), tint: med.displayColor)
+						}
+					} else {
+						insightBadge(text: availability.message, tint: .secondary)
+					}
+				}
+			}
+
+			if let refillProjection = viewModel.refillProjection {
+				HStack(alignment: .top, spacing: controlsSpacing) {
+					Image(systemSymbol: refillProjection.urgent ? .exclamationmarkTriangleFill : .shippingboxFill)
+						.foregroundStyle(refillProjection.urgent ? .orange : med.displayColor)
+						.accessibilityHidden(true)
+					Text(refillProjection.statusMessage)
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+			}
+		}
+		.padding(clinicalCardPadding)
+		.background(
+			LinearGradient(
+				colors: [med.displayColor.opacity(0.12), med.displayColor.opacity(0.04)],
+				startPoint: .topLeading,
+				endPoint: .bottomTrailing
+			),
+			in: RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+		)
+		.overlay(
+			RoundedRectangle(cornerRadius: chartContainerCornerRadius, style: .continuous)
+				.strokeBorder(med.displayColor.opacity(0.12), lineWidth: 1)
+		)
+		.accessibilityElement(children: .combine)
+	}
+
+	@ViewBuilder
+	private func metricsView(for med: ANMedicationConcept) -> some View {
+		let preferredUnit = viewModel.preferredUnit
+		let qtyText: String = {
+			guard let qty = med.quantity, let unit = preferredUnit else { return "—" }
+			return unit.localizedCompactAmount(for: qty)
+		}()
+		let refillText: String = {
+			guard let days = viewModel.daysUntilRefill else { return "—" }
+			if days == 0 { return String(localized: "Refill today") }
+			return days > 0 ? String(localized: "Refill in \(days) days") : String(localized: "Refill \(-days) days ago")
+		}()
+		let avg7 = viewModel.averagePerDay(window: 7)
+		let avgText: String = {
+			guard avg7 > 0, let unit = preferredUnit else { return "—" }
+			return String(localized: "\(unit.localizedCompactAmount(for: avg7))/day", comment: "Daily average rate. The interpolation is a full quantity with a plural-aware unit.")
+		}()
+		let etaText: String = {
+			guard let days = viewModel.estimatedDaysRemaining else { return "—" }
+			return String(localized: "About \(days) days left")
+		}()
+
+		// Usage progress text (optional - only if initialQuantity is available)
+		let usageText: String = viewModel.usageProgressText ?? "—"
+
+		// Refill cycle status (optional)
+		let cycleStatusText: String = viewModel.refillCycleStatusText
+
+		VStack(alignment: .leading, spacing: controlsSpacing) {
+			Text("Overview")
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+
+			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: controlsSpacing), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: controlsSpacing) {
+				metricCard(title: String(localized: "Daily Average (7 Days)"), value: avgText, systemImage: .chartLineUptrendXyaxis)
+				metricCard(title: String(localized: "Quantity"), value: qtyText, systemImage: .pill)
+
+				if viewModel.usagePercentage != nil {
+					metricCard(title: String(localized: "Usage"), value: usageText, systemImage: .chartPieFill)
+						.accessibilityLabel("Medication usage progress: \(usageText)")
+				}
+
+				metricCard(title: String(localized: "Until Refill"), value: refillText, systemImage: .calendar)
+				metricCard(title: String(localized: "Estimated Supply"), value: etaText, systemImage: .hourglass)
+
+				if viewModel.refillCycleStatus != .unknown {
+					metricCard(title: String(localized: "Refill Status"), value: cycleStatusText, systemImage: .arrowTrianglehead2ClockwiseRotate90)
+						.accessibilityLabel("Refill cycle status: \(cycleStatusText)")
+				}
+			}
+		}
+	}
+
+	private func metricCard(title: String, value: String, systemImage: SFSymbol) -> some View {
+		RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous)
+			.fill(.regularMaterial)
+			.aspectRatio(1, contentMode: .fit)
+			.overlay(alignment: .leading) {
+				VStack(alignment: .leading, spacing: metricTitleSpacing) {
+					HStack(spacing: metricLabelSpacing) {
+						Image(systemSymbol: systemImage)
+							.font(.customFont(fontFamily, style: .caption))
+							.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
+							.accessibilityHidden(true)
+						Text(title)
+							.font(.customFont(fontFamily, style: .caption))
+							.foregroundStyle(.secondary)
+							.fixedSize(horizontal: false, vertical: true)
+					}
+					Text(value)
+						.font(.customFont(fontFamily, style: .headline))
+						.noTruncate()
+				}
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.padding(metricCardPadding)
+			}
+			.accessibilityElement(children: .combine)
+			.accessibilityLabel("\(title): \(value)")
+	}
+
+	private func insightBadge(text: String, tint: Color) -> some View {
+		Text(text)
+			.font(.customFont(fontFamily, style: .caption, weight: .medium))
+			.foregroundStyle(tint)
+			.noTruncate()
+			.padding(.horizontal, insightBadgePaddingH)
+			.padding(.vertical, insightBadgePaddingV)
+			.background(
+				RoundedRectangle(cornerRadius: metricCardCornerRadius, style: .continuous)
+					.fill(tint.opacity(0.12))
+			)
+	}
+
+	private var chartAxisLabelCount: Int {
+		if dynamicTypeSize.isAccessibilitySize { return 2 }
+		return dynamicTypeSize >= .xxLarge ? 3 : 4
+	}
+
+	private func visualizationHeader(_ title: String, medication: ANMedicationConcept) -> some View {
+		VStack(alignment: .leading, spacing: metricTitleSpacing) {
+			Text(medication.demoDisplayName)
+				.demoNameRedacted()
+				.font(.customFont(fontFamily, style: .title3, weight: .semibold))
+				.noTruncate()
+			Text("\(title) · \(daysWindow) days through \(viewModel.trendsWindowEnd.formatted(date: .abbreviated, time: .omitted))")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
 		}
-		.frame(maxWidth: .infinity, alignment: .leading)
-		.padding(chartContainerPadding)
-		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
 	}
 
-    /// Days between x-axis labels so about five or six fit at every window size.
-    private var chartAxisStrideDays: Int {
-        switch daysWindow {
-        case ...7: return 2
-        case ...14: return 3
-        case ...30: return 5
-        default: return 15
-        }
-    }
+	@ViewBuilder
+	private func usageChart(for med: ANMedicationConcept) -> some View {
+		let data = viewModel.dailyTotals(last: daysWindow)
+		if data.isEmpty {
+			Text("No doses recorded in this range. Choose another range or open History to review your entries.")
+				.font(.customFont(fontFamily, style: .body))
+				.foregroundStyle(.secondary)
+				.frame(maxWidth: .infinity, alignment: .leading)
+		} else {
+			let labelCount = min(data.count, chartAxisLabelCount)
+			// Keep both ends of the range visible, with evenly spaced dates between them.
+			let axisDates = (0 ..< labelCount).map { index in
+				data[index * (data.count - 1) / max(1, labelCount - 1)].day
+			}
+			VStack(alignment: .leading, spacing: controlsSpacing) {
+				visualizationHeader(String(localized: "Daily Usage"), medication: med)
 
-    @ViewBuilder
-    private func usageChart(for med: ANMedicationConcept) -> some View {
-        let data = viewModel.dailyTotals(last: daysWindow)
-        if data.isEmpty {
-			emptyVisualizationCard(for: med)
-        } else {
-            VStack(alignment: .leading, spacing: controlsSpacing) {
-				visualizationHeader(for: med, title: "Daily Usage")
+				Chart(data, id: \.day) { item in
+					// Area mark for visual appeal
+					AreaMark(
+						x: .value("Day", item.day, unit: .day),
+						y: .value("Total", item.total)
+					)
+					.foregroundStyle(.linearGradient(
+						colors: [med.displayColor.opacity(0.4), med.displayColor.opacity(0.1), .clear],
+						startPoint: .top,
+						endPoint: .bottom
+					))
 
-                Chart(data, id: \.day) { item in
-                    // Area mark for visual appeal
-                    AreaMark(
-                        x: .value("Day", item.day, unit: .day),
-                        y: .value("Total", item.total)
-                    )
-                    .foregroundStyle(.linearGradient(
-                        colors: [med.displayColor.opacity(0.4), med.displayColor.opacity(0.1), .clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ))
+					// Line mark for clarity
+					LineMark(
+						x: .value("Day", item.day, unit: .day),
+						y: .value("Total", item.total)
+					)
+					.interpolationMethod(.linear)
+					.foregroundStyle(med.displayColor)
+					.lineStyle(StrokeStyle(lineWidth: chartLineWidth))
 
-                    // Line mark for clarity
-                    LineMark(
-                        x: .value("Day", item.day, unit: .day),
-                        y: .value("Total", item.total)
-                    )
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(med.displayColor)
-                    .lineStyle(StrokeStyle(lineWidth: chartLineWidth))
+					// Point marks for data points
+					if item.total > 0 {
+						PointMark(
+							x: .value("Day", item.day, unit: .day),
+							y: .value("Total", item.total)
+						)
+						.foregroundStyle(med.displayColor)
+						.symbolSize(chartSymbolSize)
+					}
+				}
+				.chartXAxis {
+					AxisMarks(values: axisDates) { value in
+						AxisGridLine()
+							.foregroundStyle(.secondary.opacity(0.3))
+						AxisValueLabel(
+							anchor: value.index == 0 ? .topLeading : value.index == axisDates.count - 1 ? .topTrailing : .top,
+							collisionResolution: .greedy(minimumSpacing: 12)
+						) {
+							if let date = value.as(Date.self) {
+								Group {
+									if dynamicTypeSize.isAccessibilitySize && daysWindow > 7 {
+										VStack(spacing: 0) {
+											Text(date, format: .dateTime.month(.abbreviated))
+											Text(date, format: .dateTime.day())
+										}
+									} else {
+										Text(date, format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
+									}
+								}
+								.font(.customFont(fontFamily, style: .caption))
+								.foregroundStyle(.secondary)
+								.fixedSize()
+							}
+						}
+					}
+				}
+				.chartYAxis {
+					AxisMarks(position: .leading) { _ in
+						AxisGridLine()
+							.foregroundStyle(.secondary.opacity(0.2))
+						AxisValueLabel()
+							.foregroundStyle(.secondary)
+					}
+				}
+				.chartBackground { _ in
+					Rectangle()
+						.fill(.clear)
+				}
+				.frame(height: chartHeight)
+				.padding(.horizontal, chartPaddingH)
+				.accessibilityLabel("Daily usage chart for \(med.demoDisplayName)")
+				.accessibilityHint("Tap to open history for this medication")
+				.onTapGesture {
+					// Navigate to history with the selected medication
+					if let medicationID = viewModel.selectedMedicationID {
+						navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+					}
+				}
+				Button {
+					if let medicationID = viewModel.selectedMedicationID {
+						navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+					}
+				} label: {
+					Label("View History", systemSymbol: .clock)
+						.font(.customFont(fontFamily, style: .body))
+						.frame(minHeight: 44)
+				}
+				.accessibilityLabel("View history for \(med.demoDisplayName)")
+			}
+			.padding(chartContainerPadding)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
+		}
+	}
 
-                    // Point marks for data points
-                    if item.total > 0 {
-                        PointMark(
-                            x: .value("Day", item.day, unit: .day),
-                            y: .value("Total", item.total)
-                        )
-                        .foregroundStyle(med.displayColor)
-                        .symbolSize(chartSymbolSize)
-                    }
-                }
-                .chartXAxis {
-                    AxisMarks(values: .stride(by: .day, count: chartAxisStrideDays)) { _ in
-                        AxisGridLine()
-                            .foregroundStyle(.secondary.opacity(0.3))
-                        AxisValueLabel(format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : daysWindow <= 14 ? .dateTime.weekday(.abbreviated).day() : .dateTime.day().month(.abbreviated))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(position: .leading) { _ in
-                        AxisGridLine()
-                            .foregroundStyle(.secondary.opacity(0.2))
-                        AxisValueLabel()
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .chartBackground { _ in
-                    Rectangle()
-                        .fill(.clear)
-                }
-                .frame(height: chartHeight)
-                .padding(.horizontal, chartPaddingH)
-                .accessibilityLabel("Daily usage chart for \(med.displayName)")
-                .accessibilityHint("Tap to open history for this medication")
-                .accessibilityAddTraits(.isButton)
-                .accessibilityAction {
-                    if let medicationID = viewModel.selectedMedicationID {
-                        navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
-                    }
-                }
-                .onTapGesture {
-                    // Navigate to history with the selected medication
-                    if let medicationID = viewModel.selectedMedicationID {
-                        navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
-                    }
-                }
-            }
-            .padding(chartContainerPadding)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
-        }
-    }
+	@ViewBuilder
+	private func calendarHeatmap(for med: ANMedicationConcept) -> some View {
+		let data = viewModel.calendarHeatmapData(last: daysWindow)
+		if data.isEmpty {
+			Text("No doses recorded in this range. Choose another range or open History to review your entries.")
+				.font(.customFont(fontFamily, style: .body))
+				.foregroundStyle(.secondary)
+				.frame(maxWidth: .infinity, alignment: .leading)
+		} else {
+			VStack(alignment: .leading, spacing: controlsSpacing) {
+				visualizationHeader(String(localized: "Usage Calendar"), medication: med)
 
-    @ViewBuilder
-    private func calendarHeatmap(for med: ANMedicationConcept) -> some View {
-        let data = viewModel.calendarHeatmapData(last: daysWindow)
-        if data.isEmpty {
-			emptyVisualizationCard(for: med)
-        } else {
-            VStack(alignment: .leading, spacing: controlsSpacing) {
-				visualizationHeader(for: med, title: "Usage Calendar")
-
-                CalendarHeatmapGrid(
-                    data: data,
-                    daysWindow: daysWindow,
-                    medicationColor: med.displayColor,
-                    medicationName: med.displayName,
-                    onDateTapped: { date in
-                        // Navigate to history with selected date and medication
-                        if let medicationID = viewModel.selectedMedicationID {
-                            navigationManager.navigateToHistory(date: date, medicationID: medicationID.uuidString)
-                        }
-                    }
-                )
-            }
-            .padding(chartContainerPadding)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
-        }
-    }
+				CalendarHeatmapGrid(
+					data: data,
+					daysWindow: daysWindow,
+					medicationColor: med.displayColor,
+					medicationName: med.demoDisplayName,
+					onDateTapped: { date in
+						// Navigate to history with selected date and medication
+						if let medicationID = viewModel.selectedMedicationID {
+							navigationManager.navigateToHistory(date: date, medicationID: medicationID.uuidString)
+						}
+					}
+				)
+			}
+			.padding(chartContainerPadding)
+			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
+		}
+	}
 }
 
 struct CalendarHeatmapGrid: View {
-    let data: [CalendarDay]
-    let daysWindow: Int
-    let medicationColor: Color
-    let medicationName: String
-    let onDateTapped: (Date) -> Void
-    private let calendar = Calendar.current
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	let data: [CalendarDay]
+	let daysWindow: Int
+	let medicationColor: Color
+	let medicationName: String
+	let onDateTapped: (Date) -> Void
+	private let calendar = Calendar.current
 
-    @ScaledMetric private var heatmapSpacing: CGFloat = 8
-    @ScaledMetric private var heatmapCellSpacing: CGFloat = 2
-    @ScaledMetric private var heatmapCellHeight: CGFloat = 20
-    @ScaledMetric private var heatmapCellCornerRadius: CGFloat = 3
-    @ScaledMetric private var heatmapCellBorderWidth: CGFloat = 0.5
-    @ScaledMetric private var legendSquareCornerRadius: CGFloat = 2
-    @ScaledMetric private var legendSquareSize: CGFloat = 12
+	@ScaledMetric private var heatmapSpacing: CGFloat = 8
+	@ScaledMetric private var heatmapCellSpacing: CGFloat = 2
+	@ScaledMetric private var heatmapCellHeight: CGFloat = 20
+	@ScaledMetric private var heatmapCellCornerRadius: CGFloat = 3
+	@ScaledMetric private var heatmapCellBorderWidth: CGFloat = 0.5
+	@ScaledMetric private var legendSquareCornerRadius: CGFloat = 2
+	@ScaledMetric private var legendSquareSize: CGFloat = 12
 
-    // Calculate grid layout
-    private var columns: Int { 7 } // Days of week
-    private var rows: Int {
-        let weeks = ceil(Double(daysWindow) / 7.0)
-        return Int(weeks)
-    }
+	// Calculate grid layout
+	private var columns: Int { 7 } // Days of week
+	private var rows: Int {
+		let weeks = ceil(Double(daysWindow) / 7.0)
+		return Int(weeks)
+	}
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: heatmapSpacing) {
-            // Weekday headers
-            HStack(spacing: heatmapCellSpacing) {
-                ForEach(calendar.veryShortWeekdaySymbols, id: \.self) { day in
-                    Text(day)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: heatmapCellHeight)
-                }
-            }
+	var body: some View {
+		VStack(alignment: .leading, spacing: heatmapSpacing) {
+			if dynamicTypeSize.isAccessibilitySize {
+				VStack(spacing: heatmapSpacing) {
+					ForEach(data, id: \.date) { day in
+						Button {
+							onDateTapped(day.date)
+						} label: {
+							VStack(alignment: .leading, spacing: heatmapCellSpacing) {
+								Text(day.date.formatted(date: .abbreviated, time: .omitted))
+									.font(.customFont(fontFamily, style: .body, weight: .medium))
+								Text(day.total > 0 ? String(localized: "\(day.total.formattedAmount) logged") : String(localized: "No doses logged"))
+									.font(.customFont(fontFamily, style: .subheadline))
+									.foregroundStyle(.secondary)
+							}
+							.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+							.padding(heatmapSpacing)
+							.background(.regularMaterial, in: RoundedRectangle(cornerRadius: heatmapCellCornerRadius))
+						}
+						.buttonStyle(.plain)
+						.accessibilityLabel(accessibilityLabel(for: day))
+						.accessibilityHint("Open history for this date")
+					}
+				}
+			} else {
+				ScrollView(.horizontal) {
+					VStack(spacing: heatmapCellSpacing) {
+						HStack(spacing: heatmapCellSpacing) {
+							ForEach(0 ..< 7, id: \.self) { index in
+								Text(calendar.veryShortWeekdaySymbols[(index + calendar.firstWeekday - 1) % 7])
+									.font(.customFont(fontFamily, style: .caption2))
+									.foregroundStyle(.secondary)
+									.frame(maxWidth: .infinity, minHeight: 44)
+							}
+						}
+						.accessibilityHidden(true)
 
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: heatmapCellSpacing), count: 7), spacing: heatmapCellSpacing) {
-                ForEach(paddedData, id: \.date) { day in
-                    RoundedRectangle(cornerRadius: heatmapCellCornerRadius)
-                        .fill(colorForIntensity(day.intensity))
-                        .frame(height: heatmapCellHeight)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: heatmapCellCornerRadius)
-                                .stroke(.secondary.opacity(0.2), lineWidth: heatmapCellBorderWidth)
-                        )
-                        .onTapGesture {
-                            // Only navigate for actual dates, not padding
-                            if day.intensity >= 0 {
-                                onDateTapped(day.date)
-                            }
-                        }
-                        .accessibilityLabel(accessibilityLabel(for: day))
-                        .accessibilityAddTraits(day.intensity >= 0 ? .isButton : AccessibilityTraits())
-                        .help(day.total > 0 ?
-                            "\(calendar.component(.day, from: day.date)): \(day.total.formattedAmount)" :
-                            "\(calendar.component(.day, from: day.date)): No doses")
-                }
-            }
+						LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 44), spacing: heatmapCellSpacing), count: 7), spacing: heatmapCellSpacing) {
+							ForEach(paddedData, id: \.date) { day in
+								if day.intensity >= 0 {
+									Button {
+										onDateTapped(day.date)
+									} label: {
+										Text("\(calendar.component(.day, from: day.date))")
+											.font(.customFont(fontFamily, style: .caption))
+											.foregroundStyle(.primary)
+											.padding(4)
+											.background(.regularMaterial, in: Circle())
+											.frame(maxWidth: .infinity, minHeight: 44)
+											.background(colorForIntensity(day.intensity), in: RoundedRectangle(cornerRadius: heatmapCellCornerRadius))
+									}
+									.buttonStyle(.plain)
+									.accessibilityLabel(accessibilityLabel(for: day))
+									.accessibilityHint("Open history for this date")
+								} else {
+									Color.clear.frame(height: 44)
+										.accessibilityHidden(true)
+								}
+							}
+						}
+					}
+					.frame(minWidth: 7 * 44 + 6 * heatmapCellSpacing)
+				}
+			}
 
-            // Legend
-            HStack {
-                Text("Less")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+			// Legend
+			HStack {
+				Text("Less")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
 
-                HStack(spacing: heatmapCellSpacing) {
-                    ForEach(0 ..< 5) { level in
-                        RoundedRectangle(cornerRadius: legendSquareCornerRadius)
-                            .fill(colorForIntensity(Double(level) / 4.0))
-                            .frame(width: legendSquareSize, height: legendSquareSize)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: legendSquareCornerRadius)
-                                    .stroke(.secondary.opacity(0.2), lineWidth: heatmapCellBorderWidth)
-                            )
-                    }
-                }
+				HStack(spacing: heatmapCellSpacing) {
+					ForEach(0 ..< 5) { level in
+						RoundedRectangle(cornerRadius: legendSquareCornerRadius)
+							.fill(colorForIntensity(Double(level) / 4.0))
+							.frame(width: legendSquareSize, height: legendSquareSize)
+							.overlay(
+								RoundedRectangle(cornerRadius: legendSquareCornerRadius)
+									.stroke(.secondary.opacity(0.2), lineWidth: heatmapCellBorderWidth)
+							)
+					}
+				}
 
-                Text("More")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+				Text("More")
+					.font(.customFont(fontFamily, style: .caption))
+					.foregroundStyle(.secondary)
 
-                Spacer()
-            }
-        }
-        .accessibilityElement(children: .contain)
-    }
+				Spacer()
+			}
+		}
+		.accessibilityElement(children: .contain)
+	}
 
-    // Pad data to fill grid properly
-    private var paddedData: [CalendarDay] {
-        guard let firstDate = data.first?.date else { return data }
+	// Pad data to fill grid properly
+	private var paddedData: [CalendarDay] {
+		guard let firstDate = data.first?.date else { return data }
 
-        let firstWeekday = calendar.component(.weekday, from: firstDate)
-        let leadingEmptyDays = (firstWeekday - calendar.firstWeekday + 7) % 7
+		let firstWeekday = calendar.component(.weekday, from: firstDate)
+		let leadingEmptyDays = (firstWeekday - calendar.firstWeekday + 7) % 7
 
-        var paddedData = data
+		var paddedData = data
 
-        // Add leading empty days
-        if leadingEmptyDays > 0 {
-            for i in (1 ... leadingEmptyDays).reversed() {
-                if let emptyDate = calendar.date(byAdding: .day, value: -i, to: firstDate) {
-                    paddedData.insert(CalendarDay(date: emptyDate, total: -1, intensity: -1), at: 0)
-                }
-            }
-        }
+		// Add leading empty days
+		if leadingEmptyDays > 0 {
+			for i in (1 ... leadingEmptyDays).reversed() {
+				if let emptyDate = calendar.date(byAdding: .day, value: -i, to: firstDate) {
+					paddedData.insert(CalendarDay(date: emptyDate, total: -1, intensity: -1), at: 0)
+				}
+			}
+		}
 
-        return paddedData
-    }
+		return paddedData
+	}
 
-    private func colorForIntensity(_ intensity: Double) -> Color {
-        if intensity < 0 {
-            // Empty/placeholder days
-            return .clear
-        } else if intensity == 0 {
-            // No usage days
-            return medicationColor.opacity(0.1)
-        } else {
-            // Usage days with intensity scaling
-            return medicationColor.opacity(0.2 + (intensity * 0.8))
-        }
-    }
+	private func colorForIntensity(_ intensity: Double) -> Color {
+		if intensity < 0 {
+			// Empty/placeholder days
+			return .clear
+		} else if intensity == 0 {
+			// No usage days
+			return medicationColor.opacity(0.1)
+		} else {
+			// Usage days with intensity scaling
+			return medicationColor.opacity(0.2 + (intensity * 0.8))
+		}
+	}
 
-    private func accessibilityLabel(for day: CalendarDay) -> String {
-        let dateText = day.date.formatted(date: .abbreviated, time: .omitted)
-        guard day.intensity >= 0 else {
-            return "Empty calendar cell"
-        }
+	private func accessibilityLabel(for day: CalendarDay) -> String {
+		let dateText = day.date.formatted(date: .abbreviated, time: .omitted)
+		guard day.intensity >= 0 else {
+			return String(localized: "Empty calendar cell")
+		}
 
-        if day.total > 0 {
-            return "\(dateText), \(medicationName), \(day.total.formattedAmount) logged"
-        }
+		if day.total > 0 {
+			return String(localized: "\(dateText), \(medicationName), \(day.total.formattedAmount) logged")
+		}
 
-        return "\(dateText), \(medicationName), no doses logged"
-    }
+		return String(localized: "\(dateText), \(medicationName), no doses logged")
+	}
 }
 
 #if DEBUG
-    #Preview {
-        MedicationTrendsView()
-    }
+	#Preview {
+		MedicationTrendsView()
+	}
 #endif

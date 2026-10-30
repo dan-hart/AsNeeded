@@ -32,7 +32,8 @@ struct ConnectionStatusView: View {
     @ObservedObject var sender: WCSender
 
     var body: some View {
-        VStack(spacing: 16) {
+		ScrollView {
+		VStack(spacing: 16) {
             if sender.isConnected {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 40))
@@ -47,9 +48,9 @@ struct ConnectionStatusView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 40))
                     .foregroundStyle(.red)
-                Text("Disconnected")
+				Text("iPhone Unavailable")
                     .font(.headline)
-                Text("Make sure iPhone is nearby and AsNeeded app is open")
+				Text("Open AsNeeded on your nearby iPhone. Changes made offline wait to sync.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -57,6 +58,7 @@ struct ConnectionStatusView: View {
         }
         .padding()
         .navigationTitle("Connection")
+		}
     }
 }
 

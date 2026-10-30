@@ -1,0 +1,119 @@
+{
+  "generated_at": "2026-10-28T00:27:53Z",
+  "raw_dir": "Design/AppStoreConnect/1.2.0/raw/iphone",
+  "framed_dir": "Design/AppStoreConnect/1.2.0/iphone",
+  "output_dir": "Design/AppStoreConnect/1.2.0/review",
+  "approval_path": "Design/AppStoreConnect/1.2.0/review/approved.json",
+  "summary": {
+    "total": 6,
+    "ready": 6,
+    "missing_raw": 0,
+    "invalid_size": 0,
+    "approved": 0,
+    "pending_approval": 6
+  },
+  "entries": [
+    {
+      "key": "||01-next-dose",
+      "screenshot_id": "01-next-dose",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/01-next-dose.png",
+      "framed_relative_path": "01-next-dose.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/01-next-dose.png",
+      "raw_relative_path": "01-next-dose.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    },
+    {
+      "key": "||02-next-dose-alert",
+      "screenshot_id": "02-next-dose-alert",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/02-next-dose-alert.png",
+      "framed_relative_path": "02-next-dose-alert.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/02-next-dose-alert.png",
+      "raw_relative_path": "02-next-dose-alert.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    },
+    {
+      "key": "||03-optional-limits",
+      "screenshot_id": "03-optional-limits",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/03-optional-limits.png",
+      "framed_relative_path": "03-optional-limits.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/03-optional-limits.png",
+      "raw_relative_path": "03-optional-limits.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    },
+    {
+      "key": "||04-dose-reflections",
+      "screenshot_id": "04-dose-reflections",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/04-dose-reflections.png",
+      "framed_relative_path": "04-dose-reflections.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/04-dose-reflections.png",
+      "raw_relative_path": "04-dose-reflections.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    },
+    {
+      "key": "||05-trends",
+      "screenshot_id": "05-trends",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/05-trends.png",
+      "framed_relative_path": "05-trends.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/05-trends.png",
+      "raw_relative_path": "05-trends.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    },
+    {
+      "key": "||06-quick-log",
+      "screenshot_id": "06-quick-log",
+      "framed_path": "Design/AppStoreConnect/1.2.0/iphone/06-quick-log.png",
+      "framed_relative_path": "06-quick-log.png",
+      "raw_path": "Design/AppStoreConnect/1.2.0/raw/iphone/06-quick-log.png",
+      "raw_relative_path": "06-quick-log.png",
+      "width": 1320,
+      "height": 2868,
+      "display_types": [
+        "APP_IPHONE_67"
+      ],
+      "valid_app_store_size": true,
+      "status": "ready",
+      "approved": false,
+      "approval_state": "pending"
+    }
+  ]
+}

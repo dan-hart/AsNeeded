@@ -1,70 +1,39 @@
-// LogDoseWidgetIntent.swift
-// App Intent for logging medication doses directly from widgets (iOS 17+)
-
-import ANModelKit
 import AppIntents
-import Boutique
 import Foundation
-import WidgetKit
 
-@available(iOS 17.0, *)
+/// Preserve cached intent identity. Compiled into both targets so foreground execution belongs to the app.
 struct LogDoseWidgetIntent: AppIntent {
-    static let title: LocalizedStringResource = "Log Dose"
-    static let description = IntentDescription("Log a dose directly from widget")
-    static let openAppWhenRun: Bool = false
+	static let title: LocalizedStringResource = "Log Dose"
+	static let description = IntentDescription("Open the dose form to review and save a dose.")
+	static let isDiscoverable = false
+	static let openAppWhenRun = true
 
-    @Parameter(title: "Medication ID")
-    var medicationID: String
+	@Parameter(title: "Medication ID")
+	var medicationID: String
 
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        // Parse medication ID
-        guard let id = UUID(uuidString: medicationID) else {
-            return .result()
-        }
+	private let navigate: @MainActor @Sendable (UUID) throws -> Void
 
-        // Get shared data provider
-        let provider = WidgetDataProvider.shared
+	init() {
+		navigate = { id in
+			#if ASNEEDED_WIDGET_EXTENSION
+			// Fail closed if a stale archive is dispatched to the extension instead of the foreground app.
+			throw WidgetLogError.reviewInApp
+			#else
+			NavigationManager.shared.pendingWidgetRoute = .logDose(id)
+			#endif
+		}
+	}
 
-        // Find the medication
-        guard let medication = provider.medications.first(where: { $0.id == id }) else {
-            return .result()
-        }
+	init(navigate: @escaping @MainActor @Sendable (UUID) throws -> Void) {
+		self.navigate = navigate
+	}
 
-        // Determine dose amount and unit
-        let doseAmount = medication.prescribedDoseAmount ?? 1.0
-        let selectedUnit = medication.prescribedUnit ?? .unit
-
-        // Create dose and event
-        let dose = ANDoseConcept(amount: doseAmount, unit: selectedUnit)
-        let event = ANEventConcept(
-            eventType: .doseTaken,
-            medication: medication,
-            dose: dose,
-            date: Date()
-        )
-
-        do {
-            // Log the dose to shared store
-            try await provider.eventsStore.insert(event)
-
-            // Update medication quantity if tracked
-            if let quantity = medication.quantity, quantity > 0 {
-                var updatedMedication = medication
-                updatedMedication.quantity = max(0, quantity - doseAmount)
-                // Boutique's insert will replace existing item with same ID
-                // No need to remove first, avoiding race condition
-                try await provider.medicationsStore.insert(updatedMedication)
-            }
-
-            // Reload all widget timelines to show updated state
-            WidgetCenter.shared.reloadAllTimelines()
-
-            return .result()
-
-        } catch {
-            // Failed to log dose
-            return .result()
-        }
-    }
+	@MainActor
+	func perform() async throws -> some IntentResult & ReturnsValue<URL> {
+		guard let id = UUID(uuidString: medicationID), let url = WidgetNavigationRoute.logDose(id).url else {
+			throw WidgetLogError.medicationUnavailable
+		}
+		try navigate(id)
+		return .result(value: url)
+	}
 }

@@ -23,8 +23,20 @@ public final class DataRecoveryManager {
 	/// Report of recovery scan results
 	public struct RecoveryReport {
 		public var scannedLocations: [ScannedLocation] = []
-		public var totalMedicationsFound: Int = 0
-		public var totalEventsFound: Int = 0
+		/// Counts source records, which can include copies already in current storage or another source.
+		public var totalMedicationsFound: Int { historicalLocations.reduce(0) { $0 + $1.medicationsFound } }
+		public var totalEventsFound: Int { historicalLocations.reduce(0) { $0 + $1.eventsFound } }
+
+		private var historicalLocations: [ScannedLocation] {
+			func normalizedPath(_ location: ScannedLocation) -> String {
+				URL(fileURLWithPath: location.path).standardizedFileURL.resolvingSymlinksInPath().path
+			}
+			let currentPaths = Set(scannedLocations.filter { $0.type == .appGroup }.map(normalizedPath))
+			var seenPaths = currentPaths
+			return scannedLocations.filter { location in
+				location.exists && location.type != .appGroup && seenPaths.insert(normalizedPath(location)).inserted
+			}
+		}
 		public var hasOrphanedData: Bool { totalMedicationsFound > 0 || totalEventsFound > 0 }
 
 		public struct ScannedLocation {
@@ -66,8 +78,6 @@ public final class DataRecoveryManager {
 				checkBodegaStructure: false
 			)
 			report.scannedLocations.append(result)
-			report.totalMedicationsFound += result.medicationsFound
-			report.totalEventsFound += result.eventsFound
 		}
 
 		// 2. Documents directory (Bodega default on iOS)
@@ -78,7 +88,7 @@ public final class DataRecoveryManager {
 				checkBodegaStructure: true
 			)
 			report.scannedLocations.append(result)
-			// Don't add to total if same as App Group
+			// Historical source totals are derived from distinct existing locations.
 			if result.medicationsFound > 0 || result.eventsFound > 0 {
 				logger.info("Found orphaned data in Documents: \(result.medicationsFound) meds, \(result.eventsFound) events")
 			}
@@ -164,7 +174,7 @@ public final class DataRecoveryManager {
 		for medication in recoveredData.medications {
 			let existingIDs = Set(dataStore.medications.map { $0.id })
 			if !existingIDs.contains(medication.id) {
-				try await dataStore.medicationsStore.insert(medication)
+				try await dataStore.addMedication(medication)
 				medicationsRecovered += 1
 			}
 		}
@@ -173,7 +183,7 @@ public final class DataRecoveryManager {
 		for event in recoveredData.events {
 			let existingIDs = Set(dataStore.events.map { $0.id })
 			if !existingIDs.contains(event.id) {
-				try await dataStore.eventsStore.insert(event)
+				try await dataStore.addEvent(event, shouldRecordForReview: false)
 				eventsRecovered += 1
 			}
 		}

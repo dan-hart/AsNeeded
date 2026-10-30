@@ -35,6 +35,7 @@ struct QuickLogHintPill: View {
 		HStack(spacing: iconSpacing) {
 			icon
 			Text(text)
+				.fixedSize(horizontal: false, vertical: true)
 
 			if let onDismiss {
 				Button(action: onDismiss) {
@@ -42,6 +43,7 @@ struct QuickLogHintPill: View {
 						.font(.customFont(fontFamily, style: .caption2, weight: .bold))
 						.foregroundStyle(.secondary)
 						.padding(dismissPadding)
+						.frame(minWidth: 44, minHeight: 44)
 						.contentShape(Rectangle())
 				}
 				.buttonStyle(.plain)
@@ -53,7 +55,7 @@ struct QuickLogHintPill: View {
 		.padding(.leading, paddingLeading)
 		.padding(.trailing, onDismiss == nil ? paddingLeading : dismissTrailingInset)
 		.padding(.vertical, onDismiss == nil ? paddingV : 0)
-		.background(.regularMaterial, in: Capsule())
+		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
 		// Every Log Dose control already describes the hold to VoiceOver, so the pill is only exposed when
 		// it carries the close button, which VoiceOver users need in order to retire the hint.
 		.accessibilityHidden(onDismiss == nil)
@@ -99,6 +101,9 @@ struct QuickLogHintPresenter: ViewModifier {
 		content
 			.task {
 				await presentIfAllowed()
+			}
+			.onChange(of: hasDiscoveredQuickLog) { _, discovered in
+				if discovered { isPresented = false }
 			}
 			.onDisappear {
 				isPresented = false
@@ -150,14 +155,14 @@ struct QuickLogHintOverlay: ViewModifier {
 	@ScaledMetric private var spacing: CGFloat = 8
 	/// Roughly the pill's height plus `spacing`. With less room than this above the control, the pill
 	/// would poke out past the container's top edge, so it goes underneath instead.
-	@ScaledMetric private var minimumRoomAbove: CGFloat = 36
+	@State private var hintHeight: CGFloat = 44
 
 	func body(content: Content) -> some View {
 		content.overlayPreferenceValue(QuickLogHintAnchorKey.self) { anchor in
 			GeometryReader { proxy in
 				if isPresented, let anchor {
 					let rect = proxy[anchor]
-					let placeAbove = rect.minY >= minimumRoomAbove
+					let placeAbove = rect.minY >= hintHeight + spacing
 					// Plain values for the alignment closures, which must not capture the proxy or the view.
 					let trailingInset = proxy.size.width - rect.maxX
 					let bottomEdgeWhenAbove = rect.minY - spacing
@@ -167,7 +172,9 @@ struct QuickLogHintOverlay: ViewModifier {
 							.allowsHitTesting(false)
 
 						QuickLogHintPill(text: text, onDismiss: onDismiss)
-							.fixedSize()
+							.frame(maxWidth: max(44, proxy.size.width - max(0, trailingInset) - 12))
+							.fixedSize(horizontal: false, vertical: true)
+							.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { hintHeight = $0 }
 							.alignmentGuide(.trailing) { dimensions in
 								dimensions[.trailing] + trailingInset
 							}

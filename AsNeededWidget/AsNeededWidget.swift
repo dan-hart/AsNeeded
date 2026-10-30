@@ -16,5 +16,6 @@ struct AsNeededWidgets: WidgetBundle {
         MedicationMediumWidget()
         MedicationLargeWidget()
         MedicationLockScreenWidget()
+		MedicationUsageWidget()
     }
 }

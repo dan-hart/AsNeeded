@@ -76,22 +76,6 @@ public final class MigrationCoordinator {
 
 		logger.info("✅ Storage health check passed - proceeding with migration")
 
-		// Create pre-migration backup (CRITICAL - must succeed before migration)
-		if currentVersion < targetVersion || currentVersion == 0 {
-			logger.info("Creating pre-migration backup...")
-			let backupResult = await BackupManager.shared.createPreMigrationBackup()
-			if backupResult.success {
-				logger.info("✅ Pre-migration backup created")
-			} else {
-				// CRITICAL: Backup failure is now blocking to prevent unrecoverable data loss
-				logger.error("❌ Pre-migration backup failed: errorType=\(DHLogger.privacySafeErrorType(backupResult.error))")
-				logger.error("Migration aborted - cannot proceed without backup protection")
-				self.error = MigrationBackupFailure(underlyingError: backupResult.error)
-				isComplete = false
-				isRunning = false
-				return
-			}
-		}
 
 		// Start timeout watchdog
 		let watchdogTask = Task {
@@ -104,7 +88,17 @@ public final class MigrationCoordinator {
 
 		// Run the migration
 		do {
-			try await DataMigrationManager().migrateIfNeeded()
+			try await DataStore.shared.recoverAndMigrateLegacy {
+				// Recover first and hold ownership across backup and migration so another
+				// candidate process cannot change one database between the two copies.
+				if currentVersion < targetVersion || currentVersion == 0 {
+					let backup = await BackupManager.shared.createPreMigrationBackup()
+					guard backup.success else { throw MigrationBackupFailure(underlyingError: backup.error) }
+				}
+				try await DataMigrationManager().migrateIfNeeded()
+			}
+			// Finish model-field migration before any editing or dose logging UI appears.
+			try await MedicationDoseLimitMigration().migrate(dataStore: .shared)
 
 			// Update schema version after successful migration
 			if currentVersion < targetVersion {
@@ -154,9 +148,9 @@ enum StorageHealthError: LocalizedError {
 		switch self {
 		case let .unhealthyStorage(issues):
 			if issues.isEmpty {
-				return "Storage system is unhealthy"
+				return String(localized: "Storage system is unhealthy")
 			}
-			return "Storage system issues detected:\n" + issues.map { "• \($0)" }.joined(separator: "\n")
+			return String(localized: "Storage system issues detected:\n") + issues.map { String(localized: "• \($0)") }.joined(separator: "\n")
 		}
 	}
 }
@@ -167,8 +161,8 @@ struct MigrationBackupFailure: LocalizedError {
 
 	var errorDescription: String? {
 		if let underlying = underlyingError {
-			return "Pre-migration backup failed: \(underlying.localizedDescription). Migration cannot proceed without backup protection."
+			return String(localized: "Pre-migration backup failed: \(underlying.localizedDescription). Migration cannot proceed without backup protection.")
 		}
-		return "Pre-migration backup failed. Migration cannot proceed without backup protection."
+		return String(localized: "Pre-migration backup failed. Migration cannot proceed without backup protection.")
 	}
 }

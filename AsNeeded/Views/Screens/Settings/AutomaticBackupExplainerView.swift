@@ -8,7 +8,7 @@ struct AutomaticBackupExplainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.fontFamily) private var fontFamily
 
-    @ScaledMetric private var cornerRadius: CGFloat = 8
+	private let cornerRadius: CGFloat = 8
 
     var body: some View {
         NavigationStack {
@@ -24,19 +24,18 @@ struct AutomaticBackupExplainerView: View {
                 }
                 .padding()
             }
-            .navigationTitle("How It Works")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("How It Works")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         dismiss()
                     } label: {
                         Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Close Backup Information")
                 }
             }
+            .tint(.accent)
         }
     }
 
@@ -60,29 +59,29 @@ struct AutomaticBackupExplainerView: View {
                 stepRow(
                     number: 1,
                     icon: .pills,
-                    title: "Log a dose",
-                    description: "Record your medication"
+                    title: String(localized: "Log a dose"),
+                    description: String(localized: "Record your medication")
                 )
 
                 stepRow(
                     number: 2,
                     icon: .clock,
-                    title: "Brief wait",
-                    description: "Prevents multiple backups in a row"
+                    title: String(localized: "Brief wait"),
+                    description: String(localized: "Prevents multiple backups in a row")
                 )
 
                 stepRow(
                     number: 3,
                     icon: .checkmarkCircleFill,
-                    title: "Auto-saved",
-                    description: "Data saved to your location"
+                    title: String(localized: "Auto-saved"),
+                    description: String(localized: "Data saved to your location")
                 )
 
                 stepRow(
                     number: 4,
                     icon: .trash,
-                    title: "Auto-cleanup",
-                    description: "Old backups removed automatically"
+                    title: String(localized: "Auto-cleanup"),
+                    description: String(localized: "Old backups removed automatically")
                 )
             }
         }
@@ -90,7 +89,7 @@ struct AutomaticBackupExplainerView: View {
 
     private var retentionPolicySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Retention Policy")
+            Text("Keep Backups")
                 .font(.customFont(fontFamily, style: .title2, weight: .bold))
 
             Text("Choose how long to keep backups (7 days to 1 year). Older backups are deleted daily to save space. Today's backup is always kept.")
@@ -144,9 +143,9 @@ struct AutomaticBackupExplainerView: View {
                 .font(.customFont(fontFamily, style: .title2, weight: .bold))
 
             VStack(alignment: .leading, spacing: 8) {
-                bulletPoint("Small backups (typically 2-3 MB)")
-                bulletPoint("Minimal battery usage")
-                bulletPoint("Track storage in settings")
+                bulletPoint(String(localized: "Small backups (typically 2-3 MB)"))
+                bulletPoint(String(localized: "Minimal battery usage"))
+                bulletPoint(String(localized: "Track storage in settings"))
             }
         }
     }
@@ -168,9 +167,9 @@ struct AutomaticBackupExplainerView: View {
                 .font(.customFont(fontFamily, style: .title2, weight: .bold))
 
             VStack(alignment: .leading, spacing: 8) {
-                bulletPoint("Backups stored in your chosen location only")
-                bulletPoint("Data stays on your device or personal iCloud")
-                bulletPoint("You control and can delete backups anytime")
+                bulletPoint(String(localized: "Backups stored in your chosen location only"))
+                bulletPoint(String(localized: "Data stays on your device or personal iCloud"))
+                bulletPoint(String(localized: "You control and can delete backups anytime"))
             }
         }
     }

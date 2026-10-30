@@ -41,7 +41,7 @@ class RevenueCatManager: NSObject, ObservableObject {
     @Published private(set) var isConfigured = false
 
     /// Shown wherever a purchase is attempted in a build that has no RevenueCat key.
-    static let unavailableMessage = "Support options are not available in this build."
+    static let unavailableMessage = String(localized: "Support options are not available in this build.")
 
     func configure() {
         // The RevenueCat public SDK key is supplied per build, never committed. See Config/Secrets.example.xcconfig.
@@ -54,7 +54,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             return
         }
 
-        Purchases.logLevel = .debug
+        Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: rcPublicKey)
         isConfigured = true
 
@@ -107,7 +107,7 @@ class RevenueCatManager: NSObject, ObservableObject {
 
                     // Set error message for missing products
                     if products.isEmpty {
-                        purchaseError = "Products temporarily unavailable. Please try again later."
+                        purchaseError = String(localized: "Products temporarily unavailable. Please try again later.")
                     }
                 } else {
                     // Clear any previous errors
@@ -188,7 +188,7 @@ class RevenueCatManager: NSObject, ObservableObject {
         guard let product = availableProducts.first(where: { $0.productIdentifier == productId.rawValue }) else {
             DHLogger.data.error("Product not found")
             DHLogger.data.error("Available products count: \(availableProducts.count)")
-            purchaseError = "Product not available. Please check your App Store Connect configuration."
+            purchaseError = String(localized: "Product not available. Please check your App Store Connect configuration.")
             return false
         }
 
@@ -216,7 +216,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             return false
         } catch {
             DHLogger.data.logPrivacySafeError("Purchase failed", error: error)
-            purchaseError = "Purchase failed. Please try again."
+            purchaseError = String(localized: "Purchase failed. Please try again.")
             return false
         }
     }
@@ -227,15 +227,15 @@ class RevenueCatManager: NSObject, ObservableObject {
             DHLogger.ui.info("Purchase cancelled by user")
         // Don't show error for user cancellation
         case .productNotAvailableForPurchaseError:
-            purchaseError = "This product is not available for purchase."
+            purchaseError = String(localized: "This product is not available for purchase.")
         case .purchaseNotAllowedError:
-            purchaseError = "Purchases are not allowed on this device."
+            purchaseError = String(localized: "Purchases are not allowed on this device.")
         case .networkError:
-            purchaseError = "Network error. Please check your connection and try again."
+            purchaseError = String(localized: "Network error. Please check your connection and try again.")
         case .paymentPendingError:
-            purchaseError = "Payment is pending. Please check back later."
+            purchaseError = String(localized: "Payment is pending. Please check back later.")
         default:
-            purchaseError = "Purchase failed. Please try again."
+            purchaseError = String(localized: "Purchase failed. Please try again.")
         }
 
         if let errorMessage = purchaseError {
@@ -263,7 +263,7 @@ class RevenueCatManager: NSObject, ObservableObject {
             return true
         } catch {
             DHLogger.data.logPrivacySafeError("Failed to restore purchases", error: error)
-            purchaseError = "Failed to restore purchases. Please try again."
+            purchaseError = String(localized: "Failed to restore purchases. Please try again.")
             return false
         }
     }

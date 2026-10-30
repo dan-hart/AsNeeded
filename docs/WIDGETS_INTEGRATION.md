@@ -2,6 +2,8 @@
 
 This document explains how to integrate the AsNeeded widgets, app icon quick actions, and Apple Watch complications into the Xcode project.
 
+Live Activities were removed during 1.2.0 stabilization. The app no longer creates or updates them, the widget bundle no longer registers a Live Activity, and the app no longer declares Live Activities support. App-only retirement code retains the previous attributes schema to enumerate and immediately end activities from earlier builds at launch. Home Screen and Lock Screen widgets remain available. Upgrade validation should include a device that had an activity from the earlier build.
+
 ## Overview
 
 The following features have been implemented:
@@ -182,9 +184,9 @@ Main App → DataStore → Shared Container (App Group)
                               ↓
                       Widget Extension
                               ↓
-                     WidgetDataProvider
+              WidgetDataProvider
                               ↓
-                         Widget Views
+                  Widget Views
 ```
 
 ### URL Scheme Format

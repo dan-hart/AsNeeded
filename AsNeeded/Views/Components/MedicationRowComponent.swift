@@ -2,41 +2,13 @@ import ANModelKit
 import SFSafeSymbols
 import SwiftUI
 
-enum MedicationRowLayoutStyle: Equatable {
-	case standard
-	case compact
-	case accessibility
-
-	init(dynamicTypeSize: DynamicTypeSize) {
-		if dynamicTypeSize.isAccessibilitySize {
-			self = .accessibility
-		} else if dynamicTypeSize >= .xxxLarge {
-			self = .compact
-		} else {
-			self = .standard
-		}
-	}
-
-	var clinicalNameLineLimit: Int? {
-		self == .compact ? 1 : nil
-	}
-
-	func quantityText(for quantity: Double, unitAbbreviation: String?) -> String {
-		let quantityText = [quantity.formattedAmount, unitAbbreviation]
-			.compactMap { $0 }
-			.joined(separator: " ")
-
-		return self == .compact ? quantityText : "\(quantityText) left"
-	}
-}
-
 /// A comprehensive medication row component with adaptive layout and interactive logging
 ///
 /// Features:
 /// - Adaptive layout that switches between standard and accessibility modes
 /// - Animated medication icon with smart type detection
-/// - Quantity tracking with color-coded status indicators
-/// - Interactive log button: tap opens Log Dose, hold quick logs, with a hold ring and haptics shared with every Log Dose control
+/// - Quantity tracking with color-coded stock indicators
+/// - Interactive log button with haptic feedback
 /// - Comprehensive accessibility support
 /// - Edit mode integration for list management
 ///
@@ -55,97 +27,56 @@ enum MedicationRowLayoutStyle: Equatable {
 /// - Healthcare provider dashboards
 /// - Any interface displaying medication information with interaction capabilities
 struct MedicationRowComponent: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     let medication: ANMedicationConcept
     var statusSummary: MedicationStatusSummaryService.Summary?
     var onLogTapped: () -> Void = {}
+	var onOpen: (() -> Void)?
     var onQuickLog: (() async -> Bool)? = nil // Quick log with default dose
     var onQuickLogSuccess: (() -> Void)? = nil // Called when quick log succeeds to show toast
+	var showQuickLogHintAnchor = false
     var onAppearanceChanged: ((String?, String?) -> Void)? = nil
-    /// Publishes the log button's frame through `QuickLogHintAnchorKey` so the list can float the
-    /// "Hold to log …" pill above it. The list turns this on for one row at a time.
-    var showsQuickLogHint: Bool = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.editMode) private var editMode
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fontFamily) private var fontFamily
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
     @State private var isLongPressing = false
-    /// 0 to 1 while the log button is held; drives the ring that shows the quick log building up.
-    @State private var holdProgress: Double = 0
-    /// Briefly true after a quick log succeeds so the button can pop.
-    @State private var isCelebrating = false
+	@State private var holdProgress: Double = 0
     @State private var showingAppearancePicker = false
     @State private var tempSelectedColor: String?
     @State private var tempSelectedSymbol: String?
     private let hapticsManager = HapticsManager.shared
 
-    @ScaledMetric private var rowPadding: CGFloat = 16
-    @ScaledMetric private var holdRingLineWidth: CGFloat = 3
-    @ScaledMetric private var iconContentSpacing: CGFloat = 14
-    @ScaledMetric private var logButtonSize: CGFloat = 66
-    @ScaledMetric private var medicationIconSize: CGFloat = 56
+    private let rowPadding: CGFloat = 16
+    private let iconContentSpacing: CGFloat = 14
+    @ScaledMetric private var medicationIconSize: CGFloat = 40
 
     var body: some View {
-        HStack(spacing: 0) {
-            switch layoutStyle {
-            case .accessibility:
-                VStack(alignment: .leading, spacing: 16) {
-                    medicationHeader
-                    if editMode?.wrappedValue != .active {
-                        medicationDetails
-                        enhancedLogButton
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(rowPadding)
+		HStack(alignment: .center, spacing: 12) {
+			VStack(alignment: .leading, spacing: 8) {
+				HStack(spacing: 10) {
+					if !dynamicTypeSize.isAccessibilitySize, editMode?.wrappedValue != .active {
+						medicationIcon
+							.frame(minWidth: 44, minHeight: 44)
+					}
+					medicationHeader
+						.frame(maxWidth: .infinity, alignment: .leading)
+				}
+				if editMode?.wrappedValue != .active {
+					medicationDetails
+						.frame(maxWidth: .infinity, alignment: .leading)
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
 
-            case .compact:
-				VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .center, spacing: 12) {
-                        compactMedicationHeader
-
-                        Spacer(minLength: 8)
-
-                        if editMode?.wrappedValue != .active {
-                            enhancedLogButton
-                        }
-                    }
-
-                    if editMode?.wrappedValue != .active {
-                        compactMedicationDetails
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-				.padding(12)
-
-            case .standard:
-                HStack(alignment: .center, spacing: 16) {
-                    // Left Side: Icon and Info
-                    HStack(spacing: iconContentSpacing) {
-                        if editMode?.wrappedValue != .active {
-                            medicationIcon
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            medicationHeader
-                            if editMode?.wrappedValue != .active {
-                                medicationDetails
-                            }
-                        }
-                    }
-
-                    Spacer(minLength: 8)
-
-                    // Right Side: Enhanced Log Button
-                    if editMode?.wrappedValue != .active {
-                        enhancedLogButton
-                    }
-                }
-                .padding(rowPadding)
-            }
-        }
+			if editMode?.wrappedValue != .active {
+				enhancedLogButton
+			}
+		}
+		.padding(dynamicTypeSize.isAccessibilitySize ? rowPadding : 12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(colorScheme == .dark ?
@@ -174,15 +105,18 @@ struct MedicationRowComponent: View {
                 )
         )
         .padding(.horizontal, 4)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(statusSummary?.accessibilityLabel ?? "Medication: \(medication.displayName)")
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8), value: editMode?.wrappedValue)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Medication: \(medication.demoDisplayName)")
         .accessibilityHint("Tap to view details or log dose")
+		.accessibilityAction { if editMode?.wrappedValue != .active { onOpen?() } }
+		.accessibilityAction(named: "View details") { if editMode?.wrappedValue != .active { onOpen?() } }
         .accessibilityAction(named: "Log custom dose") {
+			guard editMode?.wrappedValue != .active else { return }
             onLogTapped()
         }
         .accessibilityAction(named: "Quick log default dose") {
-            guard let onQuickLog else { return }
+            guard editMode?.wrappedValue != .active, let onQuickLog else { return }
             Task {
                 let success = await onQuickLog()
                 if success {
@@ -192,10 +126,6 @@ struct MedicationRowComponent: View {
                 }
             }
         }
-    }
-
-    private var layoutStyle: MedicationRowLayoutStyle {
-        MedicationRowLayoutStyle(dynamicTypeSize: dynamicTypeSize)
     }
 
     // MARK: - View Components
@@ -225,32 +155,25 @@ struct MedicationRowComponent: View {
                     .font(.title3.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(medication.displayColor)
-                    .symbolEffect(.bounce, options: .speed(0.5), value: isPressed)
             }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Change medication appearance")
-        .accessibilityHint("Tap to change the color and symbol for \(medication.displayName)")
+        .accessibilityHint("Tap to change the color and symbol for \(medication.demoDisplayName)")
         .sheet(isPresented: $showingAppearancePicker) {
             medicationAppearanceSheet
         }
     }
 
     private var medicationHeader: some View {
-        medicationHeader(showClinicalName: true)
-    }
-
-    private var compactMedicationHeader: some View {
-		medicationHeader(showClinicalName: true)
-    }
-
-    private func medicationHeader(showClinicalName: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Text(medication.displayName)
-                    .font(.customFont(fontFamily, style: .headline, weight: .bold))
-                    .noTruncate()
-                    .foregroundStyle(.primary)
+				CopyableText(
+					medication.demoDisplayName,
+					font: .customFont(fontFamily, style: .headline, weight: .bold),
+					color: .primary,
+					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
+				)
                     .accessibilityAddTraits(.isHeader)
 
                 if medication.isArchived {
@@ -261,299 +184,94 @@ struct MedicationRowComponent: View {
                 }
             }
 
-            if showClinicalName && !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
+            if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
                 CopyableText(
-                    medication.clinicalName,
+                    medication.demoClinicalName,
                     font: .customFont(fontFamily, style: .caption),
-					color: .secondary,
-					lineLimit: layoutStyle.clinicalNameLineLimit
+                    color: .secondary,
+					onTap: { if editMode?.wrappedValue != .active { onOpen?() } }
                 )
             }
         }
     }
 
-    private var medicationDetails: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Quantity Badge
-            if let quantity = medication.quantity {
-                VStack(alignment: .leading, spacing: 4) {
-                    quantityBadge(for: quantity)
+	private var medicationDetails: some View {
+		VStack(alignment: .leading, spacing: 6) {
+			if let quantity = medication.quantity {
+				HStack(spacing: 6) {
+					Image(systemSymbol: .squareStack3dUp)
+						.font(.caption2.weight(.semibold))
+						.foregroundStyle(quantityColor(for: quantity))
+						.accessibilityHidden(true)
 
-                    // Usage Progress Bar (only if initialQuantity is available)
-                    if let usagePercentage = usagePercentage {
-                        usageProgressBar(percentage: usagePercentage)
-                            .accessibilityLabel("Usage progress: \(Int(usagePercentage))% used")
-                    }
-                }
-            }
+					Text(quantityText(for: quantity))
+						.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+						.fontDesign(.rounded)
+						.foregroundStyle(quantityColor(for: quantity))
+				}
+				.padding(.horizontal, 10)
+				.padding(.vertical, 5)
+				.background(Capsule().fill(quantityColor(for: quantity).opacity(0.12)))
+				.accessibilityLabel(quantityText(for: quantity))
+			}
 
-            if let statusSummary {
-                statusSummaryView(statusSummary)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var compactMedicationDetails: some View {
-        HStack(spacing: 8) {
-            if let quantity = medication.quantity {
-                quantityBadge(for: quantity)
-            }
-
-            if let statusSummary, statusSummary.isLowStock || statusSummary.refillSoon {
-                statusBadge(statusSummary)
-            }
-        }
-    }
-
-    private func quantityBadge(for quantity: Double) -> some View {
-        HStack(spacing: 6) {
-            Image(systemSymbol: .squareStack3dUp)
-                .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
-                .foregroundStyle(quantityColor(for: quantity))
-                .accessibilityHidden(true)
-
-            Text(quantityText(for: quantity))
-                .font(.customFont(fontFamily, style: .caption, weight: .semibold))
-                .fontDesign(.rounded)
-                .foregroundStyle(quantityColor(for: quantity))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(quantityColor(for: quantity).opacity(0.12))
-        )
-        .accessibilityLabel("Quantity: \(quantityText(for: quantity))")
-    }
-
-    @ViewBuilder
-    private func statusSummaryView(_ summary: MedicationStatusSummaryService.Summary) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            statusBadge(summary)
-
-            Text(summary.timingText)
-                .font(.customFont(fontFamily, style: .caption2))
-                .foregroundStyle(.secondary)
-
-            Text(summary.refillText)
-                .font(.customFont(fontFamily, style: .caption2))
-                .foregroundStyle(.secondary)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(summary.accessibilityLabel)
-    }
-
-    private func statusBadge(_ summary: MedicationStatusSummaryService.Summary) -> some View {
-        HStack(spacing: 6) {
-            Image(systemSymbol: .shippingboxFill)
-                .font(.customFont(fontFamily, style: .caption2, weight: .semibold))
-                .foregroundStyle(summaryColor(for: summary))
-                .accessibilityHidden(true)
-
-            Text(summary.headline)
-                .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                .foregroundStyle(summaryColor(for: summary))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(summaryColor(for: summary).opacity(0.12))
-        )
-    }
+			if let nextWindowText = statusSummary?.nextWindowText {
+				Text(nextWindowText)
+					.font(.customFont(fontFamily, style: .caption2))
+					.foregroundStyle(.secondary)
+					.fixedSize(horizontal: false, vertical: true)
+			}
+		}
+	}
 
     private var enhancedLogButton: some View {
-        logButtonControl
-            .anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { anchor in
-                showsQuickLogHint ? anchor : nil
-            }
-    }
-
-    private var logButtonScale: CGFloat {
-        if isCelebrating {
-            return 1.08
-        }
-        return isPressed || isLongPressing ? 0.95 : 1.0
-    }
-
-    /// Corner radius of whichever button variant is on screen, so the hold ring hugs its edge.
-    private var logButtonCornerRadius: CGFloat {
-        if dynamicTypeSize.isAccessibilitySize || layoutStyle == .compact {
-            return 12
-        }
-        return 14
-    }
-
-    /// The button itself. Tap opens Log Dose, hold quick logs, using the same press modifier as every
-    /// other Log Dose control: light tick on touch-down, ring during the hold, heavy impact and a pop on
-    /// success.
-    private var logButtonControl: some View {
-        Group {
-            if dynamicTypeSize.isAccessibilitySize {
-                // Full width button for accessibility
-                HStack(spacing: 10) {
-                    Image(systemSymbol: .plusCircleFill)
-                        .font(.title3)
-                        .accessibilityHidden(true)
-                    Text("Log Dose")
-                        .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor())
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [medication.displayColor, medication.displayColor.opacity(0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-            } else if layoutStyle == .compact {
+		Button {
+			onLogTapped()
+		} label: {
+			VStack(spacing: 6) {
 				Image(systemSymbol: .plusCircleFill)
-					.font(.customFont(fontFamily, style: .body, weight: .semibold))
+					.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+					.symbolRenderingMode(.monochrome)
 					.accessibilityHidden(true)
-					.foregroundStyle(medication.displayColor.contrastingForegroundColor())
-					.frame(width: 44, height: 44)
-					.background(
-						RoundedRectangle(cornerRadius: 12, style: .continuous)
-							.fill(medication.displayColor)
-					)
-            } else {
-                // Compact button with icon and text
-                VStack(spacing: 4) {
-                    Image(systemSymbol: .plusCircleFill)
-                        .font(.customFont(fontFamily, style: .title2, weight: .semibold))
-                        .symbolRenderingMode(.hierarchical)
-                        .accessibilityHidden(true)
-
-                    Text("Log")
-                        .font(.customFont(fontFamily, style: .caption2, weight: .bold))
-                        .textCase(.uppercase)
-                }
-                .foregroundStyle(medication.displayColor.contrastingForegroundColor())
-                .frame(width: logButtonSize, height: logButtonSize)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    medication.displayColor,
-                                    medication.displayColor.opacity(0.9),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(
-                            color: medication.displayColor.opacity(0.4),
-                            radius: isPressed ? 2 : 8,
-                            x: 0,
-                            y: isPressed ? 1 : 4
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    medication.displayColor.contrastingForegroundColor().opacity(0.3),
-                                    medication.displayColor.contrastingForegroundColor().opacity(0.1),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-            }
-        }
-        .overlay(
-            // Hold progress ring, in the button's contrasting color so it reads on every medication tint.
-            RoundedRectangle(cornerRadius: logButtonCornerRadius, style: .continuous)
-                .trim(from: 0, to: holdProgress)
-                .stroke(
-                    medication.displayColor.contrastingForegroundColor().opacity(0.95),
-                    style: StrokeStyle(lineWidth: holdRingLineWidth, lineCap: .round)
-                )
-                .opacity(holdProgress > 0 ? 1 : 0)
-        )
-        .scaleEffect(logButtonScale)
-        .doseLogPressGesture(
-            isPressed: $isPressed,
-            isLongPressing: $isLongPressing,
-            holdProgress: $holdProgress,
-            onTap: onLogTapped,
-            onQuickLog: onQuickLog,
-            onQuickLogSuccess: {
-                celebrateQuickLog()
-                onQuickLogSuccess?()
-            }
-        )
-        .accessibilityLabel("Log dose for \(medication.displayName)")
+				Text("Log")
+					.font(.customFont(fontFamily, style: .caption2, weight: .bold))
+					.lineLimit(1)
+					.fixedSize(horizontal: true, vertical: true)
+			}
+			.fixedSize(horizontal: true, vertical: true)
+			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+			.padding(.horizontal, 16)
+			.padding(.vertical, 12)
+			.frame(minWidth: 60, minHeight: 60)
+			.background(medication.displayColor.dynamicFilledButtonBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+			.shadow(color: medication.displayColor.opacity(0.4), radius: isPressed ? 2 : 8, x: 0, y: isPressed ? 1 : 4)
+			.overlay {
+				RoundedRectangle(cornerRadius: 14, style: .continuous)
+					.strokeBorder(medication.displayColor.dynamicFilledButtonForeground.opacity(0.2), lineWidth: 1)
+			}
+			.scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1))
+		}
+		.buttonStyle(.plain)
+        .contentShape(Rectangle())
+		.overlay {
+			RoundedRectangle(cornerRadius: 14)
+				.trim(from: 0, to: holdProgress)
+				.stroke(medication.displayColor.dynamicFilledButtonForeground, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+				.padding(2)
+				.allowsHitTesting(false)
+				.accessibilityHidden(true)
+		}
+		.anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { showQuickLogHintAnchor ? $0 : nil }
+		.doseLogPressGesture(
+			isPressed: $isPressed, isLongPressing: $isLongPressing, holdProgress: $holdProgress,
+			onTap: onLogTapped, onQuickLog: onQuickLog, onQuickLogSuccess: onQuickLogSuccess
+		)
+        .accessibilityLabel("Log dose for \(medication.demoDisplayName)")
         .accessibilityHint("Tap to customize dose, hold to log default dose")
-    }
 
-    /// Pops the button once after a successful quick log. Skipped under Reduce Motion.
-    private func celebrateQuickLog() {
-        guard !reduceMotion else { return }
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
-            isCelebrating = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                isCelebrating = false
-            }
-        }
     }
 
     // MARK: - Helper Methods
-
-    /// Calculates the percentage of medication used (0-100) if both quantities are available
-    private var usagePercentage: Double? {
-        guard let initial = medication.initialQuantity,
-              let current = medication.quantity,
-              initial > 0
-        else {
-            return nil
-        }
-        let used = initial - current
-        return max(0, min(100, (used / initial) * 100))
-    }
-
-    /// Creates a thin progress bar showing usage percentage
-    @ViewBuilder
-    private func usageProgressBar(percentage: Double) -> some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background track
-                Capsule()
-                    .fill(.regularMaterial)
-                    .frame(height: 4)
-
-                // Progress fill
-                Capsule()
-                    .fill(progressBarColor(for: percentage))
-                    .frame(width: geometry.size.width * (percentage / 100), height: 4)
-            }
-        }
-        .frame(height: 4)
-        .padding(.horizontal, 10)
-    }
-
-    /// Returns color for progress bar based on percentage used
-    private func progressBarColor(for percentage: Double) -> Color {
-        if percentage < 33 {
-            return .green
-        } else if percentage < 66 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
 
     private func quantityColor(for quantity: Double) -> Color {
         if quantity < 10 {
@@ -566,18 +284,8 @@ struct MedicationRowComponent: View {
     }
 
     private func quantityText(for quantity: Double) -> String {
-		layoutStyle.quantityText(
-			for: quantity,
-			unitAbbreviation: medication.prescribedUnit?.abbreviation
-		)
-    }
-
-    private func summaryColor(for summary: MedicationStatusSummaryService.Summary) -> Color {
-        if summary.isLowStock {
-            return .orange
-        }
-
-        return summary.refillSoon ? medication.displayColor : .secondary
+		let value = medication.prescribedUnit.map { $0.localizedCompactAmount(for: quantity) } ?? quantity.formattedAmount
+		return String(localized: "\(String(localized: "Remaining")): \(value)", comment: "Stock quantity label. The second interpolation is the complete localized quantity and unit. Use a count-neutral category label, not a verb agreeing with the hidden quantity.")
     }
 
     // MARK: - Medication Appearance Sheet

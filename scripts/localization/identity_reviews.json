@@ -1,0 +1,1291 @@
+{
+  "es": {
+    "Localizable.xcstrings": {
+      "Color": "Spanish cognate: the UI noun color is spelled Color.",
+      "Error": "Spanish cognate: the UI noun error is spelled Error.",
+      "No": "Spanish negative response is No.",
+      "%lld min": "Minute abbreviation min is standard in Spanish; retain numeric placeholder.",
+      "%g vials": {
+        "%g vial": "Spanish singular medical container is vial; plural must be translated as viales."
+      },
+      "Total": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Vial": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "vial": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "General": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Control": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Horizontal": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "Vertical": "Reviewed es UI cognate: this word has the same spelling as the English source.",
+      "%.15g vials": {
+        "%.15g vial": "Spanish singular medical container is vial; plural must be translated as viales."
+      }
+    }
+  },
+  "de": {
+    "Localizable.xcstrings": {
+      "Name": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Symbol": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Filter": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Status": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Minimum": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Maximum": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Standard": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Orange": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Version": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Information": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Design": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Optional": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Text": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Test": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Timer": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "App": "Reviewed de UI cognate: this word has the same spelling as the English source.",
+      "Alizarin": "Reviewed German color name: same spelling in English and German.",
+      "Amethyst": "Reviewed German color name: same spelling in English and German.",
+      "Liter": "German measurement unit has the same spelling as English.",
+      "Milliliter": "German measurement unit has the same spelling as English.",
+      "app": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "film": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "joint": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "pen": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "%@ symbol": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "%1$lld backups • %2$@": "Reviewed German noun or established UI loanword; capitalization differs but spelling is correct.",
+      "%.15g joints": {
+        "%.15g joint": "Reviewed German unit name/loanword; the noun is capitalized in German.",
+        "%.15g joints": "Reviewed German unit name/loanword; the noun is capitalized in German."
+      },
+      "%.15g liters": {
+        "%.15g liter": "Reviewed German unit name/loanword; the noun is capitalized in German."
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Reviewed German unit name/loanword; the noun is capitalized in German."
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed German unit name/loanword; the noun is capitalized in German."
+      },
+      "%.15g pens": {
+        "%.15g pen": "Reviewed German unit name/loanword; the noun is capitalized in German.",
+        "%.15g pens": "Reviewed German unit name/loanword; the noun is capitalized in German."
+      },
+      "%lld backups • %@": {
+        "%1$lld backup • %2$@": "Reviewed German UI noun Backup/Backups; noun capitalization differs but meaning is correct.",
+        "%1$lld backups • %2$@": "Reviewed German UI noun Backup/Backups; noun capitalization differs but meaning is correct."
+      },
+      "Trends": "Established German noun Trends; distinguishes the analytics tab from Verlauf (History)."
+    }
+  },
+  "fr": {
+    "Localizable.xcstrings": {
+      "Date": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Notes": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Type": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Version": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Information": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Options": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Total": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Orange": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Description": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Application": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Injection": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Film": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Dose": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Volume": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "Menu": "Reviewed fr UI cognate: this word has the same spelling as the English source.",
+      "%g applications": {
+        "%g applications": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g application": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g applications": {
+        "%.15g applications": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g application": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g doses": {
+        "%g doses": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g dose": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g doses": {
+        "%.15g doses": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g dose": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g films": {
+        "%g films": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g film": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g films": {
+        "%.15g films": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g film": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g injections": {
+        "%g injections": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g injection": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g injections": {
+        "%.15g injections": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g injection": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g joints": {
+        "%g joints": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g joint": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g joints": {
+        "%.15g joints": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g joint": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g sachets": {
+        "%g sachets": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g sachet": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g sachets": {
+        "%.15g sachets": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g sachet": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%lld min": "Reviewed French quantity/unit cognate or standard minute abbreviation; identical spelling is correct.",
+      "Champion": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Distribution": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Joint": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Nature": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Notifications": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Sachet": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Peter River": "Proper name of the standard color palette swatch.",
+      "Turquoise": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Version %@": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "capsule": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Capsule": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "dose": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "film": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "joint": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "application": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "injection": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "sachet": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "patch": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Patch": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "spray": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Spray": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Guide": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Contact": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Important": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Flexible": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "%g capsules": {
+        "%g capsule": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g capsules": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g capsules": {
+        "%.15g capsule": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g capsules": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g patches": {
+        "%g patch": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g patches": {
+        "%.15g patch": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g sprays": {
+        "%g spray": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g sprays": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g sprays": {
+        "%.15g spray": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g sprays": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "Visualization": "Reviewed French cognate Visualisation; it coincides with the British English variant.",
+      "%.15g ampules": {
+        "%.15g ampules": {
+          "many": "Reviewed exact French many plural leaf: ampoules is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact French other plural leaf: ampoules is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g ampule": {
+          "one": "Reviewed exact French one plural leaf: ampoule is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "%.15g liters": {
+        "%.15g liters": {
+          "many": "Reviewed exact French many plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact French other plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g liter": {
+          "one": "Reviewed exact French one plural leaf: litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "%.15g milliliters": {
+        "%.15g milliliters": {
+          "many": "Reviewed exact French many plural leaf: millilitres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact French other plural leaf: millilitres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g milliliter": {
+          "one": "Reviewed exact French one plural leaf: millilitre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "Ampule": {
+        "Ampule": "Reviewed exact French unit label: Ampoule is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      },
+      "Liter": {
+        "Liter": "Reviewed exact French unit label: Litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      },
+      "Milliliter": {
+        "Milliliter": "Reviewed exact French unit label: Millilitre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      }
+    }
+  },
+  "fr-CA": {
+    "Localizable.xcstrings": {
+      "Date": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Notes": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Type": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Version": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Information": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Options": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Total": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Orange": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Description": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Application": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Injection": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Film": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Dose": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Volume": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "Menu": "Reviewed fr-CA UI cognate: this word has the same spelling as the English source.",
+      "%g applications": {
+        "%g applications": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g application": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g applications": {
+        "%.15g applications": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g application": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g doses": {
+        "%g doses": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g dose": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g doses": {
+        "%.15g doses": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g dose": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g films": {
+        "%g films": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g film": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g films": {
+        "%.15g films": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g film": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g injections": {
+        "%g injections": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g injection": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g injections": {
+        "%.15g injections": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g injection": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g joints": {
+        "%g joints": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g joint": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g joints": {
+        "%.15g joints": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g joint": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g sachets": {
+        "%g sachets": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g sachet": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g sachets": {
+        "%.15g sachets": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g sachet": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%lld min": "Reviewed French quantity/unit cognate or standard minute abbreviation; identical spelling is correct.",
+      "Champion": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Distribution": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Joint": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Nature": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Notifications": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Sachet": "Reviewed French cognate; identical spelling is correct in this UI context.",
+      "Peter River": "Proper name of the standard color palette swatch.",
+      "Turquoise": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Version %@": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "capsule": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Capsule": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "dose": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "film": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "joint": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "application": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "injection": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "sachet": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "patch": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Patch": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "spray": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Spray": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Guide": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Contact": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Important": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "Flexible": "Reviewed French cognate or standard UI phrase; identical spelling is correct.",
+      "%g capsules": {
+        "%g capsule": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g capsules": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g capsules": {
+        "%.15g capsule": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g capsules": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g patches": {
+        "%g patch": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g patches": {
+        "%.15g patch": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%g sprays": {
+        "%g spray": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%g sprays": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "%.15g sprays": {
+        "%.15g spray": "Reviewed French quantity/unit cognate; identical spelling is correct.",
+        "%.15g sprays": "Reviewed French quantity/unit cognate; identical spelling is correct."
+      },
+      "Visualization": "Reviewed French cognate Visualisation; it coincides with the British English variant.",
+      "%.15g ampules": {
+        "%.15g ampules": {
+          "many": "Reviewed exact Canadian French many plural leaf: ampoules is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact Canadian French other plural leaf: ampoules is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g ampule": {
+          "one": "Reviewed exact Canadian French one plural leaf: ampoule is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "%.15g liters": {
+        "%.15g liters": {
+          "many": "Reviewed exact Canadian French many plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact Canadian French other plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g liter": {
+          "one": "Reviewed exact Canadian French one plural leaf: litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "%.15g milliliters": {
+        "%.15g milliliters": {
+          "many": "Reviewed exact Canadian French many plural leaf: millilitres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact Canadian French other plural leaf: millilitres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g milliliter": {
+          "one": "Reviewed exact Canadian French one plural leaf: millilitre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "Ampule": {
+        "Ampule": "Reviewed exact Canadian French unit label: Ampoule is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      },
+      "Liter": {
+        "Liter": "Reviewed exact Canadian French unit label: Litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      },
+      "Milliliter": {
+        "Milliliter": "Reviewed exact Canadian French unit label: Millilitre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      }
+    }
+  },
+  "es-419": {
+    "Localizable.xcstrings": {
+      "Color": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Error": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "No": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Total": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Vial": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "vial": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "General": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Control": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Horizontal": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "Vertical": "Reviewed es-419 UI cognate: this word has the same spelling as the English source.",
+      "%.15g vials": {
+        "%.15g vial": "Reviewed Spanish singular clinical-container noun vial; only the one-form shares English spelling."
+      },
+      "%lld min": "Standard Latin American Spanish minute abbreviation.",
+      "Peter River": "Proper name of the standard color palette swatch."
+    }
+  },
+  "it": {
+    "Localizable.xcstrings": {
+      "No": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Note": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Film": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Privacy": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Dose": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Volume": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "Area": "Reviewed it UI cognate: this word has the same spelling as the English source.",
+      "%.15g doses": {
+        "%.15g dose": "Reviewed exact Italian singular dose is the medication-dose noun with identical spelling; approve this one-form source only, not English doses or other plural sources. Italian dictionary: https://www.treccani.it/vocabolario/dose/"
+      },
+      "%lld min": {
+        "%lld min": "Reviewed Italian invariant minute symbol min is correct after the count; approve only this exact numeric source. Italian dictionary: https://www.treccani.it/enciclopedia/minuto_%28Dizionario-delle-Scienze-Fisiche%29/"
+      },
+      "Spray": {
+        "Spray": "Italian spray is an established invariant pharmaceutical/aerosol noun."
+      },
+      "app": {
+        "app": "Italian app is an established abbreviation for applicazione; identical lowercase token is correct."
+      },
+      "dose": {
+        "dose": "Italian dose is the singular pharmaceutical noun; this exact unit-only leaf is valid."
+      }
+    }
+  },
+  "pt-BR": {
+    "Localizable.xcstrings": {
+      "Total": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Dose": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Volume": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Menu": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Manual": "Reviewed pt-BR UI cognate: this word has the same spelling as the English source.",
+      "Doses: %lld": {
+        "Doses: %lld": "Brazilian Portuguese doses is the native plural of dose in a count field label; preserve the numeric placeholder."
+      },
+      "OK": {
+        "OK": "OK is an established Brazilian Portuguese acknowledgment button label."
+      },
+      "Regular: %@": {
+        "Regular: %@": "Portuguese regular is a native adjective and an established regular font-style label in this font specimen; preserve the specimen placeholder."
+      },
+      "%.15g doses": {
+        "%.15g doses": "Brazilian Portuguese doses is the native plural of dose; approve this exact plural leaf only.",
+        "%.15g dose": "Brazilian Portuguese dose is the singular medicine-quantity noun; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "pt-BR uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "%lldd": {
+        "%lldd": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "+30d": {
+        "+30d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "+7d": {
+        "+7d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "-30d": {
+        "-30d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "-7d": {
+        "-7d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "14d": {
+        "14d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "30d": {
+        "30d": "pt-BR uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "dose": {
+        "dose": "Reviewed exact pt-BR standalone label: dose is the Portuguese noun for a medicine dose."
+      },
+      "Spray": {
+        "Spray": "Reviewed exact pt-BR standalone label: spray is the established Brazilian Portuguese medicine-form loanword."
+      },
+      "Status": {
+        "Status": "Reviewed exact pt-BR standalone label: status is an established Brazilian Portuguese status-label loanword."
+      }
+    }
+  },
+  "pt-PT": {
+    "Localizable.xcstrings": {
+      "Total": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Dose": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Volume": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Original": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Menu": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Manual": "Reviewed pt-PT UI cognate: this word has the same spelling as the English source.",
+      "Doses: %lld": {
+        "Doses: %lld": "European Portuguese doses is the native plural of dose in a count field label; preserve the numeric placeholder."
+      },
+      "%.15g doses": {
+        "%.15g doses": "European Portuguese doses is the native plural of dose; approve this exact plural leaf only.",
+        "%.15g dose": "European Portuguese dose is the singular medicine-quantity noun; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "pt-PT uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "%lldd": {
+        "%lldd": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "+30d": {
+        "+30d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "+7d": {
+        "+7d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "-30d": {
+        "-30d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "-7d": {
+        "-7d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "14d": {
+        "14d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "30d": {
+        "30d": "pt-PT uses d for dia in compact duration/adjustment notation; preserve this exact numeric notation and any integer placeholder."
+      },
+      "dose": {
+        "dose": "Reviewed exact pt-PT standalone label: dose is the Portuguese noun for a medicine dose."
+      }
+    }
+  },
+  "nl": {
+    "Localizable.xcstrings": {
+      "Filter": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Status": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Minimum": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Maximum": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Normaal": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "App": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "Tablet": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "tablet": "Reviewed nl UI cognate: this word has the same spelling as the English source.",
+      "EXACT": {
+        "EXACT": "Dutch exact is the native adjective/adverb for precise or exact; source uppercase styling is retained."
+      },
+      "Effect": {
+        "Effect": "Dutch effect is the native noun for effect."
+      },
+      "Effect %lld/5": {
+        "Effect %lld/5": "Dutch Effect is the native rating label; the numeric rating and /5 notation remain unchanged."
+      },
+      "Film": {
+        "Film": "Dutch film is the native technical thin-film noun."
+      },
+      "Gram": {
+        "Gram": "Dutch gram is the native metric mass unit."
+      },
+      "Joint": {
+        "Joint": "Dutch joint is the established cannabis cigarette noun."
+      },
+      "Later": {
+        "Later": "Dutch later is the native time/action label."
+      },
+      "Liter": {
+        "Liter": "Dutch liter is the native metric volume unit."
+      },
+      "Microgram": {
+        "Microgram": "Dutch microgram is the native metric mass unit."
+      },
+      "Milligram": {
+        "Milligram": "Dutch milligram is the native metric mass unit."
+      },
+      "Milliliter": {
+        "Milliliter": "Dutch milliliter is the native metric volume unit."
+      },
+      "Capsule": {
+        "Capsule": "Dutch capsule is the established pharmaceutical-form noun."
+      },
+      "Details": {
+        "Details": "Dutch details is the native plural of detail and is correct for the information heading."
+      },
+      "Doses: %lld": {
+        "Doses: %lld": "Dutch doses is an accepted plural of dosis, used in Dutch medication dose codes; preserve the numeric count."
+      },
+      "%.15g capsules": {
+        "%.15g capsule": "Dutch capsule is the singular pharmaceutical noun; approve this exact singular count leaf only.",
+        "%.15g capsules": "Dutch capsules is the native plural of capsule; approve this exact plural leaf only."
+      },
+      "%.15g dabs": {
+        "%.15g dab": "Dutch dab is an established borrowed cannabis-concentrate noun; approve the singular leaf only.",
+        "%.15g dabs": "Dutch dabs is the established plural cannabis-concentrate noun used by Trimbos; approve this exact plural leaf only."
+      },
+      "%.15g doses": {
+        "%.15g doses": "Dutch doses is an accepted plural of dosis; preserve the numeric placeholder."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Dutch gram is the native metric mass unit; approve this exact source form only."
+      },
+      "%.15g joints": {
+        "%.15g joint": "Dutch joint is the singular cannabis-cigarette noun; approve this exact singular leaf only.",
+        "%.15g joints": "Dutch joints is the native plural of joint; approve this exact plural leaf only."
+      },
+      "%.15g liters": {
+        "%.15g liter": "Dutch liter is the native metric volume unit; approve this exact source form only."
+      },
+      "%.15g micrograms": {
+        "%.15g microgram": "Dutch microgram is the native metric mass unit; approve this exact source form only."
+      },
+      "%.15g milligrams": {
+        "%.15g milligram": "Dutch milligram is the native metric mass unit; approve this exact source form only."
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Dutch milliliter is the native metric volume unit; approve this exact source form only."
+      },
+      "%.15g pens": {
+        "%.15g pen": "Dutch pen is the native injection-device noun; approve this exact singular count leaf only."
+      },
+      "%.15g tablets": {
+        "%.15g tablet": "Dutch tablet is the native singular pharmaceutical noun; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "Dutch min is the standard compact minute symbol; preserve the integer placeholder."
+      },
+      "%lldd": {
+        "%lldd": "Dutch d is the compact day symbol (dag); preserve this exact numeric-duration notation."
+      },
+      "+30d": {
+        "+30d": "Dutch d is the compact day symbol; preserve the +30-day adjustment notation."
+      },
+      "+7d": {
+        "+7d": "Dutch d is the compact day symbol; preserve the +7-day adjustment notation."
+      },
+      "-30d": {
+        "-30d": "Dutch d is the compact day symbol; preserve the -30-day adjustment notation."
+      },
+      "-7d": {
+        "-7d": "Dutch d is the compact day symbol; preserve the -7-day adjustment notation."
+      },
+      "14d": {
+        "14d": "Dutch d is the compact day symbol; preserve the 14-day duration notation."
+      },
+      "30d": {
+        "30d": "Dutch d is the compact day symbol; preserve the 30-day duration notation."
+      },
+      "joint": {
+        "joint": "Reviewed exact Dutch cannabis-cigarette unit: joint is the established Dutch word in this meaning, not an anatomical joint."
+      },
+      "strip": {
+        "strip": "Reviewed exact Dutch medicine-form unit: strip is the established Dutch word for a thin medicinal strip."
+      },
+      "OK": {
+        "OK": "Reviewed exact Dutch confirmation label: OK is conventional Dutch UI acknowledgement."
+      },
+      "Pen": {
+        "Pen": "Reviewed exact Dutch injection-device label: pen is the established Dutch word used in insulinepen."
+      },
+      "Peter River": {
+        "Peter River": "Reviewed exact named color swatch Peter River; preserve this palette proper name."
+      }
+    }
+  },
+  "da": {
+    "Localizable.xcstrings": {
+      "Filter": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Status": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Minimum": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Maximum": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Version": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "App": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Tablet": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "tablet": "Reviewed da UI cognate: this word has the same spelling as the English source.",
+      "Log": "Established Danish record action imperative.",
+      "Film": {
+        "Film": "Reviewed Danish identity: Danish film is a film/layer unit with identical spelling; count approval is restricted to this exact source variant. Evidence: https://ordnet.dk/ddo/ordbog/film"
+      },
+      "Gram": {
+        "Gram": "Reviewed Danish identity: Danish gram is the standard mass-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/gram"
+      },
+      "Joint": {
+        "Joint": "Reviewed Danish identity: Danish joint denotes a cannabis cigarette; the dictionary explicitly gives the plural joints. Only this exact label/count source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/joint"
+      },
+      "Liter": {
+        "Liter": "Reviewed Danish identity: Danish liter is the standard volume-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/liter"
+      },
+      "Milligram": {
+        "Milligram": "Reviewed Danish identity: Danish milligram is the standard mass-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/milligram"
+      },
+      "Milliliter": {
+        "Milliliter": "Reviewed Danish identity: Danish milliliter is the standard volume-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/milliliter"
+      },
+      "OK": {
+        "OK": "Reviewed Danish identity: Conventional Danish OK acknowledgment button; identical international initialism is intentional in this label. Evidence: https://ordnet.dk/ddo/ordbog/okay"
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed Danish identity: Danish film is a film/layer unit with identical spelling; count approval is restricted to this exact source variant. Evidence: https://ordnet.dk/ddo/ordbog/film"
+      },
+      "%.15g grams": {
+        "%.15g gram": "Reviewed Danish identity: Danish gram is the standard mass-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/gram"
+      },
+      "%.15g joints": {
+        "%.15g joint": "Reviewed Danish identity: Danish joint denotes a cannabis cigarette; the dictionary explicitly gives the plural joints. Only this exact label/count source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/joint",
+        "%.15g joints": "Reviewed Danish identity: Danish joints is the dictionary plural of joint in the cannabis-cigarette sense; approve this exact plural source only. Evidence: https://ordnet.dk/ddo/ordbog/joint"
+      },
+      "%.15g liters": {
+        "%.15g liter": "Reviewed Danish identity: Danish liter is the standard volume-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/liter"
+      },
+      "%.15g milligrams": {
+        "%.15g milligram": "Reviewed Danish identity: Danish milligram is the standard mass-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/milligram"
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Reviewed Danish identity: Danish milliliter is the standard volume-unit noun with identical spelling; only this exact source variant is approved. Evidence: https://ordnet.dk/ddo/ordbog/milliliter"
+      },
+      "%.15g pens": {
+        "%.15g pen": "Reviewed Danish identity: Danish singular pen is the established pen-shaped device noun, used here for a medication pen; only this one-form source is approved. Evidence: https://ordnet.dk/ddo/ordbog/pen"
+      },
+      "%.15g tablets": {
+        "%.15g tablet": "Reviewed Danish identity: Danish singular tablet denotes a compressed oral medicine pill; only this one-form source is approved, not Danish plural tabletter. Evidence: https://ordnet.dk/ddo/ordbog/tablet"
+      },
+      "Alizarin": {
+        "Alizarin": "Reviewed Danish identity: Danish alizarin is the established pigment/color name with identical spelling; preserve this exact color label. Evidence: https://ordnet.dk/ddo/ordbog?query=alizarin"
+      },
+      "Symbol": {
+        "Symbol": "Reviewed Danish identity: Danish symbol is the standard noun for a sign/icon with identical spelling; this exact appearance label only. Evidence: https://ordnet.dk/ddo/ordbog/symbol"
+      },
+      "Data": {
+        "Data": "Reviewed Danish identity: Danish data is the established computing/information noun with identical spelling; this exact settings heading only. Evidence: https://ordnet.dk/ddo/ordbog/data"
+      },
+      "Distribution": {
+        "Distribution": "Reviewed Danish identity: Danish distribution is an established noun for distribution, appropriate for the app build distribution label; exact heading only. Evidence: https://ordnet.dk/ddo/ordbog/distribution"
+      },
+      "film": {
+        "film": "Reviewed exact Danish medicine-form label: film is the Danish term for a thin medicinal film."
+      },
+      "joint": {
+        "joint": "Reviewed exact Danish cannabis-cigarette unit: joint is the established Danish loanword in this meaning, not an anatomical joint."
+      }
+    }
+  },
+  "sv": {
+    "Localizable.xcstrings": {
+      "Filter": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Status": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Minimum": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Maximum": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Version": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "App": "Reviewed sv UI cognate: this word has the same spelling as the English source.",
+      "%.15g films": {
+        "%.15g film": "Swedish singular film is the native thin-film noun; approve this exact singular count leaf only."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Swedish gram is the native mass-unit noun; approve this exact source form only."
+      },
+      "%.15g joints": {
+        "%.15g joint": "Swedish singular joint is an established cannabis-cigarette loanword; approve this exact singular leaf only."
+      },
+      "%.15g liters": {
+        "%.15g liter": "Swedish liter is the native volume-unit noun; approve this exact source form only."
+      },
+      "%.15g milligrams": {
+        "%.15g milligram": "Swedish milligram is the native metric unit noun; approve this exact source form only."
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Swedish milliliter is the native metric volume-unit noun; approve this exact source form only."
+      },
+      "%.15g puffs": {
+        "%.15g puff": "Swedish puff is the native singular administration/actuation noun used in official medicine information; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "sv uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "OK": {
+        "OK": "OK is an established Swedish acknowledgment button label."
+      },
+      "Orange": {
+        "Orange": "Swedish orange is the native color adjective."
+      },
+      "Ovation": {
+        "Ovation": "Swedish ovation is the native applause/acclamation noun; this tip-tier label is a true cognate."
+      },
+      "Peter River": {
+        "Peter River": "Exact source palette color proper name; retain Peter River as the named color, not as an English explanatory sentence."
+      },
+      "Puff": {
+        "Puff": "Swedish puff is the native singular administration/actuation noun used in Swedish medicine information."
+      },
+      "Alizarin": {
+        "Alizarin": "Swedish alizarin is the established pigment name; this palette color label is identical."
+      },
+      "Data": {
+        "Data": "Swedish data is the established native computing/data noun."
+      },
+      "Distribution": {
+        "Distribution": "Swedish distribution is the native noun and fits app/package distribution context."
+      },
+      "Film": {
+        "Film": "Swedish film is the native thin-film noun."
+      },
+      "Gram": {
+        "Gram": "Swedish gram is the native mass-unit name."
+      },
+      "Liter": {
+        "Liter": "Swedish liter is the native volume-unit name."
+      },
+      "Milligram": {
+        "Milligram": "Swedish milligram is the native metric mass-unit name."
+      },
+      "Milliliter": {
+        "Milliliter": "Swedish milliliter is the native metric volume-unit name."
+      },
+      "Symbol": {
+        "Symbol": "Reviewed exact sv standalone label: symbol is the Swedish noun for a symbol or icon."
+      },
+      "Text": {
+        "Text": "Reviewed exact sv standalone label: text is the Swedish noun for written text."
+      },
+      "Version %@": {
+        "Version %@": "Reviewed exact sv standalone label: Version is the Swedish software-version label and the native argument is preserved."
+      },
+      "film": {
+        "film": "Reviewed exact sv standalone label: film is the Swedish noun for a thin medicinal film."
+      },
+      "puff": {
+        "puff": "Reviewed exact sv standalone label: puff is the Swedish count unit for an inhaler actuation."
+      }
+    }
+  },
+  "nb": {
+    "Localizable.xcstrings": {
+      "Filter": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Status": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Minimum": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Maximum": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Normal": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Info": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "App": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "Tablet": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "tablet": "Reviewed nb UI cognate: this word has the same spelling as the English source.",
+      "%.15g doses": {
+        "%.15g dose": "Bokmal singular dose is the native medicine-quantity noun; approve this exact singular count leaf only."
+      },
+      "%.15g films": {
+        "%.15g film": "Bokmal singular film is the native thin-layer noun; approve this exact singular count leaf only."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Bokmal gram is the native metric unit name; preserve the numeric placeholder."
+      },
+      "%.15g liters": {
+        "%.15g liter": "Bokmal liter is the native metric volume unit name; preserve the numeric placeholder."
+      },
+      "%.15g milligrams": {
+        "%.15g milligram": "Bokmal milligram is the native metric unit name; preserve the numeric placeholder."
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Bokmal milliliter is the native metric volume unit name; preserve the numeric placeholder."
+      },
+      "%lld min": {
+        "%lld min": "Bokmal min is the standard compact minute symbol; preserve the integer placeholder."
+      },
+      "Alizarin": {
+        "Alizarin": "Bokmal alizarin is the established pigment name documented by Store norske leksikon; identical palette label is correct."
+      },
+      "Data": {
+        "Data": "Bokmal data is the native computing/data noun."
+      },
+      "Dose": {
+        "Dose": "Bokmal dose is the native singular medication-dose noun."
+      },
+      "Film": {
+        "Film": "Bokmal film is the native technical thin-layer noun."
+      },
+      "Gram": {
+        "Gram": "Bokmal gram is the native metric unit name."
+      },
+      "Joint": {
+        "Joint": "Bokmal joint is an established borrowed cannabis noun, documented in the Norwegian Academy dictionary; retain this unit-only label."
+      },
+      "Liter": {
+        "Liter": "Bokmal liter is the native metric volume unit name."
+      },
+      "Milligram": {
+        "Milligram": "Bokmal milligram is the native metric unit name."
+      },
+      "Milliliter": {
+        "Milliliter": "Bokmal milliliter is the native metric volume unit name."
+      },
+      "OK": {
+        "OK": "Reviewed exact Norwegian Bokmal confirmation label: OK is conventional Norwegian UI acknowledgement."
+      },
+      "Peter River": {
+        "Peter River": "Reviewed exact named color swatch Peter River; preserve this palette proper name."
+      },
+      "Spray": {
+        "Spray": "Reviewed exact Norwegian Bokmal medicine-form label: spray is the Norwegian loanword for the spray form."
+      },
+      "Symbol": {
+        "Symbol": "Reviewed exact Norwegian Bokmal icon label: symbol has the same spelling and meaning in Norwegian."
+      },
+      "app": {
+        "app": "Reviewed exact Norwegian Bokmal application label: app is an established Norwegian loanword."
+      },
+      "dose": {
+        "dose": "Reviewed exact Norwegian Bokmal medicine unit: dose has the same spelling and meaning in Norwegian."
+      },
+      "film": {
+        "film": "Reviewed exact Norwegian Bokmal medicine-form unit: film denotes the thin medicinal film and has the same spelling in Norwegian."
+      }
+    }
+  },
+  "ms": {
+    "Localizable.xcstrings": {
+      "Log": "Established Malay record action label.",
+      "%lld min": {
+        "%lld min": "Malay min is the compact minute symbol; preserve the integer placeholder."
+      },
+      "Alizarin": {
+        "Alizarin": "Malay alizarin is the established pigment name documented by Dewan Bahasa; this palette label is identical."
+      },
+      "Data": {
+        "Data": "Malay data is the established computing noun."
+      },
+      "Gram": {
+        "Gram": "Malay gram is the established metric unit name; title capitalization is intentional."
+      },
+      "Import Data": {
+        "Import Data": "Malay technical import data is explicitly recorded by Dewan Bahasa for data import; this short UI label is a genuine native homograph phrase, not an untranslated sentence."
+      },
+      "Liter": {
+        "Liter": "Malay liter is the established metric volume unit name."
+      },
+      "Pen": {
+        "Pen": "Reviewed exact Malay medical-device label: pen is the established loanword used in pen insulin."
+      },
+      "pen": {
+        "pen": "Reviewed exact Malay medical-unit label: pen is the established loanword used in pen insulin."
+      },
+      "Unit": {
+        "Unit": "Reviewed exact Malay count-unit label: unit is a Malay dictionary word for a measurement or single entity."
+      },
+      "unit": {
+        "unit": "Reviewed exact Malay count-unit label: unit is a Malay dictionary word for a measurement or single entity."
+      },
+      "Vial": {
+        "Vial": "Reviewed exact Malay pharmaceutical-container label: retain the established clinical term vial for this standalone container label."
+      },
+      "vial": {
+        "vial": "Reviewed exact Malay pharmaceutical-container label: retain the established clinical term vial for this standalone container label."
+      },
+      "Tablet": {
+        "Tablet": "Reviewed exact Malay medicine-form label: tablet is the Malay dictionary term for a solid oral medicine."
+      },
+      "Status": {
+        "Status": "Reviewed exact Malay status label: status is an established Malay dictionary loanword."
+      }
+    }
+  },
+  "ca": {
+    "Localizable.xcstrings": {
+      "Color": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Error": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "No": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Total": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "General": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Normal": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Original": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Control": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "Notes": "Reviewed Catalan cognate; identical spelling is correct for this UI label.",
+      "%lld min": "Standard Catalan minute abbreviation.",
+      "Gram": "Reviewed Catalan metric unit; identical spelling is correct.",
+      "Microgram": "Reviewed Catalan metric unit; identical spelling is correct.",
+      "%.15g grams": {
+        "%.15g gram": "Reviewed Catalan unit name; identical singular/plural spelling is correct.",
+        "%.15g grams": "Reviewed Catalan unit name; identical singular/plural spelling is correct."
+      },
+      "%.15g micrograms": {
+        "%.15g microgram": "Reviewed Catalan unit name; identical singular/plural spelling is correct.",
+        "%.15g micrograms": "Reviewed Catalan unit name; identical singular/plural spelling is correct."
+      },
+      "%.15g vials": {
+        "%.15g vial": "Reviewed Catalan unit name; identical singular/plural spelling is correct.",
+        "%.15g vials": "Reviewed Catalan unit name; identical singular/plural spelling is correct."
+      },
+      "Text": {
+        "Text": "Reviewed Catalan text is the standard noun for written/display content, with identical spelling; this exact typography label only. Evidence: https://www.diccionari.cat/GDLC/text"
+      },
+      "Vial": {
+        "Vial": "Reviewed Catalan medicinal-container noun vial is established terminology, distinct from the unrelated road adjective; this standalone unit label only. TERMCAT confirms the long-established pharmaceutical loan: https://termcat.cat/en/neoloteca/ca/V?page=32"
+      },
+      "vial": {
+        "vial": "Reviewed exact lowercase Catalan medicinal-container/unit noun vial; this exact count-free unit label only, not a blanket approval for other forms. TERMCAT pharmaceutical usage: https://termcat.cat/en/neoloteca/ca/V?page=32"
+      },
+      "%.15g liters": {
+        "%.15g liters": {
+          "many": "Reviewed exact Catalan many plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged.",
+          "other": "Reviewed exact Catalan other plural leaf: litres is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        },
+        "%.15g liter": {
+          "one": "Reviewed exact Catalan one plural leaf: litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "Liter": {
+        "Liter": "Reviewed exact Catalan unit label: Litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      }
+    }
+  },
+  "cs": {
+    "Localizable.xcstrings": {
+      "Ampule": {
+        "Ampule": "Reviewed Czech noun ampule is an established medication-container term with identical spelling; this standalone label only. Czech Academy dictionary: https://ssjc.ujc.cas.cz/search.php?heslo=ampulka&hsubstr=no"
+      },
+      "Data": {
+        "Data": "Reviewed Czech plural noun data means information/records in this settings heading and is spelled identically. Czech Language Institute: https://dotazy.ujc.cas.cz/odpovedi/?detail_polozka=1269&filter=1&page=47"
+      },
+      "Film": {
+        "Film": "Reviewed Czech noun film is also used for the medicinal film dosage form; this standalone unit label only. Czech medicines authority: https://sukl.gov.cz/wp-content/uploads/2025/02/28_12_2011.pdf"
+      },
+      "%.15g ampules": {
+        "%.15g ampule": "Reviewed exact Czech one-form ampule after the numeric placeholder; only this singular source variant is approved, not other Czech count forms. Czech Academy dictionary: https://ssjc.ujc.cas.cz/search.php?heslo=ampulka&hsubstr=no"
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed exact Czech one-form film for a medicinal film; only this singular source variant is approved. Czech medicines authority: https://sukl.gov.cz/wp-content/uploads/2025/02/28_12_2011.pdf"
+      },
+      "%.15g grams": {
+        "%.15g gram": "Reviewed exact Czech one-form gram is the standard mass-unit noun; only this singular source variant is approved. Czech Language Institute: https://m.prirucka.ujc.cas.cz/l/?id=785"
+      },
+      "%.15g joints": {
+        "%.15g joint": "Reviewed exact Czech borrowed noun joint denotes a cannabis cigarette in this unit context; only this one-form source variant is approved. Czech national drug monitoring report defines Joint in Czech: https://www.drogy-info.cz/data/obj_files/1345/14/VZ-2012.pdf"
+      },
+      "%lld min": {
+        "%lld min": "Reviewed Czech international minute symbol min is invariant after a number and is not untranslated prose. Czech Language Institute explicitly uses 30 min: https://m.prirucka.ujc.cas.cz/?ascii=0&dotaz=1&id=h."
+      },
+      "Gram": {
+        "Gram": "Reviewed Czech noun gram is the standard mass-unit name with identical spelling; this standalone label only. Czech Language Institute: https://m.prirucka.ujc.cas.cz/l/?id=785"
+      },
+      "Symbol": {
+        "Symbol": "Reviewed Czech symbol is the standard noun for a sign/icon with identical spelling; this exact appearance label only. Czech Language Institute spelling guidance includes symbol: https://m.prirucka.ujc.cas.cz/?ascii=0&dotaz=1&id=arabika"
+      },
+      "Text": {
+        "Text": "Reviewed Czech text is the standard noun for textual content with identical spelling; this exact typography label only. Czech Language Institute spelling guidance includes text: https://m.prirucka.ujc.cas.cz/?ascii=0&dotaz=1&id=arabika"
+      },
+      "film": {
+        "film": "Reviewed exact lowercase Czech film denotes the medicinal film dosage form; this count-free unit label is separate from prior Film and numeric one-form reviews. Czech medicines authority: https://sukl.gov.cz/wp-content/uploads/2025/02/28_12_2011.pdf"
+      }
+    }
+  },
+  "fi": {
+    "Localizable.xcstrings": {
+      "%lld min": {
+        "%lld min": "Reviewed Finnish invariant minute abbreviation min; Finnish Language Office explicitly gives min for minuutti/minuuttia and omits a period for measurement units. Only this exact numeric source is approved. Evidence: https://kielitoimistonohjepankki.fi/ohje/ajanilmaukset-lyhenteet-ajan-yksikot-ja-viikonpaivat/"
+      }
+    }
+  },
+  "hr": {
+    "Localizable.xcstrings": {
+      "Film": {
+        "Film": "Reviewed Croatian noun film denotes a thin film/layer and is appropriate for this medication-film unit label; identical standalone label only."
+      },
+      "Gram": {
+        "Gram": "Reviewed Croatian gram is the standard singular mass-unit noun, identical spelling; standalone label only. Croatian dictionary: https://hjp.znanje.hr/index.php?id=fV9mUBQ%3D&keyword=gram&show=search_by_id"
+      },
+      "Alizarin": {
+        "Alizarin": "Reviewed Croatian alizarin is the established red pigment/color name; retain this exact appearance label. Croatian Encyclopedia: https://www.enciklopedija.hr/clanak/alizarin"
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed exact Croatian singular numeric film unit; only this one-form source is approved, not any other plural category."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Reviewed exact Croatian singular gram after the numeric placeholder; only this one-form source is approved, not grama/grami plural contexts. Croatian dictionary: https://hjp.znanje.hr/index.php?id=fV9mUBQ%3D&keyword=gram&show=search_by_id"
+      },
+      "%lld min": {
+        "%lld min": "Reviewed Croatian minute unit symbol min is invariant after the count and is intentionally identical; only this exact numeric source is approved."
+      },
+      "Status": {
+        "Status": "Croatian status is the native noun for state; identical label spelling is correct."
+      },
+      "film": {
+        "film": "Croatian film is a native technical noun for a thin layer; retain this unit-only label."
+      }
+    }
+  },
+  "hu": {
+    "Localizable.xcstrings": {
+      "Liter": {
+        "Liter": "Reviewed Hungarian liter is the standard volume-unit noun with identical spelling; standalone label only. Evidence: https://mek.oszk.hu/22500/22531/22531.pdf"
+      },
+      "Milliliter": {
+        "Milliliter": "Reviewed Hungarian milliliter is the standard volume-unit noun with identical spelling; standalone label only. Evidence: https://mek.oszk.hu/22500/22531/22531.pdf"
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed Hungarian film is the medicinal film dosage-form noun and stays singular after a numeric count; approve only this exact source variant. EMA Hungarian product information: https://www.ema.europa.eu/hu/documents/product-information/rivaroxaban-koanaa-epar-product-information_hu.pdf"
+      },
+      "%.15g liters": {
+        "%.15g liter": "Reviewed exact Hungarian numeric liter unit phrase; Hungarian uses the uninflected unit noun after the count. Only this source variant is approved. Evidence: https://mek.oszk.hu/22500/22531/22531.pdf"
+      },
+      "%.15g milliliters": {
+        "%.15g milliliter": "Reviewed exact Hungarian numeric milliliter unit phrase; Hungarian uses the uninflected unit noun after the count. Only this source variant is approved. Evidence: https://mek.oszk.hu/22500/22531/22531.pdf"
+      },
+      "Alizarin": {
+        "Alizarin": "Reviewed Hungarian alizarin is an established pigment/color name with identical spelling, not untranslated UI prose. Hungarian National Library lexical source: https://mek.oszk.hu/09100/09152/09152.htm"
+      },
+      "film": {
+        "film": "Hungarian film is used for oral pharmaceutical films in the national medicine database; identical unit label is correct."
+      }
+    }
+  },
+  "id": {
+    "Localizable.xcstrings": {
+      "Peter River": {
+        "Peter River": "Reviewed exact canonical Peter River color-palette name used as an appearance label; retain this proper palette name rather than treating River as translatable prose. This key only."
+      },
+      "Edit %@": {
+        "Edit %@": "Reviewed Indonesian borrowed editing verb edit is established in app editing actions; retain this exact object-specific Edit %@ action with its placeholder. This is not a blanket approval for unrelated English calls to action."
+      },
+      "Film": {
+        "Film": "Reviewed Indonesian film is an established thin-film dosage-form term, as used by BPOM for lembar film/oral film. This standalone unit only. Evidence: https://standar-otskk.pom.go.id/storage/uploads/7d49dfac-dcc9-4912-8686-54485690909a/Materi-Sosialisasi-PerBPOM-24-tahun-2023.pdf"
+      },
+      "Gram": {
+        "Gram": "Reviewed Indonesian gram is the standard metric mass-unit noun with identical spelling; this standalone unit label only."
+      },
+      "Inhaler": {
+        "Inhaler": "Reviewed Indonesian inhaler is established medication-device terminology used by the Indonesian Ministry of Health; this standalone unit label only. Evidence: https://keslan.kemkes.go.id/view_artikel/2806/penggunaan-metered-dose-inhaler-mdi-pada-gangguan-pernafasan"
+      },
+      "Liter": {
+        "Liter": "Reviewed Indonesian liter is the standard metric volume-unit noun with identical spelling; this standalone unit label only."
+      },
+      "Data": {
+        "Data": "Reviewed Indonesian data means recorded information and is appropriate to this app data/settings heading; identical spelling is not the date-related false friend in some other languages. This heading only."
+      },
+      "Status": {
+        "Status": "Indonesian status is an established native label for state."
+      },
+      "Strip": {
+        "Strip": "Indonesian pharmaceutical strip is an established term, including oral film strip; retain the unit-only label."
+      },
+      "Tablet": {
+        "Tablet": "Indonesian tablet is the established pharmaceutical form, as used by BPOM."
+      },
+      "Total": {
+        "Total": "Indonesian total is the established total/count label."
+      }
+    }
+  },
+  "ro": {
+    "Localizable.xcstrings": {
+      "Film": {
+        "Film": "Romanian film is the established native thin-film noun."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Romanian singular gram is the native mass-unit noun; approve this exact singular leaf only."
+      },
+      "%.15g micrograms": {
+        "%.15g microgram": "Romanian singular microgram is the native metric unit noun; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "ro uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "Gram": {
+        "Gram": "Romanian gram is the native singular mass-unit name."
+      },
+      "Medical": {
+        "Medical": "Romanian medical is the native masculine/neuter adjective used for the medical category heading."
+      },
+      "Microgram": {
+        "Microgram": "Romanian microgram is the native singular metric unit name."
+      },
+      "Calendar": {
+        "Calendar": "Romanian calendar is the native noun for calendar."
+      },
+      "%lld active": {
+        "%lld active": {
+          "few": "Romanian active is the correct plural adjective for the medication-count label in the few category; this review does not permit the singular one form.",
+          "other": "Romanian active is the correct plural adjective for the medication-count label in the other category; this review does not permit the singular one form."
+        }
+      },
+      "Total": {
+        "Total": "Reviewed exact ro standalone label: total is the Romanian word for the aggregate amount."
+      },
+      "Spray": {
+        "Spray": "Reviewed exact ro standalone label: spray is the established Romanian medicine-form loanword."
+      },
+      "Text": {
+        "Text": "Reviewed exact ro standalone label: text is the Romanian noun for written text."
+      }
+    }
+  },
+  "sk": {
+    "Localizable.xcstrings": {
+      "Film": {
+        "Film": "Slovak film is the native technical thin-film noun."
+      },
+      "Gram": {
+        "Gram": "Slovak gram is the native mass-unit dictionary form."
+      },
+      "%.15g films": {
+        "%.15g film": "Slovak singular film is the native thin-film noun; approve this exact singular leaf only."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Slovak singular gram is the native mass-unit noun; approve this exact singular leaf only."
+      },
+      "%.15g liters": {
+        "%.15g liter": "Slovak singular liter is the native volume-unit noun; approve this exact singular leaf only."
+      },
+      "%lld min": {
+        "%lld min": "sk uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "Symbol": {
+        "Symbol": "Reviewed exact sk standalone label: symbol is the Slovak noun for a symbol or icon."
+      },
+      "Liter": {
+        "Liter": "Reviewed exact sk standalone label: liter is the Slovak spelling of the volume unit."
+      },
+      "film": {
+        "film": "Reviewed exact Slovak medicine-form unit: film is the Slovak term for a thin medicinal film."
+      },
+      "Text": {
+        "Text": "Reviewed exact Slovak written-content label: text is the Slovak noun for written text."
+      }
+    }
+  },
+  "pl": {
+    "Localizable.xcstrings": {
+      "%.15g grams": {
+        "%.15g gram": "Polish singular gram is the native mass-unit noun; approve this exact singular leaf only, not gramy or gramow count forms."
+      },
+      "%lld min": {
+        "%lld min": "pl uses the internationally accepted minute symbol min in compact durations; retain the integer placeholder."
+      },
+      "Gram": {
+        "Gram": "Polish gram is the native mass-unit dictionary form."
+      },
+      "Status": {
+        "Status": "Reviewed exact pl standalone label: status is a standard Polish noun for state or standing."
+      },
+      "Symbol": {
+        "Symbol": "Reviewed exact pl standalone label: symbol is the Polish noun for a symbol or icon."
+      },
+      "OK": {
+        "OK": "Reviewed exact pl standalone label: OK is the conventional Polish UI confirmation."
+      }
+    }
+  },
+  "tr": {
+    "Localizable.xcstrings": {
+      "Alizarin": {
+        "Alizarin": "Reviewed Turkish alizarin is an established red pigment/color name, used in Turkish university terminology; this exact named color label only. Evidence: https://havsamyo.trakya.edu.tr/news/edirne-kirmizisina-tarimsal-yaklasim"
+      },
+      "%.15g films": {
+        "%.15g film": "Reviewed exact Turkish numeric film dosage-form noun; Turkish uses the singular noun after a count. Approve this source variant only, not a blanket review of English plural sources."
+      },
+      "%.15g grams": {
+        "%.15g gram": "Reviewed exact Turkish numeric gram mass-unit phrase; gram is standard Turkish and is uninflected after the count. This source variant only."
+      },
+      "%.15g inhalers": {
+        "%.15g inhaler": "Reviewed exact Turkish numeric inhaler medication-device term; the Turkish Ministry of Health uses inhaler. This source variant only. Evidence: https://ceyhandh.saglik.gov.tr/TR-78293/akilli-ilac.html"
+      },
+      "%.15g tablets": {
+        "%.15g tablet": "Reviewed exact Turkish numeric tablet medication-form term; Turkish health guidance uses numeric tablet, with an uninflected noun after the count. This source variant only. Evidence: https://hsgm.saglik.gov.tr/depo/birimler/kronik-hastaliklar-ve-yasli-sagligi-db/Dokumanlar/Rehberler/Astim_KOAH_Katilimci_Rehberi.pdf"
+      },
+      "Film": {
+        "Film": "Reviewed Turkish film is the established film/layer term used in medicine; this standalone unit label only, not a waiver of descriptive English prose. Turkish Ministry of Health usage: https://savastepedh.saglik.gov.tr/TR-1474301/sigara-birakma-poliklinigi.html"
+      },
+      "Gram": {
+        "Gram": "Reviewed Turkish gram is the standard metric mass-unit noun with identical spelling; this exact standalone unit label only."
+      },
+      "film": {
+        "film": "Reviewed exact tr standalone label: film is the Turkish term for a thin medicinal film."
+      },
+      "Tablet": {
+        "Tablet": "Reviewed exact tr standalone label: tablet is the established Turkish term for the solid oral medicine form."
+      },
+      "%.15g liters": {
+        "%.15g liter": {
+          "one": "Reviewed exact Turkish one plural leaf: litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant. Native numeric placeholder remains unchanged."
+        }
+      },
+      "Liter": {
+        "Liter": "Reviewed exact Turkish unit label: Litre is the correct local medicine or volume-unit spelling, shared with this actual regional English variant."
+      }
+    }
+  }
+}

@@ -1,184 +1,198 @@
+import Combine
 import SwiftUI
 import WatchKit
 
 struct MedicationDetailView: View {
-    let medication: WatchMedication
-    @EnvironmentObject var sender: WCSender
-    @State private var doseAmount: Double
-    @State private var showingDoseLogger = false
-    @State private var showingQuantityEditor = false
-    @State private var newQuantity: Double
-    @State private var currentQuantity: Double?
+	@Environment(\.colorScheme) private var colorScheme
+	private let initialMedication: WatchMedication
+	@EnvironmentObject var sender: WCSender
+	@State private var doseAmount: Double
+	@State private var showingDoseLogger = false
+	@State private var showingQuantityEditor = false
+	@State private var newQuantity: Double
+	@State private var now = Date()
 
-    init(medication: WatchMedication) {
-        self.medication = medication
-        _doseAmount = State(initialValue: medication.prescribedDoseAmount ?? 1.0)
-        _newQuantity = State(initialValue: medication.quantity ?? 0)
-        _currentQuantity = State(initialValue: medication.quantity)
-    }
+	private let eligibilityTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                // Medication Info
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(medication.displayName)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .multilineTextAlignment(.center)
+	init(medication: WatchMedication) {
+		initialMedication = medication
+		_doseAmount = State(initialValue: medication.prescribedDoseAmount ?? 1.0)
+		_newQuantity = State(initialValue: medication.quantity)
+	}
 
-                    HStack {
-                        Text("Quantity:")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        if let currentQuantity {
-                            Text("\(currentQuantity, specifier: "%.0f")")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        } else {
-                            Text("Not tracked")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        Button("Edit") {
-                            showingQuantityEditor = true
-                        }
-                        .font(.caption2)
-                        .buttonStyle(.borderless)
-                    }
+	private var medication: WatchMedication {
+		sender.medications.first { $0.id == initialMedication.id } ?? initialMedication
+	}
 
-                    if let prescribedDoseAmount = medication.prescribedDoseAmount,
-                       let prescribedUnit = medication.prescribedUnit
-                    {
-                        HStack {
-                            Text("Prescribed:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("\(prescribedDoseAmount, specifier: "%.1f") \(prescribedUnit)")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-                    }
+	var body: some View {
+		let canTakeNow = medication.canTake(at: now)
 
-                    if medication.lowStock || medication.refillSoon {
-                        statusBadge
-                    } else if let statusMessage = medication.statusMessage {
-                        Text(statusMessage)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .padding()
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(12)
+		ScrollView {
+			VStack(spacing: 16) {
+				// Medication Info
+				VStack(alignment: .leading, spacing: 8) {
+					Text(medication.displayName)
+						.font(.title3)
+						.fontWeight(.semibold)
+						.multilineTextAlignment(.center)
 
-                // Quick Actions
-                VStack(spacing: 12) {
-                    Button(action: {
-                        showingDoseLogger = true
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Log Dose")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.accent)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    .buttonStyle(.plain)
+					HStack {
+						Text("Quantity:")
+							.font(.caption)
+							.foregroundColor(.secondary)
+						Text(medication.quantity.formatted(.number.precision(.fractionLength(0...2))))
+							.font(.caption)
+							.fontWeight(.medium)
+						Spacer()
+						Button("Edit") {
+							newQuantity = medication.quantity
+							showingQuantityEditor = true
+						}
+						.font(.caption2)
+						.buttonStyle(.borderless)
+					}
 
-                    Button(action: {
-                        logQuickDose()
-                    }) {
-                        HStack {
-                            Image(systemName: "bolt.fill")
-                            Text("Quick Log")
-                            if let amount = medication.prescribedDoseAmount,
-                               let unit = medication.prescribedUnit
-                            {
-                                Text("(\(amount, specifier: "%.1f") \(unit))")
-                                    .font(.caption)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding()
-        }
-        .navigationTitle("Details")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingDoseLogger) {
-            DoseLoggerView(medication: medication, doseAmount: $doseAmount)
-                .onDisappear {
-                    // Update quantity after logging dose
-                    if let quantity = currentQuantity, quantity > 0 {
-                        currentQuantity = max(0, quantity - doseAmount)
-                    }
-                }
-        }
-        .sheet(isPresented: $showingQuantityEditor) {
-            QuantityEditorView(medication: medication, quantity: $newQuantity)
-        }
-    }
+					if let prescribedDoseAmount = medication.prescribedDoseAmount,
+					   let prescribedUnit = medication.prescribedUnit
+					{
+						HStack {
+							Text("Prescribed:")
+								.font(.caption)
+								.foregroundColor(.secondary)
+							Text(WatchMedication.localizedAmount(prescribedDoseAmount, unit: prescribedUnit))
+								.font(.caption)
+								.fontWeight(.medium)
+						}
+					}
 
-    private func logQuickDose() {
-        let doseAmount = medication.prescribedDoseAmount ?? 1.0
-        let doseUnit = medication.prescribedUnit ?? "dose"
+					if medication.nextDoseDate == nil, !canTakeNow, let reason = medication.statusMessage {
+						Text(reason)
+							.font(.caption2)
+							.foregroundColor(.orange)
+							.fixedSize(horizontal: false, vertical: true)
+					} else if medication.lowStock || medication.refillSoon || !canTakeNow {
+						statusBadge
+					} else if let statusMessage = medication.statusMessage {
+						Text(statusMessage)
+							.font(.caption2)
+							.foregroundColor(.secondary)
+					}
+				}
+				.padding()
+				.background(Color.gray.opacity(0.2))
+				.cornerRadius(12)
 
-        let eventData: [String: Any] = [
-            "medicationId": medication.id.uuidString,
-            "doseAmount": doseAmount,
-            "doseUnit": doseUnit,
-            "quantityConsumed": doseAmount,
-        ]
+				// Quick Actions
+				VStack(spacing: 12) {
+					if let message = sender.actionMessage {
+						Text(message).font(.caption).fixedSize(horizontal: false, vertical: true)
+					}
+					Button(action: {
+						showingDoseLogger = true
+					}) {
+						HStack {
+							Image(systemName: "plus.circle.fill")
+							Text("Log Dose")
+						}
+						.frame(maxWidth: .infinity)
+						.padding()
+						.background(Color.accent)
+						.foregroundStyle(colorScheme == .dark ? .black : .white)
+						.cornerRadius(12)
+					}
+					.buttonStyle(.plain)
+					.disabled(sender.isSendingAction)
 
-        sender.sendMessage(key: "logDose", value: eventData)
+					Button(action: {
+						logQuickDose()
+					}) {
+						HStack {
+								Image(systemName: "bolt.fill")
+								Text("Quick Log")
+								if let amount = medication.prescribedDoseAmount,
+								   let unit = medication.prescribedUnit
+								{
+									Text(verbatim: "(" + WatchMedication.localizedAmount(amount, unit: unit) + ")")
+										.font(.caption)
+								}
+						}
+						.frame(maxWidth: .infinity)
+						.padding()
+						.background(Color.accent)
+						.foregroundStyle(colorScheme == .dark ? .black : .white)
+						.cornerRadius(12)
+					}
+					.buttonStyle(.plain)
+					.accessibilityLabel(medication.quickLogAccessibilityLabel)
+					.disabled(sender.isSendingAction)
+				}
+			}
+			.padding()
+		}
+		.navigationTitle("Details")
+		.navigationBarTitleDisplayMode(.inline)
+		.sheet(isPresented: $showingDoseLogger) {
+			DoseLoggerView(medication: medication, doseAmount: $doseAmount)
+		}
+		.sheet(isPresented: $showingQuantityEditor) {
+			QuantityEditorView(medication: medication, quantity: $newQuantity)
+		}
+		.onReceive(eligibilityTimer) { now = $0 }
+	}
 
-        // Update local quantity immediately for better UX
-        if let quantity = currentQuantity, quantity > 0 {
-            currentQuantity = max(0, quantity - doseAmount)
-        }
+	private func logQuickDose() {
+		let doseAmount = medication.prescribedDoseAmount ?? 1.0
+		let doseUnit = medication.prescribedUnit ?? "dose"
 
-        // Provide subtle haptic feedback
-        WKInterfaceDevice.current().play(.click)
-    }
+		let eventData: [String: Any] = [
+			"medicationId": medication.id.uuidString,
+			"doseAmount": doseAmount,
+			"doseUnit": doseUnit,
+			"quantityConsumed": doseAmount,
+		]
 
-    private var statusBadge: some View {
-        HStack(spacing: 6) {
-            if medication.lowStock {
-                Label("Low stock", systemImage: "exclamationmark.triangle.fill")
-                    .foregroundColor(.orange)
-            } else if medication.refillSoon {
-                Label("Refill soon", systemImage: "shippingbox.fill")
-                    .foregroundColor(.yellow)
-            }
-        }
-        .font(.caption2)
-    }
+		Task { await sender.sendAction(key: "logDose", value: eventData) }
+	}
 
+	private var statusBadge: some View {
+		HStack(spacing: 6) {
+			if medication.lowStock {
+				Label("Low stock", systemImage: "exclamationmark.triangle.fill")
+					.foregroundColor(.orange)
+			} else if !medication.canTake(at: now) {
+				Label(nextDoseLabel, systemImage: "clock.fill")
+					.foregroundColor(.orange)
+			} else if medication.refillSoon {
+				Label("Refill soon", systemImage: "shippingbox.fill")
+					.foregroundColor(.yellow)
+			}
+		}
+		.font(.caption2)
+	}
+
+	private var nextDoseLabel: String {
+		guard let nextDoseDate = medication.nextDoseDate else {
+			return String(localized: "Review saved limits")
+		}
+
+		let formatter = RelativeDateTimeFormatter()
+		formatter.unitsStyle = .short
+		return formatter.localizedString(for: nextDoseDate, relativeTo: now)
+	}
 }
 
 #if DEBUG
-    #Preview {
-        NavigationStack {
-            MedicationDetailView(
-                medication: WatchMedication(
-                    id: UUID(),
-                    displayName: "Ibuprofen",
-                    quantity: 24,
-                    prescribedDoseAmount: 2.0,
-                    prescribedUnit: "tablet"
-                )
-            )
-        }
-    }
+	#Preview {
+		NavigationStack {
+			MedicationDetailView(
+				medication: WatchMedication(
+					id: UUID(),
+					displayName: "Ibuprofen",
+					quantity: 24,
+					prescribedDoseAmount: 2.0,
+					prescribedUnit: "tablet"
+				)
+			)
+		}
+	}
 #endif

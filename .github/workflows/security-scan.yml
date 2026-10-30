@@ -74,7 +74,7 @@ jobs:
             'BEGIN.*PRIVATE KEY'
             # Generic
             'api[_-]?key.*[=:].*[a-zA-Z0-9]{20,}'
-            'password.*[=:].*[^\s]{8,}'
+            "(^|[[:space:]\"'])([[:alnum:]_]+\\.)*[[:alnum:]_]*password[\"']?[[:space:]]*[=:][[:space:]]*[^[:space:]]{8,}"
           )
 
           FOUND=0
@@ -105,7 +105,8 @@ jobs:
               || true)
             if [ -n "$MATCHES" ]; then
               echo "::error::Found potential secret matching pattern: $pattern"
-              echo "$MATCHES"
+              # Keep credential values out of hosted logs; report locations only.
+              echo "$MATCHES" | sed -nE 's/^([^:]+:[0-9]+):.*/\1: [content redacted]/p'
               FOUND=1
             fi
           done

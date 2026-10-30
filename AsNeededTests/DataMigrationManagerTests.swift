@@ -1,5 +1,5 @@
 // DataMigrationManagerTests.swift
-// Tests for DataMigrationManager operations (data-driven migration approach)
+// Exercise the production discovery, merge, verification and archival flow in disposable directories.
 
 import ANModelKit
 @testable import AsNeeded
@@ -7,749 +7,262 @@ import Boutique
 import Foundation
 import Testing
 
-/// Test errors for migration test scenarios
-enum TestError: Error {
-	case setupFailed
-	case appGroupUnavailable
-}
-
 @Suite("DataMigrationManager Tests", .tags(.migration, .persistence, .unit))
 @MainActor
 struct DataMigrationManagerTests {
-	private var migrationManager: DataMigrationManager
-
-	init() async throws {
-		// Create migration manager instance
-		migrationManager = DataMigrationManager()
+	@Test("Recovering legacy records preserves newer current medications and history")
+	func recoveryPreservesCurrentEdits() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let legacy = ANMedicationConcept(clinicalName: "Legacy example", quantity: 192)
+		var current = legacy
+		current.quantity = 30
+		current.nickname = "Edited example"
+		current.minimumHoursBetweenDoses = 4
+		let missing = ANMedicationConcept(clinicalName: "Missing example", quantity: 12.5)
+		let oldEvent = ANEventConcept(eventType: .doseTaken, medication: legacy, dose: ANDoseConcept(amount: 2, unit: .unit), date: Date(timeIntervalSince1970: 1_700_000_000), note: "Old example note")
+		var editedEvent = oldEvent
+		editedEvent.medication = current
+		editedEvent.dose = ANDoseConcept(amount: 0.5, unit: .unit)
+		editedEvent.date = oldEvent.date.addingTimeInterval(3600)
+		editedEvent.note = "Edited example note"
+		let missingEvent = ANEventConcept(eventType: .doseTaken, medication: missing, dose: ANDoseConcept(amount: 0.5, unit: .unit), date: oldEvent.date)
+		try await fixture.seed([legacy, missing], directory: fixture.documents.appendingPathComponent("medications.sqlite"), name: "data")
+		try await fixture.seed([oldEvent, missingEvent], directory: fixture.documents.appendingPathComponent("events.sqlite"), name: "data")
+		try await fixture.seed([current], directory: fixture.current, name: "medications")
+		try await fixture.seed([editedEvent], directory: fixture.current, name: "events")
+		try await fixture.manager.migrateIfNeeded()
+		try await fixture.manager.migrateIfNeeded()
+		let medications = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		let events = try await fixture.read(ANEventConcept.self, directory: fixture.current, name: "events")
+		#expect(Set(medications.map(\.id)) == Set([current.id, missing.id]))
+		#expect(medications.first { $0.id == current.id } == current)
+		#expect(Set(events.map(\.id)) == Set([editedEvent.id, missingEvent.id]))
+		#expect(events.first { $0.id == editedEvent.id } == editedEvent)
+		let retainedEvent = try #require(events.first { $0.id == editedEvent.id })
+		#expect(retainedEvent.dose == editedEvent.dose)
+		#expect(retainedEvent.date == editedEvent.date)
+		#expect(retainedEvent.note == editedEvent.note)
+		#expect(retainedEvent.medication?.quantity == current.quantity)
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications != nil)
+		#expect(fixture.manager.findArchivedLegacyDatabases().events != nil)
 	}
 
-	// MARK: - Fresh Install Tests
-
-	@Test("Fresh install with no legacy data completes without error")
-	func freshInstallNoLegacyData() async throws {
-		// Given - no legacy data
-		cleanupTestDatabases()
-
-		// When - migration runs (data-driven, will find no legacy data)
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - should complete without error (nothing to migrate)
-		// Data-driven approach: if no legacy data exists, migration is a no-op
-		#expect(true) // If we get here, no error was thrown
-	}
-
-	// MARK: - Data Merge Tests
-
-	@Test("Merge data from legacy and current locations")
-	func mergeDataFromBothLocations() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		// Create legacy data
-		let legacyStore = createLegacyStore()
-		let legacyMedication = createTestMedication(name: "Legacy Med")
-		try await legacyStore.insert(legacyMedication)
-
-		// Create current data in App Group
-		let currentStore = createAppGroupStore()
-		let currentMedication = createTestMedication(name: "Current Med")
-		try await currentStore.insert(currentMedication)
-
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - both medications should exist in App Group
-		let appGroupStore = createAppGroupStore()
-		#expect(appGroupStore.items.count == 2)
-
-		let medicationNames = Set(appGroupStore.items.map { $0.clinicalName })
-		#expect(medicationNames.contains("Legacy Med"))
-		#expect(medicationNames.contains("Current Med"))
-
-		// Cleanup
-		try await appGroupStore.removeAll()
-		try await legacyStore.removeAll()
-	}
-
-	@Test("Duplicate medications are handled by merge logic")
-	func duplicateIDsHandledCorrectly() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		// Create same medication in both locations
-		let medication = createTestMedication(name: "Test Medication")
-
-		let legacyStore = createLegacyStore()
-		try await legacyStore.insert(medication)
-
-		let currentStore = createAppGroupStore()
-		try await currentStore.insert(medication)
-
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - only one instance should exist (deduplicated by ID)
-		let appGroupStore = createAppGroupStore()
-		#expect(appGroupStore.items.count == 1)
-		#expect(appGroupStore.items.first?.clinicalName == "Test Medication")
-
-		// Cleanup
-		try await appGroupStore.removeAll()
-		try await legacyStore.removeAll()
-	}
-
-	@Test("Migration handles legacy .sqlite databases")
-	func migrationHandlesLegacySqliteDatabases() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		let medication = createTestMedication(name: "Legacy SQLite Format")
-
-		do {
-			let legacyStore = createLegacyStore()
-			try await legacyStore.insert(medication)
-		}
-
-		let fileManager = FileManager.default
-		let candidateDirectories = [
-			fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first,
-			fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
-		].compactMap { $0 }
-
-		func relocateSidecar(from source: URL, to destination: URL, suffix: String) {
-			let sourcePath = source.path + suffix
-			let destinationPath = destination.path + suffix
-
-			guard fileManager.fileExists(atPath: sourcePath) else { return }
-			if fileManager.fileExists(atPath: destinationPath) {
-				try? fileManager.removeItem(atPath: destinationPath)
+	@Test("An empty SQLite neighbor from an older reader cannot hide legacy records", arguments: ["sqlite", "db", ""])
+	func emptyNeighborDoesNotHideLegacyData(fileExtension: String) async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Recovery example", quantity: 12.5)
+		try await fixture.seed([medication], directory: fixture.support, name: "medications")
+		let original = fixture.support.appendingPathComponent("medications.sqlite3")
+		let legacy = fixture.support.appendingPathComponent(fileExtension.isEmpty ? "medications" : "medications.\(fileExtension)")
+		for suffix in ["", "-wal", "-shm"] {
+			let source = URL(fileURLWithPath: original.path + suffix)
+			if FileManager.default.fileExists(atPath: source.path) {
+				try FileManager.default.moveItem(at: source, to: URL(fileURLWithPath: legacy.path + suffix))
 			}
-			try? fileManager.moveItem(atPath: sourcePath, toPath: destinationPath)
 		}
+		// Older readers manufactured this empty database while opening the wrong filename.
+		try await fixture.seed([ANMedicationConcept](), directory: fixture.support, name: "medications")
+		try await fixture.manager.migrateIfNeeded()
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(result == [medication])
+		#expect(!FileManager.default.fileExists(atPath: legacy.path))
+	}
 
-		var finalLegacyURL: URL?
+	@Test("Fresh installs and current-only installs preserve current data", arguments: [false, true])
+	func noLegacyData(hasCurrentData: Bool) async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Current example", quantity: 12.5)
+		if hasCurrentData { try await fixture.seed([medication], directory: fixture.current, name: "medications") }
+		try await fixture.manager.migrateIfNeeded()
+		let medications = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(medications.map(\.id) == (hasCurrentData ? [medication.id] : []))
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications == nil)
+	}
 
-		for directory in candidateDirectories {
-			let sqlite3URL = directory.appendingPathComponent("test_legacy_medications.sqlite3")
-			let sqliteURL = directory.appendingPathComponent("test_legacy_medications.sqlite")
+	@Test("Legacy medications, notes and fractional doses survive upgrade and repeated launches")
+	func upgradePreservesRecordsAndLaterEdits() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Legacy example", quantity: 12.5)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 0.5, unit: .unit), date: Date(timeIntervalSince1970: 1_700_000_000), note: "Example note")
+		try await fixture.seed([medication], directory: fixture.documents.appendingPathComponent("medications.sqlite"), name: "data")
+		try await fixture.seed([event], directory: fixture.documents.appendingPathComponent("events.sqlite"), name: "data")
+		try await fixture.manager.migrateIfNeeded()
+		let medications = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		let events = try await fixture.read(ANEventConcept.self, directory: fixture.current, name: "events")
+		#expect(medications == [medication])
+		#expect(events.map(\.id) == [event.id])
+		#expect(events.first?.note == "Example note")
+		#expect(events.first?.dose == event.dose)
+		#expect(events.first?.date == event.date)
+		let archived = fixture.manager.findArchivedLegacyDatabases()
+		#expect(archived.medications != nil)
+		#expect(archived.events != nil)
+		#expect(!FileManager.default.fileExists(atPath: fixture.documents.appendingPathComponent("medications.sqlite").path))
 
-			if fileManager.fileExists(atPath: sqlite3URL.path) {
-				if fileManager.fileExists(atPath: sqliteURL.path) {
-					try? fileManager.removeItem(at: sqliteURL)
+		var edited = medication
+		edited.quantity = 7.25
+		try await fixture.seed([edited], directory: fixture.current, name: "medications")
+		// New instances model subsequent launches; stale legacy values must never replay.
+		try await fixture.manager.migrateIfNeeded()
+		try await fixture.manager.migrateIfNeeded()
+		let relaunched = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		let relaunchedEvents = try await fixture.read(ANEventConcept.self, directory: fixture.current, name: "events")
+		#expect(relaunched == [edited])
+		#expect(relaunchedEvents.count == 1)
+		#expect(relaunchedEvents.first?.id == event.id)
+	}
+
+	@Test("Mixed legacy and current data deduplicates IDs without dropping distinct records")
+	func mixedStoresPreserveIDs() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let legacy = ANMedicationConcept(clinicalName: "Legacy example", quantity: 12.5)
+		let current = ANMedicationConcept(clinicalName: "Current example", quantity: 4)
+		try await fixture.seed([legacy], directory: fixture.documents.appendingPathComponent("medications.sqlite"), name: "data")
+		try await fixture.seed([legacy, current], directory: fixture.current, name: "medications")
+		try await fixture.manager.migrateIfNeeded()
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(Set(result.map(\.id)) == Set([legacy.id, current.id]))
+		#expect(result.count == 2)
+		#expect(result.first { $0.id == current.id }?.quantity == 4)
+	}
+
+	@Test("Flat legacy filenames migrate actual records and archive only database artifacts", arguments: ["sqlite3", "sqlite", "db", ""])
+	func flatFilesMigrate(fileExtension: String) async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Flat example", quantity: 12.5)
+		try await fixture.seed([medication], directory: fixture.support, name: "medications")
+		let original = fixture.support.appendingPathComponent("medications.sqlite3")
+		let legacy = fixture.support.appendingPathComponent(fileExtension.isEmpty ? "medications" : "medications.\(fileExtension)")
+		if original != legacy {
+			for suffix in ["", "-wal", "-shm"] {
+				let source = URL(fileURLWithPath: original.path + suffix)
+				if FileManager.default.fileExists(atPath: source.path) {
+					try FileManager.default.moveItem(at: source, to: URL(fileURLWithPath: legacy.path + suffix))
 				}
-				try fileManager.moveItem(at: sqlite3URL, to: sqliteURL)
-				relocateSidecar(from: sqlite3URL, to: sqliteURL, suffix: "-wal")
-				relocateSidecar(from: sqlite3URL, to: sqliteURL, suffix: "-shm")
-				finalLegacyURL = sqliteURL
-				break
-			} else if fileManager.fileExists(atPath: sqliteURL.path) {
-				finalLegacyURL = sqliteURL
-				break
+			}
+		}
+		let sentinel = fixture.support.appendingPathComponent("unrelated.txt")
+		try Data("unrelated fixture".utf8).write(to: sentinel)
+		try await fixture.manager.migrateIfNeeded()
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(result == [medication])
+		#expect(try Data(contentsOf: sentinel) == Data("unrelated fixture".utf8))
+		#expect(!FileManager.default.fileExists(atPath: legacy.path))
+		let archive = try #require(fixture.manager.findArchivedLegacyDatabases().medications)
+		#expect(FileManager.default.fileExists(atPath: archive.appendingPathComponent(legacy.lastPathComponent).path))
+	}
+
+	@Test("Failed destination writes retain legacy data for a successful retry")
+	func failureDoesNotArchiveSource() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Retry example", quantity: 12.5)
+		let legacy = fixture.documents.appendingPathComponent("medications.sqlite")
+		try await fixture.seed([medication], directory: legacy, name: "data")
+		// A file at the destination blocks writes deterministically, without chmod or shared data.
+		try FileManager.default.removeItem(at: fixture.current)
+		try Data("blocked destination".utf8).write(to: fixture.current)
+		await #expect(throws: (any Error).self) { try await fixture.manager.migrateIfNeeded() }
+		#expect(FileManager.default.fileExists(atPath: legacy.appendingPathComponent("data.sqlite3").path))
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications == nil)
+		try FileManager.default.removeItem(at: fixture.current)
+		try FileManager.default.createDirectory(at: fixture.current, withIntermediateDirectories: true)
+		try await fixture.manager.migrateIfNeeded()
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(result == [medication])
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications != nil)
+	}
+
+	@Test("Corrupt legacy data fails without changing current records or archiving the source")
+	func corruptionDoesNotChangeCurrentRecords() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Current example", quantity: 7.25)
+		try await fixture.seed([medication], directory: fixture.current, name: "medications")
+		let source = fixture.support.appendingPathComponent("medications.db")
+		let original = Data("invalid database fixture".utf8)
+		try original.write(to: source)
+		await #expect(throws: (any Error).self) { try await fixture.manager.migrateIfNeeded() }
+		#expect(try Data(contentsOf: source) == original)
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications == nil)
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(result == [medication])
+	}
+
+	@Test("Dry run previews the merge without moving or writing records")
+	func dryRunPreservesSourceAndDestination() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Preview example", quantity: 12.5)
+		try await fixture.seed([medication], directory: fixture.documents.appendingPathComponent("medications.sqlite"), name: "data")
+		let report = await fixture.manager.dryRun()
+		guard case .dryRunComplete = report.status else { Issue.record("Expected a successful dry run"); return }
+		#expect(report.foundLegacyMedications == 1)
+		#expect(report.postMergeMedications == 1)
+		#expect(report.currentMedications == 0)
+		#expect(fixture.manager.findArchivedLegacyDatabases().medications == nil)
+		#expect(!FileManager.default.fileExists(atPath: fixture.current.appendingPathComponent("medications.sqlite3").path))
+	}
+
+	@Test("Migration preserves a large legacy medication set")
+	func largeDataset() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanup() }
+		let medications = (0..<1000).map { ANMedicationConcept(clinicalName: "Example \($0)", quantity: Double($0) + 0.5) }
+		try await fixture.seed(medications, directory: fixture.documents.appendingPathComponent("medications.sqlite"), name: "data")
+		try await fixture.manager.migrateIfNeeded()
+		let result = try await fixture.read(ANMedicationConcept.self, directory: fixture.current, name: "medications")
+		#expect(Set(result.map(\.id)) == Set(medications.map(\.id)))
+		#expect(result.count == 1000)
+	}
+
+	@MainActor
+	private struct Fixture {
+		let root: URL
+		let documents: URL
+		let support: URL
+		let current: URL
+		let suite: String
+		let defaults: UserDefaults
+
+		var manager: DataMigrationManager {
+			DataMigrationManager(documentsURL: documents, applicationSupportURL: support, appGroupURL: current, defaults: defaults)
+		}
+
+		init() throws {
+			let identifier = UUID().uuidString
+			root = FileManager.default.temporaryDirectory.appendingPathComponent(identifier)
+			documents = root.appendingPathComponent("Documents")
+			support = root.appendingPathComponent("Application Support")
+			current = root.appendingPathComponent("App Group")
+			suite = "DataMigrationManagerTests.\(identifier)"
+			defaults = try #require(UserDefaults(suiteName: suite))
+			for directory in [documents, support, current] {
+				try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 			}
 		}
 
-		guard finalLegacyURL != nil else {
-			throw TestError.setupFailed
+		func cleanup() {
+			try? FileManager.default.removeItem(at: root)
+			defaults.removePersistentDomain(forName: suite)
 		}
 
-		let appGroupStore = createAppGroupStore()
-		try await appGroupStore.removeAll()
-
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then
-		let migratedStore = createAppGroupStore()
-		let migratedNames = await migratedStore.items.map(\.clinicalName)
-		#expect(migratedNames.contains("Legacy SQLite Format"))
-
-		// Cleanup
-		try await migratedStore.removeAll()
-		cleanupTestDatabases()
-	}
-
-	// MARK: - Idempotency Tests
-
-	@Test("Running migration multiple times produces same result (data-driven idempotency)")
-	func migrationIdempotency() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		let legacyStore = createLegacyStore()
-		let medication = createTestMedication(name: "Test Med")
-		try await legacyStore.insert(medication)
-
-		// When - run migration twice (data-driven approach will check for legacy data each time)
-		try await migrationManager.migrateIfNeeded()
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - should have exactly one medication (no duplicates)
-		let appGroupStore = createAppGroupStore()
-		#expect(appGroupStore.items.count == 1)
-		#expect(appGroupStore.items.first?.clinicalName == "Test Med")
-
-		// Cleanup
-		try await appGroupStore.removeAll()
-		try await legacyStore.removeAll()
-	}
-
-	// MARK: - Large Dataset Tests
-
-	@Test("Migration handles large datasets")
-	func migrationHandlesLargeDatasets() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		let legacyStore = createLegacyStore()
-
-		// Create 100 medications
-		for i in 1...100 {
-			let medication = createTestMedication(name: "Medication \(i)")
-			try await legacyStore.insert(medication)
+		func seed<T: Codable & Identifiable & Sendable>(_ items: [T], directory: URL, name: String) async throws where T.ID == UUID {
+			let storage = try #require(SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: name))
+			let store = try await Store<T>(storage: storage, cacheIdentifier: \T.id.uuidString)
+			try await store.insert(items)
 		}
 
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then
-		let appGroupStore = createAppGroupStore()
-		#expect(appGroupStore.items.count == 100)
-
-		// Cleanup
-		try await appGroupStore.removeAll()
-		try await legacyStore.removeAll()
-	}
-
-	@Test("Legacy IDs preserved after migration")
-	func legacyIDsPreservedAfterMigration() async throws {
-		// Given
-		removeLegacyBodegaDatabases()
-		removeAppGroupDatabases()
-
-		let legacyMedicationStore = createLegacyBodegaMedicationStore()
-		let legacyEventStore = createLegacyBodegaEventStore()
-
-		let med1 = createTestMedication(name: "Legacy Med 1")
-		let med2 = createTestMedication(name: "Legacy Med 2")
-		try await legacyMedicationStore.insert(med1)
-		try await legacyMedicationStore.insert(med2)
-
-		let event1 = createTestEvent(medication: med1)
-		let event2 = createTestEvent(medication: med2)
-		try await legacyEventStore.insert(event1)
-		try await legacyEventStore.insert(event2)
-
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - every legacy ID should exist in App Group
-		let appGroupMedStore = createAppGroupStore()
-		let appGroupEventStore = createAppGroupEventStore()
-
-		let legacyMedIDs = Set([med1.id, med2.id])
-		let currentMedIDs = Set(appGroupMedStore.items.map { $0.id })
-		#expect(legacyMedIDs.isSubset(of: currentMedIDs))
-
-		let legacyEventIDs = Set([event1.id, event2.id])
-		let currentEventIDs = Set(appGroupEventStore.items.map { $0.id })
-		#expect(legacyEventIDs.isSubset(of: currentEventIDs))
-
-		// Cleanup
-		try await appGroupMedStore.removeAll()
-		try await appGroupEventStore.removeAll()
-		removeLegacyBodegaDatabases()
-		clearArchivedLegacyPaths()
-	}
-
-	@Test("Migration failure does not archive legacy databases")
-	func migrationFailure_doesNotArchiveLegacyDatabases() async throws {
-		// Given
-		removeLegacyBodegaDatabases()
-		removeAppGroupDatabases()
-		clearArchivedLegacyPaths()
-
-		let legacyMedicationStore = createLegacyBodegaMedicationStore()
-		let med = createTestMedication(name: "Legacy Med")
-		try await legacyMedicationStore.insert(med)
-
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) else {
-			throw TestError.setupFailed
-		}
-
-		let fileManager = FileManager.default
-		let originalPermissions = (try? fileManager.attributesOfItem(atPath: appGroupURL.path)[.posixPermissions]) as? NSNumber
-
-		// Make App Group read-only to force merge failure
-		try fileManager.setAttributes([.posixPermissions: 0o555], ofItemAtPath: appGroupURL.path)
-
-		// When
-		do {
-			try await migrationManager.migrateIfNeeded()
-			#expect(false, "Expected migration to fail due to read-only App Group")
-		} catch {
-			#expect(true)
-		}
-
-		// Then - legacy folder should still exist and no archive folder should be created
-		guard let documentsURL = FileManager.default.urls(
-			for: .documentDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		let legacyFolder = documentsURL.appendingPathComponent("medications.sqlite")
-		#expect(fileManager.fileExists(atPath: legacyFolder.path))
-
-		let archivedPrefix = "medications.sqlite.migrated-"
-		let contents = (try? fileManager.contentsOfDirectory(atPath: documentsURL.path)) ?? []
-		let archivedExists = contents.contains { $0.hasPrefix(archivedPrefix) }
-		#expect(archivedExists == false)
-
-		// Restore permissions and retry migration (simulates crash + retry)
-		if let originalPermissions {
-			try fileManager.setAttributes([.posixPermissions: originalPermissions], ofItemAtPath: appGroupURL.path)
-		}
-		try await migrationManager.migrateIfNeeded()
-
-		let contentsAfterRetry = (try? fileManager.contentsOfDirectory(atPath: documentsURL.path)) ?? []
-		let archivedAfterRetry = contentsAfterRetry.contains { $0.hasPrefix(archivedPrefix) }
-		#expect(archivedAfterRetry == true)
-
-		// Cleanup
-		removeLegacyBodegaDatabases()
-		removeAppGroupDatabases()
-		clearArchivedLegacyPaths()
-	}
-
-	// MARK: - Filename Variation Tests
-
-	@Test("Detect database with .sqlite3 extension")
-	func detectDatabaseWithSqlite3Extension() async throws {
-		// Given - database file with .sqlite3 extension
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create test database with .sqlite3 extension
-		let dbPath = appSupportURL.appendingPathComponent("test_variation.sqlite3")
-		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
-
-		// Then - file should be detected
-		let detected = FileManager.default.fileExists(atPath: dbPath.path)
-		#expect(detected == true)
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: dbPath)
-	}
-
-	@Test("Detect database with .sqlite extension")
-	func detectDatabaseWithSqliteExtension() async throws {
-		// Given - database file with .sqlite extension
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create test database with .sqlite extension
-		let dbPath = appSupportURL.appendingPathComponent("test_variation.sqlite")
-		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
-
-		// Then - file should be detected
-		let detected = FileManager.default.fileExists(atPath: dbPath.path)
-		#expect(detected == true)
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: dbPath)
-	}
-
-	@Test("Detect database without extension")
-	func detectDatabaseWithoutExtension() async throws {
-		// Given - database file without extension
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create test database without extension
-		let dbPath = appSupportURL.appendingPathComponent("test_variation")
-		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
-
-		// Then - file should be detected
-		let detected = FileManager.default.fileExists(atPath: dbPath.path)
-		#expect(detected == true)
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: dbPath)
-	}
-
-	@Test("Detect database with .db extension")
-	func detectDatabaseWithDbExtension() async throws {
-		// Given - database file with .db extension
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create test database with .db extension
-		let dbPath = appSupportURL.appendingPathComponent("test_variation.db")
-		try "test data".write(to: dbPath, atomically: true, encoding: .utf8)
-
-		// Then - file should be detected
-		let detected = FileManager.default.fileExists(atPath: dbPath.path)
-		#expect(detected == true)
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: dbPath)
-	}
-
-	// MARK: - WAL File Handling Tests
-
-	@Test("Detect WAL file alongside main database")
-	func detectWALFileWithMainDatabase() async throws {
-		// Given - database with WAL file
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create main database
-		let dbPath = appSupportURL.appendingPathComponent("test_wal.sqlite")
-		try "main database".write(to: dbPath, atomically: true, encoding: .utf8)
-
-		// Create WAL file
-		let walPath = appSupportURL.appendingPathComponent("test_wal.sqlite-wal")
-		try "wal data".write(to: walPath, atomically: true, encoding: .utf8)
-
-		// Create SHM file
-		let shmPath = appSupportURL.appendingPathComponent("test_wal.sqlite-shm")
-		try "shm data".write(to: shmPath, atomically: true, encoding: .utf8)
-
-		// Then - all files should be detected
-		#expect(FileManager.default.fileExists(atPath: dbPath.path))
-		#expect(FileManager.default.fileExists(atPath: walPath.path))
-		#expect(FileManager.default.fileExists(atPath: shmPath.path))
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: dbPath)
-		try? FileManager.default.removeItem(at: walPath)
-		try? FileManager.default.removeItem(at: shmPath)
-	}
-
-	@Test("Detect orphaned WAL file without main database")
-	func detectOrphanedWALFile() async throws {
-		// Given - WAL file exists but main database doesn't
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		// Create only WAL file (no main database)
-		let walPath = appSupportURL.appendingPathComponent("orphan_wal.sqlite-wal")
-		try "orphaned wal data".write(to: walPath, atomically: true, encoding: .utf8)
-
-		// Then - WAL file should be detected
-		let walExists = FileManager.default.fileExists(atPath: walPath.path)
-		#expect(walExists == true)
-
-		// And main database should NOT exist
-		let dbPath = appSupportURL.appendingPathComponent("orphan_wal.sqlite")
-		let dbExists = FileManager.default.fileExists(atPath: dbPath.path)
-		#expect(dbExists == false)
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: walPath)
-	}
-
-	// MARK: - Archival Safety Tests
-
-	@Test("Archiving flat legacy DB does not move parent directory")
-	func archiveFlatDatabaseDoesNotMoveParent() async throws {
-		// Given
-		cleanupTestDatabases()
-
-		guard let appSupportURL = FileManager.default.urls(
-			for: .applicationSupportDirectory,
-			in: .userDomainMask
-		).first else {
-			throw TestError.setupFailed
-		}
-
-		try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
-
-		let sentinelURL = appSupportURL.appendingPathComponent("archive_sentinel.txt")
-		try "sentinel".write(to: sentinelURL, atomically: true, encoding: .utf8)
-
-		guard let legacyStorage = SQLiteStorageEngine(
-			directory: FileManager.Directory(url: appSupportURL),
-			databaseFilename: "medications"
-		) else {
-			throw TestError.setupFailed
-		}
-
-		let legacyStore = try await Store<ANMedicationConcept>(
-			storage: legacyStorage,
-			cacheIdentifier: \ANMedicationConcept.id.uuidString
-		)
-		try await legacyStore.insert(createTestMedication(name: "Legacy Flat"))
-
-		// When
-		try await migrationManager.migrateIfNeeded()
-
-		// Then - sentinel should still exist (parent directory not moved)
-		#expect(FileManager.default.fileExists(atPath: sentinelURL.path))
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: sentinelURL)
-
-		if let archivedPath = UserDefaults.standard.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath) {
-			try? FileManager.default.removeItem(atPath: archivedPath)
-			UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
-		}
-
-		let legacyFiles = [
-			appSupportURL.appendingPathComponent("medications.sqlite3"),
-			appSupportURL.appendingPathComponent("medications.sqlite3-wal"),
-			appSupportURL.appendingPathComponent("medications.sqlite3-shm"),
-		]
-		for file in legacyFiles {
-			try? FileManager.default.removeItem(at: file)
-		}
-
-		if let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) {
-			let appGroupFiles = [
-				appGroupURL.appendingPathComponent("medications.sqlite3"),
-				appGroupURL.appendingPathComponent("medications.sqlite3-wal"),
-				appGroupURL.appendingPathComponent("medications.sqlite3-shm"),
-				appGroupURL.appendingPathComponent("events.sqlite3"),
-				appGroupURL.appendingPathComponent("events.sqlite3-wal"),
-				appGroupURL.appendingPathComponent("events.sqlite3-shm"),
-			]
-			for file in appGroupFiles {
-				try? FileManager.default.removeItem(at: file)
-			}
-		}
-	}
-
-	// MARK: - Test Coverage Limitations
-
-	/*
-	 App Group Unavailable Test Limitation
-	 ======================================
-
-	 We cannot easily test the scenario where App Group container is unavailable because:
-
-	 1. FileManager.containerURL(forSecurityApplicationGroupIdentifier:) is not mockable
-	 2. In test environment, App Group is always available (configured in test target)
-	 3. Creating a scenario where it returns nil would require:
-	    - Removing App Group entitlement from test target (breaks all tests)
-	    - Runtime manipulation of FileManager (not possible in Swift)
-	    - Swizzling (dangerous and unreliable)
-
-	 However, the defensive implementation ensures safety:
-
-	 ✅ DataMigrationManager throws MigrationError.appGroupUnavailable when paths nil
-	 ✅ MigrationCoordinator does NOT mark as complete on error
-	 ✅ MigrationErrorView shows user-facing error with retry button
-	 ✅ DataStore.init() crashes with helpful error if App Group unavailable
-	 ✅ Comprehensive diagnostics log App Group accessibility
-
-	 Manual Testing Required:
-	 - Remove App Group entitlement from provisioning profile
-	 - Run app on physical device
-	 - Verify MigrationErrorView is shown
-	 - Verify error message is helpful
-	 - Verify retry button works when entitlement is restored
-
-	 Data-Driven Migration Note:
-	 ===========================
-
-	 This test suite validates the data-driven migration approach:
-	 - Migration runs when legacy data exists
-	 - Migration is a no-op when no legacy data exists
-	 - Migration is idempotent (safe to run multiple times)
-	 - No UserDefaults flags are used - migration state is determined by data presence
-	 */
-
-	// MARK: - Helper Methods
-
-	/// Creates a test medication with given name
-	private func createTestMedication(name: String, nickname: String? = nil) -> ANMedicationConcept {
-		ANMedicationConcept(
-			clinicalName: name,
-			nickname: nickname,
-			quantity: nil,
-			initialQuantity: 30.0,
-			prescribedUnit: .milligram,
-			prescribedDoseAmount: 10.0
-		)
-	}
-
-	private func createTestEvent(medication: ANMedicationConcept) -> ANEventConcept {
-		ANEventConcept(
-			eventType: .doseTaken,
-			medication: medication,
-			dose: ANDoseConcept(amount: 10.0, unit: .milligram),
-			date: Date()
-		)
-	}
-
-	private func createLegacyBodegaMedicationStore() -> Store<ANMedicationConcept> {
-		Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "medications"),
-			cacheIdentifier: \ANMedicationConcept.id.uuidString
-		)
-	}
-
-	private func createLegacyBodegaEventStore() -> Store<ANEventConcept> {
-		Store<ANEventConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "events"),
-			cacheIdentifier: \ANEventConcept.id.uuidString
-		)
-	}
-
-	/// Creates a legacy store (default app container)
-	private func createLegacyStore() -> Store<ANMedicationConcept> {
-		Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine.default(appendingPath: "test_legacy_medications"),
-			cacheIdentifier: \ANMedicationConcept.id.uuidString
-		)
-	}
-
-	/// Creates an App Group store
-	private func createAppGroupStore() -> Store<ANMedicationConcept> {
-		guard let sharedContainerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) else {
-			fatalError("Unable to access App Group container for testing")
-		}
-
-		return Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "test_migration_medications"
-			)!,
-			cacheIdentifier: \ANMedicationConcept.id.uuidString
-		)
-	}
-
-	/// Creates an App Group store for events
-	private func createAppGroupEventStore() -> Store<ANEventConcept> {
-		guard let sharedContainerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) else {
-			fatalError("Unable to access App Group container for testing")
-		}
-
-		return Store<ANEventConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: "events"
-			)!,
-			cacheIdentifier: \ANEventConcept.id.uuidString
-		)
-	}
-
-	private func removeLegacyBodegaDatabases() {
-		let fileManager = FileManager.default
-		if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-			let medsFolder = documentsURL.appendingPathComponent("medications.sqlite")
-			let eventsFolder = documentsURL.appendingPathComponent("events.sqlite")
-			try? fileManager.removeItem(at: medsFolder)
-			try? fileManager.removeItem(at: eventsFolder)
-		}
-	}
-
-	private func removeAppGroupDatabases() {
-		let fileManager = FileManager.default
-		if let sharedContainerURL = fileManager.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) {
-			let appGroupFiles = [
-				"medications.sqlite3",
-				"medications.sqlite3-wal",
-				"medications.sqlite3-shm",
-				"events.sqlite3",
-				"events.sqlite3-wal",
-				"events.sqlite3-shm",
-			]
-
-			for filename in appGroupFiles {
-				let fileURL = sharedContainerURL.appendingPathComponent(filename)
-				try? fileManager.removeItem(at: fileURL)
-			}
-		}
-	}
-
-	private func clearArchivedLegacyPaths() {
-		let defaults = UserDefaults.standard
-
-		if let medsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath) {
-			try? FileManager.default.removeItem(atPath: medsPath)
-		}
-		if let eventsPath = defaults.string(forKey: UserDefaultsKeys.archivedLegacyEventsPath) {
-			try? FileManager.default.removeItem(atPath: eventsPath)
-		}
-
-		defaults.removeObject(forKey: UserDefaultsKeys.archivedLegacyMedicationsPath)
-		defaults.removeObject(forKey: UserDefaultsKeys.archivedLegacyEventsPath)
-	}
-
-	/// Cleans up all test databases
-	private func cleanupTestDatabases() {
-		let fileManager = FileManager.default
-
-		// Clean legacy location
-		if let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-		let legacyFiles = [
-			"test_legacy_medications.sqlite3",
-			"test_legacy_medications.sqlite3-wal",
-			"test_legacy_medications.sqlite3-shm",
-			"test_legacy_medications.sqlite",
-			"test_legacy_medications.sqlite-wal",
-			"test_legacy_medications.sqlite-shm",
-		]
-
-			for filename in legacyFiles {
-				let fileURL = appSupportURL.appendingPathComponent(filename)
-				try? fileManager.removeItem(at: fileURL)
-			}
-		}
-
-		// Clean App Group location
-		if let sharedContainerURL = fileManager.containerURL(
-			forSecurityApplicationGroupIdentifier: "group.com.codedbydan.AsNeeded"
-		) {
-			let appGroupFiles = [
-				"test_migration_medications.sqlite3",
-				"test_migration_medications.sqlite3-wal",
-				"test_migration_medications.sqlite3-shm",
-				"test_migration_medications.sqlite",
-				"test_migration_medications.sqlite-wal",
-				"test_migration_medications.sqlite-shm",
-			]
-
-			for filename in appGroupFiles {
-				let fileURL = sharedContainerURL.appendingPathComponent(filename)
-				try? fileManager.removeItem(at: fileURL)
-			}
+		func read<T: Codable & Identifiable & Sendable>(_ type: T.Type, directory: URL, name: String) async throws -> [T] where T.ID == UUID {
+			let storage = try #require(SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: name))
+			let store = try await Store<T>(storage: storage, cacheIdentifier: \T.id.uuidString)
+			return store.items
 		}
 	}
 }

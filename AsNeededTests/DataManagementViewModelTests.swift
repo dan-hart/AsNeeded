@@ -13,6 +13,33 @@ import Testing
 @MainActor
 @Suite(.tags(.dataManagement, .viewModel, .unit))
 struct DataManagementViewModelTests {
+	@Test("Recovery totals exclude current data and count existing historical sources once")
+	func historicalRecoveryTotals() {
+		var report = DataRecoveryManager.RecoveryReport()
+		report.scannedLocations = [
+			.init(path: "/synthetic/current", type: .appGroup, medicationsFound: 50, eventsFound: 100, exists: true),
+			.init(path: "/synthetic/current/../current", type: .documents, medicationsFound: 50, eventsFound: 100, exists: true),
+			.init(path: "/synthetic/old", type: .documents, medicationsFound: 2, eventsFound: 3, exists: true),
+			.init(path: "/synthetic/old/../old", type: .applicationSupport, medicationsFound: 2, eventsFound: 3, exists: true),
+			.init(path: "/synthetic/backup", type: .backup, medicationsFound: 4, eventsFound: 5, exists: true),
+			.init(path: "/synthetic/missing", type: .bundleSubdirectory, medicationsFound: 9, eventsFound: 9, exists: false)
+		]
+		#expect(report.totalMedicationsFound == 6)
+		#expect(report.totalEventsFound == 8)
+		#expect(report.hasOrphanedData)
+	}
+
+	@Test("Current storage alone does not indicate orphaned records")
+	func currentStorageDoesNotNeedRecovery() {
+		var report = DataRecoveryManager.RecoveryReport()
+		report.scannedLocations = [
+			.init(path: "/synthetic/current", type: .appGroup, medicationsFound: 50, eventsFound: 100, exists: true)
+		]
+		#expect(report.totalMedicationsFound == 0)
+		#expect(report.totalEventsFound == 0)
+		#expect(!report.hasOrphanedData)
+	}
+
     // MARK: - Test Helpers
 
     func createTestDataStore() -> DataStore {
@@ -186,7 +213,7 @@ struct DataManagementViewModelTests {
         // Verify success
         #expect(viewModel.isImporting == false)
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
         #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
@@ -280,7 +307,7 @@ struct DataManagementViewModelTests {
         // Verify import succeeded
         #expect(viewModel.isImporting == false)
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
         #expect(viewModel.alertMessage?.contains("0 events") == true)
         #expect(viewModel.showingAlert == true)
 
@@ -542,9 +569,14 @@ struct DataManagementViewModelTests {
         await viewModel.importData(from: tempURL)
 
         // 5. Verify data is restored
+		// Exports include settings by default. Follow the same explicit choice
+		// required by the shipping import confirmation before expecting writes.
+		#expect(viewModel.showingImportSettingsDialog)
+		#expect(viewModel.medicationCount == 0)
+		await viewModel.proceedWithImport(applySettings: false)
         #expect(viewModel.medicationCount == 1)
         #expect(dataStore.medications.first?.clinicalName == "Test Medication")
         #expect(viewModel.alertMessage?.contains("Data imported successfully") == true)
-        #expect(viewModel.alertMessage?.contains("1 medications") == true)
+        #expect(viewModel.alertMessage?.contains("1 medication,") == true)
     }
 }

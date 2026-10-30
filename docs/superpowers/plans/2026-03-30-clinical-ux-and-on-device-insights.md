@@ -1,5 +1,7 @@
 # Calm Clinical UX And On-Device Insights Implementation Plan
 
+> Historical plan: the on-device questions component was removed from the 1.2.0 release on October 27, 2026. Its sections below do not describe current shipping functionality.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship medication guardrails, richer logging, refill intelligence, calm-clinical UX improvements, ambient surface upgrades, and an opt-in on-device Trends question feature.

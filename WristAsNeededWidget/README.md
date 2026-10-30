@@ -131,4 +131,5 @@ WristAsNeededWidget/
 - [ ] Interactive complications (watchOS 9+) for quick dose logging
 - [ ] Refill reminder complication
 - [ ] Last dose taken complication
+- [ ] Live Activities integration
 - [ ] Customization options (color, display style)

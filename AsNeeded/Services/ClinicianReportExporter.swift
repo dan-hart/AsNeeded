@@ -22,85 +22,73 @@ struct ClinicianReportSummary: Equatable {
 
 struct ClinicianReportExporter {
 	private let calendar: Calendar
-	private let refillProjectionService: MedicationRefillProjectionService
+	private let doseGuidanceService: MedicationDoseGuidanceService
 
 	init(
 		calendar: Calendar = .current,
-		refillProjectionService: MedicationRefillProjectionService = MedicationRefillProjectionService()
+		doseGuidanceService: MedicationDoseGuidanceService = MedicationDoseGuidanceService()
 	) {
 		self.calendar = calendar
-		self.refillProjectionService = refillProjectionService
+		self.doseGuidanceService = doseGuidanceService
 	}
 
 	func buildSummary(
 		medications: [ANMedicationConcept],
 		events: [ANEventConcept],
-		refillProfiles: [String: MedicationRefillProfile] = [:],
+		safetyProfiles: [String: MedicationSafetyProfile] = [:],
 		generatedAt: Date = .now
 	) -> ClinicianReportSummary {
 		let formatter = DateFormatter()
 		formatter.dateStyle = .medium
 		formatter.timeStyle = .short
-		let eligibleDoseEvents = events.filter {
-			$0.eventType == .doseTaken && $0.date <= generatedAt
-		}
-		let thirtyDayLowerBound = calendar.date(
-			byAdding: .day,
-			value: -30,
-			to: generatedAt
-		) ?? generatedAt
-		let lastThirtyDays = thirtyDayLowerBound ... generatedAt
 
 		let summaries = medications
 			.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
 			.map { medication in
-				let medicationEvents = eligibleDoseEvents
-					.filter { $0.medication?.id == medication.id }
+				let medicationEvents = events
+					.filter { $0.eventType == .doseTaken && $0.medication?.id == medication.id }
 					.sorted { $0.date > $1.date }
-				let profile = refillProfiles[medication.id.uuidString] ?? .empty
-				let projection = refillProjectionService.projection(
+				let profile = safetyProfiles[medication.id.uuidString] ?? .empty
+				let projection = doseGuidanceService.refillProjection(
 					for: medication,
 					at: generatedAt,
-					events: eligibleDoseEvents,
+					events: events,
 					profile: profile
 				)
 				let logsInLast30Days = medicationEvents.filter {
-					lastThirtyDays.contains($0.date)
+					$0.date >= (calendar.date(byAdding: .day, value: -30, to: generatedAt) ?? generatedAt)
 				}.count
 				let prescribedDose = {
 					guard let amount = medication.prescribedDoseAmount,
 					      let unit = medication.prescribedUnit
 					else {
-						return "Not saved"
+						return String(localized: "Not saved")
 					}
-					return "\(amount.formattedAmount) \(unit.abbreviation)"
+					return unit.localizedCompactAmount(for: amount)
 				}()
 				let quantityStatus = {
 					guard let quantity = medication.quantity else {
-						return "Quantity not tracked"
+						return String(localized: "Quantity not tracked")
+					}
+
+					let amount = medication.prescribedUnit.map { $0.localizedCompactAmount(for: quantity) } ?? quantity.formattedAmount
+					return String(localized: "\(String(localized: "Remaining")): \(amount)")
+				}()
+				let lastLogged = medicationEvents.first.map { formatter.string(from: $0.date) } ?? String(localized: "No doses logged")
+				let averageDailyUsage = {
+					guard projection.averageDailyUsage > 0 else {
+						return String(localized: "Not enough recent data")
 					}
 
 					if let unit = medication.prescribedUnit {
-						return "\(quantity.formattedAmount) \(unit.abbreviation) remaining"
+						return unit.localizedCompactAmount(for: projection.averageDailyUsage)
 					}
 
-					return "\(quantity.formattedAmount) remaining"
-				}()
-				let lastLogged = medicationEvents.first.map { formatter.string(from: $0.date) } ?? "No doses logged"
-				let averageDailyUsage = {
-					guard projection.averageDailyUsage > 0 else {
-						return "Not enough recent data"
-					}
-
-					if let unit = projection.aggregationUnit {
-						return "\(projection.averageDailyUsage.formattedAmount) \(unit.abbreviation)/day"
-					}
-
-					return "\(projection.averageDailyUsage.formattedAmount) per day"
+					return projection.averageDailyUsage.formattedAmount
 				}()
 				let refillStatus = {
 					if let nextRefillDate = medication.nextRefillDate {
-						return "\(projection.statusMessage) Next refill: \(formatter.string(from: nextRefillDate))"
+						return String(localized: "\(projection.statusMessage) Next refill: \(formatter.string(from: nextRefillDate))")
 					}
 
 					return projection.statusMessage
@@ -120,9 +108,9 @@ struct ClinicianReportExporter {
 		return ClinicianReportSummary(
 			generatedAt: generatedAt,
 			medicationCount: medications.count,
-			eventCount: eligibleDoseEvents.count,
+			eventCount: events.filter { $0.eventType == .doseTaken }.count,
 			medications: summaries,
-			disclaimer: "This report summarizes self-logged medication history. It may be incomplete or incorrect and should not replace clinical judgment."
+			disclaimer: String(localized: "This report summarizes self-logged medication history. It may be incomplete or incorrect and should not replace clinical judgment.")
 		)
 	}
 
@@ -146,6 +134,10 @@ struct ClinicianReportExporter {
 				startPageIfNeeded(for: 48)
 				let paragraph = NSMutableParagraphStyle()
 				paragraph.lineBreakMode = .byWordWrapping
+				paragraph.alignment = .natural
+				let language = Bundle.main.preferredLocalizations.first ?? "en"
+				paragraph.baseWritingDirection = Locale.Language(identifier: language).characterDirection == .rightToLeft
+					? .rightToLeft : .leftToRight
 				let attributes: [NSAttributedString.Key: Any] = [
 					.font: font,
 					.foregroundColor: color,
@@ -168,22 +160,22 @@ struct ClinicianReportExporter {
 			generatedFormatter.dateStyle = .medium
 			generatedFormatter.timeStyle = .short
 
-			draw("As Needed Clinician Summary", font: .boldSystemFont(ofSize: 22), spacingAfter: 6)
-			draw("Generated \(generatedFormatter.string(from: summary.generatedAt))", font: .systemFont(ofSize: 12), color: .secondaryLabel, spacingAfter: 18)
-			draw("Overview", font: .boldSystemFont(ofSize: 16), spacingAfter: 6)
-			draw("Medications: \(summary.medicationCount)\nDose logs: \(summary.eventCount)", font: .systemFont(ofSize: 12), spacingAfter: 18)
+			draw(String(localized: "As Needed Clinician Summary"), font: .boldSystemFont(ofSize: 22), spacingAfter: 6)
+			draw(String(localized: "Generated \(generatedFormatter.string(from: summary.generatedAt))"), font: .systemFont(ofSize: 12), color: .secondaryLabel, spacingAfter: 18)
+			draw(String(localized: "Overview"), font: .boldSystemFont(ofSize: 16), spacingAfter: 6)
+			draw(String(localized: "Medications: \(summary.medicationCount)\nDose logs: \(summary.eventCount)"), font: .systemFont(ofSize: 12), spacingAfter: 18)
 
 			for medication in summary.medications {
 				draw(medication.name, font: .boldSystemFont(ofSize: 15), spacingAfter: 4)
-				draw("Prescribed dose: \(medication.prescribedDose)", font: .systemFont(ofSize: 12), spacingAfter: 4)
-				draw("Quantity: \(medication.quantityStatus)", font: .systemFont(ofSize: 12), spacingAfter: 4)
-				draw("Last logged: \(medication.lastLogged)", font: .systemFont(ofSize: 12), spacingAfter: 4)
-				draw("Logs in last 30 days: \(medication.logsInLast30Days)", font: .systemFont(ofSize: 12), spacingAfter: 4)
-				draw("Average daily usage: \(medication.averageDailyUsage)", font: .systemFont(ofSize: 12), spacingAfter: 4)
-				draw("Refill status: \(medication.refillStatus)", font: .systemFont(ofSize: 12), spacingAfter: 16)
+				draw(String(localized: "Prescribed dose: \(medication.prescribedDose)"), font: .systemFont(ofSize: 12), spacingAfter: 4)
+				draw(medication.quantityStatus, font: .systemFont(ofSize: 12), spacingAfter: 4)
+				draw(String(localized: "Last logged: \(medication.lastLogged)"), font: .systemFont(ofSize: 12), spacingAfter: 4)
+				draw(String(localized: "Logs in last 30 days: \(medication.logsInLast30Days)"), font: .systemFont(ofSize: 12), spacingAfter: 4)
+				draw(String(localized: "Average daily usage: \(medication.averageDailyUsage)"), font: .systemFont(ofSize: 12), spacingAfter: 4)
+				draw(String(localized: "Refill status: \(medication.refillStatus)"), font: .systemFont(ofSize: 12), spacingAfter: 16)
 			}
 
-			draw("Disclaimer", font: .boldSystemFont(ofSize: 14), spacingAfter: 6)
+			draw(String(localized: "Disclaimer"), font: .boldSystemFont(ofSize: 14), spacingAfter: 6)
 			draw(summary.disclaimer, font: .systemFont(ofSize: 11), color: .secondaryLabel, spacingAfter: 0)
 		}
 	}

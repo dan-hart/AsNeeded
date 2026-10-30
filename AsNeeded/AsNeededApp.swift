@@ -22,6 +22,7 @@ struct AsNeededApp: App {
     private let logger = DHLogger.general
 
     init() {
+		AppTips.configure()
         // Configure RevenueCat on app launch
         RevenueCatManager.shared.configure()
 
@@ -56,11 +57,6 @@ struct AsNeededApp: App {
                             logger.info("Received URL")
                             quickActionHandler.handleURL(url)
                         }
-						.task {
-							await NotificationManager.shared.start {
-								try await DataStore.shared.currentMedicationIDsWhenReady()
-							}
-						}
                 } else if migrationCoordinator.hasFailed, let error = migrationCoordinator.error {
                     // Migration failed - show error screen with retry option
                     MigrationErrorView(error: error) {
@@ -75,9 +71,9 @@ struct AsNeededApp: App {
                         }
                 }
             }
-            .task {
-                await MedicationLiveActivityCleanup.endAll()
-            }
+			.task {
+				await RetiredLiveActivityCleanup.endExistingActivities()
+			}
         }
         .handlesExternalEvents(matching: ["asneeded"])
     }

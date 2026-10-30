@@ -2,33 +2,37 @@ import SFSafeSymbols
 import SwiftUI
 
 struct DataPrivacyView: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
+	@State private var showDisableConfirmation = false
 	@Environment(\.fontFamily) private var fontFamily
 
-	@ScaledMetric private var sectionSpacing: CGFloat = 24
-	@ScaledMetric private var rowSpacing: CGFloat = 12
-	@ScaledMetric private var cardPadding: CGFloat = 16
-	@ScaledMetric private var cardCornerRadius: CGFloat = 12
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
-	@ScaledMetric private var innerSpacing: CGFloat = 4
+	private let sectionSpacing: CGFloat = 24
+	private let rowSpacing: CGFloat = 12
+	private let cardPadding: CGFloat = 16
+	private let cardCornerRadius: CGFloat = 12
+	private let iconSize: CGFloat = 24
+	private let borderWidth: CGFloat = 0.5
+	private let innerSpacing: CGFloat = 4
 
 	var body: some View {
 		VerticalOnlyScrollView {
 			VStack(alignment: .leading, spacing: sectionSpacing) {
+				if demoMode.isEnabled { DemoModeBanner() }
 				privacySummarySection
 
+
 				section(
-					title: "Backup & Recovery",
+					title: String(localized: "Backup & Recovery"),
 					rows: [
 						.init(
-							title: "Automatic Backup",
-							subtitle: "Choose backup location and privacy options",
+							title: String(localized: "Automatic Backup"),
+							subtitle: String(localized: "Choose backup location and privacy options"),
 							icon: .externaldriveConnectedToLineBelow,
 							destination: AnyView(AutomaticBackupView())
 						),
 						.init(
-							title: "Export, Import & Clear",
-							subtitle: "Export data, import backups, or remove stored records",
+							title: String(localized: "Export, Import & Clear"),
+							subtitle: String(localized: "Export data, import backups, or remove stored records"),
 							icon: .squareAndArrowUp,
 							destination: AnyView(DataManagementView().customNavigationTitle("Data Management"))
 						)
@@ -36,47 +40,66 @@ struct DataPrivacyView: View {
 				)
 
 				section(
-					title: "Privacy Choices",
+					title: String(localized: "Privacy Choices"),
 					rows: [
 						.init(
-							title: "App Preferences",
-							subtitle: "Review private questions, review prompts, haptics, and import behavior",
+							title: String(localized: "App Preferences"),
+							subtitle: String(localized: "Review feedback prompts, haptics, and import behavior"),
 							icon: .gearshapeFill,
 							destination: AnyView(AppPreferencesView())
 						),
 						.init(
-							title: "Medical Disclaimer",
-							subtitle: "Review the app's medical and safety limitations",
+							title: String(localized: "Medical Disclaimer"),
+							subtitle: String(localized: "Review the app's medical and safety limitations"),
 							icon: .exclamationmarkTriangleFill,
 							destination: AnyView(MedicalDisclaimerDetailView())
 						)
 					]
 				)
+				VStack(alignment: .leading, spacing: rowSpacing) {
+					Toggle("Demo Mode", isOn: Binding(
+						get: { demoMode.isEnabled },
+						set: { enabled in
+							if enabled { demoMode.enable() }
+							else { showDisableConfirmation = true }
+						}
+					))
+						.font(.customFont(fontFamily, style: .body, weight: .semibold))
+						.tint(.accent)
+						.confirmDemoModeDisable(isPresented: $showDisableConfirmation)
+					Text("Temporarily hide medication names while showing the app. Everything stays tappable. Turns off when the app relaunches.")
+						.font(.customFont(fontFamily, style: .subheadline))
+						.foregroundStyle(.secondary)
+					Text("Screen privacy only. Saved data, exports, notifications, and widgets are unchanged.")
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+				}
+				.padding(cardPadding)
+				.background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: cardCornerRadius))
 			}
 			.padding(.horizontal, cardPadding)
 			.padding(.vertical, cardPadding)
 		}
 		.background(Color(.systemGroupedBackground))
-		// Large title, like the other Settings pages (About, Support, Send Feedback), so the section reads
-		// as a peer of those rather than a modal detail.
-		.navigationTitle("Data & Privacy")
+		.customNavigationTitle("Data & Privacy")
 	}
 
-	/// Intro card. The page title already says "Data & Privacy", so the card carries the icon and the
-	/// explanation without repeating the heading.
 	private var privacySummarySection: some View {
-		HStack(alignment: .top, spacing: rowSpacing) {
-			Image(systemSymbol: .lockShield)
-				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-				.foregroundStyle(.accent)
-				.accessibilityHidden(true)
+		VStack(alignment: .leading, spacing: rowSpacing) {
+			Label {
+				Text("Data & Privacy")
+					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+			} icon: {
+				Image(systemSymbol: .lockShield)
+					.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+					.foregroundStyle(.accent)
+			}
 
-			Text("Your medication data stays under your control. Backup, export, import, and destructive actions are grouped here so review-sensitive choices are in one place.")
+			Text("Manage backups, export or import your data, and choose your privacy settings.")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
 		}
-		.frame(maxWidth: .infinity, alignment: .leading)
 		.padding(cardPadding)
 		.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous))
 		.accessibilityElement(children: .combine)
@@ -93,38 +116,11 @@ struct DataPrivacyView: View {
 					NavigationLink {
 						row.destination
 					} label: {
-						HStack(spacing: rowSpacing) {
-							Image(systemSymbol: row.icon)
-								.font(.customFont(fontFamily, style: .callout, weight: .medium))
-								.frame(width: iconSize, height: iconSize)
-								.foregroundStyle(.accent)
-								.accessibilityHidden(true)
-
-							VStack(alignment: .leading, spacing: innerSpacing) {
-								Text(row.title)
-									.font(.customFont(fontFamily, style: .body, weight: .medium))
-									.foregroundStyle(.primary)
-
-								Text(row.subtitle)
-									.font(.customFont(fontFamily, style: .caption))
-									.foregroundStyle(.secondary)
-									.fixedSize(horizontal: false, vertical: true)
-							}
-
-							Spacer()
-
-							Image(systemSymbol: .chevronRight)
-								.font(.customFont(fontFamily, style: .caption, weight: .medium))
-								.foregroundStyle(.secondary)
-								.accessibilityHidden(true)
-						}
-						.padding(cardPadding)
-						.background(Color(.systemBackground))
-						.overlay(
-							RoundedRectangle(cornerRadius: cardCornerRadius)
-								.stroke(Color(.systemGray4), lineWidth: borderWidth)
+						SettingsNavigationRowLabel(
+							title: row.title,
+							subtitle: row.subtitle,
+							icon: row.icon
 						)
-						.clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
 					}
 					.buttonStyle(.plain)
 					.accessibilityLabel(row.title)

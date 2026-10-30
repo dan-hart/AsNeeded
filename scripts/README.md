@@ -154,24 +154,9 @@ Install gitleaks for best results: `brew install gitleaks`
 - Performance testing
 - Final QA builds
 
-**Guardrail:** runs `verify-release-key.sh --local` first and refuses to build when `Config/Secrets.xcconfig` carries no RevenueCat key, so a release cannot silently ship without tipping. Set `SKIP_REVENUECAT_KEY_CHECK=1` to build keyless on purpose.
-
 ```bash
 ./scripts/prod-build.sh
 ```
-
-### `verify-release-key.sh` - RevenueCat Key Guardrail 🔑
-
-**Purpose:** Confirm the RevenueCat public SDK key (never committed; see `Config/Secrets.example.xcconfig`) reached a build, or that the local secrets file carries one. Prints the key's length, never its value.
-
-```bash
-./scripts/verify-release-key.sh --local                          # before archiving
-./scripts/verify-release-key.sh path/to/AsNeeded.xcarchive        # after archiving
-./scripts/verify-release-key.sh path/to/AsNeeded.ipa              # before uploading
-./scripts/verify-release-key.sh --expect-empty path/to/AsNeeded.app   # keyless builds (forks, CI without the secret)
-```
-
-The Build workflow in `.github/workflows/build.yml` runs it on every clean-clone build.
 
 ### `clean-deriveddata.sh` - Intelligent Cleanup 🧹
 
@@ -252,18 +237,12 @@ Removes ALL DerivedData for all Xcode projects.
 
 ### Release Process
 ```bash
-# Make sure the RevenueCat key is in place (gitignored Config/Secrets.xcconfig)
-./scripts/verify-release-key.sh --local
-
 # Clean build for release
 ./scripts/prod-build.sh
 ./scripts/test-parallel.sh
 
 # Then archive in Xcode
 # Product → Archive
-
-# Confirm the archive carries the key before uploading
-./scripts/verify-release-key.sh path/to/AsNeeded.xcarchive
 ```
 
 ## 🔧 System Requirements
@@ -429,3 +408,23 @@ When modifying these scripts:
 ---
 
 **Made with ⚡️ for maximum performance on high-end development machines**
+
+The test runner supports `TEST_DESTINATION` and `TEST_WORKERS` overrides, for example:
+
+```bash
+TEST_DESTINATION='platform=iOS Simulator,name=iPhone 17,OS=26.5' TEST_WORKERS=2 ./scripts/test-parallel.sh
+```
+
+Pipeline failures propagate even when the optional xcsift formatter is installed.
+
+Run the watch model's standalone Swift Testing regressions with
+`./scripts/tests/watch-medication-availability.test.sh` (Swift 6.2+ on macOS).
+The harness compiles the real watch model without requiring a watch simulator.
+
+### Encoded-secret classification
+
+The pre-commit security hook requires Python 3 (standard library only) and scans the staged blob, including paths with spaces. `utilities/base64-secret-scan.py --path FILE` reads content from stdin (with optional `--revision SHA` for historical tracked paths), checks canonical Base64 and measured character entropy, and reports only file/line locations. Source-code identifiers, tracked file references, and labeled reproducibility hashes have narrow data classifications; provider-specific and generic credential checks remain active.
+
+Run the deterministic classifier regressions with `python3 scripts/tests/base64-secret-scan.test.py`. Run `python3 scripts/tests/pre-commit-security.test.py` for real-hook regressions in temporary repositories, including staged secrets hidden by a clean working copy. Fixtures are synthetic and constructed without embedding live credentials.
+
+The push hook is read-only: set build numbers before committing rather than relying on a push-time bump. It scans only unpublished commits, with historical path classification tied to each scanned revision. Run `python3 scripts/tests/pre-push-scan.test.py` for isolated push-hook regressions. After reviewing storage-sensitive changes, use `ASP_ACK_DATA_PATH=1 git commit ...` to supply the existing preflight acknowledgement explicitly; it does not disable secret scanning.

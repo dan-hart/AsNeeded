@@ -36,7 +36,7 @@ final class DataManagementViewModel: ObservableObject {
     @Published var logCount: Int = 0
     @Published var isLoadingLogCount = false
     @Published var shouldClearAfterExport = false
-    @Published var recoverySummaryText = "Scan recovery sources to check for orphaned data from older storage locations."
+    @Published var recoverySummaryText = String(localized: "Scan recovery sources to check for orphaned data from older storage locations.")
 
     // Settings export/import
     @Published var includeSettings = true // Default enabled per requirements
@@ -108,7 +108,7 @@ final class DataManagementViewModel: ObservableObject {
             // Use documents directory for better compatibility
             guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
                 logger.error("Could not access documents directory")
-                alertMessage = "Export failed: Could not access documents directory"
+                alertMessage = String(localized: "Export failed: Could not access documents directory")
                 showingAlert = true
                 return
             }
@@ -132,7 +132,7 @@ final class DataManagementViewModel: ObservableObject {
             }
         } catch {
             logger.logPrivacySafeError("Export failed", error: error)
-            alertMessage = "Export failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Export failed: \(error.localizedDescription)")
             showingAlert = true
             shouldClearAfterExport = false // Reset flag on error
         }
@@ -157,7 +157,7 @@ final class DataManagementViewModel: ObservableObject {
         // Start accessing the security-scoped resource
         guard url.startAccessingSecurityScopedResource() else {
             logger.error("Failed to access security-scoped resource")
-            alertMessage = "Import failed: Unable to access the selected file. Please try again."
+            alertMessage = String(localized: "Import failed: Unable to access the selected file. Please try again.")
             showingAlert = true
             return
         }
@@ -203,12 +203,12 @@ final class DataManagementViewModel: ObservableObject {
                 // Get counts for success message
                 let medicationCount = dataStore.medications.count
                 let eventCount = dataStore.events.count
-                alertMessage = "Data imported successfully\n\(medicationCount) medications, \(eventCount) events"
+                alertMessage = String(localized: "Data imported successfully\n\(medicationCount) medications, \(eventCount) events")
                 showingAlert = true
             }
         } catch {
             logger.logPrivacySafeError("Import failed", error: error)
-            alertMessage = "Import failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Import failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -249,12 +249,12 @@ final class DataManagementViewModel: ObservableObject {
             // Get counts for success message
             let medicationCount = dataStore.medications.count
             let eventCount = dataStore.events.count
-            let baseMessage = applySettings ? "Data and settings imported successfully" : "Data imported successfully (settings kept)"
-            alertMessage = "\(baseMessage)\n\(medicationCount) medications, \(eventCount) events"
+            let baseMessage = applySettings ? String(localized: "Data and settings imported successfully") : String(localized: "Data imported successfully (settings kept)")
+            alertMessage = String(localized: "\(baseMessage)\n\(medicationCount) medications, \(eventCount) events")
             showingAlert = true
         } catch {
             logger.logPrivacySafeError("Import failed", error: error)
-            alertMessage = "Import failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Import failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -276,11 +276,11 @@ final class DataManagementViewModel: ObservableObject {
         do {
             try await dataStore.clearUserData()
             logger.info("User data cleared successfully")
-            alertMessage = "All user data (medications and events) cleared successfully"
+            alertMessage = String(localized: "All user data (medications and events) cleared successfully")
             showingAlert = true
         } catch {
             logger.logPrivacySafeError("Clear user data failed", error: error)
-            alertMessage = "Clear data failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Clear data failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -293,16 +293,10 @@ final class DataManagementViewModel: ObservableObject {
             logger.debug("Reset app settings process completed")
         }
 
-		do {
-			try await dataStore.resetAppSettings()
-			logger.info("App settings reset successfully")
-			alertMessage = "App settings restored to defaults successfully"
-			showingAlert = true
-		} catch {
-			logger.logPrivacySafeError("Reset app settings failed", error: error)
-			alertMessage = "Reset failed: \(error.localizedDescription)"
-			showingAlert = true
-		}
+        await dataStore.resetAppSettings()
+        logger.info("App settings reset successfully")
+        alertMessage = String(localized: "App settings restored to defaults successfully")
+        showingAlert = true
     }
 
     func clearAllData() async {
@@ -316,11 +310,11 @@ final class DataManagementViewModel: ObservableObject {
         do {
             try await dataStore.clearAllData()
             logger.info("All data cleared and settings reset successfully")
-            alertMessage = "All data cleared and settings restored to defaults"
+            alertMessage = String(localized: "All data cleared and settings restored to defaults")
             showingAlert = true
         } catch {
             logger.logPrivacySafeError("Reset and clear data failed", error: error)
-            alertMessage = "Reset failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Reset failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -378,7 +372,7 @@ final class DataManagementViewModel: ObservableObject {
             // Use documents directory for better compatibility
             guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
                 logger.error("Could not access documents directory")
-                alertMessage = "Log export failed: Could not access documents directory"
+                alertMessage = String(localized: "Log export failed: Could not access documents directory")
                 showingAlert = true
                 return
             }
@@ -395,7 +389,7 @@ final class DataManagementViewModel: ObservableObject {
             showingLogShareSheet = true
             logger.debug("exportedLogsURL set - share sheet should be triggered")
         } catch {
-            alertMessage = "Log export failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Log export failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -409,7 +403,7 @@ final class DataManagementViewModel: ObservableObject {
             let summary = exporter.buildSummary(
                 medications: dataStore.medications,
                 events: dataStore.events,
-                refillProfiles: MedicationRefillProfileStore.shared.allProfiles()
+                safetyProfiles: MedicationSafetyProfileStore.shared.allProfiles()
             )
             let pdfData = exporter.makePDF(summary: summary)
 
@@ -418,7 +412,7 @@ final class DataManagementViewModel: ObservableObject {
             let filename = "AsNeeded-Clinician-Summary-\(dateFormatter.string(from: Date())).pdf"
 
             guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-                alertMessage = "Clinician report export failed: Could not access documents directory"
+                alertMessage = String(localized: "Clinician report export failed: Could not access documents directory")
                 showingAlert = true
                 return
             }
@@ -430,7 +424,7 @@ final class DataManagementViewModel: ObservableObject {
             exportedClinicianReportURL = tempURL
             showingClinicianReportShareSheet = true
         } catch {
-            alertMessage = "Clinician report export failed: \(error.localizedDescription)"
+            alertMessage = String(localized: "Clinician report export failed: \(error.localizedDescription)")
             showingAlert = true
         }
     }
@@ -442,9 +436,9 @@ final class DataManagementViewModel: ObservableObject {
         let report = await DataRecoveryManager.shared.scanForOrphanedData()
 
         if report.hasOrphanedData {
-            recoverySummaryText = "Found \(report.totalMedicationsFound) medications and \(report.totalEventsFound) events across historical storage locations."
+            recoverySummaryText = String(localized: "Found \(report.totalMedicationsFound) medication records and \(report.totalEventsFound) event records in historical sources. Some may already be in current storage or another source.")
         } else {
-            recoverySummaryText = "No orphaned data was found across the scanned storage locations."
+            recoverySummaryText = String(localized: "No records were found in the historical sources scanned.")
         }
     }
 

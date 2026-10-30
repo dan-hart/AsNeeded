@@ -2,322 +2,310 @@
 // View model for presenting and mutating medication dose history.
 
 import ANModelKit
-import Boutique
-import Combine
+import DHLoggingKit
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
-	/// One calendar day of dose history, newest entry first.
-	struct DayGroup: Identifiable, Equatable {
-		let day: Date
-		let entries: [ANEventConcept]
+	@AppStorage(UserDefaultsKeys.historySelectedMedicationID) private var selectedMedicationIDString: String = ""
 
-		var id: Date { day }
-	}
-
-    @AppStorage(UserDefaultsKeys.historySelectedMedicationID) private var selectedMedicationIDString: String = ""
-
-    @Published var selectedMedicationID: String? {
-        didSet {
-            selectedMedicationIDString = selectedMedicationID ?? ""
-			rebuildGroupedHistory()
-        }
-    }
-
-    @Published private(set) var medications: [ANMedicationConcept] = []
-    @Published private(set) var events: [ANEventConcept] = [] {
+	@Published var selectedMedicationID: String? {
 		didSet {
-			rebuildGroupedHistory()
+			selectedMedicationIDString = selectedMedicationID ?? ""
+			cachedGroupedHistory = nil
 		}
 	}
 
-	/// Dose events for the current selection, grouped by day and sorted newest day first.
-	/// Rebuilt only when the events or the selection change, so rendering never re-filters the store.
-	@Published private(set) var groupedHistory: [DayGroup] = []
+	@Published var medications: [ANMedicationConcept] = []
+	@Published var events: [ANEventConcept] = [] {
+		didSet { cachedGroupedHistory = nil }
+	}
+	@Published private(set) var isMutating = false
+	@Published var mutationError: String?
 
-    private let dataStore: DataStore
-	private let calendar = Calendar.current
-	/// Shared quick-log core (compensating writes, haptics, feedback, toast state).
-	let quickLogCoordinator: QuickLogCoordinator
-	private var quickLogCoordinatorSubscription: AnyCancellable?
+	private let dataStore: DataStore
 	private var storeObservationTasks: [Task<Void, Never>] = []
+	private let notificationCenter: NotificationCenter
+	private var cachedGroupedHistory: [(day: Date, entries: [ANEventConcept])]?
+	private var groupingCalendar = Calendar.current
 
-	// MARK: - Quick Log Toast State
-	// Forwarded from the coordinator; its `objectWillChange` is re-published so views observing this
-	// view model refresh when the toast changes.
-	var showQuickLogToast: Bool { quickLogCoordinator.showQuickLogToast }
-	var quickLogMedicationName: String { quickLogCoordinator.quickLogMedicationName }
-	var quickLogDoseAmount: Double { quickLogCoordinator.quickLogDoseAmount }
-	var quickLogDoseUnit: String { quickLogCoordinator.quickLogDoseUnit }
-	var quickLogAccentColor: Color { quickLogCoordinator.quickLogAccentColor }
-	var quickLogFeedback: QuickLogFeedbackService.Feedback? { quickLogCoordinator.quickLogFeedback }
-	var quickLogToastGeneration: UUID? { quickLogCoordinator.quickLogToastGeneration }
+	init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil, notificationCenter: NotificationCenter = .default) {
+		self.dataStore = dataStore
+		self.notificationCenter = notificationCenter
 
-    init(
-		dataStore: DataStore = .shared,
-		selectedMedicationID: String? = nil,
-		quickLogCoordinator: QuickLogCoordinator? = nil
-	) {
-        self.dataStore = dataStore
-		self.quickLogCoordinator = quickLogCoordinator ?? QuickLogCoordinator(dataStore: dataStore)
-		quickLogCoordinatorSubscription = self.quickLogCoordinator.objectWillChange.sink { [weak self] _ in
-			self?.objectWillChange.send()
+		// Initialize from passed ID or from AppStorage
+		if let initialID = selectedMedicationID {
+			self.selectedMedicationID = initialID
+		} else if !selectedMedicationIDString.isEmpty {
+			self.selectedMedicationID = selectedMedicationIDString
 		}
 
-        // Initialize from passed ID or from AppStorage
-        if let initialID = selectedMedicationID {
-            self.selectedMedicationID = initialID
-        } else if !selectedMedicationIDString.isEmpty {
-            self.selectedMedicationID = selectedMedicationIDString
-        }
+		// Load initial data and observe changes
+		loadData()
+		observeStoreChanges()
+		observeClockAndForegroundChanges()
 
-        // Load initial data and observe changes
-        loadData()
-        observeStoreChanges()
+		// Ensure we have a valid selection
+		ensureValidSelection()
+	}
 
-        // Ensure we have a valid selection
-        ensureValidSelection()
-		rebuildGroupedHistory()
-    }
+	private func loadData(snapshot: MedicationPersistenceSnapshot? = nil) {
+		let snapshot = snapshot ?? MedicationPersistenceSnapshot(medications: dataStore.medications, events: dataStore.events)
+		if medications != snapshot.medications { medications = snapshot.medications }
+		if events != snapshot.events { events = snapshot.events }
+	}
 
 	deinit {
 		storeObservationTasks.forEach { $0.cancel() }
 	}
 
-    private func loadData() {
-        medications = dataStore.medications
-        events = dataStore.events
-    }
-
-	/// Follows the Boutique stores' event streams so the view updates the moment data loads or changes.
-	/// The streams replay their latest event on subscription, which also covers a store that finished
-	/// loading from disk before this view model was created.
-    private func observeStoreChanges() {
-		let medicationsStore = dataStore.medicationsStore
-		let eventsStore = dataStore.eventsStore
-
+	private func observeStoreChanges() {
+		// Register before the bootstrap read so a concurrent write cannot be missed.
+		// Boutique emits intermediate writes; only committed snapshots are safe to cache.
+		let snapshots = dataStore.committedSnapshots()
 		storeObservationTasks = [
 			Task { [weak self] in
-				for await event in medicationsStore.events {
+				for await snapshot in snapshots {
 					guard !Task.isCancelled else { return }
-					if case .initialized = event.operation { continue }
-					self?.refreshMedications()
+					self?.loadData(snapshot: snapshot)
+					self?.ensureValidSelection()
 				}
 			},
-			Task { [weak self] in
-				for await event in eventsStore.events {
-					guard !Task.isCancelled else { return }
-					if case .initialized = event.operation { continue }
-					self?.refreshEvents()
+			Task { [dataStore] in
+				do {
+					try await dataStore.prepareForAccess()
+				} catch {
+					DHLogger.data.logPrivacySafeError("Unable to load medication history", error: error)
 				}
-			},
+			}
 		]
-    }
+	}
 
-	private func refreshMedications() {
-		let latest = dataStore.medications
-		guard latest != medications else { return }
-		medications = latest
+	/// Refreshes date-relative presentation even when no medication data changes.
+	func refreshForClockChange() {
+		cachedGroupedHistory = nil
+		objectWillChange.send()
+	}
+
+	/// Reconciles writes made by widgets or Siri while the app was inactive.
+	func refreshAfterForeground() async {
+		refreshForClockChange()
+		do {
+			let snapshot = try await dataStore.prepareForAccess()
+			loadData(snapshot: snapshot)
+			ensureValidSelection()
+		} catch {
+			DHLogger.data.logPrivacySafeError("Unable to refresh medication data", error: error)
+		}
+	}
+
+	private func observeClockAndForegroundChanges() {
+		let clockNotifications: [Notification.Name] = [
+			.NSCalendarDayChanged,
+			.NSSystemTimeZoneDidChange,
+			UIApplication.significantTimeChangeNotification
+		]
+		for name in clockNotifications {
+			storeObservationTasks.append(Task { [weak self, notificationCenter] in
+				for await _ in notificationCenter.notifications(named: name) {
+					guard !Task.isCancelled else { return }
+					self?.refreshForClockChange()
+				}
+			})
+		}
+		storeObservationTasks.append(Task { [weak self, notificationCenter] in
+			for await _ in notificationCenter.notifications(named: UIApplication.willEnterForegroundNotification) {
+				guard !Task.isCancelled else { return }
+				await self?.refreshAfterForeground()
+			}
+		})
+	}
+
+	/// Ensures we always have a valid medication selected
+	/// This prevents picker errors when selection is nil
+	func ensureValidSelection() {
+		// If no medications are loaded yet, wait
+		guard !medications.isEmpty else { return }
+
+		// If we have a selection and it's valid, keep it
+		if let selection = selectedMedicationID {
+			// Check if it's "all" or a valid medication UUID
+			if selection == "all" || medications.contains(where: { $0.id.uuidString == selection }) {
+				return
+			}
+		}
+
+		// Otherwise, set "all" as the default
+		selectedMedicationID = "all"
+	}
+
+	/// Legacy method for compatibility
+	func validateSelectedMedication() {
 		ensureValidSelection()
 	}
 
-	private func refreshEvents() {
-		let latest = dataStore.events
-		guard latest != events else { return }
-		events = latest
+	var isShowingAllMedications: Bool {
+		selectedMedicationID == "all"
 	}
 
-    /// Ensures we always have a valid medication selected
-    /// This prevents picker errors when selection is nil
-    func ensureValidSelection() {
-        // If no medications are loaded yet, wait
-        guard !medications.isEmpty else { return }
-
-        // If we have a selection and it's valid, keep it
-        if let selection = selectedMedicationID {
-            // Check if it's "all" or a valid medication UUID
-            if selection == "all" || medications.contains(where: { $0.id.uuidString == selection }) {
-                return
-            }
-        }
-
-        // Otherwise, set "all" as the default
-        selectedMedicationID = "all"
-    }
-
-    /// Legacy method for compatibility
-    func validateSelectedMedication() {
-        ensureValidSelection()
-    }
-
-    var isShowingAllMedications: Bool {
-        selectedMedicationID == "all"
-    }
-
-    /// Active medications for the medication-agnostic Log Dose picker shown in the All view, most
-    /// recently logged first.
-    var logDosePickerItems: [LogDosePickerItem] {
-        LogDosePickerModel.items(medications: medications.active, events: events)
-    }
-
-    var selectedMedication: ANMedicationConcept? {
-        guard let selection = selectedMedicationID, selection != "all",
-              let uuid = UUID(uuidString: selection) else { return nil }
-        return medications.first { $0.id == uuid }
-    }
-
-	private func rebuildGroupedHistory() {
-		let rebuilt = Self.groupByDay(events: events, selection: selectedMedicationID, calendar: calendar)
-		guard rebuilt != groupedHistory else { return }
-		groupedHistory = rebuilt
+	/// The All view chooser follows the same active-medication rules as the Medication tab.
+	var logDosePickerMedications: [ANMedicationConcept] {
+		LogDosePickerModel.medications(from: medications)
 	}
 
-	private static func groupByDay(
-		events: [ANEventConcept],
-		selection: String?,
-		calendar: Calendar
-	) -> [DayGroup] {
-        let filteredEvents: [ANEventConcept]
-
-        if selection == "all" {
-            // Show all dose events for all medications
-            filteredEvents = events.filter { $0.eventType == .doseTaken }
-        } else {
-            // Show events for selected medication only
-            guard let selection,
-                  let uuid = UUID(uuidString: selection) else { return [] }
-            filteredEvents = events.filter { $0.medication?.id == uuid && $0.eventType == .doseTaken }
-        }
-
-        guard !filteredEvents.isEmpty else { return [] }
-        let grouped = Dictionary(grouping: filteredEvents) { event in
-            calendar.startOfDay(for: event.date)
-        }
-        return grouped
-            .map { DayGroup(day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
-            .sorted { $0.day > $1.day }
-    }
-
-    func deleteEvents(at offsets: IndexSet, in groupDay: Date) async {
-        let calendar = Calendar.current
-        var filtered: [ANEventConcept]
-
-        if isShowingAllMedications {
-            // Filter all dose events for the specific day
-            filtered = events.filter { event in
-                event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
-            }
-        } else {
-            // Filter events for selected medication only
-            guard let selection = selectedMedicationID,
-                  let uuid = UUID(uuidString: selection) else { return }
-            filtered = events.filter { event in
-                event.medication?.id == uuid && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
-            }
-        }
-        // Match UI ordering: most recent first within a day
-        filtered.sort { $0.date > $1.date }
-        let toDelete = offsets.compactMap { index in
-            filtered[doesExistAt: index]
-        }
-        for event in toDelete {
-            try? await dataStore.eventsStore.remove(event)
-            if let dose = event.dose,
-               let medicationID = event.medication?.id,
-               let medication = medications.first(where: { $0.id == medicationID })
-            {
-                var updated = medication
-                if let quantity = updated.quantity {
-                    updated.quantity = quantity + dose.amount
-                }
-                try? await dataStore.updateMedication(updated)
-            }
-        }
-    }
-
-    func updateEvent(_ event: ANEventConcept, newDate: Date, newAmount: Double, newUnit: ANUnitConcept) async {
-        // Calculate the difference in dose amount
-        let oldAmount = event.dose?.amount ?? 0
-        let difference = newAmount - oldAmount
-
-        // Create updated event with new dose and date
-        var updatedEvent = event
-        updatedEvent.date = newDate
-        updatedEvent.dose = ANDoseConcept(amount: newAmount, unit: newUnit)
-
-        // Update event in store
-        if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
-           let existingEvent = dataStore.events[doesExistAt: index]
-        {
-            try? await dataStore.eventsStore.remove(existingEvent)
-            try? await dataStore.eventsStore.insert(updatedEvent)
-        }
-
-        // Adjust medication quantity by the difference
-        if let medicationID = event.medication?.id,
-           let medication = medications.first(where: { $0.id == medicationID }),
-           let quantity = medication.quantity
-        {
-            var updated = medication
-            updated.quantity = quantity - difference
-            try? await dataStore.updateMedication(updated)
-        }
-    }
-
-    func updateEventNote(_ event: ANEventConcept) async {
-        // Legacy method for updating just the note without dose changes
-        if let index = dataStore.events.firstIndex(where: { $0.id == event.id }),
-           let existingEvent = dataStore.events[doesExistAt: index]
-        {
-            try? await dataStore.eventsStore.remove(existingEvent)
-            try? await dataStore.eventsStore.insert(event)
-        }
-    }
-
-	// MARK: - Dose Logging
-	/// Logs the medication's default dose (long press on the floating Log Dose button).
-	func quickLog(medication: ANMedicationConcept) async -> Bool {
-		await quickLogCoordinator.quickLog(medication: medication, source: "history_quick_log")
+	var selectedMedication: ANMedicationConcept? {
+		guard let selection = selectedMedicationID, selection != "all",
+		      let uuid = UUID(uuidString: selection) else { return nil }
+		return medications.first { $0.id == uuid }
 	}
 
-	/// Logs a dose chosen in the Log Dose sheet with compensating writes.
-	func logDose(
-		medication: ANMedicationConcept,
-		dose: ANDoseConcept,
-		event: ANEventConcept,
-		operationID: UUID = UUID()
-	) async -> Bool {
-		await quickLogCoordinator.logDose(
-			medication: medication,
-			dose: dose,
-			event: event,
-			source: "history_sheet",
-			operationID: operationID
-		)
+	var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
+		let calendar = Calendar.current
+		if groupingCalendar != calendar {
+			groupingCalendar = calendar
+			cachedGroupedHistory = nil
+		}
+		if let cachedGroupedHistory { return cachedGroupedHistory }
+		let filteredEvents: [ANEventConcept]
+
+		if isShowingAllMedications {
+			// Show all dose events for all medications
+			filteredEvents = events.filter { $0.eventType == .doseTaken }
+		} else {
+			// Show events for selected medication only
+			guard let selection = selectedMedicationID,
+			      let uuid = UUID(uuidString: selection) else { return [] }
+			filteredEvents = events.filter { $0.medication?.id == uuid && $0.eventType == .doseTaken }
+		}
+
+		guard !filteredEvents.isEmpty else {
+			cachedGroupedHistory = []
+			return []
+		}
+		let grouped = Dictionary(grouping: filteredEvents) { event in
+			calendar.startOfDay(for: event.date)
+		}
+		let result = grouped
+			.map { (day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
+			.sorted { $0.day > $1.day }
+		cachedGroupedHistory = result
+		return result
 	}
 
-	func undoLastQuickLog() async -> Bool {
-		await quickLogCoordinator.undoLastQuickLog()
+	@discardableResult
+	func deleteEvents(at offsets: IndexSet, in groupDay: Date) async -> Bool {
+		guard !isMutating else { return false }
+		isMutating = true
+		mutationError = nil
+		defer { isMutating = false }
+		let calendar = Calendar.current
+		var filtered: [ANEventConcept]
+
+		if isShowingAllMedications {
+			// Filter all dose events for the specific day
+			filtered = events.filter { event in
+				event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
+			}
+		} else {
+			// Filter events for selected medication only
+			guard let selection = selectedMedicationID,
+			      let uuid = UUID(uuidString: selection) else {
+				mutationError = String(localized: "Choose a medication, then try deleting the entry again.")
+				return false
+			}
+			filtered = events.filter { event in
+				event.medication?.id == uuid && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
+			}
+		}
+		// Match UI ordering: most recent first within a day
+		filtered.sort { $0.date > $1.date }
+		let toDelete = offsets.compactMap { index in
+			filtered[doesExistAt: index]
+		}
+		do {
+			try await dataStore.deleteEvents(ids: Set(toDelete.map(\.id)))
+			loadData()
+			return true
+		} catch {
+			loadData()
+			mutationError = String(localized: "Couldn’t finish deleting the entries. Some changes may have been saved. Review History and the medication quantity before trying again.")
+			return false
+		}
 	}
 
-	func dismissQuickLogToast() {
-		quickLogCoordinator.dismissQuickLogToast()
+	@discardableResult
+	func updateEvent(_ event: ANEventConcept, newDate: Date, newAmount: Double, newUnit: ANUnitConcept) async -> Bool {
+		guard !isMutating else { return false }
+		isMutating = true
+		mutationError = nil
+		defer { isMutating = false }
+		guard let existingEvent = dataStore.events.first(where: { $0.id == event.id }) else {
+			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
+			return false
+		}
+
+		// Create updated event with new dose and date
+		var updatedEvent = existingEvent
+		updatedEvent.date = newDate
+		updatedEvent.dose = ANDoseConcept(amount: newAmount, unit: newUnit)
+
+		// Update event in store
+		do {
+			try await dataStore.updateEvent(updatedEvent)
+			loadData()
+			return true
+		} catch {
+			loadData()
+			mutationError = String(localized: "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")
+			return false
+		}
 	}
 
-    func deleteEvent(_ event: ANEventConcept) async {
-        // Delete the event and restore medication quantity if needed
-        try? await dataStore.eventsStore.remove(event)
-        if let dose = event.dose,
-           let medicationID = event.medication?.id,
-           let medication = medications.first(where: { $0.id == medicationID })
-        {
-            var updated = medication
-            if let quantity = updated.quantity {
-                updated.quantity = quantity + dose.amount
-            }
-            try? await dataStore.updateMedication(updated)
-        }
-    }
+	@discardableResult
+	func updateEventNote(_ event: ANEventConcept) async -> Bool {
+		guard !isMutating else { return false }
+		isMutating = true
+		mutationError = nil
+		defer { isMutating = false }
+		// Legacy method for updating just the note without dose changes
+		guard let currentEvent = dataStore.events.first(where: { $0.id == event.id }) else {
+			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
+			return false
+		}
+		do {
+			var noteUpdate = currentEvent
+			noteUpdate.note = event.note
+			try await dataStore.updateEvent(noteUpdate)
+			loadData()
+			return true
+		} catch {
+			loadData()
+			mutationError = String(localized: "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again.")
+			return false
+		}
+	}
+
+	@discardableResult
+	func deleteEvent(_ event: ANEventConcept) async -> Bool {
+		guard !isMutating else { return false }
+		isMutating = true
+		mutationError = nil
+		defer { isMutating = false }
+		guard dataStore.events.contains(where: { $0.id == event.id }) else {
+			mutationError = String(localized: "This entry is no longer available. Review History before trying again.")
+			return false
+		}
+		// Delete the event and restore medication quantity if needed
+		do {
+			try await dataStore.deleteEvents(ids: [event.id])
+			loadData()
+			return true
+		} catch {
+			loadData()
+			mutationError = String(localized: "Couldn’t finish deleting the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")
+			return false
+		}
+	}
 }

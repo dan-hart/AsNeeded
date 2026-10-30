@@ -4,6 +4,36 @@
 import SwiftUI
 
 extension Color {
+	/// Preserve the exact fill; switch only the label for Increase Contrast.
+	func filledButtonColors(for colorScheme: ColorScheme, contrast: ColorSchemeContrast) -> FilledButtonColors {
+		let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+			.replacing(UITraitAccessibilityContrast.self, value: contrast == .increased ? .high : .normal)
+		return filledButtonColors(resolvedWith: traits)
+	}
+
+	var dynamicFilledButtonBackground: Color { self }
+
+	var dynamicFilledButtonForeground: Color {
+		Color(uiColor: UIColor { traits in
+			traits.accessibilityContrast == .high ? .black : .white
+		})
+	}
+
+	private func filledButtonColors(resolvedWith traits: UITraitCollection) -> FilledButtonColors {
+		FilledButtonColors(
+			background: Color(uiColor: UIColor(self).resolvedColor(with: traits)),
+			foreground: traits.accessibilityContrast == .high ? .black : .white
+		)
+	}
+
+	/// Semantic success tint that stays legible on the guidance card in either appearance.
+	static func guidanceGreen(for colorScheme: ColorScheme) -> Color {
+		colorScheme == .dark
+			? Color(red: 0.38, green: 0.84, blue: 0.48)
+			: Color(red: 0.0, green: 0.42, blue: 0.2)
+	}
+
+
     /// Calculates the relative luminance of a color according to WCAG standards
     /// - Returns: Luminance value between 0 (darkest) and 1 (lightest)
     var luminance: Double {
@@ -26,21 +56,17 @@ extension Color {
         return 0.2126 * linearRed + 0.7152 * linearGreen + 0.0722 * linearBlue
     }
 
-    /// Returns the optimal foreground color (black or white) for maximum contrast
+    /// Returns black or white for maximum contrast against the resolved opaque background.
     /// - Parameter colorScheme: Current color scheme (light/dark)
-    /// - Returns: Black for light backgrounds, white for dark backgrounds
+    /// - Returns: Whichever of black and white has the greater WCAG contrast ratio.
+    /// Translucent backgrounds need compositing against their actual surface before comparison.
     func contrastingForegroundColor(for colorScheme: ColorScheme = .light) -> Color {
-        // For very dark or very light backgrounds, use absolute contrast
-        if luminance < 0.15 {
-            return .white
-        } else if luminance > 0.85 {
-            return .black
-        }
-
-        // For medium luminance, use threshold approach
-        // Threshold adjusted for better visual hierarchy in UI contexts
-        let threshold = colorScheme == .dark ? 0.4 : 0.5
-        return luminance > threshold ? .black : .white
+		let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+		let resolved = UIColor(self).resolvedColor(with: traits)
+		let backgroundLuminance = Color(uiColor: resolved).luminance
+		let blackContrast = (backgroundLuminance + 0.05) / 0.05
+		let whiteContrast = 1.05 / (backgroundLuminance + 0.05)
+		return blackContrast >= whiteContrast ? .black : .white
     }
 
     /// Returns the optimal foreground color with opacity for secondary text
@@ -89,7 +115,7 @@ extension Color {
 // MARK: - Private Helpers
 
 private func gamma(_ value: Double) -> Double {
-    if value <= 0.03928 {
+    if value <= 0.04045 {
         return value / 12.92
     } else {
         return pow((value + 0.055) / 1.055, 2.4)
@@ -106,9 +132,9 @@ extension View {
     /// - Returns: View with contrasting foreground style applied
     func contrastingForeground(
         against backgroundColor: Color,
-        in colorScheme: ColorScheme = .light
+        in colorScheme: ColorScheme? = nil
     ) -> some View {
-        foregroundStyle(backgroundColor.contrastingForegroundColor(for: colorScheme))
+		modifier(ContrastingForegroundModifier(background: backgroundColor, preferredScheme: colorScheme))
     }
 
     /// Applies the optimal secondary foreground color for the given background color
@@ -122,4 +148,41 @@ extension View {
     ) -> some View {
         foregroundStyle(backgroundColor.contrastingSecondaryColor(for: colorScheme))
     }
+}
+
+// MARK: - Appearance-aware Foreground
+private struct ContrastingForegroundModifier: ViewModifier {
+	@Environment(\.colorScheme) private var colorScheme
+	let background: Color
+	let preferredScheme: ColorScheme?
+
+	func body(content: Content) -> some View {
+		let foreground = background.contrastingForegroundColor(for: preferredScheme ?? colorScheme)
+		content
+			.foregroundStyle(foreground)
+			.tint(foreground)
+	}
+}
+
+/// Rendering-only colors for filled buttons and their icons.
+struct FilledButtonColors {
+	let background: Color
+	let foreground: Color
+}
+
+extension View {
+	func filledButtonForeground(against background: Color) -> some View {
+		modifier(FilledButtonForegroundModifier(background: background))
+	}
+}
+
+private struct FilledButtonForegroundModifier: ViewModifier {
+	@Environment(\.colorScheme) private var colorScheme
+	@Environment(\.colorSchemeContrast) private var contrast
+	let background: Color
+
+	func body(content: Content) -> some View {
+		let foreground = background.filledButtonColors(for: colorScheme, contrast: contrast).foreground
+		content.foregroundStyle(foreground).tint(foreground)
+	}
 }

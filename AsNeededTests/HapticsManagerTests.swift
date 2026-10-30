@@ -8,11 +8,14 @@ import Testing
 @MainActor
 @Suite("HapticsManager Tests", .tags(.service, .haptics, .unit))
 struct HapticsManagerTests {
-    init() {
-        // Reset UserDefaults before each test to ensure isolation
-        // Note: Default for hapticsEnabled is true
-        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.hapticsEnabled)
-    }
+	private let preferences: IsolatedTestPreferences
+	private let manager: HapticsManager
+	private var defaults: UserDefaults { preferences.defaults }
+
+	init() throws {
+		preferences = try IsolatedTestPreferences()
+		manager = HapticsManager(defaults: preferences.defaults)
+	}
 
     // MARK: - Initialization Tests
 
@@ -26,14 +29,14 @@ struct HapticsManagerTests {
 
     @Test("HapticsManager initializes successfully")
     func initialization() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         #expect(manager != nil)
     }
 
     @Test("HapticsManager conforms to ObservableObject")
     func observableObjectConformance() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         #expect(manager is ObservableObject)
     }
@@ -43,9 +46,9 @@ struct HapticsManagerTests {
     @Test("Haptics enabled defaults to true")
     func hapticsEnabledDefaultsToTrue() {
         // Clear any existing value first
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hapticsEnabled)
+        defaults.removeObject(forKey: UserDefaultsKeys.hapticsEnabled)
 
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         #expect(manager.hapticsEnabled == true)
     }
@@ -54,7 +57,7 @@ struct HapticsManagerTests {
 
     @Test("Haptics can be disabled")
     func disableHaptics() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = false
 
@@ -66,7 +69,7 @@ struct HapticsManagerTests {
 
     @Test("Haptics can be enabled")
     func enableHaptics() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = false
         manager.hapticsEnabled = true
@@ -76,7 +79,7 @@ struct HapticsManagerTests {
 
     @Test("Haptics setting persists across reads")
     func hapticsSettingPersistence() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = false
         let readValue1 = manager.hapticsEnabled
@@ -91,26 +94,26 @@ struct HapticsManagerTests {
 
     @Test("Haptics setting stored in UserDefaults")
     func hapticsUserDefaultsStorage() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = false
-        let storedValue1 = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+        let storedValue1 = defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled)
         #expect(storedValue1 == false)
 
         manager.hapticsEnabled = true
-        let storedValue2 = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+        let storedValue2 = defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled)
         #expect(storedValue2 == true)
     }
 
     @Test("Haptics reads from UserDefaults correctly")
     func hapticsReadsFromUserDefaults() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         // Set value through manager (which updates UserDefaults via @AppStorage)
         manager.hapticsEnabled = false
 
         // Verify it's stored in UserDefaults
-        let storedValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+        let storedValue = defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled)
         #expect(storedValue == false)
 
         // Verify manager reads it correctly
@@ -124,7 +127,7 @@ struct HapticsManagerTests {
 
     @Test("SelectionChanged method does not crash when enabled")
     func selectionChangedEnabled() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         // Should not crash
@@ -135,7 +138,7 @@ struct HapticsManagerTests {
 
     @Test("SelectionChanged method does not crash when disabled")
     func selectionChangedDisabled() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = false
 
         // Should not crash (method should return early)
@@ -149,7 +152,7 @@ struct HapticsManagerTests {
 
     @Test("LightImpact method does not crash when enabled")
     func lightImpactEnabled() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.lightImpact()
@@ -159,7 +162,7 @@ struct HapticsManagerTests {
 
     @Test("LightImpact method does not crash when disabled")
     func lightImpactDisabled() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = false
 
         manager.lightImpact()
@@ -172,7 +175,7 @@ struct HapticsManagerTests {
 
     @Test("MediumImpact method does not crash")
     func testMediumImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.mediumImpact()
@@ -182,7 +185,7 @@ struct HapticsManagerTests {
 
     @Test("HeavyImpact method does not crash")
     func testHeavyImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.heavyImpact()
@@ -192,7 +195,7 @@ struct HapticsManagerTests {
 
     @Test("SoftImpact method does not crash")
     func testSoftImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.softImpact()
@@ -202,7 +205,7 @@ struct HapticsManagerTests {
 
     @Test("RigidImpact method does not crash")
     func testRigidImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.rigidImpact()
@@ -212,7 +215,7 @@ struct HapticsManagerTests {
 
     @Test("NotificationSuccess method does not crash")
     func testNotificationSuccess() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.notificationSuccess()
@@ -222,7 +225,7 @@ struct HapticsManagerTests {
 
     @Test("NotificationWarning method does not crash")
     func testNotificationWarning() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.notificationWarning()
@@ -232,7 +235,7 @@ struct HapticsManagerTests {
 
     @Test("NotificationError method does not crash")
     func testNotificationError() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.notificationError()
@@ -244,7 +247,7 @@ struct HapticsManagerTests {
 
     @Test("DoseLogged pattern does not crash")
     func doseLoggedPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.doseLogged()
@@ -254,7 +257,7 @@ struct HapticsManagerTests {
 
     @Test("MedicationAdded pattern does not crash")
     func medicationAddedPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.medicationAdded()
@@ -264,7 +267,7 @@ struct HapticsManagerTests {
 
     @Test("ItemDeleted pattern does not crash")
     func itemDeletedPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.itemDeleted()
@@ -274,7 +277,7 @@ struct HapticsManagerTests {
 
     @Test("PullToRefresh pattern does not crash")
     func pullToRefreshPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.pullToRefresh()
@@ -284,7 +287,7 @@ struct HapticsManagerTests {
 
     @Test("DatePickerChanged pattern does not crash")
     func datePickerChangedPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.datePickerChanged()
@@ -294,7 +297,7 @@ struct HapticsManagerTests {
 
     @Test("SwipeAction pattern does not crash")
     func swipeActionPattern() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.swipeAction()
@@ -306,7 +309,7 @@ struct HapticsManagerTests {
 
     @Test("All haptics respect disabled setting")
     func allHapticsRespectDisabled() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = false
 
         // All these methods should return early and not crash
@@ -336,7 +339,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles selection style")
     func performFeedbackSelection() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .selection)
@@ -346,7 +349,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles lightImpact style")
     func performFeedbackLightImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .lightImpact)
@@ -356,7 +359,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles mediumImpact style")
     func performFeedbackMediumImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .mediumImpact)
@@ -366,7 +369,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles heavyImpact style")
     func performFeedbackHeavyImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .heavyImpact)
@@ -376,7 +379,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles softImpact style")
     func performFeedbackSoftImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .softImpact)
@@ -386,7 +389,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles rigidImpact style")
     func performFeedbackRigidImpact() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .rigidImpact)
@@ -396,7 +399,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles success style")
     func performFeedbackSuccess() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .success)
@@ -406,7 +409,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles warning style")
     func performFeedbackWarning() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .warning)
@@ -416,7 +419,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles error style")
     func performFeedbackError() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .error)
@@ -426,7 +429,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles doseLogged style")
     func performFeedbackDoseLogged() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .doseLogged)
@@ -436,7 +439,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles medicationAdded style")
     func performFeedbackMedicationAdded() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .medicationAdded)
@@ -446,7 +449,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback handles itemDeleted style")
     func performFeedbackItemDeleted() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         manager.performFeedback(style: .itemDeleted)
@@ -456,7 +459,7 @@ struct HapticsManagerTests {
 
     @Test("PerformFeedback respects disabled setting")
     func performFeedbackRespectsSetting() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = false
 
         // Test all styles when disabled
@@ -498,7 +501,7 @@ struct HapticsManagerTests {
 
     @Test("Multiple concurrent haptic calls are safe")
     func concurrentHapticCalls() async {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         await withTaskGroup(of: Void.self) { group in
@@ -520,7 +523,7 @@ struct HapticsManagerTests {
 
     @Test("Rapid setting changes are safe")
     func rapidSettingChanges() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         for iteration in 0 ..< 100 {
             manager.hapticsEnabled = (iteration % 2 == 0)
@@ -554,16 +557,16 @@ struct HapticsManagerTests {
 
     @Test("Haptics manager works after app reset simulation")
     func afterAppReset() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = false
         #expect(manager.hapticsEnabled == false)
 
         // Simulate app reset
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.hapticsEnabled)
+        defaults.removeObject(forKey: UserDefaultsKeys.hapticsEnabled)
 
         // Verify it resets to default (true)
-        let resetValue = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hapticsEnabled)
+        let resetValue = defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled)
         #expect(resetValue == false) // Bool defaults to false when not set
 
         // Clean up - restore to default
@@ -572,7 +575,7 @@ struct HapticsManagerTests {
 
     @Test("Sequential haptic patterns execute without crash")
     func sequentialHapticPatterns() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
         manager.hapticsEnabled = true
 
         // Execute different patterns in sequence
@@ -589,7 +592,7 @@ struct HapticsManagerTests {
 
     @Test("Toggle haptics during haptic execution")
     func toggleDuringExecution() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         manager.hapticsEnabled = true
         manager.lightImpact()
@@ -607,7 +610,7 @@ struct HapticsManagerTests {
 
     @Test("HapticsManager is MainActor isolated")
     func mainActorIsolation() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         // This test verifies the @MainActor annotation is present
         #expect(manager != nil)
@@ -617,7 +620,7 @@ struct HapticsManagerTests {
 
     @Test("All public haptic methods are accessible")
     func publicAPIAccessibility() {
-        let manager = HapticsManager.shared
+        let manager = self.manager
 
         // Verify all methods are callable
         manager.selectionChanged()

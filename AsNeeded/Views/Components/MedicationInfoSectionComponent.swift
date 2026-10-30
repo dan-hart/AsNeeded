@@ -1,7 +1,7 @@
 import SFSafeSymbols
 import SwiftUI
 
-/// A comprehensive medication information input section with enhanced search capabilities
+/// Medication name search and an optional personal nickname.
 ///
 /// Features:
 /// - Required clinical name field with real-time medication search
@@ -25,6 +25,7 @@ import SwiftUI
 /// - Healthcare app medication forms
 /// - Any form requiring medication identification with search
 struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View {
+	@ObservedObject private var demoMode = DemoModeState.shared
     @Binding var clinicalName: String
     @Binding var nickname: String
     @FocusState.Binding var focusedField: Field?
@@ -34,168 +35,45 @@ struct MedicationInfoSectionComponent<Field: Hashable, ScrollID: Hashable>: View
     let searchFieldScrollID: ScrollID?
     let onMedicationSelected: (String, String) -> Void
 
-    @ScaledMetric private var sectionSpacing: CGFloat = 20
-    @ScaledMetric private var headerSpacing: CGFloat = 12
-    @ScaledMetric private var iconSize: CGFloat = 28
-    @ScaledMetric private var fieldContainerPadding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 16
-    @ScaledMetric private var borderWidth: CGFloat = 1
-    @ScaledMetric private var focusedBorderWidth: CGFloat = 2
-    @ScaledMetric private var fieldSpacing: CGFloat = 12
-    @ScaledMetric private var innerVStackSpacing: CGFloat = 8
-    @ScaledMetric private var requiredPaddingH: CGFloat = 8
-    @ScaledMetric private var requiredPaddingV: CGFloat = 3
-    @ScaledMetric private var optionalPaddingH: CGFloat = 8
-    @ScaledMetric private var optionalPaddingV: CGFloat = 2
+	@Environment(\.fontFamily) private var fontFamily
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: sectionSpacing) {
-            // Section header with icon
-            HStack(spacing: headerSpacing) {
-                Image(systemSymbol: .textBookClosedFill)
-                    .font(.title2)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.accent, .accent.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+	var body: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text("Medication name (required)")
+				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
 
-                Text("Medication Information")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .accessibilityAddTraits(.isHeader)
-            }
+			EnhancedMedicationSearchField(
+				text: $clinicalName,
+				placeholder: String(localized: "Enter medication name"),
+				scrollID: searchFieldScrollID,
+				onMedicationSelected: { name, nickname in
+					onMedicationSelected(name, nickname)
+				}
+			)
+			.focused($focusedField, equals: clinicalNameField)
 
-            // Clinical Name Field - Primary Input
-            VStack(alignment: .leading, spacing: fieldSpacing) {
-                // Enhanced header with better visual hierarchy
-                HStack(spacing: innerVStackSpacing) {
-                    ZStack {
-                        Circle()
-                            .fill(.accent.opacity(0.15))
-                            .frame(width: iconSize, height: iconSize)
+			Text("Nickname (optional)")
+				.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+			Group {
+				if demoMode.isEnabled {
+					SecureField("Nickname", text: $nickname)
+						.demoNameRedacted()
+				} else {
+					TextField("e.g. Headache relief", text: $nickname)
+				}
+			}
+				.font(.customFont(fontFamily, style: .body))
+				.textFieldStyle(.roundedBorder)
+				.textInputAutocapitalization(.words)
+				.autocorrectionDisabled()
+				.focused($focusedField, equals: nicknameField)
+				.accessibilityLabel("Nickname, optional")
+		}
+		.glassCard()
+		.padding(.horizontal)
+	}
 
-                        Image(systemSymbol: .pill)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.accent)
-                            .accessibilityHidden(true) // Decorative icon
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Text("Clinical Name")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                            Text("*")
-                                .foregroundStyle(.red)
-                                .font(.subheadline)
-                                .fontWeight(.bold)
-                                .accessibilityLabel("required")
-                        }
-                        .accessibilityElement(children: .combine)
-
-                        Text("Start typing to search medications")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true) // Redundant with field hint
-                    }
-
-                    Spacer()
-
-                    // Priority indicator
-                    if clinicalName.isEmpty {
-                        Text("REQUIRED")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, requiredPaddingH)
-                            .padding(.vertical, requiredPaddingV)
-                            .background(
-                                Capsule()
-                                    .fill(.accent)
-                            )
-                            .accessibilityLabel("Required field indicator")
-                            .accessibilityHidden(true) // Hide from VoiceOver since it's already conveyed in the hint
-                    }
-                }
-
-                // Enhanced search field container
-                VStack(spacing: 0) {
-                    EnhancedMedicationSearchField(
-                        text: $clinicalName,
-                        placeholder: "Type medication name (e.g., Ibuprofen, Tylenol)",
-                        scrollID: searchFieldScrollID,
-                        onMedicationSelected: { clinicalName, nickname in
-                            onMedicationSelected(clinicalName, nickname)
-                        }
-                    )
-                    .focused($focusedField, equals: clinicalNameField)
-                    .accessibilityLabel("Clinical Name")
-                    .accessibilityHint("Required field. Type to search for medications.")
-                    .accessibilityValue(clinicalName.isEmpty ? "Empty" : clinicalName)
-                }
-                .padding(fieldContainerPadding)
-                .background(
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.regularMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: cornerRadius)
-                                .strokeBorder(
-                                    focusedField == clinicalNameField ?
-                                        .accent.opacity(0.6) :
-                                        Color(.separator).opacity(0.3),
-                                    lineWidth: focusedField == clinicalNameField ? focusedBorderWidth : borderWidth
-                                )
-                        )
-                        .shadow(
-                            color: focusedField == clinicalNameField ?
-                                .accent.opacity(0.2) :
-                                Color.black.opacity(0.05),
-                            radius: focusedField == clinicalNameField ? 8 : 4,
-                            x: 0,
-                            y: focusedField == clinicalNameField ? 4 : 2
-                        )
-                )
-                .scaleEffect(focusedField == clinicalNameField ? 1.02 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: focusedField)
-            }
-
-            // Nickname Field
-            VStack(alignment: .leading, spacing: innerVStackSpacing) {
-                Label {
-                    HStack(spacing: 4) {
-                        Text("Nickname")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                        Text("Optional")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, optionalPaddingH)
-                            .padding(.vertical, optionalPaddingV)
-                            .background(
-                                Capsule()
-                                    .fill(.regularMaterial)
-                            )
-                    }
-                } icon: {
-                    Image(systemSymbol: .tagFill)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                TextField("Personal name for easy identification", text: $nickname)
-                    .textFieldStyle(.roundedBorder)
-                    .autocapitalization(.words)
-                    .disableAutocorrection(true)
-                    .focused($focusedField, equals: nicknameField)
-                    .accessibilityLabel("Nickname")
-                    .accessibilityHint("Optional personal name for easy identification")
-            }
-        }
-        .glassCard()
-        .padding(.horizontal)
-    }
 }
 
 #if DEBUG

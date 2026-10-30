@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # test-parallel.sh - Ultra-fast parallel test execution
 # Maximizes CPU usage for running tests across all cores
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -16,10 +16,12 @@ echo -e "${BLUE}═════════════════════�
 
 # Detect CPU cores and use 75% for tests (leave some for system)
 CPU_CORES=$(sysctl -n hw.ncpu)
-TEST_WORKERS=$((CPU_CORES * 3 / 4))
-if [ $TEST_WORKERS -lt 4 ]; then
-    TEST_WORKERS=4
+TEST_WORKERS=${TEST_WORKERS:-$((CPU_CORES * 3 / 4))}
+if [ "$TEST_WORKERS" -lt 1 ]; then
+    echo "TEST_WORKERS must be positive" >&2
+    exit 1
 fi
+TEST_DESTINATION=${TEST_DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=26.1}
 
 echo -e "${GREEN}💪 Using $TEST_WORKERS parallel test workers (out of $CPU_CORES cores)${NC}"
 
@@ -33,7 +35,7 @@ else
 fi
 
 # Check for specific test class argument
-if [ -n "$1" ]; then
+if [ -n "${1:-}" ]; then
     echo -e "${YELLOW}🎯 Running only: $1${NC}"
     TEST_FILTER="-only-testing:AsNeededTests/$1"
 else
@@ -48,7 +50,7 @@ if [ "$USE_XCSIFT" = true ]; then
     xcodebuild test \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+        -destination "$TEST_DESTINATION" \
         -parallel-testing-enabled YES \
         -maximum-parallel-testing-workers $TEST_WORKERS \
         -jobs $CPU_CORES \
@@ -67,7 +69,7 @@ else
     xcodebuild test \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+        -destination "$TEST_DESTINATION" \
         -parallel-testing-enabled YES \
         -maximum-parallel-testing-workers $TEST_WORKERS \
         -jobs $CPU_CORES \

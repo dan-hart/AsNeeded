@@ -5,19 +5,20 @@ import SwiftUI
 import SFSafeSymbols
 
 struct SettingsHapticsSectionView: View {
+	@Environment(\.fontFamily) private var fontFamily
 	@StateObject private var hapticsManager = HapticsManager.shared
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let stackItemSpacing: CGFloat = 2
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Haptics")
-				.font(.title2)
+				.font(.customFont(fontFamily, style: .title2))
 				.fontWeight(.semibold)
 
 			VStack(spacing: headerSpacing) {
@@ -36,17 +37,17 @@ struct SettingsHapticsSectionView: View {
 
 			VStack(alignment: .leading, spacing: stackItemSpacing) {
 				Text("Haptic Feedback")
-					.font(.body)
+					.font(.customFont(fontFamily, style: .body))
 					.fontWeight(.medium)
 
 				Text("Feel touches and actions throughout the app")
-					.font(.caption)
+					.font(.customFont(fontFamily, style: .caption))
 					.foregroundColor(.secondary)
 			}
 
 			Spacer()
 
-			Toggle("", isOn: $hapticsManager.hapticsEnabled)
+			Toggle("Haptic Feedback", isOn: $hapticsManager.hapticsEnabled)
 				.labelsHidden()
 				.onChange(of: hapticsManager.hapticsEnabled) { _, _ in
 					// Provide immediate feedback when toggling

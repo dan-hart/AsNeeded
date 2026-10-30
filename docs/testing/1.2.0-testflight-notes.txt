@@ -1,0 +1,9 @@
+- Optional dose timing, 24-hour quantity limits, and next-dose alerts based on your saved guidance.
+- Log straight from a notification without opening the app, with confirmation when it saves.
+- Easier dose logging with quick time shortcuts, typed amounts, rating sliders, and Undo.
+- Updated widgets and Lock Screen links, plus faster History and Trends with filters and a 90-day view.
+- More comfortable layouts for larger text, smaller screens, and iPhone Duo. Flag anything clipped or hard to tap.
+- Temporary Demo Mode hides medication names when showing someone the app.
+- Lots of fixes for saved data, stock tracking, backups, and reminders. Please check that your medications and history survive the update.
+
+All medication tracking is still free. Thanks for helping me get 1.2.0 ready!

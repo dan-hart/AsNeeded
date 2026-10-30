@@ -4,29 +4,13 @@
 import Foundation
 
 extension Double {
-    /// Returns the Double as a String: whole number if .0, or with up to 2 decimal places if needed.
-    var formattedAmount: String {
-        if truncatingRemainder(dividingBy: 1) == 0 {
-            return String(format: "%.0f", self)
-        } else {
-            // Round to 2 decimal places
-            let rounded = (self * 100).rounded() / 100
+	/// Locale-aware display with no grouping and up to two fractional digits.
+	var formattedAmount: String {
+		formattedAmount(locale: .current)
+	}
 
-            // Check if it became a whole number after rounding
-            if rounded.truncatingRemainder(dividingBy: 1) == 0 {
-                return String(format: "%.0f", rounded)
-            }
-
-            // Format with 2 decimal places
-            let formatted = String(format: "%.2f", rounded)
-
-            // Remove only trailing zeros after decimal point (but keep at least one decimal)
-            // This regex keeps the decimal point and at least one digit after it
-            if formatted.hasSuffix("0") && !formatted.hasSuffix(".0") {
-                return formatted.replacingOccurrences(of: "0+$", with: "", options: .regularExpression)
-            }
-
-            return formatted
-        }
-    }
+	func formattedAmount(locale: Locale) -> String {
+		let rounded = truncatingRemainder(dividingBy: 1) == 0 ? self : (self * 100).rounded() / 100
+		return rounded.formatted(.number.locale(locale).grouping(.never).precision(.fractionLength(0...2)))
+	}
 }

@@ -3,18 +3,14 @@ import SFSafeSymbols
 
 struct SettingsDisclaimersSectionView: View {
 	@Environment(\.fontFamily) private var fontFamily
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Disclaimers")
-				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.font(.customFont(fontFamily, style: .title2))
+				.fontWeight(.semibold)
 				.accessibilityAddTraits(.isHeader)
 
 			VStack(spacing: headerSpacing) {
@@ -22,33 +18,12 @@ struct SettingsDisclaimersSectionView: View {
 				NavigationLink {
 					MedicalDisclaimerDetailView()
 				} label: {
-					HStack(spacing: headerSpacing) {
-						Image(systemSymbol: .exclamationmarkTriangle)
-							.font(.callout.weight(.medium))
-							.frame(width: iconSize, height: iconSize)
-							.foregroundColor(.yellow)
-
-						VStack(alignment: .leading, spacing: stackItemSpacing) {
-							Text("Medical Disclaimer")
-								.font(.customFont(fontFamily, style: .body, weight: .medium))
-							Text("Important medical advice information")
-								.font(.customFont(fontFamily, style: .caption))
-								.foregroundColor(.secondary)
-						}
-
-						Spacer()
-
-						Image(systemSymbol: .chevronRight)
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundColor(.secondary)
-					}
-					.padding(padding)
-					.background(Color(.systemBackground))
-					.overlay(
-						RoundedRectangle(cornerRadius: cornerRadius)
-							.stroke(Color(.systemGray4), lineWidth: borderWidth)
+					SettingsNavigationRowLabel(
+						title: String(localized: "Medical Disclaimer"),
+						subtitle: String(localized: "Important medical advice information"),
+						icon: .exclamationmarkTriangle,
+						iconColor: .yellow
 					)
-					.cornerRadius(cornerRadius)
 				}
 				.buttonStyle(.plain)
 
@@ -56,33 +31,12 @@ struct SettingsDisclaimersSectionView: View {
 				NavigationLink {
 					NIHDisclaimerDetailView()
 				} label: {
-					HStack(spacing: headerSpacing) {
-						Image(systemSymbol: .buildingColumns)
-							.font(.callout.weight(.medium))
-							.frame(width: iconSize, height: iconSize)
-							.foregroundColor(.accent)
-
-						VStack(alignment: .leading, spacing: stackItemSpacing) {
-							Text("Medical Data Sources")
-								.font(.customFont(fontFamily, style: .body, weight: .medium))
-							Text("NIH/NLM RxNorm database citations")
-								.font(.customFont(fontFamily, style: .caption))
-								.foregroundColor(.secondary)
-						}
-
-						Spacer()
-
-						Image(systemSymbol: .chevronRight)
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundColor(.secondary)
-					}
-					.padding(padding)
-					.background(Color(.systemBackground))
-					.overlay(
-						RoundedRectangle(cornerRadius: cornerRadius)
-							.stroke(Color(.systemGray4), lineWidth: borderWidth)
+					SettingsNavigationRowLabel(
+						title: String(localized: "Medical Data Sources"),
+						subtitle: String(localized: "NIH/NLM RxNorm database citations"),
+						icon: .buildingColumns,
+						iconColor: .accent
 					)
-					.cornerRadius(cornerRadius)
 				}
 				.buttonStyle(.plain)
 			}

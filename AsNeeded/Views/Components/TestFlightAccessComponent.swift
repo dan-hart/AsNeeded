@@ -41,11 +41,11 @@ struct TestFlightAccessComponent: View {
             HStack(spacing: elementSpacing) {
                 Image(systemSymbol: .airplaneCircleFill)
                     .font(.title2)
-                    .foregroundColor(.white)
+                    .filledButtonForeground(against: .accent)
                     .frame(width: iconSize40, height: iconSize40)
                     .background(
                         LinearGradient(
-                            colors: [.blue, .cyan],
+                            colors: [Color.accent.dynamicFilledButtonBackground, Color.accent.dynamicFilledButtonBackground],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -53,11 +53,11 @@ struct TestFlightAccessComponent: View {
                     .cornerRadius(cornerRadius10)
 
                 VStack(alignment: .leading, spacing: textSpacing) {
-                    Text(String(localized: "Join TestFlight Beta"))
+                    Text("Join TestFlight Beta")
                         .font(.customFont(fontFamily, style: .callout, weight: .semibold))
                         .foregroundColor(.primary)
 
-                    Text(String(localized: "Get early access to new features and updates"))
+                    Text("Get early access to new features and updates")
                         .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }

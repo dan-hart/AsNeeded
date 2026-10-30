@@ -2,7 +2,6 @@
 // View model for listing, adding, and deleting medications via DataStore.
 
 import ANModelKit
-import Combine
 import DHLoggingKit
 import Foundation
 import SwiftUI
@@ -11,16 +10,21 @@ import SwiftUI
 final class MedicationListViewModel: ObservableObject {
     // MARK: - Properties
     private let dataStore: DataStore
+	private let undoPersistence: (UUID) async throws -> Void
+	private let confirmationSleep: (Duration) async throws -> Void
+	private var undoingEventIDs: Set<UUID> = []
+	private var nextConfirmationSequence = 0
+	private var latestPresentedSequence = 0
+	private var committedChangesTask: Task<Void, Never>?
+	private(set) var confirmationDismissTask: Task<Void, Never>?
     private let logger = DHLogger.ui
     private let hapticsManager = HapticsManager.shared
-    private let refillProfileStore = MedicationRefillProfileStore.shared
+    private let safetyProfileStore = MedicationSafetyProfileStore.shared
+    private let guidanceService = MedicationDoseGuidanceService()
+    private let feedbackService = QuickLogFeedbackService()
     private let statusSummaryService = MedicationStatusSummaryService()
-	/// Shared quick-log core (compensating writes, haptics, feedback, toast state).
-	let quickLogCoordinator: QuickLogCoordinator
-	private var quickLogCoordinatorSubscription: AnyCancellable?
 
     @AppStorage(UserDefaultsKeys.medicationOrder) private var medicationOrder: [String] = []
-    @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
 
     // MARK: - Published Properties
     @Published var showArchivedMedications: Bool = false
@@ -31,29 +35,19 @@ final class MedicationListViewModel: ObservableObject {
     @Published var pendingDelete: ANMedicationConcept?
     @Published var showSupportToast = false
     @Published var showSupportView = false
+    @Published var showQuickLogToast = false
+    @Published var quickLogMedicationName = ""
+    @Published var quickLogDoseAmount: Double = 0
+    @Published var quickLogDoseUnit: ANUnitConcept = .unit
+    @Published var quickLogAccentColor: Color = .accent
+    @Published var quickLogFeedback: QuickLogFeedbackService.Feedback?
     @Published var isLoading = true
-
-	// MARK: - Quick Log Toast State
-	// Forwarded from the coordinator; its `objectWillChange` is re-published so views observing this
-	// view model refresh when the toast changes.
-	var showQuickLogToast: Bool { quickLogCoordinator.showQuickLogToast }
-	var quickLogMedicationName: String { quickLogCoordinator.quickLogMedicationName }
-	var quickLogDoseAmount: Double { quickLogCoordinator.quickLogDoseAmount }
-	var quickLogDoseUnit: String { quickLogCoordinator.quickLogDoseUnit }
-	var quickLogAccentColor: Color { quickLogCoordinator.quickLogAccentColor }
-	var quickLogFeedback: QuickLogFeedbackService.Feedback? { quickLogCoordinator.quickLogFeedback }
-	var quickLogToastGeneration: UUID? { quickLogCoordinator.quickLogToastGeneration }
 
     // MARK: - Computed Properties
     var items: [ANMedicationConcept] { dataStore.medications }
 
     var displayedMedications: [ANMedicationConcept] {
         showArchivedMedications ? items : items.active
-    }
-
-    /// Active medications for the medication-agnostic Log Dose picker, most recently logged first.
-    var logDosePickerItems: [LogDosePickerItem] {
-        LogDosePickerModel.items(medications: items.active, events: dataStore.events)
     }
 
     var sortedMedications: [ANMedicationConcept] {
@@ -84,44 +78,37 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(
-        dataStore: DataStore = .shared,
-        scheduleQuickLogToastDismissal: @escaping (@escaping @MainActor @Sendable () -> Void) -> Void = { action in
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                action()
-            }
-        },
-		quickLogPersistence: QuickLogPersistence? = nil,
-		quickLogUndoPersistence: QuickLogUndoPersistence? = nil,
-		acknowledgeDeliveredReminders: @escaping @MainActor (UUID) async -> Void = { medicationID in
-			await NotificationManager.shared.acknowledgeDeliveredReminders(for: medicationID)
-		}
-    ) {
+    init(dataStore: DataStore = .shared, defaults: UserDefaults = .standard, undoPersistence: ((UUID) async throws -> Void)? = nil, confirmationSleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.dataStore = dataStore
-		self.quickLogCoordinator = QuickLogCoordinator(
-			dataStore: dataStore,
-			scheduleToastDismissal: scheduleQuickLogToastDismissal,
-			persistence: quickLogPersistence,
-			undoPersistence: quickLogUndoPersistence,
-			acknowledgeDeliveredReminders: acknowledgeDeliveredReminders
-		)
-		quickLogCoordinatorSubscription = quickLogCoordinator.objectWillChange.sink { [weak self] _ in
-			self?.objectWillChange.send()
-		}
+		_medicationOrder = AppStorage(wrappedValue: [], UserDefaultsKeys.medicationOrder, store: defaults)
+		self.confirmationSleep = confirmationSleep
+		self.undoPersistence = undoPersistence ?? { eventID in try await dataStore.deleteEvents(ids: [eventID]) }
 
         if medicationOrder.isEmpty && !items.isEmpty {
             medicationOrder = items.map { $0.id.uuidString }
         }
+
+		let snapshots = dataStore.committedSnapshots()
+		committedChangesTask = Task { [weak self] in
+			for await _ in snapshots {
+				guard !Task.isCancelled else { return }
+				self?.objectWillChange.send()
+			}
+		}
 
         Task { [weak self] in
             await self?.finishInitialLoad()
         }
     }
 
+	deinit {
+		committedChangesTask?.cancel()
+		confirmationDismissTask?.cancel()
+	}
+
     private func finishInitialLoad() async {
         do {
-            try await dataStore.medicationsStore.itemsHaveLoaded()
+            try await dataStore.prepareForAccess()
         } catch {
             logger.logPrivacySafeError("Failed to load medications store", error: error)
         }
@@ -132,17 +119,6 @@ final class MedicationListViewModel: ObservableObject {
             medicationOrder = items.map { $0.id.uuidString }
         }
     }
-
-	// MARK: - Quick Log Persistence
-	/// Kept for callers and tests that build persistence through the view model; see `QuickLogCoordinator`.
-	static func makeQuickLogPersistence(writes: QuickLogWrites) -> QuickLogPersistence {
-		QuickLogCoordinator.makeQuickLogPersistence(writes: writes)
-	}
-
-	/// Kept for callers and tests that build undo persistence through the view model; see `QuickLogCoordinator`.
-	static func makeQuickLogUndoPersistence(writes: QuickLogWrites) -> QuickLogUndoPersistence {
-		QuickLogCoordinator.makeQuickLogUndoPersistence(writes: writes)
-	}
 
     // MARK: - Data Operations
     func add(_ med: ANMedicationConcept) async -> Bool {
@@ -156,9 +132,9 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-    func update(_ med: ANMedicationConcept) async -> Bool {
+    func update(_ med: ANMedicationConcept, original: ANMedicationConcept? = nil) async -> Bool {
         do {
-            try await dataStore.updateMedication(med)
+            try await dataStore.updateMedication(med, original: original)
             return true
         } catch {
             logger.logPrivacySafeError("Failed to update medication", error: error)
@@ -217,7 +193,6 @@ final class MedicationListViewModel: ObservableObject {
         }
     }
 
-	// MARK: - Dose Logging
     func logDose(
         med: ANMedicationConcept,
         dose: ANDoseConcept,
@@ -225,58 +200,216 @@ final class MedicationListViewModel: ObservableObject {
         source: String = "list_sheet",
         operationID: UUID = UUID()
     ) async -> Bool {
-		let success = await quickLogCoordinator.logDose(
-			medication: med,
-			dose: dose,
-			event: event,
-			source: source,
-			operationID: operationID
-		)
-		guard success else {
+		guard let med = dataStore.medications.first(where: { $0.id == med.id }) else {
+			logger.warning("Skipped dose log for a medication that is no longer available")
 			return false
 		}
+        let confirmationSequence = allocateConfirmationSequence()
+        let eventCountBefore = dataStore.events.count
 
-		logMedication = nil
-		if hideSupportBanners {
-			quickLogCoordinator.presentToast(medication: med, dose: dose)
-		} else {
-			triggerSupportToast()
-		}
-		return true
+        var eventToSave = event
+        if eventToSave.medication?.id != med.id {
+            logger.warning("Correcting mismatched list dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
+        }
+        eventToSave.medication = med
+		eventToSave.dose = dose
+
+        logger.logDoseOperation(
+            "Starting",
+            source: source,
+            operationID: operationID,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(quantityWasPresent: med.quantity != nil)
+        )
+
+		let saved: Bool
+		do { try await dataStore.recordDose(eventToSave); saved = true }
+		catch { logger.logPrivacySafeError("Dose save failed", error: error); saved = false }
+		let (updateSuccess, eventSuccess) = (saved, saved)
+
+        if updateSuccess && eventSuccess {
+            logMedication = nil
+            logger.logDoseOperation(
+                "Succeeded",
+                source: source,
+                operationID: operationID,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
+			presentDoseConfirmation(med: med, dose: dose, event: eventToSave, sequence: confirmationSequence)
+            return true
+        }
+
+        logger.error("Failed list dose log: source=\(source), operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+        return false
     }
 
     func quickLog(medication: ANMedicationConcept) async -> Bool {
-		await quickLogCoordinator.quickLog(medication: medication, source: "list_quick_log")
+		guard let medication = dataStore.medications.first(where: { $0.id == medication.id && !$0.isArchived }) else {
+			logger.warning("Skipped quick log for a medication that is no longer available")
+			return false
+		}
+        let confirmationSequence = allocateConfirmationSequence()
+        let operationID = UUID()
+        let loggedAt = Date()
+        let dose = ANDoseConcept(
+            amount: medication.prescribedDoseAmount ?? 1,
+            unit: medication.prescribedUnit ?? .unit
+        )
+        let assessment = guidanceService.assessment(
+            for: medication,
+            proposedDose: dose,
+            at: loggedAt,
+            events: dataStore.events,
+            profile: safetyProfileStore.profile(for: medication.id)
+        )
+
+        let eventCountBefore = dataStore.events.count
+
+        let event = ANEventConcept(
+            eventType: .doseTaken,
+            medication: medication,
+            dose: dose,
+            date: loggedAt,
+            note: nil
+        )
+
+        logger.logDoseOperation(
+            "Starting",
+            source: "list_quick_log",
+            operationID: operationID,
+            eventCountBefore: eventCountBefore,
+            details: quantityDetails(quantityWasPresent: medication.quantity != nil)
+        )
+
+		let saved: Bool
+		do { try await dataStore.recordDose(event, shouldRecordForReview: false); saved = true }
+		catch { logger.logPrivacySafeError("Quick dose save failed", error: error); saved = false }
+		let (updateSuccess, eventSuccess) = (saved, saved)
+
+        if updateSuccess, eventSuccess {
+            let feedback = feedbackService.feedback(
+                medication: medication,
+                dose: dose,
+                loggedEvent: event,
+                assessment: assessment,
+				nextDoseDate: guidanceService.nextEligibleDate(
+					for: medication,
+					at: loggedAt,
+					events: dataStore.events,
+					profile: safetyProfileStore.profile(for: medication.id)
+				),
+                at: loggedAt
+            )
+            showQuickLogToast(med: medication, dose: dose, feedback: feedback, sequence: confirmationSequence)
+            logger.logDoseOperation(
+                "Succeeded",
+                source: "list_quick_log",
+                operationID: operationID,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
+        } else {
+            logger.error("Failed quick dose log: source=list_quick_log, operationID=\(operationID.uuidString), updateSuccess=\(updateSuccess), eventSuccess=\(eventSuccess)")
+        }
+        
+        return updateSuccess && eventSuccess
     }
 
-    func undoLastQuickLog() async -> Bool {
-		await quickLogCoordinator.undoLastQuickLog()
+    func undoLastQuickLog(eventID: UUID? = nil) async -> Bool {
+        guard let undoEventID = eventID ?? quickLogFeedback?.undoEventID,
+              let event = dataStore.events.first(where: { $0.id == undoEventID }),
+			  !undoingEventIDs.contains(undoEventID)
+        else {
+            return false
+        }
+
+		undoingEventIDs.insert(undoEventID)
+		defer { undoingEventIDs.remove(undoEventID) }
+        do {
+			try await undoPersistence(event.id)
+			// The visible toast may have been replaced or dismissed while the write awaited.
+			if quickLogFeedback?.undoEventID == undoEventID {
+				dismissQuickLogToast()
+			}
+            return true
+        } catch {
+            logger.logPrivacySafeError("Failed to undo quick log", error: error)
+            return false
+        }
     }
 
     func dismissQuickLogToast() {
-		quickLogCoordinator.dismissQuickLogToast()
+		confirmationDismissTask?.cancel()
+		confirmationDismissTask = nil
+        quickLogFeedback = nil
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showQuickLogToast = false
+        }
     }
+
+	/// Confirm an already-persisted regular dose without saving it a second time.
+	func presentDoseConfirmation(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept, sequence: Int? = nil) {
+		let now = Date()
+		let assessment = guidanceService.assessment(
+			for: med, proposedDose: dose, at: event.date,
+			events: dataStore.events.filter { $0.id != event.id },
+			profile: safetyProfileStore.profile(for: med.id)
+		)
+		let feedback = feedbackService.feedback(
+			medication: med, dose: dose, loggedEvent: event, assessment: assessment,
+			nextDoseDate: guidanceService.nextEligibleDate(for: med, at: now, events: dataStore.events, profile: safetyProfileStore.profile(for: med.id)),
+			at: now
+		)
+		showQuickLogToast(med: med, dose: dose, feedback: feedback,
+			sequence: sequence ?? allocateConfirmationSequence())
+	}
 
     func statusSummary(for medication: ANMedicationConcept) -> MedicationStatusSummaryService.Summary {
         statusSummaryService.summary(
             for: medication,
             events: dataStore.events,
-            profile: refillProfileStore.profile(for: medication.id)
+            profile: safetyProfileStore.profile(for: medication.id)
         )
     }
 
-    private func triggerSupportToast() {
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                self.showSupportToast = true
-            }
+	private func allocateConfirmationSequence() -> Int {
+		nextConfirmationSequence += 1
+		return nextConfirmationSequence
+	}
 
-            try? await Task.sleep(nanoseconds: 6_000_000_000)
-            withAnimation(.easeInOut(duration: 0.3)) {
-                self.showSupportToast = false
-            }
+    private func showQuickLogToast(
+        med: ANMedicationConcept,
+        dose: ANDoseConcept,
+        feedback: QuickLogFeedbackService.Feedback? = nil,
+		sequence: Int
+    ) {
+		guard sequence > latestPresentedSequence else { return }
+		latestPresentedSequence = sequence
+        quickLogMedicationName = med.displayName
+        quickLogDoseAmount = dose.amount
+        quickLogDoseUnit = dose.unit
+        quickLogAccentColor = med.displayColor
+        quickLogFeedback = feedback
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            showQuickLogToast = true
         }
+
+		confirmationDismissTask?.cancel()
+		let sleep = confirmationSleep
+		confirmationDismissTask = Task { [weak self] in
+			do { try await sleep(.seconds(4)) }
+			catch { return }
+			guard !Task.isCancelled, let self,
+				self.latestPresentedSequence == sequence else { return }
+			self.dismissQuickLogToast()
+		}
+    }
+
+
+    private func quantityDetails(quantityWasPresent: Bool) -> String {
+        "quantityUpdated=\(quantityWasPresent)"
     }
 
     private func appendToMedicationOrderIfNeeded(_ medication: ANMedicationConcept) {

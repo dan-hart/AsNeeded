@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* MedicationPersistenceTransactions.swift */; };
 		52133A022E9DB5B60055E06D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A012E9DB5B60055E06D /* WidgetKit.framework */; };
 		52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A032E9DB5B60055E06D /* SwiftUI.framework */; };
 		52133A0F2E9DB5B60055E06D /* AsNeededWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -32,6 +33,23 @@
 		52DE375F2E5531B100DD3B1A /* ANModelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE375E2E5531B100DD3B1A /* ANModelKit */; };
 		52DE37612E5531B100DD3B1A /* SwiftRxNorm in Frameworks */ = {isa = PBXBuildFile; productRef = 52DE37602E5531B100DD3B1A /* SwiftRxNorm */; };
 		52F6AE322E67A9F6005CF0A1 /* DHLoggingKit in Frameworks */ = {isa = PBXBuildFile; productRef = 52F6AE312E67A9F6005CF0A1 /* DHLoggingKit */; };
+		A12000000000000000000201 /* MedicationSafetyProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000101 /* MedicationSafetyProfile.swift */; };
+		A12000000000000000000202 /* MedicationDoseGuidanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000102 /* MedicationDoseGuidanceService.swift */; };
+		A12000000000000000000203 /* MedicationNotificationClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000103 /* MedicationNotificationClient.swift */; };
+		A12000000000000000000204 /* MedicationAvailabilityNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000104 /* MedicationAvailabilityNotificationPlanner.swift */; };
+		A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000105 /* MedicationReminderRequest.swift */; };
+		A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */; };
+		A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */; };
+		A12000000000000000000401 /* WidgetNavigationRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000301 /* WidgetNavigationRoute.swift */; };
+		A12000000000000000000402 /* WidgetExperienceProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000302 /* WidgetExperienceProjection.swift */; };
+		A12000000000000000000403 /* Font+CustomFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000303 /* Font+CustomFonts.swift */; };
+		A12000000000000000000404 /* FontFamily.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000304 /* FontFamily.swift */; };
+		A12000000000000000000405 /* View+NoTruncate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000305 /* View+NoTruncate.swift */; };
+		A12000000000000000000501 /* LogDoseWidgetIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000502 /* LogDoseWidgetIntent.swift */; };
+		A12000000000000000000503 /* SFSafeSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 52929DA528EF270100C996E0 /* SFSafeSymbols */; };
+		A12900000000000000000002 /* Localizable.xcstrings in Widget Resources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000001 /* Localizable.xcstrings */; };
+		A12900000000000000000003 /* Localizable.xcstrings in Watch Resources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000001 /* Localizable.xcstrings */; };
+		A12900000000000000000005 /* ANUnitConcept+Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12900000000000000000004 /* ANUnitConcept+Localization.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,6 +112,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A12000000000000000000002 /* MedicationPersistenceTransactions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/Persistence/MedicationPersistenceTransactions.swift; sourceTree = SOURCE_ROOT; };
 		52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AsNeededWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		52133A012E9DB5B60055E06D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
 		52133A032E9DB5B60055E06D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = /System/Library/Frameworks/SwiftUI.framework; sourceTree = "<absolute>"; };
@@ -107,8 +126,22 @@
 		52A90B982E60F6C10016124C /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		52A90B992E60F6C10016124C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		52B3784C2E4E77FD008EC5F2 /* AsNeededTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AsNeededTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5EC0F16A0000000000000002 /* AsNeeded.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AsNeeded.xcconfig; sourceTree = "<group>"; };
-		5EC0F16A0000000000000003 /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
+		5EC0F16A0000000000000002 /* AsNeeded.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/AsNeeded.xcconfig; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000101 /* MedicationSafetyProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Models/MedicationSafetyProfile.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000102 /* MedicationDoseGuidanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationDoseGuidanceService.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000103 /* MedicationNotificationClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationNotificationClient.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000104 /* MedicationAvailabilityNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationAvailabilityNotificationPlanner.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000105 /* MedicationReminderRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/MedicationReminderRequest.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000106 /* WidgetDoseRecordingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseRecordingPolicy.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000107 /* WidgetDoseNotificationReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/WidgetDoseNotificationReconciler.swift; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000301 /* WidgetNavigationRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Services/WidgetNavigationRoute.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000302 /* WidgetExperienceProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Services/WidgetExperienceProjection.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000303 /* Font+CustomFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/Font+CustomFonts.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000304 /* FontFamily.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Constants/FontFamily.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000305 /* View+NoTruncate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/View+NoTruncate.swift"; sourceTree = SOURCE_ROOT; };
+		A12000000000000000000502 /* LogDoseWidgetIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeededWidget/LogDoseWidgetIntent.swift; sourceTree = SOURCE_ROOT; };
+		A12900000000000000000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AsNeeded/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		A12900000000000000000004 /* ANUnitConcept+Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Extensions/ANUnitConcept+Localization.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -131,7 +164,6 @@
 			membershipExceptions = (
 				AppIcon.icon,
 				"Extensions/DoubleExtensions/Double+roundToPlaces.swift",
-				Localizable.xcstrings,
 			);
 			target = 524942D92CA2C9E4004DB0EC /* WristAsNeeded Watch App */;
 		};
@@ -149,6 +181,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12000000000000000000503 /* SFSafeSymbols in Frameworks */,
 				52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */,
 				52133A292E9DB8D60055E06D /* Boutique in Frameworks */,
 				52133A2B2E9DBAF00055E06D /* ANModelKit in Frameworks */,
@@ -196,6 +229,8 @@
 		524942CB2CA2C999004DB0EC /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
+				A12900000000000000000001 /* Localizable.xcstrings */,
+				A12900000000000000000004 /* ANUnitConcept+Localization.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -205,7 +240,6 @@
 			children = (
 				523262702E7849E500047C67 /* ANStoreKitConfig.storekit */,
 				5258A0222E784BB2004AE4C5 /* StoreKitTestCertificate.cer */,
-				5EC0F16A0000000000000001 /* Config */,
 				52B3780C2E4E75C5008EC5F2 /* AsNeeded */,
 				524942DB2CA2C9E4004DB0EC /* WristAsNeeded Watch App */,
 				52B3784D2E4E77FD008EC5F2 /* AsNeededTests */,
@@ -241,15 +275,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		5EC0F16A0000000000000001 /* Config */ = {
-			isa = PBXGroup;
-			children = (
-				5EC0F16A0000000000000002 /* AsNeeded.xcconfig */,
-				5EC0F16A0000000000000003 /* Secrets.example.xcconfig */,
-			);
-			path = Config;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -270,6 +295,7 @@
 			);
 			name = AsNeededWidgetExtension;
 			packageProductDependencies = (
+				52929DA528EF270100C996E0 /* SFSafeSymbols */,
 				52133A282E9DB8D60055E06D /* Boutique */,
 				52133A2A2E9DBAF00055E06D /* ANModelKit */,
 			);
@@ -421,6 +447,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000002 /* Localizable.xcstrings in Widget Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +455,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000003 /* Localizable.xcstrings in Watch Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,6 +486,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12900000000000000000005 /* ANUnitConcept+Localization.swift in Sources */,
+				A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */,
+				A12000000000000000000405 /* View+NoTruncate.swift in Sources */,
+				A12000000000000000000404 /* FontFamily.swift in Sources */,
+				A12000000000000000000403 /* Font+CustomFonts.swift in Sources */,
+				A12000000000000000000402 /* WidgetExperienceProjection.swift in Sources */,
+				A12000000000000000000401 /* WidgetNavigationRoute.swift in Sources */,
+				A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */,
+				A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */,
+				A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */,
+				A12000000000000000000204 /* MedicationAvailabilityNotificationPlanner.swift in Sources */,
+				A12000000000000000000203 /* MedicationNotificationClient.swift in Sources */,
+				A12000000000000000000202 /* MedicationDoseGuidanceService.swift in Sources */,
+				A12000000000000000000201 /* MedicationSafetyProfile.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -472,6 +514,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12000000000000000000501 /* LogDoseWidgetIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -510,7 +553,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -539,7 +582,7 @@
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited) ASNEEDED_WIDGET_EXTENSION";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -555,8 +598,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ASNEEDED_WIDGET_EXTENSION";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -602,7 +646,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -641,7 +685,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -801,7 +845,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -812,8 +856,6 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -846,7 +888,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -857,8 +899,6 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -888,7 +928,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -913,7 +953,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 307;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -988,7 +1028,7 @@
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
 			requirement = {
 				kind = exactVersion;
-				version = 5.89.0;
+				version = 5.78.0;
 			};
 		};
 		52929DA428EF270100C996E0 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */ = {
@@ -1011,8 +1051,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/dan-hart/ANModelKit";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = revision;
+				revision = ee9eb9e1603f1832cace9dea4a5fa07247d5de51;
 			};
 		};
 		52BD23CD2E6C87FC00985CD3 /* XCRemoteSwiftPackageReference "SwiftRxNorm" */ = {

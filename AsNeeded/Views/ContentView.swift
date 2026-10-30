@@ -9,109 +9,137 @@ import SFSafeSymbols
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
-    @AppStorage(UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) private var shouldShowWelcomeOnNextLaunch: Bool = false
-    @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
-    @StateObject private var navigationManager = NavigationManager.shared
-    @EnvironmentObject private var quickActionHandler: QuickActionHandler
-    private let hapticsManager = HapticsManager.shared
+	@AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
+	@AppStorage(UserDefaultsKeys.shouldShowWelcomeOnNextLaunch) private var shouldShowWelcomeOnNextLaunch: Bool = false
+	@AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
+	@StateObject private var navigationManager = NavigationManager.shared
+	@EnvironmentObject private var quickActionHandler: QuickActionHandler
+	@Environment(\.scenePhase) private var scenePhase
+	private let hapticsManager = HapticsManager.shared
 
-    private var currentFontFamily: FontFamily {
-        FontFamily(rawValue: selectedFontFamily) ?? .system
-    }
+	private var currentFontFamily: FontFamily {
+		FontFamily(rawValue: selectedFontFamily) ?? .system
+	}
 
-    var body: some View {
-        ZStack {
-            TabView(selection: $navigationManager.selectedTab) {
-                MedicationView()
-                    .tabItem {
-                        Label("Medication", systemSymbol: .pills)
-                    }
-                    .tag(0)
-                HistoryView()
-                    .tabItem {
-                        Label("History", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
-                    }
-                    .tag(1)
-                TrendsView()
-                    .tabItem {
-                        Label("Trends", systemSymbol: .chartXyaxisLine)
-                    }
-                    .tag(2)
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemSymbol: .gearshape)
-                    }
-                    .tag(3)
-            }
-            .tint(.accent)
-            .onChange(of: navigationManager.selectedTab) { _, _ in
-                hapticsManager.selectionChanged()
-            }
-            .environmentObject(navigationManager)
-        }
-        .fullScreenCover(isPresented: .constant(!hasSeenWelcome)) {
-            WelcomeView()
-        }
-        .onAppear {
-            // Check if we should reset and show welcome on this launch
-            if shouldShowWelcomeOnNextLaunch {
-                // Reset the flag first
-                shouldShowWelcomeOnNextLaunch = false
-                // Then reset hasSeenWelcome to show the welcome screen
-                hasSeenWelcome = false
-            }
-        }
-        .onChange(of: currentFontFamily) { _, newFamily in
-            // Update navigation bar appearance when font family changes
-            NavigationBarAppearanceManager.configureAppearance(for: newFamily)
-        }
-        .onQuickAction { action in
-            handleQuickAction(action)
-        }
-        .fontFamily(currentFontFamily)
-    }
+	var body: some View {
+		ZStack {
+			TabView(selection: $navigationManager.selectedTab) {
+				MedicationView()
+					.tabItem {
+						Label("Medication", systemSymbol: .pills)
+					}
+					.tag(0)
+				HistoryView()
+					.tabItem {
+						Label("History", systemSymbol: .clockArrowTriangleheadCounterclockwiseRotate90)
+					}
+					.tag(1)
+				TrendsView()
+					.tabItem {
+						Label("Trends", systemSymbol: .chartXyaxisLine)
+					}
+					.tag(2)
+				SettingsView()
+					.tabItem {
+						Label("Settings", systemSymbol: .gearshape)
+					}
+					.tag(3)
+			}
+			.tint(.accent)
+			.onChange(of: navigationManager.selectedTab) { _, tab in
+				if tab != 2 { navigationManager.widgetTrendsScope = nil }
+				hapticsManager.selectionChanged()
+			}
+			.environmentObject(navigationManager)
+		}
+		.fullScreenCover(isPresented: .constant(!hasSeenWelcome)) {
+			WelcomeView()
+		}
+		.onAppear {
+			// Check if we should reset and show welcome on this launch
+			if shouldShowWelcomeOnNextLaunch {
+				// Reset the flag first
+				shouldShowWelcomeOnNextLaunch = false
+				// Then reset hasSeenWelcome to show the welcome screen
+				hasSeenWelcome = false
+			}
+		}
+		.task {
+			await NotificationManager.shared.bootstrapAvailabilityObservation()
+		}
+		.onChange(of: currentFontFamily) { _, newFamily in
+			// Update navigation bar appearance when font family changes
+			NavigationBarAppearanceManager.configureAppearance(for: newFamily)
+		}
+		.onChange(of: scenePhase) { _, newPhase in
+			guard newPhase == .active else { return }
 
-    // MARK: - Quick Action Handler
+			Task {
+				_ = try? await DataStore.shared.prepareForAccess()
+				await NotificationManager.shared.checkAuthorizationStatus()
+			}
+		}
+		.onQuickAction { action in
+			handleQuickAction(action)
+		}
+		.task(id: "\(String(describing: navigationManager.pendingWidgetRoute))|\(scenePhase)") {
+			guard scenePhase == .active, let route = navigationManager.pendingWidgetRoute else { return }
+			do {
+				let snapshot = try await DataStore.shared.prepareForAccess()
+				guard !Task.isCancelled, navigationManager.pendingWidgetRoute == route else { return }
+				navigationManager.applyWidgetRoute(route, medications: snapshot.medications)
+			} catch {
+				// Preserve the exact pending identity for a later foreground retry.
+			}
+		}
+		.alert("Medication unavailable", isPresented: $navigationManager.showWidgetUnavailable) {
+			Button("OK", role: .cancel) {}
+		} message: { Text("This medication may have been archived or deleted. Choose another medication.") }
+		.fontFamily(currentFontFamily)
+	}
 
-    private func handleQuickAction(_ action: QuickActionHandler.QuickAction) {
-        // Ensure welcome screen is dismissed first
-        guard hasSeenWelcome else {
-            // Defer action until after welcome screen
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                handleQuickAction(action)
-            }
-            return
-        }
+	// MARK: - Quick Action Handler
 
-        switch action {
-        case let .logDose(medicationID):
-            if let medicationID = medicationID {
-                // Navigate to log dose for specific medication
-                navigationManager.navigateToLogDose(medicationID: medicationID.uuidString)
-            } else {
-                // Navigate to medications tab without specific medication
-                navigationManager.selectedTab = 0
-            }
+	private func handleQuickAction(_ action: QuickActionHandler.QuickAction) {
+		// Ensure welcome screen is dismissed first
+		guard hasSeenWelcome else {
+			// Defer action until after welcome screen
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				handleQuickAction(action)
+			}
+			return
+		}
 
-        case .viewHistory:
-            navigationManager.selectedTab = 1
+		switch action {
+		case let .logDose(medicationID):
+			if let medicationID = medicationID {
+				// Navigate to log dose for specific medication
+				navigationManager.navigateToLogDose(medicationID: medicationID.uuidString)
+			} else {
+				// Navigate to medications tab without specific medication
+				navigationManager.selectedTab = 0
+			}
 
-        case .addMedication:
-            // Navigate to medications tab and trigger add medication flow
-            navigationManager.navigateToAddMedication()
+		case .viewHistory:
+			navigationManager.selectedTab = 1
 
-        case .viewTrends:
-            navigationManager.selectedTab = 2
-        }
+		case .addMedication:
+			// Navigate to medications tab and trigger add medication flow
+			navigationManager.navigateToAddMedication()
 
-        // Clear the action after handling
-        quickActionHandler.clearPendingAction()
-    }
+		case .viewTrends:
+			navigationManager.selectedTab = 2
+		case let .widget(route):
+			navigationManager.pendingWidgetRoute = route
+		}
+
+		// Clear the action after handling
+		quickActionHandler.clearPendingAction()
+	}
 }
 
 #if DEBUG
-    #Preview {
-        ContentView()
-    }
+	#Preview {
+		ContentView()
+	}
 #endif

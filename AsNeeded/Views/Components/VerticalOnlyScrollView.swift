@@ -20,23 +20,11 @@ struct VerticalOnlyScrollView<Content: View>: View {
 	@ViewBuilder let content: () -> Content
 
 	var body: some View {
-		ScrollView(.vertical, showsIndicators: showsIndicators) {
-			content()
-				.frame(maxWidth: .infinity)
-				.containerRelativeFrame(.horizontal)
+		GeometryReader { viewport in
+			ScrollView(.vertical, showsIndicators: showsIndicators) {
+				content()
+					.frame(width: max(0, viewport.size.width), alignment: .topLeading)
+			}
 		}
 	}
 }
-
-#if DEBUG
-	#Preview {
-		VerticalOnlyScrollView {
-			VStack(alignment: .leading, spacing: 16) {
-				Text("A very long single line of text that would otherwise make a vertical scroll view pan sideways on a narrow phone.")
-					.font(.title2)
-				Text("It wraps instead.")
-			}
-			.padding()
-		}
-	}
-#endif
