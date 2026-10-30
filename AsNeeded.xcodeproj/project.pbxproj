@@ -553,7 +553,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -600,7 +600,7 @@
 				CODE_SIGN_ENTITLEMENTS = AsNeededWidget/AsNeededWidget.entitlements;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ASNEEDED_WIDGET_EXTENSION";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -646,7 +646,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -685,7 +685,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "WristAsNeeded Watch App/WristAsNeeded Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"WristAsNeeded Watch App/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -845,7 +845,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -856,8 +856,6 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -890,7 +888,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AsNeeded/AsNeeded.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				DEVELOPMENT_ASSET_PATHS = "\"AsNeeded/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
@@ -901,8 +899,6 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "As Needed needs access to save automatic backups of your medication data to a location you choose.";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "As Needed needs access to your medication data to sync doses and track your medication history with Apple Health.";
-				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "As Needed needs to save dose events to Apple Health so your medication tracking is available across your devices.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -932,7 +928,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -957,7 +953,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 323;
+				CURRENT_PROJECT_VERSION = 324;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
