@@ -22,14 +22,14 @@
 - [x] Capture representative Spanish/German/Japanese and Arabic/Hebrew/Persian app screens, including dose entry, large text and Dark Mode, plus an Arabic Watch production-view harness. Inspect RTL flow, alignment, long text, numbers and dates. Verify notification/widget text through native catalog/resource checks; do not claim physical notification delivery or every-language visual certification.
 
 ### 3. App delivery gate
-- [ ] Commit and push verified app localization changes on task/v1.2.0; verify remote head.
-- [ ] Resolve current processed and in-flight build numbers, select the next unused number, archive/export with existing signing assets, upload to ASC and verify VALID/APP_STORE_ELIGIBLE. Do not submit/release the public app.
+- [x] Commit and push verified app localization changes on task/v1.2.0; verify remote head.
+- [x] Resolve current processed and in-flight build numbers, select the next unused number, archive/export with existing signing assets, upload to ASC and verify VALID/APP_STORE_ELIGIBLE. Do not submit/release the public app.
 
 ### 4. Localized marketing assets (after app delivery)
-- [ ] Map app locales to ASC-supported locale identifiers; explicitly document locales with no corresponding ASC listing support.
-- [ ] Localize all non-brand image text, keep “As Needed” in English, and use fonts that actually cover each script. Preserve exact yellow and source art.
-- [ ] Re-seed dedicated synthetic capture simulators and capture each actual translated screen in every device family/locale, including real RTL layouts rather than mirroring English pixels.
-- [ ] Render/validate framed assets, inspect each contact sheet, and prepare a reviewable locale/device manifest. Follow the existing approval boundary before replacing newly translated store assets.
+- [x] Map app locales to ASC-supported locale identifiers; explicitly document locales with no corresponding ASC listing support.
+- [x] Localize all non-brand image text, keep “As Needed” in English, and use fonts that actually cover each script. Preserve exact yellow and source art.
+- [x] Re-seed dedicated synthetic capture simulators and capture each actual translated screen in every device family/locale, including real RTL layouts rather than mirroring English pixels.
+- [x] Render/validate framed assets, inspect each contact sheet, and prepare a reviewable locale/device manifest. Follow the existing approval boundary before replacing newly translated store assets.
 
 No storage schema, keys, medication data, product behavior, or new app feature is part of this work. Do not claim all-language quality from catalog flags or a successful build alone.
 

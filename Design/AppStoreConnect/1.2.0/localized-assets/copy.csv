@@ -1,0 +1,1303 @@
+locale,field,english,localized
+ar,01-medication.title,Your meds. Your way.,أدويتك. بطريقتك.
+ar,01-medication.subtitle,"Colors, icons and names that feel familiar.",ألوان وأيقونات وأسماء مألوفة لك.
+ar,02-history.title,"The details, all together.",كل التفاصيل في مكان واحد.
+ar,02-history.subtitle,"Doses, notes and how you felt.",الجرعات والملاحظات وكيف شعرت.
+ar,03-trends.title,See your bigger picture.,شاهد الصورة الأشمل.
+ar,03-trends.subtitle,A little history. A lot more perspective.,قليل من السجل. رؤية أشمل بكثير.
+ar,04-log-dose.title,Log it. Carry on.,سجّلها. وواصل يومك.
+ar,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,تسجيل سريع للأوقات. كميات دقيقة. تعقيد أقل.
+ar,watch.01.title,Keep it close.,دائمًا في متناولك.
+ar,watch.02.title,Know what’s left.,اعرف الكمية المتبقية.
+ar,watch.03.title,Log from your wrist.,سجّل من معصمك.
+ar,watch.04.title,Keep stock in sight.,أبقِ مخزونك أمام عينيك.
+ar,search.tracking,As-needed medication tracking.,تتبّع الأدوية المستخدمة عند الحاجة.
+ar,search.carry_on,Carry on.,واصل يومك.
+ar,search.keep_track,Keep track.,تابع وسجّل.
+ar,fixture.nicknames.0,Headache Help,راحة من الصداع
+ar,fixture.nicknames.1,Breathe Easy,تنفّس براحة
+ar,fixture.nicknames.2,Wind Down,استرخاء
+ar,fixture.clinical_names.0,Pain Relief,تخفيف الألم
+ar,fixture.clinical_names.1,Rescue Inhaler,بخاخ إسعافي
+ar,fixture.clinical_names.2,Sleep Support,دعم النوم
+ar,fixture.reflection_reasons.0,Tension headache,صداع التوتر
+ar,fixture.reflection_reasons.1,Breathing discomfort,انزعاج أثناء التنفّس
+ar,fixture.reflection_reasons.2,Trouble settling down,صعوبة في الاسترخاء
+ar,fixture.reflection_notes.0,Back to my afternoon.,عدت لمتابعة يومي بعد الظهر.
+ar,fixture.reflection_notes.1,A comfortable walk home.,مشيت إلى المنزل براحة.
+ar,fixture.reflection_notes.2,A quieter evening.,أمسية أكثر هدوءًا.
+ar,fixture.simple_notes.0,Busy afternoon at my desk.,فترة مزدحمة بعد الظهر على مكتبي.
+ar,fixture.simple_notes.1,After an outdoor walk.,بعد نزهة في الهواء الطلق.
+ar,fixture.simple_notes.2,Settled in with a book.,جلست براحة مع كتاب.
+ar,fixture.latest_note.0,Feeling more like myself.,أشعر أنني أقرب إلى طبيعتي.
+bg,01-medication.title,Your meds. Your way.,Твоите лекарства. По твоя начин.
+bg,01-medication.subtitle,"Colors, icons and names that feel familiar.","Цветове, икони и имена, които са ти познати."
+bg,02-history.title,"The details, all together.",Всички подробности на едно място.
+bg,02-history.subtitle,"Doses, notes and how you felt.","Дози, бележки и как се чувстваш."
+bg,03-trends.title,See your bigger picture.,Виж цялостната картина.
+bg,03-trends.subtitle,A little history. A lot more perspective.,Малко история. Много повече яснота.
+bg,04-log-dose.title,Log it. Carry on.,Запиши. Продължи напред.
+bg,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Бързо въвеждане на час. Точни количества. По-малко усилия.
+bg,watch.01.title,Keep it close.,Винаги подръка.
+bg,watch.02.title,Know what’s left.,Знай колко остава.
+bg,watch.03.title,Log from your wrist.,Записвай от китката си.
+bg,watch.04.title,Keep stock in sight.,Следи наличностите.
+bg,search.tracking,As-needed medication tracking.,"Проследяване на лекарства, приемани при нужда."
+bg,search.carry_on,Carry on.,Продължи напред.
+bg,search.keep_track,Keep track.,Следи приема.
+bg,fixture.nicknames.0,Headache Help,Помощ при главоболие
+bg,fixture.nicknames.1,Breathe Easy,Леко дишане
+bg,fixture.nicknames.2,Wind Down,Отпускане
+bg,fixture.clinical_names.0,Pain Relief,Облекчаване на болката
+bg,fixture.clinical_names.1,Rescue Inhaler,Инхалатор за бързо облекчение
+bg,fixture.clinical_names.2,Sleep Support,Подпомагане на съня
+bg,fixture.reflection_reasons.0,Tension headache,Тензионно главоболие
+bg,fixture.reflection_reasons.1,Breathing discomfort,Дискомфорт при дишане
+bg,fixture.reflection_reasons.2,Trouble settling down,Трудно ми е да се отпусна
+bg,fixture.reflection_notes.0,Back to my afternoon.,Връщам се към следобедните си занимания.
+bg,fixture.reflection_notes.1,A comfortable walk home.,Приятна разходка до вкъщи.
+bg,fixture.reflection_notes.2,A quieter evening.,По-спокойна вечер.
+bg,fixture.simple_notes.0,Busy afternoon at my desk.,Натоварен следобед на бюрото ми.
+bg,fixture.simple_notes.1,After an outdoor walk.,След разходка навън.
+bg,fixture.simple_notes.2,Settled in with a book.,Време за почивка с книга.
+bg,fixture.latest_note.0,Feeling more like myself.,Чувствам се повече като себе си.
+ca,01-medication.title,Your meds. Your way.,Els teus medicaments. A la teva manera.
+ca,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colors, icones i noms que et resulten familiars."
+ca,02-history.title,"The details, all together.","Tots els detalls, en un sol lloc."
+ca,02-history.subtitle,"Doses, notes and how you felt.","Dosis, notes i com et senties."
+ca,03-trends.title,See your bigger picture.,Descobreix la teva visió de conjunt.
+ca,03-trends.subtitle,A little history. A lot more perspective.,Una mica d’historial. Molta més perspectiva.
+ca,04-log-dose.title,Log it. Carry on.,Registra-ho. Continua amb el teu dia.
+ca,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Registre ràpid de l’hora. Quantitats precises. Menys complicacions.
+ca,watch.01.title,Keep it close.,Tingues-ho a mà.
+ca,watch.02.title,Know what’s left.,Sàpigues quant en queda.
+ca,watch.03.title,Log from your wrist.,Registra les dosis des del canell.
+ca,watch.04.title,Keep stock in sight.,Tingues les existències a la vista.
+ca,search.tracking,As-needed medication tracking.,Seguiment de la medicació a demanda.
+ca,search.carry_on,Carry on.,Continua.
+ca,search.keep_track,Keep track.,Porta’n el seguiment.
+ca,fixture.nicknames.0,Headache Help,Ajuda per al mal de cap
+ca,fixture.nicknames.1,Breathe Easy,Respira bé
+ca,fixture.nicknames.2,Wind Down,Desconnecta
+ca,fixture.clinical_names.0,Pain Relief,Alleujament del dolor
+ca,fixture.clinical_names.1,Rescue Inhaler,Inhalador de rescat
+ca,fixture.clinical_names.2,Sleep Support,Ajuda per dormir
+ca,fixture.reflection_reasons.0,Tension headache,Mal de cap tensional
+ca,fixture.reflection_reasons.1,Breathing discomfort,Molèsties en respirar
+ca,fixture.reflection_reasons.2,Trouble settling down,Dificultat per relaxar-me
+ca,fixture.reflection_notes.0,Back to my afternoon.,Torno a les activitats de la tarda.
+ca,fixture.reflection_notes.1,A comfortable walk home.,Una passejada agradable cap a casa.
+ca,fixture.reflection_notes.2,A quieter evening.,Un vespre més tranquil.
+ca,fixture.simple_notes.0,Busy afternoon at my desk.,Tarda atrafegada a l’escriptori.
+ca,fixture.simple_notes.1,After an outdoor walk.,Després d’una passejada a l’aire lliure.
+ca,fixture.simple_notes.2,Settled in with a book.,M’he acomodat amb un llibre.
+ca,fixture.latest_note.0,Feeling more like myself.,Em sento més com sempre.
+cs,01-medication.title,Your meds. Your way.,Vaše léky. Po vašem.
+cs,01-medication.subtitle,"Colors, icons and names that feel familiar.","Barvy, ikony a názvy, které jsou vám blízké."
+cs,02-history.title,"The details, all together.",Všechny podrobnosti pohromadě.
+cs,02-history.subtitle,"Doses, notes and how you felt.","Dávky, poznámky i vaše pocity."
+cs,03-trends.title,See your bigger picture.,Získejte širší přehled.
+cs,03-trends.subtitle,A little history. A lot more perspective.,Trocha historie. Mnohem víc souvislostí.
+cs,04-log-dose.title,Log it. Carry on.,Zapište si dávku. A pokračujte dál.
+cs,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Rychlé zadání času. Přesná množství. Méně starostí.
+cs,watch.01.title,Keep it close.,Vždy po ruce.
+cs,watch.02.title,Know what’s left.,"Mějte přehled, kolik zbývá."
+cs,watch.03.title,Log from your wrist.,Zapisujte přímo z hodinek.
+cs,watch.04.title,Keep stock in sight.,Mějte zásoby na očích.
+cs,search.tracking,As-needed medication tracking.,Sledování léků užívaných podle potřeby.
+cs,search.carry_on,Carry on.,Pokračujte dál.
+cs,search.keep_track,Keep track.,Mějte přehled.
+cs,fixture.nicknames.0,Headache Help,Pomoc při bolesti hlavy
+cs,fixture.nicknames.1,Breathe Easy,Lehké dýchání
+cs,fixture.nicknames.2,Wind Down,Zklidnění
+cs,fixture.clinical_names.0,Pain Relief,Úleva od bolesti
+cs,fixture.clinical_names.1,Rescue Inhaler,Úlevový inhalátor
+cs,fixture.clinical_names.2,Sleep Support,Podpora spánku
+cs,fixture.reflection_reasons.0,Tension headache,Tenzní bolest hlavy
+cs,fixture.reflection_reasons.1,Breathing discomfort,Nepříjemné pocity při dýchání
+cs,fixture.reflection_reasons.2,Trouble settling down,Potíže se zklidněním
+cs,fixture.reflection_notes.0,Back to my afternoon.,Zpátky k odpoledním plánům.
+cs,fixture.reflection_notes.1,A comfortable walk home.,Příjemná procházka domů.
+cs,fixture.reflection_notes.2,A quieter evening.,Klidnější večer.
+cs,fixture.simple_notes.0,Busy afternoon at my desk.,Rušné odpoledne u pracovního stolu.
+cs,fixture.simple_notes.1,After an outdoor walk.,Po procházce venku.
+cs,fixture.simple_notes.2,Settled in with a book.,Odpočívám s knihou.
+cs,fixture.latest_note.0,Feeling more like myself.,Zase se cítím víc ve své kůži.
+da,01-medication.title,Your meds. Your way.,Din medicin. På din måde.
+da,01-medication.subtitle,"Colors, icons and names that feel familiar.","Farver, ikoner og navne, der føles velkendte."
+da,02-history.title,"The details, all together.",Alle detaljerne samlet.
+da,02-history.subtitle,"Doses, notes and how you felt.","Doser, noter og hvordan du havde det."
+da,03-trends.title,See your bigger picture.,Se det store billede.
+da,03-trends.subtitle,A little history. A lot more perspective.,Lidt historik. Meget mere perspektiv.
+da,04-log-dose.title,Log it. Carry on.,Registrér det. Kom videre.
+da,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Hurtige tidsvalg. Præcise mængder. Mindre besvær.
+da,watch.01.title,Keep it close.,Hav det lige ved hånden.
+da,watch.02.title,Know what’s left.,"Se, hvor meget der er tilbage."
+da,watch.03.title,Log from your wrist.,Registrér fra dit håndled.
+da,watch.04.title,Keep stock in sight.,Hold øje med beholdningen.
+da,search.tracking,As-needed medication tracking.,Hold styr på medicin efter behov.
+da,search.carry_on,Carry on.,Kom videre.
+da,search.keep_track,Keep track.,Hold styr på det.
+da,fixture.nicknames.0,Headache Help,Hjælp mod hovedpine
+da,fixture.nicknames.1,Breathe Easy,Lettere vejrtrækning
+da,fixture.nicknames.2,Wind Down,Find ro
+da,fixture.clinical_names.0,Pain Relief,Smertelindring
+da,fixture.clinical_names.1,Rescue Inhaler,Akutinhalator
+da,fixture.clinical_names.2,Sleep Support,Søvnstøtte
+da,fixture.reflection_reasons.0,Tension headache,Spændingshovedpine
+da,fixture.reflection_reasons.1,Breathing discomfort,Ubehag ved vejrtrækning
+da,fixture.reflection_reasons.2,Trouble settling down,Svært ved at falde til ro
+da,fixture.reflection_notes.0,Back to my afternoon.,Tilbage til min eftermiddag.
+da,fixture.reflection_notes.1,A comfortable walk home.,En behagelig gåtur hjem.
+da,fixture.reflection_notes.2,A quieter evening.,En roligere aften.
+da,fixture.simple_notes.0,Busy afternoon at my desk.,Travl eftermiddag ved mit skrivebord.
+da,fixture.simple_notes.1,After an outdoor walk.,Efter en gåtur i det fri.
+da,fixture.simple_notes.2,Settled in with a book.,Fandt mig til rette med en bog.
+da,fixture.latest_note.0,Feeling more like myself.,Føler mig mere som mig selv.
+de,01-medication.title,Your meds. Your way.,Deine Medikamente. Auf deine Art.
+de,01-medication.subtitle,"Colors, icons and names that feel familiar.","Farben, Symbole und Namen, die dir vertraut sind."
+de,02-history.title,"The details, all together.",Alle Details an einem Ort.
+de,02-history.subtitle,"Doses, notes and how you felt.","Dosen, Notizen und wie du dich gefühlt hast."
+de,03-trends.title,See your bigger picture.,Sieh das Gesamtbild.
+de,03-trends.subtitle,A little history. A lot more perspective.,Ein kleiner Rückblick. Viel mehr Überblick.
+de,04-log-dose.title,Log it. Carry on.,Eintragen. Weitermachen.
+de,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Zeiten schnell erfasst. Mengen präzise. Weniger Aufwand.
+de,watch.01.title,Keep it close.,Immer bei dir.
+de,watch.02.title,Know what’s left.,"Wissen, was noch übrig ist."
+de,watch.03.title,Log from your wrist.,Direkt am Handgelenk eintragen.
+de,watch.04.title,Keep stock in sight.,Den Vorrat im Blick behalten.
+de,search.tracking,As-needed medication tracking.,Bedarfsmedikation im Blick.
+de,search.carry_on,Carry on.,Mach weiter.
+de,search.keep_track,Keep track.,Behalte den Überblick.
+de,fixture.nicknames.0,Headache Help,Kopfschmerzhilfe
+de,fixture.nicknames.1,Breathe Easy,Leicht durchatmen
+de,fixture.nicknames.2,Wind Down,Zur Ruhe kommen
+de,fixture.clinical_names.0,Pain Relief,Schmerzlinderung
+de,fixture.clinical_names.1,Rescue Inhaler,Notfallinhalator
+de,fixture.clinical_names.2,Sleep Support,Schlafunterstützung
+de,fixture.reflection_reasons.0,Tension headache,Spannungskopfschmerzen
+de,fixture.reflection_reasons.1,Breathing discomfort,Atembeschwerden
+de,fixture.reflection_reasons.2,Trouble settling down,"Schwierigkeiten, zur Ruhe zu kommen"
+de,fixture.reflection_notes.0,Back to my afternoon.,Mein Nachmittag geht weiter.
+de,fixture.reflection_notes.1,A comfortable walk home.,Ein angenehmer Heimweg zu Fuß.
+de,fixture.reflection_notes.2,A quieter evening.,Ein ruhigerer Abend.
+de,fixture.simple_notes.0,Busy afternoon at my desk.,Viel zu tun am Schreibtisch heute Nachmittag.
+de,fixture.simple_notes.1,After an outdoor walk.,Nach einem Spaziergang im Freien.
+de,fixture.simple_notes.2,Settled in with a book.,Mit einem Buch gemütlich gemacht.
+de,fixture.latest_note.0,Feeling more like myself.,Ich fühle mich wieder mehr wie ich selbst.
+el,01-medication.title,Your meds. Your way.,Τα φάρμακά σου. Όπως τα θέλεις.
+el,01-medication.subtitle,"Colors, icons and names that feel familiar.","Χρώματα, εικονίδια και ονόματα που σου είναι οικεία."
+el,02-history.title,"The details, all together.","Όλες οι λεπτομέρειες, μαζί."
+el,02-history.subtitle,"Doses, notes and how you felt.","Δόσεις, σημειώσεις και πώς ένιωθες."
+el,03-trends.title,See your bigger picture.,Δες τη συνολική σου εικόνα.
+el,03-trends.subtitle,A little history. A lot more perspective.,Λίγο ιστορικό. Πολύ πιο σφαιρική εικόνα.
+el,04-log-dose.title,Log it. Carry on.,Καταχώρισέ το. Συνέχισε.
+el,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Γρήγορη επιλογή ώρας. Ακριβείς ποσότητες. Λιγότερη ταλαιπωρία.
+el,watch.01.title,Keep it close.,Κράτα το κοντά σου.
+el,watch.02.title,Know what’s left.,Δες τι απομένει.
+el,watch.03.title,Log from your wrist.,Κάνε καταχώριση από τον καρπό σου.
+el,watch.04.title,Keep stock in sight.,Το απόθεμά σου με μια ματιά.
+el,search.tracking,As-needed medication tracking.,Παρακολούθηση φαρμάκων που λαμβάνονται όταν χρειάζεται.
+el,search.carry_on,Carry on.,Συνέχισε.
+el,search.keep_track,Keep track.,Κράτα αρχείο.
+el,fixture.nicknames.0,Headache Help,Βοήθεια για τον πονοκέφαλο
+el,fixture.nicknames.1,Breathe Easy,Εύκολη αναπνοή
+el,fixture.nicknames.2,Wind Down,Χαλάρωση
+el,fixture.clinical_names.0,Pain Relief,Ανακούφιση από τον πόνο
+el,fixture.clinical_names.1,Rescue Inhaler,Εισπνεόμενο άμεσης ανακούφισης
+el,fixture.clinical_names.2,Sleep Support,Υποστήριξη ύπνου
+el,fixture.reflection_reasons.0,Tension headache,Πονοκέφαλος τάσης
+el,fixture.reflection_reasons.1,Breathing discomfort,Δυσφορία στην αναπνοή
+el,fixture.reflection_reasons.2,Trouble settling down,Δυσκολία να χαλαρώσω
+el,fixture.reflection_notes.0,Back to my afternoon.,Συνέχισα τις απογευματινές μου ασχολίες.
+el,fixture.reflection_notes.1,A comfortable walk home.,Άνετη επιστροφή στο σπίτι με τα πόδια.
+el,fixture.reflection_notes.2,A quieter evening.,Ένα πιο ήσυχο βράδυ.
+el,fixture.simple_notes.0,Busy afternoon at my desk.,Γεμάτο απόγευμα στο γραφείο μου.
+el,fixture.simple_notes.1,After an outdoor walk.,Μετά από έναν περίπατο έξω.
+el,fixture.simple_notes.2,Settled in with a book.,Χαλάρωσα με ένα βιβλίο.
+el,fixture.latest_note.0,Feeling more like myself.,Νιώθω πιο πολύ ο εαυτός μου.
+en,01-medication.title,Your meds. Your way.,Your meds. Your way.
+en,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colors, icons and names that feel familiar."
+en,02-history.title,"The details, all together.","The details, all together."
+en,02-history.subtitle,"Doses, notes and how you felt.","Doses, notes and how you felt."
+en,03-trends.title,See your bigger picture.,See your bigger picture.
+en,03-trends.subtitle,A little history. A lot more perspective.,A little history. A lot more perspective.
+en,04-log-dose.title,Log it. Carry on.,Log it. Carry on.
+en,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Quick times. Precise amounts. Less fuss.
+en,watch.01.title,Keep it close.,Keep it close.
+en,watch.02.title,Know what’s left.,Know what’s left.
+en,watch.03.title,Log from your wrist.,Log from your wrist.
+en,watch.04.title,Keep stock in sight.,Keep stock in sight.
+en,search.tracking,As-needed medication tracking.,As-needed medication tracking.
+en,search.carry_on,Carry on.,Carry on.
+en,search.keep_track,Keep track.,Keep track.
+en,fixture.nicknames.0,Headache Help,Headache Help
+en,fixture.nicknames.1,Breathe Easy,Breathe Easy
+en,fixture.nicknames.2,Wind Down,Wind Down
+en,fixture.clinical_names.0,Pain Relief,Pain Relief
+en,fixture.clinical_names.1,Rescue Inhaler,Rescue Inhaler
+en,fixture.clinical_names.2,Sleep Support,Sleep Support
+en,fixture.reflection_reasons.0,Tension headache,Tension headache
+en,fixture.reflection_reasons.1,Breathing discomfort,Breathing discomfort
+en,fixture.reflection_reasons.2,Trouble settling down,Trouble settling down
+en,fixture.reflection_notes.0,Back to my afternoon.,Back to my afternoon.
+en,fixture.reflection_notes.1,A comfortable walk home.,A comfortable walk home.
+en,fixture.reflection_notes.2,A quieter evening.,A quieter evening.
+en,fixture.simple_notes.0,Busy afternoon at my desk.,Busy afternoon at my desk.
+en,fixture.simple_notes.1,After an outdoor walk.,After an outdoor walk.
+en,fixture.simple_notes.2,Settled in with a book.,Settled in with a book.
+en,fixture.latest_note.0,Feeling more like myself.,Feeling more like myself.
+en-AU,01-medication.title,Your meds. Your way.,Your meds. Your way.
+en-AU,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colours, icons and names that feel familiar."
+en-AU,02-history.title,"The details, all together.","The details, all together."
+en-AU,02-history.subtitle,"Doses, notes and how you felt.","Doses, notes and how you felt."
+en-AU,03-trends.title,See your bigger picture.,See your bigger picture.
+en-AU,03-trends.subtitle,A little history. A lot more perspective.,A little history. A lot more perspective.
+en-AU,04-log-dose.title,Log it. Carry on.,Log it. Carry on.
+en-AU,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Quick times. Precise amounts. Less fuss.
+en-AU,watch.01.title,Keep it close.,Keep it close.
+en-AU,watch.02.title,Know what’s left.,Know what’s left.
+en-AU,watch.03.title,Log from your wrist.,Log from your wrist.
+en-AU,watch.04.title,Keep stock in sight.,Keep stock in sight.
+en-AU,search.tracking,As-needed medication tracking.,As-needed medication tracking.
+en-AU,search.carry_on,Carry on.,Carry on.
+en-AU,search.keep_track,Keep track.,Keep track.
+en-AU,fixture.nicknames.0,Headache Help,Headache Help
+en-AU,fixture.nicknames.1,Breathe Easy,Breathe Easy
+en-AU,fixture.nicknames.2,Wind Down,Wind Down
+en-AU,fixture.clinical_names.0,Pain Relief,Pain Relief
+en-AU,fixture.clinical_names.1,Rescue Inhaler,Rescue Inhaler
+en-AU,fixture.clinical_names.2,Sleep Support,Sleep Support
+en-AU,fixture.reflection_reasons.0,Tension headache,Tension headache
+en-AU,fixture.reflection_reasons.1,Breathing discomfort,Breathing discomfort
+en-AU,fixture.reflection_reasons.2,Trouble settling down,Trouble settling down
+en-AU,fixture.reflection_notes.0,Back to my afternoon.,Back to my afternoon.
+en-AU,fixture.reflection_notes.1,A comfortable walk home.,A comfortable walk home.
+en-AU,fixture.reflection_notes.2,A quieter evening.,A quieter evening.
+en-AU,fixture.simple_notes.0,Busy afternoon at my desk.,Busy afternoon at my desk.
+en-AU,fixture.simple_notes.1,After an outdoor walk.,After an outdoor walk.
+en-AU,fixture.simple_notes.2,Settled in with a book.,Settled in with a book.
+en-AU,fixture.latest_note.0,Feeling more like myself.,Feeling more like myself.
+en-GB,01-medication.title,Your meds. Your way.,Your meds. Your way.
+en-GB,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colours, icons and names that feel familiar."
+en-GB,02-history.title,"The details, all together.","The details, all together."
+en-GB,02-history.subtitle,"Doses, notes and how you felt.","Doses, notes and how you felt."
+en-GB,03-trends.title,See your bigger picture.,See your bigger picture.
+en-GB,03-trends.subtitle,A little history. A lot more perspective.,A little history. A lot more perspective.
+en-GB,04-log-dose.title,Log it. Carry on.,Log it. Carry on.
+en-GB,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Quick times. Precise amounts. Less fuss.
+en-GB,watch.01.title,Keep it close.,Keep it close.
+en-GB,watch.02.title,Know what’s left.,Know what’s left.
+en-GB,watch.03.title,Log from your wrist.,Log from your wrist.
+en-GB,watch.04.title,Keep stock in sight.,Keep stock in sight.
+en-GB,search.tracking,As-needed medication tracking.,As-needed medication tracking.
+en-GB,search.carry_on,Carry on.,Carry on.
+en-GB,search.keep_track,Keep track.,Keep track.
+en-GB,fixture.nicknames.0,Headache Help,Headache Help
+en-GB,fixture.nicknames.1,Breathe Easy,Breathe Easy
+en-GB,fixture.nicknames.2,Wind Down,Wind Down
+en-GB,fixture.clinical_names.0,Pain Relief,Pain Relief
+en-GB,fixture.clinical_names.1,Rescue Inhaler,Rescue Inhaler
+en-GB,fixture.clinical_names.2,Sleep Support,Sleep Support
+en-GB,fixture.reflection_reasons.0,Tension headache,Tension headache
+en-GB,fixture.reflection_reasons.1,Breathing discomfort,Breathing discomfort
+en-GB,fixture.reflection_reasons.2,Trouble settling down,Trouble settling down
+en-GB,fixture.reflection_notes.0,Back to my afternoon.,Back to my afternoon.
+en-GB,fixture.reflection_notes.1,A comfortable walk home.,A comfortable walk home.
+en-GB,fixture.reflection_notes.2,A quieter evening.,A quieter evening.
+en-GB,fixture.simple_notes.0,Busy afternoon at my desk.,Busy afternoon at my desk.
+en-GB,fixture.simple_notes.1,After an outdoor walk.,After an outdoor walk.
+en-GB,fixture.simple_notes.2,Settled in with a book.,Settled in with a book.
+en-GB,fixture.latest_note.0,Feeling more like myself.,Feeling more like myself.
+es,01-medication.title,Your meds. Your way.,Tus medicamentos. A tu manera.
+es,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colores, iconos y nombres que te resultan familiares."
+es,02-history.title,"The details, all together.","Todos los detalles, en un solo lugar."
+es,02-history.subtitle,"Doses, notes and how you felt.","Dosis, notas y cómo te sentiste."
+es,03-trends.title,See your bigger picture.,Una visión más completa.
+es,03-trends.subtitle,A little history. A lot more perspective.,Un poco de historial. Mucha más perspectiva.
+es,04-log-dose.title,Log it. Carry on.,Regístralo. Sigue con tu día.
+es,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Registra la hora al instante. Cantidades precisas. Menos complicaciones.
+es,watch.01.title,Keep it close.,Tenlo a mano.
+es,watch.02.title,Know what’s left.,Ten claro cuánto te queda.
+es,watch.03.title,Log from your wrist.,Registra desde tu muñeca.
+es,watch.04.title,Keep stock in sight.,"Tus existencias, a la vista."
+es,search.tracking,As-needed medication tracking.,Registro de medicamentos según necesidad.
+es,search.carry_on,Carry on.,Sigue con tu día.
+es,search.keep_track,Keep track.,Lleva el registro.
+es,fixture.nicknames.0,Headache Help,Para el dolor de cabeza
+es,fixture.nicknames.1,Breathe Easy,Respira con calma
+es,fixture.nicknames.2,Wind Down,A relajarse
+es,fixture.clinical_names.0,Pain Relief,Alivio del dolor
+es,fixture.clinical_names.1,Rescue Inhaler,Inhalador de rescate
+es,fixture.clinical_names.2,Sleep Support,Ayuda para dormir
+es,fixture.reflection_reasons.0,Tension headache,Dolor de cabeza tensional
+es,fixture.reflection_reasons.1,Breathing discomfort,Molestias al respirar
+es,fixture.reflection_reasons.2,Trouble settling down,Dificultad para relajarse
+es,fixture.reflection_notes.0,Back to my afternoon.,Retomé mi tarde.
+es,fixture.reflection_notes.1,A comfortable walk home.,Un paseo agradable de vuelta a casa.
+es,fixture.reflection_notes.2,A quieter evening.,Una velada más tranquila.
+es,fixture.simple_notes.0,Busy afternoon at my desk.,Una tarde ajetreada en mi escritorio.
+es,fixture.simple_notes.1,After an outdoor walk.,Después de un paseo al aire libre.
+es,fixture.simple_notes.2,Settled in with a book.,Me acomodé con un libro.
+es,fixture.latest_note.0,Feeling more like myself.,Me siento más como siempre.
+es-419,01-medication.title,Your meds. Your way.,Tus medicamentos. A tu manera.
+es-419,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colores, íconos y nombres que te resultan familiares."
+es-419,02-history.title,"The details, all together.","Todos los detalles, en un solo lugar."
+es-419,02-history.subtitle,"Doses, notes and how you felt.","Dosis, notas y cómo te sentiste."
+es-419,03-trends.title,See your bigger picture.,Ve el panorama completo.
+es-419,03-trends.subtitle,A little history. A lot more perspective.,Un poco de historial. Mucha más perspectiva.
+es-419,04-log-dose.title,Log it. Carry on.,Regístralo. Sigue con tu día.
+es-419,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Registro rápido de horas. Cantidades precisas. Menos complicaciones.
+es-419,watch.01.title,Keep it close.,Tenlo a la mano.
+es-419,watch.02.title,Know what’s left.,Consulta cuánto te queda.
+es-419,watch.03.title,Log from your wrist.,Registra desde tu muñeca.
+es-419,watch.04.title,Keep stock in sight.,Mantén tus existencias a la vista.
+es-419,search.tracking,As-needed medication tracking.,Registro de medicamentos que tomas según sea necesario.
+es-419,search.carry_on,Carry on.,Sigue con tu día.
+es-419,search.keep_track,Keep track.,Lleva el registro.
+es-419,fixture.nicknames.0,Headache Help,Ayuda para el dolor de cabeza
+es-419,fixture.nicknames.1,Breathe Easy,Respira con tranquilidad
+es-419,fixture.nicknames.2,Wind Down,A relajarse
+es-419,fixture.clinical_names.0,Pain Relief,Alivio del dolor
+es-419,fixture.clinical_names.1,Rescue Inhaler,Inhalador de rescate
+es-419,fixture.clinical_names.2,Sleep Support,Ayuda para dormir
+es-419,fixture.reflection_reasons.0,Tension headache,Dolor de cabeza tensional
+es-419,fixture.reflection_reasons.1,Breathing discomfort,Molestias al respirar
+es-419,fixture.reflection_reasons.2,Trouble settling down,Dificultad para relajarme
+es-419,fixture.reflection_notes.0,Back to my afternoon.,Retomé mi tarde.
+es-419,fixture.reflection_notes.1,A comfortable walk home.,Una caminata agradable a casa.
+es-419,fixture.reflection_notes.2,A quieter evening.,Una noche más tranquila.
+es-419,fixture.simple_notes.0,Busy afternoon at my desk.,Una tarde ocupada en mi escritorio.
+es-419,fixture.simple_notes.1,After an outdoor walk.,Después de una caminata al aire libre.
+es-419,fixture.simple_notes.2,Settled in with a book.,Me acomodé con un libro.
+es-419,fixture.latest_note.0,Feeling more like myself.,Me siento más como antes.
+fa,01-medication.title,Your meds. Your way.,داروهای شما. به سبک شما.
+fa,01-medication.subtitle,"Colors, icons and names that feel familiar.",رنگ‌ها، نمادها و نام‌هایی که برایتان آشنا هستند.
+fa,02-history.title,"The details, all together.",همهٔ جزئیات، یک‌جا.
+fa,02-history.subtitle,"Doses, notes and how you felt.",دوزها، یادداشت‌ها و اینکه چه احساسی داشتید.
+fa,03-trends.title,See your bigger picture.,تصویر کامل‌تری ببینید.
+fa,03-trends.subtitle,A little history. A lot more perspective.,کمی سابقه. دیدی بسیار گسترده‌تر.
+fa,04-log-dose.title,Log it. Carry on.,ثبت کنید. به کارتان برسید.
+fa,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,ثبت سریع زمان. مقدارهای دقیق. دردسر کمتر.
+fa,watch.01.title,Keep it close.,همیشه دم دست.
+fa,watch.02.title,Know what’s left.,بدانید چقدر باقی مانده.
+fa,watch.03.title,Log from your wrist.,از روی مچ دستتان ثبت کنید.
+fa,watch.04.title,Keep stock in sight.,موجودی را زیر نظر داشته باشید.
+fa,search.tracking,As-needed medication tracking.,پیگیری داروهای مصرفی در صورت نیاز.
+fa,search.carry_on,Carry on.,به کارتان برسید.
+fa,search.keep_track,Keep track.,پیگیری کنید.
+fa,fixture.nicknames.0,Headache Help,تسکین سردرد
+fa,fixture.nicknames.1,Breathe Easy,نفس راحت
+fa,fixture.nicknames.2,Wind Down,آرامش
+fa,fixture.clinical_names.0,Pain Relief,تسکین درد
+fa,fixture.clinical_names.1,Rescue Inhaler,اسپری تنفسی اضطراری
+fa,fixture.clinical_names.2,Sleep Support,کمک به خواب
+fa,fixture.reflection_reasons.0,Tension headache,سردرد تنشی
+fa,fixture.reflection_reasons.1,Breathing discomfort,ناراحتی هنگام تنفس
+fa,fixture.reflection_reasons.2,Trouble settling down,دشواری در آرام شدن
+fa,fixture.reflection_notes.0,Back to my afternoon.,برگشتم به کارهای بعدازظهرم.
+fa,fixture.reflection_notes.1,A comfortable walk home.,پیاده‌روی راحت تا خانه.
+fa,fixture.reflection_notes.2,A quieter evening.,عصری آرام‌تر.
+fa,fixture.simple_notes.0,Busy afternoon at my desk.,بعدازظهری شلوغ پشت میزم.
+fa,fixture.simple_notes.1,After an outdoor walk.,بعد از پیاده‌روی در فضای باز.
+fa,fixture.simple_notes.2,Settled in with a book.,با یک کتاب نشستم و آرام گرفتم.
+fa,fixture.latest_note.0,Feeling more like myself.,بیشتر احساس می‌کنم خودم هستم.
+fi,01-medication.title,Your meds. Your way.,Lääkkeesi. Omalla tavallasi.
+fi,01-medication.subtitle,"Colors, icons and names that feel familiar.","Värit, kuvakkeet ja nimet, jotka tuntuvat tutuilta."
+fi,02-history.title,"The details, all together.",Kaikki tiedot yhdessä.
+fi,02-history.subtitle,"Doses, notes and how you felt.","Annokset, muistiinpanot ja vointisi."
+fi,03-trends.title,See your bigger picture.,Näe kokonaiskuva.
+fi,03-trends.subtitle,A little history. A lot more perspective.,Hieman historiaa. Paljon enemmän näkökulmaa.
+fi,04-log-dose.title,Log it. Carry on.,Kirjaa. Jatka päivääsi.
+fi,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Nopeat aikamerkinnät. Tarkat määrät. Vähemmän vaivaa.
+fi,watch.01.title,Keep it close.,Pidä lähellä.
+fi,watch.02.title,Know what’s left.,"Tiedä, paljonko on jäljellä."
+fi,watch.03.title,Log from your wrist.,Kirjaa ranteestasi.
+fi,watch.04.title,Keep stock in sight.,Pidä lääkevarastoa silmällä.
+fi,search.tracking,As-needed medication tracking.,Tarvittaessa otettavien lääkkeiden seuranta.
+fi,search.carry_on,Carry on.,Jatka päivääsi.
+fi,search.keep_track,Keep track.,Pysy ajan tasalla.
+fi,fixture.nicknames.0,Headache Help,Apua päänsärkyyn
+fi,fixture.nicknames.1,Breathe Easy,Helppo hengittää
+fi,fixture.nicknames.2,Wind Down,Rauhoittuminen
+fi,fixture.clinical_names.0,Pain Relief,Kivunlievitys
+fi,fixture.clinical_names.1,Rescue Inhaler,Avaava inhalaattori
+fi,fixture.clinical_names.2,Sleep Support,Tukea uneen
+fi,fixture.reflection_reasons.0,Tension headache,Jännityspäänsärky
+fi,fixture.reflection_reasons.1,Breathing discomfort,Epämukava tunne hengittäessä
+fi,fixture.reflection_reasons.2,Trouble settling down,Vaikeuksia rauhoittua
+fi,fixture.reflection_notes.0,Back to my afternoon.,Takaisin iltapäivän puuhiin.
+fi,fixture.reflection_notes.1,A comfortable walk home.,Mukava kävely kotiin.
+fi,fixture.reflection_notes.2,A quieter evening.,Rauhallisempi ilta.
+fi,fixture.simple_notes.0,Busy afternoon at my desk.,Kiireinen iltapäivä työpöytäni ääressä.
+fi,fixture.simple_notes.1,After an outdoor walk.,Ulkokävelyn jälkeen.
+fi,fixture.simple_notes.2,Settled in with a book.,Asetuin mukavasti kirjan ääreen.
+fi,fixture.latest_note.0,Feeling more like myself.,Tunnen oloni enemmän omaksi itsekseni.
+fr,01-medication.title,Your meds. Your way.,Vos médicaments. À votre façon.
+fr,01-medication.subtitle,"Colors, icons and names that feel familiar.","Des couleurs, des icônes et des noms qui vous parlent."
+fr,02-history.title,"The details, all together.","Tous les détails, au même endroit."
+fr,02-history.subtitle,"Doses, notes and how you felt.","Vos prises, vos notes et votre ressenti."
+fr,03-trends.title,See your bigger picture.,Prenez du recul.
+fr,03-trends.subtitle,A little history. A lot more perspective.,Un peu d’historique. Beaucoup plus de perspective.
+fr,04-log-dose.title,Log it. Carry on.,Notez votre prise. Continuez votre journée.
+fr,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Des horaires vite saisis. Des quantités précises. Moins de tracas.
+fr,watch.01.title,Keep it close.,Toujours à portée de main.
+fr,watch.02.title,Know what’s left.,Sachez ce qu’il vous reste.
+fr,watch.03.title,Log from your wrist.,Enregistrez vos prises depuis votre poignet.
+fr,watch.04.title,Keep stock in sight.,Gardez vos stocks à l’œil.
+fr,search.tracking,As-needed medication tracking.,Suivi des médicaments pris au besoin.
+fr,search.carry_on,Carry on.,Continuez votre journée.
+fr,search.keep_track,Keep track.,Gardez le fil.
+fr,fixture.nicknames.0,Headache Help,SOS mal de tête
+fr,fixture.nicknames.1,Breathe Easy,Respiration facile
+fr,fixture.nicknames.2,Wind Down,Retour au calme
+fr,fixture.clinical_names.0,Pain Relief,Soulagement de la douleur
+fr,fixture.clinical_names.1,Rescue Inhaler,Inhalateur de secours
+fr,fixture.clinical_names.2,Sleep Support,Aide au sommeil
+fr,fixture.reflection_reasons.0,Tension headache,Céphalée de tension
+fr,fixture.reflection_reasons.1,Breathing discomfort,Gêne respiratoire
+fr,fixture.reflection_reasons.2,Trouble settling down,Difficulté à se détendre
+fr,fixture.reflection_notes.0,Back to my afternoon.,Je reprends mon après-midi.
+fr,fixture.reflection_notes.1,A comfortable walk home.,Un retour à pied agréable.
+fr,fixture.reflection_notes.2,A quieter evening.,Une soirée plus calme.
+fr,fixture.simple_notes.0,Busy afternoon at my desk.,Après-midi chargé à mon bureau.
+fr,fixture.simple_notes.1,After an outdoor walk.,Après une promenade en plein air.
+fr,fixture.simple_notes.2,Settled in with a book.,Au calme avec un livre.
+fr,fixture.latest_note.0,Feeling more like myself.,Je me sens davantage moi-même.
+fr-CA,01-medication.title,Your meds. Your way.,Vos médicaments. À votre façon.
+fr-CA,01-medication.subtitle,"Colors, icons and names that feel familiar.","Des couleurs, des icônes et des noms qui vous sont familiers."
+fr-CA,02-history.title,"The details, all together.","Tous les détails, au même endroit."
+fr-CA,02-history.subtitle,"Doses, notes and how you felt.","Vos doses, vos notes et comment vous vous sentiez."
+fr-CA,03-trends.title,See your bigger picture.,Voyez votre portrait d’ensemble.
+fr-CA,03-trends.subtitle,A little history. A lot more perspective.,Un peu d’historique. Beaucoup plus de recul.
+fr-CA,04-log-dose.title,Log it. Carry on.,Notez votre prise. Poursuivez votre journée.
+fr-CA,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Heures saisies rapidement. Quantités précises. Moins de tracas.
+fr-CA,watch.01.title,Keep it close.,Gardez le tout à portée de main.
+fr-CA,watch.02.title,Know what’s left.,Sachez ce qu’il vous reste.
+fr-CA,watch.03.title,Log from your wrist.,Notez vos prises depuis votre montre.
+fr-CA,watch.04.title,Keep stock in sight.,Gardez vos réserves à l’œil.
+fr-CA,search.tracking,As-needed medication tracking.,Suivi des médicaments pris au besoin.
+fr-CA,search.carry_on,Carry on.,Poursuivez votre journée.
+fr-CA,search.keep_track,Keep track.,Gardez le fil.
+fr-CA,fixture.nicknames.0,Headache Help,Aide contre le mal de tête
+fr-CA,fixture.nicknames.1,Breathe Easy,Respiration facile
+fr-CA,fixture.nicknames.2,Wind Down,Détente
+fr-CA,fixture.clinical_names.0,Pain Relief,Soulagement de la douleur
+fr-CA,fixture.clinical_names.1,Rescue Inhaler,Inhalateur de secours
+fr-CA,fixture.clinical_names.2,Sleep Support,Aide au sommeil
+fr-CA,fixture.reflection_reasons.0,Tension headache,Céphalée de tension
+fr-CA,fixture.reflection_reasons.1,Breathing discomfort,Inconfort respiratoire
+fr-CA,fixture.reflection_reasons.2,Trouble settling down,Difficulté à me détendre
+fr-CA,fixture.reflection_notes.0,Back to my afternoon.,Je reprends mon après-midi.
+fr-CA,fixture.reflection_notes.1,A comfortable walk home.,Une marche agréable pour rentrer.
+fr-CA,fixture.reflection_notes.2,A quieter evening.,Une soirée plus calme.
+fr-CA,fixture.simple_notes.0,Busy afternoon at my desk.,Après-midi chargé à mon bureau.
+fr-CA,fixture.simple_notes.1,After an outdoor walk.,Après une marche dehors.
+fr-CA,fixture.simple_notes.2,Settled in with a book.,Au calme avec un livre.
+fr-CA,fixture.latest_note.0,Feeling more like myself.,Je me sens davantage moi-même.
+he,01-medication.title,Your meds. Your way.,התרופות שלך. בדרך שלך.
+he,01-medication.subtitle,"Colors, icons and names that feel familiar.","צבעים, סמלים ושמות שמרגישים מוכרים."
+he,02-history.title,"The details, all together.","כל הפרטים, במקום אחד."
+he,02-history.subtitle,"Doses, notes and how you felt.","מנות, הערות ואיך הרגשת."
+he,03-trends.title,See your bigger picture.,לראות את התמונה המלאה שלך.
+he,03-trends.subtitle,A little history. A lot more perspective.,קצת היסטוריה. הרבה יותר פרספקטיבה.
+he,04-log-dose.title,Log it. Carry on.,לתעד. ולהמשיך הלאה.
+he,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,בחירת זמן מהירה. כמויות מדויקות. פחות טרחה.
+he,watch.01.title,Keep it close.,הכול בהישג יד.
+he,watch.02.title,Know what’s left.,לדעת כמה נשאר.
+he,watch.03.title,Log from your wrist.,לתעד מהשעון שעל היד.
+he,watch.04.title,Keep stock in sight.,המלאי תמיד מול העיניים.
+he,search.tracking,As-needed medication tracking.,מעקב אחר תרופות שנלקחות לפי הצורך.
+he,search.carry_on,Carry on.,להמשיך הלאה.
+he,search.keep_track,Keep track.,להישאר במעקב.
+he,fixture.nicknames.0,Headache Help,עזרה לכאב הראש
+he,fixture.nicknames.1,Breathe Easy,לנשום בקלות
+he,fixture.nicknames.2,Wind Down,זמן להירגע
+he,fixture.clinical_names.0,Pain Relief,הקלה בכאב
+he,fixture.clinical_names.1,Rescue Inhaler,משאף חירום
+he,fixture.clinical_names.2,Sleep Support,סיוע לשינה
+he,fixture.reflection_reasons.0,Tension headache,כאב ראש ממתח
+he,fixture.reflection_reasons.1,Breathing discomfort,אי־נוחות בנשימה
+he,fixture.reflection_reasons.2,Trouble settling down,קושי להירגע
+he,fixture.reflection_notes.0,Back to my afternoon.,חזרתי לשגרת אחר הצהריים שלי.
+he,fixture.reflection_notes.1,A comfortable walk home.,הליכה נינוחה הביתה.
+he,fixture.reflection_notes.2,A quieter evening.,ערב שקט יותר.
+he,fixture.simple_notes.0,Busy afternoon at my desk.,אחר צהריים עמוס ליד שולחן העבודה שלי.
+he,fixture.simple_notes.1,After an outdoor walk.,אחרי הליכה בחוץ.
+he,fixture.simple_notes.2,Settled in with a book.,התמקמתי בנחת עם ספר.
+he,fixture.latest_note.0,Feeling more like myself.,חזרה לתחושה שאני עצמי.
+hi,01-medication.title,Your meds. Your way.,आपकी दवाएँ। आपका तरीका।
+hi,01-medication.subtitle,"Colors, icons and names that feel familiar.","रंग, आइकन और नाम जो अपने से लगें।"
+hi,02-history.title,"The details, all together.","सारी जानकारी, एक साथ।"
+hi,02-history.subtitle,"Doses, notes and how you felt.","खुराकें, नोट्स और आपने कैसा महसूस किया।"
+hi,03-trends.title,See your bigger picture.,अपनी पूरी तस्वीर देखें।
+hi,03-trends.subtitle,A little history. A lot more perspective.,थोड़ा सा पिछला रिकॉर्ड। कहीं ज़्यादा समझ।
+hi,04-log-dose.title,Log it. Carry on.,दर्ज करें। आगे बढ़ें।
+hi,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,झटपट समय दर्ज करें। सटीक मात्रा। कम झंझट।
+hi,watch.01.title,Keep it close.,हमेशा पास रखें।
+hi,watch.02.title,Know what’s left.,जानें कितनी दवा बची है।
+hi,watch.03.title,Log from your wrist.,अपनी कलाई से दर्ज करें।
+hi,watch.04.title,Keep stock in sight.,दवाओं के भंडार पर नज़र रखें।
+hi,search.tracking,As-needed medication tracking.,ज़रूरत पड़ने पर ली जाने वाली दवाओं का हिसाब।
+hi,search.carry_on,Carry on.,आगे बढ़ें।
+hi,search.keep_track,Keep track.,हिसाब रखें।
+hi,fixture.nicknames.0,Headache Help,सिरदर्द में राहत
+hi,fixture.nicknames.1,Breathe Easy,सुकून भरी साँसें
+hi,fixture.nicknames.2,Wind Down,सुकून के पल
+hi,fixture.clinical_names.0,Pain Relief,दर्द से राहत
+hi,fixture.clinical_names.1,Rescue Inhaler,तुरंत राहत वाला इनहेलर
+hi,fixture.clinical_names.2,Sleep Support,नींद में मदद
+hi,fixture.reflection_reasons.0,Tension headache,तनावजनित सिरदर्द
+hi,fixture.reflection_reasons.1,Breathing discomfort,साँस लेने में तकलीफ़
+hi,fixture.reflection_reasons.2,Trouble settling down,शांत होने में परेशानी
+hi,fixture.reflection_notes.0,Back to my afternoon.,फिर से अपनी दोपहर की दिनचर्या में।
+hi,fixture.reflection_notes.1,A comfortable walk home.,आराम से पैदल घर तक।
+hi,fixture.reflection_notes.2,A quieter evening.,एक सुकून भरी शाम।
+hi,fixture.simple_notes.0,Busy afternoon at my desk.,अपनी मेज़ पर काम में व्यस्त दोपहर।
+hi,fixture.simple_notes.1,After an outdoor walk.,बाहर टहलने के बाद।
+hi,fixture.simple_notes.2,Settled in with a book.,किताब के साथ आराम के पल।
+hi,fixture.latest_note.0,Feeling more like myself.,अब फिर से अपने जैसा महसूस हो रहा है।
+hr,01-medication.title,Your meds. Your way.,Tvoji lijekovi. Na tvoj način.
+hr,01-medication.subtitle,"Colors, icons and names that feel familiar.","Boje, ikone i nazivi koji su ti bliski."
+hr,02-history.title,"The details, all together.",Svi detalji na jednom mjestu.
+hr,02-history.subtitle,"Doses, notes and how you felt.","Doze, bilješke i kako se osjećaš."
+hr,03-trends.title,See your bigger picture.,Pogledaj širu sliku.
+hr,03-trends.subtitle,A little history. A lot more perspective.,Malo povijesti. Puno više uvida.
+hr,04-log-dose.title,Log it. Carry on.,Zabilježi. Nastavi dalje.
+hr,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Brz odabir vremena. Precizne količine. Manje gnjavaže.
+hr,watch.01.title,Keep it close.,Neka bude pri ruci.
+hr,watch.02.title,Know what’s left.,Znaj koliko je preostalo.
+hr,watch.03.title,Log from your wrist.,Bilježi sa zapešća.
+hr,watch.04.title,Keep stock in sight.,Imaj zalihe na oku.
+hr,search.tracking,As-needed medication tracking.,Praćenje lijekova koji se uzimaju po potrebi.
+hr,search.carry_on,Carry on.,Nastavi dalje.
+hr,search.keep_track,Keep track.,Prati.
+hr,fixture.nicknames.0,Headache Help,Pomoć kod glavobolje
+hr,fixture.nicknames.1,Breathe Easy,Diši lakše
+hr,fixture.nicknames.2,Wind Down,Opuštanje
+hr,fixture.clinical_names.0,Pain Relief,Ublažavanje boli
+hr,fixture.clinical_names.1,Rescue Inhaler,Inhalator za brzo olakšanje
+hr,fixture.clinical_names.2,Sleep Support,Podrška za spavanje
+hr,fixture.reflection_reasons.0,Tension headache,Tenzijska glavobolja
+hr,fixture.reflection_reasons.1,Breathing discomfort,Nelagoda pri disanju
+hr,fixture.reflection_reasons.2,Trouble settling down,Teškoće s opuštanjem
+hr,fixture.reflection_notes.0,Back to my afternoon.,Nastavljam svoje poslijepodne.
+hr,fixture.reflection_notes.1,A comfortable walk home.,Ugodna šetnja do kuće.
+hr,fixture.reflection_notes.2,A quieter evening.,Mirnija večer.
+hr,fixture.simple_notes.0,Busy afternoon at my desk.,Užurbano poslijepodne za radnim stolom.
+hr,fixture.simple_notes.1,After an outdoor walk.,Nakon šetnje na otvorenom.
+hr,fixture.simple_notes.2,Settled in with a book.,Udobno uz knjigu.
+hr,fixture.latest_note.0,Feeling more like myself.,Opet se osjećam kao ja.
+hu,01-medication.title,Your meds. Your way.,A gyógyszereid. Ahogy neked tetszik.
+hu,01-medication.subtitle,"Colors, icons and names that feel familiar.","Ismerős színek, ikonok és nevek."
+hu,02-history.title,"The details, all together.",Minden részlet egy helyen.
+hu,02-history.subtitle,"Doses, notes and how you felt.","Adagok, jegyzetek és az, hogyan érezted magad."
+hu,03-trends.title,See your bigger picture.,Lásd az összképet.
+hu,03-trends.subtitle,A little history. A lot more perspective.,Egy kis visszatekintés. Sokkal tágabb nézőpont.
+hu,04-log-dose.title,Log it. Carry on.,Rögzítsd. Lépj tovább.
+hu,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Gyors időrögzítés. Pontos mennyiségek. Kevesebb macera.
+hu,watch.01.title,Keep it close.,Legyen mindig kéznél.
+hu,watch.02.title,Know what’s left.,"Tudd, mennyi maradt."
+hu,watch.03.title,Log from your wrist.,Rögzíts a csuklódról.
+hu,watch.04.title,Keep stock in sight.,Tartsd szemmel a készleted.
+hu,search.tracking,As-needed medication tracking.,Szükség szerint szedett gyógyszerek nyomon követése.
+hu,search.carry_on,Carry on.,Lépj tovább.
+hu,search.keep_track,Keep track.,Kövesd nyomon.
+hu,fixture.nicknames.0,Headache Help,Fejfájás ellen
+hu,fixture.nicknames.1,Breathe Easy,Könnyű légzés
+hu,fixture.nicknames.2,Wind Down,Lazítás
+hu,fixture.clinical_names.0,Pain Relief,Fájdalomcsillapítás
+hu,fixture.clinical_names.1,Rescue Inhaler,Rohamoldó inhalátor
+hu,fixture.clinical_names.2,Sleep Support,Segítség az alváshoz
+hu,fixture.reflection_reasons.0,Tension headache,Tenziós fejfájás
+hu,fixture.reflection_reasons.1,Breathing discomfort,Kellemetlen érzés légzés közben
+hu,fixture.reflection_reasons.2,Trouble settling down,Nehezen tudok megnyugodni
+hu,fixture.reflection_notes.0,Back to my afternoon.,Folytathatom a délutánomat.
+hu,fixture.reflection_notes.1,A comfortable walk home.,Kellemes séta hazafelé.
+hu,fixture.reflection_notes.2,A quieter evening.,Nyugodtabb este.
+hu,fixture.simple_notes.0,Busy afternoon at my desk.,Mozgalmas délután az íróasztalomnál.
+hu,fixture.simple_notes.1,After an outdoor walk.,Egy szabadtéri séta után.
+hu,fixture.simple_notes.2,Settled in with a book.,Bekuckóztam egy könyvvel.
+hu,fixture.latest_note.0,Feeling more like myself.,Egyre inkább önmagamnak érzem magam.
+id,01-medication.title,Your meds. Your way.,Obatmu. Caramu.
+id,01-medication.subtitle,"Colors, icons and names that feel familiar.","Warna, ikon, dan nama yang terasa akrab."
+id,02-history.title,"The details, all together.",Semua detail dalam satu tempat.
+id,02-history.subtitle,"Doses, notes and how you felt.","Dosis, catatan, dan apa yang kamu rasakan."
+id,03-trends.title,See your bigger picture.,Lihat gambaran besarnya.
+id,03-trends.subtitle,A little history. A lot more perspective.,Sedikit riwayat. Lebih banyak perspektif.
+id,04-log-dose.title,Log it. Carry on.,Catat. Lanjutkan harimu.
+id,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Cepat catat waktu. Tepat catat jumlah. Lebih praktis.
+id,watch.01.title,Keep it close.,Selalu dekat.
+id,watch.02.title,Know what’s left.,Ketahui sisa obatmu.
+id,watch.03.title,Log from your wrist.,Catat dari pergelangan tanganmu.
+id,watch.04.title,Keep stock in sight.,Pantau persediaan obatmu.
+id,search.tracking,As-needed medication tracking.,Catat penggunaan obat sesuai kebutuhan.
+id,search.carry_on,Carry on.,Lanjutkan harimu.
+id,search.keep_track,Keep track.,Terus pantau.
+id,fixture.nicknames.0,Headache Help,Pereda Sakit Kepala
+id,fixture.nicknames.1,Breathe Easy,Napas Lega
+id,fixture.nicknames.2,Wind Down,Saatnya Rileks
+id,fixture.clinical_names.0,Pain Relief,Pereda Nyeri
+id,fixture.clinical_names.1,Rescue Inhaler,Inhaler Pelega
+id,fixture.clinical_names.2,Sleep Support,Penunjang Tidur
+id,fixture.reflection_reasons.0,Tension headache,Sakit kepala tegang
+id,fixture.reflection_reasons.1,Breathing discomfort,Rasa tidak nyaman saat bernapas
+id,fixture.reflection_reasons.2,Trouble settling down,Sulit menenangkan diri
+id,fixture.reflection_notes.0,Back to my afternoon.,Kembali beraktivitas sore ini.
+id,fixture.reflection_notes.1,A comfortable walk home.,Nyaman berjalan kaki pulang.
+id,fixture.reflection_notes.2,A quieter evening.,Malam yang lebih tenang.
+id,fixture.simple_notes.0,Busy afternoon at my desk.,Sore yang sibuk di meja kerjaku.
+id,fixture.simple_notes.1,After an outdoor walk.,Setelah berjalan-jalan di luar.
+id,fixture.simple_notes.2,Settled in with a book.,Bersantai sambil membaca buku.
+id,fixture.latest_note.0,Feeling more like myself.,Merasa lebih seperti diriku sendiri.
+it,01-medication.title,Your meds. Your way.,I tuoi farmaci. A modo tuo.
+it,01-medication.subtitle,"Colors, icons and names that feel familiar.","Colori, icone e nomi che senti familiari."
+it,02-history.title,"The details, all together.","Tutti i dettagli, insieme."
+it,02-history.subtitle,"Doses, notes and how you felt.","Dosi, note e come ti sentivi."
+it,03-trends.title,See your bigger picture.,Uno sguardo d’insieme.
+it,03-trends.subtitle,A little history. A lot more perspective.,Un po’ di storia. Una prospettiva più ampia.
+it,04-log-dose.title,Log it. Carry on.,Registra. E vai avanti.
+it,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Orari in un attimo. Quantità precise. Meno complicazioni.
+it,watch.01.title,Keep it close.,Sempre a portata di mano.
+it,watch.02.title,Know what’s left.,Sai quanto ne resta.
+it,watch.03.title,Log from your wrist.,Registra dal polso.
+it,watch.04.title,Keep stock in sight.,Tieni d’occhio le scorte.
+it,search.tracking,As-needed medication tracking.,Tieni traccia dei farmaci al bisogno.
+it,search.carry_on,Carry on.,Vai avanti.
+it,search.keep_track,Keep track.,Tieni traccia.
+it,fixture.nicknames.0,Headache Help,Aiuto per il mal di testa
+it,fixture.nicknames.1,Breathe Easy,Respiro facile
+it,fixture.nicknames.2,Wind Down,Momento di calma
+it,fixture.clinical_names.0,Pain Relief,Sollievo dal dolore
+it,fixture.clinical_names.1,Rescue Inhaler,Inalatore di emergenza
+it,fixture.clinical_names.2,Sleep Support,Aiuto per il sonno
+it,fixture.reflection_reasons.0,Tension headache,Cefalea tensiva
+it,fixture.reflection_reasons.1,Breathing discomfort,Fastidio respiratorio
+it,fixture.reflection_reasons.2,Trouble settling down,Difficoltà a rilassarmi
+it,fixture.reflection_notes.0,Back to my afternoon.,Riprendo il mio pomeriggio.
+it,fixture.reflection_notes.1,A comfortable walk home.,Una camminata verso casa senza fastidi.
+it,fixture.reflection_notes.2,A quieter evening.,Una serata più tranquilla.
+it,fixture.simple_notes.0,Busy afternoon at my desk.,Pomeriggio intenso alla scrivania.
+it,fixture.simple_notes.1,After an outdoor walk.,Dopo una passeggiata all’aperto.
+it,fixture.simple_notes.2,Settled in with a book.,In tranquillità con un libro.
+it,fixture.latest_note.0,Feeling more like myself.,Comincio a sentirmi di nuovo io.
+ja,01-medication.title,Your meds. Your way.,お薬の管理を、あなたらしく。
+ja,01-medication.subtitle,"Colors, icons and names that feel familiar.",なじみのある色、アイコン、名前で。
+ja,02-history.title,"The details, all together.",詳しい記録を、ひとつに。
+ja,02-history.subtitle,"Doses, notes and how you felt.",服用量も、メモも、そのときの体調も。
+ja,03-trends.title,See your bigger picture.,日々の記録から、全体が見える。
+ja,03-trends.subtitle,A little history. A lot more perspective.,少しの記録で、見えてくることが増える。
+ja,04-log-dose.title,Log it. Carry on.,記録したら、いつもの毎日へ。
+ja,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,時刻はさっと。量は正確に。手間は少なく。
+ja,watch.01.title,Keep it close.,いつも、手元に。
+ja,watch.02.title,Know what’s left.,残りがわかる。
+ja,watch.03.title,Log from your wrist.,手首から記録。
+ja,watch.04.title,Keep stock in sight.,お薬の残量をひと目で。
+ja,search.tracking,As-needed medication tracking.,必要なときに使うお薬を記録。
+ja,search.carry_on,Carry on.,いつもの毎日へ。
+ja,search.keep_track,Keep track.,忘れずに記録。
+ja,fixture.nicknames.0,Headache Help,頭痛の助っ人
+ja,fixture.nicknames.1,Breathe Easy,らくらく呼吸
+ja,fixture.nicknames.2,Wind Down,ほっとひと息
+ja,fixture.clinical_names.0,Pain Relief,痛み止め
+ja,fixture.clinical_names.1,Rescue Inhaler,発作時用吸入薬
+ja,fixture.clinical_names.2,Sleep Support,睡眠サポート
+ja,fixture.reflection_reasons.0,Tension headache,緊張型頭痛
+ja,fixture.reflection_reasons.1,Breathing discomfort,息苦しさ
+ja,fixture.reflection_reasons.2,Trouble settling down,なかなか落ち着けない
+ja,fixture.reflection_notes.0,Back to my afternoon.,午後のいつものペースに戻れた。
+ja,fixture.reflection_notes.1,A comfortable walk home.,気持ちよく歩いて帰れた。
+ja,fixture.reflection_notes.2,A quieter evening.,いつもより穏やかな夜。
+ja,fixture.simple_notes.0,Busy afternoon at my desk.,デスクで忙しく過ごした午後。
+ja,fixture.simple_notes.1,After an outdoor walk.,外を散歩したあと。
+ja,fixture.simple_notes.2,Settled in with a book.,本を片手にくつろいだ。
+ja,fixture.latest_note.0,Feeling more like myself.,いつもの自分に戻ってきた感じ。
+kk,01-medication.title,Your meds. Your way.,Дәрілеріңіз. Өз қалауыңызша.
+kk,01-medication.subtitle,"Colors, icons and names that feel familiar.","Өзіңізге таныс түстер, белгішелер мен атаулар."
+kk,02-history.title,"The details, all together.",Барлық мәлімет бір жерде.
+kk,02-history.subtitle,"Doses, notes and how you felt.","Дозалар, жазбалар және көңіл-күйіңіз."
+kk,03-trends.title,See your bigger picture.,Жалпы көріністі байқаңыз.
+kk,03-trends.subtitle,A little history. A lot more perspective.,Аздаған тарих. Әлдеқайда кеңірек түсінік.
+kk,04-log-dose.title,Log it. Carry on.,"Тіркеңіз де, жалғастыра беріңіз."
+kk,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Уақытты тез белгілеу. Мөлшерді дәл көрсету. Әуресі аз.
+kk,watch.01.title,Keep it close.,Әрдайым қолыңызда.
+kk,watch.02.title,Know what’s left.,Қанша қалғанын біліп жүріңіз.
+kk,watch.03.title,Log from your wrist.,Білегіңіздегі сағаттан тіркеңіз.
+kk,watch.04.title,Keep stock in sight.,Дәрі қорын назарда ұстаңыз.
+kk,search.tracking,As-needed medication tracking.,Қажет кезде қабылданатын дәрілерді бақылау.
+kk,search.carry_on,Carry on.,Жалғастыра беріңіз.
+kk,search.keep_track,Keep track.,Тіркеп жүріңіз.
+kk,fixture.nicknames.0,Headache Help,Бас ауруына көмек
+kk,fixture.nicknames.1,Breathe Easy,Еркін тыныс
+kk,fixture.nicknames.2,Wind Down,Босаңсу
+kk,fixture.clinical_names.0,Pain Relief,Ауырсынуды басу
+kk,fixture.clinical_names.1,Rescue Inhaler,Жедел көмек ингаляторы
+kk,fixture.clinical_names.2,Sleep Support,Ұйқыға қолдау
+kk,fixture.reflection_reasons.0,Tension headache,Кернеуден болатын бас ауруы
+kk,fixture.reflection_reasons.1,Breathing discomfort,Тыныс алудағы жайсыздық
+kk,fixture.reflection_reasons.2,Trouble settling down,Тыныштала алмау
+kk,fixture.reflection_notes.0,Back to my afternoon.,Түстен кейінгі істеріме оралдым.
+kk,fixture.reflection_notes.1,A comfortable walk home.,Үйге дейін жайбарақат жаяу қайттым.
+kk,fixture.reflection_notes.2,A quieter evening.,Кешім тынышырақ өтті.
+kk,fixture.simple_notes.0,Busy afternoon at my desk.,Түстен кейін жұмыс үстелімде қарбалас болды.
+kk,fixture.simple_notes.1,After an outdoor walk.,Таза ауада серуендегеннен кейін.
+kk,fixture.simple_notes.2,Settled in with a book.,Кітап оқуға жайғастым.
+kk,fixture.latest_note.0,Feeling more like myself.,Өзімді қайтадан әдеттегідей сезіне бастадым.
+ko,01-medication.title,Your meds. Your way.,"내 약, 내 방식대로."
+ko,01-medication.subtitle,"Colors, icons and names that feel familiar.","나에게 익숙한 색상, 아이콘, 이름으로."
+ko,02-history.title,"The details, all together.",자세한 기록을 한곳에.
+ko,02-history.subtitle,"Doses, notes and how you felt.","복용량, 메모, 그때의 몸 상태까지."
+ko,03-trends.title,See your bigger picture.,전체 흐름을 살펴보세요.
+ko,03-trends.subtitle,A little history. A lot more perspective.,조금씩 쌓인 기록. 더 넓어진 시야.
+ko,04-log-dose.title,Log it. Carry on.,"기록하고, 일상으로."
+ko,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,시간은 빠르게. 용량은 정확하게. 번거로움은 적게.
+ko,watch.01.title,Keep it close.,늘 가까이 두세요.
+ko,watch.02.title,Know what’s left.,얼마나 남았는지 확인하세요.
+ko,watch.03.title,Log from your wrist.,손목에서 바로 기록하세요.
+ko,watch.04.title,Keep stock in sight.,남은 약을 한눈에.
+ko,search.tracking,As-needed medication tracking.,필요할 때 복용하는 약을 기록하세요.
+ko,search.carry_on,Carry on.,다시 일상으로.
+ko,search.keep_track,Keep track.,꾸준히 기록하세요.
+ko,fixture.nicknames.0,Headache Help,두통 도우미
+ko,fixture.nicknames.1,Breathe Easy,편안한 숨
+ko,fixture.nicknames.2,Wind Down,차분한 마무리
+ko,fixture.clinical_names.0,Pain Relief,통증 완화
+ko,fixture.clinical_names.1,Rescue Inhaler,증상 완화용 흡입기
+ko,fixture.clinical_names.2,Sleep Support,수면 보조
+ko,fixture.reflection_reasons.0,Tension headache,긴장성 두통
+ko,fixture.reflection_reasons.1,Breathing discomfort,호흡 불편
+ko,fixture.reflection_reasons.2,Trouble settling down,마음이 진정되지 않음
+ko,fixture.reflection_notes.0,Back to my afternoon.,다시 오후 일상으로.
+ko,fixture.reflection_notes.1,A comfortable walk home.,편안하게 걸어서 귀가.
+ko,fixture.reflection_notes.2,A quieter evening.,한결 차분한 저녁.
+ko,fixture.simple_notes.0,Busy afternoon at my desk.,책상 앞에서 바쁘게 보낸 오후.
+ko,fixture.simple_notes.1,After an outdoor walk.,야외 산책 후.
+ko,fixture.simple_notes.2,Settled in with a book.,편히 자리 잡고 책을 읽음.
+ko,fixture.latest_note.0,Feeling more like myself.,평소 내 모습으로 돌아온 느낌.
+ms,01-medication.title,Your meds. Your way.,Ubat anda. Cara anda.
+ms,01-medication.subtitle,"Colors, icons and names that feel familiar.","Warna, ikon dan nama yang anda kenali."
+ms,02-history.title,"The details, all together.","Semua butiran, di satu tempat."
+ms,02-history.subtitle,"Doses, notes and how you felt.","Dos, nota dan perasaan anda."
+ms,03-trends.title,See your bigger picture.,Lihat gambaran yang lebih menyeluruh.
+ms,03-trends.subtitle,A little history. A lot more perspective.,Sedikit sejarah. Pandangan yang lebih luas.
+ms,04-log-dose.title,Log it. Carry on.,Catat. Teruskan hari anda.
+ms,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Catat masa dengan pantas. Jumlah yang tepat. Kurang kerenah.
+ms,watch.01.title,Keep it close.,Sentiasa dekat.
+ms,watch.02.title,Know what’s left.,Ketahui baki anda.
+ms,watch.03.title,Log from your wrist.,Catat dari pergelangan tangan anda.
+ms,watch.04.title,Keep stock in sight.,Pantau stok anda.
+ms,search.tracking,As-needed medication tracking.,Penjejakan ubat yang diambil apabila perlu.
+ms,search.carry_on,Carry on.,Teruskan hari anda.
+ms,search.keep_track,Keep track.,Terus pantau.
+ms,fixture.nicknames.0,Headache Help,Pelega Sakit Kepala
+ms,fixture.nicknames.1,Breathe Easy,Nafas Lega
+ms,fixture.nicknames.2,Wind Down,Tenangkan Diri
+ms,fixture.clinical_names.0,Pain Relief,Pelega Sakit
+ms,fixture.clinical_names.1,Rescue Inhaler,Alat Sedut Pelega
+ms,fixture.clinical_names.2,Sleep Support,Bantuan Tidur
+ms,fixture.reflection_reasons.0,Tension headache,Sakit kepala tegang
+ms,fixture.reflection_reasons.1,Breathing discomfort,Ketidakselesaan bernafas
+ms,fixture.reflection_reasons.2,Trouble settling down,Sukar menenangkan diri
+ms,fixture.reflection_notes.0,Back to my afternoon.,Sambung aktiviti petang saya.
+ms,fixture.reflection_notes.1,A comfortable walk home.,Selesa berjalan pulang.
+ms,fixture.reflection_notes.2,A quieter evening.,Malam yang lebih tenang.
+ms,fixture.simple_notes.0,Busy afternoon at my desk.,Petang yang sibuk di meja kerja saya.
+ms,fixture.simple_notes.1,After an outdoor walk.,Selepas berjalan di luar.
+ms,fixture.simple_notes.2,Settled in with a book.,Bersantai dengan sebuah buku.
+ms,fixture.latest_note.0,Feeling more like myself.,Saya rasa lebih seperti diri sendiri.
+nb,01-medication.title,Your meds. Your way.,Medisinene dine. På din måte.
+nb,01-medication.subtitle,"Colors, icons and names that feel familiar.","Farger, ikoner og navn som føles kjente."
+nb,02-history.title,"The details, all together.",Alle detaljene samlet.
+nb,02-history.subtitle,"Doses, notes and how you felt.","Doser, notater og hvordan du følte deg."
+nb,03-trends.title,See your bigger picture.,Se helheten.
+nb,03-trends.subtitle,A little history. A lot more perspective.,Litt historikk. Mye mer perspektiv.
+nb,04-log-dose.title,Log it. Carry on.,Registrer. Fortsett dagen.
+nb,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Rask tidsregistrering. Nøyaktige mengder. Mindre styr.
+nb,watch.01.title,Keep it close.,Ha det for hånden.
+nb,watch.02.title,Know what’s left.,Se hva du har igjen.
+nb,watch.03.title,Log from your wrist.,Registrer fra håndleddet.
+nb,watch.04.title,Keep stock in sight.,Hold øye med beholdningen.
+nb,search.tracking,As-needed medication tracking.,Hold oversikt over behovsmedisiner.
+nb,search.carry_on,Carry on.,Fortsett dagen.
+nb,search.keep_track,Keep track.,Hold oversikt.
+nb,fixture.nicknames.0,Headache Help,Hjelp mot hodepine
+nb,fixture.nicknames.1,Breathe Easy,Pust lett
+nb,fixture.nicknames.2,Wind Down,Ro ned
+nb,fixture.clinical_names.0,Pain Relief,Smertelindring
+nb,fixture.clinical_names.1,Rescue Inhaler,Anfallsinhalator
+nb,fixture.clinical_names.2,Sleep Support,Søvnhjelp
+nb,fixture.reflection_reasons.0,Tension headache,Spenningshodepine
+nb,fixture.reflection_reasons.1,Breathing discomfort,Ubehag ved pusting
+nb,fixture.reflection_reasons.2,Trouble settling down,Vansker med å finne roen
+nb,fixture.reflection_notes.0,Back to my afternoon.,Tilbake til ettermiddagen min.
+nb,fixture.reflection_notes.1,A comfortable walk home.,En behagelig gåtur hjem.
+nb,fixture.reflection_notes.2,A quieter evening.,En roligere kveld.
+nb,fixture.simple_notes.0,Busy afternoon at my desk.,Travel ettermiddag ved skrivebordet.
+nb,fixture.simple_notes.1,After an outdoor walk.,Etter en tur ute.
+nb,fixture.simple_notes.2,Settled in with a book.,Fant roen med en bok.
+nb,fixture.latest_note.0,Feeling more like myself.,Føler meg mer som meg selv.
+nl,01-medication.title,Your meds. Your way.,Je medicatie. Op jouw manier.
+nl,01-medication.subtitle,"Colors, icons and names that feel familiar.","Kleuren, pictogrammen en namen die vertrouwd voelen."
+nl,02-history.title,"The details, all together.",Alle details bij elkaar.
+nl,02-history.subtitle,"Doses, notes and how you felt.","Doses, notities en hoe je je voelde."
+nl,03-trends.title,See your bigger picture.,Bekijk het grotere geheel.
+nl,03-trends.subtitle,A little history. A lot more perspective.,Een beetje geschiedenis. Veel meer perspectief.
+nl,04-log-dose.title,Log it. Carry on.,Leg het vast. Ga weer verder.
+nl,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Snel tijden vastleggen. Precieze hoeveelheden. Minder gedoe.
+nl,watch.01.title,Keep it close.,Houd het bij de hand.
+nl,watch.02.title,Know what’s left.,Weet wat je nog hebt.
+nl,watch.03.title,Log from your wrist.,Leg het vast vanaf je pols.
+nl,watch.04.title,Keep stock in sight.,Houd je voorraad in beeld.
+nl,search.tracking,As-needed medication tracking.,Zo nodig gebruikte medicatie bijhouden.
+nl,search.carry_on,Carry on.,Ga weer verder.
+nl,search.keep_track,Keep track.,Houd het bij.
+nl,fixture.nicknames.0,Headache Help,Hulp bij hoofdpijn
+nl,fixture.nicknames.1,Breathe Easy,Vrij ademen
+nl,fixture.nicknames.2,Wind Down,Tot rust komen
+nl,fixture.clinical_names.0,Pain Relief,Pijnverlichting
+nl,fixture.clinical_names.1,Rescue Inhaler,Noodinhalator
+nl,fixture.clinical_names.2,Sleep Support,Ondersteuning bij het slapen
+nl,fixture.reflection_reasons.0,Tension headache,Spanningshoofdpijn
+nl,fixture.reflection_reasons.1,Breathing discomfort,Ongemak bij het ademen
+nl,fixture.reflection_reasons.2,Trouble settling down,Moeite om tot rust te komen
+nl,fixture.reflection_notes.0,Back to my afternoon.,Weer verder met mijn middag.
+nl,fixture.reflection_notes.1,A comfortable walk home.,Een prettige wandeling naar huis.
+nl,fixture.reflection_notes.2,A quieter evening.,Een rustigere avond.
+nl,fixture.simple_notes.0,Busy afternoon at my desk.,Drukke middag aan mijn bureau.
+nl,fixture.simple_notes.1,After an outdoor walk.,Na een wandeling buiten.
+nl,fixture.simple_notes.2,Settled in with a book.,Lekker gaan zitten met een boek.
+nl,fixture.latest_note.0,Feeling more like myself.,Ik voel me weer meer mezelf.
+pl,01-medication.title,Your meds. Your way.,Twoje leki. Po twojemu.
+pl,01-medication.subtitle,"Colors, icons and names that feel familiar.","Znajome kolory, ikony i nazwy."
+pl,02-history.title,"The details, all together.",Wszystkie szczegóły razem.
+pl,02-history.subtitle,"Doses, notes and how you felt.","Dawki, notatki i samopoczucie."
+pl,03-trends.title,See your bigger picture.,Spójrz szerzej.
+pl,03-trends.subtitle,A little history. A lot more perspective.,Trochę historii. Dużo szersza perspektywa.
+pl,04-log-dose.title,Log it. Carry on.,Zapisz. Rób swoje.
+pl,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Szybki wybór godziny. Dokładne ilości. Mniej zachodu.
+pl,watch.01.title,Keep it close.,Zawsze pod ręką.
+pl,watch.02.title,Know what’s left.,"Sprawdź, ile zostało."
+pl,watch.03.title,Log from your wrist.,Zapisuj na zegarku.
+pl,watch.04.title,Keep stock in sight.,Miej zapas na oku.
+pl,search.tracking,As-needed medication tracking.,Śledzenie leków przyjmowanych doraźnie.
+pl,search.carry_on,Carry on.,Rób swoje.
+pl,search.keep_track,Keep track.,Bądź na bieżąco.
+pl,fixture.nicknames.0,Headache Help,Pomoc na ból głowy
+pl,fixture.nicknames.1,Breathe Easy,Swobodny oddech
+pl,fixture.nicknames.2,Wind Down,Wyciszenie
+pl,fixture.clinical_names.0,Pain Relief,Łagodzenie bólu
+pl,fixture.clinical_names.1,Rescue Inhaler,Inhalator doraźny
+pl,fixture.clinical_names.2,Sleep Support,Wsparcie snu
+pl,fixture.reflection_reasons.0,Tension headache,Napięciowy ból głowy
+pl,fixture.reflection_reasons.1,Breathing discomfort,Dyskomfort przy oddychaniu
+pl,fixture.reflection_reasons.2,Trouble settling down,Trudności z wyciszeniem się
+pl,fixture.reflection_notes.0,Back to my afternoon.,Wracam do swoich popołudniowych zajęć.
+pl,fixture.reflection_notes.1,A comfortable walk home.,Spokojny spacer do domu.
+pl,fixture.reflection_notes.2,A quieter evening.,Spokojniejszy wieczór.
+pl,fixture.simple_notes.0,Busy afternoon at my desk.,Pracowite popołudnie przy biurku.
+pl,fixture.simple_notes.1,After an outdoor walk.,Po spacerze na świeżym powietrzu.
+pl,fixture.simple_notes.2,Settled in with a book.,Wygodnie z książką.
+pl,fixture.latest_note.0,Feeling more like myself.,Znów czuję się bardziej sobą.
+pt-BR,01-medication.title,Your meds. Your way.,Seus medicamentos. Do seu jeito.
+pt-BR,01-medication.subtitle,"Colors, icons and names that feel familiar.","Cores, ícones e nomes familiares."
+pt-BR,02-history.title,"The details, all together.","Os detalhes, todos juntos."
+pt-BR,02-history.subtitle,"Doses, notes and how you felt.","Doses, anotações e como você se sentiu."
+pt-BR,03-trends.title,See your bigger picture.,Veja seu panorama geral.
+pt-BR,03-trends.subtitle,A little history. A lot more perspective.,Um pouco de histórico. Muito mais perspectiva.
+pt-BR,04-log-dose.title,Log it. Carry on.,Registre. Siga em frente.
+pt-BR,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Registre horários com rapidez. Quantidades precisas. Menos complicação.
+pt-BR,watch.01.title,Keep it close.,Tenha sempre por perto.
+pt-BR,watch.02.title,Know what’s left.,Saiba quanto resta.
+pt-BR,watch.03.title,Log from your wrist.,Registre pelo pulso.
+pt-BR,watch.04.title,Keep stock in sight.,Tenha o estoque à vista.
+pt-BR,search.tracking,As-needed medication tracking.,Controle de medicamentos usados conforme necessário.
+pt-BR,search.carry_on,Carry on.,Siga em frente.
+pt-BR,search.keep_track,Keep track.,Mantenha o controle.
+pt-BR,fixture.nicknames.0,Headache Help,Alívio para a cabeça
+pt-BR,fixture.nicknames.1,Breathe Easy,Respire com tranquilidade
+pt-BR,fixture.nicknames.2,Wind Down,Hora de relaxar
+pt-BR,fixture.clinical_names.0,Pain Relief,Alívio da dor
+pt-BR,fixture.clinical_names.1,Rescue Inhaler,Inalador de resgate
+pt-BR,fixture.clinical_names.2,Sleep Support,Auxílio para o sono
+pt-BR,fixture.reflection_reasons.0,Tension headache,Dor de cabeça tensional
+pt-BR,fixture.reflection_reasons.1,Breathing discomfort,Desconforto ao respirar
+pt-BR,fixture.reflection_reasons.2,Trouble settling down,Dificuldade para relaxar
+pt-BR,fixture.reflection_notes.0,Back to my afternoon.,De volta à minha tarde.
+pt-BR,fixture.reflection_notes.1,A comfortable walk home.,Uma caminhada confortável de volta para casa.
+pt-BR,fixture.reflection_notes.2,A quieter evening.,Uma noite mais tranquila.
+pt-BR,fixture.simple_notes.0,Busy afternoon at my desk.,Tarde agitada na minha mesa de trabalho.
+pt-BR,fixture.simple_notes.1,After an outdoor walk.,Depois de uma caminhada ao ar livre.
+pt-BR,fixture.simple_notes.2,Settled in with a book.,Me acomodei para ler um livro.
+pt-BR,fixture.latest_note.0,Feeling more like myself.,Me sentindo mais como eu.
+pt-PT,01-medication.title,Your meds. Your way.,A tua medicação. À tua maneira.
+pt-PT,01-medication.subtitle,"Colors, icons and names that feel familiar.","Cores, ícones e nomes que te são familiares."
+pt-PT,02-history.title,"The details, all together.","Os detalhes, todos juntos."
+pt-PT,02-history.subtitle,"Doses, notes and how you felt.","Doses, notas e como te sentiste."
+pt-PT,03-trends.title,See your bigger picture.,Vê o panorama geral.
+pt-PT,03-trends.subtitle,A little history. A lot more perspective.,Um pouco de histórico. Muito mais perspetiva.
+pt-PT,04-log-dose.title,Log it. Carry on.,Regista. Continua o teu dia.
+pt-PT,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Regista a hora num instante. Quantidades precisas. Menos complicações.
+pt-PT,watch.01.title,Keep it close.,Sempre à mão.
+pt-PT,watch.02.title,Know what’s left.,Sabe quanto resta.
+pt-PT,watch.03.title,Log from your wrist.,Regista a partir do pulso.
+pt-PT,watch.04.title,Keep stock in sight.,Mantém as reservas à vista.
+pt-PT,search.tracking,As-needed medication tracking.,Registo de medicação tomada conforme necessário.
+pt-PT,search.carry_on,Carry on.,Continua o teu dia.
+pt-PT,search.keep_track,Keep track.,Mantém o registo.
+pt-PT,fixture.nicknames.0,Headache Help,Alívio da dor de cabeça
+pt-PT,fixture.nicknames.1,Breathe Easy,Respirar melhor
+pt-PT,fixture.nicknames.2,Wind Down,Descontrair
+pt-PT,fixture.clinical_names.0,Pain Relief,Alívio da dor
+pt-PT,fixture.clinical_names.1,Rescue Inhaler,Inalador de alívio
+pt-PT,fixture.clinical_names.2,Sleep Support,Apoio ao sono
+pt-PT,fixture.reflection_reasons.0,Tension headache,Dor de cabeça de tensão
+pt-PT,fixture.reflection_reasons.1,Breathing discomfort,Desconforto respiratório
+pt-PT,fixture.reflection_reasons.2,Trouble settling down,Dificuldade em descontrair
+pt-PT,fixture.reflection_notes.0,Back to my afternoon.,De volta à minha tarde.
+pt-PT,fixture.reflection_notes.1,A comfortable walk home.,Uma caminhada tranquila até casa.
+pt-PT,fixture.reflection_notes.2,A quieter evening.,Um serão mais tranquilo.
+pt-PT,fixture.simple_notes.0,Busy afternoon at my desk.,Uma tarde atarefada à secretária.
+pt-PT,fixture.simple_notes.1,After an outdoor walk.,Depois de uma caminhada ao ar livre.
+pt-PT,fixture.simple_notes.2,Settled in with a book.,A relaxar com um livro.
+pt-PT,fixture.latest_note.0,Feeling more like myself.,Sinto-me mais como sou habitualmente.
+ro,01-medication.title,Your meds. Your way.,Medicamentele tale. În stilul tău.
+ro,01-medication.subtitle,"Colors, icons and names that feel familiar.","Culori, pictograme și nume familiare."
+ro,02-history.title,"The details, all together.","Toate detaliile, la un loc."
+ro,02-history.subtitle,"Doses, notes and how you felt.","Doze, notițe și cum te-ai simțit."
+ro,03-trends.title,See your bigger picture.,Vezi imaginea de ansamblu.
+ro,03-trends.subtitle,A little history. A lot more perspective.,Puțin istoric. O perspectivă mult mai largă.
+ro,04-log-dose.title,Log it. Carry on.,Înregistrează. Continuă-ți ziua.
+ro,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Ore înregistrate rapid. Cantități precise. Mai puțină bătaie de cap.
+ro,watch.01.title,Keep it close.,Mereu la îndemână.
+ro,watch.02.title,Know what’s left.,Știi cât a mai rămas.
+ro,watch.03.title,Log from your wrist.,Înregistrează de pe ceas.
+ro,watch.04.title,Keep stock in sight.,Ține stocul la vedere.
+ro,search.tracking,As-needed medication tracking.,Evidența medicamentelor luate la nevoie.
+ro,search.carry_on,Carry on.,Continuă-ți ziua.
+ro,search.keep_track,Keep track.,Ține evidența.
+ro,fixture.nicknames.0,Headache Help,Ajutor pentru durerea de cap
+ro,fixture.nicknames.1,Breathe Easy,Respirație ușoară
+ro,fixture.nicknames.2,Wind Down,Relaxare
+ro,fixture.clinical_names.0,Pain Relief,Calmarea durerii
+ro,fixture.clinical_names.1,Rescue Inhaler,Inhalator de urgență
+ro,fixture.clinical_names.2,Sleep Support,Sprijin pentru somn
+ro,fixture.reflection_reasons.0,Tension headache,Cefalee de tensiune
+ro,fixture.reflection_reasons.1,Breathing discomfort,Disconfort respirator
+ro,fixture.reflection_reasons.2,Trouble settling down,Dificultăți de relaxare
+ro,fixture.reflection_notes.0,Back to my afternoon.,Mi-am continuat după-amiaza.
+ro,fixture.reflection_notes.1,A comfortable walk home.,O plimbare plăcută spre casă.
+ro,fixture.reflection_notes.2,A quieter evening.,O seară mai liniștită.
+ro,fixture.simple_notes.0,Busy afternoon at my desk.,După-amiază aglomerată la birou.
+ro,fixture.simple_notes.1,After an outdoor walk.,După o plimbare în aer liber.
+ro,fixture.simple_notes.2,Settled in with a book.,M-am așezat comod cu o carte.
+ro,fixture.latest_note.0,Feeling more like myself.,Mă simt din nou în apele mele.
+ru,01-medication.title,Your meds. Your way.,Ваши лекарства. Как удобно вам.
+ru,01-medication.subtitle,"Colors, icons and names that feel familiar.","Привычные цвета, значки и названия."
+ru,02-history.title,"The details, all together.",Все подробности в одном месте.
+ru,02-history.subtitle,"Doses, notes and how you felt.","Дозы, заметки и ваше самочувствие."
+ru,03-trends.title,See your bigger picture.,Взгляните на общую картину.
+ru,03-trends.subtitle,A little history. A lot more perspective.,Немного истории. Гораздо больше ясности.
+ru,04-log-dose.title,Log it. Carry on.,Отметьте приём. И дальше по делам.
+ru,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Быстрый выбор времени. Точное количество. Меньше хлопот.
+ru,watch.01.title,Keep it close.,Всегда под рукой.
+ru,watch.02.title,Know what’s left.,"Знайте, сколько осталось."
+ru,watch.03.title,Log from your wrist.,Отмечайте приём на часах.
+ru,watch.04.title,Keep stock in sight.,Запасы на виду.
+ru,search.tracking,As-needed medication tracking.,Учёт приёма лекарств по необходимости.
+ru,search.carry_on,Carry on.,Возвращайтесь к своим делам.
+ru,search.keep_track,Keep track.,Ведите учёт.
+ru,fixture.nicknames.0,Headache Help,От головной боли
+ru,fixture.nicknames.1,Breathe Easy,Лёгкое дыхание
+ru,fixture.nicknames.2,Wind Down,Время расслабиться
+ru,fixture.clinical_names.0,Pain Relief,Обезболивающее
+ru,fixture.clinical_names.1,Rescue Inhaler,Ингалятор для экстренной помощи
+ru,fixture.clinical_names.2,Sleep Support,Средство для сна
+ru,fixture.reflection_reasons.0,Tension headache,Головная боль напряжения
+ru,fixture.reflection_reasons.1,Breathing discomfort,Дискомфорт при дыхании
+ru,fixture.reflection_reasons.2,Trouble settling down,Трудно расслабиться
+ru,fixture.reflection_notes.0,Back to my afternoon.,Возвращаюсь к дневным делам.
+ru,fixture.reflection_notes.1,A comfortable walk home.,Приятная прогулка домой.
+ru,fixture.reflection_notes.2,A quieter evening.,Более спокойный вечер.
+ru,fixture.simple_notes.0,Busy afternoon at my desk.,Много дел за рабочим столом после обеда.
+ru,fixture.simple_notes.1,After an outdoor walk.,После прогулки на свежем воздухе.
+ru,fixture.simple_notes.2,Settled in with a book.,Уютный отдых с книгой.
+ru,fixture.latest_note.0,Feeling more like myself.,Снова чувствую себя собой.
+sk,01-medication.title,Your meds. Your way.,Vaše lieky. Podľa vás.
+sk,01-medication.subtitle,"Colors, icons and names that feel familiar.","Farby, ikony a názvy, ktoré sú vám blízke."
+sk,02-history.title,"The details, all together.",Všetky podrobnosti pokope.
+sk,02-history.subtitle,"Doses, notes and how you felt.","Dávky, poznámky a vaše pocity."
+sk,03-trends.title,See your bigger picture.,Získajte celkový prehľad.
+sk,03-trends.subtitle,A little history. A lot more perspective.,Trochu histórie. Oveľa viac súvislostí.
+sk,04-log-dose.title,Log it. Carry on.,Zaznamenajte. A pokračujte.
+sk,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Rýchle zadanie času. Presné množstvá. Menej starostí.
+sk,watch.01.title,Keep it close.,Vždy poruke.
+sk,watch.02.title,Know what’s left.,"Majte prehľad, koľko zostáva."
+sk,watch.03.title,Log from your wrist.,Zaznamenávajte zo zápästia.
+sk,watch.04.title,Keep stock in sight.,Majte zásoby na očiach.
+sk,search.tracking,As-needed medication tracking.,Sledovanie liekov užívaných podľa potreby.
+sk,search.carry_on,Carry on.,Pokračujte ďalej.
+sk,search.keep_track,Keep track.,Majte prehľad.
+sk,fixture.nicknames.0,Headache Help,Pomoc pri bolesti hlavy
+sk,fixture.nicknames.1,Breathe Easy,Ľahšie dýchanie
+sk,fixture.nicknames.2,Wind Down,Na upokojenie
+sk,fixture.clinical_names.0,Pain Relief,Úľava od bolesti
+sk,fixture.clinical_names.1,Rescue Inhaler,Úľavový inhalátor
+sk,fixture.clinical_names.2,Sleep Support,Podpora spánku
+sk,fixture.reflection_reasons.0,Tension headache,Tenzná bolesť hlavy
+sk,fixture.reflection_reasons.1,Breathing discomfort,Ťažkosti s dýchaním
+sk,fixture.reflection_reasons.2,Trouble settling down,Ťažkosti s upokojením
+sk,fixture.reflection_notes.0,Back to my afternoon.,Pokračujem v popoludňajších aktivitách.
+sk,fixture.reflection_notes.1,A comfortable walk home.,Príjemná prechádzka domov.
+sk,fixture.reflection_notes.2,A quieter evening.,Pokojnejší večer.
+sk,fixture.simple_notes.0,Busy afternoon at my desk.,Rušné popoludnie za pracovným stolom.
+sk,fixture.simple_notes.1,After an outdoor walk.,Po prechádzke vonku.
+sk,fixture.simple_notes.2,Settled in with a book.,Pohoda s knihou.
+sk,fixture.latest_note.0,Feeling more like myself.,Cítim sa viac vo svojej koži.
+sv,01-medication.title,Your meds. Your way.,Din medicin. På ditt sätt.
+sv,01-medication.subtitle,"Colors, icons and names that feel familiar.","Färger, ikoner och namn som känns bekanta."
+sv,02-history.title,"The details, all together.",Alla detaljer på ett ställe.
+sv,02-history.subtitle,"Doses, notes and how you felt.","Doser, anteckningar och hur du mådde."
+sv,03-trends.title,See your bigger picture.,Se helheten.
+sv,03-trends.subtitle,A little history. A lot more perspective.,Lite historik. Mycket mer perspektiv.
+sv,04-log-dose.title,Log it. Carry on.,Registrera. Gå vidare.
+sv,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Snabba tidsval. Exakta mängder. Mindre krångel.
+sv,watch.01.title,Keep it close.,Ha det nära till hands.
+sv,watch.02.title,Know what’s left.,Se vad som finns kvar.
+sv,watch.03.title,Log from your wrist.,Registrera från handleden.
+sv,watch.04.title,Keep stock in sight.,Håll koll på förrådet.
+sv,search.tracking,As-needed medication tracking.,Håll koll på medicin vid behov.
+sv,search.carry_on,Carry on.,Fortsätt med din dag.
+sv,search.keep_track,Keep track.,Håll koll.
+sv,fixture.nicknames.0,Headache Help,Hjälp mot huvudvärk
+sv,fixture.nicknames.1,Breathe Easy,Andas lätt
+sv,fixture.nicknames.2,Wind Down,Varva ner
+sv,fixture.clinical_names.0,Pain Relief,Smärtlindring
+sv,fixture.clinical_names.1,Rescue Inhaler,Akutinhalator
+sv,fixture.clinical_names.2,Sleep Support,Sömnstöd
+sv,fixture.reflection_reasons.0,Tension headache,Spänningshuvudvärk
+sv,fixture.reflection_reasons.1,Breathing discomfort,Obehag vid andning
+sv,fixture.reflection_reasons.2,Trouble settling down,Svårt att komma till ro
+sv,fixture.reflection_notes.0,Back to my afternoon.,Tillbaka till min eftermiddag.
+sv,fixture.reflection_notes.1,A comfortable walk home.,En behaglig promenad hem.
+sv,fixture.reflection_notes.2,A quieter evening.,En lugnare kväll.
+sv,fixture.simple_notes.0,Busy afternoon at my desk.,Fullt upp vid skrivbordet i eftermiddag.
+sv,fixture.simple_notes.1,After an outdoor walk.,Efter en promenad utomhus.
+sv,fixture.simple_notes.2,Settled in with a book.,Kröp upp med en bok.
+sv,fixture.latest_note.0,Feeling more like myself.,Känner mig mer som mig själv.
+th,01-medication.title,Your meds. Your way.,ยาของคุณ ในแบบของคุณ
+th,01-medication.subtitle,"Colors, icons and names that feel familiar.",สี ไอคอน และชื่อที่คุณคุ้นเคย
+th,02-history.title,"The details, all together.",ทุกรายละเอียด รวมไว้ด้วยกัน
+th,02-history.subtitle,"Doses, notes and how you felt.",การใช้ยา บันทึก และความรู้สึกของคุณ
+th,03-trends.title,See your bigger picture.,มองเห็นภาพรวมของคุณ
+th,03-trends.subtitle,A little history. A lot more perspective.,ประวัติเพียงนิด มุมมองก็กว้างขึ้นอีกมาก
+th,04-log-dose.title,Log it. Carry on.,บันทึก แล้วไปต่อ
+th,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,บันทึกเวลาได้ไว ระบุปริมาณได้แม่นยำ ยุ่งยากน้อยลง
+th,watch.01.title,Keep it close.,เก็บไว้ใกล้ตัว
+th,watch.02.title,Know what’s left.,รู้ว่าเหลือเท่าไร
+th,watch.03.title,Log from your wrist.,บันทึกได้จากข้อมือ
+th,watch.04.title,Keep stock in sight.,ดูปริมาณยาคงเหลือได้เสมอ
+th,search.tracking,As-needed medication tracking.,ติดตามการใช้ยาเมื่อจำเป็น
+th,search.carry_on,Carry on.,ไปต่อได้เลย
+th,search.keep_track,Keep track.,ติดตามไว้เสมอ
+th,fixture.nicknames.0,Headache Help,ตัวช่วยยามปวดหัว
+th,fixture.nicknames.1,Breathe Easy,หายใจสบาย
+th,fixture.nicknames.2,Wind Down,ผ่อนคลาย
+th,fixture.clinical_names.0,Pain Relief,ยาบรรเทาปวด
+th,fixture.clinical_names.1,Rescue Inhaler,ยาสูดพ่นบรรเทาอาการเฉียบพลัน
+th,fixture.clinical_names.2,Sleep Support,ตัวช่วยการนอนหลับ
+th,fixture.reflection_reasons.0,Tension headache,ปวดศีรษะจากความตึงเครียด
+th,fixture.reflection_reasons.1,Breathing discomfort,หายใจไม่สะดวก
+th,fixture.reflection_reasons.2,Trouble settling down,รู้สึกผ่อนคลายได้ยาก
+th,fixture.reflection_notes.0,Back to my afternoon.,กลับไปทำสิ่งต่าง ๆ ในช่วงบ่ายได้แล้ว
+th,fixture.reflection_notes.1,A comfortable walk home.,เดินกลับบ้านได้สบาย ๆ
+th,fixture.reflection_notes.2,A quieter evening.,เป็นช่วงเย็นที่สงบขึ้น
+th,fixture.simple_notes.0,Busy afternoon at my desk.,ช่วงบ่ายงานยุ่งอยู่ที่โต๊ะ
+th,fixture.simple_notes.1,After an outdoor walk.,หลังออกไปเดินเล่นข้างนอก
+th,fixture.simple_notes.2,Settled in with a book.,นั่งอ่านหนังสือสบาย ๆ
+th,fixture.latest_note.0,Feeling more like myself.,รู้สึกกลับมาเป็นตัวเองมากขึ้น
+tr,01-medication.title,Your meds. Your way.,İlaçların. Senin tarzın.
+tr,01-medication.subtitle,"Colors, icons and names that feel familiar.","Sana tanıdık gelen renkler, simgeler ve adlar."
+tr,02-history.title,"The details, all together.",Tüm ayrıntılar bir arada.
+tr,02-history.subtitle,"Doses, notes and how you felt.","Dozlar, notlar ve nasıl hissettiğin."
+tr,03-trends.title,See your bigger picture.,Genel tabloyu gör.
+tr,03-trends.subtitle,A little history. A lot more perspective.,Biraz geçmiş. Çok daha geniş bir bakış.
+tr,04-log-dose.title,Log it. Carry on.,Kaydet. Gününe devam et.
+tr,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Hızlı saat seçimi. Kesin miktarlar. Daha az uğraş.
+tr,watch.01.title,Keep it close.,Hep yanında.
+tr,watch.02.title,Know what’s left.,Ne kadar kaldığını bil.
+tr,watch.03.title,Log from your wrist.,Bileğinden kaydet.
+tr,watch.04.title,Keep stock in sight.,Stok durumun gözünün önünde.
+tr,search.tracking,As-needed medication tracking.,Gerektiğinde kullanılan ilaçların takibi.
+tr,search.carry_on,Carry on.,Gününe devam et.
+tr,search.keep_track,Keep track.,Takip et.
+tr,fixture.nicknames.0,Headache Help,Baş ağrısına destek
+tr,fixture.nicknames.1,Breathe Easy,Rahat nefes
+tr,fixture.nicknames.2,Wind Down,Rahatlama
+tr,fixture.clinical_names.0,Pain Relief,Ağrı giderici
+tr,fixture.clinical_names.1,Rescue Inhaler,Kurtarıcı inhaler
+tr,fixture.clinical_names.2,Sleep Support,Uyku desteği
+tr,fixture.reflection_reasons.0,Tension headache,Gerilim tipi baş ağrısı
+tr,fixture.reflection_reasons.1,Breathing discomfort,Nefes alırken rahatsızlık
+tr,fixture.reflection_reasons.2,Trouble settling down,Sakinleşmekte zorlanma
+tr,fixture.reflection_notes.0,Back to my afternoon.,Öğleden sonraki işlerime döndüm.
+tr,fixture.reflection_notes.1,A comfortable walk home.,Eve rahatça yürüdüm.
+tr,fixture.reflection_notes.2,A quieter evening.,Daha sakin bir akşam.
+tr,fixture.simple_notes.0,Busy afternoon at my desk.,Masamda yoğun bir öğleden sonra.
+tr,fixture.simple_notes.1,After an outdoor walk.,Açık havada bir yürüyüşten sonra.
+tr,fixture.simple_notes.2,Settled in with a book.,Kitabımla rahatça yerleştim.
+tr,fixture.latest_note.0,Feeling more like myself.,Kendimi daha çok kendim gibi hissediyorum.
+uk,01-medication.title,Your meds. Your way.,Ваші ліки. Як вам зручно.
+uk,01-medication.subtitle,"Colors, icons and names that feel familiar.","Звичні кольори, значки та назви."
+uk,02-history.title,"The details, all together.",Усі деталі разом.
+uk,02-history.subtitle,"Doses, notes and how you felt.","Дози, нотатки й ваше самопочуття."
+uk,03-trends.title,See your bigger picture.,Побачте загальну картину.
+uk,03-trends.subtitle,A little history. A lot more perspective.,Трохи історії. Набагато більше розуміння.
+uk,04-log-dose.title,Log it. Carry on.,Запишіть. І займайтеся своїми справами.
+uk,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Швидке введення часу. Точна кількість. Менше клопоту.
+uk,watch.01.title,Keep it close.,Завжди поруч.
+uk,watch.02.title,Know what’s left.,"Знайте, скільки залишилося."
+uk,watch.03.title,Log from your wrist.,Записуйте з годинника.
+uk,watch.04.title,Keep stock in sight.,Тримайте запаси на видноті.
+uk,search.tracking,As-needed medication tracking.,Облік приймання ліків за потреби.
+uk,search.carry_on,Carry on.,Продовжуйте свій день.
+uk,search.keep_track,Keep track.,Ведіть облік.
+uk,fixture.nicknames.0,Headache Help,Від головного болю
+uk,fixture.nicknames.1,Breathe Easy,Легкий подих
+uk,fixture.nicknames.2,Wind Down,Час розслабитися
+uk,fixture.clinical_names.0,Pain Relief,Полегшення болю
+uk,fixture.clinical_names.1,Rescue Inhaler,Інгалятор швидкої дії
+uk,fixture.clinical_names.2,Sleep Support,Підтримка сну
+uk,fixture.reflection_reasons.0,Tension headache,Головний біль напруження
+uk,fixture.reflection_reasons.1,Breathing discomfort,Дискомфорт під час дихання
+uk,fixture.reflection_reasons.2,Trouble settling down,Важко заспокоїтися
+uk,fixture.reflection_notes.0,Back to my afternoon.,Повертаюся до пообідніх справ.
+uk,fixture.reflection_notes.1,A comfortable walk home.,Приємна прогулянка додому.
+uk,fixture.reflection_notes.2,A quieter evening.,Спокійніший вечір.
+uk,fixture.simple_notes.0,Busy afternoon at my desk.,Напружена друга половина дня за робочим столом.
+uk,fixture.simple_notes.1,After an outdoor walk.,Після прогулянки на свіжому повітрі.
+uk,fixture.simple_notes.2,Settled in with a book.,Затишно з книжкою.
+uk,fixture.latest_note.0,Feeling more like myself.,Знову почуваюся собою.
+vi,01-medication.title,Your meds. Your way.,Thuốc của bạn. Theo cách của bạn.
+vi,01-medication.subtitle,"Colors, icons and names that feel familiar.","Màu sắc, biểu tượng và tên gọi quen thuộc."
+vi,02-history.title,"The details, all together.","Mọi chi tiết, cùng một nơi."
+vi,02-history.subtitle,"Doses, notes and how you felt.","Liều dùng, ghi chú và cảm nhận của bạn."
+vi,03-trends.title,See your bigger picture.,Nhìn rõ bức tranh tổng thể.
+vi,03-trends.subtitle,A little history. A lot more perspective.,Nhìn lại một chút. Hiểu thêm thật nhiều.
+vi,04-log-dose.title,Log it. Carry on.,Ghi lại. Rồi tiếp tục ngày của bạn.
+vi,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,Chọn giờ nhanh. Lượng dùng chính xác. Bớt rườm rà.
+vi,watch.01.title,Keep it close.,Luôn trong tầm tay.
+vi,watch.02.title,Know what’s left.,Biết lượng thuốc còn lại.
+vi,watch.03.title,Log from your wrist.,Ghi lại ngay trên cổ tay.
+vi,watch.04.title,Keep stock in sight.,Luôn nắm rõ lượng thuốc dự trữ.
+vi,search.tracking,As-needed medication tracking.,Theo dõi thuốc dùng khi cần.
+vi,search.carry_on,Carry on.,Tiếp tục ngày của bạn.
+vi,search.keep_track,Keep track.,Luôn theo dõi.
+vi,fixture.nicknames.0,Headache Help,Xoa dịu cơn đau đầu
+vi,fixture.nicknames.1,Breathe Easy,Dễ thở
+vi,fixture.nicknames.2,Wind Down,Thư giãn
+vi,fixture.clinical_names.0,Pain Relief,Giảm đau
+vi,fixture.clinical_names.1,Rescue Inhaler,Bình xịt cắt cơn
+vi,fixture.clinical_names.2,Sleep Support,Hỗ trợ giấc ngủ
+vi,fixture.reflection_reasons.0,Tension headache,Đau đầu do căng thẳng
+vi,fixture.reflection_reasons.1,Breathing discomfort,Khó chịu khi thở
+vi,fixture.reflection_reasons.2,Trouble settling down,Khó thư giãn
+vi,fixture.reflection_notes.0,Back to my afternoon.,Quay lại với buổi chiều của mình.
+vi,fixture.reflection_notes.1,A comfortable walk home.,Đi bộ về nhà thật thoải mái.
+vi,fixture.reflection_notes.2,A quieter evening.,Một buổi tối yên ả hơn.
+vi,fixture.simple_notes.0,Busy afternoon at my desk.,Buổi chiều bận rộn bên bàn làm việc.
+vi,fixture.simple_notes.1,After an outdoor walk.,Sau khi đi dạo ngoài trời.
+vi,fixture.simple_notes.2,Settled in with a book.,Ngồi thư thái đọc sách.
+vi,fixture.latest_note.0,Feeling more like myself.,Cảm thấy là chính mình hơn.
+zh-HK,01-medication.title,Your meds. Your way.,你的藥物，隨你喜好。
+zh-HK,01-medication.subtitle,"Colors, icons and names that feel familiar.",熟悉的顏色、圖示和名稱。
+zh-HK,02-history.title,"The details, all together.",所有細節，盡在一處。
+zh-HK,02-history.subtitle,"Doses, notes and how you felt.",用量、備註，還有你的感受。
+zh-HK,03-trends.title,See your bigger picture.,看清你的整體情況。
+zh-HK,03-trends.subtitle,A little history. A lot more perspective.,一點過往記錄，更多不同角度。
+zh-HK,04-log-dose.title,Log it. Carry on.,記下來，繼續生活。
+zh-HK,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,快捷記時，精準記量，輕鬆省事。
+zh-HK,watch.01.title,Keep it close.,隨時在身邊。
+zh-HK,watch.02.title,Know what’s left.,剩餘多少，一目了然。
+zh-HK,watch.03.title,Log from your wrist.,手腕上，輕鬆記錄。
+zh-HK,watch.04.title,Keep stock in sight.,藥物存量，隨時掌握。
+zh-HK,search.tracking,As-needed medication tracking.,按需要用藥的記錄工具。
+zh-HK,search.carry_on,Carry on.,繼續生活。
+zh-HK,search.keep_track,Keep track.,隨時記錄。
+zh-HK,fixture.nicknames.0,Headache Help,頭痛小幫手
+zh-HK,fixture.nicknames.1,Breathe Easy,輕鬆呼吸
+zh-HK,fixture.nicknames.2,Wind Down,放鬆一下
+zh-HK,fixture.clinical_names.0,Pain Relief,紓緩痛楚
+zh-HK,fixture.clinical_names.1,Rescue Inhaler,急救吸入器
+zh-HK,fixture.clinical_names.2,Sleep Support,睡眠輔助
+zh-HK,fixture.reflection_reasons.0,Tension headache,緊張性頭痛
+zh-HK,fixture.reflection_reasons.1,Breathing discomfort,呼吸不適
+zh-HK,fixture.reflection_reasons.2,Trouble settling down,難以放鬆下來
+zh-HK,fixture.reflection_notes.0,Back to my afternoon.,回到下午的日常。
+zh-HK,fixture.reflection_notes.1,A comfortable walk home.,舒舒服服地步行回家。
+zh-HK,fixture.reflection_notes.2,A quieter evening.,一個更平靜的晚上。
+zh-HK,fixture.simple_notes.0,Busy afternoon at my desk.,下午在書桌前忙個不停。
+zh-HK,fixture.simple_notes.1,After an outdoor walk.,戶外散步之後。
+zh-HK,fixture.simple_notes.2,Settled in with a book.,安頓下來看書。
+zh-HK,fixture.latest_note.0,Feeling more like myself.,感覺更像平時的自己了。
+zh-Hans,01-medication.title,Your meds. Your way.,你的药物，随你定制。
+zh-Hans,01-medication.subtitle,"Colors, icons and names that feel familiar.",熟悉的颜色、图标和名称，看着就亲切。
+zh-Hans,02-history.title,"The details, all together.",点滴细节，汇在一起。
+zh-Hans,02-history.subtitle,"Doses, notes and how you felt.",用量、备注，还有当时的感受。
+zh-Hans,03-trends.title,See your bigger picture.,看见你的用药全貌。
+zh-Hans,03-trends.subtitle,A little history. A lot more perspective.,一点点记录，多一份了解。
+zh-Hans,04-log-dose.title,Log it. Carry on.,记一笔，继续生活。
+zh-Hans,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,快速选时间，精准记用量，省心又省事。
+zh-Hans,watch.01.title,Keep it close.,随时在手边。
+zh-Hans,watch.02.title,Know what’s left.,还剩多少，心中有数。
+zh-Hans,watch.03.title,Log from your wrist.,抬起手腕，轻松记录。
+zh-Hans,watch.04.title,Keep stock in sight.,药物库存，一目了然。
+zh-Hans,search.tracking,As-needed medication tracking.,按需用药记录。
+zh-Hans,search.carry_on,Carry on.,继续生活。
+zh-Hans,search.keep_track,Keep track.,随时记录。
+zh-Hans,fixture.nicknames.0,Headache Help,头痛小帮手
+zh-Hans,fixture.nicknames.1,Breathe Easy,轻松呼吸
+zh-Hans,fixture.nicknames.2,Wind Down,放松一下
+zh-Hans,fixture.clinical_names.0,Pain Relief,缓解疼痛
+zh-Hans,fixture.clinical_names.1,Rescue Inhaler,急救吸入器
+zh-Hans,fixture.clinical_names.2,Sleep Support,辅助睡眠
+zh-Hans,fixture.reflection_reasons.0,Tension headache,紧张性头痛
+zh-Hans,fixture.reflection_reasons.1,Breathing discomfort,呼吸不适
+zh-Hans,fixture.reflection_reasons.2,Trouble settling down,难以静下心来
+zh-Hans,fixture.reflection_notes.0,Back to my afternoon.,继续忙我的下午。
+zh-Hans,fixture.reflection_notes.1,A comfortable walk home.,一路走回家，感觉很舒适。
+zh-Hans,fixture.reflection_notes.2,A quieter evening.,今晚更平静了。
+zh-Hans,fixture.simple_notes.0,Busy afternoon at my desk.,下午在桌前忙碌。
+zh-Hans,fixture.simple_notes.1,After an outdoor walk.,户外散步后。
+zh-Hans,fixture.simple_notes.2,Settled in with a book.,安顿下来，读会儿书。
+zh-Hans,fixture.latest_note.0,Feeling more like myself.,感觉更像平时的自己了。
+zh-Hant,01-medication.title,Your meds. Your way.,你的藥物，你的方式。
+zh-Hant,01-medication.subtitle,"Colors, icons and names that feel familiar.",熟悉的顏色、圖示和名稱。
+zh-Hant,02-history.title,"The details, all together.",所有細節，一次看齊。
+zh-Hant,02-history.subtitle,"Doses, notes and how you felt.",用量、筆記，還有當時的感受。
+zh-Hant,03-trends.title,See your bigger picture.,掌握你的整體狀況。
+zh-Hant,03-trends.subtitle,A little history. A lot more perspective.,一點紀錄，更多理解。
+zh-Hant,04-log-dose.title,Log it. Carry on.,記一下，繼續過生活。
+zh-Hant,04-log-dose.subtitle,Quick times. Precise amounts. Less fuss.,快速記時間，精確記用量，少點麻煩。
+zh-Hant,watch.01.title,Keep it close.,隨時在手邊。
+zh-Hant,watch.02.title,Know what’s left.,剩下多少，心裡有數。
+zh-Hant,watch.03.title,Log from your wrist.,抬起手腕，輕鬆記錄。
+zh-Hant,watch.04.title,Keep stock in sight.,藥物存量，一目了然。
+zh-Hant,search.tracking,As-needed medication tracking.,按需用藥紀錄。
+zh-Hant,search.carry_on,Carry on.,繼續過生活。
+zh-Hant,search.keep_track,Keep track.,隨手記錄。
+zh-Hant,fixture.nicknames.0,Headache Help,頭痛幫手
+zh-Hant,fixture.nicknames.1,Breathe Easy,輕鬆呼吸
+zh-Hant,fixture.nicknames.2,Wind Down,放鬆一下
+zh-Hant,fixture.clinical_names.0,Pain Relief,止痛
+zh-Hant,fixture.clinical_names.1,Rescue Inhaler,急救吸入劑
+zh-Hant,fixture.clinical_names.2,Sleep Support,睡眠輔助
+zh-Hant,fixture.reflection_reasons.0,Tension headache,緊張型頭痛
+zh-Hant,fixture.reflection_reasons.1,Breathing discomfort,呼吸不適
+zh-Hant,fixture.reflection_reasons.2,Trouble settling down,難以靜下心來
+zh-Hant,fixture.reflection_notes.0,Back to my afternoon.,繼續下午的日常。
+zh-Hant,fixture.reflection_notes.1,A comfortable walk home.,舒服地走路回家。
+zh-Hant,fixture.reflection_notes.2,A quieter evening.,今晚平靜了些。
+zh-Hant,fixture.simple_notes.0,Busy afternoon at my desk.,下午在書桌前忙碌。
+zh-Hant,fixture.simple_notes.1,After an outdoor walk.,到戶外散步後。
+zh-Hant,fixture.simple_notes.2,Settled in with a book.,安頓好，讀本書。
+zh-Hant,fixture.latest_note.0,Feeling more like myself.,感覺更像平常的自己了。
