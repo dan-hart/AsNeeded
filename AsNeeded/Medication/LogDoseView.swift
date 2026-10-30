@@ -978,6 +978,7 @@ struct LogDoseView: View {
                 Button(role: .close) {
 					if hasChanges { draft.showingDiscardConfirmation = true } else { dismiss() }
                 }
+					.accessibilityLabel(Text("Close"))
 				.disabled(draft.isLogging)
 				.tint(medication.displayColor)
 				}

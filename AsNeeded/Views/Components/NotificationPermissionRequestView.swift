@@ -89,6 +89,7 @@ struct NotificationPermissionRequestView: View {
 					Button(role: .close) {
 						dismiss()
 					}
+						.accessibilityLabel(Text("Close"))
 				}
 			}
 			.tint(.accent)

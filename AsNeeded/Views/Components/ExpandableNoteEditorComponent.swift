@@ -208,6 +208,7 @@ struct ExpandableNoteEditorComponent: View {
 							isExpanded = false
 						}
 					}
+						.accessibilityLabel(Text("Close"))
 					.tint(accentColor)
 				}
 			}

@@ -13,7 +13,7 @@ struct LocalizationResourceTests {
 		let bundles = [app,
 			app.appendingPathComponent("PlugIns/AsNeededWidgetExtension.appex"),
 			app.appendingPathComponent("Watch/WristAsNeeded Watch App.app")]
-		let keys = ["Demo Mode", "Dose logged", "Dose not logged", "Within saved guidance",
+		let keys = ["Close", "Demo Mode", "Dose logged", "Dose not logged", "Within saved guidance",
 			"Within saved limits", "Review before logging", "Medications Unavailable", "Check recorded timing and open the dose form."]
 		for url in bundles {
 			let resources = try #require(Bundle(url: url.appendingPathComponent("\(locale).lproj")),
