@@ -1,0 +1,17 @@
+{
+  "imagesValidated": 20,
+  "format": "Opaque RGB PNG",
+  "background": "#F1D89C",
+  "duoFrames": "Pinned assets and untouched central UI pixels verified",
+  "fictionalEvents": 496,
+  "trends": {
+    "Headache Help": {
+      "oldestWeekDailyMean": 3.71,
+      "latestWeekDailyMean": 0.86
+    },
+    "Breathe Easy": {
+      "oldestWeekDailyMean": 2.0,
+      "latestWeekDailyMean": 7.71
+    }
+  }
+}

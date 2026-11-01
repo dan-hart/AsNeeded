@@ -21,7 +21,7 @@ struct MedicationUnitEntity: AppEntity {
     init(unit: ANUnitConcept) {
         self.unit = unit
         id = unit.rawValue
-        displayName = unit.displayName
+        displayName = unit.localizedDisplayName
     }
 }
 
@@ -37,8 +37,8 @@ struct MedicationUnitQuery: EntityQuery {
     func entities(matching string: String) async throws -> [MedicationUnitEntity] {
         let searchTerm = string.lowercased()
         return ANUnitConcept.allCases.compactMap { unit in
-            if unit.displayName.lowercased().contains(searchTerm) ||
-                unit.abbreviation.lowercased().contains(searchTerm) ||
+            if unit.localizedDisplayName.lowercased().contains(searchTerm) ||
+                unit.localizedAbbreviation.lowercased().contains(searchTerm) ||
                 unit.rawValue.lowercased().contains(searchTerm)
             {
                 return MedicationUnitEntity(unit: unit)

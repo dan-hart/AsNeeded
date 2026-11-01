@@ -20,6 +20,9 @@ Keep tests fast, deterministic, and focused on app behavior that matters.
 
 - Test the public behavior, not private implementation details.
 - Keep fixtures and helpers simple and readable.
+- Use isolated storage/defaults and injected notification clients. Do not let unit tests request real permissions or rewrite a shared container during concurrent tests. Serialize unavoidable shared-resource tests and restore state in `defer`.
+- Use an injected reference date for rolling windows and test exact boundaries, quantity units, invalid numbers, optional fields, and older schema decoding.
+- Inspect test-result bundles when runner output is incomplete; a formatter reporting no failed assertions does not prove the test host succeeded.
 - Add regression coverage when fixing a bug.
 
 ## Avoid

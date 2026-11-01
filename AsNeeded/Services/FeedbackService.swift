@@ -31,7 +31,7 @@ enum FeedbackType {
     var emailBody: String {
         switch self {
         case .bug:
-            return """
+            return String(localized: """
             Bug Report
 
             Please describe the bug you encountered:
@@ -56,9 +56,9 @@ enum FeedbackType {
 
             Application logs may be attached to help diagnose the issue.
             No medication names are stored in logs - only technical information.
-            """
+            """)
         case .featureRequest:
-            return """
+            return String(localized: """
             Feature Request
 
             Please describe the feature you would like to see:
@@ -78,9 +78,9 @@ enum FeedbackType {
 
             Application logs may be attached for context.
             Medication details are not stored in logs - only technical information.
-            """
+            """)
         case .feedback:
-            return """
+            return String(localized: """
             General Feedback
 
             Please share your feedback:
@@ -103,7 +103,7 @@ enum FeedbackType {
 
             Application logs may be attached for context.
             No medication names are stored in logs - only technical information.
-            """
+            """)
         }
     }
 }
@@ -260,23 +260,23 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
 
     /// Creates a pre-filled feedback email content for sharing via other apps
     func createFeedbackText(type: FeedbackType) -> String {
-        let subject = "\(type.subject) AsNeeded App Feedback"
+        let subject = String(localized: "\(type.subject) AsNeeded App Feedback")
         let body = type.emailBody
-        let deviceInfo = """
+        let deviceInfo = String(localized: """
 
         Device Information:
         • App Version: \(Bundle.main.appVersionLong)
         • Distribution: \(Bundle.main.distributionType)
         • iOS Version: \(UIDevice.current.systemVersion)
         • Device Model: \(UIDevice.current.model)
-        """
+        """)
 
-        return """
+        return String(localized: """
         To: \(supportEmail)
         Subject: \(subject)
 
         \(body)\(deviceInfo)
-        """
+        """)
     }
 
     /// Copies feedback content to clipboard for easy pasting
@@ -294,7 +294,7 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
 
     /// Creates a mailto URL for opening in any available email app
     func createMailtoURL(type: FeedbackType) -> URL? {
-        let subject = "\(type.subject) AsNeeded App Feedback".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let subject = String(localized: "\(type.subject) AsNeeded App Feedback").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let body = type.emailBody.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "mailto:\(supportEmail)?subject=\(subject)&body=\(body)"
         return URL(string: urlString)
@@ -302,7 +302,7 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
 
     /// Creates a ShareLink-compatible ShareData object
     func createShareData(type: FeedbackType) -> (subject: String, text: String) {
-        let subject = "\(type.subject) AsNeeded App Feedback"
+        let subject = String(localized: "\(type.subject) AsNeeded App Feedback")
         let text = createFeedbackText(type: type)
         return (subject: subject, text: text)
     }

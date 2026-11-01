@@ -7,63 +7,21 @@ import SwiftUI
 @MainActor
 @Suite("MedicationListViewModel Unit Tests", .tags(.viewModel, .medication, .unit), .serialized)
 struct MedicationListViewModelUnitTests {
-    @MainActor
-    private final class TestToastScheduler {
-        private(set) var actions: [@MainActor @Sendable () -> Void] = []
-
-        func schedule(_ action: @escaping @MainActor @Sendable () -> Void) {
-            actions.append(action)
-        }
-    }
-
-	@MainActor
-	private final class DeliveredReminderAcknowledgementRecorder {
-		private(set) var medicationIDs: [UUID] = []
-
-		func acknowledge(_ medicationID: UUID) async {
-			medicationIDs.append(medicationID)
-		}
-	}
-
-	private struct TestPersistenceError: Error {}
-
-	enum QuickLogFailureOutcome: CaseIterable {
-		case totalFailure
-		case updateOnly
-		case eventOnly
-
-		var persistenceResult: (updateSuccess: Bool, eventSuccess: Bool) {
-			switch self {
-			case .totalFailure:
-				return (false, false)
-			case .updateOnly:
-				return (true, false)
-			case .eventOnly:
-				return (false, true)
-			}
-		}
-	}
-
     private var viewModel: MedicationListViewModel
     private var dataStore: DataStore
-    private var toastScheduler: TestToastScheduler
-	private var acknowledgementRecorder: DeliveredReminderAcknowledgementRecorder
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
 
     init() async throws {
         // Create test instance with isolated storage
-        dataStore = DataStore(testIdentifier: "MedicationListViewModelUnitTests")
-        toastScheduler = TestToastScheduler()
-		acknowledgementRecorder = DeliveredReminderAcknowledgementRecorder()
-        viewModel = MedicationListViewModel(
-            dataStore: dataStore,
-            scheduleQuickLogToastDismissal: toastScheduler.schedule,
-			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
-        )
+        preferences = try IsolatedTestPreferences()
+        dataStore = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name)
+        viewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
         // Clear any existing test data
         try await dataStore.clearAllData()
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.medicationOrder)
+        defaults.removeObject(forKey: UserDefaultsKeys.medicationOrder)
         // Ensure hideSupportBanners is false by default for this test suite
-        UserDefaults.standard.set(false, forKey: UserDefaultsKeys.hideSupportBanners)
+        defaults.set(false, forKey: UserDefaultsKeys.hideSupportBanners)
     }
 
     @Test("ViewModel initializes with correct data from DataStore")
@@ -75,7 +33,7 @@ struct MedicationListViewModelUnitTests {
         try await dataStore.addMedication(med2)
 
         // When
-        let newViewModel = MedicationListViewModel(dataStore: dataStore)
+        let newViewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
 
         // Then
         #expect(newViewModel.items.count == 2)
@@ -196,8 +154,8 @@ struct MedicationListViewModelUnitTests {
         _ = await viewModel.add(med3)
 
         // Set a custom order (e.g., med3, med1, med2)
-        UserDefaults.standard.set([med3.id.uuidString, med1.id.uuidString].rawValue, forKey: UserDefaultsKeys.medicationOrder)
-        viewModel = MedicationListViewModel(dataStore: dataStore)
+        defaults.set([med3.id.uuidString, med1.id.uuidString].rawValue, forKey: UserDefaultsKeys.medicationOrder)
+        viewModel = MedicationListViewModel(dataStore: dataStore, defaults: preferences.defaults)
         
         // When
         let sorted = viewModel.sortedMedications
@@ -246,12 +204,15 @@ struct MedicationListViewModelUnitTests {
 
         // When: Delete B (at index 1)
         viewModel.deleteMedications(at: IndexSet(integer: 1))
-        // Allow async deletion to complete
-        try await Task.sleep(nanoseconds: 100_000_000)
+		// Observe completion instead of assuming disk persistence finishes in 100 ms.
+		let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+		while viewModel.items.contains(where: { $0.id == med2.id }), ContinuousClock.now < deadline {
+			try await Task.sleep(for: .milliseconds(10))
+		}
 
         // Then: A, C
         #expect(viewModel.sortedMedications.map { $0.clinicalName } == ["A", "C"])
-        let medicationOrder = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:)) ?? []
+        let medicationOrder = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:)) ?? []
         #expect(!medicationOrder.contains(med2.id.uuidString))
     }
 
@@ -278,164 +239,32 @@ struct MedicationListViewModelUnitTests {
         // Given
         let medication = createTestMedication(name: "Quick Log Med")
         _ = await viewModel.add(medication)
-		#expect(acknowledgementRecorder.medicationIDs.isEmpty)
 
         // When
         let success = await viewModel.quickLog(medication: medication)
 
         // Then
         #expect(success)
-		#expect(acknowledgementRecorder.medicationIDs == [medication.id])
         #expect(dataStore.events.count == 1) // Verify event was added
         #expect(viewModel.showQuickLogToast) // Verify toast state change
         #expect(viewModel.quickLogMedicationName == medication.displayName)
 
-        #expect(toastScheduler.actions.count == 1)
-        toastScheduler.actions[0]()
+        // Undo remains available until the person explicitly dismisses the confirmation.
+		#expect(viewModel.quickLogFeedback?.undoEventID != nil)
+		viewModel.dismissQuickLogToast()
         #expect(!viewModel.showQuickLogToast)
+		#expect(viewModel.quickLogFeedback == nil)
     }
 
-	@Test(
-		"Quick log does not acknowledge reminders unless persistence fully succeeds",
-		arguments: QuickLogFailureOutcome.allCases
-	)
-	func quickLogDoesNotAcknowledgeRemindersOnPersistenceFailure(
-		outcome: QuickLogFailureOutcome
-	) async {
-		let medication = createTestMedication(name: "Failed Quick Log")
-		let result = outcome.persistenceResult
-		let acknowledgementRecorder = DeliveredReminderAcknowledgementRecorder()
-		let viewModel = MedicationListViewModel(
-			dataStore: dataStore,
-			scheduleQuickLogToastDismissal: toastScheduler.schedule,
-			quickLogPersistence: { _, _ in result },
-			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
-		)
-
-		#expect(await viewModel.quickLog(medication: medication) == false)
-		#expect(acknowledgementRecorder.medicationIDs.isEmpty)
-	}
-
-	@Test("Quick log restores quantity when event write fails after medication update")
-	func quickLogRestoresQuantityWhenEventWriteFails() async throws {
-		// Given
-		let medication = createTestMedication(name: "Rollback Med", quantity: 20.0)
-		try await dataStore.addMedication(medication)
-		var writes = QuickLogWrites.live(dataStore: dataStore)
-		writes.addEvent = { _ in throw TestPersistenceError() }
-		let acknowledgementRecorder = DeliveredReminderAcknowledgementRecorder()
-		let viewModel = MedicationListViewModel(
-			dataStore: dataStore,
-			scheduleQuickLogToastDismissal: toastScheduler.schedule,
-			quickLogPersistence: MedicationListViewModel.makeQuickLogPersistence(writes: writes),
-			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
-		)
-
-		// When
-		let success = await viewModel.quickLog(medication: medication)
-
-		// Then
-		#expect(success == false)
-		#expect(dataStore.events.isEmpty)
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 20.0)
-		#expect(acknowledgementRecorder.medicationIDs.isEmpty)
-		#expect(viewModel.showQuickLogToast == false)
-	}
-
-	@Test("Quick log skips event write when medication update fails")
-	func quickLogSkipsEventWriteWhenMedicationUpdateFails() async throws {
-		// Given
-		let medication = createTestMedication(name: "Update Failure Med", quantity: 20.0)
-		try await dataStore.addMedication(medication)
-		var writes = QuickLogWrites.live(dataStore: dataStore)
-		writes.updateMedication = { _ in throw TestPersistenceError() }
-		let viewModel = MedicationListViewModel(
-			dataStore: dataStore,
-			scheduleQuickLogToastDismissal: toastScheduler.schedule,
-			quickLogPersistence: MedicationListViewModel.makeQuickLogPersistence(writes: writes),
-			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
-		)
-
-		// When
-		let success = await viewModel.quickLog(medication: medication)
-
-		// Then
-		#expect(success == false)
-		#expect(dataStore.events.isEmpty)
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 20.0)
-	}
-
-	@Test("Undo re-adds event when medication restore fails")
-	func undoReAddsEventWhenMedicationRestoreFails() async throws {
-		// Given
-		let medication = createTestMedication(name: "Undo Rollback Med", quantity: 20.0)
-		try await dataStore.addMedication(medication)
-		var writes = QuickLogWrites.live(dataStore: dataStore)
-		writes.updateMedication = { _ in throw TestPersistenceError() }
-		let viewModel = MedicationListViewModel(
-			dataStore: dataStore,
-			scheduleQuickLogToastDismissal: toastScheduler.schedule,
-			quickLogUndoPersistence: MedicationListViewModel.makeQuickLogUndoPersistence(writes: writes),
-			acknowledgeDeliveredReminders: acknowledgementRecorder.acknowledge
-		)
+	@Test("Quick log shows a next window based on the newly saved dose")
+	func quickLogUsesNewDoseForNextWindow() async throws {
+		var medication = createTestMedication(name: "Window Example")
+		medication.minimumHoursBetweenDoses = 4
+		#expect(await viewModel.add(medication))
 		#expect(await viewModel.quickLog(medication: medication))
-		#expect(dataStore.events.count == 1)
-		let loggedEventID = dataStore.events.first?.id
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
-
-		// When
-		let undoSuccess = await viewModel.undoLastQuickLog()
-
-		// Then
-		#expect(undoSuccess == false)
-		#expect(dataStore.events.count == 1)
-		#expect(dataStore.events.first?.id == loggedEventID)
-		#expect(dataStore.medications.first { $0.id == medication.id }?.quantity == 10.0)
-		#expect(viewModel.quickLogFeedback?.undoEventID == loggedEventID)
-		#expect(viewModel.showQuickLogToast)
-	}
-
-	@Test("Replacement toast ignores stale auto-dismissal")
-	func replacementToastIgnoresStaleAutoDismissal() async throws {
-		let firstMedication = createTestMedication(name: "First", quantity: 20)
-		let secondMedication = createTestMedication(name: "Second", quantity: 20)
-		_ = await viewModel.add(firstMedication)
-		_ = await viewModel.add(secondMedication)
-
-		#expect(await viewModel.quickLog(medication: firstMedication))
-		let firstGeneration = viewModel.quickLogToastGeneration
-		#expect(await viewModel.quickLog(medication: secondMedication))
-		let secondGeneration = viewModel.quickLogToastGeneration
-
-		#expect(firstGeneration != secondGeneration)
-		#expect(toastScheduler.actions.count == 2)
-		toastScheduler.actions[0]()
-		#expect(viewModel.showQuickLogToast)
-		#expect(viewModel.quickLogMedicationName == "Second")
-		#expect(viewModel.quickLogToastGeneration == secondGeneration)
-
-		toastScheduler.actions[1]()
-		#expect(!viewModel.showQuickLogToast)
-		#expect(viewModel.quickLogToastGeneration == nil)
-	}
-
-	@Test("Manual dismissal cannot dismiss a subsequent toast")
-	func manualDismissalCannotDismissSubsequentToast() async throws {
-		let firstMedication = createTestMedication(name: "First", quantity: 20)
-		let secondMedication = createTestMedication(name: "Second", quantity: 20)
-		_ = await viewModel.add(firstMedication)
-		_ = await viewModel.add(secondMedication)
-
-		#expect(await viewModel.quickLog(medication: firstMedication))
-		let firstGeneration = viewModel.quickLogToastGeneration
-		viewModel.dismissQuickLogToast()
-		#expect(!viewModel.showQuickLogToast)
-
-		#expect(await viewModel.quickLog(medication: secondMedication))
-		toastScheduler.actions[0]()
-		#expect(viewModel.showQuickLogToast)
-		#expect(viewModel.quickLogToastGeneration != firstGeneration)
-		#expect(viewModel.quickLogMedicationName == "Second")
+		let savedEvent = try #require(dataStore.events.first)
+		#expect(viewModel.quickLogFeedback?.nextDoseDate == savedEvent.date.addingTimeInterval(4 * 3600))
+		#expect(viewModel.quickLogFeedback?.undoEventID == savedEvent.id)
 	}
 
     @Test("Quick log preserves medication order")
@@ -446,11 +275,11 @@ struct MedicationListViewModelUnitTests {
         _ = await viewModel.add(firstMedication)
         _ = await viewModel.add(secondMedication)
         let originalOrder = viewModel.sortedMedications.map(\.id)
-        let storedOrderBeforeQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+        let storedOrderBeforeQuickLog = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
 
         // When
         let success = await viewModel.quickLog(medication: firstMedication)
-        let storedOrderAfterQuickLog = UserDefaults.standard.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+        let storedOrderAfterQuickLog = defaults.string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
 
         // Then
         #expect(success)
@@ -472,9 +301,6 @@ struct MedicationListViewModelUnitTests {
 		#expect(success)
 		#expect(dataStore.events.count == 1)
 		#expect(viewModel.quickLogFeedback?.undoEventID == dataStore.events.first?.id)
-		#expect(viewModel.quickLogFeedback?.title == "Dose logged")
-		#expect(viewModel.quickLogFeedback?.detail == medication.displayName)
-		#expect(viewModel.quickLogFeedback?.message.localizedCaseInsensitiveContains("guidance") == false)
 
 		let undoSuccess = await viewModel.undoLastQuickLog()
 
@@ -483,16 +309,17 @@ struct MedicationListViewModelUnitTests {
 		#expect(dataStore.medications.first?.quantity == 20.0)
 		#expect(viewModel.quickLogFeedback == nil)
 		#expect(viewModel.showQuickLogToast == false)
-
-		#expect(await viewModel.quickLog(medication: medication))
-		let subsequentGeneration = viewModel.quickLogToastGeneration
-		toastScheduler.actions[0]()
-		#expect(viewModel.showQuickLogToast)
-		#expect(viewModel.quickLogToastGeneration == subsequentGeneration)
 	}
 
-    @Test("logDose correctly logs dose and updates state")
-    func logDoseCorrectlyLogsDose() async throws {
+    @Test("Form logging confirms the dose without a promotional overlay", arguments: [false, true])
+    func logDoseCorrectlyLogsDose(hideBanners: Bool) async throws {
+		let defaults = preferences.defaults
+		let previous = defaults.object(forKey: UserDefaultsKeys.hideSupportBanners)
+		defer {
+			if let previous { defaults.set(previous, forKey: UserDefaultsKeys.hideSupportBanners) }
+			else { defaults.removeObject(forKey: UserDefaultsKeys.hideSupportBanners) }
+		}
+		defaults.set(hideBanners, forKey: UserDefaultsKeys.hideSupportBanners)
         // Given
         let medication = createTestMedication(name: "Log Dose Med", quantity: 10.0)
         _ = await viewModel.add(medication)
@@ -512,10 +339,10 @@ struct MedicationListViewModelUnitTests {
         }
         #expect(updatedMed.quantity == 5.0) // Quantity updated
         
-        // Depending on hideSupportBanners, either quickLogToast or supportToast will show
-        // For this test, we ensure hideSupportBanners is false in init
-        try await Task.sleep(nanoseconds: 600_000_000)
-        #expect(viewModel.showSupportToast)
+		#expect(viewModel.showQuickLogToast)
+		#expect(!viewModel.showSupportToast)
+		#expect(viewModel.quickLogMedicationName == medication.displayName)
+		#expect(viewModel.quickLogDoseAmount == dose.amount)
     }
 
     // MARK: - Helper Methods

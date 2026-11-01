@@ -150,97 +150,35 @@ struct DataIntegrityTests {
 		try await testStore.removeAll()
 	}
 
-	// MARK: - Idempotency Tests
-
-	@Test("Migration is idempotent - running twice produces same result")
-	func migrationIsIdempotent() async throws {
-		// Given - a migration manager and test data
-		let migrationManager = DataMigrationManager()
-		let testStore = createTestStore()
-
-		let medication = ANMedicationConcept(
-			id: UUID(),
-			clinicalName: "Idempotency Test",
-			prescribedUnit: .milligram,
-			prescribedDoseAmount: 50
-		)
-		try await testStore.insert(medication)
-
-		let countBefore = testStore.items.count
-
-		// When - run migration twice
-		try await migrationManager.migrateIfNeeded()
-		let countAfterFirst = testStore.items.count
-
-		try await migrationManager.migrateIfNeeded()
-		let countAfterSecond = testStore.items.count
-
-		// Then - count should remain constant (no duplicates)
-		#expect(countAfterFirst == countBefore, "First migration should not change count")
-		#expect(countAfterSecond == countBefore, "Second migration should not change count")
-
-		// Cleanup
-		try await testStore.removeAll()
-	}
+	// Repeated-launch migration coverage lives in DataMigrationManagerTests, using
+	// production filenames and isolated source/destination directories.
 
 	// MARK: - Backup and Restore Tests
 
-	@Test("BackupManager restores App Group data end-to-end")
+	@Test("Offline migration backup restores persisted medications and history end-to-end")
 	func backupRestoreEndToEnd() async throws {
-		// Given - clean App Group databases
-		removeAppGroupDatabases()
-
-		let medicationsStore = createAppGroupMedicationStore()
-		let eventsStore = createAppGroupEventStore()
-
-		let med = ANMedicationConcept(
-			id: UUID(),
-			clinicalName: "Backup Med",
-			prescribedUnit: .milligram,
-			prescribedDoseAmount: 25
-		)
-		let event = ANEventConcept(
-			id: UUID(),
-			eventType: .doseTaken,
-			medication: med,
-			date: Date()
-		)
-
-		try await medicationsStore.insert(med)
-		try await eventsStore.insert(event)
-
-		// When - create backup, mutate data, then restore
-		let backupResult = await BackupManager.shared.createPreMigrationBackup()
-		#expect(backupResult.success == true, "Backup should succeed")
-		guard let backupPath = backupResult.backupPath else {
-			throw DataImportError.invalidFormat
-		}
-
-		try await medicationsStore.removeAll()
-		try await eventsStore.removeAll()
-
-		try await medicationsStore.insert(
-			ANMedicationConcept(
-				id: UUID(),
-				clinicalName: "Post Backup Med",
-				prescribedUnit: .milligram,
-				prescribedDoseAmount: 10
-			)
-		)
-
-		let restoreSuccess = try await BackupManager.shared.restoreFromBackup(at: backupPath)
-		#expect(restoreSuccess == true, "Restore should succeed")
-
-		// Then - original IDs should be present
-		let restoredMedIDs = Set(medicationsStore.items.map { $0.id })
-		let restoredEventIDs = Set(eventsStore.items.map { $0.id })
-
-		#expect(restoredMedIDs.contains(med.id))
-		#expect(restoredEventIDs.contains(event.id))
-
-		// Cleanup
-		try? FileManager.default.removeItem(at: backupPath)
-		removeAppGroupDatabases()
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let med = ANMedicationConcept(clinicalName: "Backup example", quantity: 12.5)
+		let event = ANEventConcept(eventType: .doseTaken, medication: med, dose: ANDoseConcept(amount: 0.5, unit: .unit), date: Date(), note: "Example note")
+		try await writeSnapshot(medications: [med], events: [event], directory: directory)
+		let manager = BackupManager(appGroupURL: directory)
+		let backup = await manager.createPreMigrationBackup()
+		#expect(backup.success)
+		let path = try #require(backup.backupPath)
+		try await writeSnapshot(medications: [ANMedicationConcept(clinicalName: "Replacement example")], events: [], directory: directory)
+		let restored = try await manager.restoreFromBackup(at: path)
+		#expect(restored)
+		// Migration backups restore files before stores open. Reopen the persisted
+		// databases instead of asserting against an unrelated Boutique memory cache.
+		let medications = try await readSnapshot(ANMedicationConcept.self, directory: directory, name: StorageConstants.medicationsDBName)
+		let events = try await readSnapshot(ANEventConcept.self, directory: directory, name: StorageConstants.eventsDBName)
+		#expect(medications == [med])
+		#expect(events.map(\.id) == [event.id])
+		#expect(events.first?.medication?.id == med.id)
+		#expect(events.first?.dose == event.dose)
+		#expect(events.first?.note == event.note)
 	}
 
 	// MARK: - StorageConstants Validation
@@ -331,32 +269,19 @@ struct DataIntegrityTests {
 		}
 	}
 
-	@Test("Backup manager uses StorageConstants paths")
-	func backupManagerUsesStorageConstantsPaths() async {
-		// Given - backup manager
-		let backupManager = BackupManager.shared
-
-		// When - create a backup
-		let result = await backupManager.createPreMigrationBackup()
-
-		// Then - verify the backup path uses StorageConstants
-		if result.success, let backupPath = result.backupPath {
-			let fileManager = FileManager.default
-
-			// Check that backup files use StorageConstants paths
-			let expectedMedicationsFile = backupPath.appendingPathComponent(StorageConstants.medicationsDBPath)
-			let expectedEventsFile = backupPath.appendingPathComponent(StorageConstants.eventsDBPath)
-
-			// At least one of these should exist if there was data to backup
-			if result.medicationsBackedUp {
-				#expect(fileManager.fileExists(atPath: expectedMedicationsFile.path),
-						"Medications backup should be at StorageConstants path")
-			}
-			if result.eventsBackedUp {
-				#expect(fileManager.fileExists(atPath: expectedEventsFile.path),
-						"Events backup should be at StorageConstants path")
-			}
-		}
+	@Test("Backup manager copies the configured database paths")
+	func backupManagerUsesStorageConstantsPaths() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		try await writeSnapshot(medications: [ANMedicationConcept(clinicalName: "Backup example")], events: [], directory: directory)
+		let result = await BackupManager(appGroupURL: directory).createPreMigrationBackup()
+		#expect(result.success)
+		#expect(result.medicationsBackedUp)
+		#expect(result.eventsBackedUp)
+		let backup = try #require(result.backupPath)
+		#expect(FileManager.default.fileExists(atPath: backup.appendingPathComponent(StorageConstants.medicationsDBPath).path))
+		#expect(FileManager.default.fileExists(atPath: backup.appendingPathComponent(StorageConstants.eventsDBPath).path))
 	}
 
 	@Test("Legacy constants exist for migration compatibility")
@@ -383,95 +308,27 @@ struct DataIntegrityTests {
 	// MARK: - Helper Methods
 
 	private func createTestStore() -> Store<ANMedicationConcept> {
-		guard let containerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
-			fatalError("App Group unavailable in test environment")
-		}
-
-		guard let storage = try? SQLiteStorageEngine(
-			directory: FileManager.Directory(url: containerURL),
-			databaseFilename: "test_medications_integrity"
-		) else {
-			fatalError("Failed to create test storage engine")
-		}
-
-		return Store<ANMedicationConcept>(
-			storage: storage,
-			cacheIdentifier: \.id.uuidString
-		)
+		Store<ANMedicationConcept>(storage: SQLiteStorageEngine.default(appendingPath: "integrity-medications-\(UUID().uuidString)"), cacheIdentifier: \.id.uuidString)
 	}
 
 	private func createEventTestStore() -> Store<ANEventConcept> {
-		guard let containerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
-			fatalError("App Group unavailable in test environment")
-		}
-
-		guard let storage = try? SQLiteStorageEngine(
-			directory: FileManager.Directory(url: containerURL),
-			databaseFilename: "test_events_integrity"
-		) else {
-			fatalError("Failed to create test storage engine")
-		}
-
-		return Store<ANEventConcept>(
-			storage: storage,
-			cacheIdentifier: \.id.uuidString
-		)
+		Store<ANEventConcept>(storage: SQLiteStorageEngine.default(appendingPath: "integrity-events-\(UUID().uuidString)"), cacheIdentifier: \.id.uuidString)
 	}
 
-	private func createAppGroupMedicationStore() -> Store<ANMedicationConcept> {
-		guard let sharedContainerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
-			fatalError("Unable to access App Group container for testing")
-		}
-
-		return Store<ANMedicationConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: StorageConstants.medicationsDBName
-			)!,
-			cacheIdentifier: \ANMedicationConcept.id.uuidString
-		)
+	private func writeSnapshot(medications: [ANMedicationConcept], events: [ANEventConcept], directory: URL) async throws {
+		let medicationsStorage = try #require(SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: StorageConstants.medicationsDBName))
+		let eventsStorage = try #require(SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: StorageConstants.eventsDBName))
+		let medicationStore = try await Store<ANMedicationConcept>(storage: medicationsStorage, cacheIdentifier: \.id.uuidString)
+		let eventStore = try await Store<ANEventConcept>(storage: eventsStorage, cacheIdentifier: \.id.uuidString)
+		try await medicationStore.removeAll()
+		try await eventStore.removeAll()
+		try await medicationStore.insert(medications)
+		try await eventStore.insert(events)
 	}
 
-	private func createAppGroupEventStore() -> Store<ANEventConcept> {
-		guard let sharedContainerURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
-			fatalError("Unable to access App Group container for testing")
-		}
-
-		return Store<ANEventConcept>(
-			storage: SQLiteStorageEngine(
-				directory: FileManager.Directory(url: sharedContainerURL),
-				databaseFilename: StorageConstants.eventsDBName
-			)!,
-			cacheIdentifier: \ANEventConcept.id.uuidString
-		)
-	}
-
-	private func removeAppGroupDatabases() {
-		let fileManager = FileManager.default
-		if let sharedContainerURL = fileManager.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) {
-			let appGroupFiles = [
-				StorageConstants.medicationsDBPath,
-				StorageConstants.medicationsDBPath + "-wal",
-				StorageConstants.medicationsDBPath + "-shm",
-				StorageConstants.eventsDBPath,
-				StorageConstants.eventsDBPath + "-wal",
-				StorageConstants.eventsDBPath + "-shm",
-			]
-
-			for filename in appGroupFiles {
-				let fileURL = sharedContainerURL.appendingPathComponent(filename)
-				try? fileManager.removeItem(at: fileURL)
-			}
-		}
+	private func readSnapshot<T: Codable & Identifiable & Sendable>(_ type: T.Type, directory: URL, name: String) async throws -> [T] where T.ID == UUID {
+		let storage = try #require(SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: name))
+		let store = try await Store<T>(storage: storage, cacheIdentifier: \.id.uuidString)
+		return store.items
 	}
 }

@@ -2,15 +2,16 @@ import SFSafeSymbols
 import SwiftUI
 
 struct WelcomeView: View {
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var subsectionSpacing: CGFloat = 16
-    @ScaledMetric private var itemSpacing: CGFloat = 12
-    @ScaledMetric private var textSpacing: CGFloat = 8
-    @ScaledMetric private var tightSpacing: CGFloat = 4
-    @ScaledMetric private var standardPadding: CGFloat = 16
-    @ScaledMetric private var smallPadding: CGFloat = 8
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var iconSize32: CGFloat = 32
+	@Environment(\.fontFamily) private var fontFamily
+	private let sectionSpacing: CGFloat = 24
+	private let subsectionSpacing: CGFloat = 16
+	private let itemSpacing: CGFloat = 12
+	private let textSpacing: CGFloat = 8
+	private let tightSpacing: CGFloat = 4
+	private let standardPadding: CGFloat = 16
+	private let smallPadding: CGFloat = 8
+	private let cornerRadius12: CGFloat = 12
+	private let iconSize32: CGFloat = 32
 
     @AppStorage(UserDefaultsKeys.hasSeenWelcome) private var hasSeenWelcome: Bool = false
     @Environment(\.dismiss) private var dismiss
@@ -33,28 +34,34 @@ struct WelcomeView: View {
 
                 coreValuesSection
 
-                continueSection
+                medicalDisclaimer
             }
             .padding(.horizontal)
             .padding(.vertical)
         }
         .navigationBarHidden(true)
+        .safeAreaInset(edge: .bottom) {
+            continueSection
+                .padding(.horizontal)
+                .padding(.bottom, smallPadding)
+                .background(.regularMaterial)
+        }
     }
 
     private var welcomeSection: some View {
         VStack(alignment: .center, spacing: subsectionSpacing) {
             VStack(spacing: textSpacing) {
                 Text("Welcome to")
-                    .font(.title2)
+                    .font(.customFont(fontFamily, style: .title2))
                     .foregroundStyle(.secondary)
 
                 Text(appName)
-                    .font(.largeTitle)
+                    .font(.customFont(fontFamily, style: .largeTitle))
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
 
                 Text("Track as-needed medications with privacy and simplicity")
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -66,22 +73,20 @@ struct WelcomeView: View {
     private var coreValuesSection: some View {
         VStack(alignment: .leading, spacing: subsectionSpacing) {
             Text("Built on three core values")
-                .font(.title2)
+                .font(.customFont(fontFamily, style: .title2))
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
 
             VStack(spacing: itemSpacing) {
-                valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
-                valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
-                valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
+                valueRow(icon: .lockShield, title: String(localized: "Privacy First"), description: String(localized: "Local medication history, with sharing and backups you control"))
+                valueRow(icon: .giftFill, title: String(localized: "Always Free"), description: String(localized: "All features free forever, no ads, no subscriptions required"))
+                valueRow(icon: .chevronLeftForwardslashChevronRight, title: String(localized: "Open Source"), description: String(localized: "Transparent, inspectable, and community-driven"))
             }
         }
     }
 
     private var continueSection: some View {
         VStack(spacing: subsectionSpacing) {
-            medicalDisclaimer
-
             Button {
                 hasSeenWelcome = true
                 dismiss()
@@ -89,19 +94,19 @@ struct WelcomeView: View {
                 HStack {
                     Spacer()
                     Text("Continue")
-                        .font(.headline)
+                        .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .filledButtonForeground(against: .accent)
                     Spacer()
                 }
                 .padding(.vertical, standardPadding)
-                .background(.accent)
+                .background(Color.accent.dynamicFilledButtonBackground)
                 .cornerRadius(cornerRadius12)
             }
             .buttonStyle(.plain)
 
             Text("Version \(version)")
-                .font(.caption)
+                .font(.customFont(fontFamily, style: .caption))
                 .foregroundStyle(.tertiary)
                 .frame(maxWidth: .infinity)
         }
@@ -111,7 +116,7 @@ struct WelcomeView: View {
     private var medicalDisclaimer: some View {
         VStack {
             Text("Medical Disclaimer")
-                .font(.title2)
+                .font(.customFont(fontFamily, style: .title2))
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity)
 
@@ -128,10 +133,10 @@ struct WelcomeView: View {
 
             VStack(alignment: .leading, spacing: tightSpacing) {
                 Text(title)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .fontWeight(.semibold)
                 Text(description)
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundColor(.secondary)
             }
 

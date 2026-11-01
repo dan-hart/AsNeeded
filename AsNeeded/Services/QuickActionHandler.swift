@@ -27,6 +27,7 @@ final class QuickActionHandler: ObservableObject {
         case viewHistory
         case addMedication
         case viewTrends
+		case widget(WidgetNavigationRoute)
     }
 
     // MARK: - Handle App Icon Quick Actions
@@ -77,6 +78,13 @@ final class QuickActionHandler: ObservableObject {
             return
         }
 
+		if let route = WidgetNavigationRoute(url: url) {
+			pendingAction = .widget(route)
+			return
+		}
+		// Preserve existing unscoped app shortcuts; reject malformed widget destinations.
+		guard url.path.isEmpty || url.path == "/" else { return }
+		guard url.query == nil, url.fragment == nil, url.user == nil, nil == url.password, url.port == nil else { return }
         let host = url.host
         let pathComponents = url.pathComponents.filter { $0 != "/" }
 
@@ -131,6 +139,8 @@ final class QuickActionHandler: ObservableObject {
 
         case .viewTrends:
             handleViewTrendsAction()
+		case let .widget(route):
+			navigationManager.pendingWidgetRoute = route
         }
 
         // Clear pending action after execution
@@ -138,7 +148,7 @@ final class QuickActionHandler: ObservableObject {
     }
 
     private func handleLogDoseAction(medicationID: UUID?) {
-        if let medicationID = medicationID {
+        if medicationID != nil {
             // Navigate to log dose for specific medication
             // This will be handled by the UI layer setting up state
             logger.info("Navigate to log dose for medication")

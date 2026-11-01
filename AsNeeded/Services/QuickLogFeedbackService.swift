@@ -2,30 +2,99 @@ import ANModelKit
 import Foundation
 
 struct QuickLogFeedbackService {
+	var locale: Locale = .autoupdatingCurrent
+	var timeZone: TimeZone = .autoupdatingCurrent
+
+	enum Tone: Equatable {
+		case success
+		case caution
+		case warning
+	}
+
 	struct Feedback: Equatable {
+		let tone: Tone
 		let title: String
 		let message: String
 		let detail: String
+		let nextDoseDate: Date?
+		let nextWindowText: String?
 		let undoEventID: UUID?
 	}
 
 	func feedback(
 		medication: ANMedicationConcept,
 		dose: ANDoseConcept,
-		loggedEvent: ANEventConcept
+		loggedEvent: ANEventConcept,
+		assessment: MedicationDoseGuidanceService.Assessment,
+		nextDoseDate: Date?,
+		at date: Date = .now
 	) -> Feedback {
-		Feedback(
-			title: "Dose logged",
-			message: "Logged \(dose.amount.formattedAmount) \(dose.unit.abbreviation) of \(medication.displayName) at \(timeFormatter.string(from: loggedEvent.date)).",
-			detail: medication.displayName,
+		let tone = tone(for: assessment.severity)
+		let title = title(for: tone)
+		let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount, locale: locale))")
+		let message = String(localized: "\(recordedDose) · \(medication.displayName) · \(timeFormatter.string(from: loggedEvent.date))")
+		let nextWindowText = nextWindowText(from: nextDoseDate, at: date)
+
+		return Feedback(
+			tone: tone,
+			title: title,
+			message: message,
+			detail: assessment.detail,
+			nextDoseDate: nextDoseDate,
+			nextWindowText: nextWindowText,
 			undoEventID: loggedEvent.id
 		)
 	}
 
+	private func tone(for severity: MedicationDoseGuidanceService.Severity) -> Tone {
+		switch severity {
+		case .clear:
+			return .success
+		case .caution:
+			return .caution
+		case .warning:
+			return .warning
+		}
+	}
+
+	private func title(for tone: Tone) -> String {
+		switch tone {
+		case .success:
+			return String(localized: "Dose logged")
+		case .caution:
+			return String(localized: "Dose logged. Check timing.")
+		case .warning:
+			return String(localized: "Dose logged. Review limits.")
+		}
+	}
+
+	private func nextWindowText(
+		from nextDoseDate: Date?,
+		at date: Date
+	) -> String? {
+		guard let nextDoseDate, nextDoseDate > date else {
+			return nil
+		}
+
+		var calendar = Calendar.current
+		calendar.timeZone = timeZone
+		if calendar.isDate(nextDoseDate, inSameDayAs: date) {
+			return String(localized: "Next dose window: \(timeFormatter.string(from: nextDoseDate))")
+		}
+		let formatter = DateFormatter()
+		formatter.locale = locale
+		formatter.timeZone = timeZone
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+		return String(localized: "Next dose window: \(formatter.string(from: nextDoseDate))")
+	}
+
 	private var timeFormatter: DateFormatter {
 		let formatter = DateFormatter()
-		formatter.locale = Locale(identifier: "en_US_POSIX")
-		formatter.dateFormat = "h:mm a"
+		formatter.locale = locale
+		formatter.timeZone = timeZone
+		formatter.dateStyle = .none
+		formatter.timeStyle = .short
 		return formatter
 	}
 }

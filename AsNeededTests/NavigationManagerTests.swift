@@ -5,17 +5,27 @@ import Testing
 
 @Suite("NavigationManager Tests", .tags(.navigation, .unit))
 struct NavigationManagerTests {
+	private let preferences: IsolatedTestPreferences
+	private let navigation: NavigationManager
+
+	@MainActor
+	init() throws {
+		let preferences = try IsolatedTestPreferences()
+		self.preferences = preferences
+		navigation = NavigationManager(defaults: preferences.defaults)
+	}
+
     @MainActor
     private func resetNavigationManager() {
-        let manager = NavigationManager.shared
+        let manager = navigation
         manager.selectedTab = 0
         manager.clearHistoryNavigation()
     }
 
-    @Test("NavigationManager singleton is accessible")
+    @Test("NavigationManager starts with a valid selected tab")
     @MainActor
-    func singletonAccess() {
-        let manager = NavigationManager.shared
+    func validSelectedTab() {
+        let manager = navigation
         #expect(manager.selectedTab >= 0, "Initial selected tab should be valid")
     }
 
@@ -23,7 +33,7 @@ struct NavigationManagerTests {
     @MainActor
     func initialState() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
 
         #expect(manager.selectedTab == 0)
         #expect(manager.historyTargetDate == nil)
@@ -34,7 +44,7 @@ struct NavigationManagerTests {
     @MainActor
     func navigateToHistoryWithoutParameters() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
 
         manager.navigateToHistory()
 
@@ -47,7 +57,7 @@ struct NavigationManagerTests {
     @MainActor
     func navigateToHistoryWithDate() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
         let testDate = Date()
 
         manager.navigateToHistory(date: testDate)
@@ -61,7 +71,7 @@ struct NavigationManagerTests {
     @MainActor
     func navigateToHistoryWithMedicationID() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
         let testID = UUID().uuidString
 
         manager.navigateToHistory(medicationID: testID)
@@ -75,7 +85,7 @@ struct NavigationManagerTests {
     @MainActor
     func navigateToHistoryWithBothParameters() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
         let testDate = Date()
         let testID = UUID().uuidString
 
@@ -90,7 +100,7 @@ struct NavigationManagerTests {
     @MainActor
     func testClearHistoryNavigation() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
         let testDate = Date()
         let testID = UUID().uuidString
 
@@ -110,7 +120,7 @@ struct NavigationManagerTests {
     @MainActor
     func tabSelectionPersistsAfterClear() {
         resetNavigationManager()
-        let manager = NavigationManager.shared
+        let manager = navigation
 
         manager.navigateToHistory(date: Date(), medicationID: "test-id")
         let tabAfterNavigation = manager.selectedTab

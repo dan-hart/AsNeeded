@@ -14,6 +14,7 @@ struct PackageDependency: Identifiable, Hashable, Sendable {
     enum VersionInfo: Hashable {
         case version(String)
         case branch(String)
+		case revision(String)
 
         var displayText: String {
             switch self {
@@ -21,6 +22,8 @@ struct PackageDependency: Identifiable, Hashable, Sendable {
                 return "v\(version)"
             case let .branch(branch):
                 return branch
+			case let .revision(revision):
+				return String(localized: "Revision \(revision.prefix(7))")
             }
         }
     }
@@ -34,7 +37,7 @@ struct PackageDependency: Identifiable, Hashable, Sendable {
         case unknown = "Unknown"
 
         var displayName: String {
-            rawValue
+			self == .unknown ? String(localized: "Unknown") : rawValue
         }
     }
 

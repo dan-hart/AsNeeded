@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # verify-release-key.sh - Confirm the RevenueCat public SDK key reached a build, or a local secrets file
 #
 # The key is never committed. It flows from Config/Secrets.xcconfig into the app's Info.plist at build

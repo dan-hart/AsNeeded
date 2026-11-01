@@ -4,51 +4,26 @@ import SFSafeSymbols
 struct SettingsDebugSectionView: View {
 	@State private var showThankYouView = false
 	@State private var showWelcomeView = false
-	@ScaledMetric private var itemSpacing: CGFloat = 16
-	@ScaledMetric private var headerSpacing: CGFloat = 12
-	@ScaledMetric private var stackItemSpacing: CGFloat = 2
-	@ScaledMetric private var iconSize: CGFloat = 24
-	@ScaledMetric private var padding: CGFloat = 16
-	@ScaledMetric private var cornerRadius: CGFloat = 12
-	@ScaledMetric private var borderWidth: CGFloat = 0.5
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
 	@Environment(\.fontFamily) private var fontFamily
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: itemSpacing) {
 			Text("Debug")
-				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.font(.customFont(fontFamily, style: .title2))
+				.fontWeight(.semibold)
 				.accessibilityAddTraits(.isHeader)
 
 			Button {
 				showThankYouView = true
 			} label: {
-				HStack(spacing: headerSpacing) {
-					Image(systemSymbol: .heartFill)
-						.font(.callout.weight(.medium))
-						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accent)
-
-					VStack(alignment: .leading, spacing: stackItemSpacing) {
-						Text("Test Thank You View")
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-						Text("Preview the thank you screen")
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundColor(.secondary)
-					}
-
-					Spacer()
-
-					Image(systemSymbol: .chevronRight)
-						.font(.customFont(fontFamily, style: .caption))
-						.foregroundColor(.secondary)
-				}
-				.padding(padding)
-				.background(Color(.systemBackground))
-				.overlay(
-					RoundedRectangle(cornerRadius: cornerRadius)
-						.stroke(Color(.systemGray4), lineWidth: borderWidth)
+				SettingsNavigationRowLabel(
+					title: String(localized: "Test Thank You View"),
+					subtitle: String(localized: "Preview the thank you screen"),
+					icon: .heartFill,
+					iconColor: .accent
 				)
-				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
 			.sheet(isPresented: $showThankYouView) {
@@ -59,33 +34,12 @@ struct SettingsDebugSectionView: View {
 			Button {
 				showWelcomeView = true
 			} label: {
-				HStack(spacing: headerSpacing) {
-					Image(systemSymbol: .handWave)
-						.font(.callout.weight(.medium))
-						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accent)
-
-					VStack(alignment: .leading, spacing: stackItemSpacing) {
-						Text("Test Welcome View")
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-						Text("Preview the welcome screen")
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundColor(.secondary)
-					}
-
-					Spacer()
-
-					Image(systemSymbol: .chevronRight)
-						.font(.customFont(fontFamily, style: .caption))
-						.foregroundColor(.secondary)
-				}
-				.padding(padding)
-				.background(Color(.systemBackground))
-				.overlay(
-					RoundedRectangle(cornerRadius: cornerRadius)
-						.stroke(Color(.systemGray4), lineWidth: borderWidth)
+				SettingsNavigationRowLabel(
+					title: String(localized: "Test Welcome View"),
+					subtitle: String(localized: "Preview the welcome screen"),
+					icon: .handWave,
+					iconColor: .accent
 				)
-				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
 			.sheet(isPresented: $showWelcomeView) {
@@ -95,33 +49,12 @@ struct SettingsDebugSectionView: View {
 			NavigationLink {
 				FontTestView()
 			} label: {
-				HStack(spacing: headerSpacing) {
-					Image(systemSymbol: .textformat)
-						.font(.callout.weight(.medium))
-						.frame(width: iconSize, height: iconSize)
-						.foregroundColor(.accent)
-
-					VStack(alignment: .leading, spacing: stackItemSpacing) {
-						Text("Test Custom Fonts")
-							.font(.customFont(fontFamily, style: .body, weight: .medium))
-						Text("Check font loading and availability")
-							.font(.customFont(fontFamily, style: .caption))
-							.foregroundColor(.secondary)
-					}
-
-					Spacer()
-
-					Image(systemSymbol: .chevronRight)
-						.font(.customFont(fontFamily, style: .caption))
-						.foregroundColor(.secondary)
-				}
-				.padding(padding)
-				.background(Color(.systemBackground))
-				.overlay(
-					RoundedRectangle(cornerRadius: cornerRadius)
-						.stroke(Color(.systemGray4), lineWidth: borderWidth)
+				SettingsNavigationRowLabel(
+					title: String(localized: "Test Custom Fonts"),
+					subtitle: String(localized: "Check font loading and availability"),
+					icon: .textformat,
+					iconColor: .accent
 				)
-				.cornerRadius(cornerRadius)
 			}
 			.buttonStyle(.plain)
 		}

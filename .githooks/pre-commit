@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Pre-commit hook to prevent secrets from being committed
 # Install with: ./scripts/install-hooks.sh
 #
@@ -10,14 +10,19 @@
 # - Can be bypassed with --no-verify (server-side scanning catches this)
 # - See SECURITY.md for the repository security policy
 
-set -e
+set -euo pipefail
 
 # =============================================================================
 # ASP PREFLIGHT (AI Safety Policy)
 # =============================================================================
 
 if [ -x "./scripts/utilities/asp-preflight.sh" ]; then
-    ./scripts/utilities/asp-preflight.sh --staged --strict
+	# Storage changes require explicit review acknowledgement; never infer it from filenames.
+	preflight_args=(--staged --strict)
+	if [ "${ASP_ACK_DATA_PATH:-0}" = "1" ]; then
+		preflight_args+=(--ack-data-path)
+	fi
+	./scripts/utilities/asp-preflight.sh "${preflight_args[@]}"
 else
     echo "Error: ASP preflight script missing. Run ./scripts/install-hooks.sh." >&2
     exit 1
@@ -206,16 +211,6 @@ GENERIC_PATTERNS=(
 )
 
 # =============================================================================
-# HIGH ENTROPY BASE64 DETECTION
-# Base64 strings that are 32+ chars and look like encoded secrets
-# =============================================================================
-
-BASE64_PATTERNS=(
-    # Long base64 strings that could be encoded secrets (44+ chars = 33+ bytes)
-    '[A-Za-z0-9+/]{44,}={0,2}'
-)
-
-# =============================================================================
 # BUILD COMBINED PATTERN
 # =============================================================================
 
@@ -250,9 +245,6 @@ for p in "${ALL_PATTERNS[@]}"; do
     fi
 done
 
-# Base64 pattern (separate due to high false positive rate - used with entropy check)
-BASE64_PATTERN='[A-Za-z0-9+/]{44,}={0,2}'
-
 # =============================================================================
 # FILES TO SKIP
 # =============================================================================
@@ -277,27 +269,30 @@ log_audit() {
 # =============================================================================
 
 # Get staged files (Added, Copied, Modified)
-FILES=$(git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true)
+FILES=()
+while IFS= read -r -d '' staged_file; do
+	FILES+=("$staged_file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 
-if [ -z "$FILES" ]; then
+if [ "${#FILES[@]}" -eq 0 ]; then
     exit 0
 fi
 
 echo -e "${GREEN}Running pre-commit security scan...${NC}"
 echo -e "${CYAN}Checking for: GitHub, OpenAI, Anthropic, Jira, AWS, Slack, Stripe, Google, Twilio, SendGrid, DigitalOcean, NPM, PyPI, RevenueCat tokens${NC}"
 
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "Error: Python 3 is required for encoded-secret classification. Install it before committing." >&2
+    exit 1
+fi
+
+STAGED_BLOB=$(mktemp)
+trap 'rm -f "$STAGED_BLOB"' EXIT
+
 FOUND_SECRETS=0
 FINDINGS=""
 
-for FILE in $FILES; do
-    # Skip if file doesn't exist
-    [ -f "$FILE" ] || continue
-
-    # Skip binary files
-    if file "$FILE" | grep -q "binary"; then
-        continue
-    fi
-
+for FILE in "${FILES[@]}"; do
     # Skip specific files (hooks themselves, workflows)
     SKIP=0
     for SKIP_PATTERN in "${SKIP_FILES[@]}"; do
@@ -308,30 +303,25 @@ for FILE in $FILES; do
     done
     [ $SKIP -eq 1 ] && continue
 
-    # Check for secret patterns (LC_ALL=C ensures consistent ASCII handling, prevents Unicode bypass)
-    MATCHES=$(LC_ALL=C grep -n -E "$PATTERN" "$FILE" 2>/dev/null || true)
-
+    # Scan the index blob, never a possibly different working-tree file.
+    git show ":$FILE" > "$STAGED_BLOB"
+    if ! LC_ALL=C grep -Iq '' "$STAGED_BLOB"; then
+        continue
+    fi
+    MATCHES=$(LC_ALL=C grep -n -E "$PATTERN" "$STAGED_BLOB" | cut -d: -f1 || true)
     if [ -n "$MATCHES" ]; then
         FOUND_SECRETS=1
-        FINDINGS="$FINDINGS\n${YELLOW}$FILE:${NC}\n$MATCHES\n"
+        FINDINGS="$FINDINGS\n${YELLOW}$FILE:${NC} credential pattern on lines $MATCHES (values redacted)\n"
     fi
 
-    # Check for high-entropy base64 strings (potential encoded secrets)
-    # Only in non-binary, non-image, non-asset files
-    if [[ ! "$FILE" =~ \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|xcassets|car|strings|storyboard|xib)$ ]]; then
-        BASE64_MATCHES=$(LC_ALL=C grep -n -o -E "$BASE64_PATTERN" "$FILE" 2>/dev/null || true)
-        if [ -n "$BASE64_MATCHES" ]; then
-            while IFS= read -r match; do
-                # Extract just the base64 string (after line number)
-                b64_str=$(echo "$match" | cut -d: -f2-)
-                # Skip if it looks like a hash or normal data (lowered from 60 to catch shorter encoded secrets)
-                if [ ${#b64_str} -gt 32 ]; then
-                    FOUND_SECRETS=1
-                    FINDINGS="$FINDINGS\n${YELLOW}$FILE (potential base64 encoded secret):${NC}\n$match\n"
-                fi
-            done <<< "$BASE64_MATCHES"
-        fi
+    # Canonical validation and measured entropy distinguish encoded values from source data.
+    if BASE64_MATCHES=$(python3 scripts/utilities/base64-secret-scan.py --path "$FILE" < "$STAGED_BLOB"); then
+        :
+    else
+        FOUND_SECRETS=1
+        FINDINGS="$FINDINGS\n$BASE64_MATCHES\n"
     fi
+
 done
 
 # =============================================================================
@@ -340,7 +330,7 @@ done
 
 if [ $FOUND_SECRETS -eq 1 ]; then
     # Log to audit file
-    log_audit "BLOCKED: Commit attempt with potential secrets in files: $FILES"
+    log_audit "BLOCKED: Commit attempt with potential secrets in files: ${FILES[*]}"
 
     echo -e "\n${RED}========================================================================${NC}"
     echo -e "${RED}  COMMIT BLOCKED: Potential secrets/sensitive data detected!           ${NC}"
@@ -382,7 +372,7 @@ if [ $FOUND_SECRETS -eq 1 ]; then
 fi
 
 echo -e "${GREEN}No secrets detected.${NC}"
-log_audit "PASSED: Secret scan approved for files: $FILES"
+log_audit "PASSED: Secret scan approved for files: ${FILES[*]}"
 
 # =============================================================================
 # STORAGE PATH SENTINEL - Prevent data loss from unprotected storage changes
@@ -421,7 +411,7 @@ MIGRATION_FILE_CHANGED=0
 GUIDELINES_UPDATED=0
 
 # Check if any storage-sensitive files are being modified
-for FILE in $FILES; do
+for FILE in "${FILES[@]}"; do
     FILENAME=$(basename "$FILE")
 
     # Check if this is a storage-sensitive file

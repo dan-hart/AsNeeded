@@ -5,64 +5,53 @@ import ANModelKit
 import Boutique
 import DHLoggingKit
 import Foundation
+import WidgetKit
 
 @MainActor
 public final class DataStore {
-	typealias UrgencyStoreFactory = @MainActor (UserDefaults) -> MedicationNotificationUrgencyStore
-	typealias MedicationInventoryReadiness = @MainActor (Store<ANMedicationConcept>) async throws -> Void
-	typealias NotificationArtifactCleanup = @MainActor (Set<UUID>) async -> Void
-
-	struct ImportFailureInjection {
-		var beforeClearMedications: () throws -> Void = {}
-		var beforeClearEvents: () throws -> Void = {}
-		var beforeMedicationInsert: (ANMedicationConcept) throws -> Void = { _ in }
-		var beforeEventInsert: (ANEventConcept) throws -> Void = { _ in }
-		var beforeRollbackMedications: () throws -> Void = {}
-		var beforeExplicitClearUserData: () throws -> Void = {}
-		var beforeExplicitClearEvents: () throws -> Void = {}
-
-		static var none: ImportFailureInjection { ImportFailureInjection() }
-	}
-
-	private struct DefaultsSnapshot {
-		let values: [(key: String, value: Any?)]
-	}
-
-	private struct ImportTransactionSnapshot {
-		let defaults: DefaultsSnapshot
-		let profiles: MedicationRefillProfileStore.ProfileDataSnapshot
-		let medications: [ANMedicationConcept]
-		let events: [ANEventConcept]
-	}
-
     public static let shared = DataStore()
-	private let logger = DHLogger.data
-	private let settingsDefaults: UserDefaults
-	private let refillProfileStore: MedicationRefillProfileStore
-	private let urgencyStore: MedicationNotificationUrgencyStore
-	private let importFailureInjection: ImportFailureInjection
-	private let medicationInventoryReadiness: MedicationInventoryReadiness
-	private let notificationArtifactCleanup: NotificationArtifactCleanup
+    private let logger = DHLogger.data
+	private let isTestStore: Bool
+	private let storageDirectory: URL
+	private let defaults: UserDefaults
+	private let navigationManager: NavigationManager
+	private let sharedDefaults: UserDefaults?
+	private let defaultsDomainName: String
+	private let sharedDefaultsDomainName: String
+	private var snapshotObservers: [UUID: AsyncStream<MedicationPersistenceSnapshot>.Continuation] = [:]
+	private let transactionFault: (PersistenceTransactionPhase) throws -> Void
+	private let notificationCleanup: @MainActor (Set<UUID>) async -> Void
+	private let reloadWidgets: () -> Void
+	private lazy var widgetRefreshObserver = WidgetRefreshObserver(reload: reloadWidgets)
+	private let reminderAcknowledgement: @MainActor (UUID) async -> Void
 
     // Underlying Boutique stores
     public let medicationsStore: Store<ANMedicationConcept>
     public let eventsStore: Store<ANEventConcept>
 
-    public var medications: [ANMedicationConcept] { medicationsStore.items }
-    public var events: [ANEventConcept] { eventsStore.items }
+    public var medications: [ANMedicationConcept] { transactions.visibleSnapshot?.medications ?? medicationsStore.items }
+    public var events: [ANEventConcept] { transactions.visibleSnapshot?.events ?? eventsStore.items }
+
+	/// Most recently recorded dose target, resolved against current active records.
+	public var lastLoggedMedication: ANMedicationConcept? {
+		LastLoggedMedicationResolver.resolve(
+			medications: medications,
+			events: events,
+			lastLoggedEventIDs: (defaults.stringArray(forKey: UserDefaultsKeys.lastLoggedDoseEventIDs) ?? []).compactMap(UUID.init(uuidString:))
+		)
+	}
 
     private init() {
-		let defaults = UserDefaults.standard
-		settingsDefaults = defaults
-		refillProfileStore = MedicationRefillProfileStore()
-		urgencyStore = MedicationNotificationUrgencyStore(defaults: defaults)
-		importFailureInjection = .none
-		medicationInventoryReadiness = { try await $0.itemsHaveLoaded() }
-		notificationArtifactCleanup = { medicationIDs in
-			await NotificationManager.shared.removeMedicationNotificationArtifacts(
-				for: medicationIDs
-			)
-		}
+		isTestStore = false
+		reloadWidgets = { WidgetCenter.shared.reloadAllTimelines() }
+		defaults = .standard
+		navigationManager = .shared
+		defaultsDomainName = Bundle.main.bundleIdentifier ?? StorageConstants.Legacy.bundleIdentifier
+		sharedDefaultsDomainName = StorageConstants.appGroupIdentifier
+		sharedDefaults = UserDefaults(suiteName: StorageConstants.appGroupIdentifier)
+		transactionFault = { _ in }
+		notificationCleanup = { await NotificationManager.shared.removeMedicationNotificationArtifacts(for: $0) }
+		reminderAcknowledgement = { await NotificationManager.shared.acknowledgeDeliveredReminders(for: $0) }
         logger.info("Initializing DataStore with persistent storage in App Group")
 
         // Get shared container URL for App Group
@@ -100,6 +89,7 @@ public final class DataStore {
                 """)
         }
 
+		storageDirectory = sharedContainerURL
         logger.info("Using shared App Group container")
 
         // Initialize stores with shared container path using FileManager.Directory
@@ -141,72 +131,159 @@ public final class DataStore {
 
         // Note: Migration is now handled by MigrationCoordinator before DataStore is accessed
         // See AsNeededApp.swift and MigrationCoordinator.swift for migration flow
+
+
     }
 
-    // Test initializer using isolated test storage
+	// Isolated stores can be reopened to test interruption and recovery.
 	public convenience init(testIdentifier: String) {
-		self.init(
-			testIdentifier: testIdentifier,
-			settingsDefaults: .standard,
-			refillProfileStore: MedicationRefillProfileStore(),
-			importFailureInjection: .none
-		)
+		self.init(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("AsNeededTests-\(UUID().uuidString)"))
 	}
 
-	convenience init(
-		testIdentifier: String,
-		medicationInventoryReadiness: @escaping MedicationInventoryReadiness
-	) {
-		self.init(
-			testIdentifier: testIdentifier,
-			settingsDefaults: .standard,
-			refillProfileStore: MedicationRefillProfileStore(),
-			medicationInventoryReadiness: medicationInventoryReadiness,
-			importFailureInjection: .none
-		)
+	init(storageDirectory: URL, defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil, defaultsDomainName: String? = nil, sharedDefaultsDomainName: String? = nil, navigationManager: NavigationManager = .shared, transactionFault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, notificationCleanup: @escaping @MainActor (Set<UUID>) async -> Void = { _ in }, reminderAcknowledgement: @escaping @MainActor (UUID) async -> Void = { _ in }, widgetReload: @escaping () -> Void = {}) {
+		isTestStore = true
+		reloadWidgets = widgetReload
+		self.storageDirectory = storageDirectory
+		self.defaults = defaults
+		self.navigationManager = navigationManager
+		self.sharedDefaults = sharedDefaults
+		self.defaultsDomainName = defaultsDomainName ?? Bundle.main.bundleIdentifier ?? StorageConstants.Legacy.bundleIdentifier
+		self.sharedDefaultsDomainName = sharedDefaultsDomainName ?? StorageConstants.appGroupIdentifier
+		self.transactionFault = transactionFault
+		self.notificationCleanup = notificationCleanup
+		self.reminderAcknowledgement = reminderAcknowledgement
+		guard let medicationsStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: storageDirectory), databaseFilename: StorageConstants.medicationsDBName),
+			let eventsStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: storageDirectory), databaseFilename: StorageConstants.eventsDBName) else {
+			fatalError("Unable to initialize isolated persistence stores")
+		}
+		medicationsStore = Store<ANMedicationConcept>(storage: medicationsStorage, cacheIdentifier: \.id.uuidString)
+		eventsStore = Store<ANEventConcept>(storage: eventsStorage, cacheIdentifier: \.id.uuidString)
 	}
 
-	init(
-		testIdentifier: String,
-		settingsDefaults: UserDefaults,
-		refillProfileStore: MedicationRefillProfileStore,
-		urgencyStoreFactory: UrgencyStoreFactory = {
-			MedicationNotificationUrgencyStore(defaults: $0)
-		},
-		medicationInventoryReadiness: @escaping MedicationInventoryReadiness = {
-			try await $0.itemsHaveLoaded()
-		},
-		importFailureInjection: ImportFailureInjection = .none,
-		notificationArtifactCleanup: @escaping NotificationArtifactCleanup = { _ in }
-	) {
-		self.settingsDefaults = settingsDefaults
-		self.refillProfileStore = refillProfileStore
-		self.urgencyStore = urgencyStoreFactory(settingsDefaults)
-		self.importFailureInjection = importFailureInjection
-		self.medicationInventoryReadiness = medicationInventoryReadiness
-		self.notificationArtifactCleanup = notificationArtifactCleanup
-        let testId = UUID().uuidString
-        medicationsStore = Store<ANMedicationConcept>(
-            storage: SQLiteStorageEngine.default(appendingPath: "test_medications_\(testIdentifier)_\(testId)"),
-            cacheIdentifier: \ANMedicationConcept.id.uuidString
-        )
-        eventsStore = Store<ANEventConcept>(
-            storage: SQLiteStorageEngine.default(appendingPath: "test_events_\(testIdentifier)_\(testId)"),
-            cacheIdentifier: \ANEventConcept.id.uuidString
-        )
-    }
+	private lazy var transactions: MedicationPersistenceTransactions = {
+		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: UserDefaultsKeys.safeToExportKeys.union([UserDefaultsKeys.lastLoggedDoseEventIDs]), persistentDomainName: defaultsDomainName)]
+		if let sharedDefaults {
+			domains["shared"] = PersistencePreferenceDomain(defaults: sharedDefaults, keys: [UserDefaultsKeys.medicationSafetyProfiles], persistentDomainName: sharedDefaultsDomainName)
+		}
+		return MedicationPersistenceTransactions(directory: storageDirectory, medicationsStore: medicationsStore, eventsStore: eventsStore, preferences: domains, fault: transactionFault, didStabilize: { [weak self] snapshot in
+			self?.publishCommittedSnapshot(snapshot)
+		})
+	}()
+
+	/// Subscribe before prepareForAccess() to receive the initial recovered read and later atomic commits.
+	/// Intermediate Boutique writes intentionally do not escape through this stream.
+	func committedSnapshots() -> AsyncStream<MedicationPersistenceSnapshot> {
+		let id = UUID()
+		return AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+			snapshotObservers[id] = continuation
+			continuation.onTermination = { [weak self] _ in
+				Task { @MainActor [weak self] in self?.snapshotObservers.removeValue(forKey: id) }
+			}
+		}
+	}
+
+	private func publishCommittedSnapshot(_ snapshot: MedicationPersistenceSnapshot) {
+		widgetRefreshObserver.receive(snapshot, profileData: sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) ?? defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles))
+		for observer in snapshotObservers.values { observer.yield(snapshot) }
+	}
+
+	@discardableResult
+	func prepareForAccess() async throws -> MedicationPersistenceSnapshot { try await transactions.read() }
+
+	func recoverAndMigrateLegacy(_ migration: () async throws -> Void) async throws {
+		try await transactions.withRecoveredStorage(migration)
+	}
+
+	func saveMigratedMedication(_ medication: ANMedicationConcept) async throws {
+		try await transactions.perform { snapshot in
+			guard let index = snapshot.medications.firstIndex(where: { $0.id == medication.id }) else { throw PersistenceTransactionError.recordUnavailable }
+			if snapshot.medications[index].minimumHoursBetweenDoses == nil { snapshot.medications[index].minimumHoursBetweenDoses = medication.minimumHoursBetweenDoses }
+			if snapshot.medications[index].maximumDailyDoseAmount == nil { snapshot.medications[index].maximumDailyDoseAmount = medication.maximumDailyDoseAmount }
+		}
+	}
+
+	func updateQuantity(medicationID: UUID, quantity: Double) async throws {
+		guard quantity.isFinite, quantity >= 0 else { throw PersistenceTransactionError.invalidDose }
+		try await transactions.perform { snapshot in
+			guard let index = snapshot.medications.firstIndex(where: { $0.id == medicationID }) else { throw PersistenceTransactionError.recordUnavailable }
+			snapshot.medications[index].quantity = quantity
+		}
+		await refreshDoseAvailability()
+	}
+
+	public func recordDose(_ event: ANEventConcept, shouldRecordForReview: Bool = true) async throws {
+		_ = try await recordDose(shouldRecordForReview: shouldRecordForReview, makeEvent: { _ in event })
+	}
+
+	/// Resolve notification targets and guidance under the same lock as dose/stock mutation.
+	@discardableResult
+	func recordDose(shouldRecordForReview: Bool, makeEvent: (MedicationPersistenceSnapshot) throws -> ANEventConcept) async throws -> ANEventConcept {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
+		var insertedNewDose = false
+		var savedEvent: ANEventConcept?
+		let didSave = try await transactions.perform(
+			preferenceKeys: ["application": [UserDefaultsKeys.lastLoggedDoseEventIDs]],
+			change: { snapshot in
+				let event = try makeEvent(snapshot)
+				savedEvent = event
+				insertedNewDose = !snapshot.events.contains { $0.id == event.id }
+				try snapshot.recordDose(event)
+			}, applyPreferences: { snapshot in
+				// The journal restores recording order with the records if commit fails.
+				// Replaying an older operation must never change recording recency.
+				if insertedNewDose, let event = savedEvent {
+					let validIDs = Set(snapshot.events.map { $0.id.uuidString })
+					let previous = defaults.stringArray(forKey: UserDefaultsKeys.lastLoggedDoseEventIDs) ?? []
+					let order = [event.id.uuidString] + previous.filter { $0 != event.id.uuidString && validIDs.contains($0) }
+					defaults.set(order, forKey: UserDefaultsKeys.lastLoggedDoseEventIDs)
+				}
+			})
+		guard let event = savedEvent else { throw PersistenceTransactionError.invalidDose }
+		// A successful retry can finish notification cleanup interrupted after the original commit.
+		if event.eventType == .doseTaken, let medicationID = event.medication?.id {
+			await reminderAcknowledgement(medicationID)
+		}
+		guard didSave, insertedNewDose else { return event }
+		await refreshDoseAvailability()
+		if !isTestStore {
+			if shouldRecordForReview { AppReviewManager.shared.recordMedicationEvent() }
+			AutomaticBackupManager.shared.triggerBackup()
+		}
+		return event
+	}
+
+	public func updateEvent(_ event: ANEventConcept) async throws {
+		try await transactions.perform { try $0.updateEvent(event) }
+		await refreshDoseAvailability()
+	}
+
+	public func deleteEvents(ids: Set<UUID>) async throws {
+		try await transactions.perform { $0.deleteEvents(ids: ids) }
+		await refreshDoseAvailability()
+	}
+
+	private func refreshDoseAvailability() async {
+		// Isolated test stores never schedule device notifications.
+		guard !isTestStore else { return }
+		do {
+			try await MedicationDoseLimitMigration().migrate(dataStore: self)
+			try await NotificationManager.shared.startAvailabilityObservation(dataStore: self)
+			await NotificationManager.shared.refreshAvailabilityNotifications()
+		} catch {
+			logger.logPrivacySafeError("Unable to refresh dose availability", error: error)
+		}
+	}
 
     // MARK: - Medication Operations
-
-	func currentMedicationIDsWhenReady() async throws -> Set<UUID> {
-		try await medicationInventoryReadiness(medicationsStore)
-		return Set(medications.map(\.id))
-	}
 
     public func addMedication(_ med: ANMedicationConcept) async throws {
         logger.logMedicationOperation("Adding", id: med.id)
         do {
-            try await medicationsStore.insert(med)
+            try await transactions.perform { snapshot in
+				if let index = snapshot.medications.firstIndex(where: { $0.id == med.id }) { snapshot.medications[index] = med }
+				else { snapshot.medications.append(med) }
+			}
+			await refreshDoseAvailability()
             logger.logMedicationOperation("Successfully added to local storage", id: med.id)
         } catch {
             logger.logPrivacySafeError("Failed to add medication record", error: error)
@@ -214,11 +291,22 @@ public final class DataStore {
         }
     }
 
-    public func updateMedication(_ med: ANMedicationConcept) async throws {
+    public func updateMedication(_ med: ANMedicationConcept, original: ANMedicationConcept? = nil) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         logger.logMedicationOperation("Updating", id: med.id)
         do {
             // Boutique replaces items with matching cache identifiers in place.
-            try await medicationsStore.insert(med)
+            try await transactions.perform { snapshot in
+				if let index = snapshot.medications.firstIndex(where: { $0.id == med.id }) {
+					var updated = med
+					if let original, original.id == med.id, original.quantity == med.quantity {
+						updated.quantity = snapshot.medications[index].quantity
+					}
+					snapshot.medications[index] = updated
+				} else if original == nil { snapshot.medications.append(med) }
+				else { throw PersistenceTransactionError.recordUnavailable }
+			}
+			await refreshDoseAvailability()
             logger.logMedicationOperation("Successfully updated in local storage", id: med.id)
         } catch {
             logger.logPrivacySafeError("Failed to update medication record", error: error)
@@ -227,44 +315,42 @@ public final class DataStore {
     }
 
     public func deleteMedication(_ med: ANMedicationConcept) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         logger.logMedicationOperation("Deleting", id: med.id)
         do {
-            // Find associated events first
-            let associatedEvents = events.filter { $0.medication?.id == med.id }
-            logger.debug("Found \(associatedEvents.count) associated events to delete")
-
-            for event in associatedEvents {
-                try await eventsStore.remove(event)
-            }
-
-            try await medicationsStore.remove(med)
-			await cleanNotificationArtifacts(for: [med.id])
+			let associatedEvents = events.filter { $0.medication?.id == med.id }
+			try await transactions.perform { snapshot in
+				snapshot.events.removeAll { $0.medication?.id == med.id }
+				snapshot.medications.removeAll { $0.id == med.id }
+			}
+			await notificationCleanup([med.id])
+			await refreshDoseAvailability()
 
             // Clear the deleted medication ID from AppStorage selections to prevent crashes
             let deletedIDString = med.id.uuidString
 
             // Clear from history view selection
-            if UserDefaults.standard.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == deletedIDString {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
+            if defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == deletedIDString {
+                defaults.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
                 logger.info("Cleared deleted medication from history selection")
             }
 
             // Clear from trends view selection
-            if UserDefaults.standard.string(forKey: UserDefaultsKeys.trendsSelectedMedicationID) == deletedIDString {
-                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
+            if defaults.string(forKey: UserDefaultsKeys.trendsSelectedMedicationID) == deletedIDString {
+                defaults.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
                 logger.info("Cleared deleted medication from trends selection")
             }
 
             // Clear from medication order array
-            if var order = UserDefaults.standard.array(forKey: UserDefaultsKeys.medicationOrder) as? [String] {
+            if var order = defaults.array(forKey: UserDefaultsKeys.medicationOrder) as? [String] {
                 order.removeAll { $0 == deletedIDString }
-                UserDefaults.standard.set(order, forKey: UserDefaultsKeys.medicationOrder)
+                defaults.set(order, forKey: UserDefaultsKeys.medicationOrder)
                 logger.info("Removed deleted medication from order array")
             }
 
             // Clear from navigation manager if it matches
-            if NavigationManager.shared.historyTargetMedicationID == deletedIDString {
-                NavigationManager.shared.historyTargetMedicationID = nil
+            if navigationManager.historyTargetMedicationID == deletedIDString {
+                navigationManager.historyTargetMedicationID = nil
                 logger.info("Cleared deleted medication from navigation target")
             }
 
@@ -285,20 +371,22 @@ public final class DataStore {
         logger.logEventOperation("Adding", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
         logger.info("Adding event details: eventCountBefore=\(eventCountBefore), shouldRecordForReview=\(shouldRecordForReview)")
         do {
-            try await eventsStore.insert(event)
+            try await transactions.perform { snapshot in
+				if let index = snapshot.events.firstIndex(where: { $0.id == event.id }) { snapshot.events[index] = event }
+				else { snapshot.events.append(event) }
+			}
+			await refreshDoseAvailability()
             logger.info("Successfully added event to local storage: eventCountBefore=\(eventCountBefore), eventCountAfter=\(events.count)")
 
             // Track medication event for review eligibility (skip for quick log)
-            if shouldRecordForReview {
+            if shouldRecordForReview && !isTestStore {
                 await MainActor.run {
                     AppReviewManager.shared.recordMedicationEvent()
                 }
             }
 
             // Trigger automatic backup (debounced)
-            await MainActor.run {
-                AutomaticBackupManager.shared.triggerBackup()
-            }
+			if !isTestStore { AutomaticBackupManager.shared.triggerBackup() }
         } catch {
             logger.logPrivacySafeError("Failed to add event record", error: error)
             throw error
@@ -311,30 +399,31 @@ public final class DataStore {
     /// - Returns: AppSettings object with current settings
     private func exportSettings() -> AppSettings {
         logger.debug("Exporting app settings")
-        return AppSettings(from: settingsDefaults)
+        return AppSettings(from: defaults)
     }
 
     /// Export all data as JSON
     public func exportDataAsJSON(redactNames: Bool = false, redactNotes: Bool = false, includeSettings: Bool = false) async throws -> Data {
+		let snapshot = try await prepareForAccess()
         let startTime = Date()
         logger.info("Starting data export (redactNames: \(redactNames), redactNotes: \(redactNotes), includeSettings: \(includeSettings))")
 
         // Count items before processing
-        let medicationCount = medications.count
-        let eventCount = events.count
+        let medicationCount = snapshot.medications.count
+        let eventCount = snapshot.events.count
         logger.debug("Source data: \(medicationCount) medications, \(eventCount) events")
 
         // Redact medication names if requested
-        let exportMedications = redactNames ? medications.map { medication in
+        let exportMedications = redactNames ? snapshot.medications.map { medication in
             var redacted = medication
             redacted.clinicalName = "[REDACTED]"
             redacted.nickname = medication.nickname != nil ? "[REDACTED]" : nil
             return redacted
-        } : medications
+        } : snapshot.medications
 
         // Handle event redaction - redact medication names and/or notes as requested
         var notesRedactedCount = 0
-        let exportEvents = events.map { event in
+        let exportEvents = snapshot.events.map { event in
             var modifiedEvent = event
 
             // Redact medication names if requested (uses built-in redacted() for medication)
@@ -358,7 +447,10 @@ public final class DataStore {
         }
 
         // Export settings if requested
-        let exportedSettings: AppSettings? = includeSettings ? exportSettings() : nil
+        var exportedSettings: AppSettings? = includeSettings ? exportSettings() : nil
+		if redactNames {
+			exportedSettings?.recentMedicationSearches = nil
+		}
         if let settings = exportedSettings {
             logger.info("Including app settings in export: \(settings.settingsCategories.joined(separator: ", "))")
         }
@@ -401,304 +493,98 @@ public final class DataStore {
     /// Import app settings to UserDefaults
     /// - Parameter settings: AppSettings to apply
     /// - Parameter defaults: UserDefaults instance to write to
-	private func importSettings(
-		_ settings: AppSettings,
-		validMedicationIDs: Set<String>
-	) throws {
+    private func importSettings(_ settings: AppSettings, to defaults: UserDefaults = .standard) {
         logger.info("Importing app settings: \(settings.settingsCategories.joined(separator: ", "))")
 
+        // Get valid medication IDs after import
+        let validMedicationIDs = Set(medications.map { $0.id.uuidString })
+
         // Apply settings with validation
-		try settings.apply(
-			to: settingsDefaults,
-			validateMedicationIDs: { validMedicationIDs },
-			profileStore: refillProfileStore,
-			urgencyStore: urgencyStore
-		)
+        settings.apply(to: defaults, validateMedicationIDs: { validMedicationIDs })
 
         logger.info("App settings imported successfully")
     }
 
     /// Import data from JSON, with options for merge or replace
     public func importDataFromJSON(_ data: Data, mergeExisting: Bool = false, applySettings: Bool = false) async throws {
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         let startTime = Date()
         let fileSizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
         logger.info("Starting data import (merge: \(mergeExisting), applySettings: \(applySettings), size: \(fileSizeFormatted))")
 
-        // Capture before counts
-        let beforeMedicationCount = medications.count
-        let beforeEventCount = events.count
-        logger.debug("Current data: \(beforeMedicationCount) medications, \(beforeEventCount) events")
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let importedData: DataExport
-        do {
-            importedData = try decoder.decode(DataExport.self, from: data)
-            logger.info("Decoded import data: \(importedData.medications.count) medications, \(importedData.events.count) events")
-        } catch {
-            logger.logPrivacySafeError("Failed to decode import data", error: error)
-            throw DataImportError.invalidFormat
-        }
-
-        // Validate data version
-        if let dataVersion = importedData.dataVersion, dataVersion != "1.0" {
-            logger.warning("Import data version mismatch: expectedSupportedVersion=false")
-        }
-
-		let snapshot = makeImportTransactionSnapshot()
-		let importedMedicationIDs = Set(importedData.medications.map { $0.id.uuidString })
-		let prospectiveMedicationIDs = mergeExisting ?
-			importedMedicationIDs.union(medications.map { $0.id.uuidString }) :
-			importedMedicationIDs
-		let importedEventIDs = Set(importedData.events.map(\.id))
-		let expectedEventIDs = mergeExisting ?
-			importedEventIDs.union(snapshot.events.map(\.id)) :
-			importedEventIDs
-
-		do {
-			// Settings are a verified preflight, but remain part of this transaction
-			// and are rolled back if any later database operation fails.
-			if applySettings, let settings = importedData.settings {
-				logger.info("Applying imported settings")
-				try importSettings(settings, validMedicationIDs: prospectiveMedicationIDs)
-			} else if importedData.settings != nil {
-				logger.info("Settings present in import but not applying (applySettings: \(applySettings))")
-			}
-
-			if !mergeExisting {
-				logger.info("Clearing existing data before import")
-				try importFailureInjection.beforeClearMedications()
-				try await medicationsStore.removeAll()
-				try importFailureInjection.beforeClearEvents()
-				try await eventsStore.removeAll()
-			}
-
-			var medicationImportCount = 0
-			var medicationDuplicateCount = 0
-			for medication in importedData.medications {
-				if mergeExisting, medications.contains(where: { $0.id == medication.id }) {
-					logger.debug("Skipping duplicate medication record")
-					medicationDuplicateCount += 1
-					continue
-				}
-				try importFailureInjection.beforeMedicationInsert(medication)
-				try await medicationsStore.insert(medication)
-				medicationImportCount += 1
-			}
-
-			var eventImportCount = 0
-			var eventDuplicateCount = 0
-			for var event in importedData.events {
-				if mergeExisting, events.contains(where: { $0.id == event.id }) {
-					logger.debug("Skipping duplicate event record")
-					eventDuplicateCount += 1
-					continue
-				}
-
-				if let eventMedication = event.medication {
-					guard let correctMedication = medications.first(where: {
-						$0.id == eventMedication.id ||
-							($0.clinicalName == eventMedication.clinicalName &&
-								$0.nickname == eventMedication.nickname)
-					}) else {
-						throw DataImportError.invalidMedicationReference
-					}
-					event.medication = correctMedication
-				}
-
-				try importFailureInjection.beforeEventInsert(event)
-				try await eventsStore.insert(event)
-				eventImportCount += 1
-			}
-
-			let actualMedicationIDs = Set(medications.map { $0.id.uuidString })
-			let actualEventIDs = Set(events.map(\.id))
-			guard actualMedicationIDs == prospectiveMedicationIDs,
-				actualEventIDs == expectedEventIDs
-			else {
-				throw DataImportError.finalValidationFailed
-			}
-
-			if applySettings, let settings = importedData.settings {
-				try settings.persistRefillProfiles(
-					validMedicationIDs: actualMedicationIDs,
-					profileStore: refillProfileStore
-				)
-			}
-
-			logger.info("Import statistics: Medications: \(medicationImportCount) imported, \(medicationDuplicateCount) duplicates")
-			logger.info("Import statistics: Events: \(eventImportCount) imported, \(eventDuplicateCount) duplicates")
-		} catch {
-			logger.logPrivacySafeError("Import failed; attempting transaction rollback", error: error)
-			let rollbackFailures = await rollbackImport(to: snapshot)
-			guard rollbackFailures.isEmpty else {
-				logger.error("Import rollback incomplete: components=\(rollbackFailures.joined(separator: ", "))")
-				throw DataImportError.transactionRollbackFailed(
-					importError: DHLogger.privacySafeErrorType(error),
-					rollbackFailures: rollbackFailures
-				)
-			}
-			throw error
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let imported: DataExport
+		do { imported = try decoder.decode(DataExport.self, from: data) }
+		catch { throw DataImportError.invalidFormat }
+		var domains: [String: Set<String>] = [:]
+		if applySettings, let settings = imported.settings {
+			domains["application"] = settings.importedPreferenceKeys
+			if sharedDefaults != nil, settings.medicationSafetyProfiles != nil { domains["shared"] = [UserDefaultsKeys.medicationSafetyProfiles] }
 		}
-
-		if !mergeExisting {
-			let finalMedicationIDs = Set(medications.map(\.id))
-			let removedMedicationIDs = Set(snapshot.medications.map(\.id))
-				.subtracting(finalMedicationIDs)
-			await cleanNotificationArtifacts(for: removedMedicationIDs)
-		}
-
-        let afterMedicationCount = medications.count
-        let afterEventCount = events.count
-
-        let duration = Date().timeIntervalSince(startTime)
-
-        // Use enhanced privacy-safe logging
-        logger.logImportOperation(
-            medicationCount: afterMedicationCount,
-            eventCount: afterEventCount,
-            includeSettings: applySettings && importedData.settings != nil,
-            beforeMedicationCount: beforeMedicationCount,
-            beforeEventCount: beforeEventCount,
-			validationFailures: 0,
-            duration: duration
-        )
-
-    }
-
-	private func makeImportTransactionSnapshot() -> ImportTransactionSnapshot {
-		ImportTransactionSnapshot(
-			defaults: DefaultsSnapshot(values: AppSettings.appliedDefaultsKeys.map { key in
-				(key: key, value: settingsDefaults.object(forKey: key))
-			}),
-			profiles: refillProfileStore.snapshotProfileData(),
-			medications: medications,
-			events: events
-		)
+		var removedMedicationIDs: Set<UUID> = []
+		try await transactions.perform(preferenceKeys: domains, change: { snapshot in
+			let priorIDs = Set(snapshot.medications.map(\.id))
+			var medications = mergeExisting ? snapshot.medications : []
+			for medication in imported.medications {
+				if let index = medications.firstIndex(where: { $0.id == medication.id }) {
+					if !mergeExisting { medications[index] = medication }
+				} else { medications.append(medication) }
+			}
+			var events = mergeExisting ? snapshot.events : []
+			for var event in imported.events {
+				if let reference = event.medication {
+					guard let resolved = resolveMedicationReference(reference, in: medications) else { throw DataImportError.invalidFormat }
+					event.medication = resolved
+				}
+				if let index = events.firstIndex(where: { $0.id == event.id }) {
+					if !mergeExisting { events[index] = event }
+				} else { events.append(event) }
+			}
+			removedMedicationIDs = priorIDs.subtracting(medications.map(\.id))
+			snapshot = MedicationPersistenceSnapshot(medications: medications, events: events)
+		}, applyPreferences: { snapshot in
+			if applySettings, let settings = imported.settings {
+				settings.apply(to: defaults, sharedDefaults: sharedDefaults, validateMedicationIDs: { Set(snapshot.medications.map { $0.id.uuidString }) })
+			}
+		})
+		await notificationCleanup(removedMedicationIDs)
+		await refreshDoseAvailability()
+		logger.info("Import committed successfully in \(Date().timeIntervalSince(startTime))s")
 	}
 
-	private func rollbackImport(to snapshot: ImportTransactionSnapshot) async -> [String] {
-		var failures: [String] = []
-
-		do {
-			if medications != snapshot.medications {
-				try importFailureInjection.beforeRollbackMedications()
-				try await medicationsStore.removeAll()
-				if !snapshot.medications.isEmpty {
-					try await medicationsStore.insert(snapshot.medications)
-				}
-			}
-			guard medications == snapshot.medications else {
-				throw DataImportError.finalValidationFailed
-			}
-		} catch {
-			logger.logPrivacySafeError("Import rollback failed: component=medications", error: error)
-			failures.append("medications")
-		}
-
-		do {
-			if events != snapshot.events {
-				try await eventsStore.removeAll()
-				if !snapshot.events.isEmpty {
-					try await eventsStore.insert(snapshot.events)
-				}
-			}
-			guard events == snapshot.events else {
-				throw DataImportError.finalValidationFailed
-			}
-		} catch {
-			logger.logPrivacySafeError("Import rollback failed: component=events", error: error)
-			failures.append("events")
-		}
-
-		for entry in snapshot.defaults.values {
-			if let value = entry.value {
-				settingsDefaults.set(value, forKey: entry.key)
-			} else {
-				settingsDefaults.removeObject(forKey: entry.key)
-			}
-		}
-		if !defaultsMatch(snapshot.defaults) {
-			logger.error("Import rollback failed: component=settings")
-			failures.append("settings")
-		}
-
-		if !refillProfileStore.restoreProfileData(snapshot.profiles) {
-			logger.error("Import rollback failed: component=refill profiles")
-			failures.append("refill profiles")
-		}
-
-		return failures
-	}
-
-	private func defaultsMatch(_ snapshot: DefaultsSnapshot) -> Bool {
-		snapshot.values.allSatisfy { entry in
-			let currentValue = settingsDefaults.object(forKey: entry.key)
-			switch (entry.value, currentValue) {
-			case (nil, nil):
-				return true
-			case let (expected as NSObject, current as NSObject):
-				return expected.isEqual(current)
-			default:
-				return false
-			}
-		}
+	private func resolveMedicationReference(_ reference: ANMedicationConcept, in medications: [ANMedicationConcept]) -> ANMedicationConcept? {
+		if let exact = medications.first(where: { $0.id == reference.id }) { return exact }
+		let matches = medications.filter { $0.clinicalName == reference.clinicalName && $0.nickname == reference.nickname }
+		return matches.count == 1 ? matches.first : nil
 	}
 
     /// Clear only user data (medications and events)
     public func clearUserData() async throws {
         logger.warning("Clearing user data (medications and events)")
-		let priorMedicationIDs = Set(medications.map(\.id))
         do {
-            try await medicationsStore.removeAll()
-			try importFailureInjection.beforeExplicitClearEvents()
-            try await eventsStore.removeAll()
-			await cleanRemovedNotificationArtifacts(from: priorMedicationIDs)
+			var removedMedicationIDs: Set<UUID> = []
+			try await transactions.perform { snapshot in
+				removedMedicationIDs = Set(snapshot.medications.map(\.id))
+				snapshot.medications = []
+				snapshot.events = []
+			}
+			await notificationCleanup(removedMedicationIDs)
+			await refreshDoseAvailability()
             logger.info("Successfully cleared all user data")
         } catch {
-			await cleanRemovedNotificationArtifacts(from: priorMedicationIDs)
             logger.logPrivacySafeError("Failed to clear user data", error: error)
             throw error
         }
     }
 
-	private func cleanRemovedNotificationArtifacts(
-		from priorMedicationIDs: Set<UUID>
-	) async {
-		let currentMedicationIDs = Set(medications.map(\.id))
-		await cleanNotificationArtifacts(
-			for: priorMedicationIDs.subtracting(currentMedicationIDs)
-		)
-	}
-
-	private func cleanNotificationArtifacts(for medicationIDs: Set<UUID>) async {
-		guard !medicationIDs.isEmpty else {
-			return
-		}
-		await notificationArtifactCleanup(medicationIDs)
-	}
-
 	@MainActor
 	static func resetAppSettings(
 		defaults: UserDefaults = .standard,
 		sharedDefaults: UserDefaults? = UserDefaults(suiteName: StorageConstants.appGroupIdentifier),
-		profileStore: MedicationRefillProfileStore? = nil,
 		navigationManager: NavigationManager = .shared
-	) -> Bool {
-		let store = profileStore ?? MedicationRefillProfileStore(
-			defaults: defaults,
-			sharedDefaults: sharedDefaults
-		)
-		guard store.resetProfiles() else {
-			return false
-		}
-
-		let verifiedProfileKeys: Set<String> = [
-			UserDefaultsKeys.medicationRefillProfiles,
-			UserDefaultsKeys.legacyMedicationProfiles,
-		]
-		for key in UserDefaultsKeys.keysToRemove.subtracting(verifiedProfileKeys) {
+	) {
+		for key in UserDefaultsKeys.keysToRemove {
 			defaults.removeObject(forKey: key)
 		}
 
@@ -706,33 +592,29 @@ public final class DataStore {
 			defaults.set(value, forKey: key)
 		}
 
+		// Medication safety profiles are mirrored for widget access, so reset must
+		// clear the shared copy as well or the value will rehydrate on next read.
+		sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+
 		navigationManager.clearHistoryNavigation()
-		return true
 	}
 
 	/// Reset only app settings and user preferences to defaults
-	public func resetAppSettings() async throws {
+	public func resetAppSettings() async {
 		logger.warning("Resetting app settings to defaults")
-		guard Self.resetAppSettings(
-			defaults: settingsDefaults,
-			sharedDefaults: nil,
-			profileStore: refillProfileStore
-		) else {
-			throw AppSettingsError.refillProfilePersistenceFailed
+		await MainActor.run {
+			Self.resetAppSettings(defaults: defaults, sharedDefaults: sharedDefaults, navigationManager: navigationManager)
+			reloadWidgets()
+			logger.info("Successfully reset all app settings to defaults")
 		}
-		logger.info("Successfully reset all app settings to defaults")
 	}
 
     /// Clear all data from both stores and reset all user preferences
     public func clearAllData() async throws {
         logger.warning("Clearing all data and resetting user preferences")
         do {
-			guard refillProfileStore.eraseAllProfileData() else {
-				throw AppSettingsError.refillProfilePersistenceFailed
-			}
-			try importFailureInjection.beforeExplicitClearUserData()
             try await clearUserData()
-			try await resetAppSettings()
+            await resetAppSettings()
             logger.info("Successfully cleared all data and reset preferences")
         } catch {
             logger.logPrivacySafeError("Failed to clear data", error: error)
@@ -855,24 +737,15 @@ public enum DataImportError: LocalizedError {
     case invalidFormat
     case versionMismatch(expected: String, actual: String)
     case partialImport(imported: Int, failed: Int)
-	case invalidMedicationReference
-	case finalValidationFailed
-	case transactionRollbackFailed(importError: String, rollbackFailures: [String])
 
     public var errorDescription: String? {
         switch self {
         case .invalidFormat:
-            return "The import file format is invalid or corrupted"
+            return String(localized: "The import file format is invalid or corrupted")
         case let .versionMismatch(expected, actual):
-            return "Data version mismatch: expected \(expected), got \(actual)"
+            return String(localized: "Data version mismatch: expected \(expected), got \(actual)")
         case let .partialImport(imported, failed):
-            return "Partial import: \(imported) items imported, \(failed) failed"
-		case .invalidMedicationReference:
-			return "An imported event references a medication that was not imported"
-		case .finalValidationFailed:
-			return "Imported data could not be verified"
-		case let .transactionRollbackFailed(_, rollbackFailures):
-			return "The import failed, and the app could not restore \(rollbackFailures.joined(separator: ", ")). Please retry. If the problem continues, contact support."
+            return String(localized: "Partial import: \(imported) items imported, \(failed) failed")
         }
     }
 }

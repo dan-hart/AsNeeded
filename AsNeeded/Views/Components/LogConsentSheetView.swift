@@ -105,10 +105,14 @@ struct LogConsentSheetView: View {
             .navigationTitle("Include App Logs?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                Button(role: .close) {
-                    dismiss()
-                }
+				ToolbarItem(placement: .topBarTrailing) {
+					Button(role: .close) {
+						dismiss()
+					}
+						.accessibilityLabel(Text("Close"))
+				}
             }
+            .tint(.accent)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -216,10 +220,10 @@ struct LogConsentSheetView: View {
             .accessibilityAddTraits(.isHeader)
 
             VStack(alignment: .leading, spacing: itemRowSpacing) {
-                logItemRow(icon: .gearshapeFill, text: "App events and actions", color: .blue)
-                logItemRow(icon: .exclamationmarkTriangleFill, text: "Error messages and warnings", color: .orange)
-                logItemRow(icon: .infoCircleFill, text: "System information (iOS version, device model)", color: .cyan)
-                logItemRow(icon: .clockFill, text: "Timestamps of app activities", color: .purple)
+                logItemRow(icon: .gearshapeFill, text: String(localized: "App events and actions"), color: .blue)
+                logItemRow(icon: .exclamationmarkTriangleFill, text: String(localized: "Error messages and warnings"), color: .orange)
+                logItemRow(icon: .infoCircleFill, text: String(localized: "System information (iOS version, device model)"), color: .cyan)
+                logItemRow(icon: .clockFill, text: String(localized: "Timestamps of app activities"), color: .purple)
             }
         }
         .glassCard()
@@ -244,9 +248,9 @@ struct LogConsentSheetView: View {
             .accessibilityAddTraits(.isHeader)
 
             VStack(alignment: .leading, spacing: itemRowSpacing) {
-                logItemRow(icon: .pillsFill, text: "Medication names", color: .red, isExcluded: true)
-                logItemRow(icon: .personFill, text: "Personal health information", color: .red, isExcluded: true)
-                logItemRow(icon: .lockFill, text: "Any sensitive user data", color: .red, isExcluded: true)
+                logItemRow(icon: .pillsFill, text: String(localized: "Medication names"), color: .red, isExcluded: true)
+                logItemRow(icon: .personFill, text: String(localized: "Personal health information"), color: .red, isExcluded: true)
+                logItemRow(icon: .lockFill, text: String(localized: "Any sensitive user data"), color: .red, isExcluded: true)
             }
         }
         .glassCard()
@@ -273,12 +277,12 @@ struct LogConsentSheetView: View {
                     Text("Include Logs")
                         .font(.customFont(fontFamily, style: .headline, weight: .semibold))
                 }
-                .foregroundStyle(Color.green.contrastingForegroundColor(for: colorScheme))
+                .foregroundStyle(Color.green.dynamicFilledButtonForeground)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, actionButtonVPadding)
                 .background(
                     LinearGradient(
-                        colors: [Color.green, Color.green.opacity(0.8)],
+                        colors: [Color.green.dynamicFilledButtonBackground, Color.green.dynamicFilledButtonBackground],
                         startPoint: .leading,
                         endPoint: .trailing
                     )

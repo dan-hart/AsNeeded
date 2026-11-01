@@ -8,7 +8,151 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
-	private struct PersistenceFailure: Error {}
+	@Test("Stock inputs reject invalid, negative and nonfinite numbers", arguments: ["word", "-1", "nan", "inf", "1e999"])
+	@MainActor
+	func invalidStockInputs(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.quantityText = value
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.stockValidationMessage?.contains("Current stock") == true)
+		viewModel.quantityText = ""
+		viewModel.initialQuantityText = value
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.stockValidationMessage?.contains("Refill quantity") == true)
+	}
+
+	@Test("Stock stays optional and accepts finite fractional or large quantities", arguments: ["", "  ", "0", "0.25", "1e30"])
+	@MainActor
+	func validStockInputs(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.quantityText = value
+		viewModel.initialQuantityText = value
+		#expect(viewModel.isFormValid)
+	}
+
+	@Test("Dose timing rejects invalid and nonfinite values", arguments: ["0", "-1", "nan", "inf", "word"])
+	@MainActor
+	func invalidDoseTiming(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.minimumHoursBetweenDosesText = value
+		#expect(!viewModel.isFormValid)
+	}
+
+	@Test("Rolling maximum requires a prescribed dose and unit")
+	@MainActor
+	func rollingMaximumRequiresDose() {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.maxDailyAmountText = "4"
+		#expect(!viewModel.isFormValid)
+		viewModel.prescribedDoseText = "5"
+		viewModel.prescribedUnit = .tablet
+		#expect(!viewModel.isFormValid)
+		viewModel.prescribedDoseText = "2"
+		#expect(viewModel.isFormValid)
+	}
+
+	@Test("Editing stores limits in the medication and preserves RxNorm metadata")
+	@MainActor
+	func editPreservesMetadataAndStoresLimits() {
+		var original = ANMedicationConcept(clinicalName: "Medication")
+		original.rxNormCode = "12345"
+		original.symbolInfo = ANSymbolInfo(name: "pills", minimumVersion: "16.0", fallbackName: "circle")
+		let viewModel = MedicationEditViewModel(medication: original)
+		viewModel.minimumHoursBetweenDosesText = "4"
+		viewModel.maxDailyAmountText = "8"
+		viewModel.nextDoseNotificationEnabled = true
+		let updated = viewModel.buildMedication()
+		#expect(updated.rxNormCode == original.rxNormCode)
+		#expect(updated.symbolInfo == original.symbolInfo)
+		#expect(updated.minimumHoursBetweenDoses == 4)
+		#expect(updated.maximumDailyDoseAmount == 8)
+		#expect(updated.nextDoseNotificationEnabled == true)
+	}
+
+	@Test("Rolling maximum rejects invalid and nonfinite values", arguments: ["0", "-1", "nan", "inf", "word"])
+	@MainActor
+	func invalidRollingMaximum(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedDoseText = "1"
+		viewModel.prescribedUnit = .tablet
+		viewModel.maxDailyAmountText = value
+		#expect(!viewModel.isFormValid)
+	}
+
+	@Test("Nonfinite prescribed amounts cannot be saved", arguments: ["nan", "inf"])
+	@MainActor
+	func nonfinitePrescribedAmount(value: String) {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedDoseText = value
+		viewModel.prescribedUnit = .tablet
+		#expect(!viewModel.isFormValid)
+		#expect(viewModel.buildMedication().prescribedDoseAmount == nil)
+	}
+
+	@Test("Model limits override legacy profile values and can be removed")
+	@MainActor
+	func modelLimitsTakePrecedenceAndCanBeRemoved() {
+		let locale = Locale(identifier: "fr_FR")
+		let defaults = UserDefaults(suiteName: "MedicationLimitPrecedence.\(UUID().uuidString)") ?? .standard
+		let store = MedicationSafetyProfileStore(defaults: defaults)
+		var medication = ANMedicationConcept(clinicalName: "Medication")
+		medication.minimumHoursBetweenDoses = 6
+		medication.maximumDailyDoseAmount = 10
+		store.save(MedicationSafetyProfile(minimumHoursBetweenDoses: 4, maxDailyAmount: 8), for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: store, locale: locale)
+		#expect(DoseAmountInput.value(from: viewModel.minimumHoursBetweenDosesText, locale: locale) == 6)
+		#expect(DoseAmountInput.value(from: viewModel.maxDailyAmountText, locale: locale) == 10)
+		#expect(!viewModel.nextDoseNotificationEnabled)
+		viewModel.minimumHoursBetweenDosesText = ""
+		viewModel.maxDailyAmountText = ""
+		#expect(viewModel.buildMedication().minimumHoursBetweenDoses == nil)
+		#expect(viewModel.buildMedication().maximumDailyDoseAmount == nil)
+	}
+
+	@Test("Failed medication persistence leaves the existing safety profile intact")
+	@MainActor
+	func failedSavePreservesSafetyProfile() async {
+		let defaults = UserDefaults(suiteName: "MedicationEditFailedSave.\(UUID().uuidString)") ?? .standard
+		let profiles = MedicationSafetyProfileStore(defaults: defaults)
+		let medication = ANMedicationConcept(clinicalName: "Medication")
+		let original = MedicationSafetyProfile(minimumHoursBetweenDoses: 4, cautionHoursBetweenDoses: 6, maxDailyAmount: 8)
+		profiles.save(original, for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profiles)
+		viewModel.maxDailyAmountText = ""
+		viewModel.cautionHoursBetweenDosesText = "10"
+		let saved = await viewModel.saveMedication { _ in false }
+		#expect(!saved)
+		#expect(profiles.profile(for: medication.id) == original)
+	}
+
+	@Test("Successful medication persistence precedes non-dose profile updates")
+	@MainActor
+	func successfulSaveOrdersProfileUpdateAfterMedication() async {
+		let defaults = UserDefaults(suiteName: "MedicationEditSuccessfulSave.\(UUID().uuidString)") ?? .standard
+		let profiles = MedicationSafetyProfileStore(defaults: defaults)
+		let medication = ANMedicationConcept(clinicalName: "Medication", prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		let original = MedicationSafetyProfile(minimumHoursBetweenDoses: 4, cautionHoursBetweenDoses: 6, maxDailyAmount: 8)
+		profiles.save(original, for: medication.id)
+		let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profiles)
+		viewModel.cautionHoursBetweenDosesText = "10"
+		let saved = await viewModel.saveMedication { updated in
+			#expect(profiles.profile(for: medication.id) == original)
+			#expect(updated.minimumHoursBetweenDoses == 4)
+			#expect(updated.maximumDailyDoseAmount == 8)
+			viewModel.cautionHoursBetweenDosesText = "12"
+			return true
+		}
+		#expect(saved)
+		#expect(profiles.profile(for: medication.id).minimumHoursBetweenDoses == nil)
+		#expect(profiles.profile(for: medication.id).maxDailyAmount == nil)
+		#expect(profiles.profile(for: medication.id).cautionHoursBetweenDoses == 10)
+	}
 
     // MARK: - Initialization Tests
 
@@ -30,6 +174,7 @@ struct MedicationEditViewModelTests {
     @Test("Initialize with existing medication populates fields")
     @MainActor
     func initWithExistingMedication() {
+        let locale = Locale(identifier: "fr_FR")
         let lastRefill = Date().addingTimeInterval(-86400 * 7) // 7 days ago
         let nextRefill = Date().addingTimeInterval(86400 * 23) // 23 days from now
 
@@ -44,16 +189,22 @@ struct MedicationEditViewModelTests {
             prescribedDoseAmount: 200
         )
 
-        let viewModel = MedicationEditViewModel(medication: medication)
+        let viewModel = MedicationEditViewModel(medication: medication, locale: locale)
 
         #expect(viewModel.clinicalName == "Ibuprofen")
         #expect(viewModel.nickname == "Pain Relief")
-        #expect(viewModel.initialQuantityText == "200.0")
-        #expect(viewModel.quantityText == "100.0")
-        #expect(viewModel.prescribedDoseText == "200.0")
+        #expect(DoseAmountInput.value(from: viewModel.initialQuantityText, locale: locale) == 200)
+        #expect(DoseAmountInput.value(from: viewModel.quantityText, locale: locale) == 100)
+        #expect(DoseAmountInput.value(from: viewModel.prescribedDoseText, locale: locale) == 200)
         #expect(viewModel.prescribedUnit == ANUnitConcept.milligram)
         #expect(viewModel.lastRefillDate == lastRefill)
         #expect(viewModel.nextRefillDate == nextRefill)
+
+        let saved = viewModel.buildMedication()
+        #expect(saved.id == medication.id)
+        #expect(saved.prescribedDoseAmount == medication.prescribedDoseAmount)
+        #expect(saved.quantity == medication.quantity)
+        #expect(saved.initialQuantity == medication.initialQuantity)
     }
 
     // MARK: - Form Validation Tests
@@ -284,99 +435,56 @@ struct MedicationEditViewModelTests {
         #expect(medication.prescribedUnit == nil) // Unit is ignored when dose is invalid
     }
 
-	@Test("Initialize with stored refill profile populates low-stock threshold")
-	@MainActor
-	func initWithStoredRefillProfile() {
-		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
-		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
-		let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
-		profileStore.save(MedicationRefillProfile(lowStockThreshold: 12), for: medication.id)
+    @Test("Initialize with stored safety profile populates guidance fields")
+    @MainActor
+    func initWithStoredSafetyProfile() {
+        let locale = Locale(identifier: "fr_FR")
+        let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
+        let profileStore = MedicationSafetyProfileStore(defaults: defaults)
+        let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
 
-		let viewModel = MedicationEditViewModel(medication: medication, refillProfileStore: profileStore)
+        profileStore.save(
+            MedicationSafetyProfile(
+                minimumHoursBetweenDoses: 4,
+                cautionHoursBetweenDoses: 6,
+                maxDailyAmount: 8,
+                duplicateDoseWindowMinutes: 45,
+                lowStockThreshold: 10,
+                refillLeadDays: 7
+            ),
+            for: medication.id
+        )
 
-		#expect(viewModel.lowStockThresholdText == "12.0")
-	}
+        let viewModel = MedicationEditViewModel(medication: medication, safetyProfileStore: profileStore, locale: locale)
 
-	@Test(
-		"Build refill profile normalizes invalid thresholds",
-		arguments: [
-			"", "   ", "invalid", "0", "-3",
-			"inf", "Inf", "INF", "+inf", "+Inf", "+INF", "-inf",
-			"infinity", "Infinity", "INFINITY", "nan", "NaN", "NAN", "1e309",
-		]
-	)
-	@MainActor
-	func buildRefillProfileNormalizesInvalidThresholds(threshold: String) {
-		let viewModel = MedicationEditViewModel(medication: nil)
-		viewModel.lowStockThresholdText = threshold
+        #expect(DoseAmountInput.value(from: viewModel.minimumHoursBetweenDosesText, locale: locale) == 4)
+        #expect(DoseAmountInput.value(from: viewModel.cautionHoursBetweenDosesText, locale: locale) == 6)
+        #expect(DoseAmountInput.value(from: viewModel.maxDailyAmountText, locale: locale) == 8)
+        #expect(viewModel.duplicateDoseWindowMinutes == 45)
+        #expect(DoseAmountInput.value(from: viewModel.lowStockThresholdText, locale: locale) == 10)
+        #expect(viewModel.refillLeadDays == 7)
+    }
 
-		#expect(viewModel.buildRefillProfile() == .empty)
-	}
+    @Test("Build safety profile normalizes empty values")
+    @MainActor
+    func buildSafetyProfileNormalizesEmptyValues() {
+        let viewModel = MedicationEditViewModel(medication: nil)
+        viewModel.minimumHoursBetweenDosesText = " 4 "
+        viewModel.cautionHoursBetweenDosesText = ""
+        viewModel.maxDailyAmountText = "8"
+        viewModel.lowStockThresholdText = " "
+        viewModel.duplicateDoseWindowMinutes = 35
+        viewModel.refillLeadDays = 6
 
-	@Test("Build refill profile preserves a positive threshold as its only state")
-	@MainActor
-	func buildRefillProfilePreservesPositiveThreshold() throws {
-		let viewModel = MedicationEditViewModel(medication: nil)
-		viewModel.lowStockThresholdText = " 7.5 "
+        let profile = viewModel.buildSafetyProfile()
 
-		let profile = viewModel.buildRefillProfile()
-		let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(profile)) as? [String: Any]
-
-		#expect(profile.lowStockThreshold == 7.5)
-		#expect(Set(encoded?.keys.map { $0 } ?? []) == ["lowStockThreshold"])
-	}
-
-	@Test("Save refill profile uses the medication ID and refill profile store")
-	@MainActor
-	func saveRefillProfileUsesMedicationID() {
-		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
-		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
-		let medicationID = UUID()
-		let otherMedicationID = UUID()
-		let viewModel = MedicationEditViewModel(medication: nil, refillProfileStore: profileStore)
-		viewModel.lowStockThresholdText = "9"
-
-		let saved = viewModel.saveRefillProfile(for: medicationID)
-
-		#expect(saved)
-		#expect(profileStore.profile(for: medicationID).lowStockThreshold == 9)
-		#expect(profileStore.profile(for: otherMedicationID) == .empty)
-	}
-
-	@Test("Save refill profile removes an existing threshold when blank")
-	@MainActor
-	func saveRefillProfileRemovesExistingThresholdWhenBlank() {
-		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
-		let profileStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
-		let medication = ANMedicationConcept(clinicalName: "Tracked Medication")
-		profileStore.save(MedicationRefillProfile(lowStockThreshold: 8), for: medication.id)
-		let viewModel = MedicationEditViewModel(medication: medication, refillProfileStore: profileStore)
-		viewModel.lowStockThresholdText = " "
-
-		let saved = viewModel.saveRefillProfile(for: medication.id)
-
-		#expect(saved)
-		#expect(profileStore.profile(for: medication.id) == .empty)
-	}
-
-	@Test("Save refill profile reports deterministic persistence failure")
-	@MainActor
-	func saveRefillProfileReportsPersistenceFailure() {
-		let defaults = UserDefaults(suiteName: "MedicationEditViewModelTests.\(UUID().uuidString)") ?? .standard
-		let profileStore = MedicationRefillProfileStore(
-			defaults: defaults,
-			sharedDefaults: nil,
-			profileEncoder: { _ in throw PersistenceFailure() }
-		)
-		let medicationID = UUID()
-		let viewModel = MedicationEditViewModel(medication: nil, refillProfileStore: profileStore)
-		viewModel.lowStockThresholdText = "9"
-
-		let saved = viewModel.saveRefillProfile(for: medicationID)
-
-		#expect(!saved)
-		#expect(profileStore.profile(for: medicationID) == .empty)
-	}
+        #expect(profile.minimumHoursBetweenDoses == nil)
+        #expect(profile.cautionHoursBetweenDoses == nil)
+        #expect(profile.maxDailyAmount == nil)
+        #expect(profile.lowStockThreshold == nil)
+        #expect(profile.duplicateDoseWindowMinutes == 35)
+        #expect(profile.refillLeadDays == 6)
+    }
 
     // MARK: - Edge Cases
 
@@ -447,4 +555,40 @@ struct MedicationEditViewModelTests {
 
         #expect(elapsed < 0.5) // Should complete 1000 builds in less than 500ms
     }
+
+	@Test("Medication edits parse localized dose, stock and limits without changing their values")
+	@MainActor
+	func localizedMedicationEdit() {
+		let viewModel = MedicationEditViewModel(medication: nil, locale: Locale(identifier: "fr_FR"))
+		viewModel.clinicalName = "Medication"
+		viewModel.prescribedUnit = .tablet
+		viewModel.prescribedDoseText = "0,25"
+		viewModel.quantityText = "10,5"
+		viewModel.initialQuantityText = "20,5"
+		viewModel.minimumHoursBetweenDosesText = "1,5"
+		viewModel.maxDailyAmountText = "2,5"
+		#expect(viewModel.isFormValid)
+		let medication = viewModel.buildMedication()
+		#expect(medication.prescribedDoseAmount == 0.25)
+		#expect(medication.quantity == 10.5)
+		#expect(medication.initialQuantity == 20.5)
+		#expect(medication.minimumHoursBetweenDoses == 1.5)
+		#expect(medication.maximumDailyDoseAmount == 2.5)
+	}
+
+	@Test("Opening and saving a localized edit preserves dose precision and medication identity")
+	@MainActor
+	func localizedEditRoundTrip() {
+		var original = ANMedicationConcept(clinicalName: "Medication")
+		original.prescribedDoseAmount = 0.12345678901234566
+		original.prescribedUnit = .tablet
+		original.quantity = 123456.78901234567
+		let viewModel = MedicationEditViewModel(medication: original, locale: Locale(identifier: "ar_EG"))
+		#expect(viewModel.isFormValid)
+		let edited = viewModel.buildMedication()
+		#expect(edited.id == original.id)
+		#expect(edited.prescribedDoseAmount == original.prescribedDoseAmount)
+		#expect(edited.prescribedUnit == original.prescribedUnit)
+		#expect(edited.quantity == original.quantity)
+	}
 }

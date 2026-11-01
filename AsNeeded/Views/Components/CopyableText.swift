@@ -2,10 +2,10 @@ import SFSafeSymbols
 import SwiftUI
 import UIKit
 
-/// A text view that can be copied to clipboard via tap gesture
+/// A text view that can be copied to clipboard via a long press.
 ///
 /// Features:
-/// - Tap gesture to copy text immediately to clipboard
+/// - Long press to copy, with a separate optional tap action
 /// - Inline "Copied to Clipboard!" confirmation message
 /// - Haptic feedback on copy action
 /// - Completion handler for parent view notifications
@@ -27,7 +27,7 @@ struct CopyableText: View {
 	let font: Font
 	let weight: Font.Weight?
 	let color: Color
-	let lineLimit: Int?
+	var onTap: (() -> Void)?
 	var onCopied: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
@@ -40,42 +40,53 @@ struct CopyableText: View {
 		font: Font,
 		weight: Font.Weight? = nil,
 		color: Color = .secondary,
-		lineLimit: Int? = nil,
+		onTap: (() -> Void)? = nil,
 		onCopied: (() -> Void)? = nil
 	) {
 		self.text = text
 		self.font = font
 		self.weight = weight
 		self.color = color
-		self.lineLimit = lineLimit
+		self.onTap = onTap
 		self.onCopied = onCopied
 	}
 
-	static func accessibilityCopyActionName(for text: String) -> String {
-		"Copy clinical name: \(text)"
-	}
-
 	var body: some View {
-		Text(showCopiedMessage ? "Copied to Clipboard!" : text)
+		Text(showCopiedMessage ? String(localized: "Copied to Clipboard!") : text)
 			.font(font)
 			.fontWeight(weight)
 			.foregroundStyle(showCopiedMessage ? .accent : color)
-			.lineLimit(lineLimit)
-			.truncationMode(.tail)
-			.fixedSize(horizontal: false, vertical: lineLimit == nil)
+			.noTruncate()
+			.demoNameRedacted()
 			.scaleEffect(isPressed ? 0.98 : 1.0)
 			.animation(.easeInOut(duration: 0.1), value: isPressed)
 			.animation(.spring(response: 0.3, dampingFraction: 0.7), value: showCopiedMessage)
 			.contentShape(Rectangle())
-			.onTapGesture {
-				copyToClipboard()
-			}
-			.accessibilityLabel("\(showCopiedMessage ? "Copied to Clipboard" : text)")
-			.accessibilityHint("Tap to copy clinical name to clipboard")
+			.gesture(
+				LongPressGesture(minimumDuration: 0.5)
+					.exclusively(before: TapGesture())
+					.onEnded { result in
+						switch result {
+						case .first(true): copyToClipboard()
+						case .second: onTap?()
+						default: break
+						}
+					}
+			)
+			.accessibilityLabel(showCopiedMessage ? String(localized: "Copied to Clipboard") : text)
+			.accessibilityHint(onTap == nil ? String(localized: "Activate to copy name to clipboard") : String(localized: "Activate to view medication details. Use Copy name to copy to clipboard"))
 			.accessibilityAddTraits(.isButton)
-			.accessibilityAction(named: Self.accessibilityCopyActionName(for: text)) {
-				copyToClipboard()
-			}
+			.accessibilityAction { Self.activate(onTap: onTap, copy: copyToClipboard) }
+			.accessibilityAction(named: "Copy name") { copyToClipboard() }
+	}
+
+	/// Assistive activation must always perform the control's primary action.
+	static func activate(onTap: (() -> Void)?, copy: () -> Void) {
+		if let onTap {
+			onTap()
+		} else {
+			copy()
+		}
 	}
 
 	// MARK: - Private Methods

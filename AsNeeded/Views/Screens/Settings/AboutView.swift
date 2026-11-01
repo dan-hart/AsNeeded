@@ -2,18 +2,24 @@ import SFSafeSymbols
 import SwiftUI
 
 struct AboutView: View {
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var subsectionSpacing: CGFloat = 16
-    @ScaledMetric private var groupSpacing: CGFloat = 12
-    @ScaledMetric private var itemSpacing: CGFloat = 8
-    @ScaledMetric private var mediumSpacing: CGFloat = 6
-    @ScaledMetric private var tightSpacing: CGFloat = 4
-    @ScaledMetric private var textSpacing: CGFloat = 2
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var smallPadding: CGFloat = 4
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var iconSize32: CGFloat = 32
+	private let sectionSpacing: CGFloat = 24
+	private let subsectionSpacing: CGFloat = 16
+	private let groupSpacing: CGFloat = 12
+	private let itemSpacing: CGFloat = 8
+	private let tightSpacing: CGFloat = 4
+	private let textSpacing: CGFloat = 2
+	private let cardPadding: CGFloat = 16
+	private let cornerRadius12: CGFloat = 12
+	private let iconSize32: CGFloat = 32
     @Environment(\.fontFamily) private var fontFamily
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@State private var isPurchasingTip = false
+	@State private var showTipAlert = false
+	@State private var tipAlertTitle = ""
+	@State private var tipAlertMessage = ""
+	@State private var showTipThankYou = false
+	@State private var tipPurchaseType: ThankYouView.PurchaseType?
+
 
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
@@ -42,9 +48,11 @@ struct AboutView: View {
 
                 coreValuesSection
 
-                developerAndSupportSection
+                supportSection
 
                 specialThanksSection
+
+                developerSection
 
                 technicalInfoSection
 
@@ -54,25 +62,49 @@ struct AboutView: View {
             }
             .padding(.horizontal)
             .padding(.vertical)
-            .navigationTitle("About")
+            .customNavigationTitle("About")
         }
+        .font(.customFont(fontFamily, style: .body))
+		.alert(tipAlertTitle, isPresented: $showTipAlert) {
+			Button("OK", role: .cancel) {}
+		} message: {
+			Text(tipAlertMessage)
+		}
+		.sheet(isPresented: $showTipThankYou) {
+			if let tipPurchaseType {
+				ThankYouView(purchaseType: tipPurchaseType)
+					.environmentObject(FeedbackService.shared)
+			}
+		}
+		.disabled(isPurchasingTip)
+		.overlay {
+			if isPurchasingTip {
+				Color.black.opacity(0.3)
+					.ignoresSafeArea()
+					.overlay {
+						ProgressView("Processing...")
+							.padding()
+							.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius12))
+					}
+			}
+		}
     }
 
     private var heroSection: some View {
         VStack(alignment: .center, spacing: subsectionSpacing) {
             VStack(spacing: itemSpacing) {
                 Text(appName)
-                    .font(.largeTitle)
+                    .font(.customFont(fontFamily, style: .largeTitle))
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
 
                 Text("Track as-needed medications with privacy and simplicity")
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
                 Text("Version \(version)")
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundStyle(.tertiary)
             }
         }
@@ -87,69 +119,93 @@ struct AboutView: View {
                 .frame(maxWidth: .infinity)
 
             VStack(spacing: groupSpacing) {
-                valueRow(icon: .lockShield, title: "Privacy First", description: "Your health data stays private, local, and secure")
-                valueRow(icon: .giftFill, title: "Always Free", description: "All features free forever, no ads, no subscriptions required")
-                valueRow(icon: .chevronLeftForwardslashChevronRight, title: "Open Source", description: "Transparent, inspectable, and community-driven")
+                valueRow(icon: .lockShield, title: String(localized: "Privacy First"), description: String(localized: "Local medication history, with sharing and backups you control"))
+                valueRow(icon: .giftFill, title: String(localized: "Always Free"), description: String(localized: "All features free forever, no ads, no subscriptions required"))
+                valueRow(icon: .chevronLeftForwardslashChevronRight, title: String(localized: "Open Source"), description: String(localized: "Transparent, inspectable, and community-driven"))
             }
         }
     }
 
-    private var developerAndSupportSection: some View {
+	private var developerSection: some View {
+		VStack(alignment: .leading, spacing: subsectionSpacing) {
+			Text("Connect with the Developer")
+				.font(.customFont(fontFamily, style: .title2, weight: .semibold))
+				.accessibilityAddTraits(.isHeader)
+
+			if let url = mastodonURL {
+				developerLink("Dan Hart on Mastodon", symbol: .atCircle, destination: url)
+			}
+			if let url = githubProfileURL {
+				developerLink("Dan Hart on GitHub", symbol: .chevronLeftForwardslashChevronRight, destination: url)
+			}
+			TipJarSection(
+				title: "Tip Dan",
+				subtitle: "Optional one-time support",
+				isPurchasing: $isPurchasingTip,
+				showPurchaseAlert: $showTipAlert,
+				alertTitle: $tipAlertTitle,
+				alertMessage: $tipAlertMessage,
+				showThankYouView: $showTipThankYou,
+				purchaseType: $tipPurchaseType
+			)
+			BuyMeACoffeeButton(
+				title: "Buy Dan a Coffee",
+				subtitle: "Support Dan’s work on As Needed"
+			)
+		}
+	}
+
+	private func developerLink(_ title: LocalizedStringKey, symbol: SFSymbol, destination: URL) -> some View {
+		Link(destination: destination) {
+			HStack(spacing: groupSpacing) {
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: symbol)
+						.accessibilityHidden(true)
+				}
+				Text(title)
+					.multilineTextAlignment(.leading)
+					.fixedSize(horizontal: false, vertical: true)
+					.frame(maxWidth: .infinity, alignment: .leading)
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: .arrowUpRight)
+						.accessibilityHidden(true)
+				}
+			}
+			.font(.customFont(fontFamily, style: .headline))
+			.foregroundStyle(Color.accent.dynamicFilledButtonForeground)
+			.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+		}
+		.buttonStyle(.borderedProminent)
+		.buttonBorderShape(.roundedRectangle(radius: cornerRadius12))
+		.controlSize(.large)
+		.tint(.accent)
+	}
+
+    private var supportSection: some View {
         VStack(alignment: .leading, spacing: subsectionSpacing) {
-            VStack(alignment: .leading, spacing: itemSpacing) {
-                HStack(spacing: subsectionSpacing) {
-                    if let url = mastodonURL {
-                        Link(destination: url) {
-                            HStack(spacing: mediumSpacing) {
-                                Image(systemSymbol: .atCircle)
-                                    .font(.subheadline)
-                                Text("Dan Hart on Mastodon")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundStyle(.accent)
-                        }
-                    }
-
-                    if let url = githubProfileURL {
-                        Link(destination: url) {
-                            HStack(spacing: mediumSpacing) {
-                                Image(systemSymbol: .chevronLeftForwardslashChevronRight)
-                                    .font(.subheadline)
-                                Text("Dan Hart on GitHub")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundStyle(.accent)
-                        }
-                    }
-                }
-                .padding(.top, smallPadding)
-            }
-
             NavigationLink {
                 SupportView()
             } label: {
                 HStack(spacing: groupSpacing) {
                     Image(systemSymbol: .heart)
-                        .font(.title3)
+                        .font(.customFont(fontFamily, style: .title3))
                         .foregroundColor(.red)
 
                     VStack(alignment: .leading, spacing: textSpacing) {
                         Text("Support As Needed")
-                            .font(.headline)
+                            .font(.customFont(fontFamily, style: .headline))
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
 
                         Text("Help keep this app free and open source")
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                     }
 
                     Spacer()
 
                     Image(systemSymbol: .chevronRight)
-                        .font(.caption)
+                        .font(.customFont(fontFamily, style: .caption))
                         .foregroundColor(.secondary)
                 }
                 .padding(cardPadding)
@@ -176,18 +232,18 @@ struct AboutView: View {
 
                             VStack(alignment: .leading, spacing: tightSpacing) {
                                 Text("Christine Wang")
-                                    .font(.headline)
+                                    .font(.customFont(fontFamily, style: .headline))
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                                 Text("Design & Testing")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .foregroundColor(.secondary)
                             }
 
                             Spacer()
 
                             Image(systemSymbol: .arrowUpRightSquare)
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
                         .padding(cardPadding)
@@ -204,10 +260,10 @@ struct AboutView: View {
 
                         VStack(alignment: .leading, spacing: tightSpacing) {
                             Text("Christine Wang")
-                                .font(.headline)
+                                .font(.customFont(fontFamily, style: .headline))
                                 .fontWeight(.semibold)
                             Text("Design & Testing")
-                                .font(.subheadline)
+                                .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundColor(.secondary)
                         }
 
@@ -228,18 +284,18 @@ struct AboutView: View {
 
                             VStack(alignment: .leading, spacing: tightSpacing) {
                                 Text("Kevin Wang")
-                                    .font(.headline)
+                                    .font(.customFont(fontFamily, style: .headline))
                                     .fontWeight(.semibold)
                                     .foregroundColor(.primary)
                                 Text("Vision & Details")
-                                    .font(.subheadline)
+                                    .font(.customFont(fontFamily, style: .subheadline))
                                     .foregroundColor(.secondary)
                             }
 
                             Spacer()
 
                             Image(systemSymbol: .arrowUpRightSquare)
-                                .font(.caption)
+                                .font(.customFont(fontFamily, style: .caption))
                                 .foregroundColor(.secondary)
                         }
                         .padding(cardPadding)
@@ -257,10 +313,10 @@ struct AboutView: View {
 
                     VStack(alignment: .leading, spacing: tightSpacing) {
                         Text("My Wife, Jesse")
-                            .font(.headline)
+                            .font(.customFont(fontFamily, style: .headline))
                             .fontWeight(.semibold)
                         Text("Support & Encouragement")
-                            .font(.subheadline)
+                            .font(.customFont(fontFamily, style: .subheadline))
                             .foregroundColor(.secondary)
                     }
 
@@ -338,24 +394,24 @@ struct AboutView: View {
         } label: {
             HStack(spacing: groupSpacing) {
                 Image(systemSymbol: .shippingboxFill)
-                    .font(.title3)
+                    .font(.customFont(fontFamily, style: .title3))
                     .foregroundColor(.accent)
 
                 VStack(alignment: .leading, spacing: textSpacing) {
                     Text("App Dependencies")
-                        .font(.headline)
+                        .font(.customFont(fontFamily, style: .headline))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
 
                     Text("Third-party libraries used in this app")
-                        .font(.subheadline)
+                        .font(.customFont(fontFamily, style: .subheadline))
                         .foregroundColor(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemSymbol: .chevronRight)
-                    .font(.caption)
+                    .font(.customFont(fontFamily, style: .caption))
                     .foregroundColor(.secondary)
             }
             .padding(cardPadding)
@@ -374,10 +430,10 @@ struct AboutView: View {
 
             VStack(alignment: .leading, spacing: tightSpacing) {
                 Text(title)
-                    .font(.headline)
+                    .font(.customFont(fontFamily, style: .headline))
                     .fontWeight(.semibold)
                 Text(description)
-                    .font(.subheadline)
+                    .font(.customFont(fontFamily, style: .subheadline))
                     .foregroundColor(.secondary)
             }
 
@@ -400,6 +456,6 @@ struct AboutView: View {
 
 #if DEBUG
     #Preview {
-        NavigationView { AboutView() }
+        NavigationView { AboutView().environmentObject(RevenueCatManager()) }
     }
 #endif

@@ -1,5 +1,7 @@
 # Calm Clinical UX And On-Device Insights Design
 
+> Historical plan: the on-device questions component was removed from the 1.2.0 release on October 27, 2026. Its sections below do not describe current shipping functionality.
+
 ## Goal
 
 Deliver a coordinated product pass that improves medication safety guardrails, richer post-dose capture, refill intelligence, widgets and watch usefulness, backup and export trust, and the overall calm clinical UX, while adding an opt-in on-device Trends question experience that never sends user data off the device.

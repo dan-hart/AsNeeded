@@ -1,0 +1,26 @@
+{
+  "source": "https://github.com/TimBroddin/appleframer.com",
+  "revision": "ad533b08fa6ce995b88f36c68a997d7293736cf7",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2025 Tim Broddin",
+  "rendering_reference": "src/lib/renderFrame.ts",
+  "coordinates_reference": "public/frames/Frames.json",
+  "assets": {
+    "duo-inner-frame.png": {
+      "upstream_path": "public/frames/iPhone/Duo/Inner/Night-Sky/iPhone Duo Inner - Night Sky - Landscape.png",
+      "sha256": "bd684d4cd2b68756ca008c158b9c0cbfeeb134bf3b5e481b3d0dd02d783211f1"
+    },
+    "duo-inner-mask.png": {
+      "upstream_path": "public/frames/iPhone/Duo/Inner/Night-Sky/iPhone Duo Inner - Night Sky - Landscape_mask.png",
+      "sha256": "d57398cfafb4f1d12e2643204a2fbc916ccf321d2526e2a3837d05b1d8a40cea"
+    },
+    "duo-outer-frame.png": {
+      "upstream_path": "public/frames/iPhone/Duo/Outer/Night-Sky/iPhone Duo Outer - Night Sky - Portrait.png",
+      "sha256": "f972a6062a0ca2bef2186d61366beaf746a7725a34a4bfa1dabc4410d7c0dbdf"
+    },
+    "duo-outer-mask.png": {
+      "upstream_path": "public/frames/iPhone/Duo/Outer/Night-Sky/iPhone Duo Outer - Night Sky - Portrait_mask.png",
+      "sha256": "8137db0a00b8f8cbd88e7c80e69b54229a0cd368ae45e6d2384005d1ad4b1b50"
+    }
+  }
+}

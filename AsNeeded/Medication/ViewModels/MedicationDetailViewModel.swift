@@ -5,29 +5,24 @@ import ANModelKit
 import DHLoggingKit
 import Foundation
 
-/// Persists a dose event during `logDose`. Injectable so tests can fail the event write after the
-/// medication update has already succeeded.
-typealias DoseEventWrite = @MainActor (_ event: ANEventConcept) async throws -> Void
-
 @MainActor
 final class MedicationDetailViewModel: ObservableObject {
     private let dataStore: DataStore
     private let logger = DHLogger(category: "MedicationDetailViewModel")
-	private let addDoseEvent: DoseEventWrite
     private var activeDoseLogOperationID: UUID?
 
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-	init(dataStore: DataStore = .shared, addDoseEvent: DoseEventWrite? = nil) {
+    init(dataStore: DataStore = .shared) {
         self.dataStore = dataStore
-		self.addDoseEvent = addDoseEvent ?? { event in
-			try await dataStore.addEvent(event)
-		}
         logger.debug("MedicationDetailViewModel initialized")
     }
 
-    func save(updated medication: ANMedicationConcept) async {
+	func currentMedication(id: UUID) -> ANMedicationConcept? { dataStore.medications.first { $0.id == id } }
+
+    @discardableResult
+    func save(updated medication: ANMedicationConcept, original: ANMedicationConcept? = nil) async -> Bool {
         logger.logMedicationOperation("Saving", id: medication.id)
         isLoading = true
         errorMessage = nil
@@ -35,11 +30,13 @@ final class MedicationDetailViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            try await dataStore.updateMedication(medication)
+            try await dataStore.updateMedication(medication, original: original)
             logger.logMedicationOperation("Successfully saved", id: medication.id)
+			return true
         } catch {
             logger.logPrivacySafeError("Failed to save medication", error: error)
-            errorMessage = "Failed to save medication: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to save medication: \(error.localizedDescription)")
+			return false
         }
     }
 
@@ -55,7 +52,7 @@ final class MedicationDetailViewModel: ObservableObject {
             logger.logMedicationOperation("Successfully deleted", id: medication.id)
         } catch {
             logger.logPrivacySafeError("Failed to delete medication", error: error)
-            errorMessage = "Failed to delete medication: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to delete medication: \(error.localizedDescription)")
         }
     }
 
@@ -78,17 +75,18 @@ final class MedicationDetailViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
+		guard let medication = dataStore.medications.first(where: { $0.id == medication.id }) else {
+			errorMessage = String(localized: "This medication is no longer available. Close this sheet and review your medications.")
+			return false
+		}
         let eventCountBefore = dataStore.events.count
-        var updatedMedication = medication
-        if let quantity = updatedMedication.quantity, dose.amount > 0 {
-            updatedMedication.quantity = quantity - dose.amount
-        }
 
         var eventToSave = event
         if eventToSave.medication?.id != medication.id {
             logger.warning("Correcting mismatched dose log medication: source=\(source), operationID=\(operationID.uuidString), eventHadDifferentMedication=true")
         }
         eventToSave.medication = medication
+		eventToSave.dose = dose
 
         logger.logDoseOperation(
             "Starting",
@@ -98,50 +96,22 @@ final class MedicationDetailViewModel: ObservableObject {
             details: quantityDetails(quantityWasPresent: medication.quantity != nil)
         )
 
-		do {
-			try await dataStore.updateMedication(updatedMedication)
-		} catch {
-			logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), stage=updateMedication, errorType=\(DHLogger.privacySafeErrorType(error))")
-			errorMessage = "Failed to log dose: \(error.localizedDescription)"
-			return false
-		}
-
-		do {
-			try await addDoseEvent(eventToSave)
-			logger.logDoseOperation(
-				"Succeeded",
-				source: source,
-				operationID: operationID,
-				eventCountBefore: eventCountBefore,
-				eventCountAfter: dataStore.events.count
-			)
-			return true
-		} catch {
-			logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), stage=addEvent, errorType=\(DHLogger.privacySafeErrorType(error))")
-			await rollBackMedicationUpdate(to: medication, source: source, operationID: operationID)
-			errorMessage = "Failed to log dose: \(error.localizedDescription)"
-			return false
-		}
+        do {
+			try await dataStore.recordDose(eventToSave)
+            logger.logDoseOperation(
+                "Succeeded",
+                source: source,
+                operationID: operationID,
+                eventCountBefore: eventCountBefore,
+                eventCountAfter: dataStore.events.count
+            )
+            return true
+        } catch {
+            logger.error("Failed dose log: source=\(source), operationID=\(operationID.uuidString), errorType=\(DHLogger.privacySafeErrorType(error))")
+            errorMessage = String(localized: "Failed to log dose: \(error.localizedDescription)")
+            return false
+        }
     }
-
-	/// Restores the pre-dose medication after the event write fails so a retry does not subtract the dose twice.
-	private func rollBackMedicationUpdate(
-		to originalMedication: ANMedicationConcept,
-		source: String,
-		operationID: UUID
-	) async {
-		do {
-			try await dataStore.updateMedication(originalMedication)
-			logger.logDoseOperation(
-				"Rolled back medication update for",
-				source: source,
-				operationID: operationID,
-				details: "reason=eventWriteFailed"
-			)
-		} catch {
-			logger.error("Failed to roll back medication update: source=\(source), operationID=\(operationID.uuidString), errorType=\(DHLogger.privacySafeErrorType(error))")
-		}
-	}
 
     func log(event: ANEventConcept) async {
         logger.logEventOperation("Logging", eventType: event.eventType.rawValue, medicationId: event.medication?.id)
@@ -155,7 +125,7 @@ final class MedicationDetailViewModel: ObservableObject {
             logger.info("Successfully logged event record")
         } catch {
             logger.logPrivacySafeError("Failed to log event", error: error)
-            errorMessage = "Failed to log event: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to log event: \(error.localizedDescription)")
         }
     }
 

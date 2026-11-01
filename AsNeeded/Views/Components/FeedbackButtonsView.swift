@@ -22,11 +22,11 @@ struct FeedbackButtonsView: View {
 
     private var loadingMessage: String {
         if feedbackService.showingLogConsentDialog {
-            return "Awaiting user consent..."
+            return String(localized: "Awaiting user consent...")
         } else if feedbackService.isCollectingLogs {
-            return "Preparing mail with logs..."
+            return String(localized: "Preparing mail with logs...")
         } else {
-            return "Loading..."
+            return String(localized: "Loading...")
         }
     }
 
@@ -39,7 +39,7 @@ struct FeedbackButtonsView: View {
 
             VStack(spacing: buttonSpacing) {
                 FeedbackButton(
-                    title: "Report a Bug",
+                    title: String(localized: "Report a Bug"),
                     icon: "exclamationmark.triangle.fill",
                     color: .red,
                     isDisabled: isLoading,
@@ -50,7 +50,7 @@ struct FeedbackButtonsView: View {
                 )
 
                 FeedbackButton(
-                    title: "Feature Request",
+                    title: String(localized: "Feature Request"),
                     icon: "lightbulb.fill",
                     color: .accent,
                     isDisabled: isLoading,
@@ -61,7 +61,7 @@ struct FeedbackButtonsView: View {
                 )
 
                 FeedbackButton(
-                    title: "Give Feedback",
+                    title: String(localized: "Give Feedback"),
                     icon: "heart.fill",
                     color: .green,
                     isDisabled: isLoading,
@@ -79,16 +79,16 @@ struct FeedbackButtonsView: View {
         .overlay {
             if isLoading {
                 RoundedRectangle(cornerRadius: containerCornerRadius)
-                    .fill(Color.black.opacity(0.4))
+                    .fill(Color(uiColor: .secondarySystemBackground))
                     .overlay {
                         VStack(spacing: loadingSpacing) {
                             ProgressView()
                                 .scaleEffect(1.2)
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .progressViewStyle(CircularProgressViewStyle(tint: .primary))
 
                             Text(loadingMessage)
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
-                                .foregroundColor(.white)
+                                .foregroundStyle(.primary)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(containerPadding)

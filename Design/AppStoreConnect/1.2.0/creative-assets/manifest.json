@@ -1,0 +1,61 @@
+{
+  "background": "#F1D89C",
+  "backgroundSource": "AsNeeded/AppIcon.icon/icon.json fill.solid",
+  "font": "Atkinson Hyperlegible Regular and Bold, bundled TTF outlines; no font substitution",
+  "assets": [
+    {
+      "file": "header.png",
+      "width": 3840,
+      "height": 1646
+    },
+    {
+      "file": "search-results.png",
+      "width": 3840,
+      "height": 2560
+    }
+  ],
+  "format": "Opaque RGB PNG, sRGB",
+  "specification": "https://developer.apple.com/help/app-store-connect/reference/app-information/creative-assets-specifications",
+  "sourceArtwork": "Original AppIcon.icon layers, referenced from assets/ without modifying source files",
+  "status": "Uploaded and assigned to 1.2.0 en-US; images prepare for submission",
+  "appStoreConnect": {
+    "appID": "6714469235",
+    "locale": "en-US",
+    "localizationID": "6560ff30-83fa-42e6-b8fc-9da8b313cebd",
+    "verifiedAt": "2026-10-29",
+    "header": {
+      "imageID": "52000019-036a-8b73-8007-bb590a35bdac",
+      "placementID": "2c000019-036a-8b73-8f39-f8325d14a66b",
+      "placementState": "ACTIVE",
+      "imageState": "PREPARE_FOR_SUBMISSION",
+      "previousImageID": "9b000019-036a-8b73-8035-f590ff43eb68",
+      "replacedPlacementID": "47800019-036a-8b73-8f2f-2276a5cf60e0",
+      "sha256": "a61fd48f1b4b44867c03a32e6fd6547ec5e734ce2eaa79ebbe463eb0937c912a"
+    },
+    "searchResults": {
+      "imageID": "26000019-036a-8b73-801a-8f8c435b2294",
+      "placementID": "0f400019-036a-8b73-8f1f-e5d1816b5f2c",
+      "placementState": "ACTIVE",
+      "imageState": "PREPARE_FOR_SUBMISSION"
+    }
+  },
+  "headerLayout": {
+    "subtitle": false,
+    "safeArea": {
+      "x": 1097,
+      "y": 493,
+      "width": 1646,
+      "height": 661
+    },
+    "safeAreaSource": "Apple creative_assets-product_page_header_template-static.psd, Art Safe Area layer",
+    "brandingBounds": {
+      "left": 1109,
+      "top": 598,
+      "right": 2732,
+      "bottom": 1049
+    },
+    "pillWidth": 574,
+    "wordmarkFontSize": 193,
+    "gap": 64
+  }
+}

@@ -20,18 +20,18 @@ import SwiftUI
 /// - License compliance and attribution
 /// - Developer reference for package versions
 struct AppDependenciesView: View {
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var subsectionSpacing: CGFloat = 16
-    @ScaledMetric private var groupSpacing: CGFloat = 12
-    @ScaledMetric private var itemSpacing: CGFloat = 8
-    @ScaledMetric private var mediumSpacing: CGFloat = 6
-    @ScaledMetric private var tightSpacing: CGFloat = 4
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var mediumPadding: CGFloat = 8
-    @ScaledMetric private var smallPadding: CGFloat = 4
-    @ScaledMetric private var cornerRadius12: CGFloat = 12
-    @ScaledMetric private var cornerRadius6: CGFloat = 6
-    @ScaledMetric private var iconSize28: CGFloat = 28
+	private let sectionSpacing: CGFloat = 24
+	private let subsectionSpacing: CGFloat = 16
+	private let groupSpacing: CGFloat = 12
+	private let itemSpacing: CGFloat = 8
+	private let mediumSpacing: CGFloat = 6
+	private let tightSpacing: CGFloat = 4
+	private let cardPadding: CGFloat = 16
+	private let mediumPadding: CGFloat = 8
+	private let smallPadding: CGFloat = 4
+	private let cornerRadius12: CGFloat = 12
+	private let cornerRadius6: CGFloat = 6
+	private let iconSize28: CGFloat = 28
     @Environment(\.openURL) private var openURL
     @Environment(\.fontFamily) private var fontFamily
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -63,7 +63,7 @@ struct AppDependenciesView: View {
             .padding(.horizontal)
             .padding(.vertical)
         }
-        .navigationTitle("App Dependencies")
+        .customNavigationTitle("App Dependencies")
     }
 
     // MARK: - View Components
@@ -121,7 +121,7 @@ struct AppDependenciesView: View {
                     // Icon and name
                     HStack(spacing: groupSpacing) {
                         Image(systemSymbol: .shippingboxFill)
-                            .font(.title2)
+                            .font(.customFont(fontFamily, style: .title2))
                             .foregroundStyle(.accent)
 
                         Text(dependency.name)
@@ -153,7 +153,7 @@ struct AppDependenciesView: View {
                     HStack {
                         Spacer()
                         Image(systemSymbol: .arrowUpRightSquare)
-                            .font(.body)
+                            .font(.customFont(fontFamily, style: .body))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -165,7 +165,7 @@ struct AppDependenciesView: View {
                 HStack(spacing: groupSpacing) {
                     // Package icon
                     Image(systemSymbol: .shippingboxFill)
-                        .font(.title2)
+                        .font(.customFont(fontFamily, style: .title2))
                         .frame(width: iconSize28, height: iconSize28)
                         .foregroundStyle(.accent)
 
@@ -210,7 +210,7 @@ struct AppDependenciesView: View {
 
                     // External link indicator
                     Image(systemSymbol: .arrowUpRightSquare)
-                        .font(.body)
+                        .font(.customFont(fontFamily, style: .body))
                         .foregroundStyle(.tertiary)
                 }
                 .padding(cardPadding)

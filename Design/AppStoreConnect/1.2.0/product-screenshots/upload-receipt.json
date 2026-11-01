@@ -1,0 +1,329 @@
+{
+  "appID": "6714469235",
+  "version": "1.2.0",
+  "versionID": "31449f69-4ebe-47a5-aad1-0191cde0595c",
+  "locale": "en-US",
+  "localizationID": "6560ff30-83fa-42e6-b8fc-9da8b313cebd",
+  "verifiedAtUTC": "2026-10-29T22:33:54Z",
+  "status": "All 28 uploaded assets COMPLETE; read back from App Store Connect",
+  "publicReleaseSubmitted": false,
+  "sets": [
+    {
+      "displayType": "APP_IPHONE_61",
+      "setID": "e7597707-c14a-4c17-80f2-e5f3949c0834",
+      "screenshots": [
+        {
+          "id": "09c00019-036a-8b73-8021-ba8065558d5f",
+          "fileName": "01-medication.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/01-medication.png",
+          "md5": "2fcd338109086c5166e6973bf9513804",
+          "sha256": "eada1a0e9103e85cac17f5f3678ee0c493865f4f0724d0199c90090f6b7da0c1",
+          "width": 1206,
+          "height": 2622,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "e6800019-036a-8b73-8034-b9b79b81922a",
+          "fileName": "02-history.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/02-history.png",
+          "md5": "87c818a05da175f541582cabbaca505f",
+          "sha256": "b4144f72c41c925109768b824c2fc97a5f961ecbee947e4fd6a9f8ac41a84740",
+          "width": 1206,
+          "height": 2622,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "10c00019-036a-8b73-803a-83a00798c594",
+          "fileName": "03-trends.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/03-trends.png",
+          "md5": "892e0ea26cae73a566171711655a0ab1",
+          "sha256": "b40dd0a16782d8e4a67425451f6b94db11685bbddca8c8dfb00b245aef7e6fa0",
+          "width": 1206,
+          "height": 2622,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "e2400019-036a-8b73-8006-b1a865d8b68a",
+          "fileName": "04-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/04-log-dose.png",
+          "md5": "21802de6ce8091c02be2b322205316d9",
+          "sha256": "f0e97fc0a3c717c7f693da9b6c639827baeb894228816a48e02e0bef293576c3",
+          "width": 1206,
+          "height": 2622,
+          "state": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_IPHONE_DUO",
+      "setID": "c4f7054a-fcdc-401a-8172-c145bcd3e96c",
+      "screenshots": [
+        {
+          "id": "82400019-036a-8b73-803c-bc26c4f88bfc",
+          "fileName": "01-duo-outer-medication.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-outer/01-medication.png",
+          "md5": "14d79a70d61305ac73bee39343408288",
+          "sha256": "52a79a47febcc3812e63ffbade287a8dabe0124ca1b555b4448dc0d0256ba305",
+          "width": 1398,
+          "height": 2034,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "1b400019-036a-8b73-8010-24e9222b0fab",
+          "fileName": "02-duo-outer-history.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-outer/02-history.png",
+          "md5": "b44158ea0022cf24017be991ab64a81d",
+          "sha256": "70e04c5f51196735a929b7a5d9fb682c3f3ddd3393c8806e11d31fcc83da0810",
+          "width": 1398,
+          "height": 2034,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "c2000019-036a-8b73-8036-d50ebabea1bd",
+          "fileName": "03-duo-outer-trends.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-outer/03-trends.png",
+          "md5": "6c1ef5f39c49618517cca9426e2a874e",
+          "sha256": "d6843caa5fe9ea0432043789c23500a56de4a114ea020de14858c50fd37b28d9",
+          "width": 1398,
+          "height": 2034,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "6a800019-036a-8b73-801c-d90898000575",
+          "fileName": "04-duo-outer-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-outer/04-log-dose.png",
+          "md5": "1bb3a0727b1f107d8645ca1ff9096bc9",
+          "sha256": "2cbcec72c783745b4829ddcc8fb52ff38c766fa796792ff355c31d4cc6e29b8f",
+          "width": 1398,
+          "height": 2034,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "f1800019-036a-8b73-8005-b0005631b664",
+          "fileName": "05-duo-inner-medication.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-inner/01-medication.png",
+          "md5": "8523a78e27f8ec05c03728e015e7c188",
+          "sha256": "31dae9b23ca54aca5b33cc1bec2b919782719555d1d5ed66da12594ea52e1de4",
+          "width": 2853,
+          "height": 2007,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "7bc00019-036a-8b73-8022-7599b46b1174",
+          "fileName": "06-duo-inner-history.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-inner/02-history.png",
+          "md5": "b6c1dbabeebdc2e491d248dd4a864f4d",
+          "sha256": "f13349c6bc3a01fa569e2031f55c006b1ee817f674a0131cb46191604b7de98d",
+          "width": 2853,
+          "height": 2007,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "c8800019-036a-8b73-8016-36d9fcaaf42d",
+          "fileName": "07-duo-inner-trends.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-inner/03-trends.png",
+          "md5": "9741fc830e520bb5e0e7d47ca2a4a136",
+          "sha256": "8a240d034241c50f956809f219db5c1f21a205db9f8b2436aaae2ab92db6f640",
+          "width": 2853,
+          "height": 2007,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "f8800019-036a-8b73-801b-1822219b9bdc",
+          "fileName": "08-duo-inner-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/duo-inner/04-log-dose.png",
+          "md5": "8e3fdacb00d63a6ff356874e61248324",
+          "sha256": "320de5903213772546658adf4e9365a8e7236d4fc1dab1487b68671472798816",
+          "width": 2853,
+          "height": 2007,
+          "state": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_IPAD_PRO_3GEN_129",
+      "setID": "56817203-d3c9-460f-896f-e1de5c4ad288",
+      "screenshots": [
+        {
+          "id": "19400019-036a-8b73-8015-dacbf4687cea",
+          "fileName": "01-medication.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/ipad/01-medication.png",
+          "md5": "8f37e0bd8cba0a9144d0c91031b027fc",
+          "sha256": "6f677b8098c047dc749a16571744b5531ccdc4b0f48ed177d8848d8a7fb6e56d",
+          "width": 2064,
+          "height": 2752,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "75800019-036a-8b73-8003-910d1b992237",
+          "fileName": "02-history.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/ipad/02-history.png",
+          "md5": "155b5ab2f137e6d28be95f769a61be82",
+          "sha256": "4418b877a114426a13f405e9893d07b8c80a0323042a4addbe2f41508aafd015",
+          "width": 2064,
+          "height": 2752,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "78800019-036a-8b73-802c-c71bd167fa32",
+          "fileName": "03-trends.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/ipad/03-trends.png",
+          "md5": "680321435dcb3a1478333f43ca9a6eda",
+          "sha256": "a71578f5d9946f1d9431bd8695fb99a2864ec8b366117f529350a790740e1a64",
+          "width": 2064,
+          "height": 2752,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "d9400019-036a-8b73-803e-9df16e614b85",
+          "fileName": "04-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/ipad/04-log-dose.png",
+          "md5": "7b566abd22e7efd587346f4890e6b5b6",
+          "sha256": "3bc7e217f04e8aa109d8fe85c5a05d71e41f3b89d4586de15120d9169730f6a0",
+          "width": 2064,
+          "height": 2752,
+          "state": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_WATCH_SERIES_10",
+      "setID": "db660c60-dfec-4374-918a-5543104603fe",
+      "screenshots": [
+        {
+          "id": "85000019-036a-8b73-8032-be8581329d85",
+          "fileName": "01-medications.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/01-medications.png",
+          "md5": "ebb815758b9fa2cb837ae97eb2e3f16f",
+          "sha256": "0c0c70f78c9a612bfd81ac540bf821dc1e9514b907cfc89ccf65fbbb66a85b51",
+          "width": 416,
+          "height": 496,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "f3400019-036a-8b73-8007-a4c929e74a73",
+          "fileName": "02-medication-details.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/02-medication-details.png",
+          "md5": "f7993be53c74422b4b4ab8e585505faa",
+          "sha256": "7bd6d49d6e452fc2d3ff09cc23d2ff48cc58f92abe2560d3f5a1ea89dcb876dc",
+          "width": 416,
+          "height": 496,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "59400019-036a-8b73-801d-e4684a1e6c8d",
+          "fileName": "03-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/03-log-dose.png",
+          "md5": "677dd675b06f138dc863367d3c1b562c",
+          "sha256": "c81a85e1344dd12495772dfcddf312751d7d1062f93ec083c78fc1693d2d602c",
+          "width": 416,
+          "height": 496,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "88000019-036a-8b73-8014-a4d665594938",
+          "fileName": "04-update-quantity.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/04-update-quantity.png",
+          "md5": "7af3e6869a9bbf8a0469f42cb31ec63e",
+          "sha256": "c752a6776a184de7bcf81acdd5f3d4dff8c5aa0f7a8d33a19bf5b6c9b0139d1e",
+          "width": 416,
+          "height": 496,
+          "state": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_IPHONE_65",
+      "setID": "331a911b-69b9-4a44-8233-f3c0c79041fb",
+      "screenshots": [
+        {
+          "id": "60400019-036a-8b73-8036-1ed9bcda926c",
+          "fileName": "01-medication.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/01-medication.png",
+          "md5": "3fe5c64a8019d3b1454ef0a5f163b9e1",
+          "sha256": "d9e746b8f396733428a123382887ba7dceb49113ef70cdcae47aecf3173d6c0a",
+          "width": 1242,
+          "height": 2688,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "a1c00019-036a-8b73-8029-bcb0016d9232",
+          "fileName": "02-history.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/02-history.png",
+          "md5": "8999c7bb2051f261968254ab87ce8d01",
+          "sha256": "918e8be0bd137f3cd0519dd2ffaa5ae55cc18dadb81f3f3a680148ad5bf7f1ca",
+          "width": 1242,
+          "height": 2688,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "af400019-036a-8b73-802a-022c96877e40",
+          "fileName": "03-trends.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/03-trends.png",
+          "md5": "2a57312aa378f4de844b283ef2f63373",
+          "sha256": "237373e8eb070cd2d0dc6f379ff9499605119cf1329d55fb9a2f498348e94249",
+          "width": 1242,
+          "height": 2688,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "21c00019-036a-8b73-801b-000267cb1ddf",
+          "fileName": "04-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/iphone/04-log-dose.png",
+          "md5": "84a5a9b2d4c5f29db576e9b4386d8ed8",
+          "sha256": "0f1e90a33ade2b31cd46220a6d94b503c6c527f94a95ced1146aeb4cc07d4198",
+          "width": 1242,
+          "height": 2688,
+          "state": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_WATCH_ULTRA",
+      "setID": "1548e091-9e9b-484f-a866-f9cbddc81efb",
+      "screenshots": [
+        {
+          "id": "7dc00019-036a-8b73-8006-2d04e929f4eb",
+          "fileName": "01-medications.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/01-medications.png",
+          "md5": "2685ad8bb0c5fdd59e3f6e92d15be4b2",
+          "sha256": "036e33e14c413a3f93f23a8f01e13e64f689c8c5468ba666540232b15e9a3f27",
+          "width": 422,
+          "height": 514,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "24800019-036a-8b73-801a-e4bde8c31397",
+          "fileName": "02-medication-details.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/02-medication-details.png",
+          "md5": "0731aece8ef4972f40dd27694f14eb5b",
+          "sha256": "a1bd8553774453f905d453652737de2f77a6020418b7d1ca8e5ff736e1a07660",
+          "width": 422,
+          "height": 514,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "91800019-036a-8b73-800c-1ff6d9e2b2b7",
+          "fileName": "03-log-dose.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/03-log-dose.png",
+          "md5": "aae962687d06beb3a2746680026bfc83",
+          "sha256": "850cc07682d81cc752548fe18f33c80ee64b2621ee6fcc2244364261d76f321d",
+          "width": 422,
+          "height": 514,
+          "state": "COMPLETE"
+        },
+        {
+          "id": "45c00019-036a-8b73-8034-1f13a5abbec9",
+          "fileName": "04-update-quantity.png",
+          "source": "Design/AppStoreConnect/1.2.0/product-screenshots/watch/04-update-quantity.png",
+          "md5": "0fbb479e78bb98c5ff34ccb6dddbd629",
+          "sha256": "44230d9fb7078656127195ee2e48a1da371af30c1afae3900a5492b0098eb59b",
+          "width": 422,
+          "height": 514,
+          "state": "COMPLETE"
+        }
+      ]
+    }
+  ],
+  "compatibilityCopies": "IPHONE_65 and WATCH_ULTRA use proportional containment of approved artwork on exact yellow; no stretching. Existing screenshots replaced after backup."
+}

@@ -6,7 +6,7 @@ import ANModelKit
 import Foundation
 import Testing
 
-@Suite("Medication ID Mismatch Tests", .tags(.dataStore, .persistence))
+@Suite("Medication ID Mismatch Tests", .serialized, .tags(.dataStore, .persistence))
 @MainActor
 struct MedicationIDMismatchTests {
     private var dataStore: DataStore
@@ -15,113 +15,37 @@ struct MedicationIDMismatchTests {
         // Create test instance with isolated storage
         dataStore = DataStore(testIdentifier: "MedicationIDMismatchTests")
         // Clear any existing test data
-        try await dataStore.clearAllData()
+        try await dataStore.clearUserData()
     }
 
     // MARK: - Import Tests
 
-    @Test("Import handles events with mismatched medication IDs", .disabled("JSON import with medication references in events not fully supported"))
-    func importHandlesMismatchedMedicationIDs() async throws {
-        // Given - JSON data with a medication and events where one has a different medication ID
-        let jsonData = """
-        {
-        	"medications": [
-        		{
-        			"id": "DA2D2903-DB45-4840-BD8B-2E8729B21875",
-        			"clinicalName": "Alprazolam",
-        			"nickname": "Xanax",
-        			"quantity": 100.0
-        		}
-        	],
-        	"events": [
-        		{
-        			"id": "EVENT-1",
-        			"eventType": "dose_taken",
-        			"date": "2022-01-01T12:00:00Z",
-        			"medication": {
-        				"id": "DA2D2903-DB45-4840-BD8B-2E8729B21875",
-        				"clinicalName": "Alprazolam"
-        			},
-        			"dose": {
-        				"amount": 1.0,
-        				"unit": "milligram"
-        			}
-        		},
-        		{
-        			"id": "EVENT-2",
-        			"eventType": "dose_taken",
-        			"date": "2022-01-02T12:00:00Z",
-        			"medication": {
-        				"id": "2D3D7CC5-09C1-46BF-8EFD-71EB956F33AF",
-        				"clinicalName": "Alprazolam"
-        			},
-        			"dose": {
-        				"amount": 2.0,
-        				"unit": "milligram"
-        			}
-        		}
-        	],
-        	"exportDate": "2022-01-01T12:00:00Z",
-        	"appVersion": "1.0.0"
-        }
-        """.data(using: .utf8)!
+	@Test("Import handles events with mismatched medication IDs")
+	func importHandlesMismatchedMedicationIDs() async throws {
+		let medication = ANMedicationConcept(clinicalName: "Example medication", nickname: "Example nickname", quantity: 100)
+		let reconstructed = ANMedicationConcept(clinicalName: medication.clinicalName, nickname: medication.nickname)
+		let correct = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 1, unit: .milligram), date: Date())
+		let mismatched = ANEventConcept(eventType: .doseTaken, medication: reconstructed, dose: ANDoseConcept(amount: 2, unit: .milligram), date: Date())
+		try await dataStore.importDataFromJSON(encoded(medications: [medication], events: [correct, mismatched]))
+		#expect(dataStore.medications.map(\.id) == [medication.id])
+		#expect(Set(dataStore.events.map(\.id)) == Set([correct.id, mismatched.id]))
+		#expect(dataStore.events.allSatisfy { $0.medication?.id == medication.id })
+	}
 
-        // When - Import the data
-        try await dataStore.importDataFromJSON(jsonData)
-
-        // Then - Both events should be imported with corrected medication references
-        #expect(dataStore.medications.count == 1)
-        #expect(dataStore.events.count == 2)
-
-        // All events should reference the same medication ID
-        let medicationID = dataStore.medications.first?.id
-        for event in dataStore.events {
-            #expect(event.medication?.id == medicationID,
-                    "Event should have corrected medication ID")
-        }
-    }
-
-    @Test("Import skips events with non-existent medications", .disabled("JSON import with medication references in events not fully supported"))
-    func importSkipsEventsWithNonExistentMedications() async throws {
-        // Given - JSON with events referencing medications not in the import
-        let jsonData = """
-        {
-        	"medications": [
-        		{
-        			"id": "MED-1",
-        			"clinicalName": "Ibuprofen",
-        			"nickname": "Advil",
-        			"quantity": 50.0
-        		}
-        	],
-        	"events": [
-        		{
-        			"id": "EVENT-1",
-        			"eventType": "dose_taken",
-        			"date": "2022-01-01T12:00:00Z",
-        			"medication": {
-        				"id": "MED-NONEXISTENT",
-        				"clinicalName": "Aspirin"
-        			},
-        			"dose": {
-        				"amount": 1.0,
-        				"unit": "tablet"
-        			}
-        		}
-        	],
-        	"exportDate": "2022-01-01T12:00:00Z",
-        	"appVersion": "1.0.0"
-        }
-        """.data(using: .utf8)!
-
-        // When - Import the data
-        try await dataStore.importDataFromJSON(jsonData)
-
-        // Then - Medication imported but event skipped
-        #expect(dataStore.medications.count == 1)
-        #expect(dataStore.events.count == 0,
-                "Event with non-existent medication should be skipped")
-    }
+	@Test("Import rejects unresolved history before replacing existing records")
+	func importRejectsNonExistentMedications() async throws {
+		let current = ANMedicationConcept(clinicalName: "Existing example", quantity: 10)
+		let retained = ANEventConcept(eventType: .doseTaken, medication: current, date: Date())
+		try await dataStore.addMedication(current)
+		try await dataStore.addEvent(retained, shouldRecordForReview: false)
+		let incoming = ANMedicationConcept(clinicalName: "Incoming example")
+		let missing = ANMedicationConcept(clinicalName: "Missing example")
+		let invalid = ANEventConcept(eventType: .doseTaken, medication: missing, date: Date())
+		let data = try encoded(medications: [incoming], events: [invalid])
+		await #expect(throws: DataImportError.self) { try await dataStore.importDataFromJSON(data) }
+		#expect(dataStore.medications == [current])
+		#expect(dataStore.events.map(\.id) == [retained.id])
+	}
 
     // MARK: - Trends ViewModel Tests
 
@@ -202,56 +126,23 @@ struct MedicationIDMismatchTests {
         // This is expected behavior since we can't calculate totals without a unit
     }
 
-    @Test("Import matches medications by name when IDs differ", .disabled("JSON import with medication references in events not fully supported"))
-    func importMatchesMedicationsByName() async throws {
-        // Given - JSON where events have same medication name but different ID
-        let jsonData = """
-        {
-        	"medications": [
-        		{
-        			"id": "CORRECT-ID",
-        			"clinicalName": "Alprazolam",
-        			"nickname": "Xanax",
-        			"quantity": 100.0
-        		}
-        	],
-        	"events": [
-        		{
-        			"id": "EVENT-1",
-        			"eventType": "dose_taken",
-        			"date": "2022-01-01T12:00:00Z",
-        			"medication": {
-        				"id": "WRONG-ID",
-        				"clinicalName": "Alprazolam"
-        			},
-        			"dose": {
-        				"amount": 1.0,
-        				"unit": "milligram"
-        			}
-        		}
-        	],
-        	"exportDate": "2022-01-01T12:00:00Z",
-        	"appVersion": "1.0.0"
-        }
-        """.data(using: .utf8)!
+	@Test("Import matches an unambiguous medication name and nickname when IDs differ")
+	func importMatchesMedicationsByName() async throws {
+		let medication = ANMedicationConcept(clinicalName: "Example medication", nickname: "Example nickname", quantity: 100)
+		let reconstructed = ANMedicationConcept(clinicalName: medication.clinicalName, nickname: medication.nickname)
+		let event = ANEventConcept(eventType: .doseTaken, medication: reconstructed, dose: ANDoseConcept(amount: 1, unit: .milligram), date: Date())
+		try await dataStore.importDataFromJSON(encoded(medications: [medication], events: [event]))
+		#expect(dataStore.medications.map(\.id) == [medication.id])
+		#expect(dataStore.events.map(\.id) == [event.id])
+		#expect(dataStore.events.first?.medication?.id == medication.id)
+		#expect(dataStore.events.first?.medication?.clinicalName == medication.clinicalName)
+		#expect(dataStore.events.first?.medication?.nickname == medication.nickname)
+	}
 
-        // When - Import the data
-        try await dataStore.importDataFromJSON(jsonData)
-
-        // Then - Event should be matched to medication by name
-        #expect(dataStore.medications.count == 1)
-        #expect(dataStore.events.count == 1)
-
-        guard let medication = dataStore.medications.first,
-              let event = dataStore.events.first
-        else {
-            Issue.record("Expected medication and event to exist")
-            return
-        }
-
-        #expect(event.medication?.id == medication.id,
-                "Event medication ID should be corrected to match imported medication")
-        #expect(event.medication?.clinicalName == "Alprazolam")
-        #expect(event.medication?.nickname == "Xanax")
-    }
+	private func encoded(medications: [ANMedicationConcept], events: [ANEventConcept]) throws -> Data {
+		let export = DataExport(medications: medications, events: events, exportDate: Date(), appVersion: "1.1.2", dataVersion: "1.0", settings: nil)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		return try encoder.encode(export)
+	}
 }

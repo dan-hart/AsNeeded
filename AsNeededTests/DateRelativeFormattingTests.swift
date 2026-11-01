@@ -14,13 +14,14 @@ import Testing
 struct DateRelativeFormattingTests {
     private let calendar = Calendar.current
     private let now = Date()
+	private let english = Locale(identifier: "en_US")
 
     // MARK: - Same Day Tests
 
     @Test("Today should return 'today'")
     func today() {
-        #expect(now.relativeFormatted(isPast: true) == "today")
-        #expect(now.relativeFormatted(isPast: false) == "today")
+        #expect(now.relativeFormatted(isPast: true, now: now, locale: english) == "today")
+        #expect(now.relativeFormatted(isPast: false, now: now, locale: english) == "today")
     }
 
     // MARK: - Yesterday/Tomorrow Tests
@@ -31,7 +32,7 @@ struct DateRelativeFormattingTests {
             #expect(Bool(false), "Failed to create yesterday date")
             return
         }
-        #expect(yesterday.relativeFormattedAsPast == "yesterday")
+        #expect(yesterday.relativeFormatted(isPast: true, now: now, locale: english) == "yesterday")
     }
 
     @Test("Tomorrow should return 'tomorrow'")
@@ -40,7 +41,7 @@ struct DateRelativeFormattingTests {
             #expect(Bool(false), "Failed to create tomorrow date")
             return
         }
-        #expect(tomorrow.relativeFormattedAsFuture == "tomorrow")
+        #expect(tomorrow.relativeFormatted(isPast: false, now: now, locale: english) == "tomorrow")
     }
 
     // MARK: - Days Tests
@@ -58,7 +59,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsPast == testCase.expected)
+            #expect(date.relativeFormatted(isPast: true, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -75,7 +76,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsFuture == testCase.expected)
+            #expect(date.relativeFormatted(isPast: false, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -97,7 +98,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsPast == testCase.expected)
+            #expect(date.relativeFormatted(isPast: true, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -115,7 +116,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsFuture == testCase.expected)
+            #expect(date.relativeFormatted(isPast: false, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -137,7 +138,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsPast == testCase.expected)
+            #expect(date.relativeFormatted(isPast: true, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -154,7 +155,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsFuture == testCase.expected)
+            #expect(date.relativeFormatted(isPast: false, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -173,7 +174,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsPast == testCase.expected)
+            #expect(date.relativeFormatted(isPast: true, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -189,7 +190,7 @@ struct DateRelativeFormattingTests {
                 #expect(Bool(false), "Failed to create date for \(testCase.days) days")
                 continue
             }
-            #expect(date.relativeFormattedAsFuture == testCase.expected)
+            #expect(date.relativeFormatted(isPast: false, now: now, locale: english) == testCase.expected)
         }
     }
 
@@ -212,7 +213,7 @@ struct DateRelativeFormattingTests {
                 continue
             }
             let isPast = testDate < now
-            #expect(testDate.relativeFormatted(isPast: isPast) == expected)
+            #expect(testDate.relativeFormatted(isPast: isPast, now: now, locale: english) == expected)
         }
     }
 
@@ -227,7 +228,15 @@ struct DateRelativeFormattingTests {
             return
         }
 
-        #expect(yesterday.relativeFormattedAsPast == "yesterday")
-        #expect(tomorrow.relativeFormattedAsFuture == "tomorrow")
+        #expect(yesterday.relativeFormatted(isPast: true, now: now, locale: english) == "yesterday")
+        #expect(tomorrow.relativeFormatted(isPast: false, now: now, locale: english) == "tomorrow")
     }
+
+	@Test("Relative dates use native non-English words and direction")
+	func localizedRelativeDates() throws {
+		let future = try #require(calendar.date(byAdding: .day, value: 3, to: now))
+		let past = try #require(calendar.date(byAdding: .day, value: -14, to: now))
+		#expect(future.relativeFormatted(isPast: false, now: now, locale: Locale(identifier: "es_ES")) == "dentro de 3 días")
+		#expect(past.relativeFormatted(isPast: true, now: now, locale: Locale(identifier: "de_DE")) == "vor 2 Wochen")
+	}
 }

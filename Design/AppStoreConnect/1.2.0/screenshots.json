@@ -1,0 +1,59 @@
+{
+  "release": "1.2.0",
+  "captureBuild": "1.2.0 (306), Debug; feature removal compiled before build-number increment to 307",
+  "captureDate": "2026-10-27",
+  "device": "iPhone 17 Pro Max",
+  "runtime": "iOS 26.5",
+  "locale": "en-US",
+  "background": "#F1D89C",
+  "renderer": "Koubou 0.20.0 via asc screenshots frame",
+  "dimensions": [
+    1320,
+    2868
+  ],
+  "data": "Fictional examples only. Values vary by screen to demonstrate features. The alert was delivered by the app using an accelerated synthetic dose window.",
+  "screenshots": [
+    {
+      "file": "iphone/01-next-dose.png",
+      "raw": "raw/iphone/01-next-dose.png",
+      "title": "A little less clock math.",
+      "subtitle": "See your next saved dose window.",
+      "sha256": "5388d904feb06fa47d23d7cd9be382550a62b7fb25a68985ef093407c003ccd3"
+    },
+    {
+      "file": "iphone/02-next-dose-alert.png",
+      "raw": "raw/iphone/02-next-dose-alert.png",
+      "title": "A heads-up. Your call.",
+      "subtitle": "Next-dose alerts, separate from reminders.",
+      "sha256": "dfdd1cb001856c95a0a4b36245c9ed2a4ddeecd17cce46953d0b96943bcc743b"
+    },
+    {
+      "file": "iphone/03-optional-limits.png",
+      "raw": "raw/iphone/03-optional-limits.png",
+      "title": "Your instructions. Saved.",
+      "subtitle": "Optional intervals and 24-hour quantity limits.",
+      "sha256": "65b599158757a39e408127e8bd3f18471b1c2adb241cac802747e0f9ed84cc9e"
+    },
+    {
+      "file": "iphone/04-dose-reflections.png",
+      "raw": "raw/iphone/04-dose-reflections.png",
+      "title": "Remember how it went.",
+      "subtitle": "Reasons, symptoms, side effects, and notes.",
+      "sha256": "bfe74eb1e41bf71de5ba43cff030d6e0fcbeafde455b9a4112a4c2cf214ff278"
+    },
+    {
+      "file": "iphone/05-trends.png",
+      "raw": "raw/iphone/05-trends.png",
+      "title": "See the bigger picture.",
+      "subtitle": "Logging patterns and refill estimates.",
+      "sha256": "101204b2e94503eb39227e39cbd6ccac96a97259416242b292faba4fdd2f971a"
+    },
+    {
+      "file": "iphone/06-quick-log.png",
+      "raw": "raw/iphone/06-quick-log.png",
+      "title": "Wrong tap? Undo it.",
+      "subtitle": "Clearer Quick Log confirmations. Easy undo.",
+      "sha256": "bbaceb6fc337e1c0dab5095aef736bf1edff070ce5f47a7d67f7171447dbf5b7"
+    }
+  ]
+}

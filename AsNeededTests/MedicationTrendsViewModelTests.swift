@@ -4,28 +4,13 @@
 import ANModelKit
 @testable import AsNeeded
 import Foundation
+import Combine
 import Testing
 
 @MainActor
 @Suite("MedicationTrendsViewModel Tests", .tags(.medication, .viewModel, .trends, .unit))
 struct MedicationTrendsViewModelTests {
     // MARK: - Test Helpers
-
-    private struct MockGenerator: TrendsQuestionGenerating {
-        let response: TrendsQuestionAnswer
-
-        func answer(prompt: String) async throws -> TrendsQuestionAnswer {
-            response
-        }
-    }
-
-    private struct ThrowingGenerator: TrendsQuestionGenerating {
-        let error: any Error
-
-        func answer(prompt: String) async throws -> TrendsQuestionAnswer {
-            throw error
-        }
-    }
 
     private func clearStoredSelection() {
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
@@ -281,11 +266,9 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        // Trends end at yesterday, so the doses go on yesterday around midday.
-        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
-            .addingTimeInterval(12 * 3600)
-        let event1 = createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet)
-        let event2 = createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(3600), amount: 3.0, unit: .tablet)
+        let today = try #require(Calendar.current.date(byAdding: .hour, value: -12, to: Calendar.current.startOfDay(for: Date())))
+        let event1 = createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet)
+        let event2 = createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 3.0, unit: .tablet)
         try await dataStore.addEvent(event1)
         try await dataStore.addEvent(event2)
 
@@ -298,32 +281,6 @@ struct MedicationTrendsViewModelTests {
         }
 
         #expect(total.total == 5.0)
-    }
-
-    @Test("DailyTotals and heatmap exclude the current day")
-    func dailyTotalsExcludeToday() async throws {
-        let dataStore = DataStore(testIdentifier: "TrendsVM-ExcludeToday")
-        let medication = createTestMedication(name: "TestMed", unit: .tablet)
-        try await dataStore.addMedication(medication)
-
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: today))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 5.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday.addingTimeInterval(3600), amount: 1.0, unit: .tablet))
-
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
-
-        let dailyTotals = viewModel.dailyTotals(last: 1)
-        #expect(dailyTotals.count == 1)
-        #expect(dailyTotals.first?.day == yesterday)
-        #expect(dailyTotals.first?.total == 1.0)
-
-        let heatmap = viewModel.calendarHeatmapData(last: 1)
-        #expect(heatmap.count == 1)
-        #expect(heatmap.first?.date == yesterday)
-        #expect(heatmap.first?.total == 1.0)
-        #expect(viewModel.trendsWindowEnd == yesterday)
     }
 
     @Test("DailyTotals includes zero days")
@@ -357,22 +314,6 @@ struct MedicationTrendsViewModelTests {
         #expect(viewModel.patternSummary.contains("evening"))
     }
 
-    @Test("Question context includes refill and quantity summaries")
-    func questionContextIncludesRefillAndQuantitySummaries() async throws {
-        let dataStore = DataStore(testIdentifier: "TrendsVM-QuestionContext")
-        let medication = createTestMedication(name: "ContextMed", quantity: 18, initialQuantity: 30, nextRefill: Date().addingTimeInterval(5 * 86_400), unit: .tablet)
-        try await dataStore.addMedication(medication)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: Date().addingTimeInterval(-3600), amount: 2, unit: .tablet))
-
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
-        let context = viewModel.questionContext(windowDays: 14)
-
-        #expect(context?.medicationName == "ContextMed")
-        #expect(context?.quantitySummary.contains("18") == true)
-        #expect(context?.refillSummary.isEmpty == false)
-        #expect(context?.dailyTotals.isEmpty == false)
-    }
-
     @Test("DailyTotals calculates correct 14-day window")
     func dailyTotals14Days() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-Daily14")
@@ -380,10 +321,9 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addMedication(medication)
 
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = try #require(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
 
-        // The window ends yesterday, so cover days 1 through 14 back from today.
-        for daysAgo in 1 ... 14 {
+        for daysAgo in 0 ..< 14 {
             guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
             let event = createTestEvent(medication: medication, date: date, amount: 1.0, unit: .tablet)
             try await dataStore.addEvent(event)
@@ -402,10 +342,9 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
-            .addingTimeInterval(12 * 3600)
-        let tabletEvent = createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet)
-        let mlEvent = createTestEvent(medication: medication, date: yesterdayNoon, amount: 5.0, unit: .milliliter)
+        let today = try #require(Calendar.current.date(byAdding: .hour, value: -12, to: Calendar.current.startOfDay(for: Date())))
+        let tabletEvent = createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet)
+        let mlEvent = createTestEvent(medication: medication, date: today, amount: 5.0, unit: .milliliter)
         try await dataStore.addEvent(tabletEvent)
         try await dataStore.addEvent(mlEvent)
 
@@ -420,6 +359,191 @@ struct MedicationTrendsViewModelTests {
         #expect(total.total == 2.0) // Only tablet counted
     }
 
+	@Test("Trends cache follows selection and preferred medication unit changes")
+	func derivedCacheInvalidatesForSelectionAndMedicationUnit() async throws {
+		let store = DataStore(testIdentifier: "Trends-Cache-\(UUID().uuidString)")
+		let first = createTestMedication(name: "First", unit: .tablet)
+		var second = createTestMedication(name: "Second", unit: .tablet)
+		try await store.addMedication(first)
+		try await store.addMedication(second)
+		let today = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now)))
+		try await store.addEvent(createTestEvent(medication: first, date: today, amount: 2, unit: .tablet))
+		try await store.addEvent(createTestEvent(medication: second, date: today, amount: 3, unit: .tablet))
+		try await store.addEvent(createTestEvent(medication: second, date: today, amount: 5, unit: .milliliter))
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: first.id)
+		#expect(model.dailyTotals(last: 1).first?.total == 2)
+		model.selectedMedicationID = second.id
+		#expect(model.events.count == 2)
+		#expect(model.dailyTotals(last: 1).first?.total == 3)
+		second.prescribedUnit = .milliliter
+		model.medications = [first, second]
+		#expect(model.dailyTotals(last: 1).first?.total == 5)
+		#expect(model.calendarHeatmapData(last: 1).first?.total == 5)
+		#expect(model.dailyTotals(last: 0).isEmpty)
+	}
+
+	@Test("Trends invalidates cached totals for event-only edits", .timeLimit(.minutes(1)))
+	func trendsObservesEventOnlyEdit() async throws {
+		let store = DataStore(testIdentifier: "Trends-ObservedEdit-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		var event = createTestEvent(medication: medication, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now))), amount: 2, unit: .tablet)
+		try await store.addEvent(event)
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id)
+		#expect(model.dailyTotals(last: 1).first?.total == 2)
+		let updates = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+		let subscription = model.objectWillChange.sink { updates.continuation.yield(()) }
+		let observation = Task { @MainActor in
+			for await _ in updates.stream {
+				if model.dailyTotals(last: 1).first?.total == 0 { return }
+			}
+		}
+		defer {
+			observation.cancel()
+			subscription.cancel()
+			updates.continuation.finish()
+		}
+		event.date = Calendar.current.date(byAdding: .day, value: -2, to: event.date) ?? event.date
+		try await store.updateEvent(event)
+		await observation.value
+		#expect(model.dailyTotals(last: 1).first?.total == 0)
+		#expect(model.calendarHeatmapData(last: 3).first?.total == 2)
+	}
+
+	@Test("Trends receives cold loaded events and retains the requested medication", .timeLimit(.minutes(1)))
+	func trendsObservesColdStoreLoad() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Trends-ColdLoad-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let medication = createTestMedication()
+		let writer = DataStore(storageDirectory: directory)
+		try await writer.addMedication(medication)
+		let event = createTestEvent(medication: medication, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now))), amount: 2, unit: .tablet)
+		try await writer.addEvent(event)
+		let reader = DataStore(storageDirectory: directory)
+		let model = MedicationTrendsViewModel(dataStore: reader, selectedMedicationID: medication.id)
+		let updates = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
+		let subscription = model.objectWillChange.sink { updates.continuation.yield(()) }
+		defer {
+			subscription.cancel()
+			updates.continuation.finish()
+		}
+		if model.events.isEmpty {
+			for await _ in updates.stream {
+				if model.events.contains(where: { $0.id == event.id }) { break }
+			}
+		}
+		#expect(model.selectedMedicationID == medication.id)
+		#expect(model.dailyTotals(last: 1).first?.total == 2)
+	}
+
+	@Test("Trends advances its completed-day window after a clock refresh")
+	func clockRefreshAdvancesDailyWindow() async throws {
+		let store = DataStore(testIdentifier: "Trends-Clock-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		let day = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+		var referenceDate = day
+		try await store.addEvent(createTestEvent(medication: medication, date: day, amount: 2, unit: .tablet))
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, notificationCenter: NotificationCenter(), now: { referenceDate })
+		#expect(model.dailyTotals(last: 1).first?.total == 0)
+		var refreshes = 0
+		let subscription = model.objectWillChange.sink { refreshes += 1 }
+		defer { subscription.cancel() }
+		referenceDate = try #require(Calendar.current.date(byAdding: .day, value: 1, to: day))
+		model.refreshForClockChange()
+		#expect(refreshes == 1)
+		#expect(model.dailyTotals(last: 1).first?.day == day)
+		#expect(model.dailyTotals(last: 1).first?.total == 2)
+	}
+
+	@Test("Trends foreground refresh loads doses saved by another store")
+	func foregroundRefreshLoadsExternalDose() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("Trends-Foreground-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let reader = DataStore(storageDirectory: directory)
+		let medication = createTestMedication()
+		try await reader.addMedication(medication)
+		let model = MedicationTrendsViewModel(dataStore: reader, selectedMedicationID: medication.id, notificationCenter: NotificationCenter())
+		await model.refreshAfterForeground()
+		#expect(model.events.isEmpty)
+		let writer = DataStore(storageDirectory: directory)
+		let event = createTestEvent(medication: medication, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now))), amount: 2, unit: .tablet)
+		try await writer.recordDose(event)
+		await model.refreshAfterForeground()
+		#expect(model.events.map(\.id) == [event.id])
+		#expect(model.dailyTotals(last: 1).first?.total == 2)
+	}
+
+	@Test("90 complete days include exact bounds and respect daylight saving", arguments: [
+		("2026-03-09T12:00:00Z", 23),
+		("2026-11-02T12:00:00Z", 25)
+	])
+	func completeDayBoundariesAcrossDaylightSaving(reference: String, yesterdayHours: Int) async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Chicago"))
+		let now = try #require(ISO8601DateFormatter().date(from: reference))
+		let today = calendar.startOfDay(for: now)
+		let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: today))
+		let oldest = try #require(calendar.date(byAdding: .day, value: -90, to: today))
+		let store = DataStore(testIdentifier: "Trends-Bounds-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		for (date, amount) in [(oldest.addingTimeInterval(-1), 100.0), (oldest, 2.0), (today.addingTimeInterval(-1), 3.0), (today, 100.0), (today.addingTimeInterval(86_400), 100.0)] {
+			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: amount, unit: .tablet))
+		}
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		let totals = model.dailyTotals(last: 90)
+		#expect(totals.count == 90)
+		#expect(totals.first?.day == oldest)
+		#expect(totals.last?.day == yesterday)
+		#expect(totals.map(\.total).reduce(0, +) == 5)
+		#expect(model.averagePerDay(window: 90) == 5.0 / 90.0)
+		#expect(model.calendarHeatmapData(last: 90).map(\.date) == totals.map(\.day))
+		#expect(today.timeIntervalSince(yesterday) == Double(yesterdayHours * 3_600))
+	}
+
+	@Test("Timezone refresh rebuckets cached totals and changes the completed-day cutoff")
+	func timezoneRefreshRebucketsCompletedDays() async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+		let now = try #require(ISO8601DateFormatter().date(from: "2026-10-28T01:00:00Z"))
+		let eventDate = try #require(ISO8601DateFormatter().date(from: "2026-10-27T23:30:00Z"))
+		let store = DataStore(testIdentifier: "Trends-Zone-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		try await store.addEvent(createTestEvent(medication: medication, date: eventDate, amount: 4, unit: .tablet))
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		#expect(model.dailyTotals(last: 1).first?.total == 4)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+		model.refreshForClockChange()
+		#expect(model.dailyTotals(last: 1).first?.total == 0)
+		#expect(model.calendarHeatmapData(last: 1).first?.total == 0)
+		#expect(model.patternSummary.contains("after the day is complete"))
+	}
+
+	@Test("Weekly comparison and heatmap scale ignore today's partial and future doses")
+	func completedWeekComparisonIgnoresPartialDay() async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+		let now = try #require(ISO8601DateFormatter().date(from: "2026-10-28T12:00:00Z"))
+		let store = DataStore(testIdentifier: "Trends-Comparison-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		for daysAgo in 1 ... 14 {
+			let date = try #require(calendar.date(byAdding: .day, value: -daysAgo, to: now))
+			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: daysAgo <= 7 ? 1 : 3, unit: .tablet))
+		}
+		for daysAhead in 0 ... 1 {
+			let date = try #require(calendar.date(byAdding: .day, value: daysAhead, to: now))
+			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: 1_000, unit: .tablet))
+		}
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		#expect(model.averagePerDay(window: 7) == 1)
+		#expect(model.patternSummary.contains("lighter than the week before"))
+		#expect(model.calendarHeatmapData(last: 14).map(\.intensity).max() == 1)
+		#expect(model.dailyTotals(last: -1).isEmpty)
+	}
+
     // MARK: - Average Per Day Tests
 
     @Test("AveragePerDay calculates correctly")
@@ -429,20 +553,19 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addMedication(medication)
 
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = try #require(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
 
-        // The window ends yesterday. Day -1: 3 tablets, Day -2: 6 tablets, Day -3: 3 tablets
+        // Add events: Day 0: 3 tablets, Day -1: 6 tablets, Day -2: 3 tablets
         guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
-              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today),
-              let threeDaysAgo = calendar.date(byAdding: .day, value: -3, to: today)
+              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)
         else {
             Issue.record("Failed to create dates")
             return
         }
 
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 3.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 6.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: threeDaysAgo, amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 6.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 3.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 3)
@@ -468,9 +591,8 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
-            .addingTimeInterval(12 * 3600)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon, amount: 7.0, unit: .tablet))
+        let today = try #require(Calendar.current.date(byAdding: .hour, value: -12, to: Calendar.current.startOfDay(for: Date())))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 7.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 7)
@@ -740,18 +862,16 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addMedication(medication)
 
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = try #require(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
 
-        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
-              let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: today)
-        else {
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
             Issue.record("Failed to create date")
             return
         }
 
-        // The window ends yesterday. Yesterday: 10 tablets (max), two days ago: 5 tablets (half intensity)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 10.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 5.0, unit: .tablet))
+        // Today: 10 tablets (max), Yesterday: 5 tablets (half intensity)
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 10.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 5.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 2)
@@ -761,11 +881,11 @@ struct MedicationTrendsViewModelTests {
             return
         }
 
-        let twoDaysAgoData = heatmapData[0]
-        let yesterdayData = heatmapData[1]
+        let yesterdayData = heatmapData[0]
+        let todayData = heatmapData[1]
 
-        #expect(twoDaysAgoData.intensity == 0.5) // 5 / 10 = 0.5
-        #expect(yesterdayData.intensity == 1.0) // 10 / 10 = 1.0
+        #expect(yesterdayData.intensity == 0.5) // 5 / 10 = 0.5
+        #expect(todayData.intensity == 1.0) // 10 / 10 = 1.0
     }
 
     @Test("CalendarHeatmapData aggregates multiple events per day")
@@ -774,11 +894,10 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let yesterdayNoon = try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())))
-            .addingTimeInterval(12 * 3600)
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon, amount: 2.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(3600), amount: 3.0, unit: .tablet))
-        try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterdayNoon.addingTimeInterval(7200), amount: 5.0, unit: .tablet))
+        let today = try #require(Calendar.current.date(byAdding: .hour, value: -12, to: Calendar.current.startOfDay(for: Date())))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 2.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 3.0, unit: .tablet))
+        try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(7200), amount: 5.0, unit: .tablet))
 
         let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 1)
@@ -791,145 +910,32 @@ struct MedicationTrendsViewModelTests {
         #expect(dayData.total == 10.0) // 2 + 3 + 5
     }
 
-    @Test("Refill projection uses saved custom low-stock threshold")
-    func refillProjectionUsesSavedCustomThreshold() async throws {
+    @Test("Next eligible dose date reflects saved minimum interval guidance")
+    func nextEligibleDoseDateUsesSavedGuidance() async throws {
         clearStoredSelection()
-        let suiteName = "TrendsVM-Refill-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
-        defaults.removePersistentDomain(forName: suiteName)
-        let refillStore = MedicationRefillProfileStore(defaults: defaults, sharedDefaults: nil)
-        let dataStore = DataStore(testIdentifier: "TrendsVM-RefillProjection")
-        let medication = createTestMedication(name: "Naproxen", quantity: 12)
+        let defaults = UserDefaults(suiteName: "TrendsVM-Safety-\(UUID().uuidString)") ?? .standard
+        let safetyStore = MedicationSafetyProfileStore(defaults: defaults, mirrorToSharedDefaults: false)
+        let dataStore = DataStore(testIdentifier: "TrendsVM-NextEligible")
+        let medication = createTestMedication(name: "Naproxen")
         try await dataStore.addMedication(medication)
 
-        let profile = MedicationRefillProfile(lowStockThreshold: 15)
-        #expect(refillStore.save(profile, for: medication.id))
+        let recentEvent = createTestEvent(
+            medication: medication,
+            date: Date().addingTimeInterval(-3600),
+            amount: 1,
+            unit: .tablet
+        )
+        try await dataStore.addEvent(recentEvent)
+        safetyStore.save(.init(minimumHoursBetweenDoses: 4), for: medication.id)
 
         let viewModel = MedicationTrendsViewModel(
             dataStore: dataStore,
             selectedMedicationID: medication.id,
-            refillProfileStore: refillStore
+            safetyProfileStore: safetyStore
         )
 
-        #expect(viewModel.refillProfile == profile)
-        #expect(viewModel.refillProjection?.lowStock == true)
-        #expect(viewModel.refillProjection?.urgent == true)
-        #expect(viewModel.summaryAccessibilityLabel.contains("Log a few doses to see timing patterns."))
-        #expect(viewModel.summaryAccessibilityLabel.contains("Urgent refill status"))
-        #expect(viewModel.summaryAccessibilityLabel.contains("Refill prep would be timely."))
+        let nextEligibleDate = try #require(viewModel.nextEligibleDoseDate)
+        #expect(nextEligibleDate > Date())
     }
 
-    @Test("Question availability reflects injected question service state")
-    func questionAvailabilityReflectsInjectedService() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-QuestionAvailability")
-        let medication = createTestMedication(name: "Melatonin")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { false },
-            isSupportedProvider: { true },
-            generator: MockGenerator(
-                response: TrendsQuestionAnswer(answer: "", highlights: [], limitations: [])
-            )
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        #expect(viewModel.questionAvailability == .disabled)
-    }
-
-    @Test("Example prompts are derived from the selected medication")
-    func examplePromptsReflectSelectedMedication() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-ExamplePrompts")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { true },
-            isSupportedProvider: { true },
-            generator: MockGenerator(
-                response: TrendsQuestionAnswer(answer: "", highlights: [], limitations: [])
-            )
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        #expect(viewModel.examplePrompts.count == 4)
-        #expect(viewModel.examplePrompts.allSatisfy { $0.contains("Ibuprofen") })
-    }
-
-    @Test("Ask stores the generated answer for the selected medication")
-    func askStoresGeneratedAnswer() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-AskSuccess")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-        try await dataStore.addEvent(
-            createTestEvent(
-                medication: medication,
-                date: Date().addingTimeInterval(-1800),
-                amount: 2,
-                unit: .tablet
-            )
-        )
-
-        let expectedAnswer = TrendsQuestionAnswer(
-            answer: "Your logging is clustered in the evening.",
-            highlights: ["Most entries are late in the day."],
-            limitations: ["Recent data only."]
-        )
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { true },
-            isSupportedProvider: { true },
-            generator: MockGenerator(response: expectedAnswer)
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        await viewModel.ask(question: "When do I usually log this?", windowDays: 14)
-
-        #expect(viewModel.latestQuestionAnswer == expectedAnswer)
-        #expect(viewModel.questionErrorMessage == nil)
-        #expect(viewModel.isAnsweringQuestion == false)
-    }
-
-    @Test("Ask surfaces service errors when private questions are disabled")
-    func askSurfacesServiceErrors() async throws {
-        clearStoredSelection()
-        let dataStore = DataStore(testIdentifier: "TrendsVM-AskFailure")
-        let medication = createTestMedication(name: "Ibuprofen")
-        try await dataStore.addMedication(medication)
-
-        let service = MedicationTrendsQuestionService(
-            isEnabledProvider: { false },
-            isSupportedProvider: { true },
-            generator: ThrowingGenerator(error: TrendsQuestionServiceError.disabled)
-        )
-
-        let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
-            selectedMedicationID: medication.id,
-            questionService: service
-        )
-
-        await viewModel.ask(question: "Do I log this consistently?", windowDays: 14)
-
-        #expect(viewModel.latestQuestionAnswer == nil)
-        #expect(viewModel.questionErrorMessage == "On-device questions are turned off in settings.")
-        #expect(viewModel.isAnsweringQuestion == false)
-    }
 }

@@ -41,7 +41,7 @@ struct MedicationReminderRequest {
 		date: Date,
 		isRecurring: Bool,
 		repeatInterval: DateComponents? = nil,
-		isUrgent: Bool,
+		isUrgent: Bool = false,
 		showMedicationNames: Bool,
 		calendar: Calendar = .current
 	) -> UNNotificationRequest {
@@ -56,15 +56,15 @@ struct MedicationReminderRequest {
 		let content = UNMutableNotificationContent()
 		if showMedicationNames {
 			content.title = medication.displayName
-			content.body = "It's time to take \(medication.displayName)"
+			content.body = String(localized: "It's time to take \(medication.displayName)")
 		} else {
-			content.title = "Medication Reminder"
-			content.body = "It's time to take your medication"
+			content.title = String(localized: "Medication Reminder")
+			content.body = String(localized: "It's time to take your medication")
 		}
+		content.interruptionLevel = isUrgent ? .timeSensitive : .active
 		content.sound = .default
 		content.categoryIdentifier = categoryIdentifier
 		content.userInfo = [medicationIDKey: medication.id.uuidString]
-		content.interruptionLevel = isUrgent ? .timeSensitive : .active
 
 		let identity = Identity(medicationID: medication.id, repeats: repeats, components: components)
 		let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: repeats)
@@ -101,39 +101,28 @@ struct MedicationReminderRequest {
 		}.sorted()
 	}
 
-	static func reconciliationPlans(
-		in requests: [UNNotificationRequest],
-		urgencyByMedicationID: [UUID: Bool]
-	) -> [ReconciliationPlan] {
+	static func reconciliationPlans(in requests: [UNNotificationRequest], showMedicationNames: Bool = true, urgencyByMedicationID: [UUID: Bool] = [:], medicationsByID: [UUID: ANMedicationConcept] = [:]) -> [ReconciliationPlan] {
 		let groupedRequests = Dictionary(grouping: requests.compactMap { request -> (Identity, UNNotificationRequest)? in
-			guard let identity = identity(for: request),
-				urgencyByMedicationID[identity.medicationID] != nil
-			else {
+			guard let identity = identity(for: request) else {
 				return nil
 			}
 			return (identity, request)
 		}, by: { $0.0 })
 
 		return groupedRequests.compactMap { identity, matches in
-			guard let isUrgent = urgencyByMedicationID[identity.medicationID] else {
-				return nil
-			}
-			let desiredInterruptionLevel: UNNotificationInterruptionLevel = isUrgent ? .timeSensitive : .active
 			let requests = matches.map(\.1).sorted { $0.identifier < $1.identifier }
 			guard let source = requests.first(where: { $0.identifier == identity.identifier }) ?? requests.first else {
 				return nil
 			}
 			let identifiersToRemove = requests.map(\.identifier).filter { $0 != identity.identifier }.sorted()
-			guard let canonicalRequest = canonicalRequest(
-				from: source,
-				identity: identity,
-				interruptionLevel: desiredInterruptionLevel
-			) else {
+			guard let canonicalRequest = canonicalRequest(from: source, identity: identity, showMedicationNames: showMedicationNames, isUrgent: urgencyByMedicationID[identity.medicationID], medication: medicationsByID[identity.medicationID]) else {
 				return nil
 			}
 			let isCurrentCanonical = source.identifier == identity.identifier
 				&& identifiersToRemove.isEmpty
-				&& source.content.interruptionLevel == desiredInterruptionLevel
+				&& canonicalRequest.content.interruptionLevel == source.content.interruptionLevel
+				&& canonicalRequest.content.title == source.content.title
+				&& canonicalRequest.content.body == source.content.body
 				&& source.trigger is UNCalendarNotificationTrigger
 				&& (source.trigger as? UNCalendarNotificationTrigger)?.dateComponents == components(for: identity)
 			guard !isCurrentCanonical else {
@@ -143,19 +132,10 @@ struct MedicationReminderRequest {
 		}.sorted { $0.requestToAdd.identifier < $1.requestToAdd.identifier }
 	}
 
-	static func updatingUrgency(
-		of request: UNNotificationRequest,
-		isUrgent: Bool
-	) -> UNNotificationRequest? {
-		guard let content = request.content.mutableCopy() as? UNMutableNotificationContent else {
-			return nil
-		}
+	static func updatingUrgency(of request: UNNotificationRequest, isUrgent: Bool) -> UNNotificationRequest? {
+		guard let content = request.content.mutableCopy() as? UNMutableNotificationContent else { return nil }
 		content.interruptionLevel = isUrgent ? .timeSensitive : .active
-		return UNNotificationRequest(
-			identifier: request.identifier,
-			content: content,
-			trigger: request.trigger
-		)
+		return UNNotificationRequest(identifier: request.identifier, content: content, trigger: request.trigger)
 	}
 
 	static func duplicateIdentifiers(in requests: [UNNotificationRequest]) -> [String] {
@@ -227,15 +207,18 @@ struct MedicationReminderRequest {
 		return DateComponents(year: identity.year, month: identity.month, day: identity.day, hour: identity.hour, minute: identity.minute)
 	}
 
-	private static func canonicalRequest(
-		from source: UNNotificationRequest,
-		identity: Identity,
-		interruptionLevel: UNNotificationInterruptionLevel
-	) -> UNNotificationRequest? {
+	private static func canonicalRequest(from source: UNNotificationRequest, identity: Identity, showMedicationNames: Bool, isUrgent: Bool?, medication: ANMedicationConcept?) -> UNNotificationRequest? {
 		guard let content = source.content.mutableCopy() as? UNMutableNotificationContent else {
 			return nil
 		}
-		content.interruptionLevel = interruptionLevel
+		if let isUrgent { content.interruptionLevel = isUrgent ? .timeSensitive : .active }
+		if showMedicationNames, let medication {
+			content.title = medication.displayName
+			content.body = String(localized: "It's time to take \(medication.displayName)")
+		} else if !showMedicationNames {
+			content.title = String(localized: "Medication Reminder")
+			content.body = String(localized: "It's time to take your medication")
+		}
 		let trigger = UNCalendarNotificationTrigger(dateMatching: components(for: identity), repeats: identity.repeats)
 		return UNNotificationRequest(identifier: identity.identifier, content: content, trigger: trigger)
 	}

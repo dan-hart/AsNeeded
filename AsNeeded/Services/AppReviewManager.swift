@@ -120,13 +120,13 @@ final class AppReviewManager: ObservableObject {
 
     private func showPreReviewAlert() async {
         let alert = UIAlertController(
-            title: "Enjoying As Needed?",
-            message: "We'd love to know how your experience has been with the app so far.",
+            title: String(localized: "Enjoying As Needed?"),
+            message: String(localized: "We'd love to know how your experience has been with the app so far."),
             preferredStyle: .alert
         )
 
         // "Yes, I'm enjoying it" - Show review prompt
-        alert.addAction(UIAlertAction(title: "Yes, I'm enjoying it!", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "Yes, I'm enjoying it!"), style: .default) { _ in
             Task { @MainActor in
                 self.recordReviewRequest()
                 self.requestNativeReview()
@@ -134,14 +134,14 @@ final class AppReviewManager: ObservableObject {
         })
 
         // "Not really" - Don't show review, but don't opt out permanently
-        alert.addAction(UIAlertAction(title: "Not really", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "Not really"), style: .default) { _ in
             Task { @MainActor in
                 self.recordReviewRequest()
             }
         })
 
         // "Don't ask again" - Permanently opt out
-        alert.addAction(UIAlertAction(title: "Don't ask again", style: .destructive) { _ in
+        alert.addAction(UIAlertAction(title: String(localized: "Don't ask again"), style: .destructive) { _ in
             Task { @MainActor in
                 self.hasOptedOutOfReviews = true
                 self.recordReviewRequest()

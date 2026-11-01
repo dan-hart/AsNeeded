@@ -255,35 +255,6 @@ Without App Group, widgets/extensions cannot access the main app's database.
 - `DataStore.swift` - Primary data access layer
 - `DataMigrationManager.swift` - Migration logic
 
-### Medication Refill Preference Storage
-
-The refill-only preference payload is separate from the Boutique databases. This migration does not change any database path, filename, container, or database schema described above.
-
-| Purpose | UserDefaults key | Exportable | Reset behavior |
-| --- | --- | --- | --- |
-| Active refill profiles | `medicationRefillProfiles` | Yes | Removed by settings reset and clear-all |
-| Legacy active safety profiles | `medicationSafetyProfiles` | No | Removed after verified migration, settings reset, and clear-all |
-| Raw legacy recovery archive | `migration.archivedMedicationProfiles` | No | Preserved by settings reset; erased by clear-all |
-| Migration completion marker | `migration.medicationProfilesCompleted` | No | Preserved by settings reset; removed by clear-all |
-
-`UserDefaults.standard` is authoritative for active refill profiles. The App Group defaults domain is a verified mirror for widgets and extensions. Writes and removals must go through `MedicationRefillProfileStore` where practical so both domains are updated and read back before the operation succeeds. If only the App Group active value exists, the store may recover it into standard defaults; if both exist, the standard value wins and is mirrored.
-
-Legacy migration decodes only `lowStockThreshold` from each old safety profile. Removed dose limits, timing windows, and other safety fields are ignored. Before the legacy active payload is removed, its raw bytes are written to the recovery archive in both defaults domains and verified. The completion marker is then mirrored to prevent archive or stale legacy data from replaying on later launches. Migration failures retain the legacy active payload and do not claim completion.
-
-Settings exports encode only `medicationRefillProfiles`. They never include the legacy active property, raw recovery archive, or migration marker. Imports prefer `medicationRefillProfiles` when both current and legacy JSON properties exist; a present current property, including `null` or malformed data, never falls back to legacy. Legacy exports containing `medicationSafetyProfiles` remain decodable through the minimal low-stock-only shape only when the current property is absent. Settings, medications, and events form one logical import transaction. Before mutation, import snapshots every setting it may touch, exact profile state in both defaults domains, and the ordered medication/event collections. Imported profiles are verified as a preflight, all database writes must succeed, and profiles are filtered again against IDs actually present after insertion. Any clear, insertion, reference-validation, or final-verification failure restores and verifies the full snapshot. A rollback failure is reported as an explicit compound error rather than partial success.
-
-An ordinary settings reset removes active current and legacy refill preferences from standard and App Group defaults, but deliberately preserves verified recovery archives and the completion marker. Explicit clear-all is a destructive privacy erasure: it removes active current data, legacy active data, the completion marker, and raw recovery archives from both domains. Both profile operations snapshot the affected keys, remove them, read back every destination, and roll back on profile-removal failure. A failed verified profile reset leaves unrelated settings untouched; a failed clear-all profile erasure is surfaced before medication or event data is deleted. After profile privacy erasure succeeds, a later Boutique medication/event clearing failure is surfaced to the caller, but deliberately does not recreate erased profile recovery bytes.
-
-Required refill-profile storage scenarios are:
-
-- Fresh: no current or legacy value; no profile is created.
-- Legacy-only: decode only low-stock thresholds, verify active writes and archive bytes, remove legacy active data, and mark completion.
-- Current-only: preserve the current payload and verify standard/App Group mirroring.
-- Both current and legacy: current active data wins; legacy bytes are archived and removed without overwriting current data.
-- Restart: completed migration does not replay or resurrect removed profiles; failed mirrored removal rolls back to a consistent state.
-- Failure: encoding, mirroring, archive verification, or removal failure must not silently discard the last recoverable payload.
-- Settings lifecycle: current export/import, legacy exported JSON decoding, invalid-ID filtering, reset, clear-all, archive exclusion, and key-registry classification remain covered by focused tests.
-
 ---
 
 ## Migration Code Template
@@ -326,7 +297,7 @@ public final class DataMigrationManager {
             let currentData = try await loadCurrentData()
             logger.info("Loaded current data: \\(currentData.count) items")
 
-            // 4. Merge data (deduplicate by ID, legacy takes precedence)
+            // 4. Recover missing IDs; preserve edits in the current store
             let mergedData = mergeByID(legacy: legacyData, current: currentData)
             logger.info("Merged data: \\(mergedData.count) items")
 
@@ -349,8 +320,8 @@ public final class DataMigrationManager {
 
     private func mergeByID<T: Identifiable>(legacy: [T], current: [T]) -> [T] {
         var itemsById = Dictionary(uniqueKeysWithValues: current.map { ($0.id, $0) })
-        for item in legacy {
-            itemsById[item.id] = item // Legacy takes precedence
+        for item in legacy where itemsById[item.id] == nil {
+            itemsById[item.id] = item // Current records take precedence
         }
         return Array(itemsById.values)
     }
@@ -373,7 +344,7 @@ The migration approach is **data-driven** (no UserDefaults flags), but this requ
 - [ ] Implement `findLegacyDatabases()` to detect legacy data locations
 - [ ] Implement `loadLegacyData()` method
 - [ ] Implement `loadCurrentData()` method
-- [ ] Implement `mergeByID()` logic (legacy takes precedence)
+- [ ] Implement `mergeByID()` logic (current records take precedence; recover missing legacy IDs)
 - [ ] Implement `writeMergedData()` method
 - [ ] Add verification step
 - [ ] **⚠️ Implement `archiveLegacyDatabases()` to rename legacy files after success**
@@ -607,10 +578,106 @@ Boutique's `SQLiteStorageEngine` automatically:
 | 2.0 | Oct 13, 2025 | App Group migration | Yes - `DataMigrationManager` |
 | 2.1 | Oct 28, 2025 | Data merge fix | No - same manager |
 | 2.2 | Dec 3, 2025 | Archive legacy DBs after migration (fixes repeated overwrite bug) | No - same manager, adds cleanup |
-| 2.3 | Jul 11, 2026 | Refill-profile UserDefaults migration, verified mirroring, and non-replay reset rules | Yes - `MedicationRefillProfileStore` |
 
 ---
 
-**Last Updated**: July 11, 2026
+**Last Updated**: December 3, 2025
 **Maintained By**: Development Team
 **Review Frequency**: After any storage-related changes
+
+## 1.2.0 Optional Medication Dose Limits (October 2026)
+
+`ANMedicationConcept` now optionally encodes `minimumHoursBetweenDoses`,
+`maximumDailyDoseAmount` (quantity in `prescribedUnit`, rolling 24 hours), and
+`nextDoseNotificationEnabled`. Missing keys decode to nil; old medication and
+event records remain readable. Database paths, filenames and containers are unchanged.
+
+`MedicationDoseLimitMigration` copies legacy safety-profile timing/quantity values
+only into absent model fields, persists the medication first, then clears only
+those two legacy values. Remaining guardrails are preserved. Failed persistence
+keeps legacy values for retry. Once cleared, a later deliberate removal of a
+model limit stays removed across restarts. Restore/import is checked again during
+availability reconciliation. Existing installs never opt in automatically.
+
+Regression tests cover fresh/model-only/legacy/both states, retry on write failure,
+repeated execution, and deliberate removal. Beta testing must verify an upgrade,
+multiple launches, backup/restore, watch sync and notification delivery on a physical
+device before a public release. Downgrade readers ignore optional model keys;
+old versions will not enforce new model-only limits.
+
+### 1.2.0 Experimental Questions Removal
+
+The optional `trendsQuestionsEnabled` setting is no longer read, written, exported,
+or applied by the shipping app. Older settings JSON containing that key decodes
+successfully because unknown keys are ignored. An existing unused boolean in
+UserDefaults does not enable any functionality; no destructive cleanup or data
+migration is needed. Medication/event storage paths and schemas are unchanged.
+Compatibility tests cover decoding older settings and medication exports,
+preserving supported preferences, and omitting the retired key from new exports.
+
+### 1.2.0 Stabilization: Legacy Reads, Imports and Migration Backups
+
+The October 27 stabilization pass changes no primary database paths, containers,
+filenames or model schemas. Bodega appends `.sqlite3`
+to engine names; discovered legacy `.sqlite`, `.db` and extensionless files must
+therefore be copied with their WAL/SHM sidecars into a disposable reading directory
+using that required filename. The original remains available until merge
+verification and archival succeed. Corrupt sources throw rather than appearing empty.
+
+**Conflict policy correction:** current same-ID medications and events take
+precedence over legacy records. The repaired reader can recover old files that
+previous versions ignored; historical legacy-first merging would revert newer
+quantities, names, limits, doses, dates and notes during that recovery. Import
+missing IDs, preserve whole current records, and retain the archived source for
+recovery instead of guessing which individual fields are newer. Existing records
+are not removed/reinserted. This changes the historical policy shown in the
+incident sections above. It can retain incomplete current metadata; the original
+legacy metadata stays archived. Without deletion tombstones, missing-ID recovery
+cannot distinguish an orphaned record from an intentional past deletion; this
+existing limitation still needs a release decision for affected upgrade fixtures.
+
+Record replacement during JSON import preserves device preferences and backup
+bookmarks. Imported settings remain opt-in. Resolve medication identity by exact
+ID before any unique-name fallback, include existing medications for merges, and
+validate unresolved/ambiguous history references before replacing records.
+
+Migration backup directories retain `pre_migration_` and their timestamp, with a
+unique suffix to prevent same-second collisions. Existing backup discovery and
+restore paths remain compatible. File-based migration restore is an offline
+operation performed before Boutique stores open; it does not refresh live caches.
+It rejects empty sources, stages the requested snapshot before retention cleanup,
+and requires a successful safety backup before replacing files. The shipping
+automatic-backup restore UI uses the separate JSON import path.
+
+Failure/retry and repeated-launch coverage uses disposable directories/defaults,
+not permission changes to the shared container. See the [stabilization evidence](testing/1.2.0-data-integrity-stabilization.md).
+The October 28 pass routes dose/stock, history changes and JSON imports through
+`MedicationPersistenceTransactions`. It keeps the existing databases and adds
+`.persistence.lock` plus a version-1 `pending-data-transaction.json` undo journal
+in their directory. Cooperating app/widget writers load fresh records under the
+same lock. The journal is flushed before writes and removed only after completion.
+Ordinary failures restore affected records and exact persisted imported preferences;
+interruption or failed rollback retains the journal for recovery before access.
+Malformed journals fail closed. Widgets cannot recover app-owned preferences and
+show an unavailable state until the app recovers them. Registered defaults and
+unrelated preference changes are not captured as persisted import values.
+
+History edits/deletes and Undo adjust compatible stock in the same operation.
+Retries with the same event ID cannot deduct twice; Watch messages retain that ID.
+No unit conversion is inferred. Existing database paths/schema are unchanged.
+Older releases cannot recover this journal: do not downgrade with one pending.
+These are process-interruption guarantees, not certification against every device
+power-loss/filesystem failure. See [build 310 verification](testing/1.2.0-310-stabilization-verification.md).
+
+
+### Shared Quick Log Recording Recency
+
+`lastLoggedDoseEventIDs` is a device-local ordered list of committed event IDs, independent of the dose's selected date. It is
+covered by the existing transaction preference undo journal with its dose and
+stock change, including recovery after interruption. Idempotent retries do not
+advance it. It is removed by settings reset and excluded from settings exports
+and imports. No database paths, filenames, containers or model schemas change.
+Existing installs without the key use the latest valid dose date. Deleted,
+undone or archived targets fall back through recording order, then legacy active history; empty history
+opens the medication selector. The resolver always returns the current medication
+record instead of the older copy embedded in an event.

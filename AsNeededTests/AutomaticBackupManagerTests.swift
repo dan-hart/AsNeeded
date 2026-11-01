@@ -8,20 +8,22 @@ import Testing
 @Suite("AutomaticBackupManager Tests", .tags(.unit, .backup))
 @MainActor
 struct AutomaticBackupManagerTests {
-    init() {
-        // Clear UserDefaults before each test
-        clearAutomaticBackupSettings()
-    }
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
+
+	init() throws {
+		preferences = try IsolatedTestPreferences()
+	}
 
     // MARK: - Helper Methods
 
     private func clearAutomaticBackupSettings() {
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupEnabled)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        defaults.removeObject(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
     }
 
@@ -38,7 +40,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When - Check enabled state
-        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        let isEnabled = defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
 
         // Then
         #expect(isEnabled == false)
@@ -47,15 +49,15 @@ struct AutomaticBackupManagerTests {
     @Test("Save backup location enables automatic backup")
     func saveLocationEnablesBackup() {
         // Given
-        let manager = AutomaticBackupManager.shared
+        let manager = AutomaticBackupManager(defaults: defaults)
         let testBookmark = createTestBookmark()
 
         // When
         manager.saveBackupLocation(bookmark: testBookmark)
 
         // Then
-        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
-        let savedBookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        let isEnabled = defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        let savedBookmark = defaults.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
 
         #expect(isEnabled == true)
         #expect(savedBookmark == testBookmark)
@@ -64,19 +66,19 @@ struct AutomaticBackupManagerTests {
     @Test("Disable clears all automatic backup settings")
     func disableClearsSettings() {
         // Given
-        let manager = AutomaticBackupManager.shared
+        let manager = AutomaticBackupManager(defaults: defaults)
         manager.saveBackupLocation(bookmark: createTestBookmark())
-        UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-        UserDefaults.standard.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        defaults.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        defaults.set(Date(), forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
         // When
         manager.disable()
 
         // Then
-        let isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
-        let bookmark = UserDefaults.standard.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
-        let lastBackup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
-        let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        let isEnabled = defaults.bool(forKey: UserDefaultsKeys.automaticBackupEnabled)
+        let bookmark = defaults.data(forKey: UserDefaultsKeys.automaticBackupLocationBookmark)
+        let lastBackup = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        let lastCleanup = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
         #expect(isEnabled == false)
         #expect(bookmark == nil)
@@ -92,7 +94,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        let redactNames = defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
 
         // Then
         #expect(redactNames == false)
@@ -104,7 +106,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        let redactNotes = defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
         // Then
         #expect(redactNotes == false)
@@ -116,12 +118,12 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-        UserDefaults.standard.set(true, forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        defaults.set(true, forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        defaults.set(true, forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
         // Then
-        let redactNames = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
-        let redactNotes = UserDefaults.standard.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+        let redactNames = defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactMedicationNames)
+        let redactNotes = defaults.bool(forKey: UserDefaultsKeys.automaticBackupRedactNotes)
 
         #expect(redactNames == true)
         #expect(redactNotes == true)
@@ -135,7 +137,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        let lastBackupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
+        let lastBackupDate = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
 
         // Then
         #expect(lastBackupDate == nil)
@@ -148,10 +150,10 @@ struct AutomaticBackupManagerTests {
         let testDate = Date()
 
         // When
-        UserDefaults.standard.set(testDate, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+        defaults.set(testDate, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
 
         // Then
-        let savedDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
+        let savedDate = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastBackupDate) as? Date
 
         #expect(savedDate != nil)
         // Comparing dates within 1 second tolerance due to precision
@@ -168,7 +170,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        let lastCleanupDate = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
+        let lastCleanupDate = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
 
         // Then
         #expect(lastCleanupDate == nil)
@@ -177,16 +179,16 @@ struct AutomaticBackupManagerTests {
     @Test("Cleanup does not run if already performed today")
     func cleanupSkipsIfAlreadyPerformedToday() async {
         // Given
-        let manager = AutomaticBackupManager.shared
+        let manager = AutomaticBackupManager(defaults: defaults)
         manager.saveBackupLocation(bookmark: createTestBookmark())
         let today = Date()
-        UserDefaults.standard.set(today, forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
+        defaults.set(today, forKey: UserDefaultsKeys.automaticBackupLastCleanupDate)
 
         // When
         await manager.performDailyCleanupIfNeeded()
 
         // Then
-        let lastCleanup = UserDefaults.standard.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
+        let lastCleanup = defaults.object(forKey: UserDefaultsKeys.automaticBackupLastCleanupDate) as? Date
 
         // Should still be the same date (within 1 second)
         if let cleanup = lastCleanup {
@@ -214,7 +216,7 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        let manager = AutomaticBackupManager.shared
+        let manager = AutomaticBackupManager(defaults: defaults)
 
         // Then
         #expect(manager.retentionDays == 90)
@@ -226,8 +228,8 @@ struct AutomaticBackupManagerTests {
         clearAutomaticBackupSettings()
 
         // When
-        UserDefaults.standard.set(30, forKey: UserDefaultsKeys.automaticBackupRetentionDays)
-        let manager = AutomaticBackupManager.shared
+        defaults.set(30, forKey: UserDefaultsKeys.automaticBackupRetentionDays)
+        let manager = AutomaticBackupManager(defaults: defaults)
 
         // Then
         #expect(manager.retentionDays == 30)

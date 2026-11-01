@@ -10,12 +10,12 @@ struct AutomaticBackupView: View {
     @Environment(\.fontFamily) private var fontFamily
     @State private var showAllBackups = false
 
-    @ScaledMetric private var sectionSpacing: CGFloat = 24
-    @ScaledMetric private var contentSpacing: CGFloat = 16
-    @ScaledMetric private var cardPadding: CGFloat = 16
-    @ScaledMetric private var cardCornerRadius: CGFloat = 12
-    @ScaledMetric private var badgeCornerRadius: CGFloat = 6
-    @ScaledMetric private var buttonCornerRadius: CGFloat = 12
+	private let sectionSpacing: CGFloat = 24
+	private let contentSpacing: CGFloat = 16
+	private let cardPadding: CGFloat = 16
+	private let cardCornerRadius: CGFloat = 12
+	private let badgeCornerRadius: CGFloat = 6
+	private let buttonCornerRadius: CGFloat = 12
 
     var body: some View {
         VerticalOnlyScrollView {
@@ -37,18 +37,18 @@ struct AutomaticBackupView: View {
             }
             .padding()
         }
-        .navigationTitle("Automatic Backup")
-        .navigationBarTitleDisplayMode(.large)
+        .customNavigationTitle("Automatic Backup", displayMode: .large)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     viewModel.showingExplainer = true
                 } label: {
                     Image(systemSymbol: .infoCircle)
-                        .font(.customFont(fontFamily, style: .body))
                 }
+                .accessibilityLabel("About Automatic Backup")
             }
         }
+        .tint(.accent)
         .fileImporter(
             isPresented: $viewModel.showingLocationPicker,
             allowedContentTypes: [.folder],
@@ -57,20 +57,15 @@ struct AutomaticBackupView: View {
             switch result {
             case let .success(urls):
                 guard let url = urls.first else { return }
-                // Claim the selection synchronously: the picker's dismissal clears the setup state on
-                // this same turn, and without this the Enable button would come alive again for the gap
-                // before the save task starts.
                 viewModel.beginSavingLocation()
                 Task {
                     await viewModel.saveBackupLocation(url: url)
                 }
             case let .failure(error):
-                viewModel.alertMessage = "Location selection failed: \(error.localizedDescription)"
+                viewModel.alertMessage = String(localized: "Location selection failed: \(error.localizedDescription)")
                 viewModel.showingAlert = true
             }
         }
-        // A cancelled folder picker does not reliably report back through the completion handler above,
-        // so setup state is cleared whenever the picker goes away.
         .onChange(of: viewModel.showingLocationPicker) { _, isPresented in
             if !isPresented {
                 viewModel.locationPickerDismissed()
@@ -79,7 +74,6 @@ struct AutomaticBackupView: View {
         .sheet(isPresented: $viewModel.showingExplainer) {
             AutomaticBackupExplainerView()
         }
-        // The folder picker is presented from `onDismiss` so it never races the sheet's own dismissal.
         .sheet(isPresented: $viewModel.showingPrivacyOnboarding, onDismiss: {
             viewModel.privacyOnboardingDismissed()
         }) {
@@ -190,10 +184,10 @@ struct AutomaticBackupView: View {
                                     .font(.customFont(fontFamily, style: .body, weight: .semibold))
                             }
                         }
-                        .foregroundStyle(.white)
+                        .filledButtonForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accent)
+                        .background(Color.accent.dynamicFilledButtonBackground)
                         .cornerRadius(buttonCornerRadius)
                     }
                     .disabled(viewModel.isBusy)
@@ -279,13 +273,13 @@ struct AutomaticBackupView: View {
     private var statusTitle: String {
         switch viewModel.statusCardState {
         case .active:
-            return "Active"
+            return String(localized: "Active")
         case .warning:
-            return "Warning"
+            return String(localized: "Warning")
         case .error:
-            return "Error"
+            return String(localized: "Error")
         case .disabled:
-            return "Not Configured"
+            return String(localized: "Not Configured")
         }
     }
 
@@ -311,9 +305,9 @@ struct AutomaticBackupView: View {
                         ProgressView()
                     }
                 }
-                .foregroundStyle(.white)
+                .filledButtonForeground(against: .accent)
                 .padding()
-                .background(Color.accent)
+                .background(Color.accent.dynamicFilledButtonBackground)
                 .cornerRadius(buttonCornerRadius)
             }
             .disabled(viewModel.isBackupInProgress)
@@ -333,7 +327,7 @@ struct AutomaticBackupView: View {
                     .foregroundStyle(.accent)
                     .font(.customFont(fontFamily, style: .body))
 
-                Text(viewModel.locationName ?? "Not selected")
+                Text(viewModel.locationName ?? String(localized: "Not selected"))
                     .font(.customFont(fontFamily, style: .body))
 
                 Spacer()
@@ -341,6 +335,7 @@ struct AutomaticBackupView: View {
                 Button("Change") {
                     viewModel.changeBackupLocation()
                 }
+                .disabled(!viewModel.canChangeBackupLocation)
                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
             }
 
@@ -359,7 +354,7 @@ struct AutomaticBackupView: View {
 
     private var retentionPolicySection: some View {
         VStack(alignment: .leading, spacing: contentSpacing) {
-            Text("Retention Policy")
+            Text("Keep Backups")
                 .font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 8) {
@@ -367,13 +362,14 @@ struct AutomaticBackupView: View {
                     Text("Keep backups for:")
                         .font(.customFont(fontFamily, style: .body))
                     Spacer()
-                    Picker("", selection: $viewModel.retentionDays) {
+                    Picker("Keep backups for", selection: $viewModel.retentionDays) {
                         Text("7 days").tag(7)
                         Text("30 days").tag(30)
                         Text("90 days").tag(90)
                         Text("1 year").tag(365)
                     }
                     .pickerStyle(.menu)
+                    .labelsHidden()
                 }
 
                 Text("Backups older than \(viewModel.retentionDays) days are automatically deleted to save space")
@@ -486,7 +482,7 @@ struct AutomaticBackupView: View {
                                         if index == 0 {
                                             Text("Latest")
                                                 .font(.customFont(fontFamily, style: .caption, weight: .medium))
-                                                .foregroundStyle(.white)
+                                                .contrastingForeground(against: .accent)
                                                 .padding(.horizontal, 8)
                                                 .padding(.vertical, 2)
                                                 .background(Color.accent)
@@ -539,7 +535,7 @@ struct AutomaticBackupView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text(showAllBackups ? "Show Less" : "Show All (\(viewModel.backupHistory.count))")
+                            Text(showAllBackups ? String(localized: "Show Less") : String(localized: "Show All (\(viewModel.backupHistory.count))"))
                                 .font(.customFont(fontFamily, style: .subheadline, weight: .medium))
                                 .foregroundStyle(.accent)
                             Image(systemSymbol: showAllBackups ? .chevronUp : .chevronDown)
@@ -705,110 +701,110 @@ struct AutomaticBackupView: View {
                             Image(systemSymbol: .arrowRight)
                                 .font(.customFont(fontFamily, style: .body))
                         }
-                        .foregroundStyle(.white)
+                        .filledButtonForeground(against: .accent)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accent)
+                        .background(Color.accent.dynamicFilledButtonBackground)
                         .cornerRadius(buttonCornerRadius)
                     }
                     .padding()
                 }
                 .background(.regularMaterial)
             }
-            .navigationTitle("Setup Backup")
-            .navigationBarTitleDisplayMode(.inline)
+            .customNavigationTitle("Setup Backup")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         viewModel.showingPrivacyOnboarding = false
                     } label: {
                         Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Cancel Backup Setup")
                 }
             }
+            .tint(.accent)
         }
     }
 
     // MARK: - Restore Sheet
 
-    private func restoreSheet(for backup: BackupFile) -> some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Image(systemSymbol: .trayAndArrowDown)
-                        .font(.system(size: 50))
-                        .foregroundStyle(.accent)
+	private func restoreSheet(for backup: BackupFile) -> some View {
+		NavigationStack {
+			VerticalOnlyScrollView {
+				VStack(spacing: 24) {
+					VStack(spacing: 12) {
+						Image(systemSymbol: .trayAndArrowDown)
+							.font(.system(size: 50))
+							.foregroundStyle(.accent)
 
-                    Text("Restore from Backup")
-                        .font(.customFont(fontFamily, style: .title2, weight: .bold))
+						Text("Restore from Backup")
+							.font(.customFont(fontFamily, style: .title2, weight: .bold))
 
-                    Text(backup.date, style: .date)
-                        .font(.customFont(fontFamily, style: .body))
-                        .foregroundStyle(.secondary)
-                }
+						Text(backup.date, style: .date)
+							.font(.customFont(fontFamily, style: .body))
+							.foregroundStyle(.secondary)
+					}
 
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemSymbol: .exclamationmarkTriangleFill)
-                            .font(.system(size: 40))
-                            .foregroundStyle(.orange)
-                            .frame(maxWidth: .infinity)
+					VStack(alignment: .leading, spacing: 16) {
+						VStack(alignment: .leading, spacing: 8) {
+							Image(systemSymbol: .exclamationmarkTriangleFill)
+								.font(.system(size: 40))
+								.foregroundStyle(.orange)
+								.frame(maxWidth: .infinity)
 
-                        Text("Warning")
-                            .font(.customFont(fontFamily, style: .headline, weight: .bold))
-                            .frame(maxWidth: .infinity)
+							Text("Warning")
+								.font(.customFont(fontFamily, style: .headline, weight: .bold))
+								.frame(maxWidth: .infinity)
 
-                        Text("This will replace all current data with the backup. This cannot be undone.")
-                            .font(.customFont(fontFamily, style: .body))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .noTruncate()
-                            .frame(maxWidth: .infinity)
-                    }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(cardCornerRadius)
+							Text("This will replace all current data with the backup. This cannot be undone.")
+								.font(.customFont(fontFamily, style: .body))
+								.foregroundStyle(.secondary)
+								.multilineTextAlignment(.center)
+								.noTruncate()
+								.frame(maxWidth: .infinity)
+						}
+						.padding()
+						.background(Color.orange.opacity(0.1))
+						.cornerRadius(cardCornerRadius)
 
-                    Button {
-                        Task {
-                            await viewModel.restoreFromBackup(mergeExisting: false)
-                        }
-                    } label: {
-                        HStack {
-                            Image(systemSymbol: .arrowCounterclockwise)
-                                .font(.customFont(fontFamily, style: .body))
-                            Text("Replace All Data")
-                                .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red)
-                        .cornerRadius(buttonCornerRadius)
-                    }
-                }
+						Button(role: .destructive) {
+							Task {
+								await viewModel.restoreFromBackup(mergeExisting: false)
+							}
+						} label: {
+							HStack {
+								Image(systemSymbol: .arrowCounterclockwise)
+									.font(.customFont(fontFamily, style: .body))
+								Text("Replace All Data")
+									.font(.customFont(fontFamily, style: .body, weight: .semibold))
+							}
+							.filledButtonForeground(against: .red)
+							.frame(maxWidth: .infinity)
+							.padding()
+							.background(Color.red.dynamicFilledButtonBackground)
+							.cornerRadius(buttonCornerRadius)
+						}
+					}
 
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("Restore Backup")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        viewModel.showingRestoreSheet = false
-                    } label: {
-                        Image(systemSymbol: .xmark)
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .dynamicDetent()
-    }
+					Spacer()
+				}
+				.padding()
+			}
+			.customNavigationTitle("Restore Backup")
+			.toolbar {
+				ToolbarItem(placement: .topBarTrailing) {
+					Button {
+						viewModel.showingRestoreSheet = false
+					} label: {
+						Image(systemSymbol: .xmark)
+					}
+					.accessibilityLabel("Cancel Restore")
+				}
+			}
+			.tint(.accent)
+		}
+		.dynamicDetent()
+	}
 }
 
 #Preview {

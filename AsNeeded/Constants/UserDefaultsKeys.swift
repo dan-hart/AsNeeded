@@ -13,6 +13,9 @@ public enum UserDefaultsKeys {
     /// Selected medication ID for trends tab
     static let trendsSelectedMedicationID = "trendsSelectedMedicationID"
 
+	/// Device-local recording order of committed doses, independent of their dates.
+	static let lastLoggedDoseEventIDs = "lastLoggedDoseEventIDs"
+
     /// Order of medications in the list
     static let medicationOrder = "medicationOrder"
 
@@ -30,48 +33,31 @@ public enum UserDefaultsKeys {
     /// Currently selected tab index
     static let selectedTab = "selectedTab"
 
+	/// Shared discovery state for quick-log hints on this device.
+	static let hasDiscoveredQuickLog = "hasDiscoveredQuickLog"
+	static let quickLogHintImpressions = "quickLogHintImpressions"
+
     // MARK: - Display Settings
 
     /// Trends visualization type (chart, list, etc.)
     static let trendsVisualizationType = "trendsVisualizationType"
 
-    /// Trends time window in days (14 or 30)
+    /// Trends time window in days (14, 30 or 90)
     static let trendsDaysWindow = "trendsDaysWindow"
 
     /// Whether to hide support banners
     static let hideSupportBanners = "hideSupportBanners"
 
-    /// Whether private on-device Trends questions are enabled
-    static let trendsQuestionsEnabled = "trendsQuestionsEnabled"
-
-    /// Whether the user has quick logged (held a Log Dose control) at least once, on any tab
-    static let hasDiscoveredQuickLog = "hasDiscoveredQuickLog"
-
-    /// How many times a "hold to quick log" hint has been shown, across tabs
-    static let quickLogHintImpressions = "quickLogHintImpressions"
-
-    /// Stored refill profiles keyed by medication ID
-    static let medicationRefillProfiles = "medicationRefillProfiles"
-
-    /// Legacy medication safety profiles retained until migration completes
-    static let legacyMedicationProfiles = "medicationSafetyProfiles"
-
-    /// Recovery copy of the raw legacy medication profile payload
-    static let archivedMedicationProfiles = "migration.archivedMedicationProfiles"
-
-    /// Whether legacy medication profiles have been safely archived
-    static let medicationProfilesMigrationCompleted = "migration.medicationProfilesCompleted"
+    /// Stored medication safety and refill profiles keyed by medication ID
+    static let medicationSafetyProfiles = "medicationSafetyProfiles"
 
     // MARK: - Notification Settings
 
-    /// Whether to show medication names in notifications
-    static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
-
-	/// Per-medication preference for Time Sensitive notifications
+	/// Device-local Time Sensitive preference keyed by medication identity.
 	static let medicationNotificationUrgency = "medicationNotificationUrgency"
 
-	/// Whether the notification urgency migration has completed
-	static let medicationNotificationUrgencyMigrationCompleted = "migration.medicationNotificationUrgencyCompleted"
+    /// Whether to show medication names in notifications
+    static let showMedicationNamesInNotifications = "showMedicationNamesInNotifications"
 
     // MARK: - Typography Settings
 
@@ -192,24 +178,20 @@ public enum UserDefaultsKeys {
     public static let allKeys: [String] = [
         historySelectedMedicationID,
         trendsSelectedMedicationID,
+		lastLoggedDoseEventIDs,
         medicationOrder,
         hasSeenWelcome,
         shouldShowWelcomeOnNextLaunch,
         hapticsEnabled,
         selectedTab,
+		hasDiscoveredQuickLog,
+		quickLogHintImpressions,
         trendsVisualizationType,
         trendsDaysWindow,
         hideSupportBanners,
-        trendsQuestionsEnabled,
-        hasDiscoveredQuickLog,
-        quickLogHintImpressions,
-        medicationRefillProfiles,
-        legacyMedicationProfiles,
-        archivedMedicationProfiles,
-        medicationProfilesMigrationCompleted,
+        medicationSafetyProfiles,
         showMedicationNamesInNotifications,
 		medicationNotificationUrgency,
-		medicationNotificationUrgencyMigrationCompleted,
         selectedFontFamily,
         hasUserOptedOutOfReviews,
         appLaunchCount,
@@ -250,13 +232,12 @@ public enum UserDefaultsKeys {
         // hasSeenWelcome is handled specially - not reset immediately
         shouldShowWelcomeOnNextLaunch: true, // Set flag to show welcome on next launch
         hapticsEnabled: true,
+		hasDiscoveredQuickLog: false,
+		quickLogHintImpressions: 0,
         selectedTab: 0,
         trendsVisualizationType: 0, // Chart view
         trendsDaysWindow: 14, // 14 days by default
         hideSupportBanners: false,
-        trendsQuestionsEnabled: false,
-        hasDiscoveredQuickLog: false,
-        quickLogHintImpressions: 0,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
         hasUserOptedOutOfReviews: false,
@@ -280,6 +261,8 @@ public enum UserDefaultsKeys {
 
     /// Keys that should be removed (not set to a default) when resetting
     public static let keysToRemove: Set<String> = [
+		lastLoggedDoseEventIDs,
+		medicationNotificationUrgency,
         historySelectedMedicationID,
         trendsSelectedMedicationID,
         medicationOrder,
@@ -292,9 +275,7 @@ public enum UserDefaultsKeys {
         analyticsMostUsedFeatures,
         analyticsDailyActiveUse,
         recentMedicationSearches,
-        medicationRefillProfiles,
-		medicationNotificationUrgency,
-        legacyMedicationProfiles,
+        medicationSafetyProfiles,
         automaticBackupLocationBookmark,
         automaticBackupLastBackupDate,
         automaticBackupLastCleanupDate,
@@ -305,12 +286,9 @@ public enum UserDefaultsKeys {
     /// Keys that should not be touched during reset (handled specially)
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
-        storageSchemaVersion,
-        archivedLegacyMedicationsPath,
-        archivedLegacyEventsPath,
-        archivedMedicationProfiles,
-        medicationProfilesMigrationCompleted,
-		medicationNotificationUrgencyMigrationCompleted,
+		storageSchemaVersion, // Storage state is independent of user preferences
+		archivedLegacyMedicationsPath, // Preserve recovery locations after a settings reset
+		archivedLegacyEventsPath,
     ]
 
     // MARK: - Export/Import Allowlist & Blocklist
@@ -324,16 +302,12 @@ public enum UserDefaultsKeys {
 
         // Display Settings
         trendsVisualizationType,
-        hasDiscoveredQuickLog,
-        quickLogHintImpressions,
         trendsDaysWindow,
         hideSupportBanners,
-        trendsQuestionsEnabled,
-        medicationRefillProfiles,
+        medicationSafetyProfiles,
 
         // Notification Settings
         showMedicationNamesInNotifications,
-		medicationNotificationUrgency,
 
         // Typography Settings
         selectedFontFamily,
@@ -357,6 +331,10 @@ public enum UserDefaultsKeys {
     /// Keys that should NEVER be exported (blocklist for security/privacy)
     /// These contain device-specific data, security-scoped bookmarks, or historical analytics
     public static let keysToNeverExport: Set<String> = [
+		lastLoggedDoseEventIDs, // Recording order belongs to this device.
+		hasDiscoveredQuickLog, // Gesture discovery is device-local.
+		quickLogHintImpressions,
+		medicationNotificationUrgency, // Delivery preferences belong to this device.
         // Security-scoped bookmarks (device-specific, won't work on other devices)
         automaticBackupLocationBookmark,
 
@@ -395,10 +373,5 @@ public enum UserDefaultsKeys {
         // Legacy migration paths (device-specific, must not be overwritten)
         archivedLegacyMedicationsPath,
         archivedLegacyEventsPath,
-        archivedMedicationProfiles,
-        medicationProfilesMigrationCompleted,
-		medicationNotificationUrgencyMigrationCompleted,
-        legacyMedicationProfiles,
-        importSettingsDefaultBehavior,
     ]
 }

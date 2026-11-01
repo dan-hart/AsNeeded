@@ -1,0 +1,332 @@
+{
+  "app_id": "6714469235",
+  "version_id": "31449f69-4ebe-47a5-aad1-0191cde0595c",
+  "version": "1.2.0",
+  "authority": "Current asc localizations supported-locales shared CLI catalog and live configured version locales; eligibility of uncreated locales has not been mutation-tested.",
+  "mapping": [
+    {
+      "app_locale": "ar",
+      "asc_locale": "ar-SA",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "bg",
+      "asc_locale": null,
+      "status": "unsupported",
+      "note": "No matching language locale in the current shared ASC CLI catalog. Produce local marketing assets; no substitute language listing proposed."
+    },
+    {
+      "app_locale": "ca",
+      "asc_locale": "ca",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "cs",
+      "asc_locale": "cs",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "da",
+      "asc_locale": "da",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "de",
+      "asc_locale": "de-DE",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "el",
+      "asc_locale": "el",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "en",
+      "asc_locale": "en-US",
+      "status": "configured",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "en-AU",
+      "asc_locale": "en-AU",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "en-GB",
+      "asc_locale": "en-GB",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "es",
+      "asc_locale": "es-ES",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "es-419",
+      "asc_locale": "es-MX",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": "Latin American Spanish app localization maps to ASC Spanish Mexico; regional copy should be reviewed for that listing."
+    },
+    {
+      "app_locale": "fa",
+      "asc_locale": null,
+      "status": "unsupported",
+      "note": "No matching language locale in the current shared ASC CLI catalog. Produce local marketing assets; no substitute language listing proposed."
+    },
+    {
+      "app_locale": "fi",
+      "asc_locale": "fi",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "fr",
+      "asc_locale": "fr-FR",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "fr-CA",
+      "asc_locale": "fr-CA",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "he",
+      "asc_locale": "he",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "hi",
+      "asc_locale": "hi",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "hr",
+      "asc_locale": "hr",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "hu",
+      "asc_locale": "hu",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "id",
+      "asc_locale": "id",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "it",
+      "asc_locale": "it",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "ja",
+      "asc_locale": "ja",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "kk",
+      "asc_locale": null,
+      "status": "unsupported",
+      "note": "No matching language locale in the current shared ASC CLI catalog. Produce local marketing assets; no substitute language listing proposed."
+    },
+    {
+      "app_locale": "ko",
+      "asc_locale": "ko",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "ms",
+      "asc_locale": "ms",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "nb",
+      "asc_locale": "no",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "nl",
+      "asc_locale": "nl-NL",
+      "status": "new_version_locale_required",
+      "mapping_kind": "canonical_alias",
+      "note": null
+    },
+    {
+      "app_locale": "pl",
+      "asc_locale": "pl",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "pt-BR",
+      "asc_locale": "pt-BR",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "pt-PT",
+      "asc_locale": "pt-PT",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "ro",
+      "asc_locale": "ro",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "ru",
+      "asc_locale": "ru",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "sk",
+      "asc_locale": "sk",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "sv",
+      "asc_locale": "sv",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "th",
+      "asc_locale": "th",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "tr",
+      "asc_locale": "tr",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "uk",
+      "asc_locale": "uk",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "vi",
+      "asc_locale": "vi",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "zh-HK",
+      "asc_locale": null,
+      "status": "no_separate_listing_collision",
+      "possible_shared_asc_locale": "zh-Hant",
+      "upload_owner_app_locale": "zh-Hant",
+      "note": "ASC catalog has no Hong Kong Chinese locale; optional shared Traditional Chinese listing cannot hold independent Hong Kong and Taiwan asset sets. Keep zh-HK local marketing outputs; do not overwrite zh-Hant implicitly."
+    },
+    {
+      "app_locale": "zh-Hans",
+      "asc_locale": "zh-Hans",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    },
+    {
+      "app_locale": "zh-Hant",
+      "asc_locale": "zh-Hant",
+      "status": "new_version_locale_required",
+      "mapping_kind": "exact",
+      "note": null
+    }
+  ],
+  "counts": {
+    "app_locales": 42,
+    "distinct_supported_targets": 38,
+    "new_version_locale_containers": 37,
+    "unsupported_app_locales": 3,
+    "independent_listing_collision_app_locales": 1
+  },
+  "unsupported": [
+    "bg",
+    "fa",
+    "kk"
+  ],
+  "collision": {
+    "zh-Hant": [
+      "zh-Hant",
+      "zh-HK"
+    ]
+  },
+  "asc_supported_not_targeted_by_existing_app_locales": [
+    "bn-BD",
+    "en-CA",
+    "gu-IN",
+    "kn-IN",
+    "ml-IN",
+    "mr-IN",
+    "or-IN",
+    "pa-IN",
+    "sl-SI",
+    "ta-IN",
+    "te-IN",
+    "ur-PK"
+  ]
+}

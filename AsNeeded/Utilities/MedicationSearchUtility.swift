@@ -59,7 +59,7 @@ public enum MedicationSearchUtility {
             }
         }
 
-        if let fuzzyMatch = fuzzyMatch {
+        if fuzzyMatch != nil {
             logger.info("Found fuzzy medication match")
         } else {
             logger.warning("No match found for search query")

@@ -10,22 +10,17 @@ struct AppPreferencesView: View {
     @AppStorage(UserDefaultsKeys.hideSupportBanners) private var hideSupportBanners = false
     @AppStorage(UserDefaultsKeys.selectedFontFamily) private var selectedFontFamily: String = FontFamily.system.rawValue
     @AppStorage(UserDefaultsKeys.importSettingsDefaultBehavior) private var importSettingsDefaultBehavior: String = "keep"
-    @AppStorage(UserDefaultsKeys.trendsQuestionsEnabled) private var trendsQuestionsEnabled = false
     @State private var showingResetConfirmation = false
-    /// Briefly true after Show Tips Again so the row can confirm it worked.
-    @State private var didShowTipsAgain = false
-    /// Identifies the latest tap so an earlier tap's timer cannot clear a newer confirmation.
-    @State private var tipsConfirmationGeneration = 0
-    @ScaledMetric private var sectionSpacing: CGFloat = 32
-    @ScaledMetric private var itemSpacing: CGFloat = 16
-    @ScaledMetric private var headerSpacing: CGFloat = 12
-    @ScaledMetric private var iconSize: CGFloat = 24
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 0.5
-    @ScaledMetric private var textLeadingPadding: CGFloat = 36
-    @ScaledMetric private var stackItemSpacing: CGFloat = 2
-    @ScaledMetric private var innerSpacing: CGFloat = 4
+	private let sectionSpacing: CGFloat = 32
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
+	private let textLeadingPadding: CGFloat = 36
+	private let stackItemSpacing: CGFloat = 2
+	private let innerSpacing: CGFloat = 4
 
     var body: some View {
         VerticalOnlyScrollView {
@@ -50,17 +45,9 @@ struct AppPreferencesView: View {
 
                 privacySection
 
-                if MedicationTrendsQuestionSupport.isSupportedOnDevice {
-                    privateQuestionsSection
-                }
-
                 // MARK: - Data Import
 
                 dataImportSection
-
-                // MARK: - Tips
-
-                tipsSection
 
                 // MARK: - Reset
 
@@ -94,7 +81,7 @@ struct AppPreferencesView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: headerSpacing) {
-            Text("Configure how As Needed behaves and interacts with you. These settings control notifications, haptic feedback, and other app behaviors.")
+            Text("Choose how the app looks, feels, and notifies you.")
                 .font(.customFont(fontFamily, style: .body))
                 .foregroundStyle(.secondary)
         }
@@ -138,8 +125,8 @@ struct AppPreferencesView: View {
     private var medicationNamesToggle: some View {
         PreferenceRow(
             icon: .pills,
-            title: "Show Medication Names",
-            subtitle: "Display medication names in notification content",
+            title: String(localized: "Show Medication Names"),
+            subtitle: String(localized: "Display medication names in notification content"),
             detail: "When enabled, medication reminders will show the specific medication name. When disabled, reminders will show generic text like 'Time for your medication' for privacy.",
             isOn: $showMedicationNames
         ) { newValue in
@@ -150,8 +137,8 @@ struct AppPreferencesView: View {
     private var hapticsToggle: some View {
         PreferenceRow(
             icon: .iphoneRadiowavesLeftAndRight,
-            title: "Haptic Feedback",
-            subtitle: "Feel touches and actions throughout the app",
+            title: String(localized: "Haptic Feedback"),
+            subtitle: String(localized: "Feel touches and actions throughout the app"),
             detail: "Provides tactile feedback when you interact with buttons, complete actions, or receive confirmations. Helps confirm your actions with subtle vibrations.",
             isOn: $hapticsManager.hapticsEnabled
         ) { _ in
@@ -164,11 +151,11 @@ struct AppPreferencesView: View {
 
     private var typographyNavigationLink: some View {
         VStack(alignment: .leading, spacing: itemSpacing) {
-            Label("Typography", systemSymbol: .textformat)
+            Label("Text", systemSymbol: .textformat)
                 .font(.customFont(fontFamily, style: .title3, weight: .semibold))
                 .foregroundStyle(.accent)
 
-            Text("Choose an accessibility-focused font family to improve readability throughout the app.")
+            Text("Choose the font that is easiest for you to read.")
                 .font(.customFont(fontFamily, style: .subheadline))
                 .foregroundStyle(.secondary)
 
@@ -213,7 +200,7 @@ struct AppPreferencesView: View {
                 .font(.customFont(fontFamily, style: .title3, weight: .semibold))
                 .foregroundStyle(.accent)
 
-            Text("Control what information is shared and how the app requests feedback from you.")
+            Text("Choose whether to see support reminders and requests for a review.")
                 .font(.customFont(fontFamily, style: .subheadline))
                 .foregroundStyle(.secondary)
 
@@ -221,51 +208,6 @@ struct AppPreferencesView: View {
                 hideSupportBannersToggle
                 disableReviewRequestsToggle
             }
-        }
-    }
-
-    private var privateQuestionsSection: some View {
-        VStack(alignment: .leading, spacing: itemSpacing) {
-            Label("Private Questions", systemSymbol: .bubbleLeftAndBubbleRightFill)
-                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                .foregroundStyle(.accent)
-
-            Text("Ask the Trends tab about your own logs using on-device processing that stays private.")
-                .font(.customFont(fontFamily, style: .subheadline))
-                .foregroundStyle(.secondary)
-
-            PreferenceRow(
-                icon: .lockFill,
-                title: "Enable On-Device Questions",
-                subtitle: "Opt in before asking about medication patterns",
-                detail: "When enabled, the Trends tab can answer questions about your logged medication history. For this feature, your data stays on this device and never leaves the device for processing.",
-                isOn: $trendsQuestionsEnabled
-            ) { _ in }
-
-            HStack(alignment: .top, spacing: headerSpacing) {
-                Image(systemSymbol: .checkmarkShieldFill)
-                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
-                    .foregroundStyle(.accent)
-                    .frame(width: iconSize, height: iconSize)
-
-                VStack(alignment: .leading, spacing: stackItemSpacing) {
-                    Text("What to expect")
-                        .font(.customFont(fontFamily, style: .body, weight: .medium))
-                        .foregroundStyle(.primary)
-
-                    Text("Responses can be incorrect or incomplete, and the feature only summarizes the data you’ve already logged.")
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(padding)
-            .background(Color(.systemBackground))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color(.systemGray4), lineWidth: borderWidth)
-            )
-            .cornerRadius(cornerRadius)
         }
     }
 
@@ -292,7 +234,7 @@ struct AppPreferencesView: View {
                             .font(.customFont(fontFamily, style: .body))
                             .tag("keep")
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .padding(.top, 8)
 
                     Text("This controls what happens when you import data that contains app settings. You can always change your choice during import.")
@@ -311,8 +253,8 @@ struct AppPreferencesView: View {
     private var hideSupportBannersToggle: some View {
         PreferenceRow(
             icon: .eyeSlash,
-            title: "Hide Support Banners",
-            subtitle: "Disable support reminders throughout the app",
+            title: String(localized: "Hide Support Banners"),
+            subtitle: String(localized: "Disable support reminders throughout the app"),
             detail: "When enabled, support banners and donation prompts will be hidden from the app interface. You can still access support options through the Settings tab.",
             isOn: $hideSupportBanners
         ) { _ in }
@@ -321,8 +263,8 @@ struct AppPreferencesView: View {
     private var disableReviewRequestsToggle: some View {
         PreferenceRow(
             icon: .starSlash,
-            title: "Disable Review Requests",
-            subtitle: "Opt out of automatic app review prompts",
+            title: String(localized: "Disable Review Requests"),
+            subtitle: String(localized: "Opt out of automatic app review prompts"),
             detail: "When enabled, the app will not automatically ask you to rate and review. Manual review buttons in Support and Feedback screens will also be hidden.",
             isOn: $appReviewManager.hasOptedOutOfReviews
         ) { _ in }
@@ -348,50 +290,6 @@ struct AppPreferencesView: View {
             .padding(padding)
             .background(Color(.systemGray6))
             .cornerRadius(cornerRadius)
-        }
-    }
-
-    private var tipsSection: some View {
-        VStack(alignment: .leading, spacing: itemSpacing) {
-            Label("Tips", systemSymbol: .lightbulb)
-                .font(.customFont(fontFamily, style: .title3, weight: .semibold))
-                .foregroundStyle(.accent)
-
-            Text("Short tips, like holding a Log Dose button to log your default dose, appear a few times and then stay out of the way.")
-                .font(.customFont(fontFamily, style: .subheadline))
-                .foregroundStyle(.secondary)
-
-            Button(action: showTipsAgain) {
-                HStack(spacing: headerSpacing) {
-                    Image(systemSymbol: didShowTipsAgain ? .checkmarkCircleFill : .handTapFill)
-                        .font(.customFont(fontFamily, style: .callout, weight: .medium))
-                        .frame(width: iconSize, height: iconSize)
-                        .foregroundStyle(.accent)
-                        .contentTransition(.symbolEffect(.replace))
-
-                    VStack(alignment: .leading, spacing: stackItemSpacing) {
-                        Text("Show Tips Again")
-                            .font(.customFont(fontFamily, style: .body, weight: .medium))
-                            .foregroundStyle(.primary)
-
-                        Text(didShowTipsAgain ? "Tips will appear again on the Medication and History tabs" : "Bring back tips you have dismissed or already seen")
-                            .font(.customFont(fontFamily, style: .caption))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-                }
-                .padding(padding)
-                .background(Color(.systemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(Color(.systemGray4), lineWidth: borderWidth)
-                )
-                .cornerRadius(cornerRadius)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Show tips again")
-            .accessibilityHint("Brings back tips you have dismissed or already seen")
         }
     }
 
@@ -442,22 +340,6 @@ struct AppPreferencesView: View {
 
     // MARK: - Actions
 
-    private func showTipsAgain() {
-        hapticsManager.notificationSuccess()
-        QuickLogHintPolicy.showAgain()
-        tipsConfirmationGeneration += 1
-        let confirmationGeneration = tipsConfirmationGeneration
-        withAnimation(.easeInOut(duration: 0.2)) {
-            didShowTipsAgain = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            guard confirmationGeneration == tipsConfirmationGeneration else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
-                didShowTipsAgain = false
-            }
-        }
-    }
-
     private func resetAllPreferences() {
         // Reset notification preferences
         showMedicationNames = false
@@ -471,14 +353,10 @@ struct AppPreferencesView: View {
 
         // Reset privacy preferences
         hideSupportBanners = false
-        trendsQuestionsEnabled = false
         appReviewManager.hasOptedOutOfReviews = false
 
         // Reset import behavior
         importSettingsDefaultBehavior = "keep"
-
-        // Bring tips back
-        QuickLogHintPolicy.showAgain()
 
         // Reset AppReviewManager internal tracking
         appReviewManager.resetReviewPreferences()
@@ -488,61 +366,79 @@ struct AppPreferencesView: View {
 // MARK: - Supporting Views
 
 private struct PreferenceRow: View {
-    let icon: SFSymbol
-    let title: String
-    let subtitle: String
-    let detail: String
-    @Binding var isOn: Bool
-    let onChange: (Bool) -> Void
-    @Environment(\.fontFamily) private var fontFamily
-    @ScaledMetric private var itemSpacing: CGFloat = 16
-    @ScaledMetric private var headerSpacing: CGFloat = 12
-    @ScaledMetric private var stackItemSpacing: CGFloat = 2
-    @ScaledMetric private var iconSize: CGFloat = 24
-    @ScaledMetric private var padding: CGFloat = 16
-    @ScaledMetric private var cornerRadius: CGFloat = 12
-    @ScaledMetric private var borderWidth: CGFloat = 0.5
-    @ScaledMetric private var textLeadingPadding: CGFloat = 36
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	let icon: SFSymbol
+	let title: String
+	let subtitle: String
+	let detail: String
+	@Binding var isOn: Bool
+	let onChange: (Bool) -> Void
+	@Environment(\.fontFamily) private var fontFamily
+	private let itemSpacing: CGFloat = 16
+	private let headerSpacing: CGFloat = 12
+	private let stackItemSpacing: CGFloat = 2
+	private let iconSize: CGFloat = 24
+	private let padding: CGFloat = 16
+	private let cornerRadius: CGFloat = 12
+	private let borderWidth: CGFloat = 0.5
+	private let textLeadingPadding: CGFloat = 36
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: itemSpacing) {
-            HStack(spacing: headerSpacing) {
-                Image(systemSymbol: icon)
-                    .font(.customFont(fontFamily, style: .callout, weight: .medium))
-                    .frame(width: iconSize, height: iconSize)
-                    .foregroundStyle(.accent)
+	var body: some View {
+		VStack(alignment: .leading, spacing: itemSpacing) {
+			controlLayout {
+				if !dynamicTypeSize.isAccessibilitySize {
+					Image(systemSymbol: icon)
+						.font(.system(size: 22, weight: .medium))
+						.frame(width: iconSize, height: iconSize)
+						.foregroundStyle(.accent)
+						.accessibilityHidden(true)
+				}
 
-                VStack(alignment: .leading, spacing: stackItemSpacing) {
-                    Text(title)
-                        .font(.customFont(fontFamily, style: .body, weight: .medium))
+				VStack(alignment: .leading, spacing: stackItemSpacing) {
+					Text(title)
+						.font(.customFont(fontFamily, style: .body, weight: .medium))
+						.fixedSize(horizontal: false, vertical: true)
 
-                    Text(subtitle)
-                        .font(.customFont(fontFamily, style: .caption))
-                        .foregroundStyle(.secondary)
-                }
+					Text(subtitle)
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+						.fixedSize(horizontal: false, vertical: true)
+				}
+				.frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
+				if !dynamicTypeSize.isAccessibilitySize {
+					Spacer(minLength: 0)
+				}
 
-                Toggle("", isOn: $isOn)
-                    .labelsHidden()
-                    .onChange(of: isOn) { _, newValue in
-                        onChange(newValue)
-                    }
-            }
+				Toggle(title, isOn: $isOn)
+					.labelsHidden()
+					.frame(minHeight: 44)
+					.frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil, alignment: .leading)
+					.onChange(of: isOn) { _, newValue in
+						onChange(newValue)
+					}
+			}
 
-            Text(detail)
-                .font(.customFont(fontFamily, style: .caption))
-                .foregroundStyle(.secondary)
-                .padding(.leading, textLeadingPadding)
-        }
-        .padding(padding)
-        .background(Color(.systemBackground))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .stroke(Color(.systemGray4), lineWidth: borderWidth)
-        )
-        .cornerRadius(cornerRadius)
-    }
+			Text(detail)
+				.font(.customFont(fontFamily, style: .caption))
+				.foregroundStyle(.secondary)
+				.fixedSize(horizontal: false, vertical: true)
+				.padding(.leading, dynamicTypeSize.isAccessibilitySize ? 0 : textLeadingPadding)
+		}
+		.padding(padding)
+		.background(Color(.systemBackground))
+		.overlay(
+			RoundedRectangle(cornerRadius: cornerRadius)
+				.stroke(Color(.systemGray4), lineWidth: borderWidth)
+		)
+		.cornerRadius(cornerRadius)
+	}
+
+	private var controlLayout: AnyLayout {
+		dynamicTypeSize.isAccessibilitySize
+			? AnyLayout(VStackLayout(alignment: .leading, spacing: headerSpacing))
+			: AnyLayout(HStackLayout(spacing: headerSpacing))
+	}
 }
 
 // MARK: - Preview

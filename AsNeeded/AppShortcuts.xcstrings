@@ -1,0 +1,2850 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "How much ${medication} have I taken today in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "How much ${medication} have I taken today in ${applicationName}",
+              "What's my daily usage of ${medication} in ${applicationName}",
+              "Check my ${medication} usage today in ${applicationName}",
+              "How many ${medication} today in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "¿Cuánto ${medication} he tomado hoy en ${applicationName}?",
+              "¿Cuál es mi consumo diario de ${medication} en ${applicationName}?",
+              "Consulta mi consumo de ${medication} de hoy en ${applicationName}",
+              "¿Cuántas dosis de ${medication} he tomado hoy en ${applicationName}?"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Wie viel ${medication} habe ich heute in ${applicationName} eingenommen",
+              "Wie hoch ist meine tägliche Einnahme von ${medication} in ${applicationName}",
+              "Prüfe meine heutige Einnahme von ${medication} in ${applicationName}",
+              "Wie viele ${medication} habe ich heute in ${applicationName} eingenommen"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quelle quantité de ${medication} ai-je prise aujourd’hui dans ${applicationName}",
+              "Quelle est ma consommation quotidienne de ${medication} dans ${applicationName}",
+              "Vérifier mes prises de ${medication} aujourd’hui dans ${applicationName}",
+              "Combien de ${medication} aujourd’hui dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "ما الكمية التي تناولتها من ${medication} اليوم في ${applicationName}",
+              "ما استخدامي اليومي من ${medication} في ${applicationName}",
+              "تحقق من استخدامي من ${medication} اليوم في ${applicationName}",
+              "كم تناولت من ${medication} اليوم في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "כמה ${medication} לקחתי היום ב-${applicationName}",
+              "מה השימוש היומי שלי ב-${medication} ב-${applicationName}",
+              "בדוק את השימוש שלי ב-${medication} היום ב-${applicationName}",
+              "כמה ${medication} היום ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "امروز چه مقدار ${medication} در ${applicationName} مصرف کرده‌ام",
+              "میزان مصرف روزانهٔ ${medication} من در ${applicationName} چقدر است",
+              "مصرف امروز ${medication} من را در ${applicationName} بررسی کن",
+              "امروز چند عدد ${medication} در ${applicationName} مصرف کرده‌ام"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で今日の${medication}の服用量を教えて",
+              "${applicationName}で${medication}の1日の使用量を教えて",
+              "${applicationName}で今日の${medication}の使用量を確認して",
+              "${applicationName}で今日の${medication}の使用数を教えて"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Колко ${medication} приех днес в ${applicationName}",
+              "Какъв е дневният ми прием на ${medication} в ${applicationName}",
+              "Провери приема ми на ${medication} днес в ${applicationName}",
+              "Колко броя ${medication} приех днес в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quina quantitat de ${medication} he pres avui a ${applicationName}",
+              "Quin és el meu consum diari de ${medication} a ${applicationName}",
+              "Consulta el meu consum de ${medication} d'avui a ${applicationName}",
+              "Quantes dosis de ${medication} he pres avui a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kolik léku ${medication} jsem dnes užil v aplikaci ${applicationName}",
+              "Jaká je moje denní spotřeba léku ${medication} v aplikaci ${applicationName}",
+              "Zkontroluj moje dnešní užívání léku ${medication} v aplikaci ${applicationName}",
+              "Kolik dávek léku ${medication} dnes v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hvor meget ${medication} har jeg taget i dag i ${applicationName}",
+              "Hvad er mit daglige forbrug af ${medication} i ${applicationName}",
+              "Tjek mit forbrug af ${medication} i dag i ${applicationName}",
+              "Hvor mange ${medication} har jeg taget i dag i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Πόσο ${medication} έχω πάρει σήμερα στο ${applicationName}",
+              "Ποια είναι η ημερήσια χρήση μου για το φάρμακο ${medication} στο ${applicationName}",
+              "Έλεγξε τη σημερινή μου χρήση για το φάρμακο ${medication} στο ${applicationName}",
+              "Πόσες δόσεις από το φάρμακο ${medication} έχω πάρει σήμερα στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "How much ${medication} have I taken today in ${applicationName}",
+              "What's my daily usage of ${medication} in ${applicationName}",
+              "Check my ${medication} usage today in ${applicationName}",
+              "How many ${medication} today in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "How much ${medication} have I taken today in ${applicationName}",
+              "What's my daily usage of ${medication} in ${applicationName}",
+              "Check my ${medication} usage today in ${applicationName}",
+              "How many ${medication} today in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Cuánto ${medication} he tomado hoy en ${applicationName}",
+              "Cuál es mi consumo diario de ${medication} en ${applicationName}",
+              "Consulta mi consumo de ${medication} de hoy en ${applicationName}",
+              "Cuántas dosis de ${medication} he tomado hoy en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kuinka paljon ${medication}-lääkettä olen ottanut tänään ${applicationName}-sovelluksessa",
+              "Mikä on ${medication}-lääkkeen päivittäinen käyttöni ${applicationName}-sovelluksessa",
+              "Tarkista tämänpäiväinen ${medication}-lääkkeen käyttöni ${applicationName}-sovelluksessa",
+              "Kuinka monta annosta ${medication}-lääkettä tänään ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quelle quantité de ${medication} ai-je prise aujourd’hui dans ${applicationName}",
+              "Quelle est ma consommation quotidienne de ${medication} dans ${applicationName}",
+              "Vérifie ma consommation de ${medication} aujourd’hui dans ${applicationName}",
+              "Combien de ${medication} aujourd’hui dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में आज मैंने ${medication} कितनी ली है",
+              "${applicationName} में ${medication} का मेरा दैनिक उपयोग कितना है",
+              "${applicationName} में आज ${medication} का मेरा उपयोग जाँचें",
+              "${applicationName} में आज ${medication} की कितनी खुराकें ली हैं"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Koliko sam lijeka ${medication} danas uzeo u aplikaciji ${applicationName}",
+              "Kolika je moja dnevna upotreba lijeka ${medication} u aplikaciji ${applicationName}",
+              "Provjeri moju današnju upotrebu lijeka ${medication} u aplikaciji ${applicationName}",
+              "Koliko lijeka ${medication} danas u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Mennyi ${medication} gyógyszert vettem be ma a ${applicationName} alkalmazásban",
+              "Mennyi a napi ${medication} gyógyszerhasználatom a ${applicationName} alkalmazásban",
+              "Ellenőrizd a mai ${medication} gyógyszerhasználatomat a ${applicationName} alkalmazásban",
+              "Hány ${medication} gyógyszert vettem be ma a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Berapa banyak ${medication} yang sudah saya gunakan hari ini di ${applicationName}",
+              "Berapa penggunaan harian ${medication} saya di ${applicationName}",
+              "Periksa penggunaan ${medication} saya hari ini di ${applicationName}",
+              "Berapa banyak ${medication} hari ini di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quanto ${medication} ho assunto oggi in ${applicationName}",
+              "Qual è il mio consumo giornaliero di ${medication} in ${applicationName}",
+              "Controlla il mio consumo di ${medication} di oggi in ${applicationName}",
+              "Quanto ${medication} oggi in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Бүгін ${applicationName} қолданбасында ${medication} дәрісін қанша қабылдадым",
+              "${applicationName} қолданбасында ${medication} дәрісін күнделікті қанша қабылдаймын",
+              "${applicationName} қолданбасында бүгінгі ${medication} дәрісін қабылдауымды тексер",
+              "${applicationName} қолданбасында бүгін қанша ${medication} қабылдадым"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 오늘 ${medication} 복용량이 얼마나 되는지 알려 줘",
+              "${applicationName}에서 ${medication}의 하루 사용량을 알려 줘",
+              "${applicationName}에서 오늘 ${medication} 사용량을 확인해 줘",
+              "${applicationName}에서 오늘 ${medication} 얼마나 복용했는지 알려 줘"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Berapa banyak ${medication} yang telah saya ambil hari ini dalam ${applicationName}",
+              "Apakah penggunaan harian ${medication} saya dalam ${applicationName}",
+              "Semak penggunaan ${medication} saya hari ini dalam ${applicationName}",
+              "Berapa banyak ${medication} hari ini dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hvor mye ${medication} har jeg tatt i dag i ${applicationName}",
+              "Hva er mitt daglige forbruk av ${medication} i ${applicationName}",
+              "Sjekk forbruket mitt av ${medication} i dag i ${applicationName}",
+              "Hvor mange ${medication} har jeg tatt i dag i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hoeveel ${medication} heb ik vandaag ingenomen in ${applicationName}",
+              "Wat is mijn dagelijkse gebruik van ${medication} in ${applicationName}",
+              "Controleer mijn gebruik van ${medication} vandaag in ${applicationName}",
+              "Hoeveel ${medication} vandaag in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Ile leku ${medication} dziś przyjęto w aplikacji ${applicationName}",
+              "Jakie jest moje dzienne zużycie leku ${medication} w aplikacji ${applicationName}",
+              "Sprawdź moje dzisiejsze zużycie leku ${medication} w aplikacji ${applicationName}",
+              "Ile dawek leku ${medication} dziś przyjęto w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quanto de ${medication} tomei hoje no ${applicationName}",
+              "Qual é o meu uso diário de ${medication} no ${applicationName}",
+              "Verificar meu uso de ${medication} hoje no ${applicationName}",
+              "Quantas doses de ${medication} hoje no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Que quantidade de ${medication} tomei hoje em ${applicationName}",
+              "Qual é o meu consumo diário de ${medication} em ${applicationName}",
+              "Verificar o meu consumo de ${medication} hoje em ${applicationName}",
+              "Quantas doses de ${medication} tomei hoje em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Cât ${medication} am luat astăzi în ${applicationName}",
+              "Care este consumul meu zilnic de ${medication} în ${applicationName}",
+              "Verifică cât ${medication} am luat astăzi în ${applicationName}",
+              "Câte doze de ${medication} am luat astăzi în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Сколько ${medication} принято сегодня в ${applicationName}",
+              "Каков мой суточный приём ${medication} в ${applicationName}",
+              "Проверь приём ${medication} за сегодня в ${applicationName}",
+              "Сколько ${medication} за сегодня в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Koľko lieku ${medication} som dnes užil v ${applicationName}",
+              "Aká je moja denná spotreba lieku ${medication} v ${applicationName}",
+              "Skontroluj moju dnešnú spotrebu lieku ${medication} v ${applicationName}",
+              "Koľko lieku ${medication} dnes v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hur mycket ${medication} har jag tagit i dag i ${applicationName}",
+              "Hur ser min dagliga användning av ${medication} ut i ${applicationName}",
+              "Kontrollera min användning av ${medication} i dag i ${applicationName}",
+              "Hur många ${medication} har jag tagit i dag i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "วันนี้ฉันใช้ ${medication} ไปเท่าไรใน ${applicationName}",
+              "ฉันใช้ ${medication} ต่อวันเท่าไรใน ${applicationName}",
+              "ตรวจสอบการใช้ ${medication} ของฉันวันนี้ใน ${applicationName}",
+              "วันนี้ใช้ ${medication} ไปเท่าไรใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasında bugün ne kadar ${medication} aldım",
+              "${applicationName} uygulamasında günlük ${medication} kullanımım ne kadar",
+              "${applicationName} uygulamasında bugünkü ${medication} kullanımımı kontrol et",
+              "${applicationName} uygulamasında bugün kaç tane ${medication} aldım"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Скільки ${medication} прийнято сьогодні в ${applicationName}",
+              "Яке моє щоденне використання ${medication} у ${applicationName}",
+              "Перевір моє використання ${medication} сьогодні в ${applicationName}",
+              "Скільки ${medication} сьогодні в ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hôm nay tôi đã dùng bao nhiêu ${medication} trong ${applicationName}",
+              "Lượng ${medication} tôi dùng hằng ngày trong ${applicationName} là bao nhiêu",
+              "Kiểm tra lượng ${medication} tôi dùng hôm nay trong ${applicationName}",
+              "Hôm nay tôi đã dùng bao nhiêu ${medication} trong ${applicationName}"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "我今天在 ${applicationName} 記錄了多少 ${medication} 用量",
+              "我在 ${applicationName} 的 ${medication} 每日用量是多少",
+              "在 ${applicationName} 查看我今天的 ${medication} 用量",
+              "我今天在 ${applicationName} 用了多少 ${medication}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "我今天在 ${applicationName} 中服用了多少 ${medication}",
+              "我在 ${applicationName} 中的 ${medication} 每日用量是多少",
+              "在 ${applicationName} 中查看我今天的 ${medication} 用量",
+              "今天在 ${applicationName} 中用了多少 ${medication}"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "我今天在 ${applicationName} 記錄服用了多少 ${medication}",
+              "我在 ${applicationName} 中的 ${medication} 每日用量是多少",
+              "在 ${applicationName} 查看我今天的 ${medication} 用量",
+              "我今天在 ${applicationName} 記錄用了多少 ${medication}"
+            ]
+          }
+        }
+      }
+    },
+    "List my medications in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "List my medications in ${applicationName}",
+              "Show my medications in ${applicationName}",
+              "What medications do I have in ${applicationName}",
+              "My medication list in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Enumera mis medicamentos en ${applicationName}",
+              "Muestra mis medicamentos en ${applicationName}",
+              "¿Qué medicamentos tengo en ${applicationName}?",
+              "Mi lista de medicamentos en ${applicationName}"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Liste meine Medikamente in ${applicationName} auf",
+              "Zeige meine Medikamente in ${applicationName}",
+              "Welche Medikamente habe ich in ${applicationName}",
+              "Meine Medikamentenliste in ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Lister mes médicaments dans ${applicationName}",
+              "Afficher mes médicaments dans ${applicationName}",
+              "Quels médicaments ai-je dans ${applicationName}",
+              "Ma liste de médicaments dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "اعرض قائمة أدويتي في ${applicationName}",
+              "اعرض أدويتي في ${applicationName}",
+              "ما الأدوية الموجودة لدي في ${applicationName}",
+              "قائمة أدويتي في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "הצג את רשימת התרופות שלי ב-${applicationName}",
+              "הצג את התרופות שלי ב-${applicationName}",
+              "אילו תרופות יש לי ב-${applicationName}",
+              "רשימת התרופות שלי ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "داروهای من را در ${applicationName} فهرست کن",
+              "داروهای من را در ${applicationName} نشان بده",
+              "چه داروهایی در ${applicationName} دارم",
+              "فهرست داروهای من در ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で自分の薬を一覧にして",
+              "${applicationName}で自分の薬を表示して",
+              "${applicationName}に登録している薬を教えて",
+              "${applicationName}の自分の薬の一覧"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Изброй лекарствата ми в ${applicationName}",
+              "Покажи лекарствата ми в ${applicationName}",
+              "Какви лекарства имам в ${applicationName}",
+              "Списъкът с лекарствата ми в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Llista els meus medicaments a ${applicationName}",
+              "Mostra els meus medicaments a ${applicationName}",
+              "Quins medicaments tinc a ${applicationName}",
+              "La meva llista de medicaments a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Vypiš moje léky v aplikaci ${applicationName}",
+              "Zobraz moje léky v aplikaci ${applicationName}",
+              "Jaké léky mám v aplikaci ${applicationName}",
+              "Můj seznam léků v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Vis min medicinliste i ${applicationName}",
+              "Vis min medicin i ${applicationName}",
+              "Hvilken medicin har jeg i ${applicationName}",
+              "Min medicinliste i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Δείξε τη λίστα των φαρμάκων μου στο ${applicationName}",
+              "Δείξε τα φάρμακά μου στο ${applicationName}",
+              "Ποια φάρμακα έχω στο ${applicationName}",
+              "Η λίστα των φαρμάκων μου στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "List my medications in ${applicationName}",
+              "Show my medications in ${applicationName}",
+              "What medications do I have in ${applicationName}",
+              "My medication list in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "List my medications in ${applicationName}",
+              "Show my medications in ${applicationName}",
+              "What medications do I have in ${applicationName}",
+              "My medication list in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Enumera mis medicamentos en ${applicationName}",
+              "Muestra mis medicamentos en ${applicationName}",
+              "Qué medicamentos tengo en ${applicationName}",
+              "Mi lista de medicamentos en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Luettele lääkkeeni ${applicationName}-sovelluksessa",
+              "Näytä lääkkeeni ${applicationName}-sovelluksessa",
+              "Mitä lääkkeitä minulla on ${applicationName}-sovelluksessa",
+              "Lääkelistani ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Dresse la liste de mes médicaments dans ${applicationName}",
+              "Affiche mes médicaments dans ${applicationName}",
+              "Quels médicaments ai-je dans ${applicationName}",
+              "Ma liste de médicaments dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में मेरी दवाओं की सूची दिखाएँ",
+              "${applicationName} में मेरी दवाएँ दिखाएँ",
+              "${applicationName} में मेरी कौन-कौन सी दवाएँ हैं",
+              "${applicationName} में मेरी दवाओं की सूची"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Navedi moje lijekove u aplikaciji ${applicationName}",
+              "Prikaži moje lijekove u aplikaciji ${applicationName}",
+              "Koje lijekove imam u aplikaciji ${applicationName}",
+              "Moj popis lijekova u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Sorold fel a gyógyszereimet a ${applicationName} alkalmazásban",
+              "Mutasd meg a gyógyszereimet a ${applicationName} alkalmazásban",
+              "Milyen gyógyszereim vannak a ${applicationName} alkalmazásban",
+              "A gyógyszerlistám a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Tampilkan daftar obat saya di ${applicationName}",
+              "Tampilkan obat saya di ${applicationName}",
+              "Obat apa saja yang saya miliki di ${applicationName}",
+              "Daftar obat saya di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Elenca i miei farmaci in ${applicationName}",
+              "Mostra i miei farmaci in ${applicationName}",
+              "Quali farmaci ho in ${applicationName}",
+              "Il mio elenco di farmaci in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} қолданбасындағы дәрілерімді тізіп бер",
+              "${applicationName} қолданбасындағы дәрілерімді көрсет",
+              "${applicationName} қолданбасында қандай дәрілерім бар",
+              "${applicationName} қолданбасындағы дәрілерімнің тізімі"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 내 약물 목록을 보여 줘",
+              "${applicationName}에서 내 약물을 보여 줘",
+              "${applicationName}에 어떤 약물이 있는지 알려 줘",
+              "${applicationName}의 내 약물 목록"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Senaraikan ubat saya dalam ${applicationName}",
+              "Tunjukkan ubat saya dalam ${applicationName}",
+              "Apakah ubat yang saya ada dalam ${applicationName}",
+              "Senarai ubat saya dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "List opp legemidlene mine i ${applicationName}",
+              "Vis legemidlene mine i ${applicationName}",
+              "Hvilke legemidler har jeg i ${applicationName}",
+              "Legemiddellisten min i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Toon mijn medicatielijst in ${applicationName}",
+              "Toon mijn medicijnen in ${applicationName}",
+              "Welke medicijnen heb ik in ${applicationName}",
+              "Mijn medicatielijst in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Wyświetl listę moich leków w aplikacji ${applicationName}",
+              "Pokaż moje leki w aplikacji ${applicationName}",
+              "Jakie leki mam w aplikacji ${applicationName}",
+              "Moja lista leków w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Listar meus medicamentos no ${applicationName}",
+              "Mostrar meus medicamentos no ${applicationName}",
+              "Quais medicamentos tenho no ${applicationName}",
+              "Minha lista de medicamentos no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Listar os meus medicamentos em ${applicationName}",
+              "Mostrar os meus medicamentos em ${applicationName}",
+              "Que medicamentos tenho em ${applicationName}",
+              "A minha lista de medicamentos em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Listează medicamentele mele în ${applicationName}",
+              "Arată medicamentele mele în ${applicationName}",
+              "Ce medicamente am în ${applicationName}",
+              "Lista mea de medicamente în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Перечисли мои лекарства в ${applicationName}",
+              "Покажи мои лекарства в ${applicationName}",
+              "Какие лекарства у меня есть в ${applicationName}",
+              "Мой список лекарств в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Vypíš moje lieky v ${applicationName}",
+              "Zobraz moje lieky v ${applicationName}",
+              "Aké lieky mám v ${applicationName}",
+              "Môj zoznam liekov v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Lista mina läkemedel i ${applicationName}",
+              "Visa mina läkemedel i ${applicationName}",
+              "Vilka läkemedel har jag i ${applicationName}",
+              "Min läkemedelslista i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "แสดงรายการยาของฉันใน ${applicationName}",
+              "แสดงยาของฉันใน ${applicationName}",
+              "ฉันมียาอะไรบ้างใน ${applicationName}",
+              "รายการยาของฉันใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasındaki ilaçlarımı listele",
+              "${applicationName} uygulamasındaki ilaçlarımı göster",
+              "${applicationName} uygulamasında hangi ilaçlarım var",
+              "${applicationName} uygulamasındaki ilaç listem"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Покажи список моїх ліків у ${applicationName}",
+              "Покажи мої ліки в ${applicationName}",
+              "Які ліки є в мене в ${applicationName}",
+              "Мій список ліків у ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Liệt kê các thuốc của tôi trong ${applicationName}",
+              "Hiển thị các thuốc của tôi trong ${applicationName}",
+              "Tôi có những thuốc nào trong ${applicationName}",
+              "Danh sách thuốc của tôi trong ${applicationName}"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "列出我在 ${applicationName} 的藥物",
+              "顯示我在 ${applicationName} 的藥物",
+              "我在 ${applicationName} 有哪些藥物",
+              "我在 ${applicationName} 的藥物清單"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 中列出我的药物",
+              "在 ${applicationName} 中显示我的药物",
+              "我在 ${applicationName} 中有哪些药物",
+              "我在 ${applicationName} 中的药物列表"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 列出我的藥物",
+              "在 ${applicationName} 顯示我的藥物",
+              "我在 ${applicationName} 中有哪些藥物",
+              "我在 ${applicationName} 中的藥物清單"
+            ]
+          }
+        }
+      }
+    },
+    "Log medication in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log medication in ${applicationName}",
+              "Take medication with ${applicationName}",
+              "Record dose in ${applicationName}",
+              "Log ${medication} in ${applicationName}",
+              "I took ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registra un medicamento en ${applicationName}",
+              "Tomar la medicación con ${applicationName}",
+              "Registra una dosis en ${applicationName}",
+              "Registra ${medication} en ${applicationName}",
+              "He tomado ${medication} en ${applicationName}"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Medikamenteneinnahme in ${applicationName} protokollieren",
+              "Medikament mit ${applicationName} einnehmen",
+              "Dosis in ${applicationName} erfassen",
+              "${medication} in ${applicationName} protokollieren",
+              "Ich habe ${medication} eingenommen in ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Enregistrer une prise de médicament dans ${applicationName}",
+              "Prendre un médicament avec ${applicationName}",
+              "Enregistrer une dose dans ${applicationName}",
+              "Enregistrer une prise de ${medication} dans ${applicationName}",
+              "J’ai pris ${medication} dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "سجّل تناول دواء في ${applicationName}",
+              "تناول الدواء باستخدام ${applicationName}",
+              "سجّل جرعة في ${applicationName}",
+              "سجّل تناول ${medication} في ${applicationName}",
+              "تناولت ${medication} في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "רשום נטילת תרופה ב-${applicationName}",
+              "לקחת תרופה עם ${applicationName}",
+              "רשום מנה ב-${applicationName}",
+              "רשום נטילת ${medication} ב-${applicationName}",
+              "לקחתי ${medication} ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "مصرف دارو را در ${applicationName} ثبت کن",
+              "با ${applicationName} دارو مصرف کن",
+              "دوز مصرفی را در ${applicationName} ثبت کن",
+              "مصرف ${medication} را در ${applicationName} ثبت کن",
+              "در ${applicationName} داروی ${medication} را مصرف کردم"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で薬の使用を記録して",
+              "${applicationName}で薬の服用を記録して",
+              "${applicationName}で服用量を記録して",
+              "${applicationName}で${medication}の使用を記録して",
+              "${medication}を服用したことを${applicationName}に記録して"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Запиши прием на лекарство в ${applicationName}",
+              "Прием на лекарство с ${applicationName}",
+              "Запиши доза в ${applicationName}",
+              "Запиши прием на ${medication} в ${applicationName}",
+              "Приех ${medication} в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registra una presa de medicació a ${applicationName}",
+              "Pren medicació amb ${applicationName}",
+              "Registra una dosi a ${applicationName}",
+              "Registra una presa de ${medication} a ${applicationName}",
+              "He pres ${medication} a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Zaznamenej užití léku v aplikaci ${applicationName}",
+              "Užít lék s aplikací ${applicationName}",
+              "Zaznamenej dávku v aplikaci ${applicationName}",
+              "Zaznamenej užití léku ${medication} v aplikaci ${applicationName}",
+              "Užil jsem lék ${medication} v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registrer medicin i ${applicationName}",
+              "Tag medicin med ${applicationName}",
+              "Registrer dosis i ${applicationName}",
+              "Registrer ${medication} i ${applicationName}",
+              "Jeg har taget ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Κατάγραψε λήψη φαρμάκου στο ${applicationName}",
+              "Πάρε φάρμακο με το ${applicationName}",
+              "Κατάγραψε δόση στο ${applicationName}",
+              "Κατάγραψε λήψη του φαρμάκου ${medication} στο ${applicationName}",
+              "Πήρα το φάρμακο ${medication} στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log medication in ${applicationName}",
+              "Take medication with ${applicationName}",
+              "Record dose in ${applicationName}",
+              "Log ${medication} in ${applicationName}",
+              "I took ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log medication in ${applicationName}",
+              "Take medication with ${applicationName}",
+              "Record dose in ${applicationName}",
+              "Log ${medication} in ${applicationName}",
+              "I took ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registra un medicamento en ${applicationName}",
+              "Toma un medicamento con ${applicationName}",
+              "Registra una dosis en ${applicationName}",
+              "Registra ${medication} en ${applicationName}",
+              "Tomé ${medication} en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kirjaa lääke ${applicationName}-sovelluksessa",
+              "Ota lääke ${applicationName}-sovelluksen avulla",
+              "Kirjaa annos ${applicationName}-sovelluksessa",
+              "Kirjaa ${medication}-lääke ${applicationName}-sovelluksessa",
+              "Otin ${medication}-lääkettä ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Consigne une prise de médicament dans ${applicationName}",
+              "Prendre un médicament avec ${applicationName}",
+              "Enregistre une dose dans ${applicationName}",
+              "Consigne une prise de ${medication} dans ${applicationName}",
+              "J’ai pris ${medication} dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में दवा लेना दर्ज करें",
+              "${applicationName} के साथ दवा लें",
+              "${applicationName} में खुराक दर्ज करें",
+              "${applicationName} में ${medication} लेना दर्ज करें",
+              "${applicationName} में मैंने ${medication} ली है"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Zabilježi uzimanje lijeka u aplikaciji ${applicationName}",
+              "Uzmi lijek uz aplikaciju ${applicationName}",
+              "Zabilježi dozu u aplikaciji ${applicationName}",
+              "Zabilježi uzimanje lijeka ${medication} u aplikaciji ${applicationName}",
+              "Uzeo sam lijek ${medication} u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Gyógyszerbevétel naplózása a ${applicationName} alkalmazásban",
+              "Gyógyszer bevétele a ${applicationName} alkalmazással",
+              "Adag rögzítése a ${applicationName} alkalmazásban",
+              "${medication} bevételének naplózása a ${applicationName} alkalmazásban",
+              "Bevettem a ${medication} gyógyszert a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Catat obat di ${applicationName}",
+              "Gunakan obat dengan ${applicationName}",
+              "Catat dosis di ${applicationName}",
+              "Catat ${medication} di ${applicationName}",
+              "Saya sudah menggunakan ${medication} di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registra un farmaco in ${applicationName}",
+              "Assumi un farmaco con ${applicationName}",
+              "Registra una dose in ${applicationName}",
+              "Registra ${medication} in ${applicationName}",
+              "Ho assunto ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} қолданбасында дәрі қабылдауды тірке",
+              "${applicationName} көмегімен дәрі қабылда",
+              "${applicationName} қолданбасында дозаны тірке",
+              "${applicationName} қолданбасында ${medication} қабылдауды тірке",
+              "${applicationName} қолданбасында ${medication} қабылдадым"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 약물 복용을 기록해 줘",
+              "${applicationName}으로 약물 복용하기",
+              "${applicationName}에서 복용량을 기록해 줘",
+              "${applicationName}에서 ${medication} 복용을 기록해 줘",
+              "${applicationName}에서 ${medication} 복용했다고 기록해 줘"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Catat ubat dalam ${applicationName}",
+              "Ambil ubat dengan ${applicationName}",
+              "Rekod dos dalam ${applicationName}",
+              "Catat ${medication} dalam ${applicationName}",
+              "Saya telah mengambil ${medication} dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registrer legemiddel i ${applicationName}",
+              "Ta legemiddel med ${applicationName}",
+              "Registrer dose i ${applicationName}",
+              "Registrer ${medication} i ${applicationName}",
+              "Jeg tok ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registreer medicatie in ${applicationName}",
+              "Neem medicatie met ${applicationName}",
+              "Registreer een dosis in ${applicationName}",
+              "Registreer ${medication} in ${applicationName}",
+              "Ik heb ${medication} ingenomen in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Zapisz przyjęcie leku w aplikacji ${applicationName}",
+              "Przyjmij lek z aplikacją ${applicationName}",
+              "Zapisz dawkę w aplikacji ${applicationName}",
+              "Zapisz przyjęcie leku ${medication} w aplikacji ${applicationName}",
+              "Przyjąłem lek ${medication} w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registrar medicamento no ${applicationName}",
+              "Tomar medicamento com o ${applicationName}",
+              "Registrar dose no ${applicationName}",
+              "Registrar ${medication} no ${applicationName}",
+              "Tomei ${medication} no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Registar medicação em ${applicationName}",
+              "Tomar medicação com ${applicationName}",
+              "Registar dose em ${applicationName}",
+              "Registar ${medication} em ${applicationName}",
+              "Tomei ${medication} em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Înregistrează un medicament în ${applicationName}",
+              "Ia medicamentul cu ${applicationName}",
+              "Înregistrează o doză în ${applicationName}",
+              "Înregistrează ${medication} în ${applicationName}",
+              "Am luat ${medication} în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Запиши приём лекарства в ${applicationName}",
+              "Принять лекарство с помощью ${applicationName}",
+              "Запиши дозу в ${applicationName}",
+              "Запиши приём ${medication} в ${applicationName}",
+              "Я принял ${medication} в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Zaznamenaj liek v ${applicationName}",
+              "Uži liek s ${applicationName}",
+              "Zaznamenaj dávku v ${applicationName}",
+              "Zaznamenaj liek ${medication} v ${applicationName}",
+              "Užil som liek ${medication} v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Logga läkemedel i ${applicationName}",
+              "Ta läkemedel med ${applicationName}",
+              "Registrera dos i ${applicationName}",
+              "Logga ${medication} i ${applicationName}",
+              "Jag tog ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "บันทึกการใช้ยาใน ${applicationName}",
+              "ใช้ยาพร้อมกับ ${applicationName}",
+              "บันทึกการใช้ยาใน ${applicationName}",
+              "บันทึกการใช้ ${medication} ใน ${applicationName}",
+              "ฉันใช้ ${medication} แล้วใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasında ilaç alımını kaydet",
+              "${applicationName} ile ilaç al",
+              "${applicationName} uygulamasında doz kaydet",
+              "${applicationName} uygulamasında ${medication} alımını kaydet",
+              "${applicationName} uygulamasında ${medication} aldım"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Запиши прийом ліків у ${applicationName}",
+              "Прийняти ліки за допомогою ${applicationName}",
+              "Запиши дозу в ${applicationName}",
+              "Запиши прийом ${medication} у ${applicationName}",
+              "Мною прийнято ${medication} у ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Ghi lại việc dùng thuốc trong ${applicationName}",
+              "Dùng thuốc với ${applicationName}",
+              "Ghi lại liều dùng trong ${applicationName}",
+              "Ghi lại việc dùng ${medication} trong ${applicationName}",
+              "Tôi đã dùng ${medication} trong ${applicationName}"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 記錄用藥",
+              "使用 ${applicationName} 服藥",
+              "在 ${applicationName} 記錄用藥劑量",
+              "在 ${applicationName} 記錄 ${medication}",
+              "在 ${applicationName} 記錄我已服用 ${medication}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 中记录用药",
+              "使用 ${applicationName} 服药",
+              "在 ${applicationName} 中记录用药剂量",
+              "在 ${applicationName} 中记录 ${medication}",
+              "在 ${applicationName} 中记录我服用了 ${medication}"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 記錄用藥",
+              "使用 ${applicationName} 服藥",
+              "在 ${applicationName} 記錄用藥劑量",
+              "在 ${applicationName} 記錄使用 ${medication}",
+              "在 ${applicationName} 記錄我已服用 ${medication}"
+            ]
+          }
+        }
+      }
+    },
+    "Tell me about ${medication} in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Tell me about ${medication} in ${applicationName}",
+              "Get information about ${medication} in ${applicationName}",
+              "What do I have for ${medication} in ${applicationName}",
+              "Show me ${medication} details in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Háblame de ${medication} en ${applicationName}",
+              "Obtén información sobre ${medication} en ${applicationName}",
+              "¿Qué tengo sobre ${medication} en ${applicationName}?",
+              "Muéstrame los detalles de ${medication} en ${applicationName}"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Erzähl mir etwas über ${medication} in ${applicationName}",
+              "Rufe Informationen über ${medication} in ${applicationName} ab",
+              "Was habe ich zu ${medication} in ${applicationName} gespeichert",
+              "Zeige mir Details zu ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Parle-moi de ${medication} dans ${applicationName}",
+              "Obtenir des informations sur ${medication} dans ${applicationName}",
+              "Qu’ai-je pour ${medication} dans ${applicationName}",
+              "Afficher les détails de ${medication} dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "أخبرني عن ${medication} في ${applicationName}",
+              "احصل على معلومات عن ${medication} في ${applicationName}",
+              "ما المعلومات الموجودة لدي عن ${medication} في ${applicationName}",
+              "اعرض لي تفاصيل ${medication} في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "ספר לי על ${medication} ב-${applicationName}",
+              "קבל מידע על ${medication} ב-${applicationName}",
+              "מה יש לי לגבי ${medication} ב-${applicationName}",
+              "הצג לי פרטים על ${medication} ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "دربارهٔ ${medication} در ${applicationName} به من بگو",
+              "اطلاعات مربوط به ${medication} را در ${applicationName} دریافت کن",
+              "چه اطلاعاتی برای ${medication} در ${applicationName} دارم",
+              "جزئیات ${medication} را در ${applicationName} به من نشان بده"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で${medication}について教えて",
+              "${applicationName}で${medication}の情報を取得して",
+              "${applicationName}にある${medication}の情報を教えて",
+              "${applicationName}で${medication}の詳細を表示して"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Разкажи ми за ${medication} в ${applicationName}",
+              "Намери информация за ${medication} в ${applicationName}",
+              "Какво имам за ${medication} в ${applicationName}",
+              "Покажи ми подробности за ${medication} в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Parla'm de ${medication} a ${applicationName}",
+              "Obtén informació sobre ${medication} a ${applicationName}",
+              "Què tinc sobre ${medication} a ${applicationName}",
+              "Mostra'm els detalls de ${medication} a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Řekni mi o léku ${medication} v aplikaci ${applicationName}",
+              "Získej informace o léku ${medication} v aplikaci ${applicationName}",
+              "Co mám k léku ${medication} v aplikaci ${applicationName}",
+              "Zobraz mi podrobnosti o léku ${medication} v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Fortæl mig om ${medication} i ${applicationName}",
+              "Hent oplysninger om ${medication} i ${applicationName}",
+              "Hvad har jeg registreret om ${medication} i ${applicationName}",
+              "Vis mig detaljer om ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Πες μου για το φάρμακο ${medication} στο ${applicationName}",
+              "Βρες πληροφορίες για το φάρμακο ${medication} στο ${applicationName}",
+              "Τι έχω καταχωρίσει για το φάρμακο ${medication} στο ${applicationName}",
+              "Δείξε μου τις λεπτομέρειες του φαρμάκου ${medication} στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Tell me about ${medication} in ${applicationName}",
+              "Get information about ${medication} in ${applicationName}",
+              "What do I have for ${medication} in ${applicationName}",
+              "Show me ${medication} details in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Tell me about ${medication} in ${applicationName}",
+              "Get information about ${medication} in ${applicationName}",
+              "What do I have for ${medication} in ${applicationName}",
+              "Show me ${medication} details in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Háblame de ${medication} en ${applicationName}",
+              "Obtén información sobre ${medication} en ${applicationName}",
+              "Qué información tengo sobre ${medication} en ${applicationName}",
+              "Muéstrame los detalles de ${medication} en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kerro ${medication}-lääkkeestä ${applicationName}-sovelluksessa",
+              "Hae tietoa ${medication}-lääkkeestä ${applicationName}-sovelluksessa",
+              "Mitä tietoja minulla on ${medication}-lääkkeestä ${applicationName}-sovelluksessa",
+              "Näytä ${medication}-lääkkeen tiedot ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Parle-moi de ${medication} dans ${applicationName}",
+              "Obtiens des renseignements sur ${medication} dans ${applicationName}",
+              "Qu’ai-je comme renseignements sur ${medication} dans ${applicationName}",
+              "Affiche les détails de ${medication} dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में मुझे ${medication} के बारे में बताएँ",
+              "${applicationName} में ${medication} के बारे में जानकारी पाएँ",
+              "${applicationName} में ${medication} के लिए मेरे पास क्या जानकारी है",
+              "${applicationName} में मुझे ${medication} का विवरण दिखाएँ"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Reci mi nešto o lijeku ${medication} u aplikaciji ${applicationName}",
+              "Dohvati informacije o lijeku ${medication} u aplikaciji ${applicationName}",
+              "Što imam za lijek ${medication} u aplikaciji ${applicationName}",
+              "Prikaži mi pojedinosti o lijeku ${medication} u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Mesélj a ${medication} gyógyszerről a ${applicationName} alkalmazásban",
+              "Információk lekérése a ${medication} gyógyszerről a ${applicationName} alkalmazásban",
+              "Milyen adataim vannak a ${medication} gyógyszerről a ${applicationName} alkalmazásban",
+              "Mutasd meg a ${medication} gyógyszer részleteit a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Beri tahu saya tentang ${medication} di ${applicationName}",
+              "Dapatkan informasi tentang ${medication} di ${applicationName}",
+              "Informasi apa yang saya miliki tentang ${medication} di ${applicationName}",
+              "Tampilkan detail ${medication} di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Parlami di ${medication} in ${applicationName}",
+              "Ottieni informazioni su ${medication} in ${applicationName}",
+              "Cosa ho per ${medication} in ${applicationName}",
+              "Mostrami i dettagli di ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} қолданбасында ${medication} туралы айтып бер",
+              "${applicationName} қолданбасында ${medication} туралы ақпарат ал",
+              "${applicationName} қолданбасында ${medication} туралы қандай мәліметтерім бар",
+              "${applicationName} қолданбасында ${medication} туралы толық мәліметті көрсет"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 ${medication}에 대해 알려 줘",
+              "${applicationName}에서 ${medication} 정보를 찾아 줘",
+              "${applicationName}에 ${medication} 관련 어떤 정보가 있는지 알려 줘",
+              "${applicationName}에서 ${medication} 상세 정보를 보여 줘"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Beritahu saya tentang ${medication} dalam ${applicationName}",
+              "Dapatkan maklumat tentang ${medication} dalam ${applicationName}",
+              "Apakah maklumat yang saya ada untuk ${medication} dalam ${applicationName}",
+              "Tunjukkan butiran ${medication} dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Fortell meg om ${medication} i ${applicationName}",
+              "Hent informasjon om ${medication} i ${applicationName}",
+              "Hva har jeg registrert om ${medication} i ${applicationName}",
+              "Vis meg detaljer om ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Vertel me over ${medication} in ${applicationName}",
+              "Haal informatie op over ${medication} in ${applicationName}",
+              "Wat heb ik voor ${medication} in ${applicationName}",
+              "Toon me de details van ${medication} in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Opowiedz mi o leku ${medication} w aplikacji ${applicationName}",
+              "Uzyskaj informacje o leku ${medication} w aplikacji ${applicationName}",
+              "Co mam zapisane o leku ${medication} w aplikacji ${applicationName}",
+              "Pokaż mi szczegóły leku ${medication} w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Fale sobre ${medication} no ${applicationName}",
+              "Obter informações sobre ${medication} no ${applicationName}",
+              "O que tenho sobre ${medication} no ${applicationName}",
+              "Mostrar detalhes de ${medication} no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Fala-me de ${medication} em ${applicationName}",
+              "Obter informações sobre ${medication} em ${applicationName}",
+              "O que tenho sobre ${medication} em ${applicationName}",
+              "Mostrar os detalhes de ${medication} em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Spune-mi despre ${medication} în ${applicationName}",
+              "Obține informații despre ${medication} în ${applicationName}",
+              "Ce informații am despre ${medication} în ${applicationName}",
+              "Arată-mi detaliile despre ${medication} în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Расскажи о ${medication} в ${applicationName}",
+              "Получи информацию о ${medication} в ${applicationName}",
+              "Какие сведения о ${medication} у меня есть в ${applicationName}",
+              "Покажи сведения о ${medication} в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Povedz mi o lieku ${medication} v ${applicationName}",
+              "Získaj informácie o lieku ${medication} v ${applicationName}",
+              "Čo mám k lieku ${medication} v ${applicationName}",
+              "Zobraz mi podrobnosti o lieku ${medication} v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Berätta om ${medication} i ${applicationName}",
+              "Hämta information om ${medication} i ${applicationName}",
+              "Vad har jag för uppgifter om ${medication} i ${applicationName}",
+              "Visa detaljer om ${medication} i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "บอกข้อมูลเกี่ยวกับ ${medication} ใน ${applicationName}",
+              "ดูข้อมูลเกี่ยวกับ ${medication} ใน ${applicationName}",
+              "ฉันมีข้อมูลอะไรเกี่ยวกับ ${medication} ใน ${applicationName}",
+              "แสดงรายละเอียด ${medication} ใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasında ${medication} hakkında bilgi ver",
+              "${applicationName} uygulamasında ${medication} hakkında bilgi al",
+              "${applicationName} uygulamasında ${medication} için hangi bilgilerim var",
+              "${applicationName} uygulamasında ${medication} ayrıntılarını göster"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Розкажи про ${medication} у ${applicationName}",
+              "Отримай інформацію про ${medication} у ${applicationName}",
+              "Що в мене є щодо ${medication} у ${applicationName}",
+              "Покажи відомості про ${medication} у ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Cho tôi biết về ${medication} trong ${applicationName}",
+              "Lấy thông tin về ${medication} trong ${applicationName}",
+              "Tôi có thông tin gì về ${medication} trong ${applicationName}",
+              "Hiển thị chi tiết về ${medication} trong ${applicationName}"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "告訴我 ${applicationName} 中 ${medication} 的資料",
+              "在 ${applicationName} 取得 ${medication} 的資料",
+              "我在 ${applicationName} 有哪些關於 ${medication} 的資料",
+              "在 ${applicationName} 顯示 ${medication} 的詳細資料"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "告诉我 ${applicationName} 中 ${medication} 的相关信息",
+              "在 ${applicationName} 中获取 ${medication} 的信息",
+              "我在 ${applicationName} 中有哪些关于 ${medication} 的信息",
+              "在 ${applicationName} 中显示 ${medication} 的详细信息"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "告訴我 ${applicationName} 中的 ${medication} 資訊",
+              "取得 ${applicationName} 中的 ${medication} 資訊",
+              "我在 ${applicationName} 中有哪些關於 ${medication} 的資料",
+              "在 ${applicationName} 顯示 ${medication} 的詳細資料"
+            ]
+          }
+        }
+      }
+    },
+    "What medications need refills in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "What medications need refills in ${applicationName}",
+              "Check my refill status in ${applicationName}",
+              "Which medications are running low in ${applicationName}",
+              "Do I need any refills in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "¿Qué medicamentos necesito reponer en ${applicationName}?",
+              "Consulta el estado de reposición de mis medicamentos en ${applicationName}",
+              "¿Qué medicamentos se están agotando en ${applicationName}?",
+              "¿Necesito reponer algún medicamento en ${applicationName}?"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Welche Medikamente müssen in ${applicationName} nachgefüllt werden",
+              "Prüfe meinen Nachfüllstatus in ${applicationName}",
+              "Welche Medikamente gehen in ${applicationName} zur Neige",
+              "Muss ich Medikamente in ${applicationName} nachfüllen"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quels médicaments faut-il réapprovisionner dans ${applicationName}",
+              "Vérifier l’état de mes réapprovisionnements dans ${applicationName}",
+              "Quels médicaments sont bientôt épuisés dans ${applicationName}",
+              "Dois-je réapprovisionner des médicaments dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "ما الأدوية التي تحتاج إلى إعادة صرف في ${applicationName}",
+              "تحقق من حالة إعادة صرف أدويتي في ${applicationName}",
+              "ما الأدوية التي أوشكت على النفاد في ${applicationName}",
+              "هل أحتاج إلى إعادة صرف أي دواء في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "אילו תרופות צריך לחדש ב-${applicationName}",
+              "בדוק את מצב חידוש מלאי התרופות שלי ב-${applicationName}",
+              "אילו תרופות עומדות להיגמר ב-${applicationName}",
+              "האם צריך לחדש מלאי של תרופות כלשהן ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "کدام داروها در ${applicationName} به تهیهٔ مجدد نیاز دارند",
+              "وضعیت نیاز به تهیهٔ مجدد داروهای من را در ${applicationName} بررسی کن",
+              "موجودی کدام داروها در ${applicationName} رو به اتمام است",
+              "آیا در ${applicationName} دارویی دارم که به تهیهٔ مجدد نیاز داشته باشد"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で補充が必要な薬を教えて",
+              "${applicationName}で薬の補充状況を確認して",
+              "${applicationName}で残りが少ない薬を教えて",
+              "${applicationName}で補充が必要な薬があるか教えて"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Кои лекарства трябва да се презаредят в ${applicationName}",
+              "Провери състоянието на презарежданията ми в ${applicationName}",
+              "Кои лекарства са на привършване в ${applicationName}",
+              "Трябва ли да презаредя някое лекарство в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quins medicaments cal reposar a ${applicationName}",
+              "Consulta l'estat de les meves reposicions a ${applicationName}",
+              "Quins medicaments s'estan esgotant a ${applicationName}",
+              "He de reposar algun medicament a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Které léky je potřeba doplnit v aplikaci ${applicationName}",
+              "Zkontroluj stav doplnění mých léků v aplikaci ${applicationName}",
+              "Které léky mi docházejí v aplikaci ${applicationName}",
+              "Potřebuji doplnit nějaké léky v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hvilke lægemidler skal genopfyldes i ${applicationName}",
+              "Tjek min genopfyldningsstatus i ${applicationName}",
+              "Hvilke lægemidler er ved at slippe op i ${applicationName}",
+              "Har jeg brug for genopfyldning i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Ποια φάρμακα χρειάζονται αναπλήρωση αποθέματος στο ${applicationName}",
+              "Έλεγξε την κατάσταση αναπλήρωσης αποθέματος στο ${applicationName}",
+              "Ποια φάρμακα κοντεύουν να τελειώσουν στο ${applicationName}",
+              "Χρειάζομαι αναπλήρωση αποθέματος για κάποιο φάρμακο στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "What medications need refills in ${applicationName}",
+              "Check my refill status in ${applicationName}",
+              "Which medications are running low in ${applicationName}",
+              "Do I need any refills in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "What medications need refills in ${applicationName}",
+              "Check my refill status in ${applicationName}",
+              "Which medications are running low in ${applicationName}",
+              "Do I need any refills in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Qué medicamentos necesitan reposición en ${applicationName}",
+              "Consulta el estado de mis reposiciones en ${applicationName}",
+              "Qué medicamentos se están agotando en ${applicationName}",
+              "Necesito reponer algún medicamento en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Mitä lääkkeitä on täydennettävä ${applicationName}-sovelluksessa",
+              "Tarkista lääkevarastoni täydennystilanne ${applicationName}-sovelluksessa",
+              "Mitkä lääkkeet ovat vähissä ${applicationName}-sovelluksessa",
+              "Tarvitseeko lääkevarastoani täydentää ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quels médicaments doivent être renouvelés dans ${applicationName}",
+              "Vérifie l’état de mes renouvellements dans ${applicationName}",
+              "Quels médicaments sont presque épuisés dans ${applicationName}",
+              "Ai-je des médicaments à renouveler dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में किन दवाओं को फिर से मँगाने की ज़रूरत है",
+              "${applicationName} में मेरी दवाएँ फिर से मँगाने की स्थिति जाँचें",
+              "${applicationName} में कौन सी दवाएँ कम बची हैं",
+              "क्या ${applicationName} में मुझे कोई दवा फिर से मँगाने की ज़रूरत है"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kojim lijekovima treba obnoviti zalihe u aplikaciji ${applicationName}",
+              "Provjeri status obnove mojih zaliha u aplikaciji ${applicationName}",
+              "Kojih lijekova ponestaje u aplikaciji ${applicationName}",
+              "Trebam li obnoviti zalihe u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Mely gyógyszereket kell pótolnom a ${applicationName} alkalmazásban",
+              "Ellenőrizd a készletpótlás állapotát a ${applicationName} alkalmazásban",
+              "Mely gyógyszerek vannak fogyóban a ${applicationName} alkalmazásban",
+              "Kell gyógyszerkészletet pótolnom a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Obat apa saja yang perlu diisi ulang di ${applicationName}",
+              "Periksa status isi ulang saya di ${applicationName}",
+              "Obat apa saja yang hampir habis di ${applicationName}",
+              "Apakah saya perlu mengisi ulang obat di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quali farmaci devo rifornire in ${applicationName}",
+              "Controlla lo stato dei miei rifornimenti in ${applicationName}",
+              "Quali farmaci stanno per finire in ${applicationName}",
+              "Devo rifornire qualche farmaco in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} қолданбасында қандай дәрілердің қорын толықтыру керек",
+              "${applicationName} қолданбасында дәрі қорын толықтыру күйін тексер",
+              "${applicationName} қолданбасында қандай дәрілер азайып қалды",
+              "${applicationName} қолданбасында дәрі қорын толықтыруым керек пе"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 보충이 필요한 약물을 알려 줘",
+              "${applicationName}에서 내 약물 보충 상태를 확인해 줘",
+              "${applicationName}에서 얼마 남지 않은 약물을 알려 줘",
+              "${applicationName}에서 보충할 약물이 있는지 알려 줘"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Apakah ubat yang memerlukan bekalan semula dalam ${applicationName}",
+              "Semak status bekalan semula saya dalam ${applicationName}",
+              "Ubat manakah yang hampir habis dalam ${applicationName}",
+              "Adakah saya memerlukan bekalan semula dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hvilke legemidler må fylles på i ${applicationName}",
+              "Sjekk påfyllingsstatusen min i ${applicationName}",
+              "Hvilke legemidler har jeg lite igjen av i ${applicationName}",
+              "Trenger jeg påfyll av noen legemidler i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Welke medicijnen moeten worden aangevuld in ${applicationName}",
+              "Controleer mijn aanvulstatus in ${applicationName}",
+              "Welke medicijnen raken op in ${applicationName}",
+              "Moet ik medicijnen aanvullen in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Które leki wymagają uzupełnienia zapasu w aplikacji ${applicationName}",
+              "Sprawdź stan uzupełnienia moich zapasów w aplikacji ${applicationName}",
+              "Które leki się kończą w aplikacji ${applicationName}",
+              "Czy muszę uzupełnić zapas jakiegoś leku w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quais medicamentos precisam de reposição no ${applicationName}",
+              "Verificar o status das minhas reposições no ${applicationName}",
+              "Quais medicamentos estão acabando no ${applicationName}",
+              "Preciso de alguma reposição no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Que medicamentos precisam de reposição em ${applicationName}",
+              "Verificar o estado das minhas reposições em ${applicationName}",
+              "Que medicamentos estão a acabar em ${applicationName}",
+              "Preciso de repor algum medicamento em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Ce medicamente trebuie reaprovizionate în ${applicationName}",
+              "Verifică starea reaprovizionării mele în ${applicationName}",
+              "Ce medicamente sunt pe terminate în ${applicationName}",
+              "Trebuie să reaprovizionez vreun medicament în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Какие лекарства нужно пополнить в ${applicationName}",
+              "Проверь статус пополнения моих лекарств в ${applicationName}",
+              "Какие лекарства заканчиваются в ${applicationName}",
+              "Нужно ли мне пополнить запас лекарств в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Ktorým liekom treba doplniť zásoby v ${applicationName}",
+              "Skontroluj stav dopĺňania mojich zásob v ${applicationName}",
+              "Ktoré lieky sa míňajú v ${applicationName}",
+              "Potrebujem doplniť zásoby nejakých liekov v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Vilka läkemedel behöver fyllas på i ${applicationName}",
+              "Kontrollera min påfyllningsstatus i ${applicationName}",
+              "Vilka läkemedel börjar ta slut i ${applicationName}",
+              "Behöver jag fylla på något läkemedel i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "มียาอะไรที่ต้องเติมบ้างใน ${applicationName}",
+              "ตรวจสอบสถานะการเติมยาของฉันใน ${applicationName}",
+              "ยาอะไรใกล้หมดบ้างใน ${applicationName}",
+              "ฉันต้องเติมยาอะไรบ้างไหมใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasında hangi ilaçların yeniden temin edilmesi gerekiyor",
+              "${applicationName} uygulamasında yeniden temin durumumu kontrol et",
+              "${applicationName} uygulamasında hangi ilaçlar azalıyor",
+              "${applicationName} uygulamasında yeniden temin etmem gereken ilaç var mı"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Запаси яких ліків потрібно поповнити в ${applicationName}",
+              "Перевір стан поповнення моїх запасів у ${applicationName}",
+              "Які ліки закінчуються в ${applicationName}",
+              "Чи потрібно мені поповнити запаси ліків у ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Những thuốc nào cần bổ sung trong ${applicationName}",
+              "Kiểm tra tình trạng bổ sung thuốc của tôi trong ${applicationName}",
+              "Những thuốc nào sắp hết trong ${applicationName}",
+              "Tôi có cần bổ sung thuốc nào trong ${applicationName} không"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} 中有哪些藥物需要補充",
+              "在 ${applicationName} 查看我的藥物補充狀態",
+              "${applicationName} 中有哪些藥物存量偏低",
+              "我在 ${applicationName} 有任何藥物需要補充嗎"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} 中哪些药物需要补充",
+              "在 ${applicationName} 中查看我的药物补充状态",
+              "${applicationName} 中哪些药物快用完了",
+              "${applicationName} 中有需要补充的药物吗"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} 中有哪些藥物需要補充",
+              "在 ${applicationName} 查看我的藥物補充狀態",
+              "${applicationName} 中有哪些藥物快用完了",
+              "我在 ${applicationName} 中有需要補充的藥物嗎"
+            ]
+          }
+        }
+      }
+    },
+    "When can I take my medication in ${applicationName}": {
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "When can I take my medication in ${applicationName}",
+              "When is my next dose in ${applicationName}",
+              "When do I need to take ${medication} in ${applicationName}",
+              "Check my next dose in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "¿Cuándo puedo tomar mi medicación en ${applicationName}?",
+              "¿Cuándo es mi próxima dosis en ${applicationName}?",
+              "¿Cuándo tengo que tomar ${medication} en ${applicationName}?",
+              "Consulta mi próxima dosis en ${applicationName}"
+            ]
+          }
+        },
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Wann kann ich mein Medikament einnehmen in ${applicationName}",
+              "Wann ist meine nächste Dosis in ${applicationName}",
+              "Wann muss ich ${medication} einnehmen in ${applicationName}",
+              "Prüfe meine nächste Dosis in ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quand puis-je prendre mon médicament dans ${applicationName}",
+              "Quand est ma prochaine prise dans ${applicationName}",
+              "Quand dois-je prendre ${medication} dans ${applicationName}",
+              "Vérifier ma prochaine prise dans ${applicationName}"
+            ]
+          }
+        },
+        "ar": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "متى يمكنني تناول دوائي في ${applicationName}",
+              "متى موعد جرعتي التالية في ${applicationName}",
+              "متى أحتاج إلى تناول ${medication} في ${applicationName}",
+              "تحقق من جرعتي التالية في ${applicationName}"
+            ]
+          }
+        },
+        "he": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "מתי אפשר לקחת את התרופה שלי ב-${applicationName}",
+              "מתי המנה הבאה שלי ב-${applicationName}",
+              "מתי עליי לקחת ${medication} ב-${applicationName}",
+              "בדוק את המנה הבאה שלי ב-${applicationName}"
+            ]
+          }
+        },
+        "fa": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "چه زمانی می‌توانم دارویم را در ${applicationName} مصرف کنم",
+              "زمان دوز بعدی من در ${applicationName} چه موقع است",
+              "چه زمانی باید ${medication} را در ${applicationName} مصرف کنم",
+              "دوز بعدی من را در ${applicationName} بررسی کن"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}で次に薬を服用できる時刻を教えて",
+              "${applicationName}で次の服用時刻を教えて",
+              "${applicationName}で${medication}を服用する時刻を教えて",
+              "${applicationName}で次の服用を確認して"
+            ]
+          }
+        },
+        "bg": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Кога мога да приема лекарството си в ${applicationName}",
+              "Кога е следващата ми доза в ${applicationName}",
+              "Кога трябва да приема ${medication} в ${applicationName}",
+              "Провери следващата ми доза в ${applicationName}"
+            ]
+          }
+        },
+        "ca": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quan puc prendre la meva medicació a ${applicationName}",
+              "Quan em toca la pròxima dosi a ${applicationName}",
+              "Quan he de prendre ${medication} a ${applicationName}",
+              "Consulta la meva pròxima dosi a ${applicationName}"
+            ]
+          }
+        },
+        "cs": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kdy si mohu vzít lék podle aplikace ${applicationName}",
+              "Kdy je moje další dávka v aplikaci ${applicationName}",
+              "Kdy si mám vzít lék ${medication} podle aplikace ${applicationName}",
+              "Zkontroluj moji další dávku v aplikaci ${applicationName}"
+            ]
+          }
+        },
+        "da": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Hvornår kan jeg tage min medicin i ${applicationName}",
+              "Hvornår er min næste dosis i ${applicationName}",
+              "Hvornår skal jeg tage ${medication} i ${applicationName}",
+              "Tjek min næste dosis i ${applicationName}"
+            ]
+          }
+        },
+        "el": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Πότε μπορώ να πάρω το φάρμακό μου στο ${applicationName}",
+              "Πότε είναι η επόμενη δόση μου στο ${applicationName}",
+              "Πότε χρειάζεται να πάρω το φάρμακο ${medication} στο ${applicationName}",
+              "Έλεγξε την επόμενη δόση μου στο ${applicationName}"
+            ]
+          }
+        },
+        "en-AU": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "When can I take my medication in ${applicationName}",
+              "When is my next dose in ${applicationName}",
+              "When do I need to take ${medication} in ${applicationName}",
+              "Check my next dose in ${applicationName}"
+            ]
+          }
+        },
+        "en-GB": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "When can I take my medication in ${applicationName}",
+              "When is my next dose in ${applicationName}",
+              "When do I need to take ${medication} in ${applicationName}",
+              "Check my next dose in ${applicationName}"
+            ]
+          }
+        },
+        "es-419": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Cuándo puedo tomar mi medicamento en ${applicationName}",
+              "Cuándo es mi próxima dosis en ${applicationName}",
+              "Cuándo tengo que tomar ${medication} en ${applicationName}",
+              "Consulta mi próxima dosis en ${applicationName}"
+            ]
+          }
+        },
+        "fi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Milloin voin ottaa lääkkeeni ${applicationName}-sovelluksessa",
+              "Milloin on seuraava annokseni ${applicationName}-sovelluksessa",
+              "Milloin minun pitää ottaa ${medication}-lääkettä ${applicationName}-sovelluksessa",
+              "Tarkista seuraava annokseni ${applicationName}-sovelluksessa"
+            ]
+          }
+        },
+        "fr-CA": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quand puis-je prendre mon médicament dans ${applicationName}",
+              "Quand est ma prochaine dose dans ${applicationName}",
+              "Quand dois-je prendre ${medication} dans ${applicationName}",
+              "Vérifie ma prochaine dose dans ${applicationName}"
+            ]
+          }
+        },
+        "hi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} में मैं अपनी दवा कब ले सकता हूँ",
+              "${applicationName} में मेरी अगली खुराक कब है",
+              "${applicationName} में मुझे ${medication} कब लेनी है",
+              "${applicationName} में मेरी अगली खुराक जाँचें"
+            ]
+          }
+        },
+        "hr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kada mogu uzeti lijek u aplikaciji ${applicationName}",
+              "Kada je moja sljedeća doza u aplikaciji ${applicationName}",
+              "Kada trebam uzeti lijek ${medication} u aplikaciji ${applicationName}",
+              "Provjeri moju sljedeću dozu u aplikaciji ${applicationName}"
+            ]
+          }
+        },
+        "hu": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Mikor vehetem be a gyógyszeremet a ${applicationName} alkalmazásban",
+              "Mikor esedékes a következő adagom a ${applicationName} alkalmazásban",
+              "Mikor kell bevennem a ${medication} gyógyszert a ${applicationName} alkalmazásban",
+              "Ellenőrizd a következő adagomat a ${applicationName} alkalmazásban"
+            ]
+          }
+        },
+        "id": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kapan saya bisa menggunakan obat saya di ${applicationName}",
+              "Kapan dosis saya berikutnya di ${applicationName}",
+              "Kapan saya perlu menggunakan ${medication} di ${applicationName}",
+              "Periksa dosis saya berikutnya di ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quando posso assumere il mio farmaco in ${applicationName}",
+              "Quando è prevista la mia prossima dose in ${applicationName}",
+              "Quando devo assumere ${medication} in ${applicationName}",
+              "Controlla la mia prossima dose in ${applicationName}"
+            ]
+          }
+        },
+        "kk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} қолданбасында дәрімді қашан қабылдай аламын",
+              "${applicationName} қолданбасында келесі дозам қашан",
+              "${applicationName} қолданбасында ${medication} дәрісін қашан қабылдауым керек",
+              "${applicationName} қолданбасында келесі дозамды тексер"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName}에서 언제 약물을 복용할 수 있는지 알려 줘",
+              "${applicationName}에서 다음 복용 시간을 알려 줘",
+              "${applicationName}에서 ${medication} 언제 복용해야 하는지 알려 줘",
+              "${applicationName}에서 다음 복용을 확인해 줘"
+            ]
+          }
+        },
+        "ms": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Bilakah saya boleh mengambil ubat saya dalam ${applicationName}",
+              "Bilakah dos saya yang seterusnya dalam ${applicationName}",
+              "Bilakah saya perlu mengambil ${medication} dalam ${applicationName}",
+              "Semak dos saya yang seterusnya dalam ${applicationName}"
+            ]
+          }
+        },
+        "nb": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Når kan jeg ta legemiddelet mitt i ${applicationName}",
+              "Når er neste dose i ${applicationName}",
+              "Når må jeg ta ${medication} i ${applicationName}",
+              "Sjekk neste dose i ${applicationName}"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Wanneer kan ik mijn medicatie innemen in ${applicationName}",
+              "Wanneer is mijn volgende dosis in ${applicationName}",
+              "Wanneer moet ik ${medication} innemen in ${applicationName}",
+              "Controleer mijn volgende dosis in ${applicationName}"
+            ]
+          }
+        },
+        "pl": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kiedy mogę przyjąć lek w aplikacji ${applicationName}",
+              "Kiedy jest moja następna dawka w aplikacji ${applicationName}",
+              "Kiedy mam przyjąć lek ${medication} w aplikacji ${applicationName}",
+              "Sprawdź moją następną dawkę w aplikacji ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quando posso tomar meu medicamento no ${applicationName}",
+              "Quando é minha próxima dose no ${applicationName}",
+              "Quando preciso tomar ${medication} no ${applicationName}",
+              "Verificar minha próxima dose no ${applicationName}"
+            ]
+          }
+        },
+        "pt-PT": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quando posso tomar a minha medicação em ${applicationName}",
+              "Quando é a minha próxima dose em ${applicationName}",
+              "Quando preciso de tomar ${medication} em ${applicationName}",
+              "Verificar a minha próxima dose em ${applicationName}"
+            ]
+          }
+        },
+        "ro": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Când pot să îmi iau medicamentul în ${applicationName}",
+              "Când este următoarea mea doză în ${applicationName}",
+              "Când trebuie să iau ${medication} în ${applicationName}",
+              "Verifică următoarea mea doză în ${applicationName}"
+            ]
+          }
+        },
+        "ru": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Когда можно принять лекарство в ${applicationName}",
+              "Когда мой следующий приём в ${applicationName}",
+              "Когда мне нужно принять ${medication} в ${applicationName}",
+              "Проверь мой следующий приём в ${applicationName}"
+            ]
+          }
+        },
+        "sk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Kedy môžem užiť svoj liek v ${applicationName}",
+              "Kedy je moja ďalšia dávka v ${applicationName}",
+              "Kedy mám užiť liek ${medication} v ${applicationName}",
+              "Skontroluj moju ďalšiu dávku v ${applicationName}"
+            ]
+          }
+        },
+        "sv": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "När kan jag ta mitt läkemedel i ${applicationName}",
+              "När är min nästa dos i ${applicationName}",
+              "När behöver jag ta ${medication} i ${applicationName}",
+              "Kontrollera min nästa dos i ${applicationName}"
+            ]
+          }
+        },
+        "th": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "ฉันใช้ยาได้เมื่อไรใน ${applicationName}",
+              "ฉันต้องใช้ยาครั้งถัดไปเมื่อไรใน ${applicationName}",
+              "ฉันต้องใช้ ${medication} เมื่อไรใน ${applicationName}",
+              "ตรวจสอบการใช้ยาครั้งถัดไปของฉันใน ${applicationName}"
+            ]
+          }
+        },
+        "tr": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "${applicationName} uygulamasında ilacımı ne zaman alabilirim",
+              "${applicationName} uygulamasında bir sonraki dozum ne zaman",
+              "${applicationName} uygulamasında ${medication} ilacını ne zaman almam gerekiyor",
+              "${applicationName} uygulamasında bir sonraki dozumu kontrol et"
+            ]
+          }
+        },
+        "uk": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Коли можна прийняти мої ліки в ${applicationName}",
+              "Коли моя наступна доза в ${applicationName}",
+              "Коли мені потрібно прийняти ${medication} у ${applicationName}",
+              "Перевір мою наступну дозу в ${applicationName}"
+            ]
+          }
+        },
+        "vi": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Khi nào tôi có thể dùng thuốc trong ${applicationName}",
+              "Khi nào đến liều tiếp theo của tôi trong ${applicationName}",
+              "Khi nào tôi cần dùng ${medication} trong ${applicationName}",
+              "Kiểm tra liều tiếp theo của tôi trong ${applicationName}"
+            ]
+          }
+        },
+        "zh-HK": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "查看 ${applicationName}，我何時可以用藥",
+              "查看 ${applicationName}，我下次用藥是甚麼時候",
+              "查看 ${applicationName}，我何時需要服用 ${medication}",
+              "在 ${applicationName} 查看我的下次用藥時間"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 中查询我什么时候可以服药",
+              "在 ${applicationName} 中查询我下次服药的时间",
+              "在 ${applicationName} 中查询我什么时候需要服用 ${medication}",
+              "在 ${applicationName} 中查看我下次的用药"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "在 ${applicationName} 查看我何時可以服藥",
+              "在 ${applicationName} 查看我的下次用藥時間",
+              "在 ${applicationName} 查看我何時需要服用 ${medication}",
+              "在 ${applicationName} 查看我的下次用藥"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
