@@ -16,7 +16,9 @@ Then load only the additional rule files triggered by the current task.
 
 Optional local enhancements such as Codex superpowers are allowed for maintainers, but they are never required for contributors and must never be a dependency for hooks, CI, builds, or tests. Keep machine-local config out of git. Optional reviewed skills live in `skills/`; see `docs/ai/skills.md` for task routing and local adaptations. See `docs/ai/README.md` for the contributor boundary.
 
-## 1.2.0 Feature Freeze
+## Release Scope
+
+Active development is on 1.3.0. Scope new work to the maintainer's request; a skill or historical plan does not authorize unrelated features, redesigns, or migrations. The following freeze applies when maintaining 1.2.0, not to explicitly approved 1.3.0 work.
 
 Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experimental capabilities, broad redesigns, or speculative refactors. Work on reproducible bug fixes, regression coverage, accessibility, clear language, and continuity with the live 1.1.2 experience. Build 309 is the frozen feature baseline. Historical plans do not expand this scope; only an explicit maintainer decision can reopen it. Follow [the stabilization checklist](docs/testing/1.2.0-stabilization.md).
 

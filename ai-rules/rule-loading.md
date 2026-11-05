@@ -16,6 +16,8 @@
 | Logging, private data, export/import, networking, permissions, dependencies, signing, or security review | `ai-rules/security-privacy.md` |
 | Versions, signing, archives, TestFlight, or App Store submissions | `ai-rules/release-verification.md` |
 | Tests added, changed, or failing | `ai-rules/testing.md` |
+| Documentation, repo guidance, or architectural decisions | `ai-rules/documentation.md` |
+| Reviewing changes or addressing review feedback | `ai-rules/code-review.md` |
 | SwiftUI views, components, layout, typography, animation, accessibility, or watch UI | `ai-rules/swiftui.md` |
 | Persistence, migrations, `UserDefaults`, `AppStorage`, HealthKit sync mode, `Info.plist`, or project settings that can affect stored data | `ai-rules/storage-safety.md` |
 | Shell scripts, hooks, automation, CI helpers, or local setup tooling | `ai-rules/scripts.md` |

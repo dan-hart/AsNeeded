@@ -2,6 +2,8 @@
 
 Load for versions, signing, archives, TestFlight, or App Store submissions.
 
+Use the `asc` CLI whenever it supports the required App Store Connect operation. Check its current help/capabilities before falling back to a browser; browser access is a last resort for unsupported operations. This preference does not authorize expiring builds, changing access, or publishing beyond the user's approved scope.
+
 1. Resolve the intended app/team and authorized destination. TestFlight testing does not authorize a public App Store release, new testers, or unrelated account changes.
 2. Verify the exact source/dependency revisions and app/widget/watch versions. Use a build number above both processed and in-flight uploads. Keep one coherent marketing/build version across shipping targets.
 3. Run focused behavior tests and the relevant broader checks. Inspect result bundles when a formatter hides failures. Separate unchanged fixture/test-runner failures from feature failures using evidence; do not declare the entire suite green or remove assertions to pass a release.

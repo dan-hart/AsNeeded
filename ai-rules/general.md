@@ -15,12 +15,15 @@ Keep agent output grounded, concise, and aligned with AsNeeded's existing code, 
 - Use the optimized repo scripts for build and test verification when relevant.
 - Keep changes minimal, reversible, and easy to review.
 - Ground repo-specific claims in local files or command output.
+- Check the current checkout, branch, diff, and applicable subtree instructions before editing. Preserve unrelated local work; inspect other worktrees when the task depends on work already done elsewhere.
+- Follow the user's authorized scope through verification. Report implemented, tested, installed, uploaded, and distributed states separately when those distinctions matter.
 
 ## Should
 
 - Prefer `rg` for search and avoid scanning build artifacts, `DerivedData`, `.swiftpm`, and localization folders unless needed.
 - Mention assumptions when local evidence is incomplete.
 - Reuse existing components, helpers, and docs before adding new ones.
+- After changes, review the final diff and status. Commit or publish within the user's requested scope and verify the resulting revision or external state; do not run personal multi-repository sync commands as an implicit setup step.
 
 ## Avoid
 

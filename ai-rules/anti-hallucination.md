@@ -15,6 +15,7 @@ Favor evidence over confidence so repo guidance stays trustworthy.
 - State uncertainty plainly when evidence is missing.
 - Run the smallest relevant verification before saying a change works.
 - Cite external sources when a claim depends on facts outside the repo.
+- Treat old plans, release receipts, and memory as leads to verify against current code or live state. A successful build does not prove a physical-device upgrade, notification delivery, or tester availability.
 
 ## Source Order
 
