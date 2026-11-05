@@ -185,16 +185,16 @@ struct DoseLoggerView: View {
 
 		if loggedAt == nil { loggedAt = Date() }
 		let eventData: [String: Any] = [
-			"eventID": eventID.uuidString,
-			"date": loggedAt ?? Date(),
-			"medicationId": medication.id.uuidString,
-			"doseAmount": doseAmount,
-			"doseUnit": selectedUnit,
-			"quantityConsumed": doseAmount,
+			SharedPlatformContracts.WatchMessage.eventID: eventID.uuidString,
+			SharedPlatformContracts.WatchMessage.date: loggedAt ?? Date(),
+			SharedPlatformContracts.WatchMessage.medicationId: medication.id.uuidString,
+			SharedPlatformContracts.WatchMessage.doseAmount: doseAmount,
+			SharedPlatformContracts.WatchMessage.doseUnit: selectedUnit,
+			SharedPlatformContracts.WatchMessage.quantityConsumed: doseAmount,
 		]
 
 		Task {
-			let outcome = await sender.sendAction(key: "logDose", value: eventData)
+			let outcome = await sender.sendAction(key: SharedPlatformContracts.WatchMessage.logDose, value: eventData)
 			isLogging = false
 			switch outcome {
 			case .saved:

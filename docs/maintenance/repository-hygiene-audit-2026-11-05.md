@@ -68,7 +68,7 @@ Add narrow ignores for local worktree directories, Python caches, and known gene
 
 ## Drift proposal
 
-Use a maintained `docs/business-rules.md` as the readable feature/rule map. Each rule should identify its implementation and meaningful regression tests. Start with logging/Undo and backdating, optional saved guidance, dose/stock atomicity, History/Trends ranges, reminders, and import/backup boundaries. Describe existing behavior from code; do not use this exercise to invent new requirements.
+Use a maintained `BUSINESS_RULES.md` as the readable feature/rule map. Each rule should identify its implementation and meaningful regression tests. Start with logging/Undo and backdating, optional saved guidance, dose/stock atomicity, History/Trends ranges, reminders, and import/backup boundaries. Describe existing behavior from code; do not use this exercise to invent new requirements.
 
 Drift's role is to flag that anchored code changed and the document needs review. It does **not** prove the implementation satisfies a sentence in Markdown. Behavioral tests remain the semantic check. The currently installed Drift v0.10.1 successfully linked a temporary Swift file and marked the document stale when that file changed. Prefer complete Swift-file anchors unless symbol support is verified for the pinned version; unsupported language parsing may use raw content comparison.
 
@@ -111,3 +111,13 @@ Independent specification and quality reviews found one introduced simulator-sel
 Hosted GitHub Actions were not part of this local verification. No physical-device upgrade, UI/VoiceOver walkthrough, notification-delivery check, signing/export, or TestFlight rollout was performed. Static review and passing tests cannot guarantee the absence of every bug. Existing build metadata is retained; these local products are not a newly distributed beta.
 
 The final commit check exposed a preexisting acknowledgement gap: the preflight CLI supports system review, but the commit hook forwarded only storage review. The hook now forwards an explicit `ASP_ACK_SYSTEM=1` to the existing flag. Real-hook regressions proved that unacknowledged changes still block and acknowledgement cannot bypass secret scanning; all ten hook tests pass. No security detector or exception was changed.
+
+## Requested health follow-ups — base `9585849`
+
+The follow-up adds the README App Store link, approved synthetic 1.2.0 screenshot and branch-specific live badges; a read-only human/JSON environment doctor; 13 stable business-rule IDs with source/regression traceability; a Mermaid recording/recovery diagram; feature-folder consolidation; shared target-neutral stored/wire identifiers; and an immutable synthetic export/upgrade fixture library.
+
+All **51 moved UI/state files retain their source bytes**. The 11 production files using shared contracts restore to their original bytes when references are replaced with the independently pinned legacy literals. Storage containers, database filenames, preference keys, schema version, Watch payload spelling, dependency versions, entry-point behavior, and existing widget routing are preserved. All configured app/widget/Watch source memberships compile. The fixtures are schema-derived synthetic examples with explicit source references and limitations, not claimed historical-release backups or personal records.
+
+Verification: **943 app tests** passed with no failures/skips (Xcode result readback), **59 standalone Python tests**, **54 localization tests**, and **five Watch tests** passed. App, iOS widget, and Watch builds succeeded. The live doctor returned healthy observations with normal simulator access; sandbox-restricted observation had correctly reported an inability to confirm simulator availability. Independent specification and quality reviews found no actionable regression. Local documentation links and README image/alt text are valid, rule IDs are unique and mapped, source-move hashes are intact, project lint passes, and Drift passes with **40 reviewed anchors**.
+
+The excluded enforced-CI/branch-protection proposal and dependency-container rewrite were not implemented. No `.github` policy/workflow files changed in this follow-up. No commit/push, release, physical-device installation, actual phone upgrade, or native notification delivery test was performed for these local changes. Automated evidence and identical stored values do not establish every possible hardware/OS upgrade outcome.

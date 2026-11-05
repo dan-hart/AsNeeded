@@ -1,6 +1,6 @@
 # Documentation freshness with Drift
 
-Drift flags changes to source/test files linked from a maintained document. It prompts review; it does not execute a Markdown business rule or prove that code satisfies prose. Keep behavioral tests as the semantic check. See [the business-rule map](business-rules.md) and [architecture](architecture.md).
+Drift flags changes to source/test files linked from a maintained document. It prompts review; it does not execute a Markdown business rule or prove that code satisfies prose. Keep behavioral tests as the semantic check. See [the business-rule map](../BUSINESS_RULES.md) and [architecture](architecture.md).
 
 ## Local workflow
 
@@ -15,18 +15,18 @@ drift refs AsNeeded/Services/MedicationDoseGuidanceService.swift
 When an anchored file changes, review the affected rule and its tests. Update the document if behavior changed. If the document remains accurate, explicitly review the change before refreshing that document's signatures:
 
 ```bash
-drift link docs/business-rules.md
+drift link BUSINESS_RULES.md --doc-is-still-accurate
 ```
 
 Review `drift.lock` before committing. Never auto-refresh it in hooks/CI or merely to silence a stale warning. Add a new file anchor only when it supports a concrete maintained statement:
 
 ```bash
-drift link docs/business-rules.md AsNeeded/Services/MedicationDoseGuidanceService.swift
+drift link BUSINESS_RULES.md AsNeeded/Services/MedicationDoseGuidanceService.swift
 ```
 
 ## Scope and verification
 
-The initial pilot links the business-rule document to selected logging, guidance, date-range, persistence, notification, and backup implementations/tests. Historical plans, archived receipts, generated exports, and vendored skills are not freshness specifications. Complete-file Swift anchors are deliberate: the installed version does not establish Swift symbol-level parsing, so formatting-only changes may require review.
+The maintained anchors cover business rules, architecture, the checker workflow, and the read-only doctor documentation. Selected logging, guidance, date-range, persistence, notification, backup, shared-contract and upgrade-fixture sources/tests are included; `drift status` shows the current bindings. Historical plans, archived receipts, generated exports, and vendored skills are not freshness specifications. Complete-file Swift anchors are deliberate: the installed version does not establish Swift symbol-level parsing, so formatting-only changes may require review.
 
 The CI workflow pins both the setup action commit and binary version. The official action verifies the release archive checksum. `scripts/tests/drift.test.py` proves a linked Swift fixture starts fresh, becomes stale after a code change, and is not silently refreshed by checking. Run it directly when Drift is available:
 

@@ -145,13 +145,13 @@ struct MedicationDetailView: View {
 		let doseUnit = medication.prescribedUnit ?? "dose"
 
 		let eventData: [String: Any] = [
-			"medicationId": medication.id.uuidString,
-			"doseAmount": doseAmount,
-			"doseUnit": doseUnit,
-			"quantityConsumed": doseAmount,
+			SharedPlatformContracts.WatchMessage.medicationId: medication.id.uuidString,
+			SharedPlatformContracts.WatchMessage.doseAmount: doseAmount,
+			SharedPlatformContracts.WatchMessage.doseUnit: doseUnit,
+			SharedPlatformContracts.WatchMessage.quantityConsumed: doseAmount,
 		]
 
-		Task { await sender.sendAction(key: "logDose", value: eventData) }
+		Task { await sender.sendAction(key: SharedPlatformContracts.WatchMessage.logDose, value: eventData) }
 	}
 
 	private var statusBadge: some View {

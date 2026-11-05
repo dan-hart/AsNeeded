@@ -25,7 +25,7 @@ A clean clone works without purchase credentials. Optional local RevenueCat conf
 - Use SFSafeSymbols in iOS targets; watchOS is the exception.
 - Keep business logic deterministic and testable. Inject time, storage/defaults, and external clients where needed; preserve existing state ownership.
 - Read [storage safety](docs/DATA_STORAGE_GUIDELINES.md) before storage/migration work. Include upgrade, recovery, rollback, and repeated-launch verification when applicable.
-- Update authoritative docs rather than adding duplicate instructions. Review [business rules](docs/business-rules.md) and affected [Drift anchors](docs/drift.md) when behavior changes.
+- Update authoritative docs rather than adding duplicate instructions. Review [business rules](BUSINESS_RULES.md) and affected [Drift anchors](docs/drift.md) when behavior changes.
 
 ## Verify
 

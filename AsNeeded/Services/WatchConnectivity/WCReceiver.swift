@@ -13,15 +13,15 @@ struct SendableMessage: Sendable {
     let quantityUpdateData: QuantityUpdateData?
 
     init(from message: [String: Any]) {
-        getMedications = message["getMedications"] != nil
+        getMedications = message[SharedPlatformContracts.WatchMessage.getMedications] != nil
 
-        if let logDose = message["logDose"] as? [String: Any] {
+        if let logDose = message[SharedPlatformContracts.WatchMessage.logDose] as? [String: Any] {
             logDoseData = LogDoseData(from: logDose)
         } else {
             logDoseData = nil
         }
 
-        if let quantityUpdate = message["updateQuantity"] as? [String: Any] {
+        if let quantityUpdate = message[SharedPlatformContracts.WatchMessage.updateQuantity] as? [String: Any] {
             quantityUpdateData = QuantityUpdateData(from: quantityUpdate)
         } else {
             quantityUpdateData = nil
@@ -47,14 +47,14 @@ struct LogDoseData: Sendable {
 	}
 
     init(from dict: [String: Any]) {
-        medicationId = dict["medicationId"] as? String ?? ""
-        doseAmount = dict["doseAmount"] as? Double ?? 0.0
-        doseUnit = dict["doseUnit"] as? String ?? ""
-        quantityConsumed = dict["quantityConsumed"] as? Double
-		eventID = (dict["eventID"] as? String).flatMap(UUID.init(uuidString:))
-		date = dict["date"] as? Date
-		invalidRetryMetadata = (dict["eventID"] != nil && eventID == nil) ||
-			(dict["date"] != nil && (date == nil || date?.timeIntervalSince1970.isFinite != true))
+        medicationId = dict[SharedPlatformContracts.WatchMessage.medicationId] as? String ?? ""
+        doseAmount = dict[SharedPlatformContracts.WatchMessage.doseAmount] as? Double ?? 0.0
+        doseUnit = dict[SharedPlatformContracts.WatchMessage.doseUnit] as? String ?? ""
+        quantityConsumed = dict[SharedPlatformContracts.WatchMessage.quantityConsumed] as? Double
+		eventID = (dict[SharedPlatformContracts.WatchMessage.eventID] as? String).flatMap(UUID.init(uuidString:))
+		date = dict[SharedPlatformContracts.WatchMessage.date] as? Date
+		invalidRetryMetadata = (dict[SharedPlatformContracts.WatchMessage.eventID] != nil && eventID == nil) ||
+			(dict[SharedPlatformContracts.WatchMessage.date] != nil && (date == nil || date?.timeIntervalSince1970.isFinite != true))
     }
 }
 
@@ -68,8 +68,8 @@ struct QuantityUpdateData: Sendable {
 	}
 
     init(from dict: [String: Any]) {
-        medicationId = dict["medicationId"] as? String ?? ""
-		quantity = dict["quantity"] as? Double ?? .nan
+        medicationId = dict[SharedPlatformContracts.WatchMessage.medicationId] as? String ?? ""
+		quantity = dict[SharedPlatformContracts.WatchMessage.quantity] as? Double ?? .nan
     }
 }
 
@@ -106,9 +106,9 @@ final class WCReceiver: NSObject, ObservableObject {
         let sendableMessage = SendableMessage(from: message)
         Task { @MainActor in
 			let saved = await self.processMessage(sendableMessage)
-			reply?.handler(["saved": saved])
+			reply?.handler([SharedPlatformContracts.WatchMessage.saved: saved])
 			if reply == nil, !saved, !sendableMessage.getMedications {
-				self.session.transferUserInfo(["saveFailed": true])
+				self.session.transferUserInfo([SharedPlatformContracts.WatchMessage.saveFailed: true])
 			}
         }
     }
@@ -157,13 +157,13 @@ final class WCReceiver: NSObject, ObservableObject {
             )
 
             var payload: [String: Any] = [
-                "id": medication.id.uuidString,
-                "displayName": medication.displayName,
-                "quantity": medication.quantity ?? 0.0,
-                "prescribedDoseAmount": medication.prescribedDoseAmount ?? 1.0,
-                "prescribedUnit": medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
-                "lowStock": refillProjection.lowStock,
-                "refillSoon": refillProjection.refillSoon,
+                SharedPlatformContracts.WatchMessage.id: medication.id.uuidString,
+                SharedPlatformContracts.WatchMessage.displayName: medication.displayName,
+                SharedPlatformContracts.WatchMessage.quantity: medication.quantity ?? 0.0,
+                SharedPlatformContracts.WatchMessage.prescribedDoseAmount: medication.prescribedDoseAmount ?? 1.0,
+                SharedPlatformContracts.WatchMessage.prescribedUnit: medication.prescribedUnit?.rawValue ?? ANUnitConcept.dose.rawValue,
+                SharedPlatformContracts.WatchMessage.lowStock: refillProjection.lowStock,
+                SharedPlatformContracts.WatchMessage.refillSoon: refillProjection.refillSoon,
             ]
 
 			payload.merge(Self.availabilityFields(for: availability, at: now)) { _, availabilityValue in availabilityValue }
@@ -173,7 +173,7 @@ final class WCReceiver: NSObject, ObservableObject {
 
         if session.isReachable {
             logger.debug("Sending medications to watch: \(medications.count) medications")
-            session.sendMessage(["medications": medicationData], replyHandler: nil) { [weak self] error in
+            session.sendMessage([SharedPlatformContracts.WatchMessage.medications: medicationData], replyHandler: nil) { [weak self] error in
                 self?.logger.logPrivacySafeError("Error sending medications to watch", error: error)
             }
         }
@@ -182,13 +182,13 @@ final class WCReceiver: NSObject, ObservableObject {
 	/// Wire fields retain unknown states instead of interpreting a missing date as clearance.
 	static func availabilityFields(for availability: MedicationDoseGuidanceService.Availability, at date: Date) -> [String: Any] {
 		guard let nextDate = availability.eligibleDate else {
-			return ["canTakeNow": false, "statusMessage": availability.message, "statusMessageKey": availability.messageKey]
+			return [SharedPlatformContracts.WatchMessage.canTakeNow: false, SharedPlatformContracts.WatchMessage.statusMessage: availability.message, SharedPlatformContracts.WatchMessage.statusMessageKey: availability.messageKey]
 		}
 		return [
-			"canTakeNow": nextDate <= date,
-			"nextDoseDate": nextDate,
-			"statusMessageKey": nextDate > date ? "" : "Saved limits met based on logged doses. Follow your prescription and care instructions.",
-			"statusMessage": nextDate > date
+			SharedPlatformContracts.WatchMessage.canTakeNow: nextDate <= date,
+			SharedPlatformContracts.WatchMessage.nextDoseDate: nextDate,
+			SharedPlatformContracts.WatchMessage.statusMessageKey: nextDate > date ? "" : "Saved limits met based on logged doses. Follow your prescription and care instructions.",
+			SharedPlatformContracts.WatchMessage.statusMessage: nextDate > date
 				? String(localized: "Next saved window: \(nextDate.formatted(date: .abbreviated, time: .shortened)). Follow your prescription and care instructions.")
 				: String(localized: "Saved limits met based on logged doses. Follow your prescription and care instructions.")
 		]
@@ -227,11 +227,11 @@ final class WCReceiver: NSObject, ObservableObject {
         // Send confirmation back to watch
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")
-            session.sendMessage(["doseLogged": true], replyHandler: nil) { [weak self] error in
+            session.sendMessage([SharedPlatformContracts.WatchMessage.doseLogged: true], replyHandler: nil) { [weak self] error in
                 self?.logger.logPrivacySafeError("Error sending dose confirmation to watch", error: error)
             }
 		} else {
-			session.transferUserInfo(["doseLogged": true])
+			session.transferUserInfo([SharedPlatformContracts.WatchMessage.doseLogged: true])
         }
 		await sendMedicationsToWatch()
 		return true
@@ -251,11 +251,11 @@ final class WCReceiver: NSObject, ObservableObject {
         // Send confirmation back to watch
         if session.isReachable {
             logger.debug("Quantity updated successfully, sending confirmation to watch")
-            session.sendMessage(["quantityUpdated": true], replyHandler: nil) { [weak self] error in
+            session.sendMessage([SharedPlatformContracts.WatchMessage.quantityUpdated: true], replyHandler: nil) { [weak self] error in
                 self?.logger.logPrivacySafeError("Error sending quantity update confirmation to watch", error: error)
             }
 		} else {
-			session.transferUserInfo(["quantityUpdated": true])
+			session.transferUserInfo([SharedPlatformContracts.WatchMessage.quantityUpdated: true])
         }
 		await sendMedicationsToWatch()
 		return true

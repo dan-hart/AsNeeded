@@ -1,0 +1,23 @@
+{
+	"libraryVersion": 1,
+	"schemaReferenceCommit": "4b9798e",
+	"modelReferenceRevision": "ee9eb9e1603f1832cace9dea4a5fa07247d5de51",
+	"fixtures": [
+		{
+			"name": "upgrade-export-v1-no-settings",
+			"sha256": "f7c3c123045c6b28f6ff14f19ed803d9989f0c85b23131330c43bb3cde57bff8",
+			"dataVersion": "1.0",
+			"synthetic": true,
+			"historicalReleaseCapture": false,
+			"settingsShape": "absent"
+		},
+		{
+			"name": "upgrade-export-v1-sparse-settings",
+			"sha256": "e3454a4373225ba8d2a597566274c6624fa283fbe17c34867255854bff9519bd",
+			"dataVersion": "1.0",
+			"synthetic": true,
+			"historicalReleaseCapture": false,
+			"settingsShape": "sparse-2025-10-24-with-retired-key"
+		}
+	]
+}

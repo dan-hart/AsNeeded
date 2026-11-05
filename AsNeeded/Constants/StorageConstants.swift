@@ -28,21 +28,21 @@ enum StorageConstants {
 	/// App Group identifier for shared storage with widgets and extensions
 	///
 	/// - Warning: Changing this value WILL cause data loss without proper migration
-	static let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
+	static let appGroupIdentifier = SharedPlatformContracts.Storage.appGroupIdentifier
 
 	// MARK: - Database Names
 	/// Medications database filename (without extension)
 	///
 	/// SQLiteStorageEngine.default() adds `.sqlite3` extension automatically
-	static let medicationsDBName = "medications"
+	static let medicationsDBName = SharedPlatformContracts.Storage.medicationsDBName
 
 	/// Events database filename (without extension)
 	///
 	/// SQLiteStorageEngine.default() adds `.sqlite3` extension automatically
-	static let eventsDBName = "events"
+	static let eventsDBName = SharedPlatformContracts.Storage.eventsDBName
 
 	/// Database file extension used by SQLiteStorageEngine
-	static let databaseExtension = ".sqlite3"
+	static let databaseExtension = SharedPlatformContracts.Storage.databaseExtension
 
 	// MARK: - Computed Database Paths
 	/// Full filename for medications database (name + extension)

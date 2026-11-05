@@ -6,7 +6,8 @@ AsNeeded is a native SwiftUI iOS app, iOS widget extension, and independent watc
 
 | Area | Responsibility |
 | --- | --- |
-| `AsNeeded/Medication/` and `AsNeeded/Views/` | SwiftUI screens, reusable components, and UI state owners |
+| `AsNeeded/Features/` and `AsNeeded/Views/Components/` | SwiftUI screens, reusable components, and UI state owners |
+| `AsNeeded/Shared/` | Target-neutral stored and wire identifiers compiled into app, widget, and Watch |
 | `AsNeeded/Services/` | Deterministic guidance/projections, notifications, purchase integration, search, and external-effect adapters |
 | `AsNeeded/Services/Persistence/` | App Group storage, migration, recovery, import/export, and serialized dose/stock transactions |
 | `AsNeededWidget/` | Timeline snapshots, configuration, projections, and medication-specific navigation |
@@ -26,6 +27,40 @@ Notification action handling and widget intents are platform-discovered entry po
 
 ## Changes and verification
 
-Read [business rules](business-rules.md), [storage safety](DATA_STORAGE_GUIDELINES.md), and the relevant [rule module](../ai-rules/rule-loading.md) before changing an ownership or persistence boundary. Prefer small reversible changes with an observed regression or a concrete new requirement. Do not introduce a broad architecture, dependency, storage, or observation migration as routine cleanup.
+Read [business rules](../BUSINESS_RULES.md), [storage safety](DATA_STORAGE_GUIDELINES.md), and the relevant [rule module](../ai-rules/rule-loading.md) before changing an ownership or persistence boundary. Prefer small reversible changes with an observed regression or a concrete new requirement. Do not introduce a broad architecture, dependency, storage, or observation migration as routine cleanup.
 
 Build the app scheme after project/shared-source changes; it includes the iOS widget and Watch dependencies. Run relevant tests and check the actual Xcode result bundle. CI, simulator, and physical-device evidence prove different things. See [scripts](../scripts/README.md) and [Drift](drift.md).
+
+## Feature folders
+
+Screen-specific SwiftUI views, UI state, and view models live together under `AsNeeded/Features/<Feature>/`. Medication includes its History/Trends screens and date-range view models; Settings includes backup/data-management view models. Main holds top-level tab wrappers, while Support, Onboarding, and Disclaimers have their own folders. Cross-feature components stay in `Views/Components/`; domain/app values stay in `Models/`; shared effects and persistence stay in `Services/`.
+
+This is source organization, not a module, navigation, dependency-container, or state-ownership migration. App source membership still comes from the synchronized `AsNeeded` root. The source moves preserve file contents. New shared contracts have explicit widget/Watch membership; they do not give Watch a database handle or entitlement.
+
+## Recording flow
+
+```mermaid
+flowchart TD
+    App["Medication screen"] --> Form["Log Dose form: opening does not save"]
+    Body["Notification body tap"] --> Form
+    Widget["Widget link or foreground intent"] --> Form
+    Form -->|"Explicit Log"| Validate["Validate medication, amount, unit and effective time"]
+    Quick["Explicit quick log"] --> Validate
+    Action["Authenticated notification Log"] --> Policy{"Saved guidance allows background recording?"}
+    Policy -->|"Review needed"| Review["Report not logged; offer app review"]
+    Review -->|"User opens review"| Form
+    Policy -->|"Yes"| Validate
+    Watch["Watch identified request"] --> Transport["WCSession: queued is not saved"]
+    Transport --> Phone["iPhone validates payload and retry identity"]
+    Phone --> Validate
+    Validate -->|"Valid request"| Commit["Serialized persistence transaction: dose and stock"]
+    Validate -->|"Invalid request"| Error["Report failure; no success confirmation"]
+    Commit -->|"Committed"| Feedback["Refresh snapshots and report actual save"]
+    Feedback --> Undo["App Undo targets the committed event"]
+    Commit -->|"Failure or interruption"| Recovery["Rollback or retain recovery journal"]
+    Recovery --> Error
+    Startup["Next storage access"] --> RecoverFirst["Recover journal before reading records"]
+    RecoverFirst --> Snapshot["Expose stable snapshot"]
+```
+
+The diagram shows ownership and outcomes, not identical UI for every entry point. Notification policy assessment is serialized with recording; it must not rely on an earlier stale snapshot. An app form can explain guidance without preventing basic record-keeping. Background notification feedback does not promise an app toast or Undo action. Watch transport acknowledgement does not prove a dose was saved. See [stable rule IDs](../BUSINESS_RULES.md#rule-traceability) for implementation and regression references.

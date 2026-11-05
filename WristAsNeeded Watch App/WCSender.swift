@@ -33,15 +33,15 @@ final class WCSender: NSObject, ObservableObject {
 			return .failed
 		}
 		var payload = value
-		if key == "logDose", var dose = value as? [String: Any] {
-			if dose["eventID"] == nil { dose["eventID"] = UUID().uuidString }
-			if dose["date"] == nil { dose["date"] = Date() }
+		if key == SharedPlatformContracts.WatchMessage.logDose, var dose = value as? [String: Any] {
+			if dose[SharedPlatformContracts.WatchMessage.eventID] == nil { dose[SharedPlatformContracts.WatchMessage.eventID] = UUID().uuidString }
+			if dose[SharedPlatformContracts.WatchMessage.date] == nil { dose[SharedPlatformContracts.WatchMessage.date] = Date() }
 			payload = dose
 		}
 		let message = [key: payload]
 		guard session.isReachable else {
 			session.transferUserInfo(message)
-			actionMessage = key == "logDose"
+			actionMessage = key == SharedPlatformContracts.WatchMessage.logDose
 				? String(localized: "Waiting to sync with iPhone. Don’t log this dose again.")
 				: String(localized: "Quantity is waiting to sync with iPhone.")
 			return .queued
@@ -50,7 +50,7 @@ final class WCSender: NSObject, ObservableObject {
 		actionMessage = String(localized: "Saving on iPhone…")
 		let saved: Bool = await withCheckedContinuation { continuation in
 			session.sendMessage(message, replyHandler: { reply in
-				continuation.resume(returning: reply["saved"] as? Bool == true)
+				continuation.resume(returning: reply[SharedPlatformContracts.WatchMessage.saved] as? Bool == true)
 			}, errorHandler: { _ in
 				continuation.resume(returning: false)
 			})
@@ -91,25 +91,25 @@ final class WCSender: NSObject, ObservableObject {
 
     private func handleMessage(_ message: [String: Any]) {
         DispatchQueue.main.async {
-            if let medicationsData = message["medications"] as? [[String: Any]] {
+            if let medicationsData = message[SharedPlatformContracts.WatchMessage.medications] as? [[String: Any]] {
                 self.medications = medicationsData.map { WatchMedication(from: $0) }
 				self.hasLoadedMedications = true
 				self.loadErrorMessage = nil
             }
 
             // Handle confirmations from iPhone
-            if let doseLogged = message["doseLogged"] as? Bool, doseLogged {
+            if let doseLogged = message[SharedPlatformContracts.WatchMessage.doseLogged] as? Bool, doseLogged {
                 // Dose was successfully logged
                 WKInterfaceDevice.current().play(.notification)
 				self.actionMessage = String(localized: "Dose saved on iPhone.")
             }
 
-            if let quantityUpdated = message["quantityUpdated"] as? Bool, quantityUpdated {
+            if let quantityUpdated = message[SharedPlatformContracts.WatchMessage.quantityUpdated] as? Bool, quantityUpdated {
                 // Quantity was successfully updated
                 print("Quantity updated successfully")
 				self.actionMessage = String(localized: "Quantity saved on iPhone.")
             }
-			if message["saveFailed"] as? Bool == true {
+			if message[SharedPlatformContracts.WatchMessage.saveFailed] as? Bool == true {
 				self.actionMessage = String(localized: "Couldn’t confirm saving. Check iPhone before trying again.")
 			}
         }
@@ -135,7 +135,7 @@ extension WCSender: WCSessionDelegate {
 
     func session(_: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         handleMessage(message)
-        replyHandler(["received": true])
+        replyHandler([SharedPlatformContracts.WatchMessage.received: true])
     }
 
     func session(_: WCSession, didReceiveUserInfo userInfo: [String: Any]) {

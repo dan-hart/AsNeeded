@@ -6,7 +6,9 @@ Start here for current guidance. Dated records in the archive describe earlier w
 | --- | --- |
 | Setup, contribution, and pull requests | [Contributor guide](../CONTRIBUTING.md) |
 | Source ownership and target boundaries | [Architecture](architecture.md) |
-| Features and business rules | [Business rules](business-rules.md) |
+| Features and business rules | [Business rules](../BUSINESS_RULES.md) |
+| Read-only development setup check | [Doctor](../scripts/README.md#read-only-environment-doctor) |
+| Frozen synthetic upgrade examples | [Upgrade fixture library](../AsNeededTests/Fixtures/Upgrades/README.md) |
 | Regression checks and test execution | [Scripts and testing](../scripts/README.md) |
 | Storage, migration, and recovery invariants | [Storage guidelines](DATA_STORAGE_GUIDELINES.md) |
 | Why storage preservation matters | [Data-loss lessons](DATA_LOSS_INCIDENT_2025.md) |

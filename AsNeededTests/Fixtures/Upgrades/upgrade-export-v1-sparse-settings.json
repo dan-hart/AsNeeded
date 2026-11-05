@@ -1,0 +1,75 @@
+{
+	"medications": [
+		{
+			"id": "10000000-0000-0000-0000-000000000001",
+			"clinicalName": "Synthetic tablet example",
+			"quantity": 12.25,
+			"initialQuantity": 30.5,
+			"lastRefillDate": "2025-10-01T08:09:10Z",
+			"nextRefillDate": "2025-11-01T08:09:10Z",
+			"prescribedUnit": "tablet",
+			"prescribedDoseAmount": 0.5
+		},
+		{
+			"id": "10000000-0000-0000-0000-000000000002",
+			"clinicalName": "Synthetic liquid example",
+			"quantity": 7.75,
+			"prescribedUnit": "milliliter",
+			"prescribedDoseAmount": 1.25
+		}
+	],
+	"events": [
+		{
+			"id": "20000000-0000-0000-0000-000000000001",
+			"eventType": "dose_taken",
+			"medication": {
+				"id": "10000000-0000-0000-0000-000000000001",
+				"clinicalName": "Synthetic tablet example",
+				"quantity": 12.25,
+				"initialQuantity": 30.5,
+				"lastRefillDate": "2025-10-01T08:09:10Z",
+				"nextRefillDate": "2025-11-01T08:09:10Z",
+				"prescribedUnit": "tablet",
+				"prescribedDoseAmount": 0.5
+			},
+			"dose": {
+				"id": "30000000-0000-0000-0000-000000000001",
+				"amount": 0.5,
+				"unit": "tablet"
+			},
+			"date": "2025-10-02T12:34:51Z",
+			"note": "Synthetic fixture note"
+		},
+		{
+			"id": "20000000-0000-0000-0000-000000000002",
+			"eventType": "dose_taken",
+			"medication": {
+				"id": "10000000-0000-0000-0000-000000000002",
+				"clinicalName": "Synthetic liquid example",
+				"quantity": 7.75,
+				"prescribedUnit": "milliliter",
+				"prescribedDoseAmount": 1.25
+			},
+			"dose": {
+				"id": "30000000-0000-0000-0000-000000000002",
+				"amount": 1.25,
+				"unit": "milliliter"
+			},
+			"date": "2025-10-02T12:34:52Z",
+			"note": "Synthetic fixture note"
+		}
+	],
+	"exportDate": "2025-10-24T13:00:00Z",
+	"appVersion": "synthetic-schema-reference",
+	"dataVersion": "1.0",
+	"settings": {
+		"hapticsEnabled": false,
+		"selectedFontFamily": "OpenDyslexic",
+		"historySelectedMedicationID": "10000000-0000-0000-0000-000000000001",
+		"medicationOrder": [
+			"10000000-0000-0000-0000-000000000002",
+			"10000000-0000-0000-0000-000000000001"
+		],
+		"featureToggleQuickPhrases": true
+	}
+}

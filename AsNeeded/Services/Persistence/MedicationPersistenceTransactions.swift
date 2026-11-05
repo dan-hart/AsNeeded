@@ -324,8 +324,8 @@ final class MedicationPersistenceTransactions {
 	}
 
 	private func loadFresh() async throws -> MedicationPersistenceSnapshot {
-		guard let medicationStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: "medications"),
-			let eventStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: "events") else { throw PersistenceTransactionError.storageUnavailable }
+		guard let medicationStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: SharedPlatformContracts.Storage.medicationsDBName),
+			let eventStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: SharedPlatformContracts.Storage.eventsDBName) else { throw PersistenceTransactionError.storageUnavailable }
 		let medications = try await Store<ANMedicationConcept>(storage: medicationStorage, cacheIdentifier: \.id.uuidString)
 		let events = try await Store<ANEventConcept>(storage: eventStorage, cacheIdentifier: \.id.uuidString)
 		return MedicationPersistenceSnapshot(medications: medications.items, events: events.items)

@@ -49,7 +49,7 @@ public enum UserDefaultsKeys {
     static let hideSupportBanners = "hideSupportBanners"
 
     /// Stored medication safety and refill profiles keyed by medication ID
-    static let medicationSafetyProfiles = "medicationSafetyProfiles"
+    static let medicationSafetyProfiles = SharedPlatformContracts.Preferences.medicationSafetyProfiles
 
     // MARK: - Notification Settings
 

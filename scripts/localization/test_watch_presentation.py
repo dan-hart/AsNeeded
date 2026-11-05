@@ -74,7 +74,7 @@ import Foundation
 	}
 }
 ''')
-			subprocess.run(["swiftc", "-module-cache-path", str(root / "module-cache"), str(model), str(harness), "-o", str(binary)], check=True, capture_output=True, text=True)
+			subprocess.run(["swiftc", "-module-cache-path", str(root / "module-cache"), str(model.parent.parent / "AsNeeded/Shared/SharedPlatformContracts.swift"), str(model), str(harness), "-o", str(binary)], check=True, capture_output=True, text=True)
 			result = subprocess.run([str(binary), "-AppleLanguages", "(pl)", "-AppleLocale", "pl_PL"], check=True, capture_output=True, text=True)
 			self.assertIn("Watch presentation proof passed", result.stdout)
 
@@ -139,7 +139,7 @@ import Foundation
 	}
 }
 ''')
-			subprocess.run(["swiftc", "-module-cache-path", str(root / "module-cache"), str(model), str(harness), "-o", str(binary)], check=True, capture_output=True, text=True)
+			subprocess.run(["swiftc", "-module-cache-path", str(root / "module-cache"), str(model.parent.parent / "AsNeeded/Shared/SharedPlatformContracts.swift"), str(model), str(harness), "-o", str(binary)], check=True, capture_output=True, text=True)
 			for language, locale in [("en", "en_US"), ("de", "de_DE"), ("ar", "ar_EG"), ("ar", "ar_SA"), ("ja", "ja_JP"), ("ru", "ru_RU")]:
 				with self.subTest(locale=locale):
 					result = subprocess.run([str(binary), locale, "-AppleLanguages", "(" + language + ")", "-AppleLocale", locale], capture_output=True, text=True)

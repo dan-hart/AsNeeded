@@ -13,7 +13,7 @@ final class WidgetDataProvider {
     static let shared = WidgetDataProvider()
 
     // App Group identifier matching main app
-    let appGroupIdentifier = "group.com.codedbydan.AsNeeded"
+    let appGroupIdentifier = SharedPlatformContracts.Storage.appGroupIdentifier
     private let decoder = JSONDecoder()
     private let guidanceService = WidgetMedicationGuidanceService()
 
@@ -28,11 +28,11 @@ final class WidgetDataProvider {
         ),
             let medicationsEngine = SQLiteStorageEngine(
                 directory: FileManager.Directory(url: sharedContainerURL),
-                databaseFilename: "medications"
+                databaseFilename: SharedPlatformContracts.Storage.medicationsDBName
             ),
             let eventsEngine = SQLiteStorageEngine(
                 directory: FileManager.Directory(url: sharedContainerURL),
-                databaseFilename: "events"
+                databaseFilename: SharedPlatformContracts.Storage.eventsDBName
             )
         else {
 			transactions = nil
@@ -107,7 +107,7 @@ final class WidgetDataProvider {
 
     private var safetyProfiles: [String: MedicationSafetyProfile] {
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
-              let data = defaults.data(forKey: "medicationSafetyProfiles"),
+              let data = defaults.data(forKey: SharedPlatformContracts.Preferences.medicationSafetyProfiles),
               let profiles = try? decoder.decode([String: MedicationSafetyProfile].self, from: data)
         else {
             return [:]

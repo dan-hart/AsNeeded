@@ -159,13 +159,13 @@ struct MedicationListView: View {
 		let doseUnit = medication.prescribedUnit ?? "dose"
 
 		let eventData: [String: Any] = [
-			"medicationId": medication.id.uuidString,
-			"doseAmount": doseAmount,
-			"doseUnit": doseUnit,
-			"quantityConsumed": doseAmount,
+			SharedPlatformContracts.WatchMessage.medicationId: medication.id.uuidString,
+			SharedPlatformContracts.WatchMessage.doseAmount: doseAmount,
+			SharedPlatformContracts.WatchMessage.doseUnit: doseUnit,
+			SharedPlatformContracts.WatchMessage.quantityConsumed: doseAmount,
 		]
 
-		Task { await sender.sendAction(key: "logDose", value: eventData) }
+		Task { await sender.sendAction(key: SharedPlatformContracts.WatchMessage.logDose, value: eventData) }
 	}
 
 	@ViewBuilder
@@ -218,7 +218,7 @@ struct MedicationListView: View {
 			isLoading = false
 			return
 		}
-		sender.sendMessage(key: "getMedications", value: "request")
+		sender.sendMessage(key: SharedPlatformContracts.WatchMessage.getMedications, value: "request")
 
 		// Wait for response with timeout
 		for _ in 0 ..< 30 { // 3 second timeout
@@ -294,13 +294,13 @@ struct MedicationRowView: View {
 		let doseUnit = medication.prescribedUnit ?? "dose"
 
 		let eventData: [String: Any] = [
-			"medicationId": medication.id.uuidString,
-			"doseAmount": doseAmount,
-			"doseUnit": doseUnit,
-			"quantityConsumed": doseAmount,
+			SharedPlatformContracts.WatchMessage.medicationId: medication.id.uuidString,
+			SharedPlatformContracts.WatchMessage.doseAmount: doseAmount,
+			SharedPlatformContracts.WatchMessage.doseUnit: doseUnit,
+			SharedPlatformContracts.WatchMessage.quantityConsumed: doseAmount,
 		]
 
-		Task { await sender.sendAction(key: "logDose", value: eventData) }
+		Task { await sender.sendAction(key: SharedPlatformContracts.WatchMessage.logDose, value: eventData) }
 	}
 
 	@ViewBuilder

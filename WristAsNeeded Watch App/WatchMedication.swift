@@ -41,16 +41,16 @@ struct WatchMedication: Identifiable, Codable {
 	}
 
 	init(from dict: [String: Any]) {
-		id = UUID(uuidString: dict["id"] as? String ?? "") ?? UUID()
-		displayName = dict["displayName"] as? String ?? String(localized: "Unknown")
-		quantity = dict["quantity"] as? Double ?? 0.0
-		prescribedDoseAmount = dict["prescribedDoseAmount"] as? Double
-		prescribedUnit = dict["prescribedUnit"] as? String
-		payloadCanTakeNow = dict["canTakeNow"] as? Bool ?? false
-		nextDoseDate = dict["nextDoseDate"] as? Date
-		lowStock = dict["lowStock"] as? Bool ?? false
-		refillSoon = dict["refillSoon"] as? Bool ?? false
-		if let key = dict["statusMessageKey"] as? String, !key.isEmpty {
+		id = UUID(uuidString: dict[SharedPlatformContracts.WatchMessage.id] as? String ?? "") ?? UUID()
+		displayName = dict[SharedPlatformContracts.WatchMessage.displayName] as? String ?? String(localized: "Unknown")
+		quantity = dict[SharedPlatformContracts.WatchMessage.quantity] as? Double ?? 0.0
+		prescribedDoseAmount = dict[SharedPlatformContracts.WatchMessage.prescribedDoseAmount] as? Double
+		prescribedUnit = dict[SharedPlatformContracts.WatchMessage.prescribedUnit] as? String
+		payloadCanTakeNow = dict[SharedPlatformContracts.WatchMessage.canTakeNow] as? Bool ?? false
+		nextDoseDate = dict[SharedPlatformContracts.WatchMessage.nextDoseDate] as? Date
+		lowStock = dict[SharedPlatformContracts.WatchMessage.lowStock] as? Bool ?? false
+		refillSoon = dict[SharedPlatformContracts.WatchMessage.refillSoon] as? Bool ?? false
+		if let key = dict[SharedPlatformContracts.WatchMessage.statusMessageKey] as? String, !key.isEmpty {
 			statusMessage = String(localized: String.LocalizationValue(key))
 		} else if let nextDoseDate {
 			// Resolve date-bearing guidance on Watch so its locale can differ from iPhone.
@@ -59,7 +59,7 @@ struct WatchMedication: Identifiable, Codable {
 				: String(localized: "Next saved window: \(nextDoseDate.formatted(date: .abbreviated, time: .shortened)). Follow your prescription and care instructions.")
 		} else {
 			// Unknown/no-date legacy messages have no language-neutral metadata. Preserve them verbatim.
-			statusMessage = dict["statusMessage"] as? String
+			statusMessage = dict[SharedPlatformContracts.WatchMessage.statusMessage] as? String
 		}
 	}
 

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A13000000000000000000003 /* SharedPlatformContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000002 /* SharedPlatformContracts.swift */; };
+		A13000000000000000000001 /* SharedPlatformContracts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13000000000000000000002 /* SharedPlatformContracts.swift */; };
 		A12000000000000000000001 /* MedicationPersistenceTransactions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* MedicationPersistenceTransactions.swift */; };
 		52133A022E9DB5B60055E06D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A012E9DB5B60055E06D /* WidgetKit.framework */; };
 		52133A042E9DB5B60055E06D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52133A032E9DB5B60055E06D /* SwiftUI.framework */; };
@@ -107,6 +109,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A13000000000000000000002 /* SharedPlatformContracts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AsNeeded/Shared/SharedPlatformContracts.swift"; sourceTree = SOURCE_ROOT; };
 		A12000000000000000000002 /* MedicationPersistenceTransactions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsNeeded/Services/Persistence/MedicationPersistenceTransactions.swift; sourceTree = SOURCE_ROOT; };
 		52133A002E9DB5B60055E06D /* AsNeededWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AsNeededWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		52133A012E9DB5B60055E06D /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
@@ -480,6 +483,7 @@
 				A12000000000000000000403 /* Font+CustomFonts.swift in Sources */,
 				A12000000000000000000402 /* WidgetExperienceProjection.swift in Sources */,
 				A12000000000000000000401 /* WidgetNavigationRoute.swift in Sources */,
+				A13000000000000000000001 /* SharedPlatformContracts.swift in Sources */,
 				A12000000000000000000207 /* WidgetDoseNotificationReconciler.swift in Sources */,
 				A12000000000000000000206 /* WidgetDoseRecordingPolicy.swift in Sources */,
 				A12000000000000000000205 /* MedicationReminderRequest.swift in Sources */,
@@ -494,6 +498,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A13000000000000000000003 /* SharedPlatformContracts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

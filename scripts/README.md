@@ -26,6 +26,17 @@ The installer configures `core.hooksPath`, checks the preflight helper, and runs
 
 The scanner supports gitleaks, trufflehog, git-secrets, and a fallback scanner. Keep scanning enabled; review findings before committing.
 
+## Read-only environment doctor
+
+```bash
+python3 scripts/doctor.py
+python3 scripts/doctor.py --json
+```
+
+Requires Python 3 (standard library only). Checks the selected Xcode 26+, Swift 6.2+, Simulator SDK against project deployment targets, available compatible iPhone simulators, nonempty revision pins in `Package.resolved`, selected executable repository hooks, and scanner/preflight helper availability and permissions. Exit status is nonzero for blockers; missing optional purchase configuration is a warning. `--root PATH` inspects another checkout. Reports go only to stdout; redirect them to a temporary location if needed.
+
+The doctor invokes only read-only Xcode/toolchain inventory and Git configuration queries. It does not install, repair, fetch/resolve packages, invoke hooks/scanners, access Keychain, or change Git/system configuration. Purchase configuration checks only whether `Config/Secrets.xcconfig` or the `REVENUECAT_API_KEY` environment variable is present, without reading configuration contents or reporting values. Presence does not prove valid credentials or working purchases. Reports omit raw command output, selected installation paths, and simulator identifiers. A healthy report does not establish successful builds/tests or a completed security scan.
+
 ## Development builds
 
 ```bash

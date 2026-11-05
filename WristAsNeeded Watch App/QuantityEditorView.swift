@@ -151,12 +151,12 @@ struct QuantityEditorView: View {
         isUpdating = true
 
         let quantityData: [String: Any] = [
-            "medicationId": medication.id.uuidString,
-            "quantity": quantity,
+            SharedPlatformContracts.WatchMessage.medicationId: medication.id.uuidString,
+            SharedPlatformContracts.WatchMessage.quantity: quantity,
         ]
 
 		Task {
-			let outcome = await sender.sendAction(key: "updateQuantity", value: quantityData)
+			let outcome = await sender.sendAction(key: SharedPlatformContracts.WatchMessage.updateQuantity, value: quantityData)
             isUpdating = false
 			switch outcome {
 			case .saved:

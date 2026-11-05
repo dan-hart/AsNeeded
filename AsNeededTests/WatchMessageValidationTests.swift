@@ -73,4 +73,18 @@ struct WatchMessageValidationTests {
 		#expect(LogDoseData(from: old).isValid)
 	}
 
+	@Test("Literal legacy envelopes and shared keys select the same phone DTOs")
+	func envelopeCompatibility() {
+		#expect(SendableMessage(from: ["getMedications": "request"]).getMedications)
+		let id = UUID().uuidString
+		let dose: [String: Any] = [SharedPlatformContracts.WatchMessage.medicationId: id, SharedPlatformContracts.WatchMessage.doseAmount: 0.5, SharedPlatformContracts.WatchMessage.doseUnit: ANUnitConcept.tablet.rawValue]
+		let decoded = SendableMessage(from: [SharedPlatformContracts.WatchMessage.logDose: dose])
+		#expect(decoded.logDoseData?.isValid == true)
+		#expect(decoded.logDoseData?.eventID == nil)
+		#expect(decoded.logDoseData?.date == nil)
+		#expect(SendableMessage(from: ["updateQuantity": ["medicationId": id, "quantity": 0.25]]).quantityUpdateData?.quantity == 0.25)
+		#expect(SendableMessage(from: ["logDose": "invalid"]).logDoseData == nil)
+		#expect(SendableMessage(from: ["updateQuantity": NSNull()]).quantityUpdateData == nil)
+	}
+
 }
