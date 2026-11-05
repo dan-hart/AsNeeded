@@ -102,10 +102,16 @@ struct LocalizationResourceTests {
 	func systemPermissionDescriptionsAreLocalized(_ locale: String) throws {
 		let url = Bundle.main.bundleURL.appendingPathComponent("\(locale).lproj")
 		let resources = try #require(Bundle(url: url))
-		for key in ["NSDocumentsFolderUsageDescription", "NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "Quick log medication"] {
+		for key in ["NSDocumentsFolderUsageDescription", "Quick log medication"] {
 			let value = resources.localizedString(forKey: key, value: "__MISSING_TRANSLATION__", table: "InfoPlist")
 			#expect(value != "__MISSING_TRANSLATION__", "\(locale): system text \(key) is missing")
 			#expect(!value.isEmpty)
 		}
+		// Build 324 deliberately removed HealthKit access; unused permission copy must stay absent.
+		for key in ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription"] {
+			#expect(Bundle.main.object(forInfoDictionaryKey: key) == nil)
+			#expect(resources.localizedString(forKey: key, value: "__MISSING_TRANSLATION__", table: "InfoPlist") == "__MISSING_TRANSLATION__")
+		}
+
 	}
 }

@@ -502,6 +502,51 @@ struct MedicationTrendsViewModelTests {
 		#expect(today.timeIntervalSince(yesterday) == Double(yesterdayHours * 3_600))
 	}
 
+	@Test("Custom totals and calendar include only selected complete dates")
+	func customRangeAggregation() async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Chicago"))
+		let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 15, hour: 12)))
+		let start = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 7)))
+		let end = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 9)))
+		let endExclusive = try #require(calendar.date(byAdding: .day, value: 1, to: end))
+		let store = DataStore(testIdentifier: "Trends-Custom-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		for (date, amount) in [(start.addingTimeInterval(-1), 100.0), (start, 2.0), (endExclusive.addingTimeInterval(-1), 3.0), (endExclusive, 100.0), (now, 100.0)] {
+			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: amount, unit: .tablet))
+		}
+		try await store.addEvent(createTestEvent(medication: medication, date: start, amount: 50, unit: .milligram))
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
+		let range = try #require(TrendsDateRange(start: start, end: end, calendar: calendar, now: now))
+		let totals = model.dailyTotals(in: range)
+		#expect(totals.count == 3)
+		#expect(totals.map(\.total) == [2, 0, 3])
+		#expect(model.averagePerDay(in: range) == 5.0 / 3.0)
+		#expect(model.calendarHeatmapData(in: range).map(\.date) == totals.map(\.day))
+		#expect(model.calendarHeatmapData(in: range).map(\.total) == totals.map(\.total))
+	}
+
+	@Test("Custom totals re-normalize day boundaries after timezone changes")
+	func customRangeTimezoneChange() async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+		let now = try #require(ISO8601DateFormatter().date(from: "2026-10-28T12:00:00Z"))
+		let start = try #require(ISO8601DateFormatter().date(from: "2026-10-25T00:00:00Z"))
+		let end = try #require(ISO8601DateFormatter().date(from: "2026-10-26T00:00:00Z"))
+		let range = try #require(TrendsDateRange(start: start, end: end, calendar: calendar, now: now))
+		let store = DataStore(testIdentifier: "Trends-Custom-Zone-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		try await store.addEvent(createTestEvent(medication: medication, date: start.addingTimeInterval(43_200), amount: 4, unit: .tablet))
+		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
+		#expect(model.dailyTotals(in: range).map(\.total) == [4, 0])
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+		model.refreshForClockChange()
+		#expect(model.dailyTotals(in: range).map(\.total) == [4, 0])
+		#expect(model.calendarHeatmapData(in: range).map(\.total) == [4, 0])
+	}
+
 	@Test("Timezone refresh rebuckets cached totals and changes the completed-day cutoff")
 	func timezoneRefreshRebucketsCompletedDays() async throws {
 		var calendar = Calendar(identifier: .gregorian)

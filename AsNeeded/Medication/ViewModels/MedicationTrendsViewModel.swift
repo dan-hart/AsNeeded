@@ -264,11 +264,19 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	// Daily totals for the last N complete days ending yesterday (default 14)
 	func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
-		guard days > 0, preferredUnit != nil else { return [] }
-		let start = trendsWindowEnd
+		guard days > 0,
+			let start = calendar.date(byAdding: .day, value: -(days - 1), to: trendsWindowEnd),
+			let range = TrendsDateRange(start: start, end: trendsWindowEnd, calendar: calendar, now: now()) else { return [] }
+		return dailyTotals(in: range)
+	}
+
+	func dailyTotals(in range: TrendsDateRange) -> [(day: Date, total: Double)] {
+		guard preferredUnit != nil,
+			let range = range.resolved(calendar: calendar, now: now()) else { return [] }
 		let totals = totalsByDay
-		return (0 ..< days).reversed().compactMap { offset in
-			guard let day = calendar.date(byAdding: .day, value: -offset, to: start) else { return nil }
+		let today = calendar.startOfDay(for: now())
+		return (0 ..< range.dayCount(calendar: calendar)).compactMap { offset in
+			guard let day = calendar.date(byAdding: .day, value: offset, to: range.start), day < today else { return nil }
 			return (day, totals[day] ?? 0)
 		}
 	}
@@ -279,6 +287,12 @@ final class MedicationTrendsViewModel: ObservableObject {
 		guard !totals.isEmpty else { return 0 }
 		let sum = totals.map { $0.total }.reduce(0, +)
 		return sum / Double(totals.count)
+	}
+
+	func averagePerDay(in range: TrendsDateRange) -> Double {
+		let totals = dailyTotals(in: range)
+		guard !totals.isEmpty else { return 0 }
+		return totals.reduce(0) { $0 + $1.total } / Double(totals.count)
 	}
 
 	// Days until refill date (if set)
@@ -381,7 +395,14 @@ final class MedicationTrendsViewModel: ObservableObject {
 
 	// Calendar heatmap data for the last N complete days ending yesterday
 	func calendarHeatmapData(last days: Int = 30) -> [CalendarDay] {
-		let totals = dailyTotals(last: days)
+		heatmapData(totals: dailyTotals(last: days))
+	}
+
+	func calendarHeatmapData(in range: TrendsDateRange) -> [CalendarDay] {
+		heatmapData(totals: dailyTotals(in: range))
+	}
+
+	private func heatmapData(totals: [(day: Date, total: Double)]) -> [CalendarDay] {
 		// Keep partial and future days out of the intensity scale as well.
 		let today = calendar.startOfDay(for: now())
 		let maxTotal = totalsByDay.filter { $0.key < today }.values.max() ?? 1

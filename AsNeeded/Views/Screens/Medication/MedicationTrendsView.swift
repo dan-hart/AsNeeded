@@ -40,9 +40,24 @@ struct MedicationTrendsView: View {
 	@AppStorage(UserDefaultsKeys.trendsDaysWindow) private var savedDaysWindow: Int = 14
 	@State private var temporaryDaysWindow: Int?
 	private let widgetScope: NavigationManager.WidgetTrendsScope?
-	private var daysWindow: Int { temporaryDaysWindow ?? savedDaysWindow }
+	@State private var customRange: TrendsDateRange?
+	@State private var showCustomRange = false
+	private var selectedPeriod: TrendsPeriod {
+		TrendsPeriod(rawValue: temporaryDaysWindow ?? savedDaysWindow) ?? .fourteenDays
+	}
+	private var selectedRange: TrendsDateRange? {
+		customRange.flatMap { $0.resolved(calendar: .current, now: .now) }
+			?? selectedPeriod.range(calendar: .current, now: .now)
+	}
+	private var daysWindow: Int { selectedRange?.dayCount(calendar: .current) ?? 14 }
+	private var rangeTitle: String { customRange == nil ? selectedPeriod.displayName : selectedRange?.displayName ?? selectedPeriod.displayName }
+	private var selectedTotals: [(day: Date, total: Double)] {
+		selectedRange.map { viewModel.dailyTotals(in: $0) } ?? []
+	}
 	private var daysWindowSelection: Binding<Int> {
-		Binding(get: { daysWindow }, set: { value in
+		Binding(get: { customRange == nil ? selectedPeriod.rawValue : 0 }, set: { value in
+			guard TrendsPeriod(rawValue: value) != nil else { return }
+			customRange = nil
 			if widgetScope != nil { temporaryDaysWindow = value }
 			else { savedDaysWindow = value }
 		})
@@ -105,7 +120,7 @@ struct MedicationTrendsView: View {
 					}
 
 					if viewModel.selectedMedication != nil,
-					   viewModel.dailyTotals(last: daysWindow).contains(where: { $0.total > 0 }) {
+					   selectedTotals.contains(where: { $0.total > 0 }) {
 						SupportSuggestionView(onSupportTapped: { showSupportPage = true })
 							.padding(.bottom, chartContainerPadding)
 					}
@@ -121,7 +136,7 @@ struct MedicationTrendsView: View {
 			}
 			.customNavigationTitle("Trends", displayMode: .large)
 			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
-			.navigationSubtitle(Text("\(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Select Medication")) · \(daysWindow) Days")
+			.navigationSubtitle(Text(verbatim: "\(viewModel.selectedMedication?.demoDisplayName ?? String(localized: "Select Medication")) · \(rangeTitle)")
 				.font(.customFont(fontFamily, style: .subheadline)))
 			.toolbar {
 				ToolbarItemGroup(placement: .topBarTrailing) {
@@ -146,6 +161,11 @@ struct MedicationTrendsView: View {
 						onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
 				}
 
+			}
+			.sheet(isPresented: $showCustomRange) {
+				TrendsCustomRangeSheet(initialRange: selectedRange, earliestEvent: viewModel.events.first?.date) { range in
+					customRange = range
+				}
 			}
 			.sheet(isPresented: $quickLogCoordinator.showSupportView) {
 				NavigationStack {
@@ -255,17 +275,19 @@ struct MedicationTrendsView: View {
 	private var timeRangeMenu: some View {
 		Menu {
 			Picker("Time Range", selection: daysWindowSelection) {
-				ForEach([14, 30, 90], id: \.self) { days in
-					Text("\(days) Days")
+				if customRange != nil { Text("Custom Range").tag(0) }
+				ForEach(TrendsPeriod.allCases, id: \.rawValue) { period in
+					Text(period.displayName)
 						.font(.customFont(fontFamily, style: .body))
-						.tag(days)
+						.tag(period.rawValue)
 				}
 			}
+			Button("Custom Range") { showCustomRange = true }
 		} label: {
-			Label("\(daysWindow) Days", systemSymbol: .calendar)
+			Label(rangeTitle, systemSymbol: .calendar)
 		}
 		.accessibilityLabel("Trends time range")
-		.accessibilityValue("\(daysWindow) days")
+		.accessibilityValue(rangeTitle)
 		.popoverTip(AppTips.isConfigured ? TrendsRangeTip() : nil)
 	}
 
@@ -354,10 +376,10 @@ struct MedicationTrendsView: View {
 			if days == 0 { return String(localized: "Refill today") }
 			return days > 0 ? String(localized: "Refill in \(days) days") : String(localized: "Refill \(-days) days ago")
 		}()
-		let avg7 = viewModel.averagePerDay(window: 7)
+		let average = selectedRange.map { viewModel.averagePerDay(in: $0) } ?? 0
 		let avgText: String = {
-			guard avg7 > 0, let unit = preferredUnit else { return "—" }
-			return String(localized: "\(unit.localizedCompactAmount(for: avg7))/day", comment: "Daily average rate. The interpolation is a full quantity with a plural-aware unit.")
+			guard average > 0, let unit = preferredUnit else { return "—" }
+			return String(localized: "\(unit.localizedCompactAmount(for: average))/day", comment: "Daily average rate. The interpolation is a full quantity with a plural-aware unit.")
 		}()
 		let etaText: String = {
 			guard let days = viewModel.estimatedDaysRemaining else { return "—" }
@@ -375,7 +397,7 @@ struct MedicationTrendsView: View {
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 
 			LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: controlsSpacing), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: controlsSpacing) {
-				metricCard(title: String(localized: "Daily Average (7 Days)"), value: avgText, systemImage: .chartLineUptrendXyaxis)
+				metricCard(title: String(localized: "Daily Average"), value: avgText, systemImage: .chartLineUptrendXyaxis)
 				metricCard(title: String(localized: "Quantity"), value: qtyText, systemImage: .pill)
 
 				if viewModel.usagePercentage != nil {
@@ -445,7 +467,7 @@ struct MedicationTrendsView: View {
 				.demoNameRedacted()
 				.font(.customFont(fontFamily, style: .title3, weight: .semibold))
 				.noTruncate()
-			Text("\(title) · \(daysWindow) days through \(viewModel.trendsWindowEnd.formatted(date: .abbreviated, time: .omitted))")
+			Text(verbatim: "\(title) · \(selectedRange?.displayName ?? rangeTitle)")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
 				.fixedSize(horizontal: false, vertical: true)
@@ -454,7 +476,7 @@ struct MedicationTrendsView: View {
 
 	@ViewBuilder
 	private func usageChart(for med: ANMedicationConcept) -> some View {
-		let data = viewModel.dailyTotals(last: daysWindow)
+		let data = selectedTotals
 		if data.isEmpty {
 			Text("No doses recorded in this range. Choose another range or open History to review your entries.")
 				.font(.customFont(fontFamily, style: .body))
@@ -514,9 +536,10 @@ struct MedicationTrendsView: View {
 										VStack(spacing: 0) {
 											Text(date, format: .dateTime.month(.abbreviated))
 											Text(date, format: .dateTime.day())
+											if daysWindow > 365 { Text(date, format: .dateTime.year()) }
 										}
 									} else {
-										Text(date, format: daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
+										Text(date, format: daysWindow > 365 ? .dateTime.month(.abbreviated).year() : daysWindow <= 7 ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
 									}
 								}
 								.font(.customFont(fontFamily, style: .caption))
@@ -566,7 +589,7 @@ struct MedicationTrendsView: View {
 
 	@ViewBuilder
 	private func calendarHeatmap(for med: ANMedicationConcept) -> some View {
-		let data = viewModel.calendarHeatmapData(last: daysWindow)
+		let data = selectedRange.map { viewModel.calendarHeatmapData(in: $0) } ?? []
 		if data.isEmpty {
 			Text("No doses recorded in this range. Choose another range or open History to review your entries.")
 				.font(.customFont(fontFamily, style: .body))
@@ -624,7 +647,7 @@ struct CalendarHeatmapGrid: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: heatmapSpacing) {
 			if dynamicTypeSize.isAccessibilitySize {
-				VStack(spacing: heatmapSpacing) {
+				LazyVStack(spacing: heatmapSpacing) {
 					ForEach(data, id: \.date) { day in
 						Button {
 							onDateTapped(day.date)
