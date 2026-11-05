@@ -25,7 +25,10 @@ struct MedicationHistoryView: View {
 	@State private var logMedication: ANMedicationConcept?
 	@State private var currentTime = Date()
 	@State private var scrollTarget: Date?
+	@State private var scrollRequestID = UUID()
 	@State private var showDatePicker = false
+	@State private var showCustomRange = false
+	@State private var lastHistoryRequestID: UUID?
 	@State private var selectedDate = Date()
 	@State private var selectedEventNote: String?
 	@State private var editingEvent: ANEventConcept?
@@ -269,8 +272,8 @@ struct MedicationHistoryView: View {
 					.environment(\.defaultMinListRowHeight, 0)
 			}
 			.listStyle(.insetGrouped)
-			.onChange(of: scrollTarget) { _, newTarget in
-				if let target = newTarget {
+			.onChange(of: scrollRequestID, initial: true) { _, _ in
+				if let target = scrollTarget {
 					withAnimation(reduceMotion ? nil : .default) {
 						proxy.scrollTo(target, anchor: .top)
 					}
@@ -439,9 +442,10 @@ struct MedicationHistoryView: View {
 	// MARK: - Private Methods
 
 	private func applyHistoryNavigation() {
-		if let targetDate = navigationManager.historyTargetDate {
-			scrollTarget = Calendar.current.startOfDay(for: targetDate)
-		}
+		guard lastHistoryRequestID != navigationManager.historyRequestID else { return }
+		lastHistoryRequestID = navigationManager.historyRequestID
+		let targetDate = navigationManager.historyTargetDate
+		let targetRange = navigationManager.historyTargetRange
 		if let id = navigationManager.historyTargetMedicationID, let uuid = UUID(uuidString: id) {
 			guard DataStore.shared.medications.contains(where: { $0.id == uuid }) else {
 				navigationManager.clearHistoryNavigation()
@@ -449,8 +453,14 @@ struct MedicationHistoryView: View {
 				return
 			}
 			viewModel.selectedMedicationID = uuid.uuidString
-			navigationManager.clearHistoryNavigation()
 		} else { viewModel.ensureValidSelection() }
+		viewModel.dateFilter = targetRange.map(HistoryDateFilter.custom) ?? .allTime
+		scrollTarget = nil
+		if let date = targetDate ?? targetRange?.end {
+			scrollTarget = viewModel.jumpTarget(for: date)
+		}
+		scrollRequestID = UUID()
+		navigationManager.clearHistoryNavigation()
 	}
 
 	private var floatingQuickLogMedication: ANMedicationConcept? {
@@ -500,6 +510,55 @@ struct MedicationHistoryView: View {
 		viewModel.isShowingAllMedications ? String(localized: "All medications") : (viewModel.selectedMedication?.demoDisplayName ?? String(localized: "All medications"))
 	}
 
+	private var historyRangeSelection: Binding<Int> {
+		Binding(get: {
+			switch viewModel.dateFilter {
+			case .allTime: 0
+			case let .period(period): period.rawValue
+			case .custom: Int.min
+			}
+		}, set: { value in
+			if value == 0 { viewModel.dateFilter = .allTime }
+			else if let period = TrendsPeriod(rawValue: value) { viewModel.dateFilter = .period(period) }
+		})
+	}
+
+	private var historyRangeMenu: some View {
+		Menu {
+			Picker("Time Range", selection: historyRangeSelection) {
+				Text("All Time").tag(0)
+				if viewModel.dateFilter == .period(.sevenDays) { Text(TrendsPeriod.sevenDays.displayName).tag(7) }
+				ForEach(TrendsPeriod.menuPeriods, id: \.rawValue) { period in
+					Text(period.displayName).tag(period.rawValue)
+				}
+				if case .custom = viewModel.dateFilter { Text("Custom Range").tag(Int.min) }
+			}
+			Button("Custom Range") { showCustomRange = true }
+			Divider()
+			Button("Jump to Date") { showDatePicker = true }
+				.disabled(!viewModel.events.contains { $0.eventType == .doseTaken })
+		} label: {
+			Label(viewModel.dateFilterTitle, systemSymbol: .calendar)
+		}
+		.font(.customFont(fontFamily, style: .body))
+		.accessibilityLabel("Time Range")
+		.accessibilityValue(viewModel.dateFilterTitle)
+	}
+
+	private var filteredHistoryEmptyView: some View {
+		VStack(spacing: emptySectionSpacing) {
+			Text("No dose history found.")
+				.font(.customFont(fontFamily, style: .body))
+			Text(viewModel.dateFilterTitle)
+				.font(.customFont(fontFamily, style: .subheadline))
+				.foregroundStyle(.secondary)
+			Button("All Time") { viewModel.dateFilter = .allTime }
+				.font(.customFont(fontFamily, style: .body))
+		}
+		.frame(maxWidth: .infinity, maxHeight: .infinity)
+		.padding()
+	}
+
 	// MARK: - Body
 
 	var body: some View {
@@ -508,7 +567,9 @@ struct MedicationHistoryView: View {
 				ZStack(alignment: .bottomTrailing) {
 					VStack(alignment: .leading, spacing: 0) {
 						if demoMode.isEnabled && viewModel.groupedHistory.isEmpty { DemoModeBanner().padding(.horizontal) }
-						if viewModel.isShowingAllMedications {
+						if viewModel.groupedHistory.isEmpty && viewModel.dateFilter != .allTime {
+							filteredHistoryEmptyView
+						} else if viewModel.isShowingAllMedications {
 							if viewModel.groupedHistory.isEmpty {
 								Spacer()
 								VStack(spacing: emptySectionSpacing) {
@@ -550,17 +611,11 @@ struct MedicationHistoryView: View {
 				}
 				.customNavigationTitle("History", displayMode: .large)
 			.navigationDestination(isPresented: $showSupportPage) { SupportView() }
-				.navigationSubtitle(Text(historyScopeTitle).font(.customFont(fontFamily, style: .subheadline)))
+				.navigationSubtitle(Text(verbatim: "\(historyScopeTitle) · \(viewModel.dateFilterTitle)").font(.customFont(fontFamily, style: .subheadline)))
 				.toolbar {
 					ToolbarItemGroup(placement: .topBarTrailing) {
 						historyMedicationMenu
-						Button {
-							showDatePicker = true
-						} label: {
-							Label("Jump to Date", systemSymbol: .calendar)
-						}
-						.disabled(viewModel.groupedHistory.isEmpty)
-						.accessibilityLabel("Jump to date")
+						historyRangeMenu
 					}
 				}
 				.tint(.accent)
@@ -584,6 +639,14 @@ struct MedicationHistoryView: View {
 				.onReceive(timer) { _ in
 					currentTime = Date()
 				}
+				.sheet(isPresented: $showCustomRange) {
+					MedicationDateRangeSheet(
+						initialRange: viewModel.activeDateRange ?? TrendsPeriod.fourteenDays.range(calendar: .current, now: .now, includingToday: true),
+						earliestEvent: viewModel.events.filter { $0.eventType == .doseTaken }.map(\.date).min(),
+						includingToday: true
+					) { range in viewModel.dateFilter = .custom(range) }
+				}
+
 				.sheet(isPresented: $showDatePicker) {
 					NavigationStack {
 						ScrollView {
@@ -609,7 +672,8 @@ struct MedicationHistoryView: View {
 
 							ToolbarItem(placement: .confirmationAction) {
 								Button {
-									scrollTarget = Calendar.current.startOfDay(for: selectedDate)
+									scrollTarget = viewModel.jumpTarget(for: selectedDate)
+									scrollRequestID = UUID()
 									showDatePicker = false
 								} label: {
 									Image(systemSymbol: .checkmark)

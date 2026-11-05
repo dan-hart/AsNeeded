@@ -18,6 +18,10 @@ final class MedicationHistoryViewModel: ObservableObject {
 		}
 	}
 
+	@Published var dateFilter: HistoryDateFilter = .allTime {
+		didSet { cachedGroupedHistory = nil }
+	}
+
 	@Published var medications: [ANMedicationConcept] = []
 	@Published var events: [ANEventConcept] = [] {
 		didSet { cachedGroupedHistory = nil }
@@ -30,8 +34,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 	private let notificationCenter: NotificationCenter
 	private var cachedGroupedHistory: [(day: Date, entries: [ANEventConcept])]?
 	private var groupingCalendar = Calendar.current
+	private var cachedDateRange: TrendsDateRange?
+	private let calendarProvider: () -> Calendar
+	private let now: () -> Date
 
-	init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil, notificationCenter: NotificationCenter = .default) {
+	init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil, notificationCenter: NotificationCenter = .default, defaults: UserDefaults = .standard, calendar: @escaping () -> Calendar = { .current }, now: @escaping () -> Date = Date.init) {
+		_selectedMedicationIDString = AppStorage(wrappedValue: "", UserDefaultsKeys.historySelectedMedicationID, store: defaults)
+		self.calendarProvider = calendar
+		self.now = now
 		self.dataStore = dataStore
 		self.notificationCenter = notificationCenter
 
@@ -162,8 +172,10 @@ final class MedicationHistoryViewModel: ObservableObject {
 	}
 
 	var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
-		let calendar = Calendar.current
-		if groupingCalendar != calendar {
+		let calendar = calendarProvider()
+		let range = dateFilter.range(calendar: calendar, now: now())
+		if groupingCalendar != calendar || cachedDateRange != range {
+			cachedDateRange = range
 			groupingCalendar = calendar
 			cachedGroupedHistory = nil
 		}
@@ -184,7 +196,13 @@ final class MedicationHistoryViewModel: ObservableObject {
 			cachedGroupedHistory = []
 			return []
 		}
-		let grouped = Dictionary(grouping: filteredEvents) { event in
+		let endExclusive = range.flatMap { calendar.date(byAdding: .day, value: 1, to: $0.end) }
+		let rangeEvents = filteredEvents.filter { event in
+			guard let range else { return dateFilter == .allTime }
+			guard let endExclusive else { return false }
+			return event.date >= range.start && event.date < endExclusive
+		}
+		let grouped = Dictionary(grouping: rangeEvents) { event in
 			calendar.startOfDay(for: event.date)
 		}
 		let result = grouped
@@ -192,6 +210,31 @@ final class MedicationHistoryViewModel: ObservableObject {
 			.sorted { $0.day > $1.day }
 		cachedGroupedHistory = result
 		return result
+	}
+
+	var activeDateRange: TrendsDateRange? {
+		dateFilter.range(calendar: calendarProvider(), now: now())
+	}
+
+	var dateFilterTitle: String {
+		switch dateFilter {
+		case .allTime: String(localized: "All Time")
+		case let .period(period): period.displayName
+		case .custom: activeDateRange?.displayName ?? String(localized: "Custom Range")
+		}
+	}
+
+	/// Jumping out of the selected range clears only the date filter. Choose an existing row anchor.
+	func jumpTarget(for date: Date) -> Date? {
+		let calendar = calendarProvider()
+		let day = calendar.startOfDay(for: date)
+		let outsideRange = activeDateRange.map { day < $0.start || day > $0.end } ?? (dateFilter != .allTime)
+		if outsideRange { dateFilter = .allTime }
+		return groupedHistory.min { left, right in
+			let leftDistance = abs(calendar.dateComponents([.day], from: day, to: left.day).day ?? 0)
+			let rightDistance = abs(calendar.dateComponents([.day], from: day, to: right.day).day ?? 0)
+			return leftDistance == rightDistance ? left.day < right.day : leftDistance < rightDistance
+		}?.day
 	}
 
 	@discardableResult

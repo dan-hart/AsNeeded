@@ -23,6 +23,16 @@ struct TrendsDateRangeTests {
 		#expect(range.end == (try date(2026, 11, 3)))
 	}
 
+	@Test("Existing seven-day widget scope remains seven complete days")
+	func widgetSevenDayScope() throws {
+		let period = try #require(TrendsPeriod(rawValue: 7))
+		let now = try date(2026, 11, 4, hour: 12)
+		let range = try #require(period.range(calendar: calendar, now: now))
+		#expect(range.start == (try date(2026, 10, 28)))
+		#expect(range.end == (try date(2026, 11, 3)))
+		#expect(range.dayCount(calendar: calendar) == 7)
+	}
+
 	@Test("Year presets use calendar years including leap day")
 	func yearPresets() throws {
 		let now = try date(2024, 3, 1, hour: 12)

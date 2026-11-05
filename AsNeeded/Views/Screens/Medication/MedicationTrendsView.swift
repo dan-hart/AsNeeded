@@ -163,7 +163,7 @@ struct MedicationTrendsView: View {
 
 			}
 			.sheet(isPresented: $showCustomRange) {
-				TrendsCustomRangeSheet(initialRange: selectedRange, earliestEvent: viewModel.events.first?.date) { range in
+				MedicationDateRangeSheet(initialRange: selectedRange, earliestEvent: viewModel.events.first?.date) { range in
 					customRange = range
 				}
 			}
@@ -276,7 +276,8 @@ struct MedicationTrendsView: View {
 		Menu {
 			Picker("Time Range", selection: daysWindowSelection) {
 				if customRange != nil { Text("Custom Range").tag(0) }
-				ForEach(TrendsPeriod.allCases, id: \.rawValue) { period in
+				if selectedPeriod == .sevenDays { Text(selectedPeriod.displayName).tag(7) }
+				ForEach(TrendsPeriod.menuPeriods, id: \.rawValue) { period in
 					Text(period.displayName)
 						.font(.customFont(fontFamily, style: .body))
 						.tag(period.rawValue)
@@ -568,12 +569,12 @@ struct MedicationTrendsView: View {
 				.onTapGesture {
 					// Navigate to history with the selected medication
 					if let medicationID = viewModel.selectedMedicationID {
-						navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+						navigationManager.navigateToHistory(medicationID: medicationID.uuidString, range: selectedRange)
 					}
 				}
 				Button {
 					if let medicationID = viewModel.selectedMedicationID {
-						navigationManager.navigateToHistory(medicationID: medicationID.uuidString)
+						navigationManager.navigateToHistory(medicationID: medicationID.uuidString, range: selectedRange)
 					}
 				} label: {
 					Label("View History", systemSymbol: .clock)
@@ -607,7 +608,7 @@ struct MedicationTrendsView: View {
 					onDateTapped: { date in
 						// Navigate to history with selected date and medication
 						if let medicationID = viewModel.selectedMedicationID {
-							navigationManager.navigateToHistory(date: date, medicationID: medicationID.uuidString)
+							navigationManager.navigateToHistory(date: date, medicationID: medicationID.uuidString, range: selectedRange)
 						}
 					}
 				)

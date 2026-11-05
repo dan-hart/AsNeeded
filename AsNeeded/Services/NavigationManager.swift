@@ -15,6 +15,7 @@ final class NavigationManager: ObservableObject {
 
     @Published var historyRequestID = UUID()
     @Published var historyTargetDate: Date?
+	@Published var historyTargetRange: TrendsDateRange?
     @Published var historyTargetMedicationID: String?
     @Published var pendingLogMedicationID: String?
     @Published var shouldShowAddMedication = false
@@ -73,8 +74,9 @@ final class NavigationManager: ObservableObject {
 	}
 
     /// Navigate to history tab with optional date and medication filter
-    func navigateToHistory(date: Date? = nil, medicationID: String? = nil) {
+    func navigateToHistory(date: Date? = nil, medicationID: String? = nil, range: TrendsDateRange? = nil) {
         historyTargetDate = date
+		historyTargetRange = range
         historyTargetMedicationID = medicationID
 		historyRequestID = UUID()
         selectedTab = 1 // History tab index
@@ -97,6 +99,7 @@ final class NavigationManager: ObservableObject {
     /// Clear navigation state
     func clearHistoryNavigation() {
         historyTargetDate = nil
+		historyTargetRange = nil
         historyTargetMedicationID = nil
     }
 
