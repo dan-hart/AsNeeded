@@ -1,26 +1,6 @@
 version = 1
 
 [[bindings]]
-doc = "docs/architecture.md"
-target = "AsNeeded.xcodeproj/project.pbxproj"
-sig = "f165b395237e0221"
-
-[[bindings]]
-doc = "docs/architecture.md"
-target = "AsNeeded/Services/WatchConnectivity/WCReceiver.swift"
-sig = "b877b48ad9d8ad34"
-
-[[bindings]]
-doc = "docs/architecture.md"
-target = "AsNeeded/Shared/SharedPlatformContracts.swift"
-sig = "db6c5419f7ba99b9"
-
-[[bindings]]
-doc = "docs/architecture.md"
-target = "WristAsNeeded Watch App/WCSender.swift"
-sig = "676812d4e1dde345"
-
-[[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/LogDoseView.swift"
 sig = "c8590f7ce36635dd"
@@ -179,6 +159,26 @@ sig = "44f88574d92126f5"
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/WatchMessageValidationTests.swift"
 sig = "4775a21d5da682f9"
+
+[[bindings]]
+doc = "docs/architecture.md"
+target = "AsNeeded.xcodeproj/project.pbxproj"
+sig = "5593ac2fba600926"
+
+[[bindings]]
+doc = "docs/architecture.md"
+target = "AsNeeded/Services/WatchConnectivity/WCReceiver.swift"
+sig = "b877b48ad9d8ad34"
+
+[[bindings]]
+doc = "docs/architecture.md"
+target = "AsNeeded/Shared/SharedPlatformContracts.swift"
+sig = "db6c5419f7ba99b9"
+
+[[bindings]]
+doc = "docs/architecture.md"
+target = "WristAsNeeded Watch App/WCSender.swift"
+sig = "676812d4e1dde345"
 
 [[bindings]]
 doc = "docs/drift.md"
