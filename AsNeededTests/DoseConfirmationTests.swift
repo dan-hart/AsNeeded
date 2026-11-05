@@ -72,6 +72,24 @@ struct DoseConfirmationTests {
 		#expect(store.medications.first?.quantity == 10)
 	}
 
+	@Test("A historical form confirmation does not replay an old interval warning")
+	func historicalFormConfirmation() async throws {
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), defaults: preferences.defaults, defaultsDomainName: preferences.name)
+		var medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		medication.minimumHoursBetweenDoses = 4
+		try await store.addMedication(medication)
+		let date = Date().addingTimeInterval(-48 * 3600)
+		let dose = ANDoseConcept(amount: 1, unit: .tablet)
+		try await store.addEvent(ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: date.addingTimeInterval(-3600)))
+		let historical = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: date)
+		try await store.recordDose(historical)
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults)
+		model.presentDoseConfirmation(med: medication, dose: dose, event: historical, isBackdated: true)
+		#expect(model.quickLogFeedback?.tone == .success)
+		#expect(model.quickLogFeedback?.title == "Dose logged")
+	}
+
 	@Test("Four-second expiry clears the toast without undoing the dose")
 	func autoDismiss() async throws {
 		let preferences = try IsolatedTestPreferences()

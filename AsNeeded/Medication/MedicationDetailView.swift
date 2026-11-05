@@ -127,7 +127,7 @@ struct MedicationDetailView: View {
         .sheet(isPresented: $showLogDose, onDismiss: {
 			if !showLogDose { doseLogSession.reset() }
 		}) {
-            LogDoseView(medication: medication, source: "detail_sheet", draft: doseLogSession.draft(for: medication)) { dose, event, operationID in
+            LogDoseView(medication: medication, source: "detail_sheet", draft: doseLogSession.draft(for: medication)) { dose, event, operationID, isBackdated in
                 let success = await viewModel.logDose(
                     medication: medication,
                     dose: dose,
@@ -138,7 +138,7 @@ struct MedicationDetailView: View {
 
                 if success {
                     await refreshMedication()
-					doseConfirmation.presentDoseConfirmation(med: medication, dose: dose, event: event)
+					doseConfirmation.presentDoseConfirmation(med: medication, dose: dose, event: event, isBackdated: isBackdated)
                 }
 
                 return success

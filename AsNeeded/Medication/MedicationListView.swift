@@ -140,13 +140,13 @@ struct MedicationListView: View {
                 .sheet(item: $viewModel.logMedication, onDismiss: {
 					if viewModel.logMedication == nil { doseLogSession.reset() }
 				}) { med in
-                    LogDoseView(medication: med, source: "list_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+                    LogDoseView(medication: med, source: "list_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID, isBackdated in
                         await viewModel.logDose(
                             med: med,
                             dose: dose,
                             event: event,
                             source: "list_sheet",
-                            operationID: operationID
+                            operationID: operationID, isBackdated: isBackdated
                         )
                     }
                 }

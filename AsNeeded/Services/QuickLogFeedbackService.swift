@@ -27,20 +27,24 @@ struct QuickLogFeedbackService {
 		loggedEvent: ANEventConcept,
 		assessment: MedicationDoseGuidanceService.Assessment,
 		nextDoseDate: Date?,
-		at date: Date = .now
+		at date: Date = .now,
+		isBackdated: Bool = false
 	) -> Feedback {
-		let tone = tone(for: assessment.severity)
+		// A historical entry is a receipt for an already-taken dose, not a decision to take one now.
+		let historical = isBackdated && loggedEvent.date < date
+		let effectiveNextDoseDate = historical ? nil : nextDoseDate
+		let tone: Tone = historical ? .success : tone(for: assessment.severity)
 		let title = title(for: tone)
 		let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount, locale: locale))")
 		let message = String(localized: "\(recordedDose) · \(medication.displayName) · \(timeFormatter.string(from: loggedEvent.date))")
-		let nextWindowText = nextWindowText(from: nextDoseDate, at: date)
+		let nextWindowText = nextWindowText(from: effectiveNextDoseDate, at: date)
 
 		return Feedback(
 			tone: tone,
 			title: title,
 			message: message,
-			detail: assessment.detail,
-			nextDoseDate: nextDoseDate,
+			detail: historical ? "" : assessment.detail,
+			nextDoseDate: effectiveNextDoseDate,
 			nextWindowText: nextWindowText,
 			undoEventID: loggedEvent.id
 		)

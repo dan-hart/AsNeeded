@@ -706,8 +706,8 @@ struct MedicationHistoryView: View {
 				.sheet(item: $logMedication, onDismiss: {
 					if logMedication == nil { doseLogSession.reset() }
 				}) { med in
-					LogDoseView(medication: med, source: "history_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
-						let saved = await quickLogCoordinator.logDose(med: med, dose: dose, event: event, source: "history_sheet", operationID: operationID)
+					LogDoseView(medication: med, source: "history_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID, isBackdated in
+						let saved = await quickLogCoordinator.logDose(med: med, dose: dose, event: event, source: "history_sheet", operationID: operationID, isBackdated: isBackdated)
 						if saved { logMedication = nil }
 						return saved
 					}

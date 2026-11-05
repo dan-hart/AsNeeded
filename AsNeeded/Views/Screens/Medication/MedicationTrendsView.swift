@@ -198,9 +198,9 @@ struct MedicationTrendsView: View {
 			.sheet(item: $quickLogCoordinator.logMedication, onDismiss: {
 				if quickLogCoordinator.logMedication == nil { doseLogSession.reset() }
 			}) { med in
-				LogDoseView(medication: med, source: "trends_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID in
+				LogDoseView(medication: med, source: "trends_sheet", draft: doseLogSession.draft(for: med)) { dose, event, operationID, isBackdated in
 					await quickLogCoordinator.logDose(med: med, dose: dose, event: event,
-						source: "trends_sheet", operationID: operationID)
+						source: "trends_sheet", operationID: operationID, isBackdated: isBackdated)
 				}
 			}
 			.onAppear {

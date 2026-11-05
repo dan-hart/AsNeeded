@@ -16,7 +16,7 @@ struct LogDoseView: View {
 	final class Draft: ObservableObject {
 		@Published var amount: Double
 		@Published var selectedUnit: ANUnitConcept
-		@Published var selectedDate: Date = .now
+		@Published var selectedDate: Date
 		@Published var reason = ""
 		@Published var symptomSeverityBefore = 0
 		@Published var symptomSeverityAfter = 0
@@ -29,10 +29,35 @@ struct LogDoseView: View {
 		@Published var selectedQuickOption: String? = "Now"
 		@Published var isLogging = false
 
-		init(medication: ANMedicationConcept) {
+		init(medication: ANMedicationConcept, at date: Date = .now) {
+			selectedDate = date
 			amount = medication.prescribedDoseAmount ?? 1
 			selectedUnit = medication.prescribedUnit ?? .unit
 		}
+
+		func selectDate(_ date: Date) {
+			selectedDate = date
+			selectedQuickOption = nil
+		}
+
+		func selectQuickTime(label: String, secondsAgo: TimeInterval, at date: Date = .now) {
+			selectedDate = date.addingTimeInterval(-secondsAgo)
+			selectedQuickOption = label
+		}
+
+		func toggleDatePicker(at date: Date = .now) {
+			if !showingDatePicker, selectedQuickOption == "Now" { selectedDate = date }
+			showingDatePicker.toggle()
+		}
+
+		func doseDate(at date: Date) -> Date {
+			selectedQuickOption == "Now" ? date : selectedDate
+		}
+
+		func isBackdated(at date: Date) -> Bool {
+			selectedQuickOption != "Now" && selectedDate < date
+		}
+
 	}
 
 	@MainActor
@@ -59,7 +84,7 @@ struct LogDoseView: View {
 	@FocusState private var amountIsFocused: Bool
     let medication: ANMedicationConcept
     let source: String
-    var onLog: (ANDoseConcept, ANEventConcept, UUID) async -> Bool
+    var onLog: (ANDoseConcept, ANEventConcept, UUID, Bool) async -> Bool
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @ScaledMetric(relativeTo: .caption) private var stepperIconSize: CGFloat = 22
@@ -162,11 +187,17 @@ struct LogDoseView: View {
 		)
 	}
 
+	private var doseDate: Date { draft.doseDate(at: .now) }
+	private var isBackdated: Bool { draft.isBackdated(at: .now) }
+	private var customDateSelection: Binding<Date> {
+		Binding(get: { draft.selectedDate }, set: { draft.selectDate($0) })
+	}
+
     private var assessment: MedicationDoseGuidanceService.Assessment {
         guidanceService.assessment(
             for: medication,
             proposedDose: proposedDose,
-            at: draft.selectedDate,
+            at: doseDate,
             events: dataStore.events,
             profile: safetyProfile
         )
@@ -191,7 +222,7 @@ struct LogDoseView: View {
         medication: ANMedicationConcept,
         source: String = "unknown",
 		draft: Draft? = nil,
-        onLog: @escaping (ANDoseConcept, ANEventConcept, UUID) async -> Bool
+        onLog: @escaping (ANDoseConcept, ANEventConcept, UUID, Bool) async -> Bool
     ) {
         self.medication = medication
         self.source = source
@@ -220,11 +251,13 @@ struct LogDoseView: View {
             note: draft.note
         )
         let encodedNote = (try? DoseReflectionCodec.encode(reflection)) ?? draft.note.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        let submittedAt = Date()
+		let historical = draft.isBackdated(at: submittedAt)
         let event = ANEventConcept(
             eventType: .doseTaken,
             medication: medication,
             dose: dose,
-            date: draft.selectedDate,
+            date: draft.doseDate(at: submittedAt),
             note: encodedNote
         )
 
@@ -235,7 +268,7 @@ struct LogDoseView: View {
             operationID: operationID
         )
 
-        let success = await onLog(dose, event, operationID)
+        let success = await onLog(dose, event, operationID, historical)
         if success {
             logger.logDoseOperation(
                 "Completed",
@@ -269,7 +302,7 @@ struct LogDoseView: View {
     private var guidanceAccessibilityLabel: String {
         var parts = [assessment.headline, assessment.detail]
 
-        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > draft.selectedDate {
+        if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > doseDate {
             parts.append(String(localized: "Next saved interval opens \(nextEligibleDate.formatted(date: .omitted, time: .shortened))."))
         }
 
@@ -455,17 +488,17 @@ struct LogDoseView: View {
                 Button(action: {
 					DoseTimeTip().invalidate(reason: .actionPerformed)
                     withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                        draft.showingDatePicker.toggle()
+                        draft.toggleDatePicker()
                         hapticsManager.selectionChanged()
                     }
                 }) {
                     HStack {
                         VStack(alignment: .leading, spacing: smallSpacing) {
-                            Text(draft.selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
+                            Text(doseDate, format: .dateTime.weekday(.wide).month(.wide).day())
                                 .font(.customFont(fontFamily, style: .subheadline))
                                 .foregroundStyle(.secondary)
 
-                            Text(draft.selectedDate, format: .dateTime.hour().minute())
+                            Text(doseDate, format: .dateTime.hour().minute())
                                 .font(.customFont(fontFamily, style: .title3))
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.primary)
@@ -485,21 +518,18 @@ struct LogDoseView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Dose time")
-                .accessibilityValue(draft.selectedDate.formatted(date: .abbreviated, time: .shortened))
+                .accessibilityValue(doseDate.formatted(date: .abbreviated, time: .shortened))
                 .accessibilityHint("Tap to show or hide the date picker")
 				.popoverTip(AppTips.isConfigured ? DoseTimeTip() : nil)
 
                 if draft.showingDatePicker {
                     DatePicker(
                             "Dose date and time",
-                        selection: $draft.selectedDate,
+                        selection: customDateSelection,
                         displayedComponents: [.date, .hourAndMinute]
                     )
                     .datePickerStyle(.wheel)
                     .labelsHidden()
-                    .onChange(of: draft.selectedDate) { _, _ in
-                        draft.selectedQuickOption = nil
-                    }
                     .transition(reduceMotion ? .opacity : .asymmetric(
                         insertion: .push(from: .top).combined(with: .opacity),
                         removal: .push(from: .bottom).combined(with: .opacity)
@@ -517,8 +547,7 @@ struct LogDoseView: View {
                         Button(action: {
 							DoseTimeTip().invalidate(reason: .actionPerformed)
                             withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.8)) {
-                                draft.selectedDate = Date().addingTimeInterval(-secondsAgo)
-                                draft.selectedQuickOption = label
+                                draft.selectQuickTime(label: label, secondsAgo: secondsAgo)
                                 draft.showingDatePicker = false
                                 hapticsManager.selectionChanged()
                             }
@@ -594,7 +623,7 @@ struct LogDoseView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > draft.selectedDate {
+            if let nextEligibleDate = assessment.nextEligibleDate, nextEligibleDate > doseDate {
                 HStack(alignment: .top, spacing: mediumSpacing) {
                     Image(systemSymbol: .clockBadgeExclamationmark)
                         .foregroundStyle(tint)
@@ -912,7 +941,7 @@ struct LogDoseView: View {
         .opacity(draft.amount <= 0 || draft.isLogging ? 0.6 : 1.0)
         .accessibilityLabel(draft.isLogging ? String(localized: "Logging dose") : String(localized: "Log dose"))
         .accessibilityValue(draft.selectedUnit.localizedCompactAmount(for: draft.amount))
-        .accessibilityHint(assessment.severity == .clear ? String(localized: "Saves this dose entry") : String(localized: "Saves this dose entry with the shown guidance warning"))
+        .accessibilityHint(isBackdated || assessment.severity == .clear ? String(localized: "Saves this dose entry") : String(localized: "Saves this dose entry with the shown guidance warning"))
     }
 
     var body: some View {
@@ -921,7 +950,7 @@ struct LogDoseView: View {
 				ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: contentSpacing) {
-						if assessment.severity != .clear {
+						if !isBackdated && assessment.severity != .clear {
 							reviewGuidanceButton(proxy: proxy)
 						}
                         headerCard
@@ -931,10 +960,10 @@ struct LogDoseView: View {
 
                         dateTimeSection
 
-						if assessment.severity != .clear ||
+						if !isBackdated && (assessment.severity != .clear ||
 							medication.minimumHoursBetweenDoses != nil ||
 							safetyProfile.minimumHoursBetweenDoses != nil ||
-							assessment.maxDailyAmount != nil {
+							assessment.maxDailyAmount != nil) {
 							guidanceSection
 								.id(ScrollTarget.guidance)
 						}
@@ -1004,7 +1033,7 @@ struct LogDoseView: View {
     #Preview {
         LogDoseView(
             medication: ANMedicationConcept(clinicalName: "Ibuprofen", nickname: "Pain Relief"),
-            onLog: { _, _, _ in true }
+            onLog: { _, _, _, _ in true }
         )
     }
 #endif

@@ -11,6 +11,7 @@ final class MedicationListViewModel: ObservableObject {
     // MARK: - Properties
     private let dataStore: DataStore
 	private let undoPersistence: (UUID) async throws -> Void
+	private let now: () -> Date
 	private let confirmationSleep: (Duration) async throws -> Void
 	private var undoingEventIDs: Set<UUID> = []
 	private var nextConfirmationSequence = 0
@@ -78,8 +79,9 @@ final class MedicationListViewModel: ObservableObject {
     }
 
     // MARK: - Initialization
-    init(dataStore: DataStore = .shared, defaults: UserDefaults = .standard, undoPersistence: ((UUID) async throws -> Void)? = nil, confirmationSleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
+    init(dataStore: DataStore = .shared, defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init, undoPersistence: ((UUID) async throws -> Void)? = nil, confirmationSleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.dataStore = dataStore
+		self.now = now
 		_medicationOrder = AppStorage(wrappedValue: [], UserDefaultsKeys.medicationOrder, store: defaults)
 		self.confirmationSleep = confirmationSleep
 		self.undoPersistence = undoPersistence ?? { eventID in try await dataStore.deleteEvents(ids: [eventID]) }
@@ -198,7 +200,8 @@ final class MedicationListViewModel: ObservableObject {
         dose: ANDoseConcept,
         event: ANEventConcept,
         source: String = "list_sheet",
-        operationID: UUID = UUID()
+        operationID: UUID = UUID(),
+		isBackdated: Bool = false
     ) async -> Bool {
 		guard let med = dataStore.medications.first(where: { $0.id == med.id }) else {
 			logger.warning("Skipped dose log for a medication that is no longer available")
@@ -236,7 +239,7 @@ final class MedicationListViewModel: ObservableObject {
                 eventCountBefore: eventCountBefore,
                 eventCountAfter: dataStore.events.count
             )
-			presentDoseConfirmation(med: med, dose: dose, event: eventToSave, sequence: confirmationSequence)
+			presentDoseConfirmation(med: med, dose: dose, event: eventToSave, isBackdated: isBackdated, sequence: confirmationSequence)
             return true
         }
 
@@ -251,7 +254,7 @@ final class MedicationListViewModel: ObservableObject {
 		}
         let confirmationSequence = allocateConfirmationSequence()
         let operationID = UUID()
-        let loggedAt = Date()
+        let loggedAt = now()
         let dose = ANDoseConcept(
             amount: medication.prescribedDoseAmount ?? 1,
             unit: medication.prescribedUnit ?? .unit
@@ -349,8 +352,8 @@ final class MedicationListViewModel: ObservableObject {
     }
 
 	/// Confirm an already-persisted regular dose without saving it a second time.
-	func presentDoseConfirmation(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept, sequence: Int? = nil) {
-		let now = Date()
+	func presentDoseConfirmation(med: ANMedicationConcept, dose: ANDoseConcept, event: ANEventConcept, isBackdated: Bool = false, sequence: Int? = nil) {
+		let now = self.now()
 		let assessment = guidanceService.assessment(
 			for: med, proposedDose: dose, at: event.date,
 			events: dataStore.events.filter { $0.id != event.id },
@@ -359,7 +362,7 @@ final class MedicationListViewModel: ObservableObject {
 		let feedback = feedbackService.feedback(
 			medication: med, dose: dose, loggedEvent: event, assessment: assessment,
 			nextDoseDate: guidanceService.nextEligibleDate(for: med, at: now, events: dataStore.events, profile: safetyProfileStore.profile(for: med.id)),
-			at: now
+			at: now, isBackdated: isBackdated
 		)
 		showQuickLogToast(med: med, dose: dose, feedback: feedback,
 			sequence: sequence ?? allocateConfirmationSequence())
