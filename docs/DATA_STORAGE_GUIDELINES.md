@@ -650,7 +650,7 @@ and requires a successful safety backup before replacing files. The shipping
 automatic-backup restore UI uses the separate JSON import path.
 
 Failure/retry and repeated-launch coverage uses disposable directories/defaults,
-not permission changes to the shared container. See the [stabilization evidence](testing/1.2.0-data-integrity-stabilization.md).
+not permission changes to the shared container. See the [stabilization evidence](archive/1.2.0/testing/1.2.0-data-integrity-stabilization.md).
 The October 28 pass routes dose/stock, history changes and JSON imports through
 `MedicationPersistenceTransactions`. It keeps the existing databases and adds
 `.persistence.lock` plus a version-1 `pending-data-transaction.json` undo journal
@@ -667,7 +667,7 @@ Retries with the same event ID cannot deduct twice; Watch messages retain that I
 No unit conversion is inferred. Existing database paths/schema are unchanged.
 Older releases cannot recover this journal: do not downgrade with one pending.
 These are process-interruption guarantees, not certification against every device
-power-loss/filesystem failure. See [build 310 verification](testing/1.2.0-310-stabilization-verification.md).
+power-loss/filesystem failure. See [build 310 verification](archive/1.2.0/testing/1.2.0-310-stabilization-verification.md).
 
 
 ### Shared Quick Log Recording Recency

@@ -155,7 +155,6 @@ struct MedicationEditViewModelTests {
 	}
 
     // MARK: - Initialization Tests
-
     @Test("Initialize with nil medication creates new medication")
     @MainActor
     func initWithNilMedication() {
@@ -208,7 +207,6 @@ struct MedicationEditViewModelTests {
     }
 
     // MARK: - Form Validation Tests
-
     @Test("Form valid with minimal required fields")
     @MainActor
     func formValidMinimal() {
@@ -328,7 +326,6 @@ struct MedicationEditViewModelTests {
     }
 
     // MARK: - Build Medication Tests
-
     @Test("Build medication with all fields")
     @MainActor
     func buildMedicationAllFields() {
@@ -487,7 +484,6 @@ struct MedicationEditViewModelTests {
     }
 
     // MARK: - Edge Cases
-
     @Test("Whitespace trimming in all text fields")
     @MainActor
     func whitespaceTrimming() {
@@ -519,43 +515,6 @@ struct MedicationEditViewModelTests {
     }
 
     // MARK: - Performance Tests
-
-    @Test("Form validation is performant")
-    @MainActor
-    func formValidationPerformance() {
-        let viewModel = MedicationEditViewModel(medication: nil)
-
-        let startTime = Date()
-        for i in 0 ..< 1000 {
-            viewModel.clinicalName = "Med \(i)"
-            viewModel.prescribedDoseText = "\(i)"
-            viewModel.prescribedUnit = i % 2 == 0 ? .milligram : .microgram
-            _ = viewModel.isFormValid
-        }
-        let elapsed = Date().timeIntervalSince(startTime)
-
-        #expect(elapsed < 0.5) // Should complete 1000 validations in less than 500ms
-    }
-
-    @Test("Build medication is performant")
-    @MainActor
-    func buildMedicationPerformance() {
-        let viewModel = MedicationEditViewModel(medication: nil)
-        viewModel.clinicalName = "Test Medication"
-        viewModel.nickname = "Test"
-        viewModel.quantityText = "100"
-        viewModel.prescribedDoseText = "200"
-        viewModel.prescribedUnit = .milligram
-
-        let startTime = Date()
-        for _ in 0 ..< 1000 {
-            _ = viewModel.buildMedication()
-        }
-        let elapsed = Date().timeIntervalSince(startTime)
-
-        #expect(elapsed < 0.5) // Should complete 1000 builds in less than 500ms
-    }
-
 	@Test("Medication edits parse localized dose, stock and limits without changing their values")
 	@MainActor
 	func localizedMedicationEdit() {

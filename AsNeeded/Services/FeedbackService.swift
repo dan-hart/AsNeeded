@@ -308,11 +308,6 @@ extension FeedbackService: @preconcurrency MFMailComposeViewControllerDelegate {
     }
 }
 
-enum FeedbackError: Error {
-    case zipCreationFailed
-    case logCollectionFailed
-}
-
 // MARK: - Bundle Extensions
 
 extension Bundle {

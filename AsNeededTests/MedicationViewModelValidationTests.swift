@@ -9,9 +9,13 @@ import Testing
 @Suite("Medication ViewModel Validation Tests", .tags(.viewModel, .validation, .unit))
 @MainActor
 struct MedicationViewModelValidationTests {
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
+
     private var dataStore: DataStore
 
     init() async throws {
+		preferences = try IsolatedTestPreferences()
         // Create test instance with isolated storage
         dataStore = DataStore(testIdentifier: "ViewModelValidationTests")
         // Clear any existing test data
@@ -19,7 +23,6 @@ struct MedicationViewModelValidationTests {
     }
 
     // MARK: - History ViewModel Tests
-
     @Test("History ViewModel keeps valid selected medication on init")
     func historyViewModelKeepsValidSelection() async throws {
         // Given - Add a medication and set it as selected
@@ -28,10 +31,10 @@ struct MedicationViewModelValidationTests {
             nickname: nil
         )
         try await dataStore.addMedication(medication)
-        UserDefaults.standard.set(medication.id.uuidString, forKey: "historySelectedMedicationID")
+		defaults.set(medication.id.uuidString, forKey: UserDefaultsKeys.historySelectedMedicationID)
 
         // When - Initialize the view model
-        let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
         // Then - Valid selection should be kept
         #expect(viewModel.selectedMedicationID == medication.id.uuidString,
@@ -49,10 +52,10 @@ struct MedicationViewModelValidationTests {
             prescribedUnit: .milligram
         )
         try await dataStore.addMedication(medication)
-        UserDefaults.standard.set(medication.id.uuidString, forKey: "trendsSelectedMedicationID")
+		defaults.set(medication.id.uuidString, forKey: UserDefaultsKeys.trendsSelectedMedicationID)
 
         // When - Initialize the view model
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults)
 
         // Then - Valid selection should be kept
         #expect(viewModel.selectedMedicationID == medication.id,
@@ -66,7 +69,7 @@ struct MedicationViewModelValidationTests {
         // Given - Initialize with non-existent medication ID
         let nonExistentID = UUID()
         let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
+			dataStore: dataStore, defaults: defaults,
             selectedMedicationID: nonExistentID
         )
 

@@ -300,9 +300,8 @@ struct NotificationManagerTests {
 	}
 
     // MARK: - ReminderDetail Tests
-
     @Test("ReminderDetail initializes from valid request")
-    func reminderDetailInitialization() {
+	func reminderDetailInitialization() throws {
         // Create a mock notification request
         let content = UNMutableNotificationContent()
         content.title = "Test Title"
@@ -320,11 +319,7 @@ struct NotificationManagerTests {
             trigger: trigger
         )
 
-        guard let detail = ReminderDetail(from: request) else {
-            // ReminderDetail might be nil if trigger is invalid in test environment
-            #expect(true)
-            return
-        }
+		let detail = try #require(ReminderDetail(from: request))
 
         #expect(detail.id == "test-id")
         #expect(detail.title == "Test Title")
@@ -333,7 +328,7 @@ struct NotificationManagerTests {
     }
 
     @Test("ReminderDetail handles repeating reminders")
-    func reminderDetailRepeating() {
+	func reminderDetailRepeating() throws {
         let content = UNMutableNotificationContent()
         content.title = "Daily Reminder"
         content.body = "Take medication"
@@ -350,10 +345,7 @@ struct NotificationManagerTests {
             trigger: trigger
         )
 
-        guard let detail = ReminderDetail(from: request) else {
-            #expect(true)
-            return
-        }
+		let detail = try #require(ReminderDetail(from: request))
 
         #expect(detail.isRepeating == true)
         #expect(detail.repeatInfo != nil)

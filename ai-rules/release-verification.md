@@ -14,4 +14,4 @@ Use the `asc` CLI whenever it supports the required App Store Connect operation.
 
 Use the installed release tooling's current help. Do not embed account credentials, tester contact lists, or machine-specific provisioning paths in repo instructions.
 
-For local AsNeeded exports, prefer the optional `scripts/export-testflight.sh` when its project-specific local signing options are configured. It pins the intended identity/profiles and avoids unrelated temporary signing keychains. `ASNEEDED_EXPORT_OPTIONS` supports other hosts; keep those local files outside Git. See [the verified repair](../docs/testing/2026-10-27-signing-repair.md).
+For local AsNeeded exports, prefer the optional `scripts/export-testflight.sh` when its project-specific local signing options are configured. It pins the intended identity/profiles and avoids unrelated temporary signing keychains. `ASNEEDED_EXPORT_OPTIONS` supports other hosts; keep those local files outside Git. See [the verified repair](../docs/archive/1.2.0/testing/2026-10-27-signing-repair.md).

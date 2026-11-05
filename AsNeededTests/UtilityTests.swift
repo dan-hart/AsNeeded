@@ -10,7 +10,6 @@ import Testing
 @MainActor
 struct UtilityTests {
     // MARK: - MedicationSearchUtility Tests
-
     @Test("Find best match with exact name")
     func findBestMatchExact() {
         // Given
@@ -89,7 +88,6 @@ struct UtilityTests {
     }
 
     // MARK: - DateUtility Tests
-
     @Test("Get day range for date")
     func dayRange() {
         // Given
@@ -105,10 +103,10 @@ struct UtilityTests {
     }
 
     @Test("Filter events for today")
-    func filterEventsForToday() {
+    func filterEventsForToday() throws {
         // Given
         let todayEvent = ANEventConcept(eventType: .doseTaken, medication: nil, dose: nil, date: Date())
-        let yesterdayEvent = ANEventConcept(eventType: .doseTaken, medication: nil, dose: nil, date: Date().addingTimeInterval(-86400))
+		let yesterdayEvent = ANEventConcept(eventType: .doseTaken, medication: nil, dose: nil, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Date())))
         let events = [todayEvent, yesterdayEvent]
 
         // When
@@ -131,7 +129,6 @@ struct UtilityTests {
     }
 
     // MARK: - ValidationUtility Tests
-
     @Test("Validate medication success")
     func validateMedicationSuccess() {
         // Given
@@ -234,7 +231,6 @@ struct UtilityTests {
     }
 
     // MARK: - Helper Methods
-
     private func createMedication(name: String, nickname: String? = nil) -> ANMedicationConcept {
         return ANMedicationConcept(
             clinicalName: name,

@@ -1,0 +1,25 @@
+name: Documentation freshness
+
+on:
+  push:
+    branches: [main, develop, task/v1.3.0]
+  pull_request:
+    branches: [main, develop, task/v1.3.0]
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Drift v0.10.1
+        uses: fiberplane/drift@fc90540acb1a3f15ab3c90b4c8c9bac16c7a6522 # v0.10.1
+        with:
+          version: v0.10.1
+      - name: Verify freshness-check behavior
+        run: python3 scripts/tests/drift.test.py
+      - name: Check maintained business rules
+        run: drift check

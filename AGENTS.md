@@ -14,13 +14,15 @@ Always load:
 
 Then load only the additional rule files triggered by the current task.
 
+Current source ownership and behavior are indexed in [docs/README.md](docs/README.md). Earlier plans and release evidence live in [the archive](docs/archive/README.md); they do not authorize new work. Keep scratch plans outside Git unless they record a requested durable decision.
+
 Optional local enhancements such as Codex superpowers are allowed for maintainers, but they are never required for contributors and must never be a dependency for hooks, CI, builds, or tests. Keep machine-local config out of git. Optional reviewed skills live in `skills/`; see `docs/ai/skills.md` for task routing and local adaptations. See `docs/ai/README.md` for the contributor boundary.
 
 ## Release Scope
 
 Active development is on 1.3.0. Scope new work to the maintainer's request; a skill or historical plan does not authorize unrelated features, redesigns, or migrations. The following freeze applies when maintaining 1.2.0, not to explicitly approved 1.3.0 work.
 
-Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experimental capabilities, broad redesigns, or speculative refactors. Work on reproducible bug fixes, regression coverage, accessibility, clear language, and continuity with the live 1.1.2 experience. Build 309 is the frozen feature baseline. Historical plans do not expand this scope; only an explicit maintainer decision can reopen it. Follow [the stabilization checklist](docs/testing/1.2.0-stabilization.md).
+Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experimental capabilities, broad redesigns, or speculative refactors. Work on reproducible bug fixes, regression coverage, accessibility, clear language, and continuity with the live 1.1.2 experience. Build 309 is the frozen feature baseline. Historical plans do not expand this scope; only an explicit maintainer decision can reopen it. Follow [the stabilization checklist](docs/archive/1.2.0/testing/1.2.0-stabilization.md).
 
 ## Build And Verification
 
@@ -40,7 +42,7 @@ Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experime
 - Never use force unwraps in app code or tests.
 - Use `Image(systemSymbol:)` from SFSafeSymbols except in watchOS targets.
 - Use `.accent` for interactive color treatment.
-- Use `.customFont()` for app text and add `@Environment(\\.fontFamily)` in views that render text.
+- Use `.customFont()` for app text and add `@Environment(\.fontFamily)` in views that render text.
 - Use `.customNavigationTitle(...)` for navigation titles.
 - Use `.noTruncate()` for critical medication names.
 - Check `AsNeeded/Views/Components/` before creating new reusable UI patterns.

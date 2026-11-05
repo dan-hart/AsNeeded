@@ -630,52 +630,6 @@ struct DataManagementView: View {
     }()
 }
 
-// Document wrapper for file export
-private struct DataDocument: FileDocument {
-    static let readableContentTypes: [UTType] = [.json]
-    static let writableContentTypes: [UTType] = [.json]
-
-    let data: Data
-
-    init(data: Data) {
-        self.data = data
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
-        self.data = data
-    }
-
-    func fileWrapper(configuration _: WriteConfiguration) throws -> FileWrapper {
-        return FileWrapper(regularFileWithContents: data)
-    }
-}
-
-// Document wrapper for log file export
-private struct LogDocument: FileDocument {
-    static let readableContentTypes: [UTType] = [.plainText]
-    static let writableContentTypes: [UTType] = [.plainText]
-
-    let data: Data
-
-    init(data: Data) {
-        self.data = data
-    }
-
-    init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
-        self.data = data
-    }
-
-    func fileWrapper(configuration _: WriteConfiguration) throws -> FileWrapper {
-        return FileWrapper(regularFileWithContents: data)
-    }
-}
-
 #if DEBUG
     #Preview {
         DataManagementView()

@@ -13,6 +13,16 @@
 !default.perspectivev3
 
 # Build artifacts
+/worktrees/
+/.worktrees/
+/.claude/
+# Scratch agent plans stay local; durable decisions belong in current docs.
+/docs/superpowers/
+__pycache__/
+*.py[cod]
+/dev-build.log
+/test-results.log
+/Design/AppStoreConnect/*-Screenshots.zip
 /build
 .build/
 **/.build/

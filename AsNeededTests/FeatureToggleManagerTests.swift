@@ -9,7 +9,6 @@ import Testing
 @MainActor
 struct FeatureToggleManagerTests {
 	// MARK: - Initialization Tests
-
 	@Test("FeatureToggleManager is a singleton")
 	func singletonInstance() {
 		let instance1 = FeatureToggleManager.shared
@@ -18,15 +17,7 @@ struct FeatureToggleManagerTests {
 		#expect(instance1 === instance2)
 	}
 
-	@Test("FeatureToggleManager initializes successfully")
-	func initialization() {
-		let manager = FeatureToggleManager.shared
-
-		#expect(manager != nil)
-	}
-
 	// MARK: - Feature Toggle Availability Tests
-
 	@Test("Feature toggle availability in DEBUG builds")
 	func featureToggleAvailabilityDebug() {
 		let manager = FeatureToggleManager.shared

@@ -17,10 +17,13 @@ set -euo pipefail
 # =============================================================================
 
 if [ -x "./scripts/utilities/asp-preflight.sh" ]; then
-	# Storage changes require explicit review acknowledgement; never infer it from filenames.
+	# Risk classifications require explicit review acknowledgement; never infer it from filenames.
 	preflight_args=(--staged --strict)
 	if [ "${ASP_ACK_DATA_PATH:-0}" = "1" ]; then
 		preflight_args+=(--ack-data-path)
+	fi
+	if [ "${ASP_ACK_SYSTEM:-0}" = "1" ]; then
+		preflight_args+=(--ack-system)
 	fi
 	./scripts/utilities/asp-preflight.sh "${preflight_args[@]}"
 else

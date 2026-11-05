@@ -1,252 +1,79 @@
 # AsNeeded
 
-[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2026.0%2B-blue.svg)](https://developer.apple.com/ios/)
-[![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE)
+[![Swift](https://img.shields.io/badge/Swift-6-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2026%2B-blue.svg)](https://developer.apple.com/ios/)
+[![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](LICENSE.txt)
 
-Track as-needed medications with privacy and clarity.
+Track as-needed medication doses, review history, and keep clear records with local storage. All tracking features are free. Optional tips and recurring support purchases fund development and do not unlock features.
 
-AsNeeded is a privacy-first iOS app designed to help people track as-needed medications with calm, dependable tools for day-to-day self-management. It focuses on quick logging, saved safety guardrails, refill awareness, and clear insights so you always know what you took, when you took it, when you may be able to take more, and how your patterns are changing over time.
+AsNeeded records medication amounts and times, optional notes/reflections, stock, and refill information. Saved dose intervals and rolling 24-hour quantity limits provide guidance based on recorded doses; they are not medical clearance. Follow your prescription and care team's instructions.
 
-## Table of Contents
-- [Core Values](#core-values)
-- [Features](#features)
-- [Getting Started](#getting-started)
-- [Development](#development)
-- [Project Structure](#project-structure)
-- [Architecture](#architecture)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Privacy](#privacy)
-- [License](#license)
+## Start here
 
-## Core Values
-
-AsNeeded is built on three fundamental principles:
-
-- **Privacy First**: Local medication records, with sharing and backups you control
-- **Always Free**: All features free forever, no ads, no subscriptions required
-- **Open Source**: Transparent, inspectable, and community-driven
-
-Note on terminology: Some clinicians use the abbreviation "PRN" (from Latin "pro re nata") to mean "as needed." In this project and README, we use the plain phrase "as-needed" to keep things universally understandable.
-
----
+- [Contribute and set up development](CONTRIBUTING.md)
+- [Current documentation](docs/README.md)
+- [Features and business rules](docs/business-rules.md)
+- [Architecture and target ownership](docs/architecture.md)
+- [Build and test scripts](scripts/README.md)
+- [Design and App Store sources](Design/README.md)
+- [Privacy](PRIVACY.md), [security](SECURITY.md), and [medical disclaimer](DISCLAIMER.md)
 
 ## Features
 
-### Key Features
+- Log now or backdate an entry; hold to quick-log a default dose and Undo the exact entry.
+- Track quantities and units, notes, symptoms, effectiveness, and side effects.
+- Review History and Trends with medication/date filters, including calendar-year and custom ranges.
+- Save optional dose intervals and rolling quantity limits, track stock, and review refill information.
+- Set scheduled reminders and optional next-dose alerts; control notification-name privacy and per-medication urgency.
+- Access medication forms through widgets and Shortcuts, and record with the paired Watch app.
+- Use Dynamic Type, accessible font choices, VoiceOver labels, Dark Mode, and localized interfaces.
+- Export/import records and choose a local or cloud-backed folder for optional automatic backups.
 
-- **Privacy-first storage and insights**: Local-first data, no tracking, and full export/import
-- **Medication safety guardrails**: Saved intervals, duplicate-dose checks, daily limits, caution windows, and next-dose guidance
-- **Richer logging**: Quick dose logging, voice shortcuts, backdated entries, and optional post-dose reflections for symptoms, effectiveness, side effects, and notes
-- **Refill awareness**: Inventory tracking, low-stock warnings, refill lead-time guidance, and projected run-out dates
-- **Usage insights**: Visual charts, searchable history, and clinician-friendly export
-- **Ambient access**: Home Screen widgets, Lock Screen widgets, interactive quick actions, and watchOS support
-- **Accessibility**: Dynamic Type, VoiceOver, high-contrast support, and customizable typography
+Current development is on `task/v1.3.0`. The 1.2.0 release and its earlier plans/verification are [historical records](docs/archive/README.md), not the active work queue. The maintained [business-rule map](docs/business-rules.md) describes current behavior and its regression tests.
 
----
+## Build and run
 
-## Getting Started
-
-### Requirements
-- Xcode 26 or later, with the macOS version required by that Xcode release
-- iOS 26.0+ device or simulator
-- Swift 6
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   # Using SSH (recommended)
-   git clone git@github.com:dan-hart/AsNeeded.git
-
-   # Using HTTPS
-   git clone https://github.com/dan-hart/AsNeeded.git
-   ```
-
-2. **Open the project**
-   ```bash
-   cd AsNeeded
-   open AsNeeded.xcodeproj
-   ```
-
-3. **Configure signing (for device testing)**
-   - Select the AsNeeded target
-   - Go to Signing & Capabilities
-   - Select your development team
-
-4. **Build and run**
-   - Select target device/simulator (iOS 26+)
-   - Press ⌘R or click the Run button
-
-5. **First launch**
-   - Add your first medication from the Home or Medications screen
-   - Configure its typical dose, interval, and refill settings (optional)
-   - Log your first dose to see the next-dose guidance and history summaries in action
-
----
-
-## Development
-
-**1.2.0 is feature-frozen as of October 27, 2026.** Remaining work is testing, bug fixes, and restrained refinement of existing flows. See the [stabilization checklist](docs/testing/1.2.0-stabilization.md).
-
-### Building from Command Line
-```bash
-# Build for simulator
-xcodebuild -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16' build
-
-# Run tests
-xcodebuild test -scheme AsNeeded -testPlan AsNeededTests -destination 'platform=iOS Simulator,name=iPhone 16'
-```
-
-### Code Style
-- Tabs for indentation (configured in .editorconfig)
-- Line length: ~120 characters
-- Use `// MARK: -` comments for organization
-- Follow Swift API Design Guidelines
-- SF Symbols: Always use SFSafeSymbols (e.g., `Image(systemSymbol: .pills)`)
-- Colors: Use `.accent` for interactive elements
-
----
-
-### Optional purchase configuration
-
-A clean checkout builds without private packages or purchase configuration. To enable tips and subscriptions, copy `Config/Secrets.example.xcconfig` to the gitignored `Config/Secrets.xcconfig` and replace its placeholder with your RevenueCat public SDK key. Without a usable key, the Support screen explains that purchases are unavailable; medication tracking continues to work.
-
-Before a release, run `./scripts/verify-release-key.sh --local`, then verify the exported `.app`, `.xcarchive`, or `.ipa` with the same script. `scripts/prod-build.sh` requires configuration unless `SKIP_REVENUECAT_KEY_CHECK=1` is explicitly set for a keyless build.
-
-The Build workflow compiles the Debug iOS simulator scheme from a fresh checkout on pushes and pull requests targeting `main`, `develop`, or `task/v1.2.0`, and checks configuration in the built app. Pull requests exercise the keyless path. This compile check does not run tests or verify release signing and distribution.
-
-## Project Structure
-
-The codebase is organized for clarity and modularity. Each SwiftUI view is in its own file and grouped by feature.
-
-```
-AsNeeded/
-├── AsNeededApp.swift           # App entry point
-├── Views/                      # UI Components
-│   ├── Screens/               # Main app screens
-│   └── Components/            # Reusable UI elements
-├── Medication/                 # Medication features
-├── Services/                   # Business logic & APIs
-│   ├── Persistence/           # Data management
-│   ├── NotificationManager    # Reminders
-│   └── Intents/              # Siri integration
-├── Packages/                   # Local Swift packages
-│   ├── ANModelKit/            # Core models
-│   ├── DHLoggingKit/          # Logging utilities
-│   └── SwiftRxNorm/           # Medication search
-└── Tests/                      # Test suite
-```
-
-### Package Architecture
-
-- **ANModelKit**: Core data models (Medication, Dose, Event, Unit concepts)
-- **DHLoggingKit**: Modern Swift logging with OSLog integration
-- **SwiftRxNorm**: RxNorm API client for medication search and information
-- **Main App**: SwiftUI interface, business logic, and service integration
-
----
-
-## Architecture
-
-Lightweight, testable architecture with Swift 6 and SwiftUI:
-
-- **Domain-driven**: Pure Swift models with no UI dependencies
-- **Protocol-based services**: Swappable persistence and notification implementations
-- **SwiftUI composition**: Small, focused views with unidirectional data flow
-- **Swift Concurrency**: async/await for I/O and background tasks
-- **Unit tested**: Business logic covered with Swift Testing framework
-
----
-
-## Core Models (ANModelKit)
-
-- **ANMedicationConcept**: Tracked medications with clinical names, nicknames, inventory
-- **ANDoseConcept**: Dose amounts with standardized units
-- **ANEventConcept**: Logged events (doses taken, reconciliation, side effects)
-
-See implementations in `Medication/` views and `AsNeededTests/ANModelKitTests.swift`
-
----
-
-## Design & Accessibility
-
-- **Accessibility**: Dynamic Type, VoiceOver, high contrast, reduced motion support, Light/Dark Mode
-- **Design system**: Calm clinical presentation, semantic colors, typography, spacing tokens, reusable components
-- **Localization-ready**: Centralized strings
-
----
-
-## Testing
-
-Swift Testing framework (`@Test`, `#expect`) with focus on business logic:
+Use Xcode 26 or later with an installed iOS 26+ SDK/runtime and the Swift 6 toolchain supported by the project. Open `AsNeeded.xcodeproj`, select the AsNeeded scheme, choose an available simulator, and run. Device testing requires your own signing team and profiles.
 
 ```bash
-# Run tests
-xcodebuild test -scheme AsNeeded -destination 'platform=iOS Simulator,name=iPhone 16'
+git clone https://github.com/dan-hart/AsNeeded.git
+cd AsNeeded
+./scripts/dev-build.sh
 ```
 
-In Xcode: Product → Test (⌘U). See `AsNeededTests/` for examples.
+The development script builds for a generic iOS Simulator by default; it does not install or launch the app. In Xcode, use Product → Run for the selected device. For CLI overrides, test execution, release checks, and security hooks, see [scripts](scripts/README.md).
 
----
+A clean checkout builds without private packages or purchase configuration. To enable support purchases locally, copy `Config/Secrets.example.xcconfig` to the ignored `Config/Secrets.xcconfig` and supply your RevenueCat public SDK key. Without a usable key, tracking still works and purchases are unavailable. Never commit credentials or local signing assets.
 
-## Troubleshooting
+## Repository map
 
-**Build issues**: Clean (⌘⇧K), reset packages, delete DerivedData  
-**Simulator**: Check `xcrun simctl list devices`, download the current supported runtime  
-**Notifications**: Verify permissions in Settings and app Reminders  
-**Tests**: Run `swift package resolve`, check test plan configuration
+```text
+AsNeeded/                 iOS app screens, state, services, and resources
+AsNeededWidget/           iOS widget extension and navigation intents
+WristAsNeeded Watch App/  watchOS app and phone messaging
+AsNeededTests/            Swift Testing regression suites
+AsNeeded.xcodeproj/       Targets, schemes, test plan, and resolved packages
+scripts/                 Build/test/release helpers and their regressions
+docs/                    Current guidance, business rules, and historical archive
+Design/                  Editable artwork and versioned release assets
+skills/                  Optional reviewed development references and search data
+ai-rules/                Focused, agent-neutral contributor rules
+```
 
----
+ANModelKit, Boutique, SwiftRxNorm, and the other Swift package dependencies are remotely resolved. There is no required local `Packages/` checkout. Target ownership and persistence/Watch boundaries are documented in [architecture](docs/architecture.md).
 
-## Contributing
+## Verification
 
-**Issues**: Search existing, include iOS version and repro steps  
-**Pull Requests**: Fork, create feature branch, follow code style (tabs, MARK comments, SFSafeSymbols, `.accent`), add tests, submit to `main`  
-**Guidelines**: No force unwraps, UI-free packages, test business logic
+```bash
+./scripts/test-parallel.sh
+```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+The script chooses an available iPhone simulator. `TEST_DESTINATION` selects an explicit target and `TEST_WORKERS` controls parallel test runners. The Build workflow compiles the app and runs unit/standalone regressions for the maintained branches; documentation freshness has a separate pinned Drift check. Hosted success, local simulator tests, release signing, and physical-device upgrades are distinct evidence.
 
----
+No UI or screenshot-test target is required. Use synthetic data for manual visual verification, and never attach private medication records to public issues or commits.
 
-## Privacy
+## Contribute
 
-Medication records and insights are stored and calculated locally. Optional medication searches use NIH RxNorm; support purchases use Apple and RevenueCat. You control exports and backup destinations. There are no ads or remote medication-usage analytics. See [the privacy policy](PRIVACY.md) for data handling and third-party services.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md). Keep changes scoped, preserve stored data and supported upgrades, and test changed behavior. Optional agent skills and formatter/review tools are not required to build or contribute.
 
----
-
-## License
-
-GNU General Public License v3.0 (GPL-3.0)
-See LICENSE file for details.
-
----
-
-## Contact
-
-Questions or feedback? Open an issue on GitHub or start a discussion:
-- Issues: https://github.com/dan-hart/AsNeeded/issues
-- Discussions: https://github.com/dan-hart/AsNeeded/discussions
-
-We'd love to hear how you're using AsNeeded and what would make it more helpful.
-
----
-
-## HealthKit Support
-
-AsNeeded currently does not support HealthKit integration for the following reasons:
-
-### 1. Platform Independence
-AsNeeded is designed to be a standalone medication tracking platform. Adding HealthKit sync would create confusion about where your data lives and fragment the user experience between multiple apps.
-
-### 2. Apple Platform Restrictions
-Apple does not allow third-party apps to write medication data to HealthKit. This would force users to log doses in the Health app but view trends in AsNeeded—a poor and confusing user experience.
-
-### 3. Privacy & Data Control
-Medication records use local app storage. Paired Watch features transfer selected records between devices, and exports or backups go to destinations you choose, including cloud-backed folders. Medication lookup and support purchases use external services as described in [the privacy policy](PRIVACY.md).
-
----
-
-We're focused on making AsNeeded the best standalone medication tracker, with features like local backups and exports that give you control without compromising privacy or simplicity.
+AsNeeded is licensed under [GPL-3.0](LICENSE.txt).

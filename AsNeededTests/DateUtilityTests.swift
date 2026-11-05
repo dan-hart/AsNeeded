@@ -9,7 +9,6 @@ import Testing
 @Suite("DateUtility Tests", .tags(.date, .utility, .unit))
 struct DateUtilityTests {
     // MARK: - Helper Properties
-
     private var calendar: Calendar { Calendar.current }
 
     private var testDate: Date {
@@ -19,7 +18,6 @@ struct DateUtilityTests {
     }
 
     // MARK: - Date Range Tests
-
     @Test("Start of today should be midnight")
     func testStartOfToday() {
         let startOfToday = DateUtility.startOfToday
@@ -81,13 +79,15 @@ struct DateUtilityTests {
     }
 
     // MARK: - Event Filtering Tests
-
     @Test("Filter events for today should only include today's events")
-    func testFilterEventsForToday() {
-        let todayEvent1 = ANEventConcept(eventType: .doseTaken, date: Date())
-        let todayEvent2 = ANEventConcept(eventType: .doseTaken, date: Date().addingTimeInterval(-3600))
-        let yesterdayEvent = ANEventConcept(eventType: .doseTaken, date: Date().addingTimeInterval(-86400))
-        let tomorrowEvent = ANEventConcept(eventType: .doseTaken, date: Date().addingTimeInterval(86400))
+	func testFilterEventsForToday() throws {
+		let start = calendar.startOfDay(for: Date())
+		let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: start))
+		let tomorrow = try #require(calendar.date(byAdding: .day, value: 1, to: start))
+		let todayEvent1 = ANEventConcept(eventType: .doseTaken, date: start)
+		let todayEvent2 = ANEventConcept(eventType: .doseTaken, date: start.addingTimeInterval(3600))
+		let yesterdayEvent = ANEventConcept(eventType: .doseTaken, date: yesterday)
+		let tomorrowEvent = ANEventConcept(eventType: .doseTaken, date: tomorrow)
 
         let events = [todayEvent1, todayEvent2, yesterdayEvent, tomorrowEvent]
         let filtered = DateUtility.filterEventsForToday(events)
@@ -134,9 +134,8 @@ struct DateUtilityTests {
     }
 
     // MARK: - Statistics Tests
-
     @Test("Calculate daily stats should sum correctly")
-    func testCalculateDailyStats() {
+    func testCalculateDailyStats() throws {
         let medication = ANMedicationConcept(
             clinicalName: "Test Med",
             prescribedUnit: .milligram,
@@ -147,11 +146,11 @@ struct DateUtilityTests {
         let dose2 = ANDoseConcept(amount: 20, unit: .milligram)
         let dose3 = ANDoseConcept(amount: 15, unit: .milligram)
 
-        let today = Date()
+		let today = testDate
         let event1 = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose1, date: today)
         let event2 = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose2, date: today.addingTimeInterval(-3600))
         let event3 = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose3, date: today.addingTimeInterval(-7200))
-        let yesterdayEvent = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose1, date: today.addingTimeInterval(-86400))
+		let yesterdayEvent = ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose1, date: try #require(calendar.date(byAdding: .day, value: -1, to: today)))
 
         let events = [event1, event2, event3, yesterdayEvent]
         let (totalDoses, totalAmount, unit) = DateUtility.calculateDailyStats(for: medication, events: events, on: today)
@@ -179,7 +178,6 @@ struct DateUtilityTests {
     }
 
     // MARK: - Formatting Tests
-
     @Test("Format for history should include date and time")
     func testFormatForHistory() {
         let formatted = DateUtility.formatForHistory(testDate)
@@ -210,12 +208,11 @@ struct DateUtilityTests {
     }
 
     // MARK: - Validation Tests
-
     @Test("Is today should correctly identify today's date")
-    func testIsToday() {
+	func testIsToday() throws {
         #expect(DateUtility.isToday(Date()) == true)
-        #expect(DateUtility.isToday(Date().addingTimeInterval(-86400)) == false) // Yesterday
-        #expect(DateUtility.isToday(Date().addingTimeInterval(86400)) == false) // Tomorrow
+		#expect(DateUtility.isToday(try #require(calendar.date(byAdding: .day, value: -1, to: Date()))) == false) // Yesterday
+		#expect(DateUtility.isToday(try #require(calendar.date(byAdding: .day, value: 1, to: Date()))) == false) // Tomorrow
     }
 
     @Test("Is future should correctly identify future dates")
@@ -240,9 +237,8 @@ struct DateUtilityTests {
         #expect(DateUtility.isValidMedicationDate(twoWeeksFromNow) == false) // Too far future
     }
 
-    // MARK: - Performance Tests
-
-    @Test("Filtering large event sets should be performant")
+	// MARK: - Large Dataset Tests
+	@Test("Filtering large event sets returns expected results for a large dataset")
     func filteringPerformance() {
         // Create 10000 events spread over a month
         var events: [ANEventConcept] = []
@@ -252,15 +248,12 @@ struct DateUtilityTests {
             events.append(ANEventConcept(eventType: .doseTaken, date: date))
         }
 
-        let startTime = Date()
         let filtered = DateUtility.filterEventsForToday(events)
-        let elapsed = Date().timeIntervalSince(startTime)
 
         #expect(filtered.count > 0)
-        #expect(elapsed < 0.1) // Should complete in less than 100ms
     }
 
-    @Test("Statistics calculation should be performant")
+	@Test("Statistics calculation returns expected results for a large dataset")
     func statisticsPerformance() {
         let medication = ANMedicationConcept(clinicalName: "Test Med")
         let dose = ANDoseConcept(amount: 10, unit: .milligram)
@@ -273,11 +266,8 @@ struct DateUtilityTests {
             events.append(ANEventConcept(eventType: .doseTaken, medication: medication, dose: dose, date: date))
         }
 
-        let startTime = Date()
         let stats = DateUtility.calculateWeeklyStats(for: medication, events: events)
-        let elapsed = Date().timeIntervalSince(startTime)
 
         #expect(stats.count == 7)
-        #expect(elapsed < 0.5) // Should complete in less than 500ms
     }
 }

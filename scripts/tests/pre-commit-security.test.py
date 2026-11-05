@@ -53,6 +53,21 @@ class PreCommitSecurityTests(unittest.TestCase):
 		self.assertEqual(result.returncode, 1, 'Hook must reject fixture')
 		self.assertTrue(value not in result.stdout + result.stderr, 'Hook must redact fixture contents')
 
+
+	def test_system_review_acknowledgement_is_explicit(self):
+		self.stage('sysctl -n hw.ncpu\n', 'fixture.sh')
+		unreviewed = self.scan()
+		self.assertEqual(unreviewed.returncode, 2)
+		self.assertIn('--ack-system', unreviewed.stderr)
+		self.env['ASP_ACK_SYSTEM'] = '1'
+		self.assertEqual(self.scan().returncode, 0)
+
+	def test_system_acknowledgement_never_bypasses_secret_scan(self):
+		token = 'ghp_' + 'Z' * 36
+		self.stage('sysctl -n hw.ncpu\n' + token + '\n', 'fixture.sh')
+		self.env['ASP_ACK_SYSTEM'] = '1'
+		self.blocked(token)
+
 	def test_safe_swift(self):
 		self.stage('let symbol = SFSafeSymbols.clockArrowTriangleheadCounterclockwiseRotate90\nfunc reconcileScheduledMedicationReminderNotificationRequests() {}\n')
 		self.assertEqual(self.scan().returncode, 0)

@@ -8,15 +8,13 @@ import Testing
 @MainActor
 @Suite("AppReviewManager Review Opt-Out Tests")
 struct AppReviewManagerTests {
-    // MARK: - Test Setup Helpers
+	private let preferences: IsolatedTestPreferences
 
-    private func createTestManager() -> AppReviewManager {
-        // Reset review preferences before each test
-        let manager = AppReviewManager.shared
-        manager.resetReviewPreferences()
-        manager.resetEngagementTracking()
-        return manager
-    }
+	init() throws { preferences = try IsolatedTestPreferences() }
+
+	private func createTestManager() -> AppReviewManager {
+		AppReviewManager(defaults: preferences.defaults)
+	}
 
     // MARK: - Opt-Out Preference Tests
 
@@ -103,8 +101,8 @@ struct AppReviewManagerTests {
         let stats = manager.getEngagementStats()
 
         // Verify tracking
-        #expect(stats.launches >= 1, "Launch count should be tracked")
-        #expect(stats.events >= 1, "Event count should be tracked")
+        #expect(stats.launches == 1, "Launch count should be tracked")
+        #expect(stats.events == 1, "Event count should be tracked")
     }
 
     @Test("Reset engagement tracking clears all stats")
@@ -199,4 +197,33 @@ struct AppReviewManagerTests {
         _ = reviewService.canShowReviewButtons
         #expect(reviewService.canShowReviewButtons == true, "Review service should consistently show CTAs")
     }
+	@Test("Review preferences and engagement are isolated and persist within their domain")
+	func isolatedPreferenceDomains() throws {
+		let manager = createTestManager()
+		let otherPreferences = try IsolatedTestPreferences()
+		let other = AppReviewManager(defaults: otherPreferences.defaults)
+		manager.hasOptedOutOfReviews = true
+		manager.recordAppLaunch()
+		manager.recordMedicationEvent()
+		#expect(!other.hasOptedOutOfReviews)
+		#expect(other.getEngagementStats().launches == 0)
+		#expect(other.getEngagementStats().events == 0)
+		let reloaded = createTestManager()
+		#expect(reloaded.hasOptedOutOfReviews)
+		#expect(reloaded.getEngagementStats().launches == 1)
+		#expect(reloaded.getEngagementStats().events == 1)
+		other.resetReviewPreferences()
+		other.resetEngagementTracking()
+		#expect(manager.hasOptedOutOfReviews)
+		#expect(manager.getEngagementStats().events == 1)
+	}
+
+	@Test("Opted-out automatic requests do not record or present a review")
+	func optedOutAutomaticRequest() async {
+		let manager = createTestManager()
+		manager.hasOptedOutOfReviews = true
+		await manager.requestReviewWithAlert()
+		#expect(manager.getEngagementStats().lastRequest == nil)
+	}
+
 }

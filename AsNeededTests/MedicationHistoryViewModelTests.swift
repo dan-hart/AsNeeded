@@ -10,10 +10,14 @@ import Testing
 @MainActor
 @Suite("MedicationHistoryViewModel Dose Editing Tests", .serialized)
 struct MedicationHistoryViewModelTests {
-	// MARK: - Test Setup Helpers
+	init() throws { preferences = try IsolatedTestPreferences() }
 
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
+
+	// MARK: - Test Setup Helpers
 	private func clearStoredSelection() {
-		UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		defaults.removeObject(forKey: UserDefaultsKeys.historySelectedMedicationID)
 	}
 
 	private func createTestMedication(quantity: Double = 10.0) -> ANMedicationConcept {
@@ -43,7 +47,7 @@ struct MedicationHistoryViewModelTests {
 		let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-SelectionAll")
 		try? await dataStore.addMedication(medication)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		#expect(viewModel.selectedMedicationID == "all")
 		#expect(viewModel.isShowingAllMedications)
@@ -56,7 +60,7 @@ struct MedicationHistoryViewModelTests {
 		let dataStore = DataStore(testIdentifier: "MedicationHistoryViewModelTests-SelectionSpecific")
 		try? await dataStore.addMedication(medication)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		#expect(viewModel.selectedMedication?.id == medication.id)
 		#expect(viewModel.isShowingAllMedications == false)
@@ -90,7 +94,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addEvent(yesterdayEvent)
 		try? await dataStore.addEvent(otherMedicationEvent)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: med1.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: med1.id.uuidString, defaults: defaults)
 
 		#expect(viewModel.groupedHistory.count == 2)
 		#expect(viewModel.groupedHistory.first?.entries.first?.medication?.id == med1.id)
@@ -104,7 +108,7 @@ struct MedicationHistoryViewModelTests {
 		let store = DataStore(testIdentifier: "History-Cache-\(UUID().uuidString)")
 		try await store.addMedication(first)
 		try await store.addMedication(second)
-		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: first.id.uuidString)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: first.id.uuidString, defaults: defaults)
 		let event = createTestEvent(medication: first, amount: 1, unit: .tablet)
 		let secondEvent = createTestEvent(medication: second, amount: 2, unit: .tablet)
 		model.events = [event, secondEvent]
@@ -126,7 +130,7 @@ struct MedicationHistoryViewModelTests {
 		let medication = createTestMedication(quantity: 10)
 		let store = DataStore(testIdentifier: "History-ObservedDose-\(UUID().uuidString)")
 		try await store.addMedication(medication)
-		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 		#expect(model.groupedHistory.isEmpty)
 		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)
 		let updates = AsyncStream<[ANEventConcept]>.makeStream(bufferingPolicy: .bufferingNewest(1))
@@ -157,7 +161,7 @@ struct MedicationHistoryViewModelTests {
 		let event = createTestEvent(medication: medication, amount: 1, unit: .tablet)
 		try await writer.addEvent(event)
 		let reader = DataStore(storageDirectory: directory)
-		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString)
+		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 		let updates = AsyncStream<[ANEventConcept]>.makeStream(bufferingPolicy: .bufferingNewest(1))
 		let subscription = model.$events.sink { updates.continuation.yield($0) }
 		defer {
@@ -176,7 +180,7 @@ struct MedicationHistoryViewModelTests {
 		let store = DataStore(testIdentifier: "History-Clock-\(UUID().uuidString)")
 		let medication = createTestMedication()
 		try await store.addMedication(medication)
-		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter())
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter(), defaults: defaults)
 		var refreshes = 0
 		let subscription = model.objectWillChange.sink { refreshes += 1 }
 		defer { subscription.cancel() }
@@ -192,7 +196,7 @@ struct MedicationHistoryViewModelTests {
 		let reader = DataStore(storageDirectory: directory)
 		let medication = createTestMedication(quantity: 10)
 		try await reader.addMedication(medication)
-		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter())
+		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: medication.id.uuidString, notificationCenter: NotificationCenter(), defaults: defaults)
 		await model.refreshAfterForeground()
 		#expect(model.groupedHistory.isEmpty)
 		let writer = DataStore(storageDirectory: directory)
@@ -204,14 +208,13 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - Dose Increase Tests
-
 	@Test("A missing history entry reports failure without changing medication quantity")
 	func missingEntryCannotChangeQuantity() async throws {
 		let medication = createTestMedication(quantity: 10)
 		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)
 		let dataStore = DataStore(testIdentifier: "History-MissingEntry-\(UUID().uuidString)")
 		try await dataStore.addMedication(medication)
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		let saved = await viewModel.updateEvent(event, newDate: event.date, newAmount: 3, newUnit: .tablet)
 
@@ -229,7 +232,7 @@ struct MedicationHistoryViewModelTests {
 		let dataStore = DataStore(testIdentifier: "History-DuplicateDelete-\(UUID().uuidString)")
 		try await dataStore.addMedication(medication)
 		try await dataStore.addEvent(event)
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		let firstDeletion = await viewModel.deleteEvent(event)
 		let secondDeletion = await viewModel.deleteEvent(event)
@@ -252,7 +255,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event dose from 2 to 3
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 3.0, newUnit: .tablet)
@@ -263,7 +266,6 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - Dose Decrease Tests
-
 	@Test("Update event with decreased dose increases medication quantity")
 	func updateEventDecreaseDoseIncreasesQuantity() async throws {
 		// Given: medication with quantity 10, event with dose 3
@@ -274,7 +276,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event dose from 3 to 2
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 2.0, newUnit: .tablet)
@@ -285,7 +287,6 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - No Dose Change Tests
-
 	@Test("Update event with same dose keeps quantity unchanged")
 	func updateEventSameDoseKeepsQuantityUnchanged() async throws {
 		// Given: medication with quantity 10, event with dose 2
@@ -296,7 +297,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event with same dose (2.0)
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 2.0, newUnit: .tablet)
@@ -307,7 +308,6 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - Date Change Tests
-
 	@Test("Update event changes date correctly")
 	func updateEventChangesDate() async throws {
 		// Given: event with current date
@@ -318,7 +318,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event with new date
 		let newDate = Date().addingTimeInterval(-3600) // 1 hour ago
@@ -330,7 +330,6 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - Unit Change Tests
-
 	@Test("Update event changes unit correctly")
 	func updateEventChangesUnit() async throws {
 		// Given: event with tablet unit
@@ -341,7 +340,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event to use milliliter unit
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 2.0, newUnit: .milliliter)
@@ -352,7 +351,6 @@ struct MedicationHistoryViewModelTests {
 	}
 
 	// MARK: - Edge Case Tests
-
 	@Test("Update event with nil medication quantity doesn't crash")
 	func updateEventWithNilQuantity() async throws {
 		// Given: medication with nil quantity
@@ -364,7 +362,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event dose
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 3.0, newUnit: .tablet)
@@ -384,7 +382,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event dose from 1 to 50
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 50.0, newUnit: .tablet)
@@ -404,7 +402,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 
 		// When: update event dose from 0.5 to 1.5
 		await viewModel.updateEvent(event, newDate: event.date, newAmount: 1.5, newUnit: .tablet)
@@ -434,7 +432,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
 		let updatedNote = try DoseReflectionCodec.updatingNote(in: event.note, with: "Updated note")
 		var updatedEvent = event
 		updatedEvent.note = updatedNote
@@ -462,7 +460,7 @@ struct MedicationHistoryViewModelTests {
 				date: today.addingTimeInterval(Double(index + 1) * 60)
 			))
 		}
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		let deleted = await viewModel.deleteEvents(at: IndexSet([0, 1]), in: today)
 
@@ -479,7 +477,7 @@ struct MedicationHistoryViewModelTests {
 		let dataStore = DataStore(testIdentifier: "History-UpsertIdentity-\(UUID().uuidString)")
 		try await dataStore.addMedication(medication)
 		try await dataStore.addEvent(event)
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 		let newDate = event.date.addingTimeInterval(-60)
 
 		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 3, newUnit: .tablet))
@@ -508,7 +506,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addMedication(medication)
 		try? await dataStore.addEvent(event)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		await viewModel.deleteEvent(event)
 
@@ -539,7 +537,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addEvent(firstEvent)
 		try? await dataStore.addEvent(secondEvent)
 
-		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString)
+		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, selectedMedicationID: medication.id.uuidString, defaults: defaults)
 
 		await viewModel.deleteEvents(at: IndexSet(integer: 0), in: today)
 
@@ -548,10 +546,10 @@ struct MedicationHistoryViewModelTests {
 	}
 	@Test("All History chooser excludes archived medications and keeps list order")
 	func allHistoryLogChoices() {
-		let previousSelection = UserDefaults.standard.object(forKey: UserDefaultsKeys.historySelectedMedicationID)
-		defer { UserDefaults.standard.set(previousSelection, forKey: UserDefaultsKeys.historySelectedMedicationID) }
+		let previousSelection = defaults.object(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		defer { defaults.set(previousSelection, forKey: UserDefaultsKeys.historySelectedMedicationID) }
 		let store = DataStore(testIdentifier: "History-Chooser-\(UUID().uuidString)")
-		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", notificationCenter: NotificationCenter())
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", notificationCenter: NotificationCenter(), defaults: defaults)
 		let first = ANMedicationConcept(clinicalName: "Synthetic Z")
 		let second = ANMedicationConcept(clinicalName: "Synthetic A")
 		var archived = ANMedicationConcept(clinicalName: "Synthetic archived")

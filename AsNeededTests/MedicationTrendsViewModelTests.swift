@@ -10,10 +10,14 @@ import Testing
 @MainActor
 @Suite("MedicationTrendsViewModel Tests", .tags(.medication, .viewModel, .trends, .unit))
 struct MedicationTrendsViewModelTests {
-    // MARK: - Test Helpers
+	init() throws { preferences = try IsolatedTestPreferences() }
 
+	private let preferences: IsolatedTestPreferences
+	private var defaults: UserDefaults { preferences.defaults }
+
+    // MARK: - Test Helpers
     private func clearStoredSelection() {
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
+		defaults.removeObject(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
     }
 
     private func createTestMedication(
@@ -52,12 +56,11 @@ struct MedicationTrendsViewModelTests {
     }
 
     // MARK: - Initialization Tests
-
     @Test("ViewModel initializes with empty medication list")
     func initializationEmpty() async throws {
         clearStoredSelection()
         let dataStore = DataStore(testIdentifier: "TrendsVM-Empty")
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults)
 
         #expect(viewModel.medications.isEmpty)
         #expect(viewModel.selectedMedicationID == nil)
@@ -70,7 +73,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "Aspirin")
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults)
 
         #expect(viewModel.medications.count == 1)
         #expect(viewModel.selectedMedicationID == medication.id)
@@ -85,14 +88,13 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addMedication(med1)
         try await dataStore.addMedication(med2)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: med2.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: med2.id)
 
         #expect(viewModel.selectedMedicationID == med2.id)
         #expect(viewModel.selectedMedication?.clinicalName == "Med2")
     }
 
     // MARK: - Selection Management Tests
-
     @Test("EnsureValidSelection selects first medication when none selected")
     func ensureValidSelectionNoneSelected() async throws {
         clearStoredSelection()
@@ -100,7 +102,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "FirstMed")
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults)
         viewModel.selectedMedicationIDString = "" // Clear selection
 
         viewModel.ensureValidSelection()
@@ -117,7 +119,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addMedication(med1)
         try await dataStore.addMedication(med2)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: med2.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: med2.id)
 
         viewModel.ensureValidSelection()
 
@@ -131,7 +133,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "ValidMed")
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults)
         viewModel.selectedMedicationIDString = UUID().uuidString // Invalid ID
 
         viewModel.ensureValidSelection()
@@ -140,7 +142,6 @@ struct MedicationTrendsViewModelTests {
     }
 
     // MARK: - Event Filtering Tests
-
     @Test("Events filtered by medication ID")
     func eventsFilteredByMedicationID() async throws {
         clearStoredSelection()
@@ -155,7 +156,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(event1)
         try await dataStore.addEvent(event2)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: med1.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: med1.id)
 
         #expect(viewModel.events.count == 1)
         #expect(viewModel.events.first?.medication?.id == med1.id)
@@ -179,7 +180,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(doseTakenEvent)
         try await dataStore.addEvent(reconcileEvent)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         // Only doseTaken events should be included
         #expect(viewModel.events.count == 1)
@@ -205,7 +206,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(event2)
         try await dataStore.addEvent(event3)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let events = viewModel.events as? [ANEventConcept], events.count == 3 else {
             Issue.record("Expected 3 events")
@@ -217,7 +218,6 @@ struct MedicationTrendsViewModelTests {
     }
 
     // MARK: - Preferred Unit Tests
-
     @Test("PreferredUnit returns prescribed unit when available")
     func preferredUnitFromPrescribed() async throws {
         clearStoredSelection()
@@ -225,7 +225,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .milligram)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.preferredUnit == .milligram)
     }
@@ -241,7 +241,7 @@ struct MedicationTrendsViewModelTests {
         let event = createTestEvent(medication: medication, date: Date(), amount: 5.0, unit: .milliliter)
         try await dataStore.addEvent(event)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.preferredUnit == .milliliter)
     }
@@ -253,13 +253,12 @@ struct MedicationTrendsViewModelTests {
         medication.prescribedUnit = nil
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.preferredUnit == nil)
     }
 
     // MARK: - Daily Totals Tests
-
     @Test("DailyTotals calculates correctly for single day")
     func dailyTotalsSingleDay() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-DailySingle")
@@ -272,7 +271,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(event1)
         try await dataStore.addEvent(event2)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let dailyTotals = viewModel.dailyTotals(last: 1)
 
         guard let total = dailyTotals.first else {
@@ -289,7 +288,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let dailyTotals = viewModel.dailyTotals(last: 7)
 
         #expect(dailyTotals.count == 7)
@@ -309,7 +308,7 @@ struct MedicationTrendsViewModelTests {
             try await dataStore.addEvent(createTestEvent(medication: medication, date: eventDate, amount: 2.0, unit: .tablet))
         }
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.patternSummary.contains("evening"))
     }
@@ -329,7 +328,7 @@ struct MedicationTrendsViewModelTests {
             try await dataStore.addEvent(event)
         }
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let dailyTotals = viewModel.dailyTotals(last: 14)
 
         #expect(dailyTotals.count == 14)
@@ -348,7 +347,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(tabletEvent)
         try await dataStore.addEvent(mlEvent)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let dailyTotals = viewModel.dailyTotals(last: 1)
 
         guard let total = dailyTotals.first else {
@@ -370,7 +369,7 @@ struct MedicationTrendsViewModelTests {
 		try await store.addEvent(createTestEvent(medication: first, date: today, amount: 2, unit: .tablet))
 		try await store.addEvent(createTestEvent(medication: second, date: today, amount: 3, unit: .tablet))
 		try await store.addEvent(createTestEvent(medication: second, date: today, amount: 5, unit: .milliliter))
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: first.id)
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: first.id)
 		#expect(model.dailyTotals(last: 1).first?.total == 2)
 		model.selectedMedicationID = second.id
 		#expect(model.events.count == 2)
@@ -389,7 +388,7 @@ struct MedicationTrendsViewModelTests {
 		try await store.addMedication(medication)
 		var event = createTestEvent(medication: medication, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now))), amount: 2, unit: .tablet)
 		try await store.addEvent(event)
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id)
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id)
 		#expect(model.dailyTotals(last: 1).first?.total == 2)
 		let updates = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
 		let subscription = model.objectWillChange.sink { updates.continuation.yield(()) }
@@ -420,7 +419,7 @@ struct MedicationTrendsViewModelTests {
 		let event = createTestEvent(medication: medication, date: try #require(Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: .now))), amount: 2, unit: .tablet)
 		try await writer.addEvent(event)
 		let reader = DataStore(storageDirectory: directory)
-		let model = MedicationTrendsViewModel(dataStore: reader, selectedMedicationID: medication.id)
+		let model = MedicationTrendsViewModel(dataStore: reader, defaults: defaults, selectedMedicationID: medication.id)
 		let updates = AsyncStream<Void>.makeStream(bufferingPolicy: .bufferingNewest(1))
 		let subscription = model.objectWillChange.sink { updates.continuation.yield(()) }
 		defer {
@@ -444,7 +443,7 @@ struct MedicationTrendsViewModelTests {
 		let day = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
 		var referenceDate = day
 		try await store.addEvent(createTestEvent(medication: medication, date: day, amount: 2, unit: .tablet))
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, notificationCenter: NotificationCenter(), now: { referenceDate })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, notificationCenter: NotificationCenter(), now: { referenceDate })
 		#expect(model.dailyTotals(last: 1).first?.total == 0)
 		var refreshes = 0
 		let subscription = model.objectWillChange.sink { refreshes += 1 }
@@ -463,7 +462,7 @@ struct MedicationTrendsViewModelTests {
 		let reader = DataStore(storageDirectory: directory)
 		let medication = createTestMedication()
 		try await reader.addMedication(medication)
-		let model = MedicationTrendsViewModel(dataStore: reader, selectedMedicationID: medication.id, notificationCenter: NotificationCenter())
+		let model = MedicationTrendsViewModel(dataStore: reader, defaults: defaults, selectedMedicationID: medication.id, notificationCenter: NotificationCenter())
 		await model.refreshAfterForeground()
 		#expect(model.events.isEmpty)
 		let writer = DataStore(storageDirectory: directory)
@@ -491,7 +490,7 @@ struct MedicationTrendsViewModelTests {
 		for (date, amount) in [(oldest.addingTimeInterval(-1), 100.0), (oldest, 2.0), (today.addingTimeInterval(-1), 3.0), (today, 100.0), (today.addingTimeInterval(86_400), 100.0)] {
 			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: amount, unit: .tablet))
 		}
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
 		let totals = model.dailyTotals(last: 90)
 		#expect(totals.count == 90)
 		#expect(totals.first?.day == oldest)
@@ -517,7 +516,7 @@ struct MedicationTrendsViewModelTests {
 			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: amount, unit: .tablet))
 		}
 		try await store.addEvent(createTestEvent(medication: medication, date: start, amount: 50, unit: .milligram))
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
 		let range = try #require(TrendsDateRange(start: start, end: end, calendar: calendar, now: now))
 		let totals = model.dailyTotals(in: range)
 		#expect(totals.count == 3)
@@ -539,7 +538,7 @@ struct MedicationTrendsViewModelTests {
 		let medication = createTestMedication()
 		try await store.addMedication(medication)
 		try await store.addEvent(createTestEvent(medication: medication, date: start.addingTimeInterval(43_200), amount: 4, unit: .tablet))
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, transientSelection: true, calendar: { calendar }, now: { now })
 		#expect(model.dailyTotals(in: range).map(\.total) == [4, 0])
 		calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
 		model.refreshForClockChange()
@@ -557,7 +556,7 @@ struct MedicationTrendsViewModelTests {
 		let medication = createTestMedication()
 		try await store.addMedication(medication)
 		try await store.addEvent(createTestEvent(medication: medication, date: eventDate, amount: 4, unit: .tablet))
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
 		#expect(model.dailyTotals(last: 1).first?.total == 4)
 		calendar.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
 		model.refreshForClockChange()
@@ -582,7 +581,7 @@ struct MedicationTrendsViewModelTests {
 			let date = try #require(calendar.date(byAdding: .day, value: daysAhead, to: now))
 			try await store.addEvent(createTestEvent(medication: medication, date: date, amount: 1_000, unit: .tablet))
 		}
-		let model = MedicationTrendsViewModel(dataStore: store, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id, calendar: { calendar }, now: { now })
 		#expect(model.averagePerDay(window: 7) == 1)
 		#expect(model.patternSummary.contains("lighter than the week before"))
 		#expect(model.calendarHeatmapData(last: 14).map(\.intensity).max() == 1)
@@ -590,7 +589,6 @@ struct MedicationTrendsViewModelTests {
 	}
 
     // MARK: - Average Per Day Tests
-
     @Test("AveragePerDay calculates correctly")
     func testAveragePerDay() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-AvgPerDay")
@@ -612,7 +610,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 6.0, unit: .tablet))
         try await dataStore.addEvent(createTestEvent(medication: medication, date: twoDaysAgo, amount: 3.0, unit: .tablet))
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 3)
 
         #expect(average == 4.0) // (3 + 6 + 3) / 3 = 4
@@ -624,7 +622,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 7)
 
         #expect(average == 0.0)
@@ -639,14 +637,13 @@ struct MedicationTrendsViewModelTests {
         let today = try #require(Calendar.current.date(byAdding: .hour, value: -12, to: Calendar.current.startOfDay(for: Date())))
         try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 7.0, unit: .tablet))
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let average = viewModel.averagePerDay(window: 7)
 
         #expect(average == 1.0) // 7 tablets / 7 days = 1
     }
 
     // MARK: - Days Until Refill Tests
-
     @Test("DaysUntilRefill calculates correctly")
     func testDaysUntilRefill() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-DaysRefill")
@@ -655,7 +652,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", nextRefill: nextRefill)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let days = viewModel.daysUntilRefill else {
             Issue.record("Expected days until refill")
@@ -671,7 +668,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed")
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.daysUntilRefill == nil)
     }
@@ -682,7 +679,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", nextRefill: Date())
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let days = viewModel.daysUntilRefill else {
             Issue.record("Expected days until refill")
@@ -693,7 +690,6 @@ struct MedicationTrendsViewModelTests {
     }
 
     // MARK: - Estimated Days Remaining Tests
-
     @Test("EstimatedDaysRemaining calculates correctly")
     func testEstimatedDaysRemaining() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-EstDays")
@@ -709,7 +705,7 @@ struct MedicationTrendsViewModelTests {
             try await dataStore.addEvent(createTestEvent(medication: medication, date: date, amount: 10.0, unit: .tablet))
         }
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let daysRemaining = viewModel.estimatedDaysRemaining else {
             Issue.record("Expected estimated days remaining")
@@ -725,7 +721,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", quantity: 0.0)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.estimatedDaysRemaining == nil)
     }
@@ -736,13 +732,12 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", quantity: 50.0)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.estimatedDaysRemaining == nil)
     }
 
     // MARK: - Usage Percentage Tests
-
     @Test("UsagePercentage calculates correctly")
     func testUsagePercentage() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-UsagePct")
@@ -753,7 +748,7 @@ struct MedicationTrendsViewModelTests {
         )
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let percentage = viewModel.usagePercentage else {
             Issue.record("Expected usage percentage")
@@ -769,7 +764,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", quantity: 50.0)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.usagePercentage == nil)
     }
@@ -784,7 +779,7 @@ struct MedicationTrendsViewModelTests {
         )
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         guard let percentage = viewModel.usagePercentage else {
             Issue.record("Expected usage percentage")
@@ -795,7 +790,6 @@ struct MedicationTrendsViewModelTests {
     }
 
     // MARK: - Refill Cycle Status Tests
-
     @Test("RefillCycleStatus is onTrack when usage matches time")
     func refillCycleStatusOnTrack() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-RefillOnTrack")
@@ -813,7 +807,7 @@ struct MedicationTrendsViewModelTests {
         )
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.refillCycleStatus == .onTrack) // 50% time, 50% used (within 10% tolerance)
     }
@@ -835,7 +829,7 @@ struct MedicationTrendsViewModelTests {
         )
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.refillCycleStatus == .ahead) // 67% time elapsed, 20% used
     }
@@ -857,7 +851,7 @@ struct MedicationTrendsViewModelTests {
         )
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.refillCycleStatus == .behind) // 33% time elapsed, 80% used
     }
@@ -868,20 +862,19 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", quantity: 50.0, initialQuantity: 100.0)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
 
         #expect(viewModel.refillCycleStatus == .unknown)
     }
 
     // MARK: - Calendar Heatmap Tests
-
     @Test("CalendarHeatmapData returns correct number of days")
     func calendarHeatmapDataCount() async throws {
         let dataStore = DataStore(testIdentifier: "TrendsVM-HeatmapCount")
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 30)
 
         #expect(heatmapData.count == 30)
@@ -893,7 +886,7 @@ struct MedicationTrendsViewModelTests {
         let medication = createTestMedication(name: "TestMed", unit: .tablet)
         try await dataStore.addMedication(medication)
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 7)
 
         #expect(heatmapData.count == 7)
@@ -918,7 +911,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(createTestEvent(medication: medication, date: today, amount: 10.0, unit: .tablet))
         try await dataStore.addEvent(createTestEvent(medication: medication, date: yesterday, amount: 5.0, unit: .tablet))
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 2)
 
         guard heatmapData.count == 2 else {
@@ -944,7 +937,7 @@ struct MedicationTrendsViewModelTests {
         try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(3600), amount: 3.0, unit: .tablet))
         try await dataStore.addEvent(createTestEvent(medication: medication, date: today.addingTimeInterval(7200), amount: 5.0, unit: .tablet))
 
-        let viewModel = MedicationTrendsViewModel(dataStore: dataStore, selectedMedicationID: medication.id)
+		let viewModel = MedicationTrendsViewModel(dataStore: dataStore, defaults: defaults, selectedMedicationID: medication.id)
         let heatmapData = viewModel.calendarHeatmapData(last: 1)
 
         guard let dayData = heatmapData.first else {
@@ -958,7 +951,6 @@ struct MedicationTrendsViewModelTests {
     @Test("Next eligible dose date reflects saved minimum interval guidance")
     func nextEligibleDoseDateUsesSavedGuidance() async throws {
         clearStoredSelection()
-        let defaults = UserDefaults(suiteName: "TrendsVM-Safety-\(UUID().uuidString)") ?? .standard
         let safetyStore = MedicationSafetyProfileStore(defaults: defaults, mirrorToSharedDefaults: false)
         let dataStore = DataStore(testIdentifier: "TrendsVM-NextEligible")
         let medication = createTestMedication(name: "Naproxen")
@@ -974,7 +966,7 @@ struct MedicationTrendsViewModelTests {
         safetyStore.save(.init(minimumHoursBetweenDoses: 4), for: medication.id)
 
         let viewModel = MedicationTrendsViewModel(
-            dataStore: dataStore,
+			dataStore: dataStore, defaults: defaults,
             selectedMedicationID: medication.id,
             safetyProfileStore: safetyStore
         )

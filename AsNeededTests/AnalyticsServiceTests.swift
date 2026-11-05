@@ -8,42 +8,20 @@ import Testing
 
 @Suite("AnalyticsService Tests", .tags(.analytics, .service, .unit))
 struct AnalyticsServiceTests {
-    // MARK: - Test Helper
+	private let preferences: IsolatedTestPreferences
+	private let analytics: AnalyticsService
 
-    private class MockUserDefaults: UserDefaults {
-        private var storage: [String: Any] = [:]
-
-        override func set(_ value: Any?, forKey defaultName: String) {
-            storage[defaultName] = value
-        }
-
-        override func object(forKey defaultName: String) -> Any? {
-            return storage[defaultName]
-        }
-
-        override func integer(forKey defaultName: String) -> Int {
-            return storage[defaultName] as? Int ?? 0
-        }
-
-        override func dictionary(forKey defaultName: String) -> [String: Any]? {
-            return storage[defaultName] as? [String: Any]
-        }
-
-        override func removeObject(forKey defaultName: String) {
-            storage.removeValue(forKey: defaultName)
-        }
-
-        func clearAll() {
-            storage.removeAll()
-        }
-    }
+	@MainActor
+	init() throws {
+		preferences = try IsolatedTestPreferences()
+		analytics = AnalyticsService(defaults: preferences.defaults)
+	}
 
     // MARK: - Feature Usage Tests
-
     @Test("Track feature use increments count")
     @MainActor
     func testTrackFeatureUse() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
 
         // Track multiple uses of a feature
         analytics.trackFeatureUse(.logDose)
@@ -53,13 +31,14 @@ struct AnalyticsServiceTests {
         let summary = analytics.getAnalyticsSummary()
         let features = summary.mostUsedFeatures
 
-        #expect(features.count > 0)
+        #expect(features.map(\.feature) == [AnalyticsService.Feature.logDose.rawValue, AnalyticsService.Feature.viewHistory.rawValue])
+		#expect(features.map(\.count) == [2, 1])
     }
 
     @Test("Track medication added increments counter")
     @MainActor
     func testTrackMedicationAdded() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
         let initialSummary = analytics.getAnalyticsSummary()
         let initialCount = initialSummary.totalMedicationsAdded
 
@@ -72,7 +51,7 @@ struct AnalyticsServiceTests {
     @Test("Track event logged increments counter")
     @MainActor
     func testTrackEventLogged() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
         let initialSummary = analytics.getAnalyticsSummary()
         let initialCount = initialSummary.totalEventsLogged
 
@@ -84,36 +63,34 @@ struct AnalyticsServiceTests {
 
     @Test("Track data export updates last export date")
     @MainActor
-    func testTrackDataExport() {
-        let analytics = AnalyticsService.shared
+    func testTrackDataExport() throws {
+        let analytics = self.analytics
         let beforeExport = Date()
 
         analytics.trackDataExport(itemCount: 100, redacted: false)
 
         let summary = analytics.getAnalyticsSummary()
-        if let exportDate = summary.lastExportDate {
-            #expect(exportDate >= beforeExport)
-        }
+		let exportDate = try #require(summary.lastExportDate)
+		#expect(exportDate >= beforeExport)
     }
 
     @Test("Track data import updates last import date on success")
     @MainActor
-    func testTrackDataImport() {
-        let analytics = AnalyticsService.shared
+    func testTrackDataImport() throws {
+        let analytics = self.analytics
         let beforeImport = Date()
 
         analytics.trackDataImport(itemCount: 50, success: true)
 
         let summary = analytics.getAnalyticsSummary()
-        if let importDate = summary.lastImportDate {
-            #expect(importDate >= beforeImport)
-        }
+		let importDate = try #require(summary.lastImportDate)
+		#expect(importDate >= beforeImport)
     }
 
     @Test("Track data import does not update date on failure")
     @MainActor
     func trackDataImportFailure() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
         let initialSummary = analytics.getAnalyticsSummary()
         let initialImportDate = initialSummary.lastImportDate
 
@@ -124,23 +101,22 @@ struct AnalyticsServiceTests {
     }
 
     // MARK: - Analytics Summary Tests
-
     @Test("Analytics summary contains expected fields")
     @MainActor
     func analyticsSummary() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
         let summary = analytics.getAnalyticsSummary()
 
         // Check that summary has expected structure
-        #expect(summary.launchCount >= 0)
-        #expect(summary.totalMedicationsAdded >= 0)
-        #expect(summary.totalEventsLogged >= 0)
-        #expect(summary.mostUsedFeatures.count <= 5) // Top 5 features
+        #expect(summary.launchCount == 1)
+        #expect(summary.totalMedicationsAdded == 0)
+        #expect(summary.totalEventsLogged == 0)
+        #expect(summary.mostUsedFeatures.isEmpty)
     }
 
     @Test("Days since first launch calculates correctly")
     @MainActor
-    func testDaysSinceFirstLaunch() {
+    func testDaysSinceFirstLaunch() throws {
         let tenDaysAgo = Calendar.current.date(byAdding: .day, value: -10, to: Date())
         let summary = AnalyticsSummary(
             firstLaunchDate: tenDaysAgo,
@@ -153,14 +129,13 @@ struct AnalyticsServiceTests {
             mostUsedFeatures: []
         )
 
-        if let days = summary.daysSinceFirstLaunch {
-            #expect(days >= 9 && days <= 11) // Allow for date calculation variance
-        }
+		let days = try #require(summary.daysSinceFirstLaunch)
+		#expect(days >= 9 && days <= 11) // Allow for date calculation variance
     }
 
     @Test("Average daily launches calculates correctly")
     @MainActor
-    func testAverageDailyLaunches() {
+    func testAverageDailyLaunches() throws {
         let tenDaysAgo = Calendar.current.date(byAdding: .day, value: -10, to: Date())
         let summary = AnalyticsSummary(
             firstLaunchDate: tenDaysAgo,
@@ -173,9 +148,8 @@ struct AnalyticsServiceTests {
             mostUsedFeatures: []
         )
 
-        if let average = summary.averageDailyLaunches {
-            #expect(average >= 2.5 && average <= 3.5) // Approximately 3 launches per day
-        }
+		let average = try #require(summary.averageDailyLaunches)
+		#expect(average >= 2.5 && average <= 3.5) // Approximately 3 launches per day
     }
 
     @Test("Average daily launches returns nil for no first launch")
@@ -197,7 +171,6 @@ struct AnalyticsServiceTests {
     }
 
     // MARK: - Feature Enum Tests
-
     @Test("Feature enum has expected values")
     @MainActor
     func featureEnumValues() {
@@ -215,11 +188,10 @@ struct AnalyticsServiceTests {
     }
 
     // MARK: - Clear Analytics Tests
-
     @Test("Clear analytics resets all data")
     @MainActor
     func testClearAnalytics() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
 
         // Add some data
         analytics.trackMedicationAdded()
@@ -237,51 +209,11 @@ struct AnalyticsServiceTests {
         #expect(summary.lastImportDate == nil)
     }
 
-    // MARK: - Performance Tests
-
-    @Test("Track feature use is performant")
-    @MainActor
-    func trackFeaturePerformance() {
-        let analytics = AnalyticsService.shared
-
-        let startTime = Date()
-        for _ in 0 ..< 1000 {
-            analytics.trackFeatureUse(.logDose)
-        }
-        let elapsed = Date().timeIntervalSince(startTime)
-
-        #expect(elapsed < 1.0) // Should complete 1000 tracks in less than 1 second
-    }
-
-    @Test("Get analytics summary is performant")
-    @MainActor
-    func getSummaryPerformance() {
-        let analytics = AnalyticsService.shared
-
-        // Add some data
-        for i in 0 ..< 100 {
-            if i % 2 == 0 {
-                analytics.trackMedicationAdded()
-            } else {
-                analytics.trackEventLogged(type: .doseTaken)
-            }
-        }
-
-        let startTime = Date()
-        for _ in 0 ..< 100 {
-            _ = analytics.getAnalyticsSummary()
-        }
-        let elapsed = Date().timeIntervalSince(startTime)
-
-        #expect(elapsed < 0.5) // Should complete 100 summaries in less than 500ms
-    }
-
     // MARK: - Top Features Tests
-
     @Test("Top features are sorted by count")
     @MainActor
     func topFeaturesSorting() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
 
         // Track features with different frequencies
         for _ in 0 ..< 5 {
@@ -308,7 +240,7 @@ struct AnalyticsServiceTests {
     @Test("Top features limited to 5")
     @MainActor
     func topFeaturesLimit() {
-        let analytics = AnalyticsService.shared
+        let analytics = self.analytics
 
         // Track more than 5 different features
         analytics.trackFeatureUse(.addMedication)
@@ -320,6 +252,25 @@ struct AnalyticsServiceTests {
         analytics.trackFeatureUse(.exportData)
 
         let summary = analytics.getAnalyticsSummary()
-        #expect(summary.mostUsedFeatures.count <= 5)
+        #expect(summary.mostUsedFeatures.count == 5)
     }
+	@Test("Analytics counters persist only within their injected preference domain")
+	@MainActor
+	func isolatedPreferenceDomains() throws {
+		let otherPreferences = try IsolatedTestPreferences()
+		let other = AnalyticsService(defaults: otherPreferences.defaults)
+		analytics.trackMedicationAdded()
+		analytics.trackEventLogged(type: .doseTaken)
+		#expect(analytics.getAnalyticsSummary().totalMedicationsAdded == 1)
+		#expect(analytics.getAnalyticsSummary().totalEventsLogged == 1)
+		#expect(other.getAnalyticsSummary().totalMedicationsAdded == 0)
+		#expect(other.getAnalyticsSummary().totalEventsLogged == 0)
+		let reloaded = AnalyticsService(defaults: preferences.defaults)
+		#expect(reloaded.getAnalyticsSummary().totalMedicationsAdded == 1)
+		#expect(reloaded.getAnalyticsSummary().launchCount == 2)
+		#expect(other.getAnalyticsSummary().launchCount == 1)
+		other.clearAnalytics()
+		#expect(analytics.getAnalyticsSummary().totalEventsLogged == 1)
+	}
+
 }

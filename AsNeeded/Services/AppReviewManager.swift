@@ -12,15 +12,19 @@ final class AppReviewManager: ObservableObject {
     private let minimumLaunchCount = 3
     private let minimumEventsCount = 2
 
-    private init() {}
+	private let defaults: UserDefaults
+
+	init(defaults: UserDefaults = .standard) {
+		self.defaults = defaults
+	}
 
     // MARK: - User Preferences
 
     var hasOptedOutOfReviews: Bool {
-        get { UserDefaults.standard.bool(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews) }
+        get { defaults.bool(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews) }
         set {
             objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
+            defaults.set(newValue, forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
         }
     }
 
@@ -32,20 +36,20 @@ final class AppReviewManager: ObservableObject {
         let calendar = Calendar.current
 
         // Increment launch count
-        let currentLaunchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-        UserDefaults.standard.set(currentLaunchCount + 1, forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        let currentLaunchCount = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        defaults.set(currentLaunchCount + 1, forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
 
         // Update consecutive days tracking
         updateConsecutiveDaysTracking(for: currentDate, calendar: calendar)
 
         // Update last use date
-        UserDefaults.standard.set(currentDate, forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
+        defaults.set(currentDate, forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
     }
 
     /// Call this when user logs a medication event
     func recordMedicationEvent() {
-        let currentCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-        UserDefaults.standard.set(currentCount + 1, forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        let currentCount = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        defaults.set(currentCount + 1, forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
 
         // Check if we should request a review after this meaningful interaction
         Task {
@@ -70,23 +74,23 @@ final class AppReviewManager: ObservableObject {
     // MARK: - Private Methods
 
     private func updateConsecutiveDaysTracking(for currentDate: Date, calendar: Calendar) {
-        let lastUseDate = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate) as? Date
-        let currentConsecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        let lastUseDate = defaults.object(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate) as? Date
+        let currentConsecutiveDays = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
 
         if let lastUse = lastUseDate {
             let daysBetween = calendar.dateComponents([.day], from: lastUse, to: currentDate).day ?? 0
 
             if daysBetween == 1 {
                 // Consecutive day usage
-                UserDefaults.standard.set(currentConsecutiveDays + 1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+                defaults.set(currentConsecutiveDays + 1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
             } else if daysBetween > 1 {
                 // Streak broken, reset to 1
-                UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+                defaults.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
             }
             // If daysBetween == 0, it's the same day, don't change consecutive count
         } else {
             // First time using the app
-            UserDefaults.standard.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+            defaults.set(1, forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
         }
     }
 
@@ -111,8 +115,8 @@ final class AppReviewManager: ObservableObject {
     }
 
     private func isEngagementCriteriaMet() -> Bool {
-        let launchCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-        let eventsCount = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        let launchCount = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        let eventsCount = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
 
         return launchCount >= minimumLaunchCount &&
             eventsCount >= minimumEventsCount
@@ -157,7 +161,7 @@ final class AppReviewManager: ObservableObject {
     }
 
     private func recordReviewRequest() {
-        UserDefaults.standard.set(Date(), forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
+        defaults.set(Date(), forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
     }
 
     private func requestNativeReview() {
@@ -239,24 +243,24 @@ final class AppReviewManager: ObservableObject {
     // MARK: - Settings and Debug Info
 
     func getEngagementStats() -> (launches: Int, events: Int, consecutiveDays: Int, lastRequest: Date?) {
-        let launches = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-        let events = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-        let consecutiveDays = UserDefaults.standard.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-        let lastRequest = UserDefaults.standard.object(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate) as? Date
+        let launches = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        let events = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        let consecutiveDays = defaults.integer(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        let lastRequest = defaults.object(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate) as? Date
 
         return (launches, events, consecutiveDays, lastRequest)
     }
 
     func resetReviewPreferences() {
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.hasUserOptedOutOfReviews)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastReviewRequestDate)
         hasOptedOutOfReviews = false
     }
 
     func resetEngagementTracking() {
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
-        UserDefaults.standard.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.appLaunchCount)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.medicationEventsCount)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.consecutiveDaysOfUse)
+        defaults.removeObject(forKey: AsNeeded.UserDefaultsKeys.lastAppUseDate)
     }
 }

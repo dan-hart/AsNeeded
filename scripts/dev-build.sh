@@ -1,8 +1,7 @@
-#!/bin/bash
-# dev-build.sh - Ultra-fast development builds using maximum parallelization
-# Optimized for 16-core CPU with aggressive parallel compilation
+#!/usr/bin/env bash
+# dev-build.sh - Incremental development builds with parallel compilation
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -17,6 +16,7 @@ echo -e "${BLUE}═════════════════════�
 # Detect CPU cores and use ALL of them
 CPU_CORES=$(sysctl -n hw.ncpu)
 PARALLEL_JOBS=$CPU_CORES
+BUILD_DESTINATION=${BUILD_DESTINATION:-generic/platform=iOS Simulator}
 echo -e "${GREEN}💪 Using all $CPU_CORES CPU cores for maximum speed${NC}"
 
 # Optional: Clean old DerivedData (uncomment for first-time speed boost)
@@ -39,7 +39,7 @@ if [ "$USE_XCSIFT" = true ]; then
     xcodebuild \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+        -destination "$BUILD_DESTINATION" \
         -configuration Debug \
         -jobs $PARALLEL_JOBS \
         -parallelizeTargets \
@@ -50,19 +50,12 @@ if [ "$USE_XCSIFT" = true ]; then
         build \
         -quiet 2>&1 | xcsift
 
-    BUILD_STATUS=$?
-
-    if [ $BUILD_STATUS -eq 0 ]; then
-        echo -e "${GREEN}✅ Development build complete!${NC}"
-    else
-        echo -e "${RED}❌ Build failed${NC}"
-        exit 1
-    fi
+    echo -e "${GREEN}✅ Development build complete!${NC}"
 else
     xcodebuild \
         -project AsNeeded.xcodeproj \
         -scheme AsNeeded \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.1' \
+        -destination "$BUILD_DESTINATION" \
         -configuration Debug \
         -jobs $PARALLEL_JOBS \
         -parallelizeTargets \

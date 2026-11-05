@@ -43,7 +43,7 @@ Existing system `.close`/`.confirm` roles can remain where their semantics apply
 
 Check actual rendered screens in light/dark appearance, large accessibility text, Increase Contrast, Reduce Transparency and Reduce Motion. Native controls provide system adaptations; custom surfaces still need inspection. Keep named actions and reading order. A source scan is not a VoiceOver or visual conformance test.
 
-For this pass, see [the audit and verification record](testing/1.2.0-liquid-glass-audit.md). Test only with synthetic medication data.
+For this pass, see [the audit and verification record](archive/1.2.0/testing/1.2.0-liquid-glass-audit.md). Test only with synthetic medication data.
 
 ## Sources and skill selection
 

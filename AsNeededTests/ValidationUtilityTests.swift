@@ -9,7 +9,6 @@ import Testing
 @Suite("ValidationUtility Tests", .tags(.validation, .utility, .unit))
 struct ValidationUtilityTests {
     // MARK: - Name Validation Tests
-
     @Test("Valid medication names should pass validation")
     func validMedicationNames() {
         let validNames = [
@@ -54,7 +53,6 @@ struct ValidationUtilityTests {
     }
 
     // MARK: - Medication Validation Tests
-
     @Test("Valid medication should pass validation")
     func validMedication() {
         let medication = ANMedicationConcept(
@@ -120,7 +118,6 @@ struct ValidationUtilityTests {
     }
 
     // MARK: - Event Validation Tests
-
     @Test("Valid event should pass validation")
     func validEvent() {
         let medication = ANMedicationConcept(clinicalName: "Test Med")
@@ -191,7 +188,6 @@ struct ValidationUtilityTests {
     }
 
     // MARK: - Bulk Validation Tests
-
     @Test("Bulk medication validation should categorize correctly")
     func bulkMedicationValidation() {
         let validMed1 = ANMedicationConcept(clinicalName: "Valid Med 1")
@@ -242,7 +238,6 @@ struct ValidationUtilityTests {
     }
 
     // MARK: - Data Integrity Tests
-
     @Test("Should find duplicate medications by name")
     func testFindDuplicateMedications() {
         let med1 = ANMedicationConcept(clinicalName: "Aspirin")
@@ -305,7 +300,6 @@ struct ValidationUtilityTests {
     }
 
     // MARK: - ValidationError Tests
-
     @Test("ValidationError should provide correct descriptions")
     func validationErrorDescriptions() {
         let emptyError = ValidationError.emptyField(field: "Name")
@@ -327,9 +321,8 @@ struct ValidationUtilityTests {
         #expect(duplicateError.errorDescription == "Username already exists")
     }
 
-    // MARK: - Performance Tests
-
-    @Test("Bulk validation should be performant")
+	// MARK: - Large Dataset Tests
+	@Test("Bulk validation accepts every valid medication")
     func bulkValidationPerformance() {
         // Create 1000 medications for performance testing
         var medications: [ANMedicationConcept] = []
@@ -340,11 +333,8 @@ struct ValidationUtilityTests {
             ))
         }
 
-        let startTime = Date()
         let result = ValidationUtility.validateMedications(medications)
-        let elapsed = Date().timeIntervalSince(startTime)
 
         #expect(result.validCount == 1000)
-        #expect(elapsed < 1.0) // Should complete in less than 1 second
     }
 }

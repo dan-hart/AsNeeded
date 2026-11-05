@@ -1,161 +1,40 @@
 # Contributing to AsNeeded
 
-Thank you for your interest in contributing to AsNeeded! We welcome contributions from the community and are excited to work with you.
+Help keep medication recording clear, dependable, accessible, and private. Please be respectful and constructive in issues and reviews.
 
-## Code of Conduct
+## Choose the right branch and scope
 
-By participating in this project, you agree to be respectful and constructive in all interactions. We're building a health app that helps people, and we want our community to reflect that positive mission.
+Current release development is `task/v1.3.0`; target that branch for agreed 1.3.0 work. Use `main` for a maintainer-requested released-version fix. Confirm the intended base for other release work instead of assuming that an old plan or `develop` is current. Keep unrelated work in separate changes.
 
-## How to Contribute
+For bugs, describe expected/actual behavior, reproduction steps, app build, iOS/watchOS version, and device class. Use synthetic medication data. Redact private information from logs and screenshots. For features, explain the use case and agree scope before a broad implementation.
 
-### Reporting Bugs
+## Set up
 
-Before creating a bug report, please check existing issues to avoid duplicates. When creating a bug report, include:
+1. Clone your fork and open `AsNeeded.xcodeproj` in a compatible Xcode with an installed iOS 26+ runtime.
+2. Select the AsNeeded scheme and simulator. Device builds need your own signing setup.
+3. Install the repository security hooks with `./scripts/install-hooks.sh`. The helper checks its scanner prerequisites; optional AI tools are never prerequisites.
+4. Create a focused branch from the intended base, for example `task/history-filter-fix`.
 
-- **Clear title and description**: Explain what happened vs. what you expected
-- **Steps to reproduce**: List the exact steps to trigger the bug
-- **Environment details**: iOS version, device model, Xcode version
-- **Screenshots/videos**: If applicable, add visual evidence
-- **Crash logs**: Include relevant logs from Xcode console
+A clean clone works without purchase credentials. Optional local RevenueCat configuration and build/test commands are documented in [the README](README.md) and [scripts](scripts/README.md).
 
-### Suggesting Features
+## Implement and review
 
-We love feature suggestions! When proposing a new feature:
+- Follow [AGENTS.md](AGENTS.md) and load only relevant [rule modules](ai-rules/rule-loading.md).
+- Use tabs, meaningful names, and `// MARK:` sections with no blank line immediately after the marker.
+- Use `.accent` for interactive treatment, `.customFont()` with `fontFamily`, and `.customNavigationTitle(...)` for titles. Preserve critical medication names and units at large text sizes.
+- Use SFSafeSymbols in iOS targets; watchOS is the exception.
+- Keep business logic deterministic and testable. Inject time, storage/defaults, and external clients where needed; preserve existing state ownership.
+- Read [storage safety](docs/DATA_STORAGE_GUIDELINES.md) before storage/migration work. Include upgrade, recovery, rollback, and repeated-launch verification when applicable.
+- Update authoritative docs rather than adding duplicate instructions. Review [business rules](docs/business-rules.md) and affected [Drift anchors](docs/drift.md) when behavior changes.
 
-- **Check existing issues**: Someone might have already suggested it
-- **Explain the use case**: Why would this feature help users?
-- **Consider privacy**: How does this align with our privacy-first approach?
-- **Be specific**: Provide mockups or detailed descriptions if possible
+## Verify
 
-### Pull Request Process
+Run the smallest relevant tests first, then `./scripts/test-parallel.sh` for broader changes. See [scripts](scripts/README.md) for destination/worker overrides and standalone regression commands. Use Swift Testing (`import Testing`, `@Test`, `#expect`), isolated synthetic fixtures, and behavior-based assertions. Avoid live network calls, shared preferences, stopwatch thresholds, and checks that pass without reaching their fixture.
 
-1. **Fork the repository** and create your branch from `develop`
-2. **Follow the code style**:
-   - Use tabs for indentation
-   - Keep lines under ~120 characters
-   - Use `// MARK: -` comments to organize code sections
-   - Always use SFSafeSymbols for SF Symbols
-   - Use `.accentColor` instead of `.blue` for interactive elements
-3. **Write tests** for new functionality using Swift Testing framework
-4. **Update documentation** if you're changing behavior
-5. **Ensure the build passes**: Run `xcodebuild -scheme AsNeeded build`
-6. **Create a Pull Request** with a clear title and description
+No UI/snapshot-test target is needed. Inspect real screenshots/device behavior for UI changes; state the device/runtime and remaining accessibility/hardware gaps. A build pass is not evidence of notification delivery or an upgrade on a physical device.
 
-### Development Setup
+Review the final diff and changed documentation links. Keep security scans enabled and never commit secrets, local signing assets, build output, or personal records. Stage only the intended files. Use an imperative commit message describing the change, and give PR reviewers the problem, resulting behavior, validation, and any material limits. Do not merge or publish a release without maintainer authorization.
 
-```bash
-# Clone your fork
-git clone git@github.com:your-username/AsNeeded.git
-cd AsNeeded
+## Repository navigation
 
-# Add upstream remote
-git remote add upstream git@github.com:dan-hart/AsNeeded.git
-
-# Install security hooks (required)
-./scripts/install-hooks.sh
-
-# Optional but recommended: install git-secrets for extra local scanning
-brew install git-secrets
-
-# Create a feature branch
-git checkout -b feature/your-feature-name
-
-# Make your changes and commit
-git add .
-git commit -m "Add your feature"
-
-# Push to your fork
-git push origin feature/your-feature-name
-```
-
-### AI Guidance
-
-- Repository AI guidance is agent-agnostic and lives in `AGENTS.md` plus `ai-rules/`.
-- Optional local tooling notes for maintainers live in `docs/ai/`.
-- Contributors should never need local AI setup to build, test, review, or contribute to the project.
-
-### Commit Messages
-
-- Use present tense ("Add feature" not "Added feature")
-- Use imperative mood ("Fix bug" not "Fixes bug")
-- Keep the first line under 50 characters
-- Reference issues and pull requests when relevant
-
-Examples:
-- `Add medication interaction warnings`
-- `Fix dose logging crash on iPad`
-- `Update RxNorm search algorithm`
-- `Refactor notification scheduling logic`
-
-### Testing Guidelines
-
-- Write tests for all new business logic
-- Use Swift Testing framework (`@Test`, `#expect`)
-- Focus on domain models, services, and view models
-- No UI or snapshot tests needed
-- Aim for 80%+ coverage on new code
-
-Example test:
-```swift
-@Test func calculatesNextDoseCorrectly() {
-    let medication = ANMedicationConcept(
-        name: "Ibuprofen",
-        minimumInterval: 6 * 3600 // 6 hours
-    )
-    let lastDose = Date.now.addingTimeInterval(-3600) // 1 hour ago
-    let nextAvailable = medication.nextDoseAvailable(after: lastDose)
-    #expect(nextAvailable.timeIntervalSince(lastDose) == 5 * 3600)
-}
-```
-
-### Architecture Guidelines
-
-- **Domain Layer**: Keep models pure with no UI or persistence code
-- **Services**: Use protocols for dependency injection
-- **Views**: Small, focused SwiftUI views in separate files
-- **Packages**: No SwiftUI imports in ANModelKit or SwiftRxNorm
-- **Concurrency**: Use async/await for asynchronous operations
-
-### What We're Looking For
-
-#### High Priority
-- Bug fixes and stability improvements
-- Performance optimizations
-- Accessibility enhancements
-- Test coverage improvements
-- Documentation updates
-
-#### Medium Priority
-- New medication tracking features
-- Data visualization improvements
-- Apple Watch app enhancements
-- Siri Shortcuts additions
-
-#### Nice to Have
-- Localization support
-- Theme customization
-- Widget implementations
-- Advanced analytics
-
-### Review Process
-
-1. A maintainer will review your PR within 3-5 days
-2. We may request changes or ask questions
-3. Once approved, we'll merge your contribution
-4. Your contribution will be included in the next release
-
-### Recognition
-
-Contributors are recognized in:
-- Release notes
-- GitHub contributors page
-- In-app credits (for significant contributions)
-
-## Questions?
-
-Feel free to:
-- Open a [Discussion](https://github.com/dan-hart/AsNeeded/discussions) for general questions
-- Create an [Issue](https://github.com/dan-hart/AsNeeded/issues) for bugs or features
-- Reach out to maintainers for clarification
-
-Thank you for helping make AsNeeded better for everyone!
+[Current docs](docs/README.md) · [Architecture](docs/architecture.md) · [Design sources](Design/README.md) · [Optional AI tooling](docs/ai/README.md) · [Historical records](docs/archive/README.md)

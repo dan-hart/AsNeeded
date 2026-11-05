@@ -21,7 +21,34 @@ if [ "$TEST_WORKERS" -lt 1 ]; then
     echo "TEST_WORKERS must be positive" >&2
     exit 1
 fi
-TEST_DESTINATION=${TEST_DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=26.1}
+# Discover a concrete installed destination unless the caller selected one.
+if [ -z "${TEST_DESTINATION:-}" ]; then
+	TEST_DESTINATION=$(xcrun simctl list devices available --json | python3 -c '
+import json
+import re
+import sys
+from pathlib import Path
+
+def version(value):
+    parts = tuple(int(part) for part in value.replace("-", ".").split("."))
+    return parts + (0,) * (3 - len(parts))
+
+try:
+    # Use the highest iOS deployment target so app and test targets can run.
+    project = Path("AsNeeded.xcodeproj/project.pbxproj").read_text()
+    minimum = max(version(value) for value in re.findall(r"IPHONEOS_DEPLOYMENT_TARGET\s*=\s*([0-9.]+);", project))
+    devices = json.load(sys.stdin)["devices"]
+    candidates = [device for runtime, entries in devices.items()
+                  if ".iOS-" in runtime and version(runtime.rsplit(".iOS-", 1)[1]) >= minimum
+                  for device in entries
+                  if device.get("isAvailable") and device["name"].startswith("iPhone")]
+except (OSError, ValueError, KeyError, TypeError, AttributeError):
+    sys.exit("Could not read installed simulator inventory. Check xcrun simctl list devices available or set TEST_DESTINATION.")
+if not candidates:
+    sys.exit("No compatible available iPhone simulator. Install an iOS runtime/device matching the project deployment target in Xcode or set TEST_DESTINATION.")
+print("platform=iOS Simulator,id=" + candidates[0]["udid"])
+')
+fi
 
 echo -e "${GREEN}💪 Using $TEST_WORKERS parallel test workers (out of $CPU_CORES cores)${NC}"
 

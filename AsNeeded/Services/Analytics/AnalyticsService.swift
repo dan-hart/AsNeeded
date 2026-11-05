@@ -9,9 +9,10 @@ import Foundation
 public final class AnalyticsService {
     public static let shared = AnalyticsService()
     private let logger = DHLogger(category: "Analytics")
-    private let userDefaults = UserDefaults.standard
+	private let userDefaults: UserDefaults
 
-    private init() {
+	init(defaults: UserDefaults = .standard) {
+		userDefaults = defaults
         trackAppLaunch()
     }
 

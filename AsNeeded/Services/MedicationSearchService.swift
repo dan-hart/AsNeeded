@@ -19,10 +19,11 @@ final class MedicationSearchService: ObservableObject {
     @Published private(set) var searchResults: [RxNormSearchResult] = []
     @Published private(set) var autocompleteResults: AutocompleteResult?
 
-    private let client = RxNormClient()
+	private let enhancedSearch: @MainActor (String) async throws -> [RxNormSearchResult]
+	private let autocompleteSearch: @MainActor (String) async throws -> AutocompleteResult
     private var searchCache = NSCache<NSString, CacheEntry>()
     private var searchTask: Task<Void, Never>?
-    private let userDefaults = UserDefaults.standard
+	private let userDefaults: UserDefaults
 
     private class CacheEntry {
         let results: [RxNormSearchResult]
@@ -42,7 +43,19 @@ final class MedicationSearchService: ObservableObject {
         }
     }
 
-    private init() {
+	init(
+		defaults: UserDefaults = .standard,
+		enhancedSearch: (@MainActor (String) async throws -> [RxNormSearchResult])? = nil,
+		autocomplete: (@MainActor (String) async throws -> AutocompleteResult)? = nil
+	) {
+		let client = RxNormClient()
+		self.userDefaults = defaults
+		self.enhancedSearch = enhancedSearch ?? { query in
+			try await client.enhancedSearch(query, options: .comprehensive)
+		}
+		self.autocompleteSearch = autocomplete ?? { query in
+			try await client.autocomplete(query, options: .autocomplete)
+		}
         setupCache()
         loadRecentSearches()
         loadPopularMedications()
@@ -113,7 +126,7 @@ final class MedicationSearchService: ObservableObject {
 
         do {
             // Use enhanced search with fuzzy matching for better results
-            let rawResults = try await client.enhancedSearch(trimmedQuery, options: .comprehensive)
+			let rawResults = try await enhancedSearch(trimmedQuery)
 
             // Process, simplify and sort results with intelligent prioritization
             let sortedResults = await MedicationResultSorter.processAndSort(rawResults, for: trimmedQuery)
@@ -164,7 +177,7 @@ final class MedicationSearchService: ObservableObject {
 
         do {
             // Use optimized autocomplete API
-            let result = try await client.autocomplete(trimmedQuery, options: .autocomplete)
+			let result = try await autocompleteSearch(trimmedQuery)
 
             // Extract drug names from suggestions for deduplication and sorting
             let drugNames = result.suggestions.map { $0.drug.name }

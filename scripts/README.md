@@ -1,425 +1,98 @@
 # AsNeeded Build Scripts
 
-Ultra-optimized build, test, and security scripts for high-performance development.
+Run scripts from the repository root on macOS with Xcode 26+ and its required simulator runtimes installed. Build and test scripts detect CPU count; memory use and elapsed time depend on the machine, workload, and caches. No benchmark speedup is established here.
 
-## 🚀 Quick Start
+## Setup and security
+
+Install the repository's security hooks before committing:
 
 ```bash
-# FIRST: Install security hooks (one-time setup)
 brew install git-secrets
 ./scripts/install-hooks.sh
+```
 
-# Fast development build (incremental, max speed)
-./scripts/dev-build.sh
+The installer configures `core.hooksPath`, checks the preflight helper, and runs the security scan. Review the installer before changing local Git configuration.
 
-# Run all tests in parallel
-./scripts/test-parallel.sh
-
-# Run specific test class
-./scripts/test-parallel.sh DataStoreTests
-
-# Production build (whole-module optimization)
-./scripts/prod-build.sh
-
-# Weekly cleanup (recommended)
-./scripts/clean-deriveddata.sh --asneeded
-
-# Scan repository for secrets
+```bash
+# Repository secret scan, including history when supported
 ./scripts/scan-repo.sh
-```
 
-## 📋 Scripts Overview
+# Current files only
+./scripts/scan-repo.sh --quick
 
-### `install-hooks.sh` - Security Setup (Run First!)
-
-**Purpose:** Configure git to use security hooks that prevent accidental secret commits.
-
-**What it does:**
-- Configures `git config core.hooksPath .githooks`
-- Makes hooks executable
-- Ensures ASP preflight is executable
-- Configures git-secrets patterns if installed
-- Runs initial security scan
-- Verifies hook installation
-
-**Usage:**
-```bash
-# One-time setup for new contributors
-./scripts/install-hooks.sh
-```
-
-**Important:** Run this before making any commits to the repository.
-
-For full local protection, install git-secrets first:
-```bash
-brew install git-secrets
-```
-
-### `utilities/asp-preflight.sh` - AI Safety Policy Guardrail
-
-**Purpose:** Block risky file types and require acknowledgements for high-risk changes.
-
-**Usage:**
-```bash
+# Staged policy checks
 ./scripts/utilities/asp-preflight.sh --staged --strict
 ```
 
-### `scan-repo.sh` - Repository Security Scanner
+The scanner supports gitleaks, trufflehog, git-secrets, and a fallback scanner. Keep scanning enabled; review findings before committing.
 
-**Purpose:** Scan the repository for potential secrets in code and git history.
-
-**Detection:**
-- GitHub, OpenAI, Anthropic API keys
-- AWS, Slack, Stripe credentials
-- RevenueCat, Jira/Atlassian tokens
-- Private keys and certificates
-- Generic passwords and connection strings
-
-**Usage:**
-```bash
-# Full history scan (uses gitleaks if available)
-./scripts/scan-repo.sh
-
-# Quick scan - current files only (faster)
-./scripts/scan-repo.sh --quick
-```
-
-**Scanners supported (in order of preference):**
-1. gitleaks (recommended)
-2. trufflehog
-3. git-secrets
-4. grep fallback
-
-Install gitleaks for best results: `brew install gitleaks`
-
----
-
-### `dev-build.sh` - Fast Development Builds ⚡️
-
-**Purpose:** Ultra-fast incremental builds optimized for rapid development iteration.
-
-**Optimizations:**
-- ✅ Incremental compilation mode
-- ✅ Uses all CPU cores (16 cores on your system)
-- ✅ Parallel target building
-- ✅ Disabled index store for speed
-- ✅ Clean xcsift output
-
-**When to use:**
-- During active development
-- After making small code changes
-- When you need fast feedback loops
-
-**Performance:** ~50-70% faster than standard builds for incremental changes.
+## Development builds
 
 ```bash
 ./scripts/dev-build.sh
 ```
 
-### `test-parallel.sh` - Parallel Test Execution 🧪
+The development build uses incremental compilation, detected CPU cores, parallel targets, and a disabled index store. Its default destination is `generic/platform=iOS Simulator`, so it does not require a particular installed iPhone device/runtime. To select a destination explicitly:
 
-**Purpose:** Run tests using maximum parallelization across all CPU cores.
-
-**Optimizations:**
-- ✅ Uses 75% of CPU cores for tests (12 workers on your 16-core system)
-- ✅ Parallel test execution enabled
-- ✅ Can run specific test classes
-- ✅ Clean xcsift output
-
-**Usage:**
 ```bash
-# Run all tests
-./scripts/test-parallel.sh
-
-# Run specific test class
-./scripts/test-parallel.sh DataStoreTests
-./scripts/test-parallel.sh HealthKitSyncManagerTests
+BUILD_DESTINATION='platform=iOS Simulator,id=SIMULATOR-UUID' ./scripts/dev-build.sh
 ```
 
-**Performance:** ~60-80% faster test execution compared to serial testing.
+The optional `xcsift` formatter is detected automatically. If absent, the scripts show normal `xcodebuild` output. A build failure exits nonzero with either output path.
 
-### `prod-build.sh` - Production Builds 🏭
+## Unit tests
 
-**Purpose:** Optimized release builds for App Store submission.
+```bash
+./scripts/test-parallel.sh
+./scripts/test-parallel.sh DataStoreTests
+./scripts/test-parallel.sh NotificationManagerTests
+```
 
-**Optimizations:**
-- ✅ Whole-module optimization
-- ✅ Maximum Swift optimization level (-O)
-- ✅ Index store enabled (for debugging)
-- ✅ All CPU cores utilized
-- ✅ Parallel target building
+The test runner selects an available installed iPhone simulator whose runtime meets the highest iOS deployment target in `AsNeeded.xcodeproj/project.pbxproj` (currently iOS 26.0) and uses 75% of detected CPU cores for test workers. If no compatible iPhone is available or inventory cannot be read, it stops with guidance before invoking `xcodebuild`. Python 3 is required for automatic selection. Select a destination explicitly and reduce worker count when needed:
 
-**When to use:**
-- Before archiving for App Store
-- Performance testing
-- Final QA builds
+```bash
+xcrun simctl list devices available
+TEST_DESTINATION='platform=iOS Simulator,id=SIMULATOR-UUID' TEST_WORKERS=2 ./scripts/test-parallel.sh
+```
+
+Tests require a concrete installed simulator; a generic build destination cannot run them. Build CI discovers a compatible available iPhone in the selected Xcode runtime and supplies its UUID, rather than assuming a particular simulator version is installed on hosted runners. CI builds and runs unit tests for `main`, `develop`, `task/v1.2.0`, and `task/v1.3.0`.
+
+## Standalone regressions
+
+These run without the app simulator test host:
+
+```bash
+for test in scripts/tests/*test*.py; do python3 "$test"; done
+python3 -m unittest discover -s scripts/localization -p 'test_*.py'
+./scripts/tests/setup-codex-superpowers.test.sh
+./scripts/tests/watch-medication-availability.test.sh
+```
+
+Python checks use the standard library. The watch harness requires Swift 6.2+ on macOS and compiles the real watch medication model in a temporary Swift package. Setup-tool regressions use temporary directories; optional agent tooling is not a prerequisite for app builds or CI. CI runs these standalone regressions separately from the app unit tests.
+
+## Production and cleanup
 
 ```bash
 ./scripts/prod-build.sh
 ```
 
-### `clean-deriveddata.sh` - Intelligent Cleanup 🧹
+This creates a release build with whole-module optimization. Follow the release documentation for signing, archiving, upload, and distribution; a local build alone does not verify those steps.
 
-**Purpose:** Remove build artifacts to improve build and indexing performance.
+Cleanup removes cached work and can make the next build slower. Inspect the relevant script and use cleanup for a specific build/cache problem:
 
-**Modes:**
-
-1. **AsNeeded only** (Recommended weekly):
 ```bash
 ./scripts/clean-deriveddata.sh --asneeded
-```
-Removes only AsNeeded's DerivedData (~2.6GB). Safe and fast.
-
-2. **Old data** (Recommended monthly):
-```bash
 ./scripts/clean-deriveddata.sh --old 7
 ```
-Removes DerivedData older than 7 days for all projects.
 
-3. **Nuclear option** (Use sparingly):
-```bash
-./scripts/clean-deriveddata.sh --all
-```
-Removes ALL DerivedData for all Xcode projects.
+`clean-deriveddata.sh --all` removes all Xcode DerivedData. `clean-all.sh` also removes local build, package, and Xcode caches and requests confirmation. These are broader recovery operations, not routine prerequisites.
 
-**Benefits:**
-- 20-30% faster builds after cleanup
-- 40-60% faster Xcode indexing
-- Fixes weird build issues
-- Recovers disk space
+## Troubleshooting and maintenance
 
-### `clean-all.sh` - Nuclear Cleanup ☢️
-
-**Purpose:** Complete fresh start - removes all caches, builds, and derived data.
-
-**⚠️ WARNING:** This will make the next build significantly slower. Only use when:
-- Build system is misbehaving
-- Before major Xcode version updates
-- Switching between major project versions
-- Investigating mysterious build failures
-
-**Removes:**
-- All DerivedData (~2.6GB for AsNeeded)
-- Local `build/` folder
-- SPM package caches
-- Xcode caches
-- Project-specific caches
-
-```bash
-./scripts/clean-all.sh
-# Requires typing 'yes' to confirm
-```
-
-**After running:** Open Xcode and wait ~2-3 minutes for re-indexing, then run `./scripts/dev-build.sh`.
-
-## 🎯 Recommended Workflow
-
-### Daily Development
-```bash
-# Morning - start fresh
-./scripts/dev-build.sh
-
-# During development - iterate quickly
-./scripts/dev-build.sh
-./scripts/test-parallel.sh
-
-# End of day - verify everything works
-./scripts/test-parallel.sh
-```
-
-### Weekly Maintenance
-```bash
-# Monday morning
-./scripts/clean-deriveddata.sh --asneeded
-./scripts/dev-build.sh
-./scripts/test-parallel.sh
-```
-
-### Release Process
-```bash
-# Clean build for release
-./scripts/prod-build.sh
-./scripts/test-parallel.sh
-
-# Then archive in Xcode
-# Product → Archive
-```
-
-## 🔧 System Requirements
-
-These scripts are optimized for your system:
-- **CPU:** 16 cores (detected automatically)
-- **RAM:** High (parallel builds use more memory)
-- **Storage:** SSD recommended for fast I/O
-
-Scripts automatically detect CPU count and adjust parallelization accordingly.
-
-## 📦 Dependencies
-
-### Required
-- Xcode 26+
-- macOS with 16 CPU cores
-- AsNeeded project
-
-### Recommended
-- **xcsift** - Structured build output (auto-detected)
-  ```bash
-  brew tap ldomaradzki/xcsift
-  brew install xcsift
-  ```
-
-If xcsift is not installed, scripts fall back to standard xcodebuild output.
-
-## 🎨 Output Colors
-
-Scripts use color-coded output for easy scanning:
-- 🔵 **Blue:** Informational messages
-- 🟢 **Green:** Success messages
-- 🟡 **Yellow:** Warnings and non-critical info
-- 🔴 **Red:** Errors and dangerous operations
-
-## 💡 Tips & Tricks
-
-### Speed up first build after cleanup
-```bash
-# Clean and rebuild in one command
-./scripts/clean-deriveddata.sh --asneeded && ./scripts/dev-build.sh
-```
-
-### Run tests while coding
-```bash
-# Terminal 1: Watch mode (manual)
-while true; do ./scripts/test-parallel.sh; sleep 10; done
-
-# Terminal 2: Keep coding
-# Tests run automatically every 10 seconds
-```
-
-### Quick single-test debugging
-```bash
-# Run only the failing test class
-./scripts/test-parallel.sh FailingTestClass
-```
-
-### Combine with git hooks
-Add to `.git/hooks/pre-push`:
-```bash
-#!/bin/bash
-cd "$(git rev-parse --show-toplevel)"
-./scripts/test-parallel.sh
-```
-
-## 🐛 Troubleshooting
-
-### "Scheme not found" error
-Ensure you're in the project root directory:
-```bash
-cd path/to/AsNeeded
-./scripts/dev-build.sh
-```
-
-### Build still slow after cleanup
-Try nuclear option:
-```bash
-./scripts/clean-all.sh
-```
-
-### Tests failing randomly
-May be resource contention. Reduce parallel workers:
-Edit `test-parallel.sh` and change:
-```bash
-TEST_WORKERS=$((CPU_CORES / 2))  # Use 50% instead of 75%
-```
-
-### xcsift not showing output
-Check installation:
-```bash
-which xcsift
-# Should return: /opt/homebrew/bin/xcsift
-```
-
-## 📊 Performance Metrics
-
-Based on your 16-core system:
-
-| Task | Standard | Optimized | Improvement |
-|------|----------|-----------|-------------|
-| Incremental Build | ~45s | ~15s | **67% faster** |
-| Clean Build | ~180s | ~120s | **33% faster** |
-| Full Test Suite | ~120s | ~35s | **71% faster** |
-| Single Test | ~25s | ~8s | **68% faster** |
-
-*Actual times vary based on change scope and system load*
-
-## 🔄 Maintenance Schedule
-
-### Daily
-- Use `dev-build.sh` for development
-- Run `test-parallel.sh` before committing
-
-### Weekly (Monday)
-- Run `./scripts/clean-deriveddata.sh --asneeded`
-- Full test suite with `test-parallel.sh`
-
-### Monthly
-- Run `./scripts/clean-deriveddata.sh --old 30`
-- Consider updating dependencies
-
-### As Needed
-- `clean-all.sh` only when build issues occur
-- `prod-build.sh` before App Store submissions
-
-## 📝 Customization
-
-All scripts detect CPU cores automatically, but you can customize:
-
-**Force specific core count:**
-Edit any script and add at the top:
-```bash
-CPU_CORES=8  # Force 8 cores instead of auto-detect
-```
-
-**Disable xcsift:**
-Set environment variable:
-```bash
-USE_XCSIFT=false ./scripts/dev-build.sh
-```
-
-**Change simulator:**
-Edit script destination:
-```bash
--destination 'platform=iOS Simulator,name=iPhone 16 Pro'
-```
-
-## 🎓 Learning Resources
-
-- [xcodebuild man page](https://developer.apple.com/library/archive/technotes/tn2339/_index.html)
-- [xcsift documentation](https://github.com/ldomaradzki/xcsift)
-- [Swift compilation modes](https://developer.apple.com/documentation/xcode/building-swift-packages-or-apps-that-use-them-in-continuous-integration-workflows)
-
-## 🤝 Contributing
-
-When modifying these scripts:
-1. Test on clean checkout
-2. Verify xcsift fallback works
-3. Update this README
-4. Check performance impact
-
----
-
-**Made with ⚡️ for maximum performance on high-end development machines**
-
-The test runner supports `TEST_DESTINATION` and `TEST_WORKERS` overrides, for example:
-
-```bash
-TEST_DESTINATION='platform=iOS Simulator,name=iPhone 17,OS=26.5' TEST_WORKERS=2 ./scripts/test-parallel.sh
-```
-
-Pipeline failures propagate even when the optional xcsift formatter is installed.
-
-Run the watch model's standalone Swift Testing regressions with
-`./scripts/tests/watch-medication-availability.test.sh` (Swift 6.2+ on macOS).
-The harness compiles the real watch model without requiring a watch simulator.
+- Run from the repository root if Xcode cannot find the project or scheme.
+- For unavailable destinations, inspect `xcrun simctl list devices available` and set the appropriate destination override.
+- For resource contention, reduce `TEST_WORKERS` instead of editing the script.
+- When changing shell helpers, run `bash -n` and the focused regression tests. Verify both formatted and unformatted failure behavior when changing build wrappers.
 
 ### Encoded-secret classification
 
@@ -428,3 +101,5 @@ The pre-commit security hook requires Python 3 (standard library only) and scans
 Run the deterministic classifier regressions with `python3 scripts/tests/base64-secret-scan.test.py`. Run `python3 scripts/tests/pre-commit-security.test.py` for real-hook regressions in temporary repositories, including staged secrets hidden by a clean working copy. Fixtures are synthetic and constructed without embedding live credentials.
 
 The push hook is read-only: set build numbers before committing rather than relying on a push-time bump. It scans only unpublished commits, with historical path classification tied to each scanned revision. Run `python3 scripts/tests/pre-push-scan.test.py` for isolated push-hook regressions. After reviewing storage-sensitive changes, use `ASP_ACK_DATA_PATH=1 git commit ...` to supply the existing preflight acknowledgement explicitly; it does not disable secret scanning.
+
+For a reviewed system-change classification, use `ASP_ACK_SYSTEM=1 git commit ...` to forward the existing `--ack-system` preflight acknowledgement. This is also needed when read-only CPU-query test fixtures match that classification. Review the actual diff first; the acknowledgement does not disable secret scanning or remove the default block on unacknowledged changes.

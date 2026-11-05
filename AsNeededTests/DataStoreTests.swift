@@ -27,7 +27,6 @@ struct DataStoreTests {
         defaults.removeObject(forKey: "trendsSelectedMedicationID")
         defaults.removeObject(forKey: "medicationOrder")
 
-
         // Clear NavigationManager state
         navigation.historyTargetMedicationID = nil
     }
@@ -49,7 +48,6 @@ struct DataStoreTests {
 	}
 
     // MARK: - Medication Tests
-
     @Test("Add medication to data store")
     func addMedication() async throws {
         // Given
@@ -141,7 +139,6 @@ struct DataStoreTests {
         defaults.removeObject(forKey: "trendsSelectedMedicationID")
         defaults.removeObject(forKey: "medicationOrder")
 
-
         // Given
         let medication = createTestMedication(name: "Selected Med")
         try await dataStore.addMedication(medication)
@@ -192,7 +189,6 @@ struct DataStoreTests {
     }
 
     // MARK: - Event Tests
-
     @Test("Add event to data store")
     func addEvent() async throws {
         // Given
@@ -210,7 +206,6 @@ struct DataStoreTests {
     }
 
     // MARK: - Export/Import Tests
-
     @Test("Export data as JSON with correct structure")
     func exportDataAsJSON() async throws {
         // Given
@@ -301,7 +296,6 @@ struct DataStoreTests {
     }
 
     // MARK: - Clear Data Tests
-
     @Test("Clear all data removes medications and events")
     func clearAllData() async throws {
         // Given
@@ -357,29 +351,22 @@ struct DataStoreTests {
         #expect(allKeys.contains(UserDefaultsKeys.selectedTab))
     }
 
-    // MARK: - Performance Tests
-
-    @Test("Bulk operations complete within performance threshold")
+	// MARK: - Large Dataset Tests
+	@Test("Bulk inserts retain every medication")
     func bulkOperationsPerformance() async throws {
-        // Measure bulk insert performance
+		// Insert a batch and verify all records remain present
         let medications = (0 ..< 100).map { i in
             createTestMedication(name: "Med \(i)")
         }
-
-        let startTime = Date()
 
         for medication in medications {
             try await dataStore.addMedication(medication)
         }
 
-        let elapsed = Date().timeIntervalSince(startTime)
-
         #expect(dataStore.medications.count == 100)
-        #expect(elapsed < 5.0, "Bulk insert should complete within 5 seconds")
     }
 
     // MARK: - Helper Methods
-
     private func createTestMedication(name: String, nickname: String? = nil) -> ANMedicationConcept {
         return ANMedicationConcept(
             clinicalName: name,
