@@ -2,8 +2,73 @@ version = 1
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded.xcodeproj/project.pbxproj"
+sig = "5593ac2fba600926"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/AppShortcuts.xcstrings"
+sig = "c8b3a384fc1a066d"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/AsNeededApp.swift"
+sig = "b16b4274db97a3b6"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Constants/FontFamily.swift"
+sig = "2355c9ae3e75926b"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Extensions/ANUnitConcept+Localization.swift"
+sig = "94b16e23443d0130"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Extensions/Color+Contrast.swift"
+sig = "389e200209732b8d"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Extensions/Font+CustomFonts.swift"
+sig = "d9b2a00ae601115b"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Extensions/View+NoTruncate.swift"
+sig = "34a43c9da595206b"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Main/MedicationView.swift"
+sig = "159620149914e451"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/DoseAmountInput.swift"
+sig = "ed558ddeeeaa183d"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/LogDosePickerModel.swift"
+sig = "6790711bd2bdedd7"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/LogDoseView.swift"
 sig = "c8590f7ce36635dd"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/MedicationHistoryView.swift"
+sig = "68dc70c1bb1dd7dc"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/MedicationTrendsView.swift"
+sig = "aad619705cda4fc9"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -12,8 +77,18 @@ sig = "82d2529edccbccef"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/ViewModels/MedicationHistoryViewModel.swift"
+sig = "fd1233f842cd5f79"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/ViewModels/MedicationListViewModel.swift"
 sig = "4ea1b48e24d37f5a"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/ViewModels/MedicationTrendsViewModel.swift"
+sig = "fcaed8595ea86b04"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -22,8 +97,68 @@ sig = "e2fb8ccc2a230516"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Settings/AboutView.swift"
+sig = "4d722998764e26f9"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Settings/AutomaticBackupView.swift"
+sig = "42a63cd91355bcfb"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Settings/DataPrivacyView.swift"
+sig = "352c7c276504b335"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Settings/FontPreferencesView.swift"
+sig = "9d9bb933969a048a"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Settings/ViewModels/AutomaticBackupViewModel.swift"
+sig = "6c581a6599cb2352"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Support/SupportView.swift"
+sig = "7b32fd98dd974432"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/InfoPlist.xcstrings"
+sig = "ad3feb6397cd6eac"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/AppDelegate.swift"
+sig = "63e3817e36f2cd9e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Services/AutomaticBackupManager.swift"
 sig = "d980c04766abc96e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/DemoModeState.swift"
+sig = "006b19a8b2244ff9"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/FontManager.swift"
+sig = "dcd1df9abbeb485a"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/Intents/GetNextDoseIntent.swift"
+sig = "f71540081d13a1de"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/MedicationAvailabilityNotificationPlanner.swift"
+sig = "fa3678f292d8a47c"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -32,8 +167,33 @@ sig = "241f60be5c41e678"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/MedicationDoseLimitMigration.swift"
+sig = "32a7c0bec554c171"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Services/MedicationNotificationAction.swift"
 sig = "3cc7a0cd446e2ef4"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/MedicationNotificationResponseHandler.swift"
+sig = "d8b58024c467f4b7"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/MedicationNotificationUrgencyStore.swift"
+sig = "97e69e32b1d74c89"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/MedicationReminderRequest.swift"
+sig = "0ba4349bb57a2bda"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/NavigationManager.swift"
+sig = "83d80c0e004f7261"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -62,13 +222,68 @@ sig = "eeeab14c6f69c080"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/RevenueCatManager.swift"
+sig = "3dd4238a2741e8d1"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/WatchConnectivity/WCReceiver.swift"
+sig = "b877b48ad9d8ad34"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/WidgetDoseNotificationReconciler.swift"
+sig = "51262a7d417aadd4"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/WidgetDoseRecordingPolicy.swift"
+sig = "7552e6ac20e688da"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/WidgetExperienceProjection.swift"
+sig = "6587a0c34bedd961"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Services/WidgetNavigationRoute.swift"
+sig = "cfc4ec9cf5a8599b"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Shared/SharedPlatformContracts.swift"
 sig = "db6c5419f7ba99b9"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Views/Components/FloatingLogDoseButton.swift"
+sig = "bdb9e783966b72a3"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Views/Components/LogDosePickerSheet.swift"
+sig = "794d8f08a72bfad6"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Views/Components/MedicationRowComponent.swift"
+sig = "ef73be2e1012dc4f"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Views/Components/QuickLogToastView.swift"
+sig = "72d66c9d85340345"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/AtomicPersistenceTests.swift"
 sig = "d66c2c55848637da"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/AutomaticBackupManagerTests.swift"
+sig = "cede80a4191a15ec"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -82,13 +297,38 @@ sig = "7bcae15c8b17dc41"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/ColorContrastTests.swift"
+sig = "c48cf5ee115a2774"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/DataImportIntegrityTests.swift"
 sig = "889ad0adfe1c001a"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/DataStoreTests.swift"
+sig = "1bdb9017745746fa"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/DemoModeStateTests.swift"
+sig = "477c3051e45a65fe"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/DoseConfirmationTests.swift"
 sig = "146d3361faf8acd9"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/DoseEntryRegressionTests.swift"
+sig = "9e8ef9f66f27a099"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/DoseStockStabilityTests.swift"
+sig = "6836e8ee868ecf55"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -107,8 +347,48 @@ sig = "e1fa77f1ad57edf6"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/FloatingDoseTargetTests.swift"
+sig = "987d51c7c9d26d21"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/FontFamilyTests.swift"
+sig = "1d247f64ca61be4e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/FontManagerTests.swift"
+sig = "c74303e7c76b7487"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/GetNextDoseIntentTests.swift"
+sig = "cd1f0df18df16b86"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/HistoryDateFilterTests.swift"
 sig = "0243a73d08174be7"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/LegacyWidgetIntentTests.swift"
+sig = "20c27d3394ae4e24"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/LocalizationResourceTests.swift"
+sig = "d9cdaa138819273e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/LogDosePickerModelTests.swift"
+sig = "88539d9cbd932073"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/MedicationAvailabilityNotificationPlannerTests.swift"
+sig = "facdab8a10ae0c13"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -117,8 +397,28 @@ sig = "a1fe9a717b620781"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/MedicationDoseLimitMigrationTests.swift"
+sig = "4c003257e440ba09"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/MedicationHistoryViewModelTests.swift"
+sig = "9b7ec7b421e4ef8f"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/MedicationNotificationActionTests.swift"
 sig = "25ad732f02fb81b9"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/MedicationReminderRequestTests.swift"
+sig = "db14a6e3363a3f2a"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/MedicationTrendsViewModelTests.swift"
+sig = "dbaad041cda66ae8"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -132,13 +432,38 @@ sig = "cbc79e52dcaff162"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/QuickLogFeedbackServiceTests.swift"
+sig = "f96258a6c6cb1443"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/QuickLogUndoRaceTests.swift"
 sig = "9a6d1aaa6ffcd9cb"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/ReminderPersistenceIntegrationTests.swift"
+sig = "33ce1dd775b7def3"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/RetiredQuestionSettingsTests.swift"
 sig = "fc623a58d0702f08"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/RevenueCatConfigurationTests.swift"
+sig = "0bba52d2b1d6528e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/ScheduledReminderReliabilityTests.swift"
+sig = "54bab4e458e3ee43"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/SettingsExportImportTests.swift"
+sig = "d2c7ab2e7aca8bbd"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -159,6 +484,71 @@ sig = "44f88574d92126f5"
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/WatchMessageValidationTests.swift"
 sig = "4775a21d5da682f9"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/WidgetDoseRegressionTests.swift"
+sig = "430a2adc31836b86"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/WidgetExperienceProjectionTests.swift"
+sig = "15a0f78ac591d910"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/WidgetNavigationRouteTests.swift"
+sig = "71ddb5de99a6924b"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/WidgetNotificationReconciliationTests.swift"
+sig = "4a473a36b4cc28b0"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededTests/WidgetScopedNavigationTests.swift"
+sig = "d5740a6f2e78839a"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededWidget/LogDoseWidgetIntent.swift"
+sig = "0ade659bc02059e0"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededWidget/MedicationLockScreenWidget.swift"
+sig = "dec15edcd9cf0bbf"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededWidget/WidgetDataProvider.swift"
+sig = "72edb2e1994d18ac"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededWidget/WidgetExperienceConfiguration.swift"
+sig = "70af678cadb1d65f"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "AsNeededWidget/WidgetExperienceViews.swift"
+sig = "55b8be4ae697eea0"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "WristAsNeeded Watch App/DoseLoggerView.swift"
+sig = "db76d9d02fb0c18e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "WristAsNeeded Watch App/QuantityEditorView.swift"
+sig = "2376feb3421b13a4"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
+target = "WristAsNeeded Watch App/WCSender.swift"
+sig = "676812d4e1dde345"
 
 [[bindings]]
 doc = "docs/architecture.md"
@@ -188,7 +578,7 @@ sig = "baace338903ec6bb"
 [[bindings]]
 doc = "docs/drift.md"
 target = "scripts/tests/drift.test.py"
-sig = "27ceb2090c30f140"
+sig = "78f15bbcc7366ff7"
 
 [[bindings]]
 doc = "scripts/README.md"

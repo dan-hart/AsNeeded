@@ -20,4 +20,4 @@ Start here for current guidance. Dated records in the archive describe earlier w
 | Release assets and licenses | [Design index](../Design/README.md) |
 | Earlier plans, backlog, and release evidence | [Historical archive](archive/README.md) |
 
-Keep current instructions in one authoritative place. New scratch plans and raw local output normally stay outside Git. Preserve durable decisions, reproducible regression evidence, privacy-safe fixtures, and required asset/license provenance. See [documentation rules](../ai-rules/documentation.md).
+Keep current instructions in one authoritative place. Keep temporary prompts, plans, and draft specs in the ignored `docs/superpowers/` directory or outside the checkout. Keep raw local output outside Git. Preserve durable decisions, reproducible regression evidence, privacy-safe fixtures, and required asset/license provenance. See [documentation rules](../ai-rules/documentation.md).

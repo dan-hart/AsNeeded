@@ -1,0 +1,7 @@
+# Human review for business rules, Drift bindings, and review controls.
+/BUSINESS_RULES.md @dan-hart
+/drift.lock @dan-hart
+/docs/drift.md @dan-hart
+/scripts/tests/drift.test.py @dan-hart
+/.github/workflows/drift.yml @dan-hart
+/.github/CODEOWNERS @dan-hart

@@ -16,8 +16,10 @@
 /worktrees/
 /.worktrees/
 /.claude/
-# Scratch agent plans stay local; durable decisions belong in current docs.
+# Local agent prompts, plans, and draft specs
 /docs/superpowers/
+/docs/archive/implementation-notes/plans/
+/docs/archive/implementation-notes/specs/
 __pycache__/
 *.py[cod]
 /dev-build.log

@@ -14,7 +14,7 @@ Always load:
 
 Then load only the additional rule files triggered by the current task.
 
-Current source ownership and behavior are indexed in [docs/README.md](docs/README.md). The canonical business rules and stable IDs live in [BUSINESS_RULES.md](BUSINESS_RULES.md). Earlier plans and release evidence live in [the archive](docs/archive/README.md); they do not authorize new work. Keep scratch plans outside Git unless they record a requested durable decision.
+Current source ownership and behavior are indexed in [docs/README.md](docs/README.md). The canonical business rules and stable IDs live in [BUSINESS_RULES.md](BUSINESS_RULES.md). Past release evidence lives in [the archive](docs/archive/README.md). Keep temporary prompts, plans, and draft specs in the ignored `docs/superpowers/` directory or outside the checkout. Record durable decisions in the relevant maintained docs.
 
 Optional local enhancements such as Codex superpowers are allowed for maintainers, but they are never required for contributors and must never be a dependency for hooks, CI, builds, or tests. Keep machine-local config out of git. Optional reviewed skills live in `skills/`; see `docs/ai/skills.md` for task routing and local adaptations. See `docs/ai/README.md` for the contributor boundary.
 
