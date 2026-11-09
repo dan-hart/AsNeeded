@@ -180,3 +180,6 @@ jobs:
 
       - name: Watch-model regressions
         run: ./scripts/tests/watch-medication-availability.test.sh
+
+      - name: Verify the macOS export helper rejects upload options
+        run: python3 scripts/tests/release-handoff.test.py ReleaseHandoffTests.test_existing_export_helper_refuses_upload_options

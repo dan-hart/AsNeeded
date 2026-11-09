@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import plistlib
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -156,6 +157,7 @@ class ReleaseHandoffTests(unittest.TestCase):
 				with self.assertRaisesRegex(self.release.ReleaseError, 'profile'):
 					self.release.inspect_profile(self.root, bundle_id, team, exported=True)
 
+	@unittest.skipUnless(sys.platform == 'darwin', 'The export helper uses macOS plutil.')
 	def test_existing_export_helper_refuses_upload_options(self):
 		options = self.root / 'ExportOptions.plist'
 		self.write_plist(options, {'method': 'app-store-connect', 'destination': 'upload'})

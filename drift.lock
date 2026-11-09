@@ -588,7 +588,7 @@ sig = "6559d3f42410da4f"
 [[bindings]]
 doc = "ai-rules/release-verification.md"
 target = "scripts/tests/release-handoff.test.py"
-sig = "6e9ff06b2cdb7916"
+sig = "807a91691c1c3779"
 
 [[bindings]]
 doc = "docs/architecture.md"
