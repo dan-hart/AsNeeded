@@ -11,13 +11,13 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class SimulatorSelectionTests(unittest.TestCase):
-	def run_tests(self, inventory, destination=None):
+	def run_tests(self, inventory, destination=None, prebuilt=False, status=0, test_filter=None, keyless=False, parallel=None):
 		with tempfile.TemporaryDirectory() as directory:
 			root = Path(directory)
 			commands = {
 				"sysctl": "#!/bin/sh\necho 4\n",
 				"xcrun": "#!/bin/sh\nprintf '%s' \"$SIMULATOR_INVENTORY\"\n",
-				"xcodebuild": "#!/usr/bin/env python3\nimport json, os, sys\nwith open(os.environ['ARGUMENT_LOG'], 'w') as log: json.dump(sys.argv[1:], log)\n",
+				"xcodebuild": "#!/usr/bin/env python3\nimport json, os, sys\nwith open(os.environ['ARGUMENT_LOG'], 'w') as log: json.dump(sys.argv[1:], log)\nsys.exit(int(os.environ['TEST_EXIT']))\n",
 				"xcsift": "#!/bin/sh\ncat\n",
 			}
 			for name, content in commands.items():
@@ -25,11 +25,22 @@ class SimulatorSelectionTests(unittest.TestCase):
 				path.write_text(content)
 				path.chmod(0o755)
 			argument_log = root / "args.json"
-			env = dict(os.environ, PATH=f"{directory}:/usr/bin:/bin", ARGUMENT_LOG=str(argument_log), SIMULATOR_INVENTORY=inventory, TEST_WORKERS="2")
-			env.pop("TEST_DESTINATION", None)
+			env = dict(os.environ, PATH=f"{directory}:/usr/bin:/bin", ARGUMENT_LOG=str(argument_log), SIMULATOR_INVENTORY=inventory, TEST_WORKERS="2", TEST_EXIT=str(status))
+			for setting in ("TEST_DESTINATION", "TEST_WITHOUT_BUILDING", "TEST_DERIVED_DATA_PATH", "TEST_PINNED_PACKAGES_PATH", "TEST_RESULT_BUNDLE_PATH", "TEST_DISABLE_REVENUECAT", "TEST_PARALLEL_ENABLED", "TEST_RAW_OUTPUT"):
+				env.pop(setting, None)
 			if destination:
 				env["TEST_DESTINATION"] = destination
-			result = subprocess.run(["bash", str(ROOT / "scripts/test-parallel.sh")], env=env, capture_output=True, text=True)
+			if prebuilt:
+				env.update(TEST_WITHOUT_BUILDING="1", TEST_DERIVED_DATA_PATH=str(root / "Derived Data"),
+					TEST_PINNED_PACKAGES_PATH=str(root / "Pinned Packages"), TEST_RESULT_BUNDLE_PATH=str(root / "Test Results.xcresult"))
+			if keyless:
+				env["TEST_DISABLE_REVENUECAT"] = "1"
+			if parallel is not None:
+				env["TEST_PARALLEL_ENABLED"] = parallel
+			command = ["bash", str(ROOT / "scripts/test-parallel.sh")]
+			if test_filter:
+				command.append(test_filter)
+			result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True)
 			args = json.loads(argument_log.read_text()) if argument_log.exists() else None
 			return result, args
 
@@ -103,6 +114,36 @@ class SimulatorSelectionTests(unittest.TestCase):
 		result, args = self.run_tests("invalid JSON", destination)
 		self.assertEqual(result.returncode, 0, result.stderr)
 		self.assertEqual(args[args.index("-destination") + 1], destination)
+		self.assertEqual(args[0], "test")
+
+	def test_prebuilt_execution_keeps_full_suite_and_explicit_bundle(self):
+		result, args = self.run_tests("invalid JSON", "platform=iOS Simulator,id=prebuilt", prebuilt=True)
+		self.assertEqual(result.returncode, 0, result.stderr)
+		self.assertEqual(args[0], "test-without-building")
+		self.assertTrue(args[args.index("-derivedDataPath") + 1].endswith("/Derived Data"))
+		self.assertTrue(args[args.index("-clonedSourcePackagesDirPath") + 1].endswith("/Pinned Packages"))
+		self.assertTrue(args[args.index("-resultBundlePath") + 1].endswith("/Test Results.xcresult"))
+		self.assertIn("-onlyUsePackageVersionsFromResolvedFile", args)
+		self.assertFalse(any(arg.startswith("-only-testing:") for arg in args))
+
+	def test_handoff_can_run_keyless_without_changing_other_test_invocations(self):
+		for keyless in (True, False):
+			with self.subTest(keyless=keyless):
+				result, args = self.run_tests("invalid JSON", "platform=iOS Simulator,id=synthetic", keyless=keyless)
+				self.assertEqual(result.returncode, 0, result.stderr)
+				self.assertEqual("REVENUECAT_API_KEY=" in args, keyless)
+
+	def test_serial_execution_keeps_the_full_suite(self):
+		result, args = self.run_tests("invalid JSON", "platform=iOS Simulator,id=synthetic", parallel="NO")
+		self.assertEqual(result.returncode, 0, result.stderr)
+		self.assertEqual(args[args.index("-parallel-testing-enabled") + 1], "NO")
+		self.assertFalse(any(arg.startswith("-only-testing:") for arg in args))
+
+	def test_formatter_cannot_hide_test_failure(self):
+		result, args = self.run_tests("invalid JSON", "platform=iOS Simulator,id=prebuilt", status=65, test_filter="RecordingTests")
+		self.assertEqual(result.returncode, 65, result.stdout)
+		self.assertIn("-only-testing:AsNeededTests/RecordingTests", args)
+		self.assertNotIn("All tests passed", result.stdout)
 
 
 if __name__ == "__main__":

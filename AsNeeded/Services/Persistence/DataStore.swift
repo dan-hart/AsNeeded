@@ -342,9 +342,9 @@ public final class DataStore {
             }
 
             // Clear from medication order array
-            if var order = defaults.array(forKey: UserDefaultsKeys.medicationOrder) as? [String] {
+            if var order = defaults.storedMedicationOrder {
                 order.removeAll { $0 == deletedIDString }
-                defaults.set(order, forKey: UserDefaultsKeys.medicationOrder)
+                defaults.setMedicationOrder(order)
                 logger.info("Removed deleted medication from order array")
             }
 

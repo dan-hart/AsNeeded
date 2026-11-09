@@ -29,37 +29,46 @@ struct MedicationNotificationResponseHandler {
 				removeDelivered: { notifications.removeDelivered([$0]) }).handle(action)
 			return
 		}
-		let feedbackID = "dose-log-feedback.\(action.eventID.uuidString)"
-		let request: UNNotificationRequest
+		let savedEvent: ANEventConcept?
 		do {
-			let event = try await logDose(action)
+			savedEvent = try await logDose(action)
+		} catch {
+			logger.logPrivacySafeError("Notification dose was not saved", error: error)
+			savedEvent = nil
+		}
+		if savedEvent != nil {
 			notifications.removeDelivered([action.requestIdentifier])
-			let content = UNMutableNotificationContent()
+		}
+		let feedback = Self.feedbackRequest(for: action, savedEvent: savedEvent, showNames: savedEvent != nil && showNames())
+		// Replace earlier failures too, so a successful retry leaves no stale review prompt.
+		notifications.removePending([feedback.identifier])
+		notifications.removeDelivered([feedback.identifier])
+		// Delivery is best effort after the save outcome is known.
+		do { try await notifications.add(feedback) }
+		catch { logger.logPrivacySafeError("Unable to deliver notification action feedback", error: error) }
+	}
+
+	private static func feedbackRequest(
+		for action: MedicationNotificationAction,
+		savedEvent: ANEventConcept?,
+		showNames: Bool
+	) -> UNNotificationRequest {
+		let content = UNMutableNotificationContent()
+		if let event = savedEvent {
 			content.title = String(localized: "Dose logged")
-			if showNames(), let medication = event.medication, let dose = event.dose {
+			if showNames, let medication = event.medication, let dose = event.dose {
 				let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount))")
 				content.body = String(localized: "\(recordedDose) · \(medication.displayName). Tap to view History.")
 			} else {
 				content.body = String(localized: "Your dose was saved. Tap to view History.")
 			}
 			content.categoryIdentifier = MedicationNotificationAction.confirmationCategoryIdentifier
-			content.userInfo = [MedicationReminderRequest.medicationIDKey: action.medicationID.uuidString]
-			request = UNNotificationRequest(identifier: feedbackID, content: content, trigger: nil)
-		} catch {
-			logger.logPrivacySafeError("Notification dose was not saved", error: error)
-			let content = UNMutableNotificationContent()
+		} else {
 			content.title = String(localized: "Dose not logged")
 			content.body = String(localized: "Open AsNeeded to review the medication, dose, and saved guidance before logging.")
 			content.categoryIdentifier = MedicationNotificationAction.reviewCategoryIdentifier
-			content.userInfo = [MedicationReminderRequest.medicationIDKey: action.medicationID.uuidString]
-			request = UNNotificationRequest(identifier: feedbackID, content: content, trigger: nil)
 		}
-		// Feedback scheduling is separate from the committed save. Never report a saved dose
-		// as failed because iOS refused the confirmation notification.
-		// Replace earlier failures too, so a successful retry leaves no stale review prompt.
-		notifications.removePending([feedbackID])
-		notifications.removeDelivered([feedbackID])
-		do { try await notifications.add(request) }
-		catch { logger.logPrivacySafeError("Unable to deliver notification action feedback", error: error) }
+		content.userInfo = [MedicationReminderRequest.medicationIDKey: action.medicationID.uuidString]
+		return UNNotificationRequest(identifier: "dose-log-feedback.\(action.eventID.uuidString)", content: content, trigger: nil)
 	}
 }

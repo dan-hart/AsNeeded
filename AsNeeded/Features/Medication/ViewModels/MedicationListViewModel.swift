@@ -57,20 +57,19 @@ final class MedicationListViewModel: ObservableObject {
             return items
         }
 
-        let itemsById = Dictionary(uniqueKeysWithValues: items.map { ($0.id.uuidString, $0) })
-        let orderSet = Set(medicationOrder)
+        var itemsById = Dictionary(uniqueKeysWithValues: items.map { ($0.id.uuidString, $0) })
 
         var sorted: [ANMedicationConcept] = []
         sorted.reserveCapacity(items.count)
 
         for id in medicationOrder {
-            if let med = itemsById[id] {
+            if let med = itemsById.removeValue(forKey: id) {
                 sorted.append(med)
             }
         }
 
         for item in items {
-            if !orderSet.contains(item.id.uuidString) {
+            if itemsById[item.id.uuidString] != nil {
                 sorted.append(item)
             }
         }
@@ -82,6 +81,10 @@ final class MedicationListViewModel: ObservableObject {
     init(dataStore: DataStore = .shared, defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init, undoPersistence: ((UUID) async throws -> Void)? = nil, confirmationSleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
         self.dataStore = dataStore
 		self.now = now
+		// Convert only the legacy property-list array before AppStorage reads it.
+		if let legacyOrder = defaults.stringArray(forKey: UserDefaultsKeys.medicationOrder) {
+			defaults.setMedicationOrder(legacyOrder)
+		}
 		_medicationOrder = AppStorage(wrappedValue: [], UserDefaultsKeys.medicationOrder, store: defaults)
 		self.confirmationSleep = confirmationSleep
 		self.undoPersistence = undoPersistence ?? { eventID in try await dataStore.deleteEvents(ids: [eventID]) }

@@ -8,3 +8,5 @@ Keep editable originals, app icons, licensed frames, approved captures, syntheti
 - `archive/v01/`: earlier icon exploration.
 
 New release work should use a named version directory and synthetic data. Ignore local intermediate render output and distribution ZIPs; do not blanket-ignore the manifests, source captures, licenses, or approved final artwork needed to reproduce a release.
+
+For maintenance, check project resource membership, renderer inputs, manifests, and incoming links before retiring an asset. Keep approved uploads and their editable sources together. The loose top/bottom pill PNG exports were removed after confirming byte-identical copies in the 1.2.0 creative assets folder. The editable XCFs and the app icon layers remain.

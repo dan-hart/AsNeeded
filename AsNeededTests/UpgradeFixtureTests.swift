@@ -42,7 +42,7 @@ struct UpgradeFixtureTests {
 		#expect(fixture.defaults.bool(forKey: UserDefaultsKeys.hideSupportBanners), "Omitted settings remain unchanged")
 		if let settings = expected.settings {
 			#expect(fixture.defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == settings.historySelectedMedicationID)
-			#expect(fixture.defaults.stringArray(forKey: UserDefaultsKeys.medicationOrder) == settings.medicationOrder)
+			#expect(fixture.defaults.storedMedicationOrder == settings.medicationOrder)
 			#expect(fixture.defaults.string(forKey: UserDefaultsKeys.selectedFontFamily) == settings.selectedFontFamily)
 		}
 		let reexported = try UpgradeFixtureLibrary.decode(await reopened.exportDataAsJSON(includeSettings: true))

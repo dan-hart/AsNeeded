@@ -15,6 +15,8 @@ For bugs, describe expected/actual behavior, reproduction steps, app build, iOS/
 3. Install the repository security hooks with `./scripts/install-hooks.sh`. The helper checks its scanner prerequisites; optional AI tools are never prerequisites.
 4. Create a focused branch from the intended base, for example `task/history-filter-fix`.
 
+Run `python3 scripts/doctor.py` for a read-only setup check, then `./scripts/dev-build.sh` for a simulator build. Xcode’s Product → Run installs and launches the app on the selected simulator. Device builds need an authorized signing team and profiles.
+
 A clean clone works without purchase credentials. Optional local RevenueCat configuration and build/test commands are documented in [the README](README.md) and [scripts](scripts/README.md).
 
 ## Implement and review

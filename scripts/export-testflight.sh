@@ -38,9 +38,24 @@ if ! command -v asc >/dev/null 2>&1; then
 	exit 1
 fi
 
-exec asc xcode export \
+# Snapshot the checked options so a concurrent edit cannot turn an export into an upload.
+options_dir=$(mktemp -d)
+trap 'rm -rf "$options_dir"' EXIT
+local_options="$options_dir/ExportOptions.plist"
+cp "$export_options" "$local_options"
+if ! /usr/bin/plutil -lint "$local_options" >/dev/null 2>&1; then
+	echo "ExportOptions.plist is invalid." >&2
+	exit 1
+fi
+destination=$(/usr/bin/plutil -extract destination raw -o - "$local_options" 2>/dev/null || true)
+if [[ -n "$destination" && "$destination" != "export" ]]; then
+	echo "ExportOptions.plist must use local export." >&2
+	exit 1
+fi
+
+asc xcode export \
 	--archive-path "$archive_path" \
-	--export-options "$export_options" \
+	--export-options "$local_options" \
 	--ipa-path "$ipa_path" \
 	--timeout 10m \
 	--output json

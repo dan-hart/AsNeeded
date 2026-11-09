@@ -111,7 +111,7 @@ struct DataStoreClearTests {
         #expect(store.events.isEmpty)
         #expect(defaults.string(forKey: "historySelectedMedicationID") == nil)
         #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil)
-        #expect(defaults.array(forKey: "medicationOrder") == nil)
+        #expect(defaults.storedMedicationOrder == nil)
         #expect(navigation.historyTargetMedicationID == nil)
     }
 
@@ -139,7 +139,7 @@ struct DataStoreClearTests {
         // Then: Re-read values to ensure they're actually cleared
         let historyID = defaults.string(forKey: "historySelectedMedicationID")
         let trendsID = defaults.string(forKey: "trendsSelectedMedicationID")
-        let order = defaults.array(forKey: "medicationOrder")
+        let order = defaults.storedMedicationOrder
 
         #expect(historyID == nil)
         #expect(trendsID == nil)
@@ -171,7 +171,7 @@ struct DataStoreClearTests {
         #expect(store.medications.isEmpty)
         #expect(defaults.string(forKey: "historySelectedMedicationID") == nil)
         #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil)
-        #expect(defaults.array(forKey: "medicationOrder") == nil)
+        #expect(defaults.storedMedicationOrder == nil)
     }
 
     @Test("clearAllData clears NavigationManager state")

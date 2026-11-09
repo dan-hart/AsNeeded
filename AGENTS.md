@@ -20,7 +20,7 @@ Optional local enhancements such as Codex superpowers are allowed for maintainer
 
 ## Release Scope
 
-Active development is on 1.3.0. Scope new work to the maintainer's request; a skill or historical plan does not authorize unrelated features, redesigns, or migrations. The following freeze applies when maintaining 1.2.0, not to explicitly approved 1.3.0 work.
+Active development is on 1.3.0. Prioritize maintenance, regression coverage, safety, security, and developer tooling. Preserve the 1.2 workflows and use the [regression baseline](docs/maintenance/release-regression.md) to account for approved beta changes. New features, redesigns, and migrations need explicit maintainer direction.
 
 Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experimental capabilities, broad redesigns, or speculative refactors. Work on reproducible bug fixes, regression coverage, accessibility, clear language, and continuity with the live 1.1.2 experience. Build 309 is the frozen feature baseline. Historical plans do not expand this scope; only an explicit maintainer decision can reopen it. Follow [the stabilization checklist](docs/archive/1.2.0/testing/1.2.0-stabilization.md).
 

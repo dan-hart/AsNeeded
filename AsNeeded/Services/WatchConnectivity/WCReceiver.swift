@@ -194,36 +194,47 @@ final class WCReceiver: NSObject, ObservableObject {
 		]
 	}
 
-    private func handleDoseLogging(_ logDoseData: LogDoseData) async throws -> Bool {
-		try await DataStore.shared.prepareForAccess()
-		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
+	/// Persist the decoded Watch request before the session can acknowledge it.
+	static func recordDose(
+		_ logDoseData: LogDoseData,
+		in dataStore: DataStore,
+		now: () -> Date = Date.init,
+		migrate: (DataStore) async throws -> Void = { try await MedicationDoseLimitMigration().migrate(dataStore: $0) }
+	) async throws -> Bool {
+		try await dataStore.prepareForAccess()
+		try await migrate(dataStore)
 		guard logDoseData.isValid,
-			  let medicationId = UUID(uuidString: logDoseData.medicationId),
-			  let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit)
-        else {
-            logger.warning("Invalid dose logging data from watch")
-            return false
-        }
+			let medicationId = UUID(uuidString: logDoseData.medicationId),
+			let doseUnit = ANUnitConcept(rawValue: logDoseData.doseUnit) else {
+			DHLogger.network.warning("Invalid dose logging data from watch")
+			return false
+		}
 
-        // Find the medication
-        guard let medication = DataStore.shared.medications.first(where: { $0.id == medicationId }) else {
-            logger.warning("Medication not found for dose logging")
-            return false
-        }
+		guard let medication = dataStore.medications.first(where: { $0.id == medicationId }) else {
+			DHLogger.network.warning("Medication not found for dose logging")
+			return false
+		}
 
-        // Create dose and event
-        let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
-        let event = ANEventConcept(
-			id: logDoseData.eventID ?? UUID(),
-            eventType: .doseTaken,
-            medication: medication,
-            dose: dose,
-            date: logDoseData.date ?? Date()
-        )
+		let eventID = logDoseData.eventID ?? UUID()
+		let date = logDoseData.date ?? now()
+		try await dataStore.recordDose(shouldRecordForReview: true) { snapshot in
+			if let existing = snapshot.events.first(where: { $0.id == eventID }) {
+				guard existing.eventType == .doseTaken, existing.medication?.id == medicationId,
+					existing.dose?.amount == logDoseData.doseAmount, existing.dose?.unit == doseUnit,
+					logDoseData.date.map({ $0 == existing.date }) ?? true else {
+					throw PersistenceTransactionError.invalidDose
+				}
+				// The wire ID identifies the event. Reuse its persisted dose ID as well.
+				return existing
+			}
+			let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
+			return ANEventConcept(id: eventID, eventType: .doseTaken, medication: medication, dose: dose, date: date)
+		}
+		return true
+	}
 
-        // Log the event
-        try await DataStore.shared.recordDose(event)
-
+	private func handleDoseLogging(_ logDoseData: LogDoseData) async throws -> Bool {
+		guard try await Self.recordDose(logDoseData, in: .shared) else { return false }
         // Send confirmation back to watch
         if session.isReachable {
             logger.debug("Dose logged successfully, sending confirmation to watch")

@@ -26,81 +26,62 @@ struct LogMedicationIntent: AppIntent {
 
     private let logger = DHLogger(category: "LogMedicationIntent")
 
-    @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-		try await DataStore.shared.prepareForAccess()
-		try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
-        // Determine which medication to use
-        let targetMedication: ANMedicationConcept
+	@MainActor
+	func perform() async throws -> some IntentResult & ProvidesDialog {
+		let dialog = try await doseLogDialog(in: .shared)
+		return .result(dialog: IntentDialog(dialog))
+	}
 
-        if let providedMedication = medication {
-			guard let current = DataStore.shared.medications.first(where: { $0.id == providedMedication.medication.id }) else {
-				return .result(dialog: IntentDialog("That medication is no longer available."))
+	@MainActor
+	func doseLogDialog(
+		in dataStore: DataStore,
+		now: () -> Date = Date.init,
+		migrate: (DataStore) async throws -> Void = { try await MedicationDoseLimitMigration().migrate(dataStore: $0) }
+	) async throws -> LocalizedStringResource {
+		try await dataStore.prepareForAccess()
+		try await migrate(dataStore)
+		let targetMedication: ANMedicationConcept
+
+		if let providedMedication = medication {
+			guard let current = dataStore.medications.first(where: { $0.id == providedMedication.medication.id }) else {
+				return "That medication is no longer available."
 			}
 			targetMedication = current
-            logger.info("Using entity medication")
-        } else if let name = medicationName, !name.isEmpty {
-            logger.info("Searching for medication by provided name")
-            guard let foundMedication = findBestMatch(for: name) else {
-                logger.warning("No medication found for provided name")
-                return .result(dialog: IntentDialog("I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."))
-            }
-            targetMedication = foundMedication
-        } else {
-            logger.warning("No medication specified")
-            return .result(dialog: IntentDialog("Please specify which medication you'd like to log."))
-        }
+			logger.info("Using entity medication")
+		} else if let name = medicationName, !name.isEmpty {
+			logger.info("Searching for medication by provided name")
+			guard let foundMedication = MedicationSearchUtility.findBestMatch(for: name, in: dataStore.medications) else {
+				logger.warning("No medication found for provided name")
+				return "I couldn't find a medication named \(name). Please make sure you've added it to AsNeeded first."
+			}
+			targetMedication = foundMedication
+		} else {
+			logger.warning("No medication specified")
+			return "Please specify which medication you'd like to log."
+		}
 
-        // Use provided unit or fall back to medication's prescribed unit or default
-        let selectedUnit: ANUnitConcept
-        if let providedUnit = unit {
-            selectedUnit = providedUnit.unit
-        } else if let prescribedUnit = targetMedication.prescribedUnit {
-            selectedUnit = prescribedUnit
-        } else {
-            selectedUnit = .unit
-        }
+		let selectedUnit = unit?.unit ?? targetMedication.prescribedUnit ?? .unit
+		let doseAmount = amount > 0 ? amount : (targetMedication.prescribedDoseAmount ?? 1.0)
 
-        // Use provided amount or fall back to prescribed dose
-        let doseAmount = amount > 0 ? amount : (targetMedication.prescribedDoseAmount ?? 1.0)
+		do {
+			let dose = ANDoseConcept(amount: doseAmount, unit: selectedUnit)
+			let event = ANEventConcept(eventType: .doseTaken, medication: targetMedication, dose: dose, date: now())
+			try await dataStore.recordDose(event)
 
-        do {
-            // Create dose and event
-            let dose = ANDoseConcept(amount: doseAmount, unit: selectedUnit)
-            let event = ANEventConcept(
-                eventType: .doseTaken,
-                medication: targetMedication,
-                dose: dose,
-                date: Date()
-            )
-
-            // Log the dose
-            try await DataStore.shared.recordDose(event)
-
-            logger.info("Successfully logged medication dose from intent")
-
-            // Format response message
+			logger.info("Successfully logged medication dose from intent")
 			let amountText = selectedUnit.localizedCompactAmount(for: doseAmount)
-            let medicationText = if let nickname = targetMedication.nickname, !nickname.isEmpty {
-                nickname
-            } else {
-                targetMedication.clinicalName
-            }
-
-            let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(amountText)")
-            return .result(dialog: IntentDialog("\(recordedDose) · \(medicationText)"))
-
-        } catch {
-            logger.logPrivacySafeError("Failed to log medication dose", error: error)
-            return .result(dialog: IntentDialog("Sorry, I couldn't log your medication. Please try again or open AsNeeded manually."))
-        }
-    }
-
-    /// Find the best matching medication for the given name
-    @MainActor
-    private func findBestMatch(for name: String) -> ANMedicationConcept? {
-        return MedicationSearchUtility.findBestMatch(for: name)
-    }
+			let medicationText = if let nickname = targetMedication.nickname, !nickname.isEmpty {
+				nickname
+			} else {
+				targetMedication.clinicalName
+			}
+			let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(amountText)")
+			return "\(recordedDose) · \(medicationText)"
+		} catch {
+			logger.logPrivacySafeError("Failed to log medication dose", error: error)
+			return "Sorry, I couldn't log your medication. Please try again or open AsNeeded manually."
+		}
+	}
 }
 
 // MARK: - App Shortcuts Provider

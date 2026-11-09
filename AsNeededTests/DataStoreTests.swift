@@ -152,7 +152,7 @@ struct DataStoreTests {
         // Verify they were set
         #expect(defaults.string(forKey: "historySelectedMedicationID") == medicationIDString)
         #expect(defaults.string(forKey: "trendsSelectedMedicationID") == medicationIDString)
-        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) == true)
+        #expect(defaults.storedMedicationOrder?.contains(medicationIDString) == true)
 
         // When
         try await dataStore.deleteMedication(medication)
@@ -162,9 +162,9 @@ struct DataStoreTests {
                 "History selection should be cleared")
         #expect(defaults.string(forKey: "trendsSelectedMedicationID") == nil,
                 "Trends selection should be cleared")
-        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains(medicationIDString) != true,
+        #expect(defaults.storedMedicationOrder?.contains(medicationIDString) != true,
                 "Medication should be removed from order array")
-        #expect((defaults.array(forKey: "medicationOrder") as? [String])?.contains("other-id") == true,
+        #expect(defaults.storedMedicationOrder?.contains("other-id") == true,
                 "Other IDs should remain in order array")
     }
 

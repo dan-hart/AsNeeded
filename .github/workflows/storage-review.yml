@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
@@ -124,7 +124,7 @@ jobs:
           done <<< "$CHANGED_FILES"
 
           # Output results
-          echo "storage_changes_found=$STORAGE_CHANGES_FOUND" >> $GITHUB_OUTPUT
+          echo "storage_changes_found=$STORAGE_CHANGES_FOUND" >> "$GITHUB_OUTPUT"
 
           if [ "$STORAGE_CHANGES_FOUND" = true ]; then
             echo "::warning::Storage-sensitive changes detected!"
@@ -132,19 +132,19 @@ jobs:
 
             # Check if migration file was also modified
             if echo "$CHANGED_FILES" | grep -q "DataMigrationManager.swift"; then
-              echo "migration_updated=true" >> $GITHUB_OUTPUT
+              echo "migration_updated=true" >> "$GITHUB_OUTPUT"
               echo "✅ DataMigrationManager.swift is being updated"
             else
-              echo "migration_updated=false" >> $GITHUB_OUTPUT
+              echo "migration_updated=false" >> "$GITHUB_OUTPUT"
               echo "::warning::DataMigrationManager.swift was NOT modified"
             fi
 
             # Check if guidelines were updated
             if echo "$CHANGED_FILES" | grep -q "DATA_STORAGE_GUIDELINES.md"; then
-              echo "guidelines_updated=true" >> $GITHUB_OUTPUT
+              echo "guidelines_updated=true" >> "$GITHUB_OUTPUT"
               echo "✅ DATA_STORAGE_GUIDELINES.md is being updated"
             else
-              echo "guidelines_updated=false" >> $GITHUB_OUTPUT
+              echo "guidelines_updated=false" >> "$GITHUB_OUTPUT"
               echo "::warning::DATA_STORAGE_GUIDELINES.md was NOT updated"
             fi
           fi
@@ -202,7 +202,7 @@ jobs:
 
       - name: Post review comment
         if: steps.storage-check.outputs.storage_changes_found == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const migrationUpdated = '${{ steps.storage-check.outputs.migration_updated }}' === 'true';

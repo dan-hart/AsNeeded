@@ -1,6 +1,6 @@
 # AsNeeded Build Scripts
 
-Run scripts from the repository root on macOS with Xcode 26+ and its required simulator runtimes installed. Build and test scripts detect CPU count; memory use and elapsed time depend on the machine, workload, and caches. No benchmark speedup is established here.
+Run build and simulator scripts from the repository root on macOS with Xcode 26+ and its required simulator runtimes installed. Build and test scripts detect CPU count. Memory use and elapsed time depend on the machine, workload, and caches.
 
 ## Setup and security
 
@@ -68,6 +68,8 @@ TEST_DESTINATION='platform=iOS Simulator,id=SIMULATOR-UUID' TEST_WORKERS=2 ./scr
 
 Tests require a concrete installed simulator; a generic build destination cannot run them. Build CI discovers a compatible available iPhone in the selected Xcode runtime and supplies its UUID, rather than assuming a particular simulator version is installed on hosted runners. CI builds and runs unit tests for `main`, `develop`, `task/v1.2.0`, and `task/v1.3.0`.
 
+Set `TEST_RESULT_BUNDLE_PATH` to a fresh `.xcresult` path to retain a local bundle. `TEST_DERIVED_DATA_PATH` selects an isolated build directory and `TEST_PINNED_PACKAGES_PATH` selects an explicit package checkout directory with resolution constrained to `Package.resolved`. CI sets these paths in runner storage, compiles the app and test host with `build-for-testing`, checks the app's RevenueCat key handling, then runs the entire scheme with `TEST_WITHOUT_BUILDING=1`. Use that flag with existing Debug simulator products built for the same destination and derived data path. CI and release rehearsals run the full suite in one simulator with `TEST_PARALLEL_ENABLED=NO`. This avoids preferences write failures observed across parallel simulator clones. Local parallel runs remain available. Set `TEST_RAW_OUTPUT=1` to keep timing lines and other raw Xcode output.
+
 ## Standalone regressions
 
 These run without the app simulator test host:
@@ -79,7 +81,23 @@ python3 -m unittest discover -s scripts/localization -p 'test_*.py'
 ./scripts/tests/watch-medication-availability.test.sh
 ```
 
-Python checks use the standard library. The watch harness requires Swift 6.2+ on macOS and compiles the real watch medication model in a temporary Swift package. Setup-tool regressions use temporary directories; optional agent tooling is not a prerequisite for app builds or CI. CI runs these standalone regressions separately from the app unit tests.
+Python checks use the standard library. Setup-tool regressions use temporary directories. The fast tooling CI job runs these Python and setup checks on Ubuntu while the simulator job runs independently. The standalone macOS job uses Swift 6.2+ to compile and test the real Watch medication model in a temporary Swift package.
+
+## Simulator CI evidence
+
+Check the Build run summary for the outcome and the stage that stopped. `runner_setup_failure` covers Xcode and simulator selection. `package_resolution_failure`, `build_failure`, and `app_configuration_failure` identify failures before simulator tests. `test_case_failure` indicates that Xcode reported failed cases. The listed identifiers locate assertions or crashes in those cases. `test_execution_failure` means the test command failed without a reported failed case, so inspect the runner and test-host output. A successful test command with zero or unverified executed tests fails the report step as `test_evidence_failure`. If runner startup, checkout, or cancellation prevents the summary step from running, inspect the job status and steps directly.
+
+The seven-day `simulator-test-report-<attempt>` artifact contains the same allowlisted stage outcomes, test counts, and up to 20 source-style failed test identifiers as the run summary. The workflow keeps the raw `.xcresult` in runner storage. Inspect local bundles using `xcrun xcresulttool get test-results summary --path PATH`. Share bundles only after checking that attachments, diagnostics, and logs are safe to disclose.
+
+### Hosted baseline
+
+GitHub job and step timestamps for the three most recent successful first attempts on `task/v1.3.0` before this workflow change, November 5–8, 2026. Durations exclude queue time. The old unit-test step included its own build. Compare the new build and test durations against the old build and unit-test steps together. The timing impact of the new workflow awaits a hosted run.
+
+| Build run | Standalone job | Package resolution | App build | Unit-test step | Simulator job |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| [42530004528](https://github.com/dan-hart/AsNeeded/actions/runs/42530004528) | 1:25 | 1:28 | 7:57 | 9:22 | 19:12 |
+| [42115678894](https://github.com/dan-hart/AsNeeded/actions/runs/42115678894) | 1:15 | 1:12 | 6:51 | 7:23 | 15:48 |
+| [42094057876](https://github.com/dan-hart/AsNeeded/actions/runs/42094057876) | 1:04 | 1:23 | 7:53 | 15:27 | 25:11 |
 
 ## Production and cleanup
 
@@ -87,7 +105,7 @@ Python checks use the standard library. The watch harness requires Swift 6.2+ on
 ./scripts/prod-build.sh
 ```
 
-This creates a release build with whole-module optimization. Follow the release documentation for signing, archiving, upload, and distribution; a local build alone does not verify those steps.
+This creates a release build with whole-module optimization. Follow the [release handoff](../ai-rules/release-verification.md#local-release-handoff) to test, archive, export, and verify the signed artifact. App Store Connect upload and distribution are separate steps.
 
 Cleanup removes cached work and can make the next build slower. Inspect the relevant script and use cleanup for a specific build/cache problem:
 

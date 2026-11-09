@@ -69,3 +69,15 @@ extension Array: @retroactive RawRepresentable where Element == String {
         return result
     }
 }
+
+extension UserDefaults {
+	/// Older imports wrote a property-list array. The medication list writes the JSON string used by AppStorage.
+	var storedMedicationOrder: [String]? {
+		if let legacy = stringArray(forKey: UserDefaultsKeys.medicationOrder) { return legacy }
+		return string(forKey: UserDefaultsKeys.medicationOrder).flatMap([String].init(rawValue:))
+	}
+
+	func setMedicationOrder(_ order: [String]) {
+		set(order.rawValue, forKey: UserDefaultsKeys.medicationOrder)
+	}
+}

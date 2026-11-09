@@ -127,7 +127,7 @@ struct AppSettings: Codable {
 		// Medication ID References (will be validated after import)
 		historySelectedMedicationID = defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
 		trendsSelectedMedicationID = defaults.string(forKey: UserDefaultsKeys.trendsSelectedMedicationID)
-		medicationOrder = defaults.array(forKey: UserDefaultsKeys.medicationOrder) as? [String]
+		medicationOrder = defaults.storedMedicationOrder
 
 		// Search Settings
 		recentMedicationSearches = defaults.array(forKey: UserDefaultsKeys.recentMedicationSearches) as? [String]
@@ -210,7 +210,7 @@ struct AppSettings: Codable {
 			// Filter out invalid medication IDs
 			let validOrder = value.filter { validMedicationIDs.contains($0) }
 			if !validOrder.isEmpty {
-				defaults.set(validOrder, forKey: UserDefaultsKeys.medicationOrder)
+				defaults.setMedicationOrder(validOrder)
 			} else {
 				defaults.removeObject(forKey: UserDefaultsKeys.medicationOrder)
 			}
