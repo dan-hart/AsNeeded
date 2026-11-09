@@ -6,6 +6,7 @@ import ANModelKit
 @testable import AsNeeded
 import Boutique
 import Foundation
+import SQLite3
 import Testing
 
 @Suite("Data Integrity Tests", .tags(.migration, .persistence, .unit))
@@ -267,6 +268,65 @@ struct DataIntegrityTests {
 						"Warnings should be in warnings list")
 			}
 		}
+	}
+
+	@Test("A locked database blocks startup preflight and retries with its records intact")
+	func lockedStorageHealthCheckCanRetry() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let medication = ANMedicationConcept(clinicalName: "Locked storage example", quantity: 17)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication, date: Date())
+		try await writeSnapshot(medications: [medication], events: [event], directory: directory)
+		let checker = StorageHealthChecker()
+		try #require(checker.performHealthCheck(in: directory).isHealthy)
+		let eventsURL = directory.appendingPathComponent(StorageConstants.eventsDBPath)
+		var connection: OpaquePointer?
+		let opened = sqlite3_open_v2(eventsURL.path, &connection, SQLITE_OPEN_READWRITE, nil)
+		defer { sqlite3_close(connection) }
+		try #require(opened == SQLITE_OK)
+		let database = try #require(connection)
+		try #require(sqlite3_exec(database, "PRAGMA journal_mode = DELETE", nil, nil, nil) == SQLITE_OK)
+		try #require(sqlite3_exec(database, "BEGIN EXCLUSIVE", nil, nil, nil) == SQLITE_OK)
+
+		let locked = checker.performHealthCheck(in: directory)
+		#expect(!locked.isHealthy)
+		#expect(!locked.errors.isEmpty)
+
+		try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
+		#expect(checker.performHealthCheck(in: directory).isHealthy)
+		let medications = try await readSnapshot(ANMedicationConcept.self, directory: directory, name: StorageConstants.medicationsDBName)
+		let events = try await readSnapshot(ANEventConcept.self, directory: directory, name: StorageConstants.eventsDBName)
+		#expect(medications.map(\.id) == [medication.id])
+		#expect(medications.first?.quantity == 17)
+		#expect(events.map(\.id) == [event.id])
+	}
+
+	@Test("Watch waits for an in-flight storage migration while ordinary callers return")
+	func watchJoinsRunningStorageMigration() async {
+		let coordinator = MigrationCoordinator()
+		let started = AsyncStream<Void>.makeStream()
+		let finish = AsyncStream<Void>.makeStream()
+		let joinStarted = AsyncStream<Void>.makeStream()
+		let owner = Task { @MainActor in
+			await coordinator.runMigrationIfNeeded {
+				started.continuation.yield()
+				_ = await finish.stream.first { _ in true }
+			}
+		}
+		_ = await started.stream.first { _ in true }
+		let watch = Task { @MainActor in
+			// Let the caller reach the join before the next main-actor task releases the migration.
+			Task { @MainActor in _ = joinStarted.continuation.yield() }
+			await coordinator.runMigrationIfNeeded(waitForRunningMigration: true)
+			return coordinator.isRunning
+		}
+		_ = await joinStarted.stream.first { _ in true }
+		await coordinator.runMigrationIfNeeded()
+		#expect(coordinator.isRunning)
+
+		finish.continuation.yield()
+		await owner.value
+		#expect(await !watch.value)
 	}
 
 	@Test("Backup manager copies the configured database paths")

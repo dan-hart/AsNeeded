@@ -161,7 +161,10 @@ public final class DataStore {
 	}
 
 	private lazy var transactions: MedicationPersistenceTransactions = {
-		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: UserDefaultsKeys.safeToExportKeys.union([UserDefaultsKeys.lastLoggedDoseEventIDs]), persistentDomainName: defaultsDomainName)]
+		let applicationKeys = UserDefaultsKeys.safeToExportKeys.union([
+			UserDefaultsKeys.lastLoggedDoseEventIDs, UserDefaultsKeys.acknowledgedWatchDoseEventIDs,
+		])
+		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: applicationKeys, persistentDomainName: defaultsDomainName)]
 		if let sharedDefaults {
 			domains["shared"] = PersistencePreferenceDomain(defaults: sharedDefaults, keys: [UserDefaultsKeys.medicationSafetyProfiles], persistentDomainName: sharedDefaultsDomainName)
 		}
@@ -218,16 +221,43 @@ public final class DataStore {
 	/// Resolve notification targets and guidance under the same lock as dose/stock mutation.
 	@discardableResult
 	func recordDose(shouldRecordForReview: Bool, makeEvent: (MedicationPersistenceSnapshot) throws -> ANEventConcept) async throws -> ANEventConcept {
+		guard let event = try await persistDose(shouldRecordForReview: shouldRecordForReview, makeEvent: makeEvent) else {
+			throw PersistenceTransactionError.invalidDose
+		}
+		return event
+	}
+
+	func recordWatchDose(eventID: UUID?, makeEvent: (MedicationPersistenceSnapshot) throws -> ANEventConcept) async throws {
+		_ = try await persistDose(shouldRecordForReview: true, watchEventID: eventID, makeEvent: makeEvent)
+	}
+
+	private func persistDose(shouldRecordForReview: Bool, watchEventID: UUID? = nil,
+		makeEvent: (MedicationPersistenceSnapshot) throws -> ANEventConcept) async throws -> ANEventConcept? {
 		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
 		var insertedNewDose = false
 		var savedEvent: ANEventConcept?
+		var updatedWatchReceipts: [String]?
 		let didSave = try await transactions.perform(
-			preferenceKeys: ["application": [UserDefaultsKeys.lastLoggedDoseEventIDs]],
-			change: { snapshot in
+			changeWithPreferenceKeys: { snapshot in
+				var preferenceKeys = Set<String>()
+				if let watchEventID {
+					let receipts = defaults.stringArray(forKey: UserDefaultsKeys.acknowledgedWatchDoseEventIDs) ?? []
+					if receipts.contains(watchEventID.uuidString) {
+						// A previously acknowledged dose removed from history is a no-op.
+						// Live matches still go through the caller's payload validation.
+						guard snapshot.events.contains(where: { $0.id == watchEventID }) else { return [:] }
+					} else {
+						updatedWatchReceipts = receipts + [watchEventID.uuidString]
+						preferenceKeys.insert(UserDefaultsKeys.acknowledgedWatchDoseEventIDs)
+					}
+				}
 				let event = try makeEvent(snapshot)
+				guard watchEventID == nil || watchEventID == event.id else { throw PersistenceTransactionError.invalidDose }
 				savedEvent = event
 				insertedNewDose = !snapshot.events.contains { $0.id == event.id }
 				try snapshot.recordDose(event)
+				if insertedNewDose { preferenceKeys.insert(UserDefaultsKeys.lastLoggedDoseEventIDs) }
+				return preferenceKeys.isEmpty ? [:] : ["application": preferenceKeys]
 			}, applyPreferences: { snapshot in
 				// The journal restores recording order with the records if commit fails.
 				// Replaying an older operation must never change recording recency.
@@ -237,8 +267,11 @@ public final class DataStore {
 					let order = [event.id.uuidString] + previous.filter { $0 != event.id.uuidString && validIDs.contains($0) }
 					defaults.set(order, forKey: UserDefaultsKeys.lastLoggedDoseEventIDs)
 				}
+				if let updatedWatchReceipts {
+					defaults.set(updatedWatchReceipts, forKey: UserDefaultsKeys.acknowledgedWatchDoseEventIDs)
+				}
 			})
-		guard let event = savedEvent else { throw PersistenceTransactionError.invalidDose }
+		guard let event = savedEvent else { return nil }
 		// A successful retry can finish notification cleanup interrupted after the original commit.
 		if event.eventType == .doseTaken, let medicationID = event.medication?.id {
 			await reminderAcknowledgement(medicationID)
@@ -507,7 +540,6 @@ public final class DataStore {
 
     /// Import data from JSON, with options for merge or replace
     public func importDataFromJSON(_ data: Data, mergeExisting: Bool = false, applySettings: Bool = false) async throws {
-		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
         let startTime = Date()
         let fileSizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
         logger.info("Starting data import (merge: \(mergeExisting), applySettings: \(applySettings), size: \(fileSizeFormatted))")
@@ -517,6 +549,10 @@ public final class DataStore {
 		let imported: DataExport
 		do { imported = try decoder.decode(DataExport.self, from: data) }
 		catch { throw DataImportError.invalidFormat }
+		guard !Self.hasConflictingRecordIDs(imported.medications), !Self.hasConflictingRecordIDs(imported.events) else {
+			throw DataImportError.invalidFormat
+		}
+		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
 		var domains: [String: Set<String>] = [:]
 		if applySettings, let settings = imported.settings {
 			domains["application"] = settings.importedPreferenceKeys
@@ -551,6 +587,15 @@ public final class DataStore {
 		await notificationCleanup(removedMedicationIDs)
 		await refreshDoseAvailability()
 		logger.info("Import committed successfully in \(Date().timeIntervalSince(startTime))s")
+	}
+
+	/// Identical entries can collapse, while conflicting versions have no unambiguous value to restore.
+	private static func hasConflictingRecordIDs<Record: Equatable & Identifiable>(_ records: [Record]) -> Bool {
+		var byID: [Record.ID: Record] = [:]
+		for record in records {
+			if let prior = byID.updateValue(record, forKey: record.id), prior != record { return true }
+		}
+		return false
 	}
 
 	private func resolveMedicationReference(_ reference: ANMedicationConcept, in medications: [ANMedicationConcept]) -> ANMedicationConcept? {

@@ -22,7 +22,7 @@ final class MedicationSearchService: ObservableObject {
 	private let enhancedSearch: @MainActor (String) async throws -> [RxNormSearchResult]
 	private let autocompleteSearch: @MainActor (String) async throws -> AutocompleteResult
     private var searchCache = NSCache<NSString, CacheEntry>()
-    private var searchTask: Task<Void, Never>?
+	private var latestRequest = UUID()
 	private let userDefaults: UserDefaults
 
     private class CacheEntry {
@@ -101,10 +101,13 @@ final class MedicationSearchService: ObservableObject {
 
     /// Enhanced search using new SwiftRxNorm APIs with fuzzy matching and scoring
     func searchMedicationsEnhanced(_ query: String) async -> [RxNormSearchResult] {
+		guard !Task.isCancelled else { return [] }
+		let request = beginRequest()
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Return empty for very short queries
         guard trimmedQuery.count >= 2 else {
+			finishRequest(request)
             return []
         }
 
@@ -114,22 +117,22 @@ final class MedicationSearchService: ObservableObject {
            !cachedEntry.isExpired
         {
             searchResults = cachedEntry.results
+			finishRequest(request)
             return cachedEntry.results
         }
 
-        // Cancel previous search
-        searchTask?.cancel()
-
         // Perform search
         isSearching = true
-        defer { isSearching = false }
+		defer { finishRequest(request) }
 
         do {
             // Use enhanced search with fuzzy matching for better results
 			let rawResults = try await enhancedSearch(trimmedQuery)
+			guard !Task.isCancelled else { return [] }
 
             // Process, simplify and sort results with intelligent prioritization
             let sortedResults = await MedicationResultSorter.processAndSort(rawResults, for: trimmedQuery)
+			guard !Task.isCancelled else { return [] }
 
             // Deduplicate while preserving sort order
             var seen = Set<String>()
@@ -141,6 +144,9 @@ final class MedicationSearchService: ObservableObject {
                 seen.insert(key)
                 return true
             }
+
+			// Each caller gets its own results. Only the newest request owns shared state.
+			guard request == latestRequest else { return results }
 
             // Cache results
             let entry = CacheEntry(results: results, searchTerm: trimmedQuery)
@@ -155,29 +161,31 @@ final class MedicationSearchService: ObservableObject {
             return results
         } catch {
             // On error, try to find similar cached results
+			guard !Task.isCancelled else { return [] }
             return findSimilarCachedResultsEnhanced(for: trimmedQuery)
         }
     }
 
     /// Optimized autocomplete using new SwiftRxNorm API
     func autocomplete(_ query: String) async -> AutocompleteResult? {
+		guard !Task.isCancelled else { return nil }
+		let request = beginRequest()
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Return empty for very short queries
         guard trimmedQuery.count >= 2 else {
+			finishRequest(request)
             return nil
         }
 
-        // Cancel previous search
-        searchTask?.cancel()
-
         // Perform autocomplete
         isSearching = true
-        defer { isSearching = false }
+		defer { finishRequest(request) }
 
         do {
             // Use optimized autocomplete API
 			let result = try await autocompleteSearch(trimmedQuery)
+			guard !Task.isCancelled else { return nil }
 
             // Extract drug names from suggestions for deduplication and sorting
             let drugNames = result.suggestions.map { $0.drug.name }
@@ -199,6 +207,7 @@ final class MedicationSearchService: ObservableObject {
                 searchTime: result.searchTime
             )
 
+			guard request == latestRequest else { return sortedResult }
             autocompleteResults = sortedResult
 
             // Save to recent searches if we got results
@@ -212,6 +221,15 @@ final class MedicationSearchService: ObservableObject {
             return nil
         }
     }
+
+	private func beginRequest() -> UUID {
+		latestRequest = UUID()
+		return latestRequest
+	}
+
+	private func finishRequest(_ request: UUID) {
+		if request == latestRequest { isSearching = false }
+	}
 
     /// Finds similar results from cache when API fails
     private func findSimilarCachedResults(for query: String) -> [RxNormDrug] {

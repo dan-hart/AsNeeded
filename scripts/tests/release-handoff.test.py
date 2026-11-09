@@ -274,6 +274,74 @@ class ReleaseHandoffTests(unittest.TestCase):
 		self.assertEqual(evidence, {'totalTestCount': 5, 'failedTests': 0, 'passedTests': 4, 'skippedTests': 1,
 			'expectedFailures': 0, 'runtimes': ['26.5']})
 
+	def test_debug_symbols_must_match_both_built_copies(self):
+		archive = self.root / 'AsNeeded.xcarchive'
+		archive_app = archive / 'Products/Applications/AsNeeded.app'
+		exported_app = self.root / 'Payload/AsNeeded.app'
+		for relative in self.release.BUNDLES:
+			for bundle in (archive_app / relative, exported_app / relative):
+				self.write_plist(bundle / 'Info.plist', {'CFBundleExecutable': 'FixtureExecutable'})
+			symbols = archive / 'dSYMs' / ((archive_app / relative).name + '.dSYM')
+			symbols.mkdir(parents=True)
+		matching = b'UUID: 00000000-0000-0000-0000-000000000001 (arm64) Fixture\n'
+		wrong = b'UUID: 00000000-0000-0000-0000-000000000002 (arm64) Fixture\n'
+		with patch.object(self.release, 'command', return_value=matching):
+			self.assertEqual(len(self.release.verify_debug_symbols(archive, archive_app, exported_app)), 3)
+		with patch.object(self.release, 'command', side_effect=[matching, wrong, matching]):
+			with self.assertRaisesRegex(self.release.ReleaseError, 'UUID'):
+				self.release.verify_debug_symbols(archive, archive_app, exported_app)
+
+	def test_crash_review_is_scoped_to_the_exact_processed_build(self):
+		build = {
+			'data': {'id': 'fixture-build', 'attributes': {'version': '328', 'processingState': 'VALID', 'expired': False}},
+			'included': [{'type': 'preReleaseVersions', 'attributes': {'version': '1.3.0', 'platform': 'IOS'}}],
+		}
+		reports = {'data': [{'id': 'fixture-crash', 'attributes': {'feedback': 'private fixture'}}], 'links': {}}
+		metrics = {'data': [{'type': 'betaBuildUsages', 'dataPoints': [{'values': {'crashCount': 2, 'sessionCount': 6}}]}]}
+		with patch.object(self.release, 'command', side_effect=[json.dumps(item).encode() for item in (build, reports, metrics)]) as command:
+			result = self.release.testflight_crash_summary('1.3.0', '328')
+			self.assertEqual(result, {'build_id': 'fixture-build', 'crash_submissions': 1, 'recorded_crashes': 2, 'reported_sessions': 6})
+			self.assertIn('fixture-build', command.call_args.args[0])
+			self.assertIn('--paginate', command.call_args_list[1].args[0])
+		build['data']['attributes']['version'] = '327'
+		with patch.object(self.release, 'command', return_value=json.dumps(build).encode()):
+			with self.assertRaisesRegex(self.release.ReleaseError, 'expected processed'):
+				self.release.testflight_crash_summary('1.3.0', '328')
+
+	def test_crash_review_blocks_promotion_when_a_report_exists(self):
+		archive = self.root / 'AsNeeded.xcarchive'
+		(archive / 'Products/Applications/AsNeeded.app').mkdir(parents=True)
+		ipa = self.root / 'AsNeeded.ipa'
+		with zipfile.ZipFile(ipa, 'w') as fixture:
+			fixture.writestr('Payload/AsNeeded.app/Info.plist', b'synthetic')
+		receipt = {
+			'source_revision': 'fixture-revision',
+			'artifacts': {
+				archive.name: {'tree_sha256': self.release.sha256_tree(archive)},
+				ipa.name: {'sha256': self.release.sha256_file(ipa)},
+			},
+			'bundle_audit': {
+				'signature_trust_verified': True,
+				'ipa': [{'bundle_id': bundle, 'version': '1.3.0', 'build': '328'} for bundle in self.release.BUNDLES.values()],
+			},
+		}
+		(self.root / 'release-receipt.json').write_text(json.dumps(receipt))
+		for feedback, crashes, sessions, message in [(1, 0, 1, 'before promoting'), (0, 1, 1, 'before promoting'),
+			(0, 0, 0, 'reported beta sessions'), (0, 0, 1, None)]:
+			with self.subTest(feedback=feedback, crashes=crashes, sessions=sessions), patch.object(
+				self.release, 'verify_debug_symbols', return_value={}
+			), patch.object(self.release, 'testflight_crash_summary', return_value={
+				'build_id': 'fixture-build', 'crash_submissions': feedback, 'recorded_crashes': crashes, 'reported_sessions': sessions,
+			}), patch('builtins.print'):
+				if message is None:
+					self.release.review_testflight_crashes(self.root, '1.3.0', '328')
+				else:
+					with self.assertRaisesRegex(self.release.ReleaseError, message):
+						self.release.review_testflight_crashes(self.root, '1.3.0', '328')
+		ipa.write_bytes(b'modified')
+		with self.assertRaisesRegex(self.release.ReleaseError, 'no longer match'):
+			self.release.review_testflight_crashes(self.root, '1.3.0', '328')
+
 	def test_checkout_provenance_rejects_an_unpinned_local_dependency(self):
 		state = {'object': {'dependencies': [{'packageRef': {'identity': 'local-dependency'}, 'state': {'name': 'fileSystem'}}]}}
 		(self.root / 'workspace-state.json').write_text(json.dumps(state))

@@ -43,6 +43,20 @@ python3 scripts/release-handoff.py audit \
 
 Without `--verify-signatures`, `audit` checks the artifact metadata and reads signed entitlements and embedded profiles. A receipt requires Apple-backed signing for the expected team and targets, Apple Distribution signing for the IPA, and a trusted Apple provisioning profile matching each signing certificate. App Store Connect processing, tester group availability, and physical-device validation are separate release gates.
 
+### TestFlight crash review
+
+Keep the verified archive, IPA, receipt and debug symbols together in private release storage. Before promoting a beta, review its observation window and check the exact processed build:
+
+```bash
+python3 scripts/release-handoff.py crash-review \
+  --release-directory /path/to/private-release-directory \
+  --version "$RELEASE_VERSION" --build "$RELEASE_BUILD"
+```
+
+The check verifies the artifact digests from the receipt and matches the debug symbol UUIDs to the iPhone, widget and Watch executables in both the archive and IPA. It queries TestFlight crash submissions and aggregate crash and session counts for the exact build. The output contains counts and omits tester details. Use the receipt from the artifact actually uploaded. Allow for delayed or incomplete reports when interpreting a zero count. Repeat the check before promotion. See [Apple's build metrics guide](https://developer.apple.com/help/app-store-connect/test-a-beta-version/view-build-status-and-metrics).
+
+Crash submissions, recorded crashes and zero reported sessions stop the automated gate for review. Use `asc testflight crashes list --app "$APP_ID" --build-id "$BUILD_ID" --paginate` and `asc testflight crashes log --submission-id "$SUBMISSION_ID"` in a private workspace. Reproduce crashes in launch, logging, import or notification handling, add a regression, and verify the fix in a subsequent beta. Record any maintainer decision about other reports with the release evidence. Keep raw feedback, reports and symbols outside Git.
+
 ### Replacing a beta
 
 If an artifact fails local checks, fix the source or signing configuration and rerun the handoff. If a build was already uploaded, check its current processing and group state, select a higher unused build number, and prepare the successor from the reviewed commit. Confirm the successor in the intended TestFlight group after authorized upload and assignment. Keep the existing build available until that confirmation unless the maintainer separately authorizes changing its availability. For an upgrade issue, rehearse the replacement in place with synthetic data and preserve a backup before asking testers to upgrade. Record the affected build, successor receipt, processing and group status, and any pending external beta review separately.

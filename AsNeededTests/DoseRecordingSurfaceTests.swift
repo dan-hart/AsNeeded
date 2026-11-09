@@ -176,6 +176,61 @@ struct DoseRecordingSurfaceTests {
 		try await ledger.expectUnchanged(from: before)
 	}
 
+	@Test("A delayed Watch retry cannot restore a deleted dose or deduct stock", arguments: [false, true], [false, true])
+	func deletedWatchDoseReplay(reopen: Bool, preexisting: Bool) async throws {
+		let ledger = try await Ledger.seeded()
+		let id = UUID()
+		let decoded = LogDoseData(from: [
+			"medicationId": ledger.target.id.uuidString,
+			"eventID": id.uuidString,
+			"date": ledger.now,
+			"doseAmount": 0.5,
+			"doseUnit": ANUnitConcept.tablet.rawValue,
+		])
+		if preexisting {
+			// Model an older app that already committed the Watch ID without a receipt.
+			let dose = ANDoseConcept(amount: 0.5, unit: .tablet)
+			try await ledger.store.recordDose(ANEventConcept(id: id, eventType: .doseTaken,
+				medication: ledger.target, dose: dose, date: ledger.now))
+		}
+		try #require(try await WCReceiver.recordDose(decoded, in: ledger.store, migrate: { _ in }))
+		try await ledger.store.deleteEvents(ids: [id])
+		let defaults = try #require(UserDefaults(suiteName: ledger.preferences.name))
+		let receiver = reopen ? DataStore(storageDirectory: ledger.directory, defaults: defaults,
+			defaultsDomainName: ledger.preferences.name, navigationManager: NavigationManager(defaults: defaults)) : ledger.store
+
+		#expect(try await WCReceiver.recordDose(decoded, in: receiver, migrate: { _ in }))
+		let after = try await receiver.prepareForAccess()
+		#expect(after.events.map(\.id) == [ledger.priorID])
+		#expect(after.medications.first { $0.id == ledger.target.id }?.quantity == 19)
+	}
+
+	@Test("Clearing data and reimporting the medication cannot resurrect an acknowledged Watch dose")
+	func clearedWatchDoseReplay() async throws {
+		let ledger = try await Ledger.seeded()
+		let id = UUID()
+		let decoded = LogDoseData(from: [
+			"medicationId": ledger.target.id.uuidString,
+			"eventID": id.uuidString,
+			"date": ledger.now,
+			"doseAmount": 0.5,
+			"doseUnit": ANUnitConcept.tablet.rawValue,
+		])
+		try #require(try await WCReceiver.recordDose(decoded, in: ledger.store, migrate: { _ in }))
+		try await ledger.store.clearAllData()
+		#expect(try await WCReceiver.recordDose(decoded, in: ledger.store, migrate: { _ in }))
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		let export = DataExport(medications: [ledger.target], events: [], exportDate: ledger.now,
+			appVersion: "1.2.0", dataVersion: "1.0", settings: nil)
+		try await ledger.store.importDataFromJSON(encoder.encode(export))
+
+		#expect(try await WCReceiver.recordDose(decoded, in: ledger.store, migrate: { _ in }))
+		let after = try await ledger.store.prepareForAccess()
+		#expect(after.events.isEmpty)
+		#expect(after.medications.first?.quantity == 20)
+	}
+
 	@Test("Widget dose links navigate to the exact target or fail with the ledger untouched")
 	func widgetNavigation() async throws {
 		let ledger = try await Ledger.seeded()

@@ -136,6 +136,14 @@ final class MedicationPersistenceTransactions {
 
 	@discardableResult
 	func perform(preferenceKeys: [String: Set<String>] = [:], change: (inout MedicationPersistenceSnapshot) throws -> Void, applyPreferences: (MedicationPersistenceSnapshot) -> Void = { _ in }) async throws -> Bool {
+		try await perform(changeWithPreferenceKeys: { snapshot in
+			try change(&snapshot)
+			return preferenceKeys
+		}, applyPreferences: applyPreferences)
+	}
+
+	@discardableResult
+	func perform(changeWithPreferenceKeys: (inout MedicationPersistenceSnapshot) throws -> [String: Set<String>], applyPreferences: (MedicationPersistenceSnapshot) -> Void) async throws -> Bool {
 		let lock = try await acquireLock()
 		defer { lock.release() }
 		try await recoverUnlocked()
@@ -144,7 +152,8 @@ final class MedicationPersistenceTransactions {
 		// Reconcile caches with external-process writes before calculating a mutation.
 		try await apply(before)
 		var after = before
-		do { try change(&after) } catch { visibleSnapshot = nil; throw error }
+		let preferenceKeys: [String: Set<String>]
+		do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
 		let journal = try makeJournal(before: before, after: after, preferenceKeys: preferenceKeys)
 		if journal.medicationIDs.isEmpty && journal.eventIDs.isEmpty && journal.preferences.isEmpty {
 			publishStable(before)

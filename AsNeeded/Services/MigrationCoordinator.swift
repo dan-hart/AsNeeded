@@ -30,8 +30,9 @@ public final class MigrationCoordinator {
 
 	/// When migration started (for timeout detection)
 	private var migrationStartTime: Date?
+	@ObservationIgnored private var migrationWaiters: [CheckedContinuation<Void, Never>] = []
 
-	private init() {}
+	init() {}
 
 	/// Logs current migration state (for diagnostics)
 	public func logCurrentState() {
@@ -45,6 +46,19 @@ public final class MigrationCoordinator {
 	/// Runs migration if needed
 	/// Should be called on app launch before showing main UI
 	public func runMigrationIfNeeded() async {
+		await runMigrationIfNeeded(waitForRunningMigration: false)
+	}
+
+	func runMigrationIfNeeded(waitForRunningMigration: Bool) async {
+		await runMigrationIfNeeded(waitForRunningMigration: waitForRunningMigration, operation: migrateStorage)
+	}
+
+	func runMigrationIfNeeded(waitForRunningMigration: Bool = false, operation: @MainActor () async -> Void) async {
+		if isRunning && waitForRunningMigration {
+			await withCheckedContinuation { migrationWaiters.append($0) }
+			return
+		}
+
 		// Already completed or running
 		guard !isComplete && !isRunning else {
 			logger.info("Migration already completed or running, skipping")
@@ -52,6 +66,16 @@ public final class MigrationCoordinator {
 		}
 
 		isRunning = true
+		defer {
+			isRunning = false
+			let waiters = migrationWaiters
+			migrationWaiters.removeAll()
+			for waiter in waiters { waiter.resume() }
+		}
+		await operation()
+	}
+
+	private func migrateStorage() async {
 		migrationStartTime = Date()
 		logger.info("Starting migration coordinator")
 
@@ -70,7 +94,6 @@ public final class MigrationCoordinator {
 			let healthError = StorageHealthError.unhealthyStorage(issues: healthResult.issueMessages)
 			self.error = healthError
 			isComplete = false
-			isRunning = false
 			return
 		}
 
@@ -109,12 +132,10 @@ public final class MigrationCoordinator {
 			let duration = Date().timeIntervalSince(migrationStartTime ?? Date())
 			logger.info("Migration completed successfully in \(String(format: "%.1f", duration))s")
 			isComplete = true
-			isRunning = false
 		} catch {
 			logger.logPrivacySafeError("Migration failed", error: error)
 			self.error = error
 			isComplete = false
-			isRunning = false
 		}
 
 		// Cancel watchdog

@@ -73,8 +73,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			// Prevent dismissing keyboard when tapping within component
 		}
 		.onDisappear {
-			searchTask?.cancel()
-			searchRequestID = UUID()
+			cancelPendingSearch()
 		}
 	}
 
@@ -111,6 +110,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 					handleTextChange(newValue)
 				}
 				.onSubmit {
+					cancelPendingSearch()
 					showSuggestions = false
 					isFocused = false
 				}
@@ -122,14 +122,12 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			}
 			if !text.isEmpty {
 				Button(action: {
-					searchTask?.cancel()
-					searchRequestID = UUID()
+					cancelPendingSearch()
 					withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
 						text = ""
 						suggestions = []
 						showSuggestions = false
 						selectedMedication = nil
-						isSearching = false
 					}
 				}) {
 					Image(systemSymbol: .xmarkCircleFill)
@@ -438,8 +436,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 
 	private func simplifiedMedicationButton(_ medication: CommonMedication) -> some View {
 		Button(action: {
-			searchTask?.cancel()
-			searchRequestID = UUID()
+			cancelPendingSearch()
 			// Set the simplified clinical name
 			let simplifiedName = MedicationNameSimplifier.simplifyName(medication.clinicalName)
 			text = simplifiedName
@@ -494,6 +491,12 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 	}
 
 	// MARK: - Actions
+
+	private func cancelPendingSearch() {
+		searchTask?.cancel()
+		searchRequestID = UUID()
+		isSearching = false
+	}
 
 	private func handleTextChange(_ newValue: String) {
 		searchTask?.cancel()
@@ -634,8 +637,7 @@ struct EnhancedMedicationSearchField<ScrollID: Hashable>: View {
 			}
 		}
 
-		searchTask?.cancel()
-		searchRequestID = UUID()
+		cancelPendingSearch()
 	}
 }
 

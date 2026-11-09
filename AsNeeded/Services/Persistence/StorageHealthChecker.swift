@@ -81,6 +81,12 @@ public final class StorageHealthChecker {
 
 	/// Performs comprehensive health check on storage system
 	public func performHealthCheck() -> HealthCheckResult {
+		performHealthCheck(in: FileManager.default.containerURL(
+			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
+		))
+	}
+
+	func performHealthCheck(in containerURL: URL?) -> HealthCheckResult {
 		logger.info("Starting storage health check...")
 
 		var issues: [HealthIssue] = []
@@ -90,9 +96,7 @@ public final class StorageHealthChecker {
 		var diskSpaceMB: Double?
 
 		// Check 1: App Group Accessibility (CRITICAL - blocking)
-		guard let appGroupURL = FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		) else {
+		guard let appGroupURL = containerURL else {
 			let issue = String(localized: "App Group container is unavailable: \(StorageConstants.appGroupIdentifier)")
 			issues.append(HealthIssue(message: issue, severity: .error))
 			logger.error("❌ \(issue)")
@@ -251,54 +255,52 @@ public final class StorageHealthChecker {
 		}
 	}
 
-	/// Validates SQLite database integrity using PRAGMA integrity_check
+	/// Validates SQLite database integrity using PRAGMA quick_check.
 	private func validateSQLiteIntegrity(at path: URL, name: String, issues: inout [HealthIssue]) {
-		// Use SQLite3 C API directly for integrity check
+		func reportFailure(_ code: Int32, unavailableMessage: String) {
+			let issue = switch code {
+			case SQLITE_CORRUPT, SQLITE_NOTADB:
+				String(localized: "\(name) database failed integrity check (may be corrupted)")
+			default:
+				unavailableMessage
+			}
+			issues.append(HealthIssue(message: issue, severity: .error))
+			logger.error("❌ \(issue) (SQLite code: \(code))")
+		}
+
 		var db: OpaquePointer?
 		let openResult = sqlite3_open_v2(path.path, &db, SQLITE_OPEN_READONLY, nil)
+		defer { sqlite3_close(db) }
 
 		guard openResult == SQLITE_OK, let database = db else {
-			let issue = String(localized: "\(name) database cannot be opened for integrity check")
-			issues.append(HealthIssue(message: issue, severity: .warning))
-			logger.warning("⚠️ \(issue)")
-			if let database = db {
-				sqlite3_close(database)
-			}
+			reportFailure(openResult, unavailableMessage: String(localized: "\(name) database cannot be opened for integrity check"))
 			return
 		}
 
-		defer { sqlite3_close(database) }
-
-		// Run quick integrity check (faster than full integrity_check)
 		var statement: OpaquePointer?
-		let query = "PRAGMA quick_check"
-
-		guard sqlite3_prepare_v2(database, query, -1, &statement, nil) == SQLITE_OK else {
-			let issue = String(localized: "\(name) database integrity check failed to prepare")
-			issues.append(HealthIssue(message: issue, severity: .warning))
-			logger.warning("⚠️ \(issue)")
+		let prepareResult = sqlite3_prepare_v2(database, "PRAGMA quick_check", -1, &statement, nil)
+		defer { sqlite3_finalize(statement) }
+		guard prepareResult == SQLITE_OK else {
+			reportFailure(prepareResult, unavailableMessage: String(localized: "\(name) database integrity check failed to prepare"))
 			return
 		}
 
-		defer { sqlite3_finalize(statement) }
-
-		var isIntact = true
-		while sqlite3_step(statement) == SQLITE_ROW {
-			if let resultPointer = sqlite3_column_text(statement, 0) {
-				let result = String(cString: resultPointer)
-				if result != "ok" {
-					isIntact = false
-						logger.error("❌ \(name) database integrity issue")
-					}
-				}
-			}
-
-		if isIntact {
-			logger.info("✅ \(name) database passed integrity check")
-		} else {
-			let issue = String(localized: "\(name) database failed integrity check (may be corrupted)")
-			issues.append(HealthIssue(message: issue, severity: .error))
+		let unavailable = String(localized: "Medication storage is unavailable. Please try again.")
+		let row = sqlite3_step(statement)
+		guard row == SQLITE_ROW, let result = sqlite3_column_text(statement, 0) else {
+			reportFailure(row, unavailableMessage: unavailable)
+			return
 		}
+		guard String(cString: result) == "ok" else {
+			reportFailure(SQLITE_CORRUPT, unavailableMessage: unavailable)
+			return
+		}
+		let completion = sqlite3_step(statement)
+		guard completion == SQLITE_DONE else {
+			reportFailure(completion, unavailableMessage: unavailable)
+			return
+		}
+		logger.info("✅ \(name) database passed integrity check")
 	}
 
 	/// Quick health check that returns only a boolean (for simple go/no-go decisions)

@@ -5,6 +5,8 @@ import UserNotifications
 struct MedicationReminderRequest {
 	static let categoryIdentifier = "MEDICATION_REMINDER"
 	static let medicationIDKey = "medicationId"
+	static var genericTitle: String { String(localized: "Medication Reminder") }
+	static var genericBody: String { String(localized: "It's time to take your medication") }
 
 	struct Identity: Hashable {
 		let medicationID: UUID
@@ -58,8 +60,8 @@ struct MedicationReminderRequest {
 			content.title = medication.displayName
 			content.body = String(localized: "It's time to take \(medication.displayName)")
 		} else {
-			content.title = String(localized: "Medication Reminder")
-			content.body = String(localized: "It's time to take your medication")
+			content.title = genericTitle
+			content.body = genericBody
 		}
 		content.interruptionLevel = isUrgent ? .timeSensitive : .active
 		content.sound = .default
@@ -216,8 +218,8 @@ struct MedicationReminderRequest {
 			content.title = medication.displayName
 			content.body = String(localized: "It's time to take \(medication.displayName)")
 		} else if !showMedicationNames {
-			content.title = String(localized: "Medication Reminder")
-			content.body = String(localized: "It's time to take your medication")
+			content.title = genericTitle
+			content.body = genericBody
 		}
 		let trigger = UNCalendarNotificationTrigger(dateMatching: components(for: identity), repeats: identity.repeats)
 		return UNNotificationRequest(identifier: identity.identifier, content: content, trigger: trigger)

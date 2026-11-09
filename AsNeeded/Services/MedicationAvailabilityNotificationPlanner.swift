@@ -4,6 +4,10 @@ import Foundation
 struct MedicationAvailabilityNotificationPlanner {
 	static let identifierPrefix = "availability."
 	static let categoryIdentifier = "MEDICATION_AVAILABILITY"
+	static var genericTitle: String { String(localized: "Next Dose Availability") }
+	static var genericBody: String {
+		String(localized: "The waiting time based on your saved dose guidance has passed. Review your medication instructions before taking a dose.")
+	}
 
 	struct Candidate {
 		let medicationID: UUID
@@ -29,10 +33,10 @@ struct MedicationAvailabilityNotificationPlanner {
 				identifier: Self.identifierPrefix + candidate.medicationID.uuidString,
 				medicationID: candidate.medicationID,
 				date: date,
-				title: showMedicationNames ? candidate.medicationName : String(localized: "Next Dose Availability"),
+				title: showMedicationNames ? candidate.medicationName : Self.genericTitle,
 				body: showMedicationNames
 					? String(localized: "The waiting time based on your saved dose guidance for \(candidate.medicationName) has passed. Review your instructions before taking a dose.")
-					: String(localized: "The waiting time based on your saved dose guidance has passed. Review your medication instructions before taking a dose.")
+					: Self.genericBody
 			)
 		}
 	}

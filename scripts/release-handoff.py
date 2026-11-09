@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = 'AsNeeded.xcodeproj'
 LOCKFILE = Path(PROJECT) / 'project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
 APP_ID = 'com.codedbydan.AsNeeded'
+APP_STORE_ID = '6714469235'
 SYNCHRONIZED_ROOTS = ('AsNeeded', 'AsNeededTests', 'AsNeededWidget', 'WristAsNeeded Watch App')
 SYSTEM_ROOTS = '/System/Library/Keychains/SystemRootCertificates.keychain'
 APPLE_PROFILE_SIGNING_OID = '1.2.840.113635.100.6.58'
@@ -497,6 +498,77 @@ def prepare(args):
 	print('Verified archive and IPA. Wrote release-receipt.json.')
 
 
+def debug_uuids(path):
+	lines = command(['xcrun', 'dwarfdump', '--uuid', path]).decode()
+	uuids = set(re.findall(r'^UUID: ([0-9A-Fa-f-]{36}) \(([^)]+)\) ', lines, flags=re.MULTILINE))
+	require(uuids, f'Missing debug UUID for {path.name}.')
+	return {(uuid.upper(), arch) for uuid, arch in uuids}
+
+
+def verify_debug_symbols(archive, archive_app, exported_app):
+	symbols = {}
+	for relative, bundle_id in BUNDLES.items():
+		bundle = archive_app / relative
+		exported = exported_app / relative
+		dsym = archive / 'dSYMs' / f'{bundle.name}.dSYM'
+		require(dsym.is_dir(), f'Missing debug symbols for {bundle_id}.')
+		executable = read_plist(bundle / 'Info.plist')['CFBundleExecutable']
+		exported_executable = read_plist(exported / 'Info.plist')['CFBundleExecutable']
+		uuids = debug_uuids(dsym)
+		require(uuids == debug_uuids(bundle / executable) == debug_uuids(exported / exported_executable),
+			f'Debug symbol UUID mismatch for {bundle_id}.')
+		symbols[bundle_id] = [{'uuid': uuid, 'architecture': arch} for uuid, arch in sorted(uuids)]
+	return symbols
+
+
+def testflight_crash_summary(version, build):
+	result = json.loads(command(['asc', 'builds', 'info', '--app', APP_STORE_ID, '--build-number', build,
+		'--version', version, '--platform', 'IOS', '--include', 'preReleaseVersion', '--output', 'json']))
+	item = result['data']
+	attributes = item['attributes']
+	require(attributes['version'] == build and attributes['processingState'] == 'VALID' and attributes['expired'] is False
+		and any(row['type'] == 'preReleaseVersions' and row['attributes']['version'] == version
+			and row['attributes']['platform'] == 'IOS' for row in result['included']),
+		'App Store Connect did not return the expected processed TestFlight build.')
+	build_id = item['id']
+	reports = json.loads(command(['asc', 'testflight', 'crashes', 'list', '--app', APP_STORE_ID,
+		'--build-id', build_id, '--paginate', '--output', 'json']))
+	require(isinstance(reports['data'], list) and not (reports.get('links') or {}).get('next'),
+		'App Store Connect did not return a complete crash submission list.')
+	metrics = json.loads(command(['asc', 'builds', 'metrics', 'beta-usages', '--build-id', build_id, '--output', 'json']))
+	points = [point['values'] for row in metrics['data'] if row['type'] == 'betaBuildUsages' for point in row['dataPoints']]
+	require(len(points) == 1 and not (metrics.get('links') or {}).get('next'),
+		'App Store Connect did not return one aggregate beta usage interval.')
+	counts = points[0]
+	require(all(type(counts.get(key)) is int and counts[key] >= 0 for key in ('crashCount', 'sessionCount')),
+		'App Store Connect did not report both crash and session counts.')
+	# Raw submissions can include private feedback. Emit only the counts for the selected build.
+	return {'build_id': build_id, 'crash_submissions': len(reports['data']),
+		'recorded_crashes': counts['crashCount'], 'reported_sessions': counts['sessionCount']}
+
+
+def review_testflight_crashes(directory, version, build):
+	receipt = json.loads((directory / 'release-receipt.json').read_text())
+	archive = directory / 'AsNeeded.xcarchive'
+	ipa = directory / 'AsNeeded.ipa'
+	artifact_audit = receipt['bundle_audit']
+	require(artifact_audit['signature_trust_verified'] and len(artifact_audit['ipa']) == len(BUNDLES)
+		and all(row['version'] == version and row['build'] == build for row in artifact_audit['ipa']),
+		'The release receipt does not cover this signed build.')
+	require(receipt['artifacts'][archive.name]['tree_sha256'] == sha256_tree(archive)
+		and receipt['artifacts'][ipa.name]['sha256'] == sha256_file(ipa), 'Release artifacts no longer match the receipt.')
+	with tempfile.TemporaryDirectory(prefix='asneeded-crash-review-') as scratch:
+		unpack_ipa(ipa, Path(scratch))
+		symbols = verify_debug_symbols(archive, only_app(archive / 'Products/Applications'), only_app(Path(scratch) / 'Payload'))
+	result = testflight_crash_summary(version, build)
+	print(json.dumps({'version': version, 'build': build, 'source_revision': receipt['source_revision'],
+		'checked_at_utc': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+		'debug_symbols': symbols, **result}, indent=2))
+	require(result['crash_submissions'] == result['recorded_crashes'] == 0,
+		'Review and reproduce reported crashes before promoting this beta.')
+	require(result['reported_sessions'] > 0, 'Wait for reported beta sessions before promoting this build.')
+
+
 def main():
 	parser = argparse.ArgumentParser(description=__doc__)
 	modes = parser.add_subparsers(dest='mode', required=True)
@@ -506,6 +578,10 @@ def main():
 	audit_parser.add_argument('--archive', type=Path, required=True)
 	audit_parser.add_argument('--ipa', type=Path, required=True)
 	audit_parser.add_argument('--verify-signatures', action='store_true', help='Also verify signature integrity and local trust.')
+	crash_parser = modes.add_parser('crash-review', help='Verify local debug symbols and check the exact TestFlight build for crash submissions.')
+	crash_parser.add_argument('--release-directory', type=Path, required=True, help='Private directory produced by prepare.')
+	crash_parser.add_argument('--version', required=True)
+	crash_parser.add_argument('--build', required=True)
 	for mode in (prepare_parser, audit_parser):
 		mode.add_argument('--version', required=True)
 		mode.add_argument('--build', required=True)
@@ -514,9 +590,12 @@ def main():
 	try:
 		require(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', args.version) and re.fullmatch(r'[0-9]+', args.build),
 			'Use a three-part marketing version and a numeric build number.')
-		require(re.fullmatch(r'[A-Z0-9]{10}', args.team_id), 'Supply the expected 10-character Apple Developer team ID.')
+		if args.mode != 'crash-review':
+			require(re.fullmatch(r'[A-Z0-9]{10}', args.team_id), 'Supply the expected 10-character Apple Developer team ID.')
 		if args.mode == 'prepare':
 			prepare(args)
+		elif args.mode == 'crash-review':
+			review_testflight_crashes(args.release_directory.resolve(), args.version, args.build)
 		else:
 			print(json.dumps(audit(args.archive.resolve(), args.ipa.resolve(), args.version, args.build, args.team_id,
 				verify_signatures=args.verify_signatures), indent=2))

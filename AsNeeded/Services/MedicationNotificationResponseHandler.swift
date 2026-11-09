@@ -10,6 +10,8 @@ struct MedicationNotificationResponseHandler {
 	let logDose: (MedicationNotificationAction) async throws -> ANEventConcept
 	let showNames: () -> Bool
 	private let logger = DHLogger(category: "MedicationNotificationResponse")
+	static var confirmationTitle: String { String(localized: "Dose logged") }
+	static var genericConfirmationBody: String { String(localized: "Your dose was saved. Tap to view History.") }
 
 	static var live: Self {
 		let doseLogger = NotificationDoseLogger(dataStore: .shared, prepare: {
@@ -39,12 +41,25 @@ struct MedicationNotificationResponseHandler {
 		if savedEvent != nil {
 			notifications.removeDelivered([action.requestIdentifier])
 		}
-		let feedback = Self.feedbackRequest(for: action, savedEvent: savedEvent, showNames: savedEvent != nil && showNames())
+		let includeName = savedEvent?.medication != nil && savedEvent?.dose != nil && showNames()
+		let feedback = Self.feedbackRequest(for: action, savedEvent: savedEvent, showNames: includeName)
 		// Replace earlier failures too, so a successful retry leaves no stale review prompt.
 		notifications.removePending([feedback.identifier])
 		notifications.removeDelivered([feedback.identifier])
 		// Delivery is best effort after the save outcome is known.
-		do { try await notifications.add(feedback) }
+		do {
+			try await notifications.add(feedback)
+			if includeName && !showNames() {
+				notifications.removePending([feedback.identifier])
+				notifications.removeDelivered([feedback.identifier])
+				let generic = Self.feedbackRequest(for: action, savedEvent: savedEvent, showNames: false)
+				try await notifications.add(generic)
+				let delivered = await notifications.deliveredRequests()
+				if delivered.contains(where: { $0.identifier == feedback.identifier && $0.content.body == feedback.content.body }) {
+					notifications.removeDelivered([feedback.identifier])
+				}
+			}
+		}
 		catch { logger.logPrivacySafeError("Unable to deliver notification action feedback", error: error) }
 	}
 
@@ -55,12 +70,12 @@ struct MedicationNotificationResponseHandler {
 	) -> UNNotificationRequest {
 		let content = UNMutableNotificationContent()
 		if let event = savedEvent {
-			content.title = String(localized: "Dose logged")
+			content.title = confirmationTitle
 			if showNames, let medication = event.medication, let dose = event.dose {
 				let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount))")
 				content.body = String(localized: "\(recordedDose) · \(medication.displayName). Tap to view History.")
 			} else {
-				content.body = String(localized: "Your dose was saved. Tap to view History.")
+				content.body = genericConfirmationBody
 			}
 			content.categoryIdentifier = MedicationNotificationAction.confirmationCategoryIdentifier
 		} else {

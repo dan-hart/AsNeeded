@@ -29,7 +29,11 @@ struct NotificationDoseLoggerTests {
 		try await seed.addMedication(med)
 		let cold = DataStore(storageDirectory: directory, defaults: preferences.defaults, defaultsDomainName: preferences.name)
 		var prepared = false
-		let logger = NotificationDoseLogger(dataStore: cold, prepare: {
+		func openStore() -> DataStore {
+			#expect(prepared)
+			return cold
+		}
+		let logger = NotificationDoseLogger(dataStore: openStore(), prepare: {
 			med.prescribedDoseAmount = 3
 			try await seed.updateMedication(med)
 			prepared = true

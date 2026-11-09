@@ -133,6 +133,108 @@ struct NotificationManagerTests {
 		#expect(fixture.pending.first?.content.body == "It's time to take your medication")
 	}
 
+	@Test("Hiding names removes named delivered alerts and keeps future reminders at the same time")
+	func hidingNamesRedactsPendingAndDelivered() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanUp() }
+		fixture.defaults.set(true, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+		fixture.authorization = .authorized
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let store = DataStore(storageDirectory: directory, defaults: fixture.defaults, defaultsDomainName: fixture.suite,
+			navigationManager: NavigationManager(defaults: fixture.defaults))
+		let medication = ANMedicationConcept(clinicalName: "Synthetic private", prescribedUnit: .tablet,
+			prescribedDoseAmount: 1, minimumHoursBetweenDoses: 4, nextDoseNotificationEnabled: true)
+		let loggedAt = Date().addingTimeInterval(-600)
+		try await store.addMedication(medication)
+		try await store.addEvent(ANEventConcept(eventType: .doseTaken, medication: medication,
+			dose: ANDoseConcept(amount: 1, unit: .tablet), date: loggedAt))
+		let scheduled = MedicationReminderRequest.make(medication: medication, date: fixture.date, isRecurring: true,
+			repeatInterval: DateComponents(hour: 9, minute: 0), isUrgent: true, showMedicationNames: true)
+		let manager = NotificationManager(notificationClient: fixture.client, defaults: fixture.defaults,
+			medicationExists: { _ in true })
+		try await manager.startAvailabilityObservation(dataStore: store)
+		let available = try #require(fixture.pending.first)
+		#expect(available.content.title == medication.displayName)
+		let namedFeedback = makeAlert("dose-log-feedback.named", category: MedicationNotificationAction.confirmationCategoryIdentifier,
+			title: "Dose logged", body: "Dose logged: 1 tablet · Synthetic private. Tap to view History.")
+		let genericFeedback = makeAlert("dose-log-feedback.generic", category: MedicationNotificationAction.confirmationCategoryIdentifier,
+			title: "Dose logged", body: "Your dose was saved. Tap to view History.")
+		let unrelated = makeAlert("unrelated", category: "OTHER_ALERT", title: medication.displayName, body: "Unrelated")
+		fixture.pending = [scheduled, available, namedFeedback, unrelated]
+		fixture.delivered = [scheduled, available, namedFeedback, genericFeedback, unrelated]
+
+		manager.showMedicationNames = false
+		await manager.reconcileScheduledReminders()
+		await manager.refreshAvailabilityNotifications()
+
+		#expect(Set(fixture.delivered.map(\.identifier)) == [genericFeedback.identifier, unrelated.identifier])
+		#expect(Set(fixture.pending.map(\.identifier)) == [scheduled.identifier, available.identifier, unrelated.identifier])
+		let pendingScheduled = try #require(fixture.pending.first { $0.identifier == scheduled.identifier })
+		#expect(pendingScheduled.content.title == "Medication Reminder")
+		#expect(pendingScheduled.content.interruptionLevel == .timeSensitive)
+		#expect(pendingScheduled.trigger == scheduled.trigger)
+		let pendingAvailability = try #require(fixture.pending.first { $0.identifier == available.identifier })
+		#expect(pendingAvailability.content.title == "Next Dose Availability")
+		#expect(!pendingAvailability.content.body.contains(medication.displayName))
+		let trigger = try #require(pendingAvailability.trigger as? UNTimeIntervalNotificationTrigger)
+		let eligibleAt = loggedAt.addingTimeInterval(4 * 3600)
+		#expect(abs(Date().addingTimeInterval(trigger.timeInterval).timeIntervalSince(eligibleAt)) < 5)
+	}
+
+	@Test("Rejected redaction removes a named schedule and preserves the generic schedule")
+	func rejectedRedactionKeepsOnlySafeSchedule() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanUp() }
+		fixture.defaults.set(true, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+		let medication = ANMedicationConcept(clinicalName: "Synthetic private")
+		let named = MedicationReminderRequest.make(medication: medication, date: fixture.date, isRecurring: false, showMedicationNames: true)
+		let generic = MedicationReminderRequest.make(medication: medication, date: fixture.date.addingTimeInterval(3600),
+			isRecurring: false, showMedicationNames: false)
+		fixture.pending = [named, generic]
+		fixture.addFails = true
+		fixture.manager.showMedicationNames = false
+		await fixture.manager.reconcileScheduledReminders()
+		#expect(fixture.pending.map(\.identifier) == [generic.identifier])
+		#expect(fixture.pending.first?.trigger == generic.trigger)
+	}
+
+	@Test("A confirmation accepted after privacy changes is replaced with generic feedback")
+	func confirmationInFlightRespectsPrivacy() async throws {
+		let fixture = try Fixture()
+		defer { fixture.cleanUp() }
+		let medication = ANMedicationConcept(clinicalName: "Synthetic private")
+		let action = try #require(MedicationNotificationAction(actionIdentifier: "LOG_ACTION", requestIdentifier: "synthetic-reminder",
+			categoryIdentifier: MedicationReminderRequest.categoryIdentifier, medicationID: medication.id.uuidString))
+		fixture.defaults.set(true, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+		fixture.onAdd = { request in
+			if request.content.body.contains(medication.displayName) {
+				fixture.defaults.set(false, forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+				fixture.delivered.append(request)
+			}
+		}
+		var saves = 0
+		let handler = MedicationNotificationResponseHandler(navigationManager: NavigationManager(defaults: fixture.defaults),
+			notifications: fixture.client, logDose: { _ in
+				saves += 1
+				return ANEventConcept(eventType: .doseTaken, medication: medication,
+					dose: ANDoseConcept(amount: 1, unit: .tablet), date: Date())
+			}, showNames: { fixture.defaults.bool(forKey: UserDefaultsKeys.showMedicationNamesInNotifications) })
+		await handler.handle(action)
+		#expect(saves == 1)
+		#expect(fixture.delivered.isEmpty)
+		#expect(fixture.pending.count == 1)
+		#expect(fixture.pending.first?.content.body == "Your dose was saved. Tap to view History.")
+	}
+
+	private func makeAlert(_ identifier: String, category: String, title: String, body: String) -> UNNotificationRequest {
+		let content = UNMutableNotificationContent()
+		content.title = title
+		content.body = body
+		content.categoryIdentifier = category
+		return UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+	}
+
 	@Test("Saving a renamed medication refreshes scheduled names without manual reconciliation")
 	func savedRenameRefreshesScheduledName() async throws {
 		let preferences = try IsolatedTestPreferences()
@@ -270,6 +372,8 @@ struct NotificationManagerTests {
 	@MainActor
 	private final class Fixture {
 		var pending: [UNNotificationRequest] = []
+		var delivered: [UNNotificationRequest] = []
+		var authorization: UNAuthorizationStatus = .denied
 		var medications: [ANMedicationConcept] = []
 		var lookupEnabled = false
 		var addFails = false
@@ -278,10 +382,10 @@ struct NotificationManagerTests {
 		let date = Date(timeIntervalSince1970: 2_000_000_000)
 		let suite = "NotificationManagerTests-\(UUID().uuidString)"
 		let defaults: UserDefaults
-		lazy var manager = NotificationManager(notificationClient: MedicationNotificationClient(
-			notificationSettings: { .denied },
+		lazy var client = MedicationNotificationClient(
+			notificationSettings: { self.authorization },
 			pendingRequests: { self.pending },
-			deliveredRequests: { [] },
+			deliveredRequests: { self.delivered },
 			add: { request in
 				if self.addFails { throw Failure.scheduling }
 				try await self.onAdd?(request)
@@ -289,8 +393,11 @@ struct NotificationManagerTests {
 				self.pending.append(request)
 			},
 			removePending: { ids in self.pending.removeAll { ids.contains($0.identifier) } },
-			removeDelivered: { _ in }
-		), defaults: defaults, medicationExists: { id in !self.lookupEnabled || self.medications.contains { $0.id == id } }, currentMedications: currentMedicationSnapshot)
+			removeDelivered: { ids in self.delivered.removeAll { ids.contains($0.identifier) } }
+		)
+		lazy var manager = NotificationManager(notificationClient: client, defaults: defaults,
+			medicationExists: { id in !self.lookupEnabled || self.medications.contains { $0.id == id } },
+			currentMedications: currentMedicationSnapshot)
 		var currentMedicationSnapshot: (@MainActor () async throws -> [ANMedicationConcept])? {
 			guard lookupEnabled else { return nil }
 			return { self.medications }

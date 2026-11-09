@@ -33,6 +33,18 @@ Keep the source and result bundles from the printed temporary directory with the
 
 For a physical rehearsal, use a dedicated iPhone with an empty AsNeeded store and an authorized path to the verified 1.2 build. Seed and export synthetic records, install the candidate without uninstalling, and compare exports after two separate launches. Check scheduled reminder delivery and Watch separately. A simulator run and an export fixture do not establish actual iPhone or Watch behavior. Keep device identifiers and private records out of Git.
 
+## Transaction interruption rehearsal
+
+```bash
+./scripts/interruption-rehearsal/run.sh HEAD com.apple.CoreSimulator.SimRuntime.iOS-26-5
+```
+
+The harness uses a new simulator and separate synthetic stores for dose, Undo and replacement import. It stops the hosted test process at an existing persistence checkpoint, then relaunches twice to check records, stock, preferences and journal cleanup. Keep the printed result directory private. The interruption phases are expected to exit unsuccessfully after writing their checkpoint markers. The two reopen phases must pass.
+
+## Locked-device check
+
+Use a dedicated iPhone with synthetic records and, for Watch transport, a paired test Watch. Export a baseline. Reboot the phone, leave it locked before first unlock, and try an already scheduled reminder action and an existing Watch dose action when available. Record whether iOS delivers or defers each action. Unlock and export again. A deferred or rejected action leaves the baseline intact. A committed action appears once with its stock change, including after a second launch. Record OS and build, delivery, save acknowledgement and comparison separately. An injected storage failure or simulator lock does not establish first-unlock behavior on hardware.
+
 ## Long history performance
 
 Run the [long-history workload](../../AsNeededTests/LongHistoryWorkloadTests.swift) with `TEST_RAW_OUTPUT=1 TEST_PARALLEL_ENABLED=NO ./scripts/test-parallel.sh LongHistoryWorkloadTests`. It imports 5,844 synthetic doses over 1,461 days, with active and archived medications and notes, then measures store open, History filtering, Trends totals, and JSON export. The test asserts the results and records cold and warm computation times. Use the same Xcode, configuration, and runtime or device for comparisons. For an older iPhone, select the authorized phone as the Xcode test destination and run only `LongHistoryWorkloadTests` from the Test navigator, or supply its explicit `TEST_DESTINATION='platform=iOS,id=…'` to the same command. The workload creates a separate store.

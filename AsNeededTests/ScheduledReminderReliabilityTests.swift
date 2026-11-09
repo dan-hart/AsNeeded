@@ -242,7 +242,8 @@ struct ScheduledReminderReliabilityTests {
 		func cleanUp() { defaults.removePersistentDomain(forName: suite) }
 		func request(identifier: String, category: String = "MEDICATION_REMINDER") -> UNNotificationRequest {
 			let content = UNMutableNotificationContent()
-			content.title = "Synthetic private name"
+			content.title = MedicationReminderRequest.genericTitle
+			content.body = MedicationReminderRequest.genericBody
 			content.categoryIdentifier = category
 			content.userInfo = ["medicationId": medication.id.uuidString]
 			return UNNotificationRequest(identifier: identifier, content: content, trigger: UNCalendarNotificationTrigger(dateMatching: DateComponents(hour: 8, minute: 30), repeats: true))

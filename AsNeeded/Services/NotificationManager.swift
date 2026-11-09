@@ -58,6 +58,9 @@ final class NotificationManager: ObservableObject {
 	private var availabilityNeedsRefresh = false
 	private var availabilityObservationStarted = false
 	private var availabilityDataStore: DataStore?
+	private var allowsMedicationNames: Bool {
+		defaults.bool(forKey: UserDefaultsKeys.showMedicationNamesInNotifications)
+	}
 
 
 	init(
@@ -156,12 +159,12 @@ final class NotificationManager: ObservableObject {
 			}
 			let currentMedication = try await self.currentMedications?().first { $0.id == medication.id }
 			if self.currentMedications != nil && currentMedication == nil { throw OperationError.medicationNotFound }
-			let request = MedicationReminderRequest.make(medication: currentMedication ?? medication, date: date, isRecurring: isRecurring, repeatInterval: repeatInterval, isUrgent: self.isUrgent(for: medication.id), showMedicationNames: self.showMedicationNames)
+			let request = MedicationReminderRequest.make(medication: currentMedication ?? medication, date: date, isRecurring: isRecurring, repeatInterval: repeatInterval, isUrgent: self.isUrgent(for: medication.id), showMedicationNames: self.allowsMedicationNames)
 			let pending = await self.notificationClient.pendingRequests()
 			guard try await self.medicationExists(medication.id), self.removalGeneration(for: medication.id) == generation else {
 				throw OperationError.medicationNotFound
 			}
-			try await self.notificationClient.add(request)
+			try await self.addReminderRequest(request)
 			do {
 				guard try await self.medicationExists(medication.id), self.removalGeneration(for: medication.id) == generation else { throw OperationError.medicationNotFound }
 			} catch {
@@ -183,8 +186,9 @@ final class NotificationManager: ObservableObject {
 	/// the observer: committed snapshots can coalesce while an add is suspended.
 	private func reconcileScheduledReminderNames() async -> [UUID: String]? {
 		let result: Result<[UUID: String]?, Error> = await enqueueReminderMutation {
-			let pending = await self.notificationClient.pendingRequests()
+			let originalPending = await self.notificationClient.pendingRequests()
 			let delivered = await self.notificationClient.deliveredRequests()
+			let pending = await self.hideNamesIfNeeded(in: originalPending, delivered: delivered)
 			var missingIDs: Set<UUID> = []
 			var medicationsByID: [UUID: ANMedicationConcept] = [:]
 			let ids = Set((pending + delivered).filter { $0.content.categoryIdentifier == MedicationReminderRequest.categoryIdentifier }.compactMap { Self.medicationID(for: $0) })
@@ -218,7 +222,7 @@ final class NotificationManager: ObservableObject {
 			guard self.urgencyStore.replaceAll(with: preferences) else { return nil }
 			self.urgencyRevision &+= 1
 			let urgencyByID = Dictionary(uniqueKeysWithValues: preferences.compactMap { key, value in UUID(uuidString: key).map { ($0, value) } })
-			for plan in MedicationReminderRequest.reconciliationPlans(in: current, showMedicationNames: self.showMedicationNames, urgencyByMedicationID: urgencyByID, medicationsByID: medicationsByID) {
+			for plan in MedicationReminderRequest.reconciliationPlans(in: current, showMedicationNames: self.allowsMedicationNames, urgencyByMedicationID: urgencyByID, medicationsByID: medicationsByID) {
 				guard let id = MedicationReminderRequest.identity(for: plan.requestToAdd)?.medicationID else { continue }
 				let generation = self.removalGeneration(for: id)
 				do {
@@ -227,7 +231,7 @@ final class NotificationManager: ObservableObject {
 						continue
 					}
 					guard self.removalGeneration(for: id) == generation else { continue }
-					try await self.notificationClient.add(plan.requestToAdd)
+					try await self.addReminderRequest(plan.requestToAdd)
 					do {
 						guard try await self.medicationExists(id), self.removalGeneration(for: id) == generation else { throw OperationError.medicationNotFound }
 					} catch {
@@ -268,7 +272,7 @@ final class NotificationManager: ObservableObject {
 					guard let replacement = MedicationReminderRequest.updatingUrgency(of: original, isUrgent: isUrgent) else {
 						throw OperationError.urgencyRequestCreationFailed
 					}
-					try await self.notificationClient.add(replacement)
+					try await self.addReminderRequest(replacement)
 					replaced.append(original)
 					try await validate()
 				}
@@ -279,7 +283,7 @@ final class NotificationManager: ObservableObject {
 				let stillExists = (try? await self.medicationExists(medicationID)) == true
 				if stillExists && self.removalGeneration(for: medicationID) == generation {
 					for original in replaced {
-						do { try await self.notificationClient.add(original) }
+						do { try await self.addReminderRequest(original) }
 						catch { self.logger.logPrivacySafeError("Unable to restore reminder priority", error: error) }
 						if self.removalGeneration(for: medicationID) != generation {
 							self.notificationClient.removePending(replaced.map(\.identifier))
@@ -326,6 +330,109 @@ final class NotificationManager: ObservableObject {
 		medicationID(for: request).map { ids.contains($0) } ?? false
 	}
 
+	private static func redactedContent(for request: UNNotificationRequest) -> UNMutableNotificationContent? {
+		let text: (title: String, body: String)
+		switch request.content.categoryIdentifier {
+		case MedicationReminderRequest.categoryIdentifier:
+			text = (MedicationReminderRequest.genericTitle, MedicationReminderRequest.genericBody)
+		case MedicationAvailabilityNotificationPlanner.categoryIdentifier:
+			text = (MedicationAvailabilityNotificationPlanner.genericTitle, MedicationAvailabilityNotificationPlanner.genericBody)
+		case MedicationNotificationAction.confirmationCategoryIdentifier:
+			text = (MedicationNotificationResponseHandler.confirmationTitle, MedicationNotificationResponseHandler.genericConfirmationBody)
+		default:
+			return nil
+		}
+		guard request.content.title != text.title || request.content.body != text.body || !request.content.subtitle.isEmpty,
+			let content = request.content.mutableCopy() as? UNMutableNotificationContent else { return nil }
+		content.title = text.title
+		content.body = text.body
+		content.subtitle = ""
+		return content
+	}
+
+	private func removeNamedDeliveries(_ requests: [UNNotificationRequest]) {
+		let identifiers = requests.filter { Self.redactedContent(for: $0) != nil }.map(\.identifier)
+		notificationClient.removeDelivered(identifiers)
+	}
+
+	private func hideNamesIfNeeded(in pending: [UNNotificationRequest], delivered: [UNNotificationRequest]) async -> [UNNotificationRequest] {
+		guard !allowsMedicationNames else { return pending }
+		removeNamedDeliveries(delivered)
+		var safePending: [UNNotificationRequest] = []
+		var changed = false
+		for request in pending {
+			guard let content = Self.redactedContent(for: request) else {
+				safePending.append(request)
+				continue
+			}
+			changed = true
+			// Feedback is immediate. Availability is rebuilt from its saved guidance and
+			// original eligibility date, because re-adding its interval restarts the timer.
+			guard request.content.categoryIdentifier == MedicationReminderRequest.categoryIdentifier else {
+				notificationClient.removePending([request.identifier])
+				continue
+			}
+			let replacement = UNNotificationRequest(identifier: request.identifier, content: content, trigger: request.trigger)
+			do {
+				try await notificationClient.add(replacement)
+				safePending.append(replacement)
+			} catch {
+				// Retry from the captured schedule after discarding content that could reveal a name.
+				notificationClient.removePending([request.identifier])
+				do {
+					try await notificationClient.add(replacement)
+					safePending.append(replacement)
+				} catch {
+					logger.logPrivacySafeError("Unable to hide name in scheduled reminder", error: error)
+				}
+			}
+		}
+		if changed {
+			removeNamedDeliveries(await notificationClient.deliveredRequests())
+		}
+		return safePending
+	}
+
+	private func addReminderRequest(_ request: UNNotificationRequest, availabilityDate: Date? = nil) async throws {
+		let content = Self.redactedContent(for: request)
+		let includedName = allowsMedicationNames && content != nil
+		func genericRequest(using content: UNNotificationContent) -> UNNotificationRequest? {
+			var trigger = request.trigger
+			if let availabilityDate {
+				let interval = availabilityDate.timeIntervalSinceNow
+				guard interval > 0 else { return nil }
+				trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, interval), repeats: false)
+			}
+			return UNNotificationRequest(identifier: request.identifier, content: content, trigger: trigger)
+		}
+		let initialRequest: UNNotificationRequest
+		if !includedName, let content {
+			guard let generic = genericRequest(using: content) else {
+				notificationClient.removePending([request.identifier])
+				return
+			}
+			initialRequest = generic
+		} else {
+			initialRequest = request
+		}
+		try await notificationClient.add(initialRequest)
+		guard includedName, !allowsMedicationNames, let content else { return }
+		// The setting changed while the system was accepting the old content.
+		notificationClient.removeDelivered([request.identifier])
+		do {
+			if let replacement = genericRequest(using: content) {
+				try await notificationClient.add(replacement)
+			} else {
+				notificationClient.removePending([request.identifier])
+			}
+		} catch {
+			notificationClient.removePending([request.identifier])
+			notificationClient.removeDelivered([request.identifier])
+			throw error
+		}
+		removeNamedDeliveries(await notificationClient.deliveredRequests())
+	}
+
 	func cancelReminder(for medication: ANMedicationConcept) async {
 		_ = await enqueueReminderMutation {
 			let requests = await self.notificationClient.pendingRequests()
@@ -369,11 +476,11 @@ final class NotificationManager: ObservableObject {
 
 	/// Retry on foreground/permission checks after a transient migration or storage failure.
 	func bootstrapAvailabilityObservation(dataStore: DataStore = .shared) async {
+		await reconcileScheduledReminders()
 		do {
 			try await MedicationDoseLimitMigration().migrate(dataStore: dataStore)
 			await updateAuthorizationStatus()
 			await setupNotificationCategories()
-			await reconcileScheduledReminders()
 			try await startAvailabilityObservation(dataStore: dataStore)
 		} catch {
 			logger.logPrivacySafeError("Unable to prepare next-dose notifications", error: error)
@@ -498,7 +605,7 @@ final class NotificationManager: ObservableObject {
 				).eligibleDate
 			)
 		}
-		let desired = planner.notifications(for: candidates, at: now, showMedicationNames: showMedicationNames)
+		let desired = planner.notifications(for: candidates, at: now, showMedicationNames: allowsMedicationNames)
 		let staleIDs = planner.identifiersToRemove(pending: pending.map(\.identifier), desired: desired)
 		notificationClient.removePending(staleIDs)
 		let delivered = await notificationClient.deliveredRequests()
@@ -520,7 +627,7 @@ final class NotificationManager: ObservableObject {
 			}
 			let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, interval), repeats: false)
 			do {
-				try await notificationClient.add(UNNotificationRequest(identifier: notification.identifier, content: content, trigger: trigger))
+				try await addReminderRequest(UNNotificationRequest(identifier: notification.identifier, content: content, trigger: trigger), availabilityDate: notification.date)
 			} catch {
 				notificationClient.removePending([notification.identifier])
 				logger.logPrivacySafeError("Failed to schedule next-dose availability", error: error)

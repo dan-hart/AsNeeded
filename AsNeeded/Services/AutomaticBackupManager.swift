@@ -1,3 +1,4 @@
+import Darwin
 import DHLoggingKit
 import Foundation
 
@@ -73,10 +74,14 @@ final class AutomaticBackupManager: ObservableObject {
     private nonisolated let logger = DHLogger(category: "AutomaticBackup")
     private var debounceTask: Task<Void, Never>?
     private var hasPendingAutomaticBackup = false
+	private var isRestoreInProgress = false
     private(set) var configurationRevision = 0
     private let defaults: UserDefaults
     private let debounceSleep: @MainActor () async throws -> Void
     private let backupOperation: (@MainActor () async -> BackupStatus)?
+	private let dataStore: DataStore?
+	private nonisolated let writeCandidate: @Sendable (Data, URL) throws -> Void
+	private nonisolated let readRestoreData: @Sendable (URL) throws -> Data
     /// Fallback estimate used when there is no previous backup to measure.
     private nonisolated static let defaultEstimatedBackupSize: Int64 = 10_485_760
     /// Prefix shared by every automatic backup filename.
@@ -98,11 +103,17 @@ final class AutomaticBackupManager: ObservableObject {
         debounceSleep: @escaping @MainActor () async throws -> Void = {
             try await Task.sleep(nanoseconds: 5_000_000_000)
         },
-        backupOperation: (@MainActor () async -> BackupStatus)? = nil
+        backupOperation: (@MainActor () async -> BackupStatus)? = nil,
+		dataStore: DataStore? = nil,
+		writeCandidate: @escaping @Sendable (Data, URL) throws -> Void = { try $0.write(to: $1, options: .atomic) },
+		readRestoreData: @escaping @Sendable (URL) throws -> Data = AutomaticBackupManager.readBackup(at:)
     ) {
         self.defaults = defaults
         self.debounceSleep = debounceSleep
         self.backupOperation = backupOperation
+		self.dataStore = dataStore
+		self.writeCandidate = writeCandidate
+		self.readRestoreData = readRestoreData
         loadLastBackupDate()
     }
 
@@ -218,25 +229,25 @@ final class AutomaticBackupManager: ObservableObject {
     /// - Parameters:
     ///   - url: URL of the backup file to restore
     ///   - mergeExisting: If true, merge with existing data; if false, replace all data
-    /// - Throws: BackupError if restore fails
+    /// A restore keeps ownership while its provider is reading and until the import finishes.
     func restoreFromBackup(url: URL, mergeExisting: Bool = false) async throws {
+		guard !isRestoreInProgress else { throw PersistenceTransactionError.busy }
+		isRestoreInProgress = true
+		defer { isRestoreInProgress = false }
+
         logger.info("Restoring from backup, merge: \(mergeExisting)")
 
-        guard url.startAccessingSecurityScopedResource() else {
-            throw BackupError.accessDenied
-        }
-        defer { url.stopAccessingSecurityScopedResource() }
-
-        // Validate backup before restoring
-        guard validateBackup(at: url) else {
-            throw BackupError.validationFailed
-        }
+		let data = try await Self.offMain { [self] in
+			guard url.startAccessingSecurityScopedResource() else { throw BackupError.accessDenied }
+			defer { url.stopAccessingSecurityScopedResource() }
+			let data = try readRestoreData(url)
+			guard validateBackup(data) else { throw BackupError.validationFailed }
+			return data
+		}
 
         do {
-            let data = try Data(contentsOf: url)
-
             // Use existing DataStore import method (DRY!)
-            try await DataStore.shared.importDataFromJSON(data, mergeExisting: mergeExisting)
+            try await (dataStore ?? .shared).importDataFromJSON(data, mergeExisting: mergeExisting)
 
             logger.info("Successfully restored from backup")
         } catch {
@@ -428,7 +439,7 @@ final class AutomaticBackupManager: ObservableObject {
             guard configurationIsCurrent() else { return }
 
             // Export data from DataStore (DRY!)
-            let exportData = try await DataStore.shared.exportDataAsJSON(
+            let exportData = try await (dataStore ?? .shared).exportDataAsJSON(
                 redactNames: redactMedicationNames,
                 redactNotes: redactNotes,
                 includeSettings: includeSettings
@@ -446,8 +457,9 @@ final class AutomaticBackupManager: ObservableObject {
             // kept off the main actor.
             let fileURL = backupDirectory.appendingPathComponent(filename)
             try await Self.offMain { [self] in
-                try Self.writeAndValidateBackup(exportData, to: fileURL) { url in
-                    validateBackup(at: url)
+                try Self.writeAndValidateBackup(exportData, to: fileURL, write: writeCandidate) { url in
+					guard let data = try? Data(contentsOf: url), data == exportData else { return false }
+                    return validateBackup(data)
                 }
             }
             guard configurationIsCurrent() else { return }
@@ -760,7 +772,7 @@ final class AutomaticBackupManager: ObservableObject {
                         return nil
                     }
 
-                    let isValid = validateBackup(at: url)
+                    let isValid = (try? Self.readBackup(at: url)).map(validateBackup) ?? false
                     return BackupFile(url: url, date: date, size: Int64(size), isValid: isValid)
                 }
                 .sorted { $0.date > $1.date } // Newest first
@@ -777,22 +789,46 @@ final class AutomaticBackupManager: ObservableObject {
 	nonisolated static func writeAndValidateBackup(
 		_ data: Data,
 		to url: URL,
+		write: (Data, URL) throws -> Void = { try $0.write(to: $1, options: .atomic) },
 		validate: (URL) -> Bool
 	) throws {
-		for _ in 0..<2 {
-			try data.write(to: url, options: .atomic)
-			if validate(url) { return }
-			try FileManager.default.removeItem(at: url)
+		var coordinationError: NSError?
+		var result: Result<Void, Error> = .failure(BackupError.validationFailed)
+		NSFileCoordinator().coordinate(writingItemAt: url, options: .forReplacing, error: &coordinationError) { destination in
+			result = Result {
+				// Keep the current same-day backup visible and intact until its replacement
+				// has passed readback. Rename within the same folder publishes it atomically.
+				let candidate = destination.deletingLastPathComponent().appendingPathComponent(".\(UUID().uuidString).tmp")
+				defer { try? FileManager.default.removeItem(at: candidate) }
+				for _ in 0..<2 {
+					try write(data, candidate)
+					if validate(candidate) {
+						guard Darwin.rename(candidate.path, destination.path) == 0 else {
+							throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+						}
+						return
+					}
+				}
+				throw BackupError.validationFailed
+			}
 		}
-		throw BackupError.validationFailed
+		if let coordinationError { throw coordinationError }
+		try result.get()
 	}
 
-    /// Validate a backup file by attempting to decode it
-    /// - Parameter url: URL of the backup file to validate
-    /// - Returns: True if the backup file is valid and can be decoded
-    private nonisolated func validateBackup(at url: URL) -> Bool {
+	private nonisolated static func readBackup(at url: URL) throws -> Data {
+		var coordinationError: NSError?
+		var result: Result<Data, Error> = .failure(BackupError.validationFailed)
+		NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { source in
+			result = Result { try Data(contentsOf: source) }
+		}
+		if let coordinationError { throw coordinationError }
+		return try result.get()
+	}
+
+    /// Validate the bytes that will be saved or restored.
+    private nonisolated func validateBackup(_ data: Data) -> Bool {
         do {
-            let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
 

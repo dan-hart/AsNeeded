@@ -1,3 +1,4 @@
+import ANModelKit
 @testable import AsNeeded
 import Combine
 import Foundation
@@ -266,6 +267,150 @@ struct AutomaticBackupStabilizationTests {
 
 		#expect(attempts == [payload, payload])
 		#expect(!FileManager.default.fileExists(atPath: url.path))
+	}
+
+	@Test("A partially written replacement leaves the last good same-day backup intact")
+	func failedReplacementPreservesLastGood() throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let url = directory.appendingPathComponent("AsNeeded-AutoBackup-2026-11-09.json")
+		let lastGood = Data(#"{"medications":[{"name":"Last good"}],"events":[]}"#.utf8)
+		let replacement = Data(#"{"medications":[{"name":"Replacement"}],"events":[]}"#.utf8)
+		try AutomaticBackupManager.writeAndValidateBackup(lastGood, to: url) { candidate in
+			(try? Data(contentsOf: candidate)) == lastGood
+		}
+
+		#expect(throws: BackupError.self) {
+			try AutomaticBackupManager.writeAndValidateBackup(replacement, to: url) { candidate in
+				try? Data(replacement.prefix(12)).write(to: candidate)
+				return false
+			}
+		}
+		#expect((try? Data(contentsOf: url)) == lastGood)
+		#expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == [url.lastPathComponent])
+	}
+
+	@Test("Provider access loss and partial writes keep the last local backup restorable")
+	func providerFailurePreservesRestorableBackup() async throws {
+		let fixture = try BackupFixture()
+		defer { fixture.removeDefaults() }
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let backupFolder = directory.appendingPathComponent("Backups")
+		try FileManager.default.createDirectory(at: backupFolder, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+
+		let store = DataStore(storageDirectory: directory.appendingPathComponent("Store"), defaults: fixture.defaults,
+			defaultsDomainName: fixture.suiteName, navigationManager: NavigationManager(defaults: fixture.defaults))
+		let medication = ANMedicationConcept(clinicalName: "Synthetic backup medication", quantity: 12, prescribedUnit: .tablet)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication,
+			dose: ANDoseConcept(amount: 1.5, unit: .tablet), date: Date(timeIntervalSince1970: 1_700_000_000), note: "Synthetic backup note")
+		try await store.addMedication(medication)
+		try await store.addEvent(event, shouldRecordForReview: false)
+		fixture.defaults.set(true, forKey: UserDefaultsKeys.automaticBackupRedactNotes)
+		fixture.defaults.set(false, forKey: UserDefaultsKeys.automaticBackupIncludeSettings)
+
+		let live = AutomaticBackupManager(defaults: fixture.defaults, dataStore: store)
+		let bookmark = try backupFolder.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
+		live.saveBackupLocation(bookmark: bookmark)
+		let first = await live.performManualBackup()
+		try #require(first == .success)
+		let lastSuccess = try #require(live.lastBackupDate)
+		let backup = try #require(await live.backupHistory().first)
+		#expect(backup.isValid)
+		let goodBytes = try Data(contentsOf: backup.url)
+		#expect(!String(decoding: goodBytes, as: UTF8.self).contains("Synthetic backup note"))
+
+		var changed = try #require(store.medications.first)
+		changed.quantity = 3
+		try await store.updateMedication(changed)
+		try await store.deleteEvents(ids: [event.id])
+
+		let inaccessible = AutomaticBackupManager(defaults: fixture.defaults, dataStore: store, writeCandidate: { _, _ in
+			throw BackupError.accessDenied
+		})
+		#expect(await inaccessible.performManualBackup() == .accessDenied)
+		#expect(inaccessible.lastBackupDate == lastSuccess)
+		#expect(try Data(contentsOf: backup.url) == goodBytes)
+
+		let partial = AutomaticBackupManager(defaults: fixture.defaults, dataStore: store, writeCandidate: { data, candidate in
+			try Data(data.prefix(24)).write(to: candidate, options: .atomic)
+		})
+		let partialStatus = await partial.performManualBackup()
+		guard case .failed = partialStatus else {
+			Issue.record("A partial backup unexpectedly reported \(partialStatus)")
+			return
+		}
+		#expect(partial.lastBackupDate == lastSuccess)
+		#expect(try Data(contentsOf: backup.url) == goodBytes)
+		#expect(try FileManager.default.contentsOfDirectory(atPath: backupFolder.path) == [backup.url.lastPathComponent])
+
+		let restoredBackup = try #require(await live.backupHistory().first)
+		try await live.restoreFromBackup(url: restoredBackup.url)
+		let restored = try await store.prepareForAccess()
+		#expect(restored.medications.map(\.id) == [medication.id])
+		#expect(restored.medications.first?.quantity == medication.quantity)
+		#expect(restored.events.map(\.id) == [event.id])
+		#expect(restored.events.first?.dose == event.dose)
+		#expect(restored.events.first?.note == nil)
+	}
+
+	@Test("A second restore cannot overtake the restore that owns a suspended file read")
+	func overlappingRestoreRejectsSecondRead() async throws {
+		let fixture = try BackupFixture()
+		defer { fixture.removeDefaults() }
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let backupFolder = directory.appendingPathComponent("Backups")
+		try FileManager.default.createDirectory(at: backupFolder, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+
+		let firstName = "AsNeeded-AutoBackup-2026-11-08.json"
+		let secondName = "AsNeeded-AutoBackup-2026-11-09.json"
+		let firstMedication = ANMedicationConcept(clinicalName: "Synthetic earlier backup")
+		let secondMedication = ANMedicationConcept(clinicalName: "Synthetic later backup")
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		for (name, medication) in [(firstName, firstMedication), (secondName, secondMedication)] {
+			let export = DataExport(medications: [medication], events: [],
+				exportDate: Date(timeIntervalSince1970: 1_700_000_000), appVersion: "1.3.0", dataVersion: "1.0", settings: nil)
+			try encoder.encode(export).write(to: backupFolder.appendingPathComponent(name))
+		}
+
+		let store = DataStore(storageDirectory: directory.appendingPathComponent("Store"), defaults: fixture.defaults,
+			defaultsDomainName: fixture.suiteName, navigationManager: NavigationManager(defaults: fixture.defaults))
+		let entered = AsyncStream<Void>.makeStream()
+		let resume = DispatchSemaphore(value: 0)
+		defer { resume.signal() }
+		let manager = AutomaticBackupManager(defaults: fixture.defaults, dataStore: store, readRestoreData: { url in
+			if url.lastPathComponent == firstName {
+				entered.continuation.yield(())
+				resume.wait()
+			}
+			return try Data(contentsOf: url)
+		})
+		manager.saveBackupLocation(bookmark: try backupFolder.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil))
+		let history = await manager.backupHistory()
+		let first = try #require(history.first { $0.url.lastPathComponent == firstName })
+		let second = try #require(history.first { $0.url.lastPathComponent == secondName })
+
+		let firstRestore = Task {
+			defer { entered.continuation.finish() }
+			try await manager.restoreFromBackup(url: first.url)
+		}
+		var reads = entered.stream.makeAsyncIterator()
+		try #require(await reads.next() != nil)
+		do {
+			try await manager.restoreFromBackup(url: second.url)
+			Issue.record("The second restore overtook the first restore")
+		} catch PersistenceTransactionError.busy {
+			#expect(store.medications.isEmpty)
+		}
+
+		resume.signal()
+		try await firstRestore.value
+		#expect(store.medications.map(\.id) == [firstMedication.id])
+		try await manager.restoreFromBackup(url: second.url)
+		#expect(store.medications.map(\.id) == [secondMedication.id])
 	}
 }
 

@@ -681,3 +681,30 @@ Existing installs without the key use the latest valid dose date. Deleted,
 undone or archived targets fall back through recording order, then legacy active history; empty history
 opens the medication selector. The resolver always returns the current medication
 record instead of the older copy embedded in an event.
+
+### Watch dose retry receipts
+
+`acknowledgedWatchDoseEventIDs` stores only opaque Watch event UUIDs in the
+iPhone app’s local preferences. The existing preference undo journal commits
+each receipt with the dose and stock change. An identical retry for a live dose
+from an older app can also establish a receipt. A delayed retry for a removed
+dose with a receipt is acknowledged without restoring history or deducting stock.
+
+Receipts survive history deletion, settings reset, clear data, and replacement
+import so those operations cannot resurrect an acknowledged dose. Receipts are
+excluded from settings export and import. There is no schema or path migration.
+History deleted before a receipt could be recorded cannot be identified
+retroactively. Messages from older Watches without an event ID retain their
+existing recording behavior. An older app cannot recover a journal containing
+the new key, so avoid downgrading with a save pending.
+
+### Storage health when SQLite is temporarily unavailable
+
+The migration preflight requires a complete, successful SQLite quick check.
+An open, prepare, or read failure blocks startup and allows the existing retry
+flow. SQLite corruption results are reported separately from access failures.
+WatchConnectivity checks startup readiness before opening the app stores when it
+wakes the app and joins a check already underway.
+An isolated fixture holds an exclusive lock on the events database and verifies
+that a retry reads the original medication, stock, and event after release.
+Physical-device testing is required for iOS file protection before first unlock.

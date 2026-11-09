@@ -114,6 +114,7 @@ final class WCReceiver: NSObject, ObservableObject {
     }
 
     private func processMessage(_ message: SendableMessage) async -> Bool {
+		guard await ensureStorageReady() else { return false }
         do {
 			try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
             if message.getMedications {
@@ -132,7 +133,15 @@ final class WCReceiver: NSObject, ObservableObject {
 
     // MARK: - Private Methods
 
+	private func ensureStorageReady() async -> Bool {
+		// WatchConnectivity can wake the app before the SwiftUI startup task.
+		let coordinator = MigrationCoordinator.shared
+		if !coordinator.isComplete { await coordinator.runMigrationIfNeeded(waitForRunningMigration: true) }
+		return coordinator.isComplete
+	}
+
     private func sendMedicationsToWatch() async {
+		guard await ensureStorageReady() else { return }
 		do {
 			try await MedicationDoseLimitMigration().migrate(dataStore: DataStore.shared)
 		} catch {
@@ -210,25 +219,28 @@ final class WCReceiver: NSObject, ObservableObject {
 			return false
 		}
 
-		guard let medication = dataStore.medications.first(where: { $0.id == medicationId }) else {
-			DHLogger.network.warning("Medication not found for dose logging")
-			return false
-		}
-
 		let eventID = logDoseData.eventID ?? UUID()
 		let date = logDoseData.date ?? now()
-		try await dataStore.recordDose(shouldRecordForReview: true) { snapshot in
-			if let existing = snapshot.events.first(where: { $0.id == eventID }) {
-				guard existing.eventType == .doseTaken, existing.medication?.id == medicationId,
-					existing.dose?.amount == logDoseData.doseAmount, existing.dose?.unit == doseUnit,
-					logDoseData.date.map({ $0 == existing.date }) ?? true else {
-					throw PersistenceTransactionError.invalidDose
+		do {
+			try await dataStore.recordWatchDose(eventID: logDoseData.eventID) { snapshot in
+				guard let medication = snapshot.medications.first(where: { $0.id == medicationId }) else {
+					throw PersistenceTransactionError.recordUnavailable
 				}
-				// The wire ID identifies the event. Reuse its persisted dose ID as well.
-				return existing
+				if let existing = snapshot.events.first(where: { $0.id == eventID }) {
+					guard existing.eventType == .doseTaken, existing.medication?.id == medicationId,
+						existing.dose?.amount == logDoseData.doseAmount, existing.dose?.unit == doseUnit,
+						logDoseData.date.map({ $0 == existing.date }) ?? true else {
+						throw PersistenceTransactionError.invalidDose
+					}
+					// The wire ID identifies the event. Reuse its persisted dose ID as well.
+					return existing
+				}
+				let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
+				return ANEventConcept(id: eventID, eventType: .doseTaken, medication: medication, dose: dose, date: date)
 			}
-			let dose = ANDoseConcept(amount: logDoseData.doseAmount, unit: doseUnit)
-			return ANEventConcept(id: eventID, eventType: .doseTaken, medication: medication, dose: dose, date: date)
+		} catch PersistenceTransactionError.recordUnavailable {
+			DHLogger.network.warning("Medication not found for dose logging")
+			return false
 		}
 		return true
 	}

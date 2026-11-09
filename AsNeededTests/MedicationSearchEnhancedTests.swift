@@ -103,6 +103,62 @@ struct MedicationSearchEnhancedTests {
 		#expect(!service.isSearching)
 	}
 
+	@Test("An older RxNorm response cannot replace newer results or recent searches")
+	func newerQueryOwnsPublishedState() async throws {
+		let transport = SuspendedSearch()
+		var starts = transport.starts.makeAsyncIterator()
+		let service = MedicationSearchService(defaults: preferences.defaults, enhancedSearch: transport.search)
+		let older = Task { await service.searchMedicationsEnhanced("aspirin") }
+		#expect(await starts.next() == "aspirin")
+		let newer = Task { await service.searchMedicationsEnhanced("ibuprofen") }
+		#expect(await starts.next() == "ibuprofen")
+
+		try transport.complete("ibuprofen", with: result("Ibuprofen", id: "197381"))
+		#expect(await newer.value.map(\.drug.rxCUI) == ["197381"])
+		try transport.complete("aspirin", with: result("Aspirin", id: "1191"))
+		#expect(await older.value.map(\.drug.rxCUI) == ["1191"], "An uncancelled field still receives its own response")
+
+		#expect(service.searchResults.map(\.drug.rxCUI) == ["197381"])
+		#expect(service.recentSearches == ["ibuprofen"])
+		#expect(!service.isSearching)
+	}
+
+	@Test("A cancelled search cannot publish after its field closes or clears")
+	func cancelledQueryCannotPublish() async throws {
+		let transport = SuspendedSearch()
+		var starts = transport.starts.makeAsyncIterator()
+		let service = MedicationSearchService(defaults: preferences.defaults, enhancedSearch: transport.search)
+		let search = Task { await service.searchMedicationsEnhanced("aspirin") }
+		#expect(await starts.next() == "aspirin")
+		search.cancel()
+		try transport.complete("aspirin", with: result("Aspirin", id: "1191"))
+
+		#expect(await search.value.isEmpty)
+		#expect(service.searchResults.isEmpty)
+		#expect(service.recentSearches.isEmpty)
+		#expect(!service.isSearching)
+	}
+
+	private final class SuspendedSearch {
+		private let stream = AsyncStream<String>.makeStream()
+		private var waiting: [String: CheckedContinuation<[RxNormSearchResult], Never>] = [:]
+
+		var starts: AsyncStream<String> { stream.stream }
+
+		func search(_ query: String) async -> [RxNormSearchResult] {
+			await withCheckedContinuation { continuation in
+				waiting[query] = continuation
+				stream.continuation.yield(query)
+			}
+		}
+
+		func complete(_ query: String, with result: RxNormSearchResult) throws {
+			let pending = waiting.removeValue(forKey: query)
+			let continuation = try #require(pending)
+			continuation.resume(returning: [result])
+		}
+	}
+
 	@Test("Successful empty results do not create a recent search")
 	func emptyResponse() async {
 		let service = service()
