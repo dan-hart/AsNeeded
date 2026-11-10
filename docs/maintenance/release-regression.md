@@ -33,6 +33,14 @@ Keep the source and result bundles from the printed temporary directory with the
 
 For a physical rehearsal, use a dedicated iPhone with an empty AsNeeded store and an authorized path to the verified 1.2 build. Seed and export synthetic records, install the candidate without uninstalling, and compare exports after two separate launches. Check scheduled reminder delivery and Watch separately. A simulator run and an export fixture do not establish actual iPhone or Watch behavior. Keep device identifiers and private records out of Git.
 
+### Settings import lockout
+
+On November 10, 2026, a settings-inclusive import on build 329 left a pending undo journal that failed to replay at launch. Both SQLite databases passed their health checks. The device trace reached database rollback and stopped before the journal was removed. The device also logged that iOS rejected an all-users lookup for the app-group preferences. That log identifies a scope error, but does not identify which preference call originally failed during the import.
+
+Local build 330 allowed recovery to finish by skipping preference synchronization when the journal's saved values already matched. The user then imported records with **Keep Settings**. The app confirmed the import, and History displayed the recovered records after another cold launch. This verified recovery on that device. The settings-inclusive path still needed its own fix.
+
+Before promoting a build with changes to import, export, or journal replay, rehearse an in-place upgrade on a physical iPhone with synthetic data. Include a safety profile so the import touches both the app and shared preferences. Verify an unchanged settings import, an import with changed settings, and an import with **Keep Settings**. Export after two cold launches and compare record IDs and settings with the expected result. Exercise the interrupted-import fixture before promotion. Verify that a failed preference write leaves the previous records recoverable and that a prior journal with already-restored preferences can finish replay. For an affected install, preserve the app container and journal through the upgrade. Confirm History before choosing whether to import a backup, since the normal import replaces current records.
+
 ## Transaction interruption rehearsal
 
 ```bash

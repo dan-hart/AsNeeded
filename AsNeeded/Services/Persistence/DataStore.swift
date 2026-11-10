@@ -432,7 +432,7 @@ public final class DataStore {
     /// - Returns: AppSettings object with current settings
     private func exportSettings() -> AppSettings {
         logger.debug("Exporting app settings")
-        return AppSettings(from: defaults)
+        return AppSettings(from: defaults, sharedDefaults: sharedDefaults)
     }
 
     /// Export all data as JSON

@@ -1,5 +1,6 @@
 import ANModelKit
 import Boutique
+import CoreFoundation
 import Darwin
 import Foundation
 
@@ -93,6 +94,25 @@ struct PersistencePreferenceDomain {
 	let defaults: UserDefaults
 	let keys: Set<String>
 	let persistentDomainName: String
+
+	var isAppGroup: Bool { persistentDomainName == SharedPlatformContracts.Storage.appGroupIdentifier }
+
+	func persistedValues(for keys: [String]) -> [String: Any] {
+		if isAppGroup {
+			// Query only the app group's writable user scope. A broad suite lookup
+			// also consults scopes that iOS rejects for third-party containers.
+			return CFPreferencesCopyMultiple(keys as CFArray, persistentDomainName as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] ?? [:]
+		}
+		let values = defaults.persistentDomain(forName: persistentDomainName) ?? [:]
+		return values.filter { keys.contains($0.key) }
+	}
+
+	func synchronize() -> Bool {
+		if isAppGroup {
+			return CFPreferencesSynchronize(persistentDomainName as CFString, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+		}
+		return defaults.synchronize()
+	}
 }
 
 /// Recovery metadata only. Primary database paths and schemas do not change.
@@ -105,6 +125,7 @@ final class MedicationPersistenceTransactions {
 	private let preferences: [String: PersistencePreferenceDomain]
 	private let fault: (PersistenceTransactionPhase) throws -> Void
 	private let didStabilize: (MedicationPersistenceSnapshot) -> Void
+	private var preferenceDomainsNeedingSync: Set<String> = []
 	// Hide partially published Boutique changes from app-owned computed views.
 	private(set) var visibleSnapshot: MedicationPersistenceSnapshot?
 
@@ -154,6 +175,11 @@ final class MedicationPersistenceTransactions {
 		var after = before
 		let preferenceKeys: [String: Set<String>]
 		do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
+		if let keys = preferenceKeys["shared"], !keys.isEmpty, let domain = preferences["shared"], domain.isAppGroup,
+			!domain.synchronize() {
+			visibleSnapshot = nil
+			throw PersistenceTransactionError.storageUnavailable
+		}
 		let journal = try makeJournal(before: before, after: after, preferenceKeys: preferenceKeys)
 		if journal.medicationIDs.isEmpty && journal.eventIDs.isEmpty && journal.preferences.isEmpty {
 			publishStable(before)
@@ -163,9 +189,15 @@ final class MedicationPersistenceTransactions {
 		try saveJournal(journal)
 		do {
 			try await apply(after, injectingFaults: true)
+			preferenceDomainsNeedingSync.formUnion(journal.preferences.map(\.domain))
 			applyPreferences(after)
 			for undo in journal.preferences {
-				guard preferences[undo.domain]?.defaults.synchronize() == true else { throw PersistenceTransactionError.storageUnavailable }
+				guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
+				let current = domain.persistedValues(for: undo.keys)
+				if !NSDictionary(dictionary: current).isEqual(to: try undo.decodedValues()), !domain.synchronize() {
+					throw PersistenceTransactionError.storageUnavailable
+				}
+				preferenceDomainsNeedingSync.remove(undo.domain)
 			}
 			try fault(.beforeCommit)
 			try FileManager.default.removeItem(at: journalURL)
@@ -210,6 +242,12 @@ final class MedicationPersistenceTransactions {
 		let domain: String
 		let keys: [String]
 		let values: Data
+
+		func decodedValues() throws -> [String: Any] {
+			guard let decoded = try PropertyListSerialization.propertyList(from: values, format: nil) as? [String: Any],
+				Set(decoded.keys).isSubset(of: Set(keys)) else { throw PersistenceTransactionError.recoveryRequired }
+			return decoded
+		}
 	}
 
 	private struct UndoJournal: Codable {
@@ -231,10 +269,9 @@ final class MedicationPersistenceTransactions {
 		let preferenceUndo = try preferenceKeys.keys.sorted().map { name -> PreferenceUndo in
 			guard let domain = preferences[name], let keys = preferenceKeys[name], keys.isSubset(of: domain.keys) else { throw PersistenceTransactionError.recoveryRequired }
 			// Registered fallbacks are not persisted preferences. Preserve absence exactly.
-			let persisted = domain.defaults.persistentDomain(forName: domain.persistentDomainName) ?? [:]
-			var values: [String: Any] = [:]
-			for key in keys { if let value = persisted[key] { values[key] = value } }
-			return PreferenceUndo(domain: name, keys: keys.sorted(), values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
+			let sortedKeys = keys.sorted()
+			let values = domain.persistedValues(for: sortedKeys)
+			return PreferenceUndo(domain: name, keys: sortedKeys, values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
 		}
 		return UndoJournal(version: 1, medicationIDs: medicationIDs, eventIDs: eventIDs, medications: before.medications.filter { medicationIDs.contains($0.id) }, events: before.events.filter { eventIDs.contains($0.id) }, medicationOrder: before.medications.map(\.id), eventOrder: before.events.map(\.id), preferences: preferenceUndo)
 	}
@@ -264,9 +301,8 @@ final class MedicationPersistenceTransactions {
 				Set(journal.events.map(\.id)) == journal.eventIDs.intersection(journal.eventOrder),
 				Set(journal.preferences.map(\.domain)).count == journal.preferences.count else { throw PersistenceTransactionError.recoveryRequired }
 			for undo in journal.preferences {
-				guard ["application", "shared"].contains(undo.domain), Set(undo.keys).count == undo.keys.count,
-					let values = try PropertyListSerialization.propertyList(from: undo.values, format: nil) as? [String: Any],
-					Set(values.keys).isSubset(of: Set(undo.keys)) else { throw PersistenceTransactionError.recoveryRequired }
+				guard ["application", "shared"].contains(undo.domain), Set(undo.keys).count == undo.keys.count else { throw PersistenceTransactionError.recoveryRequired }
+				_ = try undo.decodedValues()
 			}
 			return journal
 		} catch { throw PersistenceTransactionError.recoveryRequired }
@@ -302,20 +338,25 @@ final class MedicationPersistenceTransactions {
 		guard let journal = try loadJournal() else { return }
 		guard canRestorePreferences(journal) else { throw PersistenceTransactionError.recoveryRequired }
 		// Validate every preference payload before changing any records.
-		let restoredPreferences = try journal.preferences.map { undo -> (PreferenceUndo, [String: Any]) in
-			guard let values = try PropertyListSerialization.propertyList(from: undo.values, format: nil) as? [String: Any], Set(values.keys).isSubset(of: Set(undo.keys)) else { throw PersistenceTransactionError.recoveryRequired }
-			return (undo, values)
-		}
+		let restoredPreferences = try journal.preferences.map { ($0, try $0.decodedValues()) }
 		let before = restore(journal, onto: try await loadFresh())
 		visibleSnapshot = before
 		try await apply(before)
 		for (undo, values) in restoredPreferences {
 			guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
-			for key in undo.keys {
-				if let value = values[key] { domain.defaults.set(value, forKey: key) }
-				else { domain.defaults.removeObject(forKey: key) }
+			let currentValues = domain.persistedValues(for: undo.keys)
+			if !NSDictionary(dictionary: currentValues).isEqual(to: values) {
+				preferenceDomainsNeedingSync.insert(undo.domain)
+				for key in undo.keys {
+					if let value = values[key] { domain.defaults.set(value, forKey: key) }
+					else { domain.defaults.removeObject(forKey: key) }
+				}
 			}
-			guard domain.defaults.synchronize() else { throw PersistenceTransactionError.storageUnavailable }
+			// A failed synchronization can leave the process cache looking restored.
+			// Require confirmation for writes made in this process before dropping the journal.
+			guard preferenceDomainsNeedingSync.contains(undo.domain) else { continue }
+			guard domain.synchronize() else { throw PersistenceTransactionError.storageUnavailable }
+			preferenceDomainsNeedingSync.remove(undo.domain)
 		}
 		try FileManager.default.removeItem(at: journalURL)
 		flushDirectoryAfterCommit()

@@ -90,6 +90,115 @@ struct AtomicPersistenceTests {
 		#expect(!FileManager.default.fileExists(atPath: journal.path))
 	}
 
+	@Test("Recovery skips already restored preferences and retains the journal after a failed changed preference write")
+	func preferenceReplayOnlySynchronizesUnconfirmedChanges() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Recovery example", quantity: 10)
+		try await fixture.store.addMedication(medication)
+		let key = UserDefaultsKeys.hapticsEnabled
+		let defaults = try #require(RecoveryDefaults(suiteName: fixture.suite))
+		defaults.set(false, forKey: key)
+		#expect(defaults.synchronize())
+		let domain = PersistencePreferenceDomain(defaults: defaults, keys: [key], persistentDomainName: fixture.suite)
+		let writer = MedicationPersistenceTransactions(directory: fixture.directory, medicationsStore: fixture.store.medicationsStore, eventsStore: fixture.store.eventsStore, preferences: ["application": domain], fault: { phase in
+			if phase == .afterMedications { throw CancellationError() }
+		})
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		func interruptSave() async throws {
+			await #expect(throws: PersistenceTransactionError.self) {
+				try await writer.perform(preferenceKeys: ["application": [key]]) { $0.medications[0].quantity = 9 }
+			}
+			try #require(FileManager.default.fileExists(atPath: journal.path))
+		}
+		try await interruptSave()
+		let reader = makeCoordinator(fixture, preferences: ["application": domain])
+		defaults.rejectSynchronization = true
+		#expect(try await reader.read().medications.first?.quantity == 10)
+		#expect(!FileManager.default.fileExists(atPath: journal.path))
+
+		try await interruptSave()
+		defaults.set(true, forKey: key)
+		await #expect(throws: PersistenceTransactionError.self) { try await reader.read() }
+		await #expect(throws: PersistenceTransactionError.self) { try await reader.read() }
+		#expect(FileManager.default.fileExists(atPath: journal.path))
+		defaults.rejectSynchronization = false
+		#expect(try await reader.read().medications.first?.quantity == 10)
+		#expect(defaults.bool(forKey: key) == false)
+		#expect(!FileManager.default.fileExists(atPath: journal.path))
+	}
+
+	private final class RecoveryDefaults: UserDefaults, @unchecked Sendable {
+		var rejectSynchronization = false
+
+		override func synchronize() -> Bool {
+			!rejectSynchronization && super.synchronize()
+		}
+	}
+
+	@Test("An import with unchanged preferences does not depend on preference synchronization")
+	func unchangedPreferencesDoNotBlockImport() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let defaults = try #require(RecoveryDefaults(suiteName: fixture.suite))
+		let key = UserDefaultsKeys.hapticsEnabled
+		defaults.set(false, forKey: key)
+		#expect(defaults.synchronize())
+		let store = DataStore(storageDirectory: fixture.directory, defaults: defaults, defaultsDomainName: fixture.suite)
+		var settings = AppSettings()
+		settings.hapticsEnabled = false
+		let medication = ANMedicationConcept(clinicalName: "Import example")
+		let data = try encode(medications: [medication], events: [], settings: settings)
+		defaults.rejectSynchronization = true
+		try await store.importDataFromJSON(data, applySettings: true)
+		#expect(try await store.prepareForAccess().medications == [medication])
+	}
+
+	@Test("A shared-only safety profile survives settings export, import, and reopen")
+	func exportIncludesSharedOnlyProfile() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Shared profile example")
+		try await fixture.store.addMedication(medication)
+		var profile = MedicationSafetyProfile.empty
+		profile.minimumHoursBetweenDoses = 4
+		let profiles = [medication.id.uuidString: profile]
+		fixture.sharedDefaults.set(try JSONEncoder().encode(profiles), forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		let data = try await fixture.store.exportDataAsJSON(includeSettings: true)
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		#expect(try decoder.decode(DataExport.self, from: data).settings?.medicationSafetyProfiles == profiles)
+
+		let destination = try AtomicFixture()
+		defer { destination.cleanup() }
+		try await destination.store.importDataFromJSON(data, applySettings: true)
+		let reopened = DataStore(storageDirectory: destination.directory, defaults: destination.defaults, sharedDefaults: destination.sharedDefaults, defaultsDomainName: destination.suite, sharedDefaultsDomainName: destination.suite + ".shared")
+		#expect(try await reopened.prepareForAccess().medications == [medication])
+		for defaults in [destination.defaults, destination.sharedDefaults] {
+			let data = try #require(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles))
+			#expect(try decoder.decode([String: MedicationSafetyProfile].self, from: data) == profiles)
+		}
+	}
+
+	@Test("Shared settings use the same current-user domain for writes and journal reads")
+	func appGroupJournalReadsUserDefaultsWrites() throws {
+		let suite = StorageConstants.appGroupIdentifier
+		let key = "AsNeededTests.preferenceProbe.\(UUID().uuidString)"
+		let defaults = try #require(UserDefaults(suiteName: suite))
+		let domain = PersistencePreferenceDomain(defaults: defaults, keys: [key], persistentDomainName: suite)
+		defer {
+			defaults.removeObject(forKey: key)
+			_ = domain.synchronize()
+		}
+		#expect(domain.persistedValues(for: [key]).isEmpty)
+		defaults.set(Data([1, 2, 3]), forKey: key)
+		#expect(domain.synchronize())
+		#expect(domain.persistedValues(for: [key])[key] as? Data == Data([1, 2, 3]))
+		defaults.removeObject(forKey: key)
+		#expect(domain.synchronize())
+		#expect(domain.persistedValues(for: [key]).isEmpty)
+	}
+
 	@Test("Replacing import rolls back after a partial event batch")
 	func partialEventImportRollsBack() async throws {
 		let fixture = try AtomicFixture()

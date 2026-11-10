@@ -101,7 +101,7 @@ struct AppSettings: Codable {
 
 	/// Create settings from UserDefaults
 	/// - Parameter defaults: UserDefaults instance to read from (default: .standard)
-	init(from defaults: UserDefaults = .standard) {
+	init(from defaults: UserDefaults = .standard, sharedDefaults: UserDefaults? = nil) {
 		// App Preferences
 		hapticsEnabled = defaults.object(forKey: UserDefaultsKeys.hapticsEnabled) as? Bool
 		selectedTab = defaults.object(forKey: UserDefaultsKeys.selectedTab) as? Int
@@ -132,7 +132,8 @@ struct AppSettings: Codable {
 		// Search Settings
 		recentMedicationSearches = defaults.array(forKey: UserDefaultsKeys.recentMedicationSearches) as? [String]
 
-		if let data = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) {
+		if let data = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) ??
+			sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) {
 			medicationSafetyProfiles = try? JSONDecoder().decode([String: MedicationSafetyProfile].self, from: data)
 		}
 	}
@@ -231,8 +232,13 @@ struct AppSettings: Codable {
 				defaults.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
 				sharedDefaults?.removeObject(forKey: UserDefaultsKeys.medicationSafetyProfiles)
 			} else if let data = try? JSONEncoder().encode(filteredProfiles) {
-				defaults.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
-				sharedDefaults?.set(data, forKey: UserDefaultsKeys.medicationSafetyProfiles)
+				for domain in [defaults, sharedDefaults].compactMap({ $0 }) {
+					let key = UserDefaultsKeys.medicationSafetyProfiles
+					let existing = domain.data(forKey: key).flatMap {
+						try? JSONDecoder().decode([String: MedicationSafetyProfile].self, from: $0)
+					}
+					if existing != filteredProfiles { domain.set(data, forKey: key) }
+				}
 			}
 		}
 	}
