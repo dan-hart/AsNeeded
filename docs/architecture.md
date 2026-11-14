@@ -21,6 +21,8 @@ ANModelKit contains medication, dose, event, and unit records. Calculations belo
 
 The app's `DataStore` uses `MedicationPersistenceTransactions` to coordinate medication, event, stock, and preference updates. Await recovery/loading before deriving availability or acting on a snapshot. A failed or canceled operation must not be treated as a committed dose. Shared app/widget access is a cross-process storage boundary, not merely a main-actor concern.
 
+At iOS startup, the app presents a read-only preview of the saved tab while the migration coordinator prepares storage. The preview uses static placeholders. The live tab roots and their data tasks start after the coordinator reports completion. An unsuccessful startup presents the recovery screen and retry action.
+
 The Watch app does not open the phone's Boutique databases. It sends identified requests through WCSession; the iPhone validates and persists them. Queued transport and completed recording are distinct outcomes.
 
 Notification action handling and widget intents are platform-discovered entry points. A lack of direct Swift callers is not grounds for removing their identity. Background Log actions use the recording policy and an idempotent event identity; paths needing review navigate to the medication form instead. Home Screen widgets favor navigation to app review.
