@@ -412,20 +412,11 @@ struct MedicationListView: View {
         }
     }
 
-    @ViewBuilder
-    private var loadingStateView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .tint(.secondary)
-            Text("Loading")
-                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("Loading"))
-    }
+	private var loadingStateView: some View {
+		MedicationLoadingRows()
+			.accessibilityElement(children: .ignore)
+			.accessibilityLabel(Text("Loading"))
+	}
 }
 
 #Preview {
