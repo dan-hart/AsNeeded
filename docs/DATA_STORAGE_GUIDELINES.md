@@ -641,6 +641,12 @@ bookmarks. Imported settings remain opt-in. Resolve medication identity by exact
 ID before any unique-name fallback, include existing medications for merges, and
 validate unresolved/ambiguous history references before replacing records.
 
+The History totals display preference is an optional Boolean in app settings.
+Settings exports include its effective value. Older files can omit it and
+leave the current choice intact. Import applies an explicit value through the
+existing preference journal, so rollback restores the previous choice. This
+preference does not require a medication database schema or path migration.
+
 Migration backup directories retain `pre_migration_` and their timestamp, with a
 unique suffix to prevent same-second collisions. Existing backup discovery and
 restore paths remain compatible. File-based migration restore is an offline
