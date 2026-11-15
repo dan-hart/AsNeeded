@@ -63,4 +63,16 @@ struct DoseLogPressStateTests {
 		let disappearedReleaseCannotOpen = !state.release()
 		#expect(disappearedReleaseCannotOpen)
 	}
+
+	@Test("Movement and release cannot trigger another action once the hold commits")
+	func movementAfterTrigger() {
+		var state = DoseLogPressState()
+		let started = state.begin()
+		let commits = state.reachThreshold()
+		#expect(started && commits)
+		let movementCancelled = state.move(horizontal: 15, vertical: 0)
+		let commitsAgain = state.reachThreshold()
+		let opensForm = state.release()
+		#expect(!movementCancelled && !commitsAgain && !opensForm)
+	}
 }

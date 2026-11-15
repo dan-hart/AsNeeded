@@ -249,18 +249,12 @@ struct MedicationRowComponent: View {
 				RoundedRectangle(cornerRadius: 14, style: .continuous)
 					.strokeBorder(medication.displayColor.dynamicFilledButtonForeground.opacity(0.2), lineWidth: 1)
 			}
+			.doseLogHoldRing(RoundedRectangle(cornerRadius: 14), color: medication.displayColor.dynamicFilledButtonForeground,
+				isHolding: isPressed && onQuickLog != nil, progress: holdProgress)
 			.scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1))
 		}
 		.buttonStyle(.plain)
         .contentShape(Rectangle())
-		.overlay {
-			RoundedRectangle(cornerRadius: 14)
-				.trim(from: 0, to: holdProgress)
-				.stroke(medication.displayColor.dynamicFilledButtonForeground, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-				.padding(2)
-				.allowsHitTesting(false)
-				.accessibilityHidden(true)
-		}
 		.anchorPreference(key: QuickLogHintAnchorKey.self, value: .bounds) { showQuickLogHintAnchor ? $0 : nil }
 		.doseLogPressGesture(
 			isPressed: $isPressed, isLongPressing: $isLongPressing, holdProgress: $holdProgress,

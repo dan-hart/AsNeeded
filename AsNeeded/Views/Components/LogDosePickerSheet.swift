@@ -95,11 +95,8 @@ private struct LogDosePickerRow: View {
 			.padding(.leading, 8)
 			.frame(minHeight: 60)
 			.background(palette.background, in: RoundedRectangle(cornerRadius: 12))
-			.overlay {
-				RoundedRectangle(cornerRadius: 12).trim(from: 0, to: holdProgress)
-					.stroke(palette.foreground, lineWidth: 3)
-					.padding(2).allowsHitTesting(false).accessibilityHidden(true)
-			}
+			.doseLogHoldRing(RoundedRectangle(cornerRadius: 12), color: palette.foreground,
+				isHolding: isPressed && onQuickLog != nil, progress: holdProgress)
 		}
 		.buttonStyle(.plain)
 		.listRowSeparator(.hidden)

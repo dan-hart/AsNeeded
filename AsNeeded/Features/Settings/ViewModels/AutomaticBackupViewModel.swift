@@ -64,6 +64,16 @@ final class AutomaticBackupViewModel: ObservableObject {
         manager.isBackupInProgress
     }
 
+	var manualBackupButtonTitle: String {
+		isBackupInProgress ? String(localized: "Backing up…") : String(localized: "Backup Now")
+	}
+
+	var lastSuccessfulBackupLabel: String? {
+		lastBackupDate.map { date in
+			String(localized: "Last backup: \(date.formatted(date: .abbreviated, time: .standard))")
+		}
+	}
+
     var statusCardState: StatusCardState {
         if !isEnabled {
             return .disabled
@@ -92,11 +102,6 @@ final class AutomaticBackupViewModel: ObservableObject {
     var statusMessage: String {
         switch statusCardState {
         case .active:
-            if let lastBackup = lastBackupDate {
-                let formatter = RelativeDateTimeFormatter()
-                formatter.unitsStyle = .abbreviated
-                return String(localized: "Last backup: \(formatter.localizedString(for: lastBackup, relativeTo: Date()))")
-            }
             return String(localized: "Ready for backup")
         case .warning:
             return String(localized: "Location may be inaccessible")
@@ -307,12 +312,11 @@ final class AutomaticBackupViewModel: ObservableObject {
     }
 
     func performManualBackup() async {
+		guard !isBackupInProgress else { return }
         let status = await manager.performManualBackup()
 
         switch status {
         case .success:
-            successMessage = String(localized: "Backup completed successfully")
-            showingSuccess = true
             await loadBackupHistory()
         case let .failed(message):
             alertMessage = message

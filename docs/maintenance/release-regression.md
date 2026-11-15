@@ -18,6 +18,16 @@ The initial 1.2-to-1.3 rehearsal exposed a saved-order mismatch between native p
 
 The known product differences already in the 1.3 beta are year and custom ranges in History and Trends, and normal confirmation for explicit past doses. Recent backdated entries still count at the recorded time when they fall within the applicable window. These differences have explicit tests. Any other observed difference needs a bug fix or a maintainer decision.
 
+## 1.3 interaction refinements
+
+- **Quick Log:** Check the hold indicator on a medication row, the floating button, and the picker. A completed hold still logs at the existing threshold. Lift before the threshold and confirm that no event is created. After a save, verify the receipt against the event’s recorded medication, amount, and unit. Use Undo and check that its removal confirmation follows the committed event and stock reversal.
+- **History:** Jump to a day with entries and to a day without entries. Confirm that the indicator calls out the actual destination. Save an edit that moves an event to another day and verify it is highlighted when visible under the current filters. With daily totals on, edit and delete doses and verify that feedback marks only changed totals that still have a visible row. With no entries in a date range, clear only the date filter from the empty state.
+- **Stock:** Save an edit that records a refill and changes stock. Compare the detail feedback with the saved count and unit. Change a unit in the edit form, restore the previous unit, and check that other draft fields keep their values. Cancel and verify the persisted medication is unchanged.
+- **Trends:** Scrub across days with and without recorded usage. Verify that the readout above the chart reports the plotted local date and amount, including zero. Check that VoiceOver can adjust the selected day and the History button retains the selected range.
+- **Backup:** Start a manual backup and check its progress label and last verified timestamp in the same card. Repeat with a simulated provider failure and verify the old timestamp and backup remain available.
+
+Exercise the interactions with Reduce Motion, VoiceOver, and accessibility text sizes. Feedback comes from the current selection or an existing completed operation. The changes introduce no storage paths, schemas, or preference keys.
+
 ## Simulator upgrade rehearsal
 
 From the repo root, with an iPhone 17 compatible iOS simulator runtime installed:

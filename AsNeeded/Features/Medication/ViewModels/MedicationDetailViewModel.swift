@@ -7,6 +7,28 @@ import Foundation
 
 @MainActor
 final class MedicationDetailViewModel: ObservableObject {
+	struct SavedEdit {
+		let medication: ANMedicationConcept
+		let refillStockFeedback: RefillStockFeedback?
+	}
+
+	struct RefillStockFeedback: Identifiable {
+		let id = UUID()
+		let previousQuantity: Double?
+		let currentQuantity: Double
+		let unit: ANUnitConcept?
+
+		var message: String {
+			let currentStock = unit?.localizedAmount(for: currentQuantity)
+				?? String(localized: "\(currentQuantity.formattedAmount) (unit not set)")
+			if let previousQuantity, let unit {
+				let previousStock = unit.localizedAmount(for: previousQuantity)
+				return String(localized: "Refill saved. Last known stock was \(previousStock). Stock after save was \(currentStock).")
+			}
+			return String(localized: "Refill saved. Previous stock unavailable. Stock after save was \(currentStock).")
+		}
+	}
+
     private let dataStore: DataStore
     private let logger = DHLogger(category: "MedicationDetailViewModel")
     private var activeDoseLogOperationID: UUID?
@@ -20,6 +42,29 @@ final class MedicationDetailViewModel: ObservableObject {
     }
 
 	func currentMedication(id: UUID) -> ANMedicationConcept? { dataStore.medications.first { $0.id == id } }
+
+	func saveEdit(updated medication: ANMedicationConcept, original: ANMedicationConcept?) async -> SavedEdit? {
+		let previous = currentMedication(id: medication.id)
+		guard await save(updated: medication, original: original) else { return nil }
+
+		guard let saved = currentMedication(id: medication.id) else {
+			return SavedEdit(medication: medication, refillStockFeedback: nil)
+		}
+		guard let original, let refillDate = medication.lastRefillDate,
+			refillDate != original.lastRefillDate, refillDate != previous?.lastRefillDate,
+			refillDate == saved.lastRefillDate, let savedQuantity = saved.quantity, savedQuantity.isFinite else {
+			return SavedEdit(medication: saved, refillStockFeedback: nil)
+		}
+
+		let previousQuantity = saved.prescribedUnit != nil && previous?.prescribedUnit == saved.prescribedUnit
+			? previous?.quantity.flatMap { $0.isFinite ? $0 : nil }
+			: nil
+		return SavedEdit(medication: saved, refillStockFeedback: RefillStockFeedback(
+			previousQuantity: previousQuantity,
+			currentQuantity: savedQuantity,
+			unit: saved.prescribedUnit
+		))
+	}
 
     @discardableResult
     func save(updated medication: ANMedicationConcept, original: ANMedicationConcept? = nil) async -> Bool {

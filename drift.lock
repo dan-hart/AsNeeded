@@ -73,12 +73,12 @@ sig = "c8590f7ce36635dd"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/MedicationHistoryView.swift"
-sig = "99ac4fa23df84218"
+sig = "578406963a4a0fe9"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/MedicationTrendsView.swift"
-sig = "aad619705cda4fc9"
+sig = "ad1d61b1a05543fe"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -88,17 +88,17 @@ sig = "82d2529edccbccef"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/ViewModels/MedicationHistoryViewModel.swift"
-sig = "74b09bdaa92d9873"
+sig = "c6ca3ab7bd2bd33c"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/ViewModels/MedicationListViewModel.swift"
-sig = "77c0993ca895f919"
+sig = "885db25b40aa12fe"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/ViewModels/MedicationTrendsViewModel.swift"
-sig = "fcaed8595ea86b04"
+sig = "2f87d19f9fd51d83"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -113,7 +113,7 @@ sig = "4d722998764e26f9"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Settings/AutomaticBackupView.swift"
-sig = "42a63cd91355bcfb"
+sig = "0582ab165bc24638"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -128,7 +128,7 @@ sig = "9d9bb933969a048a"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Settings/ViewModels/AutomaticBackupViewModel.swift"
-sig = "6c581a6599cb2352"
+sig = "387efabae97f21c3"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -253,7 +253,7 @@ sig = "13bfae9d71b9017e"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Services/QuickLogFeedbackService.swift"
-sig = "eeeab14c6f69c080"
+sig = "5332498374ac661e"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -298,22 +298,22 @@ sig = "e9ed4b89871b8fe1"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/FloatingLogDoseButton.swift"
-sig = "bdb9e783966b72a3"
+sig = "61599db827ed1427"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/LogDosePickerSheet.swift"
-sig = "794d8f08a72bfad6"
+sig = "ab26f36b07ee0574"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/MedicationRowComponent.swift"
-sig = "ef73be2e1012dc4f"
+sig = "ec88d22ebf29043a"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/QuickLogToastView.swift"
-sig = "72d66c9d85340345"
+sig = "0f3d81dafef0c454"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -328,7 +328,7 @@ sig = "cede80a4191a15ec"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/AutomaticBackupStabilizationTests.swift"
-sig = "12677f3e20163e92"
+sig = "18a94a2a7ead7aba"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -368,7 +368,7 @@ sig = "756e757348a70240"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/DoseConfirmationTests.swift"
-sig = "146d3361faf8acd9"
+sig = "1272d374919a8568"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -423,7 +423,7 @@ sig = "cd1f0df18df16b86"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/HistoryDateFilterTests.swift"
-sig = "e87b2dba38253114"
+sig = "2b6492872ac21ec8"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -468,7 +468,7 @@ sig = "4c003257e440ba09"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/MedicationHistoryViewModelTests.swift"
-sig = "0decb3df3e8662c7"
+sig = "f26346b169fd89b0"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -493,7 +493,7 @@ sig = "29843bca681b3aa3"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/MedicationTrendsViewModelTests.swift"
-sig = "dbaad041cda66ae8"
+sig = "8c048d521bc1951e"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -508,12 +508,12 @@ sig = "46f82881b688d824"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/QuickLogFeedbackServiceTests.swift"
-sig = "f96258a6c6cb1443"
+sig = "ad51594f376291f2"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/QuickLogUndoRaceTests.swift"
-sig = "9a6d1aaa6ffcd9cb"
+sig = "8296ff0a5507da3e"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"

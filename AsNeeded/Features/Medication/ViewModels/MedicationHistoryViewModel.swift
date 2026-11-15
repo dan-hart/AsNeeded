@@ -42,6 +42,22 @@ final class MedicationHistoryViewModel: ObservableObject {
 		}
 	}
 
+	struct JumpTarget {
+		let requestedDay: Date
+		let landedDay: Date?
+	}
+
+	enum SavedEntryLocation: Equatable {
+		case visible(UUID)
+		case outsideFilters(Date)
+		case unavailable
+	}
+
+	struct SubtotalID: Hashable {
+		let day: Date
+		let medicationID: UUID
+	}
+
 	@Published var selectedMedicationID: String? {
 		didSet {
 			cachedGroupedHistory = nil
@@ -270,12 +286,16 @@ final class MedicationHistoryViewModel: ObservableObject {
 		}
 	}
 
+	func clearDateFilter() {
+		dateFilter = .allTime
+	}
+
 	/// Jumping out of the selected range clears only the date filter. Choose an existing row anchor.
-	func jumpTarget(for date: Date) -> Date? {
+	func jumpTarget(for date: Date) -> JumpTarget {
 		let calendar = calendarProvider()
 		let day = calendar.startOfDay(for: date)
 		let outsideRange = activeDateRange.map { day < $0.start || day > $0.end } ?? (dateFilter != .allTime)
-		if outsideRange { dateFilter = .allTime }
+		if outsideRange { clearDateFilter() }
 		// Civil noon gives both days a common wall-clock time even if midnight was skipped.
 		func noon(on date: Date) -> Date {
 			calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
@@ -284,11 +304,43 @@ final class MedicationHistoryViewModel: ObservableObject {
 		func distance(to date: Date) -> Int {
 			abs(calendar.dateComponents([.day], from: target, to: noon(on: date)).day ?? 0)
 		}
-		return groupedHistory.min { left, right in
+		let landedDay = groupedHistory.min { left, right in
 			let leftDistance = distance(to: left.day)
 			let rightDistance = distance(to: right.day)
 			return leftDistance == rightDistance ? left.day < right.day : leftDistance < rightDistance
 		}?.day
+		return JumpTarget(requestedDay: day, landedDay: landedDay)
+	}
+
+	func savedEntryLocation(id: UUID) -> SavedEntryLocation {
+		guard let saved = events.first(where: { $0.id == id }) else { return .unavailable }
+		let savedDay = calendarProvider().startOfDay(for: saved.date)
+		if groupedHistory.first(where: { $0.day == savedDay })?.entries.contains(where: { $0.id == id }) == true {
+			return .visible(id)
+		}
+		return .outsideFilters(saved.date)
+	}
+
+	/// Compare the affected medication on the day the entry left and the day it joined.
+	func changedSubtotals(since previousGroups: [Day], for eventID: UUID) -> Set<SubtotalID> {
+		let currentGroups = groupedHistory
+		func subtotalID(in groups: [Day]) -> SubtotalID? {
+			for group in groups {
+				if let medicationID = group.entries.first(where: { $0.id == eventID })?.medication?.id {
+					return SubtotalID(day: group.day, medicationID: medicationID)
+				}
+			}
+			return nil
+		}
+		func amounts(of subtotal: SubtotalID, in groups: [Day]) -> [ANUnitConcept: Double]? {
+			groups.first(where: { $0.day == subtotal.day })?.medicationTotals
+				.first(where: { $0.id == subtotal.medicationID })?.amounts
+		}
+		let affected = Set([subtotalID(in: previousGroups), subtotalID(in: currentGroups)].compactMap { $0 })
+		return affected.filter { subtotal in
+			guard let current = amounts(of: subtotal, in: currentGroups) else { return false }
+			return amounts(of: subtotal, in: previousGroups) != current
+		}
 	}
 
 	@discardableResult

@@ -158,6 +158,78 @@ struct MedicationHistoryViewModelTests {
 		#expect(model.groupedHistory.map { $0.medicationTotals.map(\.id) } == [[second.id], [second.id]])
 	}
 
+	@Test("A moved entry keeps its saved identity and highlights only changed visible medication subtotals")
+	func movedEntryFeedback() throws {
+		let store = DataStore(testIdentifier: "History-Feedback-\(UUID().uuidString)")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		let now = Date(timeIntervalSince1970: 1_800_000_000)
+		let today = calendar.startOfDay(for: now)
+		let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: today))
+		let medication = ANMedicationConcept(clinicalName: "Synthetic A")
+		let other = ANMedicationConcept(clinicalName: "Synthetic B")
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults,
+			calendar: { calendar }, now: { now })
+		var entry = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 2, unit: .tablet), date: today)
+		let remaining = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 1, unit: .tablet), date: today)
+		let unrelated = ANEventConcept(eventType: .doseTaken, medication: other, dose: ANDoseConcept(amount: 1, unit: .tablet), date: yesterday)
+		model.events = [entry, remaining, unrelated]
+		let before = model.groupedHistory
+
+		entry.date = yesterday
+		model.events = [entry, remaining, unrelated]
+
+		#expect(model.savedEntryLocation(id: entry.id) == .visible(entry.id))
+		#expect(model.changedSubtotals(since: before, for: entry.id) == [
+			.init(day: today, medicationID: medication.id),
+			.init(day: yesterday, medicationID: medication.id)
+		])
+
+		let beforeNote = model.groupedHistory
+		entry.note = "Synthetic note"
+		model.events = [entry, remaining, unrelated]
+		#expect(model.changedSubtotals(since: beforeNote, for: entry.id).isEmpty)
+
+		let beforeDelete = model.groupedHistory
+		model.events.removeAll { $0.id == entry.id }
+		#expect(model.changedSubtotals(since: beforeDelete, for: entry.id).isEmpty)
+		#expect(model.savedEntryLocation(id: entry.id) == .unavailable)
+	}
+
+	@Test("Saved entry outside the current date filter reports its actual saved date")
+	func filteredSavedEntryFeedback() throws {
+		let store = DataStore(testIdentifier: "History-Filtered-Feedback-\(UUID().uuidString)")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		let now = Date(timeIntervalSince1970: 1_800_000_000)
+		let outside = try #require(calendar.date(byAdding: .day, value: -20, to: now))
+		let medication = ANMedicationConcept(clinicalName: "Synthetic")
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults,
+			calendar: { calendar }, now: { now })
+		model.dateFilter = .period(.fourteenDays)
+		var entry = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 2, unit: .tablet), date: now)
+		let remaining = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 1, unit: .tablet), date: now)
+		model.events = [entry, remaining]
+		let before = model.groupedHistory
+
+		entry.date = outside
+		model.events = [entry, remaining]
+
+		#expect(model.savedEntryLocation(id: entry.id) == .outsideFilters(outside))
+		#expect(model.changedSubtotals(since: before, for: entry.id) == [
+			.init(day: calendar.startOfDay(for: now), medicationID: medication.id)
+		])
+		#expect(model.dateFilter == .period(.fourteenDays))
+
+		let second = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 3, unit: .tablet), date: now)
+		model.events.append(second)
+		let beforeDelete = model.groupedHistory
+		model.events.removeAll { $0.id == remaining.id }
+		#expect(model.changedSubtotals(since: beforeDelete, for: remaining.id) == [
+			.init(day: calendar.startOfDay(for: now), medicationID: medication.id)
+		])
+	}
+
 	@Test("History cache follows selection changes and replacements with the same event identity")
 	func groupedHistoryInvalidatesForSelectionAndEventEdits() async throws {
 		let first = createTestMedication()

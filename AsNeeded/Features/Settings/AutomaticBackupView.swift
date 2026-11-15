@@ -24,7 +24,6 @@ struct AutomaticBackupView: View {
 
                 if viewModel.isEnabled {
                     heroStatusCard
-                    quickActionsSection
                     locationManagementCard
                     retentionPolicySection
                     backupContentSection
@@ -208,9 +207,16 @@ struct AutomaticBackupView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(statusTitle)
                         .font(.customFont(fontFamily, style: .title2, weight: .bold))
-                    Text(viewModel.statusMessage)
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundStyle(.secondary)
+                    if viewModel.statusCardState != .active || viewModel.lastSuccessfulBackupLabel == nil {
+                        Text(viewModel.statusMessage)
+                            .font(.customFont(fontFamily, style: .subheadline))
+                            .foregroundStyle(.secondary)
+                    }
+                    if let lastBackup = viewModel.lastSuccessfulBackupLabel {
+                        Text(lastBackup)
+                            .font(.customFont(fontFamily, style: .subheadline))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
             }
@@ -225,6 +231,8 @@ struct AutomaticBackupView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            manualBackupButton
 
             if viewModel.statusCardState == .active {
                 Text("Next backup: After your next dose")
@@ -283,36 +291,29 @@ struct AutomaticBackupView: View {
         }
     }
 
-    // MARK: - Quick Actions
-
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
-            Text("Quick Actions")
-                .font(.customFont(fontFamily, style: .headline, weight: .semibold))
-
-            Button {
-                Task {
-                    await viewModel.performManualBackup()
-                }
-            } label: {
-                HStack {
-                    Image(systemSymbol: .trayAndArrowUp)
-                        .font(.customFont(fontFamily, style: .title3))
-                    Text("Backup Now")
-                        .font(.customFont(fontFamily, style: .body, weight: .semibold))
-                    Spacer()
-                    if viewModel.isBackupInProgress {
-                        ProgressView()
-                    }
-                }
-                .filledButtonForeground(against: .accent)
-                .padding()
-                .background(Color.accent.dynamicFilledButtonBackground)
-                .cornerRadius(buttonCornerRadius)
-            }
-            .disabled(viewModel.isBackupInProgress)
-        }
-    }
+	// MARK: - Manual Backup
+	private var manualBackupButton: some View {
+		Button {
+			Task { await viewModel.performManualBackup() }
+		} label: {
+			HStack {
+				Image(systemSymbol: .trayAndArrowUp)
+					.font(.customFont(fontFamily, style: .title3))
+				Text(viewModel.manualBackupButtonTitle)
+					.font(.customFont(fontFamily, style: .body, weight: .semibold))
+				Spacer()
+				if viewModel.isBackupInProgress {
+					ProgressView()
+						.accessibilityHidden(true)
+				}
+			}
+			.filledButtonForeground(against: .accent)
+			.padding()
+			.background(Color.accent.dynamicFilledButtonBackground)
+			.cornerRadius(buttonCornerRadius)
+		}
+		.disabled(viewModel.isBackupInProgress)
+	}
 
     // MARK: - Location Management
 

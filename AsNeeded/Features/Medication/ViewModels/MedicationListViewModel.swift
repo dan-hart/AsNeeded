@@ -13,7 +13,7 @@ final class MedicationListViewModel: ObservableObject {
 	private let undoPersistence: (UUID) async throws -> Void
 	private let now: () -> Date
 	private let confirmationSleep: (Duration) async throws -> Void
-	private var undoingEventIDs: Set<UUID> = []
+	@Published private var undoingEventIDs: Set<UUID> = []
 	private var nextConfirmationSequence = 0
 	private var latestPresentedSequence = 0
 	private var committedChangesTask: Task<Void, Never>?
@@ -46,6 +46,10 @@ final class MedicationListViewModel: ObservableObject {
 
     // MARK: - Computed Properties
     var items: [ANMedicationConcept] { dataStore.medications }
+
+	var isUndoingQuickLog: Bool {
+		quickLogFeedback?.undoEventID.map(undoingEventIDs.contains) ?? false
+	}
 
     var displayedMedications: [ANMedicationConcept] {
         showArchivedMedications ? items : items.active
@@ -332,15 +336,24 @@ final class MedicationListViewModel: ObservableObject {
 
 		undoingEventIDs.insert(undoEventID)
 		defer { undoingEventIDs.remove(undoEventID) }
+		if quickLogFeedback?.undoEventID == undoEventID {
+			confirmationDismissTask?.cancel()
+			confirmationDismissTask = nil
+		}
         do {
 			try await undoPersistence(event.id)
 			// The visible toast may have been replaced or dismissed while the write awaited.
 			if quickLogFeedback?.undoEventID == undoEventID {
-				dismissQuickLogToast()
+				// The dose may have been edited since the original receipt was shown.
+				quickLogFeedback = feedbackService.removalFeedback(medicationName: quickLogMedicationName)
+				scheduleQuickLogToastDismissal(sequence: latestPresentedSequence)
 			}
             return true
         } catch {
             logger.logPrivacySafeError("Failed to undo quick log", error: error)
+			if quickLogFeedback?.undoEventID == undoEventID {
+				scheduleQuickLogToastDismissal(sequence: latestPresentedSequence)
+			}
             return false
         }
     }
@@ -402,6 +415,10 @@ final class MedicationListViewModel: ObservableObject {
             showQuickLogToast = true
         }
 
+		scheduleQuickLogToastDismissal(sequence: sequence)
+    }
+
+	private func scheduleQuickLogToastDismissal(sequence: Int) {
 		confirmationDismissTask?.cancel()
 		let sleep = confirmationSleep
 		confirmationDismissTask = Task { [weak self] in
@@ -411,7 +428,7 @@ final class MedicationListViewModel: ObservableObject {
 				self.latestPresentedSequence == sequence else { return }
 			self.dismissQuickLogToast()
 		}
-    }
+	}
 
 
     private func quantityDetails(quantityWasPresent: Bool) -> String {

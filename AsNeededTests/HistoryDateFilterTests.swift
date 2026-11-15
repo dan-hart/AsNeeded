@@ -73,12 +73,61 @@ struct HistoryDateFilterTests {
 		let old = try date(2026, 9, 2)
 		model.events = [ANEventConcept(eventType: .doseTaken, medication: medication, date: old), ANEventConcept(eventType: .doseTaken, medication: medication, date: now)]
 		model.dateFilter = .period(.fourteenDays)
-		#expect(model.jumpTarget(for: now) == now)
+		#expect(model.jumpTarget(for: now).landedDay == now)
 		#expect(model.dateFilter == .period(.fourteenDays))
-		#expect(model.jumpTarget(for: try date(2026, 9, 3)) == old)
+		#expect(model.jumpTarget(for: try date(2026, 9, 3)).landedDay == old)
 		#expect(model.dateFilter == .allTime)
 		#expect(model.selectedMedicationID == medication.id.uuidString)
-		#expect(model.jumpTarget(for: try date(2026, 11, 3)) == now)
+		#expect(model.jumpTarget(for: try date(2026, 11, 3)).landedDay == now)
+	}
+
+	@Test("Jump identifies the requested day separately from the visible day")
+	func jumpIdentifiesNearbyDay() throws {
+		let defaults = try IsolatedTestPreferences()
+		let store = DataStore(testIdentifier: "History-Jump-Feedback-\(UUID().uuidString)")
+		let cal = calendar
+		let now = try date(2026, 11, 4, hour: 12)
+		let selected = ANMedicationConcept(clinicalName: "Synthetic A")
+		let other = ANMedicationConcept(clinicalName: "Synthetic B")
+		let target = try date(2026, 11, 3, hour: 18)
+		let requestedDay = try date(2026, 11, 3)
+		let nearbyDay = try date(2026, 11, 2)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: selected.id.uuidString, defaults: defaults.defaults,
+			calendar: { cal }, now: { now })
+		model.events = [
+			ANEventConcept(eventType: .doseTaken, medication: selected, date: nearbyDay),
+			ANEventConcept(eventType: .doseTaken, medication: other, date: target)
+		]
+
+		let nearbyJump = model.jumpTarget(for: target)
+		#expect(nearbyJump.requestedDay == requestedDay)
+		#expect(nearbyJump.landedDay == nearbyDay)
+		let exactJump = model.jumpTarget(for: nearbyDay)
+		#expect(exactJump.requestedDay == exactJump.landedDay)
+		model.events.removeFirst()
+		#expect(model.jumpTarget(for: target).landedDay == nil)
+	}
+
+	@Test("Clearing empty date results retains the selected medication")
+	func clearEmptyDateFilter() throws {
+		let defaults = try IsolatedTestPreferences()
+		let store = DataStore(testIdentifier: "History-Clear-Filter-\(UUID().uuidString)")
+		let cal = calendar
+		let now = try date(2026, 11, 4)
+		let past = try date(2026, 10, 1)
+		let selected = ANMedicationConcept(clinicalName: "Synthetic A")
+		let other = ANMedicationConcept(clinicalName: "Synthetic B")
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: selected.id.uuidString, defaults: defaults.defaults,
+			calendar: { cal }, now: { now })
+		let retained = ANEventConcept(eventType: .doseTaken, medication: selected, date: past)
+		model.events = [retained, ANEventConcept(eventType: .doseTaken, medication: other, date: now)]
+		model.dateFilter = .period(.fourteenDays)
+		#expect(model.groupedHistory.isEmpty)
+
+		model.clearDateFilter()
+
+		#expect(model.selectedMedicationID == selected.id.uuidString)
+		#expect(model.groupedHistory.flatMap(\.entries).map(\.id) == [retained.id])
 	}
 
 	@Test("Rolling history cache advances at midnight even without new doses")
@@ -142,7 +191,7 @@ struct HistoryDateFilterTests {
 		let previousDay = try #require(calendar.date(from: DateComponents(year: 2018, month: 11, day: 3)))
 		model.dateFilter = .allTime
 		model.events = [ANEventConcept(eventType: .doseTaken, date: previousDay), outside]
-		#expect(model.jumpTarget(for: selectedDay) == previousDay)
+		#expect(model.jumpTarget(for: selectedDay).landedDay == previousDay)
 	}
 
 	@Test("History opened from Trends retains complete-day bounds instead of adding today")

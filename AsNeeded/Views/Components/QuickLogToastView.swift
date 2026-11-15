@@ -1,3 +1,4 @@
+import Accessibility
 import ANModelKit
 import SFSafeSymbols
 import SwiftUI
@@ -23,6 +24,7 @@ struct QuickLogToastView: View {
 	let accentColor: Color
 	let isVisible: Bool
 	var feedback: QuickLogFeedbackService.Feedback?
+	var isUndoing = false
 	let onDismiss: () -> Void
 	var onUndo: ((UUID) -> Void)?
 
@@ -86,6 +88,7 @@ struct QuickLogToastView: View {
 									)
 							}
 							.buttonStyle(.plain)
+							.disabled(isUndoing)
 							.accessibilityHint("Removes the dose event and restores the medication quantity")
 						}
 					}
@@ -117,11 +120,15 @@ struct QuickLogToastView: View {
 			.animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: isVisible)
 			.zIndex(1000)
 			.accessibilityElement(children: .contain)
+			.onChange(of: feedback?.undoEventID) { previousID, eventID in
+				if previousID != nil, eventID == nil, let feedback {
+					AccessibilityNotification.Announcement(feedback.title).post()
+				}
+			}
 		}
 	}
 
 	// MARK: - Helper Methods
-
 	private var messageContent: some View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(titleText)
@@ -131,11 +138,12 @@ struct QuickLogToastView: View {
 				.font(.customFont(fontFamily, style: .subheadline, weight: .bold))
 				.foregroundStyle(.primary)
 				.noTruncate()
-			Text(detailText)
-				.redacted(reason: demoMode.isEnabled && feedback == nil ? .placeholder : [])
-				.font(.customFont(fontFamily, style: .caption, weight: .medium))
-				.foregroundStyle(.secondary)
-				.noTruncate()
+			if let detail = feedback?.detail, !detail.isEmpty {
+				Text(demoMode.text(detail))
+					.font(.customFont(fontFamily, style: .caption, weight: .medium))
+					.foregroundStyle(.secondary)
+					.noTruncate()
+			}
 			if let nextWindowText = feedback?.nextWindowText {
 				Text(nextWindowText)
 					.font(.customFont(fontFamily, style: .caption, weight: .semibold))
@@ -156,15 +164,11 @@ struct QuickLogToastView: View {
 	}
 
 	private var messageText: String {
-		demoMode.isEnabled ? formattedDose : (feedback?.message ?? formattedDose)
-	}
-
-	private var detailText: String {
-		if let feedback {
-			return demoMode.text(feedback.detail)
+		if !demoMode.isEnabled, let feedback {
+			return feedback.message
 		}
-
-		return demoMode.name(medicationName)
+		if feedback?.isRemoval == true { return demoMode.name(medicationName) }
+		return String(localized: "\(formattedDose) · \(demoMode.name(medicationName))")
 	}
 
 	private var toneColor: Color {

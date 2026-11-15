@@ -12,6 +12,7 @@ struct MedicationDetailView: View {
 	@StateObject private var doseConfirmation = MedicationListViewModel()
 	@State private var showSupportPage = false
 	@State private var undoDoseError = false
+	@State private var refillStockFeedback: MedicationDetailViewModel.RefillStockFeedback?
     let medicationId: UUID
     @State private var medication: ANMedicationConcept
     @StateObject private var viewModel = MedicationDetailViewModel()
@@ -95,6 +96,7 @@ struct MedicationDetailView: View {
 					accentColor: doseConfirmation.quickLogAccentColor,
 					isVisible: doseConfirmation.showQuickLogToast,
 					feedback: doseConfirmation.quickLogFeedback,
+					isUndoing: doseConfirmation.isUndoingQuickLog,
 					onDismiss: { doseConfirmation.dismissQuickLogToast() },
 					onUndo: { eventID in
 						Task {
@@ -145,18 +147,23 @@ struct MedicationDetailView: View {
             }
         }
         .sheet(isPresented: $showEditSheet, onDismiss: {
-			if !showEditSheet { medicationEditSession.reset() }
+			if !showEditSheet {
+				medicationEditSession.reset()
+				if let refillStockFeedback, UIAccessibility.isVoiceOverRunning {
+					UIAccessibility.post(notification: .announcement, argument: refillStockFeedback.message)
+				}
+			}
 		}) {
             MedicationEditView(
                 medication: medication,
 				draft: medicationEditSession.draft(for: medication),
                 onSave: { updatedMedication in
-					let saved = await viewModel.save(updated: updatedMedication, original: medicationEditSession.draft(for: medication).originalMedication)
-					if saved {
-						medication = viewModel.currentMedication(id: medicationId) ?? updatedMedication
-						showEditSheet = false
-					}
-					return saved
+					let original = medicationEditSession.draft(for: medication).originalMedication
+					guard let saved = await viewModel.saveEdit(updated: updatedMedication, original: original) else { return false }
+					medication = saved.medication
+					refillStockFeedback = saved.refillStockFeedback
+					showEditSheet = false
+					return true
                 },
                 onCancel: {
                     showEditSheet = false
@@ -243,6 +250,19 @@ struct MedicationDetailView: View {
             selectedColorHex = medication.displayColorHex
             selectedSymbol = medication.symbolInfo?.name
         }
+		.task(id: refillStockFeedback?.id) {
+			guard let feedbackID = refillStockFeedback?.id else { return }
+			try? await Task.sleep(for: .seconds(12))
+			guard !Task.isCancelled, refillStockFeedback?.id == feedbackID else { return }
+			refillStockFeedback = nil
+		}
+		.onChange(of: showEditSheet) { _, isEditing in
+			if isEditing { refillStockFeedback = nil }
+		}
+		.onChange(of: showLogDose) { _, isLogging in
+			if isLogging { refillStockFeedback = nil }
+		}
+		.onDisappear { refillStockFeedback = nil }
         .onAppear {
             Task {
                 await refreshMedication()
@@ -509,6 +529,10 @@ struct MedicationDetailView: View {
                     .foregroundStyle(.primary)
                 Spacer()
             }
+
+			if let refillStockFeedback {
+				confidenceRow(icon: .checkmarkCircle, text: refillStockFeedback.message, color: .primary)
+			}
 
             VStack(spacing: detailSpacing) {
                 if let quantity = medication.quantity {

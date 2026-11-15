@@ -207,15 +207,31 @@ struct MedicationEditView: View {
 
     // MARK: - Prescribed Dose Section
 
-    @ViewBuilder
-    private var prescribedDoseSection: some View {
-        PrescribedDoseSectionComponent(
-            prescribedDoseText: $viewModel.prescribedDoseText,
-            prescribedUnit: $viewModel.prescribedUnit,
-            focusedField: $focusedField,
-            doseField: .dose
-        )
-    }
+	private var prescribedDoseSection: some View {
+		let unit = Binding<ANUnitConcept?>(
+			get: { viewModel.prescribedUnit },
+			set: { viewModel.selectPrescribedUnit($0) }
+		)
+		let restore: (() -> Void)? = viewModel.canRestorePreviousUnit ? { restorePreviousUnit() } : nil
+		return PrescribedDoseSectionComponent<Field>(
+			prescribedDoseText: $viewModel.prescribedDoseText,
+			prescribedUnit: unit,
+			focusedField: $focusedField,
+			doseField: .dose,
+			onRestorePreviousUnit: restore
+		)
+	}
+
+	private func restorePreviousUnit() {
+		viewModel.restorePreviousUnit()
+		guard UIAccessibility.isVoiceOverRunning else { return }
+		let announcement = if let unit = viewModel.prescribedUnit {
+			String(localized: "Dose unit restored to \(unit.localizedDisplayName).")
+		} else {
+			String(localized: "Dose unit cleared.")
+		}
+		UIAccessibility.post(notification: .announcement, argument: announcement)
+	}
 
     // MARK: - Refill Info Section
 

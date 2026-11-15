@@ -8,6 +8,46 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
+	@Test("Restoring the prior unit preserves edits to amount, stock, and name")
+	@MainActor
+	func restorePriorUnitPreservesOtherDraftFields() {
+		let medication = ANMedicationConcept(clinicalName: "Medication", quantity: 3, prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		let viewModel = MedicationEditViewModel(medication: medication)
+		viewModel.selectPrescribedUnit(.capsule)
+		viewModel.selectPrescribedUnit(.capsule) // A repeated selection leaves the restore action available.
+		viewModel.nickname = "Edited Name"
+		viewModel.quantityText = "12"
+		viewModel.prescribedDoseText = "2"
+		viewModel.maxDailyAmountText = "6"
+		#expect(viewModel.canRestorePreviousUnit)
+
+		viewModel.restorePreviousUnit()
+		#expect(viewModel.prescribedUnit == .tablet)
+		#expect(viewModel.nickname == "Edited Name")
+		#expect(viewModel.quantityText == "12")
+		#expect(viewModel.prescribedDoseText == "2")
+		#expect(viewModel.maxDailyAmountText == "6")
+		#expect(!viewModel.canRestorePreviousUnit)
+		#expect(viewModel.originalMedication?.quantity == 3)
+	}
+
+	@Test("Unit restoration returns to the preceding draft selection, including no unit")
+	@MainActor
+	func restorePreviousOptionalDraftUnit() {
+		let viewModel = MedicationEditViewModel(medication: nil)
+		viewModel.selectPrescribedUnit(.tablet)
+		viewModel.selectPrescribedUnit(.capsule)
+		viewModel.restorePreviousUnit()
+		#expect(viewModel.prescribedUnit == .tablet)
+		viewModel.selectPrescribedUnit(nil)
+		viewModel.selectPrescribedUnit(.milliliter)
+		viewModel.prescribedDoseText = "9"
+		viewModel.restorePreviousUnit()
+		#expect(viewModel.prescribedUnit == nil)
+		#expect(viewModel.prescribedDoseText == "9")
+		#expect(!viewModel.isFormValid)
+	}
+
 	@Test("Stock inputs reject invalid, negative and nonfinite numbers", arguments: ["word", "-1", "nan", "inf", "1e999"])
 	@MainActor
 	func invalidStockInputs(value: String) {

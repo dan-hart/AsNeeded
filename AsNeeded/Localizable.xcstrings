@@ -484292,6 +484292,237 @@
           }
         }
       }
+    },
+    "%@ (unit not set)": {
+      "comment": "Saved stock amount when the medication has no explicit unit.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (unit not set)"
+          }
+        }
+      }
+    },
+    "Backing up…": {
+      "comment": "Manual backup button label while the provider is writing and validating the backup.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backing up…"
+          }
+        }
+      }
+    },
+    "Clear date filter": {
+      "comment": "Clears the date range in History.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear date filter"
+          }
+        }
+      }
+    },
+    "Date filter: %@": {
+      "comment": "Names the current date filter in the History empty state.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date filter: %@"
+          }
+        }
+      }
+    },
+    "Dose unit cleared.": {
+      "comment": "VoiceOver feedback after restoring an empty draft unit.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dose unit cleared."
+          }
+        }
+      }
+    },
+    "Dose unit restored to %@.": {
+      "comment": "VoiceOver feedback after restoring the previous draft unit.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dose unit restored to %@."
+          }
+        }
+      }
+    },
+    "Drag across the chart to see daily usage.": {
+      "comment": "Prompt above the daily usage chart before a day is selected.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag across the chart to see daily usage."
+          }
+        }
+      }
+    },
+    "Entry saved": {
+      "comment": "Feedback on a History entry that was just edited.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry saved"
+          }
+        }
+      }
+    },
+    "Entry saved for %@, outside the current filters.": {
+      "comment": "A History edit saved successfully and moved the event outside the selected filters.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry saved for %@, outside the current filters."
+          }
+        }
+      }
+    },
+    "Entry saved. It’s no longer available in History.": {
+      "comment": "The entry was saved and disappeared before the editor closed.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry saved. It’s no longer available in History."
+          }
+        }
+      }
+    },
+    "Log removed": {
+      "comment": "Quick Log receipt title after Undo commits successfully.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log removed"
+          }
+        }
+      }
+    },
+    "No dose history in this date range.": {
+      "comment": "Empty History list with a date range applied.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No dose history in this date range."
+          }
+        }
+      }
+    },
+    "No entries on %@ in this view.": {
+      "comment": "History Jump to Date found no visible entries.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entries on %@ in this view."
+          }
+        }
+      }
+    },
+    "No entries on %@ in this view. Showing %@.": {
+      "comment": "History Jump to Date used a nearby day. Arguments are requested date and displayed date.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entries on %@ in this view. Showing %@."
+          }
+        }
+      }
+    },
+    "Refill saved. Last known stock was %@. Stock after save was %@.": {
+      "comment": "Refill receipt with the last known and saved quantities, each with its unit.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refill saved. Last known stock was %@. Stock after save was %@."
+          }
+        }
+      }
+    },
+    "Refill saved. Previous stock unavailable. Stock after save was %@.": {
+      "comment": "Refill receipt when an earlier count cannot be compared.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refill saved. Previous stock unavailable. Stock after save was %@."
+          }
+        }
+      }
+    },
+    "Restore Previous Unit": {
+      "comment": "Revert only the latest unsaved dose unit change.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Previous Unit"
+          }
+        }
+      }
+    },
+    "Show all dates for the current medication selection": {
+      "comment": "VoiceOver hint for clearing only the History date filter.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show all dates for the current medication selection"
+          }
+        }
+      }
+    },
+    "Showing %@.": {
+      "comment": "History Jump to Date landed on the given local date.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Showing %@."
+          }
+        }
+      }
+    },
+    "Swipe up or down to browse chart days": {
+      "comment": "VoiceOver hint for the adjustable daily usage chart.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe up or down to browse chart days"
+          }
+        }
+      }
+    },
+    "Updated subtotal": {
+      "comment": "VoiceOver value when a committed edit changes a displayed subtotal.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updated subtotal"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

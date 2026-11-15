@@ -186,6 +186,7 @@ struct MedicationListView: View {
                             accentColor: viewModel.quickLogAccentColor,
                             isVisible: viewModel.showQuickLogToast,
                             feedback: viewModel.quickLogFeedback,
+							isUndoing: viewModel.isUndoingQuickLog,
                             onDismiss: {
                                 viewModel.dismissQuickLogToast()
                             },

@@ -28,21 +28,15 @@ struct FloatingLogDoseButton: View {
 				.padding(.horizontal, 28)
 				.padding(.vertical, 18)
 				.background(palette.background, in: Capsule())
-				.overlay {
-					Capsule().trim(from: 0, to: holdProgress)
-						.stroke(palette.foreground, lineWidth: 3)
-						.padding(2).allowsHitTesting(false).accessibilityHidden(true)
-				}
+				.doseLogHoldRing(Capsule(), color: palette.foreground,
+					isHolding: isPressed && onQuickLog != nil, progress: holdProgress)
 				.shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
 		}
 		.buttonStyle(.plain)
 		.scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1))
 		.doseLogPressGesture(isPressed: $isPressed, isLongPressing: $isLongPressing,
-			holdProgress: $holdProgress, onTap: choose, onQuickLog: onQuickLog ?? {
-				choose()
-				return false
-			},
-			onQuickLogSuccess: succeeded)
+			holdProgress: $holdProgress, onTap: choose, onQuickLog: onQuickLog,
+			onQuickLogSuccess: succeeded, onHoldWithoutQuickLog: choose)
 		.accessibilityLabel("Log dose")
 		.accessibilityHint(quickLogMedication.map { String(localized: "Choose a medication, or hold to log the default dose for \($0.demoDisplayName)") } ?? String(localized: "Choose a medication to record a dose"))
 		.accessibilityActions {

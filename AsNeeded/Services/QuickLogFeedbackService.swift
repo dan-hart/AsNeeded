@@ -19,6 +19,7 @@ struct QuickLogFeedbackService {
 		let nextDoseDate: Date?
 		let nextWindowText: String?
 		let undoEventID: UUID?
+		var isRemoval = false
 	}
 
 	func feedback(
@@ -35,7 +36,7 @@ struct QuickLogFeedbackService {
 		let effectiveNextDoseDate = historical ? nil : nextDoseDate
 		let tone: Tone = historical ? .success : tone(for: assessment.severity)
 		let title = title(for: tone)
-		let recordedDose = String(localized: "\(String(localized: "Dose logged")): \(dose.unit.localizedCompactAmount(for: dose.amount, locale: locale))")
+		let recordedDose = dose.unit.localizedCompactAmount(for: dose.amount, locale: locale)
 		let message = String(localized: "\(recordedDose) · \(medication.displayName) · \(timeFormatter.string(from: loggedEvent.date))")
 		let nextWindowText = nextWindowText(from: effectiveNextDoseDate, at: date)
 
@@ -47,6 +48,19 @@ struct QuickLogFeedbackService {
 			nextDoseDate: effectiveNextDoseDate,
 			nextWindowText: nextWindowText,
 			undoEventID: loggedEvent.id
+		)
+	}
+
+	func removalFeedback(medicationName: String) -> Feedback {
+		Feedback(
+			tone: .success,
+			title: String(localized: "Log removed"),
+			message: medicationName,
+			detail: "",
+			nextDoseDate: nil,
+			nextWindowText: nil,
+			undoEventID: nil,
+			isRemoval: true
 		)
 	}
 

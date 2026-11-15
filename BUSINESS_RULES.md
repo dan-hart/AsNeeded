@@ -18,9 +18,9 @@ Drift anchors this document to a selected implementation/test set. A fresh ancho
 
 **DOSE-003 — Exact Undo.** Undo and confirmation ownership belong to the exact committed event.
 
-Record the selected medication, finite positive amount, unit, and effective dose timestamp. A committed dose and its stock change form one recoverable transaction. Canceling or failing a save must not leave half a record. Undo targets the exact committed event and restores its contribution to the current stock tracking period; an old operation or toast timer must not replace or clear a newer confirmation.
+Record the selected medication, finite positive amount, unit, and effective dose timestamp. A committed dose and its stock change form one recoverable transaction. Canceling or failing a save must not leave half a record. Undo targets the exact committed event and restores its contribution to the current stock tracking period; an old operation or toast timer must not replace or clear a newer confirmation. The hold indicator follows the existing Quick Log threshold. The receipt identifies the recorded medication and dose, and confirms removal only once the Undo succeeds.
 
-Changing a medication’s effective stock unit or turning stock tracking on or off closes the previous tracking period. Earlier doses stay in History, and edits or deletion of those doses leave current stock intact, including after changing the unit back. Merging doses into a medication whose stock already exists on the device keeps those doses as History. Backups carry the affected event IDs with the records, including when the settings export option is off.
+Changing a medication’s effective stock unit or turning stock tracking on or off closes the previous tracking period. Earlier doses stay in History, and edits or deletion of those doses leave current stock intact, including after changing the unit back. Restoring a unit before saving changes only the edit draft. Refill feedback describes the saved stock in its recorded unit. Merging doses into a medication whose stock already exists on the device keeps those doses as History. Backups carry the affected event IDs with the records, including when the settings export option is off.
 
 Implementation: [DataStore](AsNeeded/Services/Persistence/DataStore.swift), [transactions](AsNeeded/Services/Persistence/MedicationPersistenceTransactions.swift), [confirmation owner](AsNeeded/Features/Medication/ViewModels/MedicationListViewModel.swift). Tests: [atomic persistence](AsNeededTests/AtomicPersistenceTests.swift), [Undo races](AsNeededTests/QuickLogUndoRaceTests.swift), [confirmations](AsNeededTests/DoseConfirmationTests.swift).
 
@@ -54,13 +54,13 @@ Implementation: [guidance](AsNeeded/Services/MedicationDoseGuidanceService.swift
 
 **DATE-002 — Calendar ranges.** Year/custom ranges follow local calendar boundaries and preserve selection on cancellation and navigation.
 
-History defaults to All Time; period filters include today. Trends uses complete local calendar days ending yesterday. Both support calendar-year and custom ranges, and custom cancellation preserves the current selection. Calendar years are not assumed to equal 365 days. Trends-to-History navigation preserves the selected medication and exact date range; jumping outside a History filter can clear that date filter without clearing the medication.
+History defaults to All Time; period filters include today. Trends uses complete local calendar days ending yesterday. Both support calendar-year and custom ranges, and custom cancellation preserves the current selection. Calendar years are not assumed to equal 365 days. Trends-to-History navigation preserves the selected medication and exact date range; jumping outside a History filter can clear that date filter without clearing the medication. The Jump to Date cue marks the actual visible result. Clearing an empty date range preserves the medication filter. Trends scrubbing reads the same local-day buckets as the chart.
 
 Implementation: [range model](AsNeeded/Features/Medication/ViewModels/TrendsDateRange.swift), [History filter](AsNeeded/Features/Medication/ViewModels/HistoryDateFilter.swift). Tests: [range boundaries](AsNeededTests/TrendsDateRangeTests.swift), [History filters and handoff](AsNeededTests/HistoryDateFilterTests.swift).
 
 <a id="date-003"></a>
 
-**DATE-003 — Optional daily History totals.** All medications can show a total for each medication and recorded unit per local day. The footer omits amounts that are missing, nonpositive, or nonfinite. Totals default to hidden. The calendar menu and the inline and swipe actions update the same preference. The choice survives relaunch and travels with exports that include app settings. An older backup that omits this preference preserves the current choice.
+**DATE-003 — Optional daily History totals.** All medications can show a total for each medication and recorded unit per local day. The footer omits amounts that are missing, nonpositive, or nonfinite. Totals default to hidden. The calendar menu and the inline and swipe actions update the same preference. The choice survives relaunch and travels with exports that include app settings. An older backup that omits this preference preserves the current choice. Feedback after a committed History edit or deletion marks visible subtotals whose displayed amounts changed.
 
 ## Reminders and notification actions
 
@@ -94,7 +94,7 @@ Prepare and validate imported content before committing; medication/event/settin
 
 Settings-inclusive exports preserve safety profiles stored only in shared preferences. Import and recovery read the app group's current-user preference domain. Recovery can finish when saved preferences already match the journal. If changed preferences cannot be made durable, retain the journal for retry.
 
-Reject conflicting duplicate identities inside one import before changing records or preferences. Temporary storage access failures preserve existing files and permit retry. Startup automatically retries SQLite contention before asking the user to retry. A failed automatic backup retains the last validated backup and its success timestamp.
+Reject conflicting duplicate identities inside one import before changing records or preferences. Temporary storage access failures preserve existing files and permit retry. Startup automatically retries SQLite contention before asking the user to retry. A failed automatic backup retains the last validated backup and its success timestamp. The Settings status card shows that verified timestamp and reflects active work while a backup runs.
 
 Implementation: [transactions](AsNeeded/Services/Persistence/MedicationPersistenceTransactions.swift), [backup manager](AsNeeded/Services/AutomaticBackupManager.swift). Tests: [import rollback](AsNeededTests/DataImportIntegrityTests.swift), [backup cancellation/concurrency](AsNeededTests/AutomaticBackupStabilizationTests.swift), [retired settings](AsNeededTests/RetiredQuestionSettingsTests.swift). Durable path/migration constraints live in [storage guidelines](docs/DATA_STORAGE_GUIDELINES.md).
 

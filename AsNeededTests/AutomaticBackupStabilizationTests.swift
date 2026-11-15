@@ -7,6 +7,37 @@ import Testing
 @Suite("Automatic backup stabilization", .tags(.unit, .backup))
 @MainActor
 struct AutomaticBackupStabilizationTests {
+	@Test("Backup action reports progress in place and ignores a repeated tap", .tags(.coreDataIntegrity))
+	func manualBackupPresentationTracksProvider() async throws {
+		let fixture = try BackupFixture()
+		defer { fixture.removeDefaults() }
+		let lastVerified = Date(timeIntervalSince1970: 1_700_000_000)
+		fixture.defaults.set(lastVerified, forKey: UserDefaultsKeys.automaticBackupLastBackupDate)
+		let gate = BackupGate()
+		var attempts = 0
+		let manager = AutomaticBackupManager(defaults: fixture.defaults, backupOperation: {
+			attempts += 1
+			await gate.wait()
+			return .failed("Synthetic provider failure")
+		})
+		let model = AutomaticBackupViewModel(manager: manager)
+		#expect(model.manualBackupButtonTitle == String(localized: "Backup Now"))
+		let before = try #require(model.lastSuccessfulBackupLabel)
+
+		let request = Task { await model.performManualBackup() }
+		await gate.waitUntilEntered()
+		#expect(model.manualBackupButtonTitle == String(localized: "Backing up…"))
+		await model.performManualBackup()
+		#expect(attempts == 1)
+		#expect(!model.showingAlert)
+		gate.open()
+		await request.value
+
+		#expect(model.manualBackupButtonTitle == String(localized: "Backup Now"))
+		#expect(model.lastSuccessfulBackupLabel == before)
+		#expect(model.showingAlert)
+	}
+
 	@Test("Dismissing privacy setup restores the enable action")
 	func dismissPrivacySetup() {
 		let model = AutomaticBackupViewModel()
@@ -313,9 +344,13 @@ struct AutomaticBackupStabilizationTests {
 		let live = AutomaticBackupManager(defaults: fixture.defaults, dataStore: store)
 		let bookmark = try backupFolder.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
 		live.saveBackupLocation(bookmark: bookmark)
-		let first = await live.performManualBackup()
-		try #require(first == .success)
+		let model = AutomaticBackupViewModel(manager: live)
+		#expect(model.lastSuccessfulBackupLabel == nil)
+		await model.performManualBackup()
+		try #require(live.lastBackupStatus == .success)
 		let lastSuccess = try #require(live.lastBackupDate)
+		#expect(model.lastSuccessfulBackupLabel == String(localized: "Last backup: \(lastSuccess.formatted(date: .abbreviated, time: .standard))"))
+		#expect(!model.showingSuccess)
 		let backup = try #require(await live.backupHistory().first)
 		#expect(backup.isValid)
 		let goodBytes = try Data(contentsOf: backup.url)

@@ -80,6 +80,7 @@ struct MedicationTrendsView: View {
 	@ScaledMetric private var pickerMaxWidth: CGFloat = 160
 	private let metricCardPadding: CGFloat = 12
 	@ScaledMetric private var metricCardCornerRadius: CGFloat = 10
+	@State private var chartSelection: Date?
 	@ScaledMetric private var chartHeight: CGFloat = 280
 	@ScaledMetric private var chartPaddingH: CGFloat = 4
 	@ScaledMetric private var chartContainerPadding: CGFloat = 16
@@ -157,6 +158,7 @@ struct MedicationTrendsView: View {
 						accentColor: quickLogCoordinator.quickLogAccentColor,
 						isVisible: quickLogCoordinator.showQuickLogToast,
 						feedback: quickLogCoordinator.quickLogFeedback,
+						isUndoing: quickLogCoordinator.isUndoingQuickLog,
 						onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
 						onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
 				}
@@ -489,40 +491,61 @@ struct MedicationTrendsView: View {
 			let axisDates = (0 ..< labelCount).map { index in
 				data[index * (data.count - 1) / max(1, labelCount - 1)].day
 			}
+			let selectedPoint = MedicationTrendsViewModel.chartPoint(at: chartSelection, in: data, calendar: .current)
 			VStack(alignment: .leading, spacing: controlsSpacing) {
 				visualizationHeader(String(localized: "Daily Usage"), medication: med)
+				chartReadout(for: selectedPoint)
 
-				Chart(data, id: \.day) { item in
-					// Area mark for visual appeal
-					AreaMark(
-						x: .value("Day", item.day, unit: .day),
-						y: .value("Total", item.total)
-					)
-					.foregroundStyle(.linearGradient(
-						colors: [med.displayColor.opacity(0.4), med.displayColor.opacity(0.1), .clear],
-						startPoint: .top,
-						endPoint: .bottom
-					))
-
-					// Line mark for clarity
-					LineMark(
-						x: .value("Day", item.day, unit: .day),
-						y: .value("Total", item.total)
-					)
-					.interpolationMethod(.linear)
-					.foregroundStyle(med.displayColor)
-					.lineStyle(StrokeStyle(lineWidth: chartLineWidth))
-
-					// Point marks for data points
-					if item.total > 0 {
-						PointMark(
+				Chart {
+					if let selectedPoint {
+						RuleMark(x: .value("Day", selectedPoint.day, unit: .day))
+							.foregroundStyle(.secondary)
+							.accessibilityHidden(true)
+					}
+					ForEach(data, id: \.day) { item in
+						// Area mark for visual appeal
+						AreaMark(
 							x: .value("Day", item.day, unit: .day),
 							y: .value("Total", item.total)
 						)
+						.foregroundStyle(.linearGradient(
+							colors: [med.displayColor.opacity(0.4), med.displayColor.opacity(0.1), .clear],
+							startPoint: .top,
+							endPoint: .bottom
+						))
+
+						// Line mark for clarity
+						LineMark(
+							x: .value("Day", item.day, unit: .day),
+							y: .value("Total", item.total)
+						)
+						.interpolationMethod(.linear)
 						.foregroundStyle(med.displayColor)
-						.symbolSize(chartSymbolSize)
+						.lineStyle(StrokeStyle(lineWidth: chartLineWidth))
+
+						// Point marks for data points
+						if item.total > 0 {
+							PointMark(
+								x: .value("Day", item.day, unit: .day),
+								y: .value("Total", item.total)
+							)
+							.foregroundStyle(med.displayColor)
+							.symbolSize(chartSymbolSize)
+						}
 					}
 				}
+				.chartXSelection(value: Binding(get: { chartSelection }, set: { position in
+					chartSelection = MedicationTrendsViewModel.chartPoint(at: position, in: data, calendar: .current)?.day
+				}))
+				.chartGesture { proxy in
+					DragGesture(minimumDistance: 12)
+						.onChanged { drag in
+							guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
+							proxy.selectXValue(at: drag.location.x)
+						}
+				}
+				.onChange(of: med.id) { _, _ in chartSelection = nil }
+				.onChange(of: selectedRange) { _, _ in chartSelection = nil }
 				.chartXAxis {
 					AxisMarks(values: axisDates) { value in
 						AxisGridLine()
@@ -565,7 +588,18 @@ struct MedicationTrendsView: View {
 				.frame(height: chartHeight)
 				.padding(.horizontal, chartPaddingH)
 				.accessibilityLabel("Daily usage chart for \(med.demoDisplayName)")
-				.accessibilityHint("Tap to open history for this medication")
+				.accessibilityHint("Swipe up or down to browse chart days")
+				.accessibilityValue(chartReadoutText(for: selectedPoint))
+				.accessibilityAdjustableAction { direction in
+					let currentIndex = selectedPoint.flatMap { point in data.firstIndex { $0.day == point.day } }
+					let index: Int
+					switch direction {
+					case .increment: index = min((currentIndex ?? -1) + 1, data.count - 1)
+					case .decrement: index = max((currentIndex ?? data.count) - 1, 0)
+					@unknown default: return
+					}
+					chartSelection = data[index].day
+				}
 				.onTapGesture {
 					// Navigate to history with the selected medication
 					if let medicationID = viewModel.selectedMedicationID {
@@ -586,6 +620,26 @@ struct MedicationTrendsView: View {
 			.padding(chartContainerPadding)
 			.background(.regularMaterial, in: RoundedRectangle(cornerRadius: chartContainerCornerRadius))
 		}
+	}
+
+	private func chartReadout(for point: (day: Date, total: Double)?) -> some View {
+		ZStack(alignment: .leading) {
+			Text(chartReadoutText(for: nil))
+				.hidden()
+				.accessibilityHidden(true)
+			Text(chartReadoutText(for: point))
+		}
+		.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+		.foregroundStyle(.secondary)
+		.monospacedDigit()
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	private func chartReadoutText(for point: (day: Date, total: Double)?) -> String {
+		guard let point else { return String(localized: "Drag across the chart to see daily usage.") }
+		let date = point.day.formatted(date: .abbreviated, time: .omitted)
+		let amount = viewModel.preferredUnit?.localizedCompactAmount(for: point.total) ?? point.total.formatted(.number)
+		return String(localized: "\(date) · \(amount)")
 	}
 
 	@ViewBuilder

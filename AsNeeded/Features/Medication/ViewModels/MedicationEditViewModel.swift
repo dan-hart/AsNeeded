@@ -29,6 +29,11 @@ final class MedicationEditViewModel: ObservableObject {
 		}
 	}
 
+	private struct UnitChange {
+		let previousUnit: ANUnitConcept?
+	}
+
+	private var unitChange: UnitChange?
 	var originalDraft: [String]?
 	@Published private(set) var isSaving = false
 	@Published var showingSaveError = false
@@ -91,6 +96,20 @@ final class MedicationEditViewModel: ObservableObject {
 		lowStockThresholdText = safetyProfile.lowStockThreshold.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		duplicateDoseWindowMinutes = safetyProfile.duplicateDoseWindowMinutes
 		refillLeadDays = safetyProfile.refillLeadDays
+	}
+
+	var canRestorePreviousUnit: Bool { unitChange != nil }
+
+	func selectPrescribedUnit(_ unit: ANUnitConcept?) {
+		guard unit != prescribedUnit else { return }
+		unitChange = UnitChange(previousUnit: prescribedUnit)
+		prescribedUnit = unit
+	}
+
+	func restorePreviousUnit() {
+		guard let unitChange else { return }
+		self.unitChange = nil
+		prescribedUnit = unitChange.previousUnit
 	}
 
 	// Computed property for display color

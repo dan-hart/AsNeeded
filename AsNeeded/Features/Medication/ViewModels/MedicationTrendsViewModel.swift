@@ -262,6 +262,22 @@ final class MedicationTrendsViewModel: ObservableObject {
 		return events.filter { $0.date < today }
 	}
 
+	/// Resolve a chart position to the plotted local-day bucket, including days with zero usage.
+	nonisolated static func chartPoint(
+		at date: Date?, in data: [(day: Date, total: Double)], calendar: Calendar
+	) -> (day: Date, total: Double)? {
+		guard let date else { return nil }
+		let day = calendar.startOfDay(for: date)
+		var lower = data.startIndex
+		var upper = data.endIndex
+		while lower < upper {
+			let middle = lower + (upper - lower) / 2
+			if data[middle].day < day { lower = middle + 1 } else { upper = middle }
+		}
+		guard lower < data.endIndex, data[lower].day == day else { return nil }
+		return data[lower]
+	}
+
 	// Daily totals for the last N complete days ending yesterday (default 14)
 	func dailyTotals(last days: Int = 14) -> [(day: Date, total: Double)] {
 		guard days > 0,
@@ -274,11 +290,19 @@ final class MedicationTrendsViewModel: ObservableObject {
 		guard preferredUnit != nil,
 			let range = range.resolved(calendar: calendar, now: now()) else { return [] }
 		let totals = totalsByDay
+		let calendar = calendar
 		let today = calendar.startOfDay(for: now())
-		return (0 ..< range.dayCount(calendar: calendar)).compactMap { offset in
-			guard let day = calendar.date(byAdding: .day, value: offset, to: range.start), day < today else { return nil }
-			return (day, totals[day] ?? 0)
+		var buckets: [(day: Date, total: Double)] = []
+		var day = range.start
+		while day <= range.end, day < today {
+			buckets.append((day, totals[day] ?? 0))
+			guard let followingDate = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+			// Some calendar days begin after midnight. Normalize each bucket to its own boundary.
+			let followingDay = calendar.startOfDay(for: followingDate)
+			guard followingDay > day else { break }
+			day = followingDay
 		}
+		return buckets
 	}
 
 	// Average per day over the last window (default 7 days)

@@ -46,6 +46,9 @@ struct DoseConfirmationTests {
 		#expect(store.events.count == 1)
 		let id = try #require(model.quickLogFeedback?.undoEventID)
 		#expect(store.events.first?.id == id)
+		#expect(model.quickLogMedicationName == med.displayName)
+		#expect(model.quickLogDoseAmount == 2)
+		#expect(model.quickLogDoseUnit == .tablet)
 		#expect(store.medications.first?.quantity == 8)
 		#expect(await model.undoLastQuickLog(eventID: id))
 		#expect(store.events.isEmpty)
@@ -134,5 +137,40 @@ struct DoseConfirmationTests {
 		clock.advance(1)
 		await dismissal?.value
 		#expect(!model.showQuickLogToast)
+	}
+
+	@Test("Undo keeps the current receipt visible and starts a fresh dismissal timer after removal")
+	func removalTimer() async throws {
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
+		let med = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet)
+		try await store.addMedication(med)
+		let clock = Clock()
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults, undoPersistence: { id in
+			await clock.sleep(.zero)
+			try await store.deleteEvents(ids: [id])
+		}, confirmationSleep: { await clock.sleep($0) })
+		#expect(await model.quickLog(medication: med))
+		await clock.wait(for: 1)
+		let originalTimer = model.confirmationDismissTask
+		let undo = Task { await model.undoLastQuickLog() }
+		await clock.wait(for: 2)
+		clock.advance(0)
+		await originalTimer?.value
+		#expect(model.isUndoingQuickLog)
+		#expect(model.showQuickLogToast)
+		#expect(model.quickLogFeedback?.undoEventID != nil)
+		clock.advance(1)
+		#expect(await undo.value)
+		#expect(!model.isUndoingQuickLog)
+		#expect(model.quickLogFeedback?.title == "Log removed")
+		await clock.wait(for: 3)
+		#expect(clock.durations == [.seconds(4), .zero, .seconds(4)])
+		let removalTimer = model.confirmationDismissTask
+		clock.advance(2)
+		await removalTimer?.value
+		#expect(!model.showQuickLogToast)
+		#expect(store.events.isEmpty)
 	}
 }

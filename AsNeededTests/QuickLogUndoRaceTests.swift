@@ -118,10 +118,59 @@ struct QuickLogUndoRaceTests {
 			try await store.deleteEvents(ids: [id])
 		})
 		#expect(await model.quickLog(medication: medication))
+		let originalFeedback = model.quickLogFeedback
 		#expect(await model.undoLastQuickLog() == false)
 		#expect(model.showQuickLogToast)
+		#expect(model.quickLogFeedback == originalFeedback)
 		#expect(await model.undoLastQuickLog())
-		#expect(!model.showQuickLogToast)
+		#expect(model.showQuickLogToast)
+		#expect(model.quickLogFeedback?.title == "Log removed")
+		#expect(model.quickLogFeedback?.undoEventID == nil)
+		#expect(model.quickLogFeedback?.nextWindowText == nil)
 		#expect(store.medications.first?.quantity == 10)
+	}
+
+	@Test("Undo confirms removal after a dose edit without displaying the old dose amount", .tags(.coreDataIntegrity))
+	func removalReceiptAfterDoseEdit() async throws {
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
+		let medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		try await store.addMedication(medication)
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults)
+		#expect(await model.quickLog(medication: medication))
+		let eventID = try #require(model.quickLogFeedback?.undoEventID)
+		try await store.editEvent(id: eventID) { event in
+			event.dose = ANDoseConcept(amount: 2, unit: .tablet)
+		}
+		#expect(store.medications.first?.quantity == 8)
+		#expect(await model.undoLastQuickLog())
+		#expect(model.quickLogFeedback?.isRemoval == true)
+		#expect(model.quickLogFeedback?.message == medication.displayName)
+		#expect(store.events.isEmpty)
+		#expect(store.medications.first?.quantity == 10)
+	}
+
+	@Test("Dismissing a toast during Undo keeps it dismissed")
+	func dismissWhileUndoing() async throws {
+		let preferences = try IsolatedTestPreferences()
+		let store = DataStore(storageDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+			defaults: preferences.defaults, defaultsDomainName: preferences.name)
+		let medication = ANMedicationConcept(clinicalName: "Synthetic", quantity: 10, prescribedUnit: .tablet, prescribedDoseAmount: 1)
+		try await store.addMedication(medication)
+		let gate = Gate()
+		let model = MedicationListViewModel(dataStore: store, defaults: preferences.defaults, undoPersistence: { id in
+			await gate.pause()
+			try await store.deleteEvents(ids: [id])
+		})
+		#expect(await model.quickLog(medication: medication))
+		let undo = Task { await model.undoLastQuickLog() }
+		await gate.wait()
+		model.dismissQuickLogToast()
+		gate.release()
+		#expect(await undo.value)
+		#expect(!model.showQuickLogToast)
+		#expect(model.quickLogFeedback == nil)
+		#expect(store.events.isEmpty)
 	}
 }

@@ -59,6 +59,80 @@ struct MedicationDetailViewModelTests {
         #expect(viewModel.errorMessage == nil)
     }
 
+	@Test("A saved refill reports the previous and saved stock with their units")
+	func refillFeedbackUsesSavedStock() async throws {
+		let store = DataStore(testIdentifier: "DetailVM-RefillStock")
+		let viewModel = MedicationDetailViewModel(dataStore: store)
+		let original = createTestMedication(quantity: 3, unit: .tablet)
+		try await store.addMedication(original)
+		var edited = original
+		edited.lastRefillDate = Date(timeIntervalSince1970: 1_600_000_000)
+		edited.quantity = 12.5
+
+		let saved = try #require(await viewModel.saveEdit(updated: edited, original: original))
+		let feedback = try #require(saved.refillStockFeedback)
+		#expect(feedback.previousQuantity == 3)
+		#expect(feedback.currentQuantity == 12.5)
+		#expect(feedback.unit == .tablet)
+		#expect(saved.medication.quantity == store.medications.first?.quantity)
+	}
+
+	@Test("A refill reads current stock when an unchanged quantity in the draft is stale")
+	func refillFeedbackUsesStockAfterConcurrentDose() async throws {
+		let store = DataStore(testIdentifier: "DetailVM-RefillAfterDose")
+		let viewModel = MedicationDetailViewModel(dataStore: store)
+		let original = createTestMedication(quantity: 10)
+		try await store.addMedication(original)
+		try await store.recordDose(createTestEvent(medication: original, amount: 2))
+		var edited = original
+		edited.lastRefillDate = Date(timeIntervalSince1970: 1_600_000_000)
+
+		let saved = try #require(await viewModel.saveEdit(updated: edited, original: original))
+		#expect(saved.medication.quantity == 8)
+		#expect(saved.refillStockFeedback?.previousQuantity == 8)
+		#expect(saved.refillStockFeedback?.currentQuantity == 8)
+	}
+
+	@Test("A refill with a new unit reports only comparable stock")
+	func refillFeedbackDoesNotCompareDifferentUnits() async throws {
+		let store = DataStore(testIdentifier: "DetailVM-RefillDifferentUnits")
+		let viewModel = MedicationDetailViewModel(dataStore: store)
+		let original = createTestMedication(quantity: 3, unit: .tablet)
+		try await store.addMedication(original)
+		var edited = original
+		edited.lastRefillDate = Date(timeIntervalSince1970: 1_600_000_000)
+		edited.quantity = 20
+		edited.prescribedUnit = .capsule
+
+		let saved = try #require(await viewModel.saveEdit(updated: edited, original: original))
+		let feedback = try #require(saved.refillStockFeedback)
+		#expect(feedback.previousQuantity == nil)
+		#expect(feedback.currentQuantity == 20)
+		#expect(feedback.unit == .capsule)
+	}
+
+	@Test("Stock-only edits, removed refill dates and failed saves do not confirm a refill")
+	func refillFeedbackRequiresSuccessfulRefill() async throws {
+		let store = DataStore(testIdentifier: "DetailVM-RefillSaveBoundaries")
+		let viewModel = MedicationDetailViewModel(dataStore: store)
+		var original = createTestMedication(quantity: 3)
+		original.lastRefillDate = Date(timeIntervalSince1970: 1_600_000_000)
+		try await store.addMedication(original)
+		var stockEdit = original
+		stockEdit.quantity = 5
+		let stockSave = try #require(await viewModel.saveEdit(updated: stockEdit, original: original))
+		#expect(stockSave.refillStockFeedback == nil)
+
+		var removedRefill = stockEdit
+		removedRefill.lastRefillDate = nil
+		let removedSave = try #require(await viewModel.saveEdit(updated: removedRefill, original: stockEdit))
+		#expect(removedSave.refillStockFeedback == nil)
+
+		try await store.deleteMedication(removedRefill)
+		let failedSave = await viewModel.saveEdit(updated: original, original: removedRefill)
+		#expect(failedSave == nil)
+	}
+
     // MARK: - Save Medication Tests
 
     @Test("Save medication succeeds with valid data")

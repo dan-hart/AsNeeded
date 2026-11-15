@@ -307,8 +307,9 @@ struct MedicationListViewModelUnitTests {
 		#expect(undoSuccess)
 		#expect(dataStore.events.isEmpty)
 		#expect(dataStore.medications.first?.quantity == 20.0)
-		#expect(viewModel.quickLogFeedback == nil)
-		#expect(viewModel.showQuickLogToast == false)
+		#expect(viewModel.quickLogFeedback?.title == "Log removed")
+		#expect(viewModel.quickLogFeedback?.undoEventID == nil)
+		#expect(viewModel.showQuickLogToast)
 	}
 
     @Test("Form logging confirms the dose without a promotional overlay", arguments: [false, true])

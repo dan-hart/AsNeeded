@@ -1,3 +1,4 @@
+import Accessibility
 import ANModelKit
 import Combine
 import Foundation
@@ -5,7 +6,29 @@ import SFSafeSymbols
 import SwiftUI
 import TipKit
 
+private enum HistoryEntryMutation {
+	case edit
+	case delete
+}
+
 struct MedicationHistoryView: View {
+	private enum Anchor: Hashable {
+		case day(Date)
+		case entry(UUID)
+	}
+
+	private struct ScrollRequest: Equatable {
+		let id = UUID()
+		let target: Anchor
+	}
+
+	private struct Feedback {
+		let id = UUID()
+		var target: Anchor?
+		var message: String?
+		var changedSubtotals: Set<MedicationHistoryViewModel.SubtotalID> = []
+	}
+
 	@AppStorage(UserDefaultsKeys.historyShowsDailyTotals) private var showDailyTotals = UserDefaultsKeys.defaultHistoryShowsDailyTotals
 	@ObservedObject private var demoMode = DemoModeState.shared
 	@State private var showSupportPage = false
@@ -23,8 +46,11 @@ struct MedicationHistoryView: View {
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@State private var logMedication: ANMedicationConcept?
-	@State private var scrollTarget: Date?
-	@State private var scrollRequestID = UUID()
+	@State private var scrollRequest: ScrollRequest?
+	@State private var feedback: Feedback?
+	@State private var pendingJumpDate: Date?
+	@State private var pendingEditorFeedback: Feedback?
+	@AccessibilityFocusState(for: .voiceOver) private var focusedEntry: UUID?
 	@State private var showDatePicker = false
 	@State private var showCustomRange = false
 	@State private var lastHistoryRequestID: UUID?
@@ -121,9 +147,10 @@ struct MedicationHistoryView: View {
 					Section(header: sectionHeader(for: group, offersDailyTotals: group.day == showButtonDay)) {
 						ForEach(group.entries, id: \.id) { event in
 							historyRow(for: event)
+								.id(Anchor.entry(event.id))
 						}
 						if showDailyTotals, viewModel.isShowingAllMedications, !group.medicationTotals.isEmpty {
-							dailyTotalsRow(for: group.medicationTotals)
+							dailyTotalsRow(for: group)
 								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button {
 										showDailyTotals = false
@@ -134,7 +161,7 @@ struct MedicationHistoryView: View {
 								}
 						}
 					}
-					.id(group.day)
+					.id(Anchor.day(group.day))
 				}
 				SupportSuggestionView(onSupportTapped: { showSupportPage = true })
 					.listRowInsets(EdgeInsets())
@@ -143,12 +170,13 @@ struct MedicationHistoryView: View {
 					.environment(\.defaultMinListRowHeight, 0)
 			}
 			.listStyle(.insetGrouped)
-			.onChange(of: scrollRequestID, initial: true) { _, _ in
-				if let target = scrollTarget {
-					withAnimation(reduceMotion ? nil : .default) {
-						proxy.scrollTo(target, anchor: .top)
-					}
+			.onChange(of: scrollRequest, initial: true) { _, request in
+				guard let request else { return }
+				let anchor: UnitPoint = if case .entry = request.target { .center } else { .top }
+				withAnimation(reduceMotion ? nil : .default) {
+					proxy.scrollTo(request.target, anchor: anchor)
 				}
+				scrollRequest = nil
 			}
 		}
 	}
@@ -172,6 +200,7 @@ struct MedicationHistoryView: View {
 		let note = reflection?.note
 		let highlights = reflectionHighlights(for: reflection, historicalMedication: event.medication)
 		let tint = viewModel.isShowingAllMedications ? Color.accent : (medication?.displayColor ?? .accent)
+		let isSavedEntry = feedback?.target == .entry(event.id)
 
 		return VStack(alignment: .leading, spacing: entrySpacing) {
 			HStack(alignment: .center, spacing: 8) {
@@ -192,6 +221,9 @@ struct MedicationHistoryView: View {
 							}
 
 							historyDoseDetails(for: event)
+							if isSavedEntry {
+								feedbackLabel(String(localized: "Entry saved"))
+							}
 						}
 						.fixedSize(horizontal: false, vertical: true)
 						Spacer()
@@ -202,6 +234,13 @@ struct MedicationHistoryView: View {
 				.buttonStyle(.plain)
 				.accessibilityLabel(historyAccessibilityLabel(for: event, medication: medication, hasNote: note != nil))
 				.accessibilityHint("Edit this dose entry")
+				.accessibilityValue(isSavedEntry ? Text("Entry saved") : Text(verbatim: ""))
+				.accessibilityFocused($focusedEntry, equals: event.id)
+				.task(id: isSavedEntry ? feedback?.id : nil) {
+					guard isSavedEntry else { return }
+					await Task.yield()
+					if !Task.isCancelled { focusedEntry = event.id }
+				}
 
 				// Show add note button on trailing side if no note exists
 				if note == nil {
@@ -239,6 +278,7 @@ struct MedicationHistoryView: View {
 				.padding(.top, noteTopSpacing)
 			}
 		}
+		.listRowBackground(isSavedEntry ? Color.accent.opacity(0.12) : nil)
 		.contentShape(Rectangle())
 		.accessibilityElement(children: .contain)
 		.accessibilityAction(named: "Edit entry") {
@@ -257,7 +297,12 @@ struct MedicationHistoryView: View {
 			.tint(.accent)
 
 			Button(role: .destructive) {
-				Task { await viewModel.deleteEvent(event) }
+				Task {
+					let previousGroups = viewModel.groupedHistory
+					if await viewModel.deleteEvent(event) {
+						presentFeedback(mutationFeedback(for: .delete, eventID: event.id, previousGroups: previousGroups))
+					}
+				}
 			} label: {
 				Label("Delete", systemSymbol: .trash)
 			}
@@ -292,8 +337,8 @@ struct MedicationHistoryView: View {
 			.accessibilityHidden(true)
 	}
 
-	private func dailyTotalsRow(for totals: [MedicationHistoryViewModel.Day.MedicationTotal]) -> some View {
-		let rows = totals.map { total in
+	private func dailyTotalsRow(for group: MedicationHistoryViewModel.Day) -> some View {
+		let rows = group.medicationTotals.map { total in
 			(medication: viewModel.currentMedication(for: total.medication), amounts: total.amounts)
 		}.sorted { lhs, rhs in
 			switch lhs.medication.demoDisplayName.localizedStandardCompare(rhs.medication.demoDisplayName) {
@@ -310,13 +355,15 @@ struct MedicationHistoryView: View {
 				.accessibilityAddTraits(.isHeader)
 
 			ForEach(rows, id: \.medication.id) { row in
-				dailyTotal(for: row.medication, amounts: row.amounts)
+				let subtotal = MedicationHistoryViewModel.SubtotalID(day: group.day, medicationID: row.medication.id)
+				let changed = feedback?.changedSubtotals.contains(subtotal) == true
+				dailyTotal(for: row.medication, amounts: row.amounts, changed: changed)
 			}
 		}
 		.frame(maxWidth: .infinity, alignment: .leading)
 	}
 
-	private func dailyTotal(for medication: ANMedicationConcept, amounts: [ANUnitConcept: Double]) -> some View {
+	private func dailyTotal(for medication: ANMedicationConcept, amounts: [ANUnitConcept: Double], changed: Bool) -> some View {
 		let total = amounts.sorted { $0.key.rawValue < $1.key.rawValue }
 			.map { unit, amount in
 				if amount < 0.005 {
@@ -343,13 +390,22 @@ struct MedicationHistoryView: View {
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
 
-			Text(total)
-				.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-				.monospacedDigit()
-				.multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
-				.noTruncate()
+			HStack(spacing: sectionHeaderSpacing * 2) {
+				if changed {
+					Image(systemSymbol: .checkmarkCircleFill)
+						.foregroundStyle(Color.accent)
+						.accessibilityHidden(true)
+				}
+				Text(total)
+					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+					.monospacedDigit()
+					.multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+					.noTruncate()
+			}
 		}
+		.background(changed ? Color.accent.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 4))
 		.accessibilityElement(children: .combine)
+		.accessibilityValue(changed ? Text("Updated subtotal") : Text(verbatim: ""))
 	}
 
 	// MARK: - Section Header Helpers
@@ -365,6 +421,7 @@ struct MedicationHistoryView: View {
 			headerLayout {
 				Text(formatDateWithDayOfWeek(group.day))
 					.font(.customFont(fontFamily, style: .headline))
+					.accessibilityAddTraits(.isHeader)
 				Spacer()
 				if let totalText = selectedMedicationTotal(for: group) {
 					Text(totalText)
@@ -372,6 +429,9 @@ struct MedicationHistoryView: View {
 						.foregroundStyle(.secondary)
 						.noTruncate()
 				}
+			}
+			if feedback?.target == .day(group.day), let message = feedback?.message {
+				feedbackLabel(message, icon: .arrowDownCircle)
 			}
 			if let rel = dayRelativeLabel(for: group.day) {
 				Text(rel)
@@ -501,12 +561,73 @@ struct MedicationHistoryView: View {
 			viewModel.selectedMedicationID = uuid.uuidString
 		} else { viewModel.ensureValidSelection() }
 		viewModel.dateFilter = targetRange.map(HistoryDateFilter.custom) ?? .allTime
-		scrollTarget = nil
-		if let date = targetDate ?? targetRange?.end {
-			scrollTarget = viewModel.jumpTarget(for: date)
+		feedback = nil
+		scrollRequest = nil
+		if let date = targetDate ?? targetRange?.end, let day = viewModel.jumpTarget(for: date).landedDay {
+			scrollRequest = ScrollRequest(target: .day(day))
 		}
-		scrollRequestID = UUID()
 		navigationManager.clearHistoryNavigation()
+	}
+
+	private func feedbackLabel(_ message: String, icon: SFSymbol = .checkmarkCircle) -> some View {
+		Label {
+			Text(verbatim: message)
+				.noTruncate()
+		} icon: {
+			Image(systemSymbol: icon)
+				.accessibilityHidden(true)
+		}
+		.font(.customFont(fontFamily, style: .footnote, weight: .semibold))
+		.foregroundStyle(.primary)
+	}
+
+	private func presentFeedback(_ newFeedback: Feedback) {
+		feedback = newFeedback
+		scrollRequest = newFeedback.target.map { ScrollRequest(target: $0) }
+	}
+
+	private func completeHistoryJump() {
+		guard let date = pendingJumpDate else { return }
+		pendingJumpDate = nil
+		let jump = viewModel.jumpTarget(for: date)
+		let requested = jump.requestedDay.formatted(date: .abbreviated, time: .omitted)
+		guard let day = jump.landedDay else {
+			presentFeedback(Feedback(message: String(localized: "No entries on \(requested) in this view.")))
+			return
+		}
+		let landed = day.formatted(date: .abbreviated, time: .omitted)
+		let message = day == jump.requestedDay
+			? String(localized: "Showing \(landed).")
+			: String(localized: "No entries on \(requested) in this view. Showing \(landed).")
+		presentFeedback(Feedback(target: .day(day), message: message))
+	}
+
+	private func mutationFeedback(for mutation: HistoryEntryMutation, eventID: UUID, previousGroups: [MedicationHistoryViewModel.Day]) -> Feedback {
+		var result = Feedback()
+		if showDailyTotals, viewModel.isShowingAllMedications {
+			result.changedSubtotals = viewModel.changedSubtotals(since: previousGroups, for: eventID)
+		}
+		switch mutation {
+		case .edit:
+			switch viewModel.savedEntryLocation(id: eventID) {
+			case let .visible(id):
+				result.target = .entry(id)
+			case let .outsideFilters(date):
+				let savedDate = date.formatted(date: .abbreviated, time: .omitted)
+				result.message = String(localized: "Entry saved for \(savedDate), outside the current filters.")
+			case .unavailable:
+				result.message = String(localized: "Entry saved. It’s no longer available in History.")
+			}
+		case .delete:
+			break
+		}
+		return result
+	}
+
+	private func presentEditorFeedback() {
+		guard let pendingEditorFeedback else { return }
+		self.pendingEditorFeedback = nil
+		presentFeedback(pendingEditorFeedback)
 	}
 
 	private var floatingQuickLogMedication: ANMedicationConcept? {
@@ -566,7 +687,8 @@ struct MedicationHistoryView: View {
 			case .custom: Int.min
 			}
 		}, set: { value in
-			if value == 0 { viewModel.dateFilter = .allTime }
+			feedback = nil
+			if value == 0 { viewModel.clearDateFilter() }
 			else if let period = TrendsPeriod(rawValue: value) { viewModel.dateFilter = .period(period) }
 		})
 	}
@@ -597,14 +719,22 @@ struct MedicationHistoryView: View {
 
 	private var filteredHistoryEmptyView: some View {
 		VStack(spacing: emptySectionSpacing) {
-			Text("No dose history found.")
+			Text("No dose history in this date range.")
 				.font(.customFont(fontFamily, style: .body))
-			Text(viewModel.dateFilterTitle)
+			Text("Date filter: \(viewModel.dateFilterTitle)")
 				.font(.customFont(fontFamily, style: .subheadline))
 				.foregroundStyle(.secondary)
-			Button("All Time") { viewModel.dateFilter = .allTime }
-				.font(.customFont(fontFamily, style: .body))
+			Button {
+				feedback = nil
+				viewModel.clearDateFilter()
+			} label: {
+				Text("Clear date filter")
+					.font(.customFont(fontFamily, style: .body))
+					.frame(minHeight: 44)
+			}
+			.accessibilityHint("Show all dates for the current medication selection")
 		}
+		.multilineTextAlignment(.center)
 		.frame(maxWidth: .infinity, maxHeight: .infinity)
 		.padding()
 	}
@@ -647,6 +777,15 @@ struct MedicationHistoryView: View {
 			NavigationStack {
 				ZStack(alignment: .bottomTrailing) {
 					historyContent
+					.safeAreaInset(edge: .top, spacing: 0) {
+						if let feedback, feedback.target == nil, let message = feedback.message {
+							feedbackLabel(message, icon: .infoCircle)
+								.padding(.horizontal)
+								.padding(.vertical, entrySpacing)
+								.frame(maxWidth: .infinity, alignment: .leading)
+								.background(.regularMaterial)
+						}
+					}
 					.safeAreaInset(edge: .bottom, spacing: 0) {
 						if !viewModel.logDosePickerMedications.isEmpty {
 							Color.clear.frame(height: floatingButtonClearance)
@@ -678,6 +817,7 @@ struct MedicationHistoryView: View {
 							accentColor: quickLogCoordinator.quickLogAccentColor,
 							isVisible: quickLogCoordinator.showQuickLogToast,
 							feedback: quickLogCoordinator.quickLogFeedback,
+							isUndoing: quickLogCoordinator.isUndoingQuickLog,
 							onDismiss: { quickLogCoordinator.dismissQuickLogToast() },
 							onUndo: { eventID in Task { if !(await quickLogCoordinator.undoLastQuickLog(eventID: eventID)) { quickLogError = true } } })
 					}
@@ -685,16 +825,28 @@ struct MedicationHistoryView: View {
 
 				.onAppear { applyHistoryNavigation() }
 				.onChange(of: navigationManager.historyRequestID) { _, _ in applyHistoryNavigation() }
+				.onChange(of: viewModel.selectedMedicationID) { _, _ in feedback = nil }
 				.onReceive(timer) { _ in viewModel.refreshForClockChange() }
+				.task(id: feedback?.id) {
+					guard let feedback else { return }
+					if let message = feedback.message {
+						AccessibilityNotification.Announcement(message).post()
+					}
+					try? await Task.sleep(for: .seconds(5))
+					if !Task.isCancelled, self.feedback?.id == feedback.id { self.feedback = nil }
+				}
 				.sheet(isPresented: $showCustomRange) {
 					MedicationDateRangeSheet(
 						initialRange: viewModel.activeDateRange ?? TrendsPeriod.fourteenDays.range(calendar: .current, now: .now, includingToday: true),
 						earliestEvent: viewModel.events.filter { $0.eventType == .doseTaken }.map(\.date).min(),
 						includingToday: true
-					) { range in viewModel.dateFilter = .custom(range) }
+					) { range in
+						feedback = nil
+						viewModel.dateFilter = .custom(range)
+					}
 				}
 
-				.sheet(isPresented: $showDatePicker) {
+				.sheet(isPresented: $showDatePicker, onDismiss: completeHistoryJump) {
 					NavigationStack {
 						ScrollView {
 							DatePicker(
@@ -719,8 +871,7 @@ struct MedicationHistoryView: View {
 
 							ToolbarItem(placement: .confirmationAction) {
 								Button {
-									scrollTarget = viewModel.jumpTarget(for: selectedDate)
-									scrollRequestID = UUID()
+									pendingJumpDate = selectedDate
 									showDatePicker = false
 								} label: {
 									Image(systemSymbol: .checkmark)
@@ -759,7 +910,7 @@ struct MedicationHistoryView: View {
 						return saved
 					}
 				}
-				.sheet(item: $editingEvent) { event in
+				.sheet(item: $editingEvent, onDismiss: presentEditorFeedback) { event in
 					NavigationStack {
 						VStack(spacing: 0) {
 							Form {
@@ -834,7 +985,9 @@ struct MedicationHistoryView: View {
 										return
 									}
 									Task {
+										let previousGroups = viewModel.groupedHistory
 										if await viewModel.updateEventNote(event, text: editingNoteText) {
+											pendingEditorFeedback = mutationFeedback(for: .edit, eventID: event.id, previousGroups: previousGroups)
 											editingEvent = nil
 											editingNoteText = ""
 										}
@@ -914,10 +1067,13 @@ struct MedicationHistoryView: View {
 
 
 		}
-		.sheet(item: $editingEntryEvent) { event in
-			HistoryEntryEditor(event: event, viewModel: viewModel) {
+		.sheet(item: $editingEntryEvent, onDismiss: presentEditorFeedback) { event in
+			HistoryEntryEditor(event: event, viewModel: viewModel, onDismiss: {
 				editingEntryEvent = nil
-			}
+			}, onMutation: { mutation, previousGroups in
+				pendingEditorFeedback = mutationFeedback(for: mutation, eventID: event.id, previousGroups: previousGroups)
+				editingEntryEvent = nil
+			})
 		}
 		.alert("Couldn’t Update History", isPresented: Binding(
 			get: { viewModel.mutationError != nil && editingEvent == nil && editingEntryEvent == nil },
@@ -937,6 +1093,7 @@ private struct HistoryEntryEditor: View {
 	let event: ANEventConcept
 	@ObservedObject var viewModel: MedicationHistoryViewModel
 	let onDismiss: () -> Void
+	let onMutation: (HistoryEntryMutation, [MedicationHistoryViewModel.Day]) -> Void
 
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -949,10 +1106,12 @@ private struct HistoryEntryEditor: View {
 	@ScaledMetric private var entrySpacing: CGFloat = 8
 	@ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
 
-	init(event: ANEventConcept, viewModel: MedicationHistoryViewModel, onDismiss: @escaping () -> Void) {
+	init(event: ANEventConcept, viewModel: MedicationHistoryViewModel, onDismiss: @escaping () -> Void,
+		onMutation: @escaping (HistoryEntryMutation, [MedicationHistoryViewModel.Day]) -> Void) {
 		self.event = event
 		self.viewModel = viewModel
 		self.onDismiss = onDismiss
+		self.onMutation = onMutation
 		_editingEntryDate = State(initialValue: event.date)
 		_editingEntryAmount = State(initialValue: Self.amountText(for: event))
 		_editingEntryUnit = State(initialValue: event.dose?.unit ?? .unit)
@@ -1084,8 +1243,9 @@ private struct HistoryEntryEditor: View {
 				Section {
 					Button(role: .destructive) {
 						Task {
+							let previousGroups = viewModel.groupedHistory
 							if await viewModel.deleteEvent(event) {
-								onDismiss()
+								onMutation(.delete, previousGroups)
 							}
 						}
 					} label: {
@@ -1120,6 +1280,7 @@ private struct HistoryEntryEditor: View {
 							return
 						}
 						Task {
+							let previousGroups = viewModel.groupedHistory
 							let saved = await viewModel.updateEvent(
 								event,
 								newDate: dateHasChanged ? editingEntryDate : nil,
@@ -1127,7 +1288,7 @@ private struct HistoryEntryEditor: View {
 								newUnit: unitHasChanged ? editingEntryUnit : nil
 							)
 							if saved {
-								onDismiss()
+								onMutation(.edit, previousGroups)
 							}
 						}
 					} label: {

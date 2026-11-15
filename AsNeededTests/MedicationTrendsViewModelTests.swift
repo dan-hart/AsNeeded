@@ -12,6 +12,41 @@ import Testing
 struct MedicationTrendsViewModelTests {
 	init() throws { preferences = try IsolatedTestPreferences() }
 
+	@Test("Chart selection maps to the plotted local day across the spring clock change")
+	func chartSelectionUsesPlottedDay() throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Chicago"))
+		let march8 = try #require(calendar.date(from: DateComponents(year: 2026, month: 3, day: 8)))
+		let march9 = try #require(calendar.date(byAdding: .day, value: 1, to: march8))
+		let noon = try #require(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: march8))
+		let data = [(day: march8, total: 0.0), (day: march9, total: 1.25)]
+
+		#expect(MedicationTrendsViewModel.chartPoint(at: noon, in: data, calendar: calendar)?.total == 0)
+		#expect(MedicationTrendsViewModel.chartPoint(at: march9, in: data, calendar: calendar)?.total == 1.25)
+		#expect(MedicationTrendsViewModel.chartPoint(at: march8.addingTimeInterval(-1), in: data, calendar: calendar) == nil)
+		#expect(MedicationTrendsViewModel.chartPoint(at: nil, in: data, calendar: calendar) == nil)
+	}
+
+	@Test("Chart buckets retain both dates when the first midnight is skipped", .tags(.coreDataIntegrity))
+	func chartBucketsAfterSkippedMidnight() async throws {
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Sao_Paulo"))
+		let localCalendar = calendar
+		let start = try #require(calendar.date(from: DateComponents(year: 2018, month: 11, day: 4, hour: 12)))
+		let end = try #require(calendar.date(byAdding: .day, value: 1, to: start))
+		let now = try #require(calendar.date(byAdding: .day, value: 1, to: end))
+		let range = try #require(TrendsDateRange(start: start, end: end, calendar: calendar, now: now))
+		let store = DataStore(testIdentifier: "Trends-SkippedMidnight")
+		let medication = createTestMedication()
+		try await store.addMedication(medication)
+		try await store.addEvent(createTestEvent(medication: medication, date: end, amount: 2, unit: .tablet))
+		let model = MedicationTrendsViewModel(dataStore: store, defaults: defaults, selectedMedicationID: medication.id,
+			calendar: { localCalendar }, now: { now })
+		let data = model.dailyTotals(in: range)
+		#expect(data.map(\.day) == [calendar.startOfDay(for: start), calendar.startOfDay(for: end)])
+		#expect(MedicationTrendsViewModel.chartPoint(at: end, in: data, calendar: calendar)?.total == 2)
+	}
+
 	private let preferences: IsolatedTestPreferences
 	private var defaults: UserDefaults { preferences.defaults }
 

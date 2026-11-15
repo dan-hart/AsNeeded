@@ -31,6 +31,7 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 	@FocusState.Binding var focusedField: Field?
 
 	let doseField: Field
+	var onRestorePreviousUnit: (() -> Void)?
 
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -146,6 +147,17 @@ struct PrescribedDoseSectionComponent<Field: Hashable>: View {
 					.accessibilityValue(prescribedUnit?.localizedDisplayName ?? String(localized: "Not selected"))
 				}
 				.frame(maxWidth: .infinity)
+			}
+
+			if let onRestorePreviousUnit {
+				Button(action: onRestorePreviousUnit) {
+					Text("Restore Previous Unit")
+						.font(.customFont(fontFamily, style: .subheadline, weight: .medium))
+						.fixedSize(horizontal: false, vertical: true)
+						.frame(minHeight: 44)
+				}
+				.buttonStyle(.bordered)
+				.tint(.accent)
 			}
 		}
 		.glassCard()
