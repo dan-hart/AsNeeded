@@ -20,6 +20,7 @@ The known product differences already in the 1.3 beta are year and custom ranges
 
 ## 1.3 interaction refinements
 
+- **Floating Log Dose:** Scroll down and back up in Medication, History, and Trends. Check that the icon makes room for content, the label comes back, and tapping the icon still opens the chooser. Hold the icon with an eligible medication and check the ordinary log confirmation.
 - **Quick Log:** Check the hold indicator on a medication row, the floating button, and the picker. A completed hold still logs at the existing threshold. Lift before the threshold and confirm that no event is created. After a save, verify the receipt against the event’s recorded medication, amount, and unit. Use Undo and check that its removal confirmation follows the committed event and stock reversal.
 - **History:** Jump to a day with entries and to a day without entries. Confirm that the indicator calls out the actual destination. Save an edit that moves an event to another day and verify it is highlighted when visible under the current filters. With daily totals on, edit and delete doses and verify that feedback marks only changed totals that still have a visible row. With no entries in a date range, clear only the date filter from the empty state.
 - **Stock:** Save an edit that records a refill and changes stock. Compare the detail feedback with the saved count and unit. Change a unit in the edit form, restore the previous unit, and check that other draft fields keep their values. Cancel and verify the persisted medication is unchanged.

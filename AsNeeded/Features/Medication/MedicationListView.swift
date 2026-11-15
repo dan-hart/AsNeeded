@@ -16,6 +16,7 @@ struct MedicationListView: View {
 	@Environment(\.scenePhase) private var scenePhase
     @Environment(\.fontFamily) private var fontFamily
 	@State private var quickLogError = false
+	@State private var isFloatingLogDoseCollapsed = false
 	@State private var showLogDosePicker = false
 	@State private var pendingPickerMedication: ANMedicationConcept?
 	@State private var logDoseSearchQuery = ""
@@ -245,7 +246,7 @@ struct MedicationListView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = floatingQuickLogMedication
-		return FloatingLogDoseButton(quickLogMedication: medication, tint: .accent, onChoose: {
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: .accent, isCollapsed: isFloatingLogDoseCollapsed, onChoose: {
 			pendingPickerMedication = nil
 			logDoseSearchQuery = ""
 			showLogDosePicker = true
@@ -405,6 +406,7 @@ struct MedicationListView: View {
 						.environment(\.defaultMinListRowHeight, 0)
 				}
             }
+            .collapsesFloatingLogDose($isFloatingLogDoseCollapsed)
             .listStyle(.plain)
             .environment(\.editMode, $viewModel.editMode)
             .scrollContentBackground(.hidden)

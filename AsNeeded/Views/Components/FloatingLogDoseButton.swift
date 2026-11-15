@@ -8,6 +8,7 @@ struct FloatingLogDoseButton: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
 	let quickLogMedication: ANMedicationConcept?
 	var tint: Color = .accent
+	var isCollapsed = false
 	let onChoose: () -> Void
 	let onQuickLog: (() async -> Bool)?
 	var onSuccess: () -> Void = {}
@@ -18,19 +19,28 @@ struct FloatingLogDoseButton: View {
 	@State private var isPressed = false
 	@State private var isLongPressing = false
 	@State private var holdProgress: Double = 0
+	@ScaledMetric(relativeTo: .headline) private var iconButtonSize: CGFloat = 58
 
 	var body: some View {
 		let palette = tint.filledButtonColors(for: colorScheme, contrast: contrast)
 		Button(action: choose) {
-			Label("Log Dose", systemSymbol: .plusCircleFill)
+			HStack(spacing: 8) {
+				Image(systemSymbol: .plusCircleFill)
+				if !isCollapsed {
+					Text("Log Dose")
+						.transition(.opacity)
+				}
+			}
 				.font(.customFont(fontFamily, style: .headline, weight: .semibold))
 				.foregroundStyle(palette.foreground)
-				.padding(.horizontal, 28)
-				.padding(.vertical, 18)
+				.padding(.horizontal, isCollapsed ? 0 : 28)
+				.padding(.vertical, isCollapsed ? 0 : 18)
+				.frame(width: isCollapsed ? iconButtonSize : nil, height: isCollapsed ? iconButtonSize : nil)
 				.background(palette.background, in: Capsule())
 				.doseLogHoldRing(Capsule(), color: palette.foreground,
 					isHolding: isPressed && onQuickLog != nil, progress: holdProgress)
 				.shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
+				.animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isCollapsed)
 		}
 		.buttonStyle(.plain)
 		.scaleEffect(reduceMotion ? 1 : (isPressed || isLongPressing ? 0.95 : 1))

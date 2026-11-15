@@ -37,6 +37,7 @@ struct MedicationHistoryView: View {
 	// Reuse the existing atomic dose/Undo coordinator on both tabs.
 	@StateObject private var quickLogCoordinator = MedicationListViewModel()
 	@State private var quickLogError = false
+	@State private var isFloatingLogDoseCollapsed = false
 	@State private var showLogDosePicker = false
 	@State private var pickerQuery = ""
 	@State private var pendingPickerMedication: ANMedicationConcept?
@@ -169,6 +170,7 @@ struct MedicationHistoryView: View {
 					.listRowSeparator(.hidden)
 					.environment(\.defaultMinListRowHeight, 0)
 			}
+			.collapsesFloatingLogDose($isFloatingLogDoseCollapsed)
 			.listStyle(.insetGrouped)
 			.onChange(of: scrollRequest, initial: true) { _, request in
 				guard let request else { return }
@@ -640,7 +642,7 @@ struct MedicationHistoryView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = floatingQuickLogMedication
-		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, onChoose: {
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, isCollapsed: isFloatingLogDoseCollapsed, onChoose: {
 			pendingPickerMedication = nil
 			pickerQuery = ""
 			showLogDosePicker = true
