@@ -49,7 +49,7 @@ Before promoting a build with changes to import, export, or journal replay, rehe
 ./scripts/interruption-rehearsal/run.sh HEAD com.apple.CoreSimulator.SimRuntime.iOS-26-5
 ```
 
-The harness uses a new simulator and separate synthetic stores for dose, Undo and replacement import. It stops the hosted test process at an existing persistence checkpoint, then relaunches twice to check records, stock, preferences and journal cleanup. Keep the printed result directory private. The interruption phases are expected to exit unsuccessfully after writing their checkpoint markers. The two reopen phases must pass.
+The harness uses a new simulator and separate synthetic stores for dose, Undo and replacement import. It stops the hosted test process at an existing persistence checkpoint, then relaunches twice to check records, stock, preferences and journal cleanup. After the first reopen, the harness checks that each fixture’s restored haptics preference has reached disk before Xcode can move the simulator data container for the second test. It fails if the on-disk values do not match the baseline within ten seconds. Keep the printed result directory private. The interruption phases are expected to exit unsuccessfully after writing their checkpoint markers. The two reopen phases must pass.
 
 ## Locked-device check
 

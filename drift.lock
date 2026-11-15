@@ -688,7 +688,7 @@ sig = "d52a02b181c98435"
 [[bindings]]
 doc = "docs/maintenance/release-regression.md"
 target = "scripts/interruption-rehearsal/run.sh"
-sig = "042383f314eed14f"
+sig = "69fe7836110f7457"
 
 [[bindings]]
 doc = "docs/maintenance/release-regression.md"
