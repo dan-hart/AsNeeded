@@ -307,7 +307,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(model.groupedHistory.first?.medicationTotals.isEmpty == true)
 	}
 
-	@Test("Date and note edits preserve exact fractional stock")
+	@Test("Date and note edits preserve exact fractional stock", .tags(.coreDataIntegrity, .persistence, .unit))
 	func dateAndNoteEditsDoNotRoundStock() async throws {
 		let store = DataStore(testIdentifier: "History-Fractional-Stock-\(UUID().uuidString)")
 		let medication = createTestMedication(quantity: 0.3)
@@ -322,7 +322,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(store.events.first?.dose == event.dose)
 	}
 
-	@Test("A stale amount edit cannot be combined with a concurrently changed unit")
+	@Test("A stale amount edit cannot be combined with a concurrently changed unit", .tags(.coreDataIntegrity, .persistence, .unit))
 	func staleAmountCannotAdoptNewUnit() async throws {
 		let store = DataStore(testIdentifier: "History-StaleAmount-\(UUID().uuidString)")
 		let medication = createTestMedication()
@@ -335,9 +335,10 @@ struct MedicationHistoryViewModelTests {
 		try await store.updateEvent(concurrent)
 		let stock = store.medications.first?.quantity
 
-		#expect(!(await model.updateEvent(original, newAmount: 3)))
+		let requestedDate = original.date.addingTimeInterval(-60)
+		#expect(!(await model.updateEvent(original, newDate: requestedDate, newAmount: 3)))
 		#expect(model.mutationError != nil)
-		#expect(store.events.first?.dose == concurrent.dose)
+		#expect(store.events.first == concurrent)
 		#expect(store.medications.first?.quantity == stock)
 	}
 
@@ -359,7 +360,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(store.events.first == concurrent)
 	}
 
-	@Test("A stale History delete cannot remove a same-ID replacement")
+	@Test("A stale History delete cannot remove a same-ID replacement", .tags(.coreDataIntegrity, .persistence, .unit))
 	func staleDeleteLeavesReplacementIntact() async throws {
 		let store = DataStore(testIdentifier: "History-StaleDelete-\(UUID().uuidString)")
 		let medication = createTestMedication()
@@ -377,7 +378,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(store.medications.first?.quantity == stock)
 	}
 
-	@Test("History can edit the date and note of a legacy zero dose without inventing stock")
+	@Test("History can edit the date and note of a legacy zero dose without inventing stock", .tags(.coreDataIntegrity, .persistence, .unit))
 	func editingLegacyZeroDosePreservesIt() async throws {
 		let store = DataStore(testIdentifier: "History-LegacyZero-\(UUID().uuidString)")
 		let medication = createTestMedication(quantity: 10)
@@ -695,7 +696,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(viewModel.mutationError == nil)
 	}
 
-	@Test("Editing an event and its note keeps one record with the original identity")
+	@Test("Editing an event and its note keeps one record with the original identity", .tags(.coreDataIntegrity, .persistence, .unit))
 	func eventUpdatesReplaceTheSameIDWithoutDuplicates() async throws {
 		let medication = createTestMedication(quantity: 10)
 		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)

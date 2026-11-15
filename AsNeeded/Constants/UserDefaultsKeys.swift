@@ -16,6 +16,9 @@ public enum UserDefaultsKeys {
 	/// Device-local recording order of committed doses, independent of their dates.
 	static let lastLoggedDoseEventIDs = "lastLoggedDoseEventIDs"
 
+	/// History carried forward from a previous stock unit or a history-only merge.
+	static let stockExcludedEventIDs = SharedPlatformContracts.Preferences.stockExcludedEventIDs
+
 	/// Opaque Watch delivery receipts survive history deletion and settings reset.
 	static let acknowledgedWatchDoseEventIDs = "acknowledgedWatchDoseEventIDs"
 
@@ -186,6 +189,7 @@ public enum UserDefaultsKeys {
         historySelectedMedicationID,
         trendsSelectedMedicationID,
 		lastLoggedDoseEventIDs,
+		stockExcludedEventIDs,
 		acknowledgedWatchDoseEventIDs,
         medicationOrder,
         hasSeenWelcome,
@@ -297,6 +301,7 @@ public enum UserDefaultsKeys {
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
 		storageSchemaVersion, // Storage state is independent of user preferences
+		stockExcludedEventIDs, // Owned by medication history, including across settings reset.
 		acknowledgedWatchDoseEventIDs, // Reset must not let a delayed Watch delivery replay.
 		archivedLegacyMedicationsPath, // Preserve recovery locations after a settings reset
 		archivedLegacyEventsPath,
@@ -344,6 +349,7 @@ public enum UserDefaultsKeys {
     /// These contain device-specific data, security-scoped bookmarks, or historical analytics
     public static let keysToNeverExport: Set<String> = [
 		lastLoggedDoseEventIDs, // Recording order belongs to this device.
+		stockExcludedEventIDs, // Exported as record data, separately from app settings.
 		acknowledgedWatchDoseEventIDs, // Watch delivery receipts belong to this installation.
 		hasDiscoveredQuickLog, // Gesture discovery is device-local.
 		quickLogHintImpressions,

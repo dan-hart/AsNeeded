@@ -11,6 +11,7 @@ enum SharedPlatformContracts {
 	}
 
 	enum Preferences {
+		static let stockExcludedEventIDs = "stockExcludedEventIDs"
 		static let medicationSafetyProfiles = "medicationSafetyProfiles"
 	}
 

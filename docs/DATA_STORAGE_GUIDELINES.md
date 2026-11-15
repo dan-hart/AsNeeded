@@ -694,6 +694,23 @@ undone or archived targets fall back through recording order, then legacy active
 opens the medication selector. The resolver always returns the current medication
 record instead of the older copy embedded in an event.
 
+### History stock after a unit change
+
+Changing the effective stock unit or whether stock is tracked excludes existing
+doses from future stock adjustments. Their recorded dose, date, and note remain
+in History. The app stores the excluded event IDs in its existing application
+defaults domain, and the undo journal commits those IDs with the medication.
+Settings reset preserves the IDs. Deleting records removes the corresponding
+IDs. Widget recordings continue to use the current medication under the write lock.
+
+An optional data field in JSON backups preserves the IDs across a full restore.
+A merge into existing stock excludes the newly imported History for that
+medication. Older records use the recorded medication snapshot when it has a
+tracked quantity and a compatible unit. Prior unit changes that were never
+recorded, or already-normalized historical snapshots from older restores,
+cannot be reconstructed. Database paths, filenames, and SQLite schemas stay
+the same. Complete any pending journal before downgrading to an older build.
+
 ### Watch dose retry receipts
 
 `acknowledgedWatchDoseEventIDs` stores only opaque Watch event UUIDs in the

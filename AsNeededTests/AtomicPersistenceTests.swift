@@ -92,6 +92,41 @@ struct AtomicPersistenceTests {
 		#expect(reopenedDefaults.bool(forKey: key))
 	}
 
+	@Test("An interrupted stock unit change restores the unit, quantity, and History stock effects", .tags(.coreDataIntegrity))
+	func interruptedStockUnitChangeRollsBack() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Synthetic stock", quantity: 10, prescribedUnit: .tablet)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 2, unit: .tablet),
+			date: Date(timeIntervalSince1970: 1_700_000_000))
+		try await fixture.store.addMedication(medication)
+		try await fixture.store.recordDose(event)
+
+		var updated = try #require(fixture.store.medications.first)
+		updated.prescribedUnit = .milligram
+		updated.quantity = 40
+		fixture.fault.cancelAt = .beforeCommit
+		await #expect(throws: PersistenceTransactionError.self) {
+			try await fixture.store.updateMedication(updated)
+		}
+
+		let reopened = DataStore(storageDirectory: fixture.directory, defaults: fixture.defaults, defaultsDomainName: fixture.suite)
+		let recovered = try await reopened.prepareForAccess()
+		#expect(recovered.medications.first?.prescribedUnit == .tablet)
+		#expect(recovered.medications.first?.quantity == 8)
+		#expect(recovered.events.map(\.id) == [event.id])
+		#expect(recovered.stockExcludedEventIDs.isEmpty)
+
+		try await reopened.updateMedication(updated)
+		let committed = try await reopened.prepareForAccess()
+		#expect(committed.stockExcludedEventIDs == [event.id])
+		try await reopened.deleteEvents(ids: [event.id])
+		let final = try await reopened.prepareForAccess()
+		#expect(final.medications.first?.quantity == 40)
+		#expect(final.events.isEmpty)
+		#expect(final.stockExcludedEventIDs.isEmpty)
+	}
+
 	@Test("An interrupted write is recovered even by a reader with an unchanged old cache")
 	func interruptedSaveRecoversAcrossInstances() async throws {
 		let fixture = try AtomicFixture()

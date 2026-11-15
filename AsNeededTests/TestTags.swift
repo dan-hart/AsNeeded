@@ -33,6 +33,7 @@ extension Tag {
 
     @Tag static var dataManagement: Self
     @Tag static var persistence: Self
+    @Tag static var coreDataIntegrity: Self
     @Tag static var migration: Self
     @Tag static var compatibility: Self
 

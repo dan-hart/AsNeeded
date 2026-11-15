@@ -18,6 +18,18 @@ enum PersistenceTransactionPhase: Hashable {
 struct MedicationPersistenceSnapshot: Codable, Sendable {
 	var medications: [ANMedicationConcept]
 	var events: [ANEventConcept]
+	var stockExcludedEventIDs: Set<UUID> = []
+
+	mutating func replaceMedication(_ medication: ANMedicationConcept, at index: Int) {
+		let previous = medications[index]
+		if (previous.prescribedUnit ?? .unit) != (medication.prescribedUnit ?? .unit) ||
+			(previous.quantity == nil) != (medication.quantity == nil) {
+			// Stock in the new tracking configuration starts with the supplied quantity.
+			let olderDoses = events.lazy.filter { $0.medication?.id == medication.id && $0.eventType == .doseTaken }
+			stockExcludedEventIDs.formUnion(olderDoses.map(\.id))
+		}
+		medications[index] = medication
+	}
 
 	mutating func recordDose(_ supplied: ANEventConcept) throws {
 		guard supplied.eventType == .doseTaken, let dose = supplied.dose,
@@ -42,7 +54,8 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 		for event in events where ids.contains(event.id) {
 			if event.eventType == .doseTaken, let dose = event.dose,
 				let index = medications.firstIndex(where: { $0.id == event.medication?.id }),
-				let quantity = medications[index].quantity {
+				let quantity = medications[index].quantity,
+				canAdjustStock(for: event, medication: medications[index]) {
 				medications[index].quantity = quantity + stockAmount(dose, medication: medications[index])
 			}
 		}
@@ -65,7 +78,8 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 			throw PersistenceTransactionError.invalidDose
 		}
 		if let medicationIndex = medications.firstIndex(where: { $0.id == original.medication?.id }),
-			let quantity = medications[medicationIndex].quantity {
+			let quantity = medications[medicationIndex].quantity,
+			canAdjustStock(for: original, medication: medications[medicationIndex]) {
 			let medication = medications[medicationIndex]
 			let oldAmount = original.eventType == .doseTaken ? original.dose.map { stockAmount($0, medication: medication) } ?? 0 : 0
 			let newAmount = updated.eventType == .doseTaken ? updated.dose.map { stockAmount($0, medication: medication) } ?? 0 : 0
@@ -77,6 +91,13 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 			}
 		}
 		events[index] = updated
+	}
+
+	private func canAdjustStock(for event: ANEventConcept, medication: ANMedicationConcept) -> Bool {
+		guard !stockExcludedEventIDs.contains(event.id), let historical = event.medication,
+			historical.quantity != nil else { return false }
+		// Legacy records retain their original tracked unit when it is known.
+		return (historical.prescribedUnit ?? .unit) == (medication.prescribedUnit ?? .unit)
 	}
 
 	private func stockAmount(_ dose: ANDoseConcept, medication: ANMedicationConcept) -> Double {
@@ -188,8 +209,14 @@ final class MedicationPersistenceTransactions {
 		// Reconcile caches with external-process writes before calculating a mutation.
 		try await apply(before)
 		var after = before
-		let preferenceKeys: [String: Set<String>]
+		var preferenceKeys: [String: Set<String>]
 		do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
+		if !after.stockExcludedEventIDs.isEmpty {
+			after.stockExcludedEventIDs.formIntersection(after.events.lazy.filter { $0.eventType == .doseTaken }.map(\.id))
+		}
+		let stockKey = SharedPlatformContracts.Preferences.stockExcludedEventIDs
+		let stockExclusionsChanged = before.stockExcludedEventIDs != after.stockExcludedEventIDs
+		if stockExclusionsChanged { preferenceKeys["application", default: []].insert(stockKey) }
 		if let keys = preferenceKeys["shared"], !keys.isEmpty, let domain = preferences["shared"], domain.isAppGroup,
 			!domain.synchronize() {
 			visibleSnapshot = nil
@@ -206,6 +233,13 @@ final class MedicationPersistenceTransactions {
 			try await apply(after, injectingFaults: true)
 			preferenceDomainsNeedingSync.formUnion(journal.preferences.map(\.domain))
 			applyPreferences(after)
+			if stockExclusionsChanged, let domain = preferences["application"] {
+				if after.stockExcludedEventIDs.isEmpty {
+					domain.defaults.removeObject(forKey: stockKey)
+				} else {
+					domain.defaults.set(after.stockExcludedEventIDs.map(\.uuidString).sorted(), forKey: stockKey)
+				}
+			}
 			for undo in journal.preferences {
 				guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
 				let current = domain.persistedValues(for: undo.keys)
@@ -354,7 +388,7 @@ final class MedicationPersistenceTransactions {
 		guard canRestorePreferences(journal) else { throw PersistenceTransactionError.recoveryRequired }
 		// Validate every preference payload before changing any records.
 		let restoredPreferences = try journal.preferences.map { ($0, try $0.decodedValues()) }
-		let before = restore(journal, onto: try await loadFresh())
+		var before = restore(journal, onto: try await loadFresh())
 		visibleSnapshot = before
 		try await apply(before)
 		for (undo, values) in restoredPreferences {
@@ -373,6 +407,7 @@ final class MedicationPersistenceTransactions {
 			guard domain.synchronize() else { throw PersistenceTransactionError.storageUnavailable }
 			preferenceDomainsNeedingSync.remove(undo.domain)
 		}
+		before.stockExcludedEventIDs = try loadStockExcludedEventIDs()
 		try FileManager.default.removeItem(at: journalURL)
 		flushDirectoryAfterCommit()
 		publishStable(before)
@@ -393,7 +428,17 @@ final class MedicationPersistenceTransactions {
 			let eventStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: SharedPlatformContracts.Storage.eventsDBName) else { throw PersistenceTransactionError.storageUnavailable }
 		let medications = try await Store<ANMedicationConcept>(storage: medicationStorage, cacheIdentifier: \.id.uuidString)
 		let events = try await Store<ANEventConcept>(storage: eventStorage, cacheIdentifier: \.id.uuidString)
-		return MedicationPersistenceSnapshot(medications: medications.items, events: events.items)
+		return MedicationPersistenceSnapshot(medications: medications.items, events: events.items,
+			stockExcludedEventIDs: try loadStockExcludedEventIDs())
+	}
+
+	private func loadStockExcludedEventIDs() throws -> Set<UUID> {
+		let key = SharedPlatformContracts.Preferences.stockExcludedEventIDs
+		guard let stored = preferences["application"]?.defaults.object(forKey: key) else { return [] }
+		guard let strings = stored as? [String] else { throw PersistenceTransactionError.recoveryRequired }
+		let ids = strings.compactMap(UUID.init(uuidString:))
+		guard ids.count == strings.count else { throw PersistenceTransactionError.recoveryRequired }
+		return Set(ids)
 	}
 
 	private func apply(_ snapshot: MedicationPersistenceSnapshot, injectingFaults: Bool = false) async throws {
