@@ -52,6 +52,46 @@ struct AtomicPersistenceTests {
 		#expect(fixture.defaults.object(forKey: UserDefaultsKeys.historyShowsDailyTotals) as? Bool == false)
 	}
 
+	@Test("An interrupted totals settings import restores absent preferences and original records on reopen")
+	func interruptedTotalsImportRecoversAndCanBeRetried() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let key = UserDefaultsKeys.historyShowsDailyTotals
+		let original = ANMedicationConcept(clinicalName: "Original example", quantity: 10, prescribedUnit: .tablet)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: original, dose: ANDoseConcept(amount: 2, unit: .tablet), date: .now)
+		try await fixture.store.addMedication(original)
+		try await fixture.store.recordDose(dose)
+		let before = try await fixture.store.prepareForAccess()
+		#expect(fixture.defaults.persistentDomain(forName: fixture.suite)?[key] == nil)
+
+		var settings = AppSettings()
+		settings.historyShowsDailyTotals = true
+		let data = try encode(medications: [ANMedicationConcept(clinicalName: "Incoming example")], events: [], settings: settings)
+		fixture.fault.cancelAt = .beforeCommit
+		await #expect(throws: PersistenceTransactionError.self) {
+			try await fixture.store.importDataFromJSON(data, applySettings: true)
+		}
+		#expect(fixture.defaults.bool(forKey: key))
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		#expect(FileManager.default.fileExists(atPath: journal.path))
+
+		let reopenedDefaults = try #require(UserDefaults(suiteName: fixture.suite))
+		let reopened = DataStore(storageDirectory: fixture.directory, defaults: reopenedDefaults, defaultsDomainName: fixture.suite)
+		for _ in 0..<2 {
+			let recovered = try await reopened.prepareForAccess()
+			#expect(recovered.medications == before.medications)
+			#expect(recovered.events == before.events)
+			#expect(reopenedDefaults.persistentDomain(forName: fixture.suite)?[key] == nil)
+			#expect(!FileManager.default.fileExists(atPath: journal.path))
+		}
+
+		try await reopened.importDataFromJSON(data, applySettings: true)
+		let after = try await reopened.prepareForAccess()
+		#expect(after.medications.map(\.clinicalName) == ["Incoming example"])
+		#expect(after.events.isEmpty)
+		#expect(reopenedDefaults.bool(forKey: key))
+	}
+
 	@Test("An interrupted write is recovered even by a reader with an unchanged old cache")
 	func interruptedSaveRecoversAcrossInstances() async throws {
 		let fixture = try AtomicFixture()

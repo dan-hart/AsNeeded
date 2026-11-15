@@ -322,6 +322,81 @@ struct MedicationHistoryViewModelTests {
 		#expect(store.events.first?.dose == event.dose)
 	}
 
+	@Test("A stale amount edit cannot be combined with a concurrently changed unit")
+	func staleAmountCannotAdoptNewUnit() async throws {
+		let store = DataStore(testIdentifier: "History-StaleAmount-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		let original = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(original)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		var concurrent = original
+		concurrent.dose?.unit = .milligram
+		try await store.updateEvent(concurrent)
+		let stock = store.medications.first?.quantity
+
+		#expect(!(await model.updateEvent(original, newAmount: 3)))
+		#expect(model.mutationError != nil)
+		#expect(store.events.first?.dose == concurrent.dose)
+		#expect(store.medications.first?.quantity == stock)
+	}
+
+	@Test("A stale History editor cannot overwrite a concurrently changed note or date")
+	func overlappingDateAndNoteEditsConflict() async throws {
+		let store = DataStore(testIdentifier: "History-StaleNoteAndDate-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		let original = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(original)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		var concurrent = original
+		concurrent.date = original.date.addingTimeInterval(-60)
+		concurrent.note = "Other writer"
+		try await store.updateEvent(concurrent)
+
+		#expect(!(await model.updateEvent(original, newDate: original.date.addingTimeInterval(-120))))
+		#expect(!(await model.updateEventNote(original, text: "Stale draft")))
+		#expect(store.events.first == concurrent)
+	}
+
+	@Test("A stale History delete cannot remove a same-ID replacement")
+	func staleDeleteLeavesReplacementIntact() async throws {
+		let store = DataStore(testIdentifier: "History-StaleDelete-\(UUID().uuidString)")
+		let medication = createTestMedication()
+		let original = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(original)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		var replacement = original
+		replacement.dose?.amount = 4
+		try await store.updateEvent(replacement)
+		let stock = store.medications.first?.quantity
+
+		#expect(!(await model.deleteEvent(original)))
+		#expect(store.events.first == replacement)
+		#expect(store.medications.first?.quantity == stock)
+	}
+
+	@Test("History can edit the date and note of a legacy zero dose without inventing stock")
+	func editingLegacyZeroDosePreservesIt() async throws {
+		let store = DataStore(testIdentifier: "History-LegacyZero-\(UUID().uuidString)")
+		let medication = createTestMedication(quantity: 10)
+		let original = createTestEvent(medication: medication, amount: 0, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(original)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		let newDate = original.date.addingTimeInterval(-60)
+
+		#expect(await model.updateEvent(original, newDate: newDate))
+		#expect(await model.updateEventNote(original, text: "Correction"))
+		#expect(!(await model.updateEvent(original, newAmount: -1)))
+		let saved = try #require(store.events.first)
+		#expect(saved.date == newDate)
+		#expect(saved.note == "Correction")
+		#expect(saved.dose == original.dose)
+		#expect(store.medications.first?.quantity == 10)
+	}
+
 	@Test("History patches the latest saved fields when a second store changes the same entry")
 	func editPreservesUnchangedFieldsFromOtherStore() async throws {
 		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("History-Edit-\(UUID().uuidString)")
@@ -348,12 +423,15 @@ struct MedicationHistoryViewModelTests {
 
 		concurrent = moved
 		concurrent.dose?.amount = 4
+		concurrent.note = try DoseReflectionCodec.encode(DoseReflection(reason: "New context", effectiveness: 4, note: "Other writer"))
 		try await writer.updateEvent(concurrent)
-		#expect(await model.updateEventNote(event, text: "My note"))
+		#expect(await model.updateEventNote(moved, text: "My note"))
+		#expect(await model.updateEventNote(moved, text: "My note"))
 		let saved = try #require(reader.events.first)
 		#expect(saved.dose == concurrent.dose)
 		#expect(saved.date == movedDate)
 		#expect(DoseReflectionCodec.reflection(from: saved.note)?.reason == "New context")
+		#expect(DoseReflectionCodec.reflection(from: saved.note)?.effectiveness == 4)
 		#expect(DoseReflectionCodec.displayNote(from: saved.note) == "My note")
 		#expect(reader.medications.first?.quantity == 6)
 	}
@@ -628,8 +706,10 @@ struct MedicationHistoryViewModelTests {
 		let newDate = event.date.addingTimeInterval(-60)
 
 		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 3, newUnit: .tablet))
-		// A retained editor snapshot must compare against the dose currently stored, not its old value.
-		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 4, newUnit: .tablet))
+		// A retry of the same change must neither duplicate the event nor adjust stock again.
+		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 3, newUnit: .tablet))
+		let refreshed = try #require(dataStore.events.first)
+		#expect(await viewModel.updateEvent(refreshed, newAmount: 4))
 		#expect(await viewModel.updateEventNote(event, text: "Updated note"))
 
 		let storedEvent = try #require(dataStore.events.first)

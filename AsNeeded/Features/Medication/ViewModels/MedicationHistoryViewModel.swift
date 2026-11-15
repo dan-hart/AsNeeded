@@ -9,6 +9,10 @@ import UIKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
+	private enum EditError: Error {
+		case conflict
+	}
+
 	struct Day {
 		struct MedicationTotal: Identifiable {
 			let medication: ANMedicationConcept
@@ -300,7 +304,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			return false
 		}
 		do {
-			try await dataStore.deleteEvents(ids: Set(toDelete.map(\.id)))
+			try await dataStore.deleteEvents(matching: toDelete)
 			loadData()
 			return true
 		} catch {
@@ -313,17 +317,20 @@ final class MedicationHistoryViewModel: ObservableObject {
 	@discardableResult
 	func updateEvent(_ event: ANEventConcept, newDate: Date? = nil, newAmount: Double? = nil, newUnit: ANUnitConcept? = nil) async -> Bool {
 		await editEvent(event, failureMessage: String(localized: "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")) { saved in
-			if let newDate { saved.date = newDate }
+			if let newDate, newDate != saved.date {
+				guard saved.date == event.date else { throw EditError.conflict }
+				saved.date = newDate
+			}
 			if newAmount != nil || newUnit != nil {
-				if saved.dose == nil, event.dose != nil {
-					throw PersistenceTransactionError.recordUnavailable
+				guard var requested = event.dose ?? newAmount.map({ ANDoseConcept(amount: $0, unit: newUnit ?? .unit) }) else {
+					throw PersistenceTransactionError.invalidDose
 				}
-				guard var dose = saved.dose ?? newAmount.map({ ANDoseConcept(amount: $0, unit: newUnit ?? .unit) }) else {
-					throw PersistenceTransactionError.recordUnavailable
-				}
-				if let newAmount { dose.amount = newAmount }
-				if let newUnit { dose.unit = newUnit }
-				saved.dose = dose
+				if let newAmount { requested.amount = newAmount }
+				if let newUnit { requested.unit = newUnit }
+				// An amount and its unit are one change. Preserve an already-applied retry.
+				if saved.dose?.amount == requested.amount, saved.dose?.unit == requested.unit { return }
+				guard saved.dose == event.dose else { throw EditError.conflict }
+				saved.dose = requested
 			}
 		}
 	}
@@ -331,7 +338,11 @@ final class MedicationHistoryViewModel: ObservableObject {
 	@discardableResult
 	func updateEventNote(_ event: ANEventConcept, text: String?) async -> Bool {
 		await editEvent(event, failureMessage: String(localized: "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again.")) { saved in
-			saved.note = try DoseReflectionCodec.updatingNote(in: saved.note, with: text)
+			let requested = DoseReflection(note: text).sanitized().note
+			let current = DoseReflectionCodec.displayNote(from: saved.note)
+			guard current != requested else { return }
+			guard current == DoseReflectionCodec.displayNote(from: event.note) else { throw EditError.conflict }
+			saved.note = try DoseReflectionCodec.updatingNote(in: saved.note, with: requested)
 		}
 	}
 
@@ -349,6 +360,10 @@ final class MedicationHistoryViewModel: ObservableObject {
 			}
 			loadData()
 			return true
+		} catch EditError.conflict {
+			loadData()
+			mutationError = String(localized: "This entry changed while you were editing. Close the editor and reopen it to review the latest values.")
+			return false
 		} catch PersistenceTransactionError.recordUnavailable {
 			loadData()
 			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
@@ -366,15 +381,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 		isMutating = true
 		mutationError = nil
 		defer { isMutating = false }
-		guard dataStore.events.contains(where: { $0.id == event.id }) else {
-			mutationError = String(localized: "This entry is no longer available. Review History before trying again.")
-			return false
-		}
-		// Delete the event and restore medication quantity if needed
 		do {
-			try await dataStore.deleteEvents(ids: [event.id])
+			try await dataStore.deleteEvents(matching: [event])
 			loadData()
 			return true
+		} catch PersistenceTransactionError.recordUnavailable {
+			loadData()
+			mutationError = String(localized: "This entry changed or is no longer available. Review History before trying again.")
+			return false
 		} catch {
 			loadData()
 			mutationError = String(localized: "Couldn’t finish deleting the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")

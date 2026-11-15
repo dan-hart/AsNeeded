@@ -50,10 +50,20 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 	}
 
 	mutating func updateEvent(_ updated: ANEventConcept) throws {
-		guard let index = events.firstIndex(where: { $0.id == updated.id }) else { throw PersistenceTransactionError.recordUnavailable }
+		try editEvent(id: updated.id) { $0 = updated }
+	}
+
+	mutating func editEvent(id: UUID, _ edit: (inout ANEventConcept) throws -> Void) throws {
+		guard let index = events.firstIndex(where: { $0.id == id }) else { throw PersistenceTransactionError.recordUnavailable }
 		let original = events[index]
-		guard updated.medication?.id == original.medication?.id else { throw PersistenceTransactionError.invalidDose }
-		if let dose = updated.dose, (!dose.amount.isFinite || dose.amount <= 0) { throw PersistenceTransactionError.invalidDose }
+		var updated = original
+		try edit(&updated)
+		guard updated.id == original.id, updated.medication?.id == original.medication?.id else {
+			throw PersistenceTransactionError.invalidDose
+		}
+		if let dose = updated.dose, dose != original.dose, !dose.amount.isFinite || dose.amount <= 0 {
+			throw PersistenceTransactionError.invalidDose
+		}
 		if let medicationIndex = medications.firstIndex(where: { $0.id == original.medication?.id }),
 			let quantity = medications[medicationIndex].quantity {
 			let medication = medications[medicationIndex]
@@ -61,7 +71,9 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 			let newAmount = updated.eventType == .doseTaken ? updated.dose.map { stockAmount($0, medication: medication) } ?? 0 : 0
 			let change = oldAmount - newAmount
 			if change != 0 {
-				medications[medicationIndex].quantity = quantity + change
+				let adjustedQuantity = quantity + change
+				guard adjustedQuantity.isFinite else { throw PersistenceTransactionError.invalidDose }
+				medications[medicationIndex].quantity = adjustedQuantity
 			}
 		}
 		events[index] = updated

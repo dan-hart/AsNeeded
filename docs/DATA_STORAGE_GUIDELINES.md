@@ -647,6 +647,12 @@ leave the current choice intact. Import applies an explicit value through the
 existing preference journal, so rollback restores the previous choice. This
 preference does not require a medication database schema or path migration.
 
+History compares edited fields against the saved entry while holding the write
+lock. A dose amount and unit are compared together. A conflicting change keeps
+the saved values, and an already-applied retry leaves the record and stock intact.
+Date and note corrections preserve a legacy dose that has no usable amount.
+History deletion verifies the displayed record under the lock before removing it.
+
 Migration backup directories retain `pre_migration_` and their timestamp, with a
 unique suffix to prevent same-second collisions. Existing backup discovery and
 restore paths remain compatible. File-based migration restore is an offline
