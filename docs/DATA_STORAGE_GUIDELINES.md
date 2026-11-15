@@ -730,10 +730,16 @@ the new key, so avoid downgrading with a save pending.
 ### Storage health when SQLite is temporarily unavailable
 
 The migration preflight requires a complete, successful SQLite quick check.
-An open, prepare, or read failure blocks startup and allows the existing retry
-flow. SQLite corruption results are reported separately from access failures.
+When SQLite reports a busy or locked database, startup checks again up to twice
+after short delays. Every blocking issue must be retryable. The app stays on
+the loading screen during those attempts and offers Try Again if they run out.
+Corruption and other access failures stop the preflight without restoring a
+backup or replacing either database. Backup selection remains an explicit
+decision because the backup may be older than surviving records.
+
 WatchConnectivity checks startup readiness before opening the app stores when it
-wakes the app and joins a check already underway.
-An isolated fixture holds an exclusive lock on the events database and verifies
-that a retry reads the original medication, stock, and event after release.
-Physical-device testing is required for iOS file protection before first unlock.
+wakes the app and joins a check already underway. Core Data Integrity fixtures
+release an exclusive SQLite lock during the retry, hold it through all attempts,
+and verify that a corrupt file remains byte for byte intact. The retry does not
+change database paths or schemas. Physical-device verification includes opening
+the app after first unlock.

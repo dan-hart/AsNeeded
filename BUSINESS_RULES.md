@@ -94,7 +94,7 @@ Prepare and validate imported content before committing; medication/event/settin
 
 Settings-inclusive exports preserve safety profiles stored only in shared preferences. Import and recovery read the app group's current-user preference domain. Recovery can finish when saved preferences already match the journal. If changed preferences cannot be made durable, retain the journal for retry.
 
-Reject conflicting duplicate identities inside one import before changing records or preferences. Temporary storage access failures preserve existing files and permit retry. A failed automatic backup retains the last validated backup and its success timestamp.
+Reject conflicting duplicate identities inside one import before changing records or preferences. Temporary storage access failures preserve existing files and permit retry. Startup automatically retries SQLite contention before asking the user to retry. A failed automatic backup retains the last validated backup and its success timestamp.
 
 Implementation: [transactions](AsNeeded/Services/Persistence/MedicationPersistenceTransactions.swift), [backup manager](AsNeeded/Services/AutomaticBackupManager.swift). Tests: [import rollback](AsNeededTests/DataImportIntegrityTests.swift), [backup cancellation/concurrency](AsNeededTests/AutomaticBackupStabilizationTests.swift), [retired settings](AsNeededTests/RetiredQuestionSettingsTests.swift). Durable path/migration constraints live in [storage guidelines](docs/DATA_STORAGE_GUIDELINES.md).
 

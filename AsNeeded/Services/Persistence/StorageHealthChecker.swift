@@ -21,6 +21,13 @@ public final class StorageHealthChecker {
 	public struct HealthIssue {
 		let message: String
 		let severity: IssueSeverity
+		let isRetryable: Bool
+
+		init(message: String, severity: IssueSeverity, isRetryable: Bool = false) {
+			self.message = message
+			self.severity = severity
+			self.isRetryable = isRetryable
+		}
 	}
 
 	/// Result of health check
@@ -79,11 +86,29 @@ public final class StorageHealthChecker {
 		}
 	}
 
+	private static var appGroupURL: URL? {
+		FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier)
+	}
+
 	/// Performs comprehensive health check on storage system
 	public func performHealthCheck() -> HealthCheckResult {
-		performHealthCheck(in: FileManager.default.containerURL(
-			forSecurityApplicationGroupIdentifier: StorageConstants.appGroupIdentifier
-		))
+		performHealthCheck(in: Self.appGroupURL)
+	}
+
+	/// Give cooperating SQLite writers time to release their locks before opening the stores.
+	func performStartupHealthCheck(
+		in containerURL: URL? = StorageHealthChecker.appGroupURL,
+		sleep: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
+	) async throws -> HealthCheckResult {
+		try Task.checkCancellation()
+		var result = performHealthCheck(in: containerURL)
+		for delay in [Duration.milliseconds(250), .milliseconds(750)] {
+			guard !result.errors.isEmpty, result.errors.allSatisfy(\.isRetryable) else { break }
+			try await sleep(delay)
+			try Task.checkCancellation()
+			result = performHealthCheck(in: containerURL)
+		}
+		return result
 	}
 
 	func performHealthCheck(in containerURL: URL?) -> HealthCheckResult {
@@ -258,13 +283,15 @@ public final class StorageHealthChecker {
 	/// Validates SQLite database integrity using PRAGMA quick_check.
 	private func validateSQLiteIntegrity(at path: URL, name: String, issues: inout [HealthIssue]) {
 		func reportFailure(_ code: Int32, unavailableMessage: String) {
-			let issue = switch code {
+			let primaryCode = code & 0xff // SQLite extended result codes keep the primary code in the low byte.
+			let issue = switch primaryCode {
 			case SQLITE_CORRUPT, SQLITE_NOTADB:
 				String(localized: "\(name) database failed integrity check (may be corrupted)")
 			default:
 				unavailableMessage
 			}
-			issues.append(HealthIssue(message: issue, severity: .error))
+			let isRetryable = primaryCode == SQLITE_BUSY || primaryCode == SQLITE_LOCKED
+			issues.append(HealthIssue(message: issue, severity: .error, isRetryable: isRetryable))
 			logger.error("❌ \(issue) (SQLite code: \(code))")
 		}
 

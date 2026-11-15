@@ -270,8 +270,9 @@ struct DataIntegrityTests {
 		}
 	}
 
-	@Test("A locked database blocks startup preflight and retries with its records intact")
-	func lockedStorageHealthCheckCanRetry() async throws {
+	@Test("Startup retries a temporary SQLite lock and stops retrying a persistent lock",
+		.tags(.coreDataIntegrity, .critical), arguments: [true, false])
+	func lockedStorageHealthCheckCanRetry(releaseDuringRetry: Bool) async throws {
 		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let medication = ANMedicationConcept(clinicalName: "Locked storage example", quantity: 17)
@@ -292,13 +293,42 @@ struct DataIntegrityTests {
 		#expect(!locked.isHealthy)
 		#expect(!locked.errors.isEmpty)
 
-		try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
+		var retryCount = 0
+		let result = try await checker.performStartupHealthCheck(in: directory) { _ in
+			retryCount += 1
+			if releaseDuringRetry {
+				try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
+			}
+		}
+		#expect(result.isHealthy == releaseDuringRetry)
+		#expect(retryCount == (releaseDuringRetry ? 1 : 2))
+		if !releaseDuringRetry {
+			try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
+		}
 		#expect(checker.performHealthCheck(in: directory).isHealthy)
 		let medications = try await readSnapshot(ANMedicationConcept.self, directory: directory, name: StorageConstants.medicationsDBName)
 		let events = try await readSnapshot(ANEventConcept.self, directory: directory, name: StorageConstants.eventsDBName)
 		#expect(medications.map(\.id) == [medication.id])
 		#expect(medications.first?.quantity == 17)
 		#expect(events.map(\.id) == [event.id])
+	}
+
+	@Test("Startup preserves a corrupt database byte for byte without retrying",
+		.tags(.coreDataIntegrity, .critical))
+	func corruptStorageDoesNotTriggerRetryOrReplacement() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let eventsURL = directory.appendingPathComponent(StorageConstants.eventsDBPath)
+		let damagedBytes = Data(repeating: 0x41, count: 4096)
+		try damagedBytes.write(to: eventsURL)
+
+		let result = try await StorageHealthChecker().performStartupHealthCheck(in: directory) { _ in
+			Issue.record("A corrupt database must not be retried as a temporary lock")
+		}
+		#expect(!result.isHealthy)
+		#expect(try Data(contentsOf: eventsURL) == damagedBytes)
+		#expect(!FileManager.default.fileExists(atPath: directory.appendingPathComponent(StorageConstants.medicationsDBPath).path))
 	}
 
 	@Test("Watch waits for an in-flight storage migration while ordinary callers return")

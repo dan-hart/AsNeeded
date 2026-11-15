@@ -218,7 +218,7 @@ sig = "157dd745db9864c5"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Services/MigrationCoordinator.swift"
-sig = "a0f57774ce7ff337"
+sig = "39c376fbcf6caae9"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -248,7 +248,7 @@ sig = "50c0df30857030fd"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Services/Persistence/StorageHealthChecker.swift"
-sig = "8a0165f42f40b052"
+sig = "13bfae9d71b9017e"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -353,7 +353,7 @@ sig = "9a5818248e7a832c"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/DataIntegrityTests.swift"
-sig = "af06d426a722de03"
+sig = "c13ae26d158b7664"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
