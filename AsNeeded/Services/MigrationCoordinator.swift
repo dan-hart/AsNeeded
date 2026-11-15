@@ -76,6 +76,16 @@ public final class MigrationCoordinator {
 	}
 
 	private func migrateStorage() async {
+		do {
+			try await PersistenceActivity.run(begin: AppPersistenceActivity.begin, migrateStorageWithActivity)
+		} catch {
+			logger.logPrivacySafeError("Startup storage work interrupted", error: error)
+			self.error = error
+			isComplete = false
+		}
+	}
+
+	private func migrateStorageWithActivity() async throws {
 		migrationStartTime = Date()
 		logger.info("Starting migration coordinator")
 
@@ -90,6 +100,8 @@ public final class MigrationCoordinator {
 			// A cancelled startup does not represent a storage failure.
 			return
 		}
+
+		try PersistenceActivity.checkCancellation()
 
 		if !healthResult.isHealthy {
 			logger.error("❌ Storage health check failed - see issues above")
@@ -119,11 +131,14 @@ public final class MigrationCoordinator {
 				if currentVersion < targetVersion || currentVersion == 0 {
 					let backup = await BackupManager.shared.createPreMigrationBackup()
 					guard backup.success else { throw MigrationBackupFailure(underlyingError: backup.error) }
+					try PersistenceActivity.checkCancellation()
 				}
 				try await DataMigrationManager().migrateIfNeeded()
 			}
 			// Finish model-field migration before any editing or dose logging UI appears.
 			try await MedicationDoseLimitMigration().migrate(dataStore: .shared)
+
+			try PersistenceActivity.checkCancellation()
 
 			// Update schema version after successful migration
 			if currentVersion < targetVersion {

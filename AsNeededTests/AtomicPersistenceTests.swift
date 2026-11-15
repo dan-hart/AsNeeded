@@ -6,6 +6,45 @@ import Testing
 
 @MainActor
 struct AtomicPersistenceTests {
+	@Test("Background expiration releases storage ownership and recovers a partial dose save", .tags(.coreDataIntegrity))
+	func expirationRecoversPartialDoseSave() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Synthetic stock", quantity: 10, prescribedUnit: .tablet)
+		try await fixture.store.addMedication(medication)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication,
+			dose: ANDoseConcept(amount: 2, unit: .tablet), date: .now)
+		var expire: (@MainActor () -> Void)?
+		var started = 0
+		var ended = 0
+		let writer = MedicationPersistenceTransactions(directory: fixture.directory,
+			medicationsStore: fixture.store.medicationsStore, eventsStore: fixture.store.eventsStore,
+			beginActivity: { expiration in
+				started += 1
+				expire = expiration
+				return { ended += 1 }
+			}, fault: { phase in
+				if phase == .beforeLock { #expect(started == 1 && ended == 0) }
+				if phase == .afterMedications { expire?() }
+			})
+
+		await #expect(throws: PersistenceTransactionError.recoveryRequired) {
+			try await writer.perform { try $0.recordDose(event) }
+		}
+		#expect(ended == 1)
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		#expect(FileManager.default.fileExists(atPath: journal.path))
+
+		let reopened = DataStore(storageDirectory: fixture.directory, defaults: fixture.defaults, defaultsDomainName: fixture.suite)
+		let recovered = try await reopened.prepareForAccess()
+		#expect(recovered.medications.first?.quantity == 10)
+		#expect(recovered.events.isEmpty)
+		#expect(!FileManager.default.fileExists(atPath: journal.path))
+		try await reopened.recordDose(event)
+		#expect(reopened.medications.first?.quantity == 8)
+		#expect(reopened.events.map(\.id) == [event.id])
+	}
+
 	@Test("A failed dose event write restores stock and permits one clean retry")
 	func failedDoseSaveRestoresBothStores() async throws {
 		let fixture = try AtomicFixture()

@@ -270,9 +270,15 @@ struct DataIntegrityTests {
 		}
 	}
 
-	@Test("Startup retries a temporary SQLite lock and stops retrying a persistent lock",
-		.tags(.coreDataIntegrity, .critical), arguments: [true, false])
-	func lockedStorageHealthCheckCanRetry(releaseDuringRetry: Bool) async throws {
+	enum StartupLockOutcome: CaseIterable {
+		case releasedOnRetry
+		case stillLocked
+		case backgroundTimeExpired
+	}
+
+	@Test("Startup retries SQLite contention and stops when background time expires",
+		.tags(.coreDataIntegrity, .critical), arguments: StartupLockOutcome.allCases)
+	func lockedStorageHealthCheckCanRetry(outcome: StartupLockOutcome) async throws {
 		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 		defer { try? FileManager.default.removeItem(at: directory) }
 		let medication = ANMedicationConcept(clinicalName: "Locked storage example", quantity: 17)
@@ -294,15 +300,34 @@ struct DataIntegrityTests {
 		#expect(!locked.errors.isEmpty)
 
 		var retryCount = 0
-		let result = try await checker.performStartupHealthCheck(in: directory) { _ in
-			retryCount += 1
-			if releaseDuringRetry {
-				try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
-			}
+		var ended = 0
+		var expire: (@MainActor () -> Void)?
+		let begin: PersistenceActivity.Begin = { expiration in
+			expire = expiration
+			return { ended += 1 }
 		}
-		#expect(result.isHealthy == releaseDuringRetry)
-		#expect(retryCount == (releaseDuringRetry ? 1 : 2))
-		if !releaseDuringRetry {
+		do {
+			let result = try await PersistenceActivity.run(begin: begin) {
+				try await checker.performStartupHealthCheck(in: directory) { _ in
+					retryCount += 1
+					switch outcome {
+						case .releasedOnRetry:
+							try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
+						case .stillLocked:
+							break
+						case .backgroundTimeExpired:
+							expire?()
+					}
+				}
+			}
+			#expect(outcome != .backgroundTimeExpired)
+			#expect(result.isHealthy == (outcome == .releasedOnRetry))
+		} catch is CancellationError {
+			#expect(outcome == .backgroundTimeExpired)
+		}
+		#expect(ended == 1)
+		#expect(retryCount == (outcome == .stillLocked ? 2 : 1))
+		if outcome != .releasedOnRetry {
 			try #require(sqlite3_exec(database, "ROLLBACK", nil, nil, nil) == SQLITE_OK)
 		}
 		#expect(checker.performHealthCheck(in: directory).isHealthy)

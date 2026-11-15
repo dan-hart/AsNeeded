@@ -746,3 +746,21 @@ release an exclusive SQLite lock during the retry, hold it through all attempts,
 and verify that a corrupt file remains byte for byte intact. The retry does not
 change database paths or schemas. Physical-device verification includes opening
 the app after first unlock.
+
+### Storage work when iOS backgrounds the app
+
+The iPhone app requests bounded background time before opening stores during
+startup and before taking the shared persistence lock for app transactions.
+If that time expires, the operation stops at the next storage boundary and
+releases the lock. An interrupted save keeps its durable undo journal so the
+next successful access can restore the original dose and stock before retry.
+The widget keeps its existing extension-safe storage path. Database paths,
+schemas, and the undo journal format stay the same.
+
+The Core Data Integrity suite expires an operation between the stock update and
+dose write, reopens both stores, and verifies that recovery and a clean retry
+leave one dose and the corresponding stock deduction. It also expires startup
+while SQLite is locked and checks that retries stop and both stores retain
+their original records. On a physical device,
+background the app during a cold launch with a large History and after starting
+a log or restore, then reopen and verify the existing records and stock.

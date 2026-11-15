@@ -100,12 +100,12 @@ public final class StorageHealthChecker {
 		in containerURL: URL? = StorageHealthChecker.appGroupURL,
 		sleep: (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 	) async throws -> HealthCheckResult {
-		try Task.checkCancellation()
+		try PersistenceActivity.checkCancellation()
 		var result = performHealthCheck(in: containerURL)
 		for delay in [Duration.milliseconds(250), .milliseconds(750)] {
 			guard !result.errors.isEmpty, result.errors.allSatisfy(\.isRetryable) else { break }
 			try await sleep(delay)
-			try Task.checkCancellation()
+			try PersistenceActivity.checkCancellation()
 			result = performHealthCheck(in: containerURL)
 		}
 		return result

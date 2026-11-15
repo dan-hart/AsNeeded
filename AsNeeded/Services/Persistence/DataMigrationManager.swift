@@ -130,6 +130,7 @@ public final class DataMigrationManager {
 	/// Safe to call on every app launch - only migrates if legacy data exists
 	/// - Throws: Migration errors that should be handled by the caller
 	public func migrateIfNeeded() async throws {
+		try PersistenceActivity.checkCancellation()
 		logger.info("=== Starting Migration Check ===")
 
 		// Step 1: Find legacy data at correct iOS path
@@ -167,6 +168,7 @@ public final class DataMigrationManager {
 		// Only runs after verification succeeds - renames (not deletes) for safety
 		// CRITICAL: This must succeed for migration to be complete
 		// If archival fails, migration throws and will retry on next app launch
+		try PersistenceActivity.checkCancellation()
 		try archiveLegacyDatabases(legacyPaths)
 
 		logger.info("✅ Migration complete and verified")
@@ -316,6 +318,7 @@ public final class DataMigrationManager {
 		}
 
 		// Load events in isolated scope to ensure connection cleanup
+		try PersistenceActivity.checkCancellation()
 		if let eventsURL = paths.events {
 			logger.info("Loading legacy events")
 			let resolved = try await loadLegacyItemsResolvingEmptyNeighbor(from: eventsURL, type: ANEventConcept.self)
@@ -326,7 +329,8 @@ public final class DataMigrationManager {
 
 		// Brief delay to ensure file handles are fully released after store deallocation
 		// This is critical for archival to succeed
-		try? await Task.sleep(for: .milliseconds(100))
+		try await Task.sleep(for: .milliseconds(100))
+		try PersistenceActivity.checkCancellation()
 		logger.info("Legacy data loading complete, file handles released")
 
 		return (medications: medications, events: events)
@@ -461,6 +465,7 @@ public final class DataMigrationManager {
 			medications = store.items
 		}
 
+		try PersistenceActivity.checkCancellation()
 		if fileManager.fileExists(atPath: eventsPath) {
 			guard let storage = SQLiteStorageEngine(
 				directory: FileManager.Directory(url: containerURL),
@@ -504,6 +509,7 @@ public final class DataMigrationManager {
 		events: [ANEventConcept],
 		containerURL: URL
 	) async throws {
+		try PersistenceActivity.checkCancellation()
 		// Write medications
 		guard let medicationsStorage = SQLiteStorageEngine(
 			directory: FileManager.Directory(url: containerURL),
@@ -516,6 +522,7 @@ public final class DataMigrationManager {
 			cacheIdentifier: \ANMedicationConcept.id.uuidString
 		)
 
+		try PersistenceActivity.checkCancellation()
 		// Write events
 		guard let eventsStorage = SQLiteStorageEngine(
 			directory: FileManager.Directory(url: containerURL),
@@ -536,11 +543,13 @@ public final class DataMigrationManager {
 		let recoveredEvents = events.filter { !currentEventIDs.contains($0.id) }
 
 		for medication in recoveredMedications {
+			try PersistenceActivity.checkCancellation()
 			try await medicationsStore.insert(medication)
 		}
 		logger.info("Recovered \(recoveredMedications.count) medications")
 
 		for event in recoveredEvents {
+			try PersistenceActivity.checkCancellation()
 			try await eventsStore.insert(event)
 		}
 		logger.info("Recovered \(recoveredEvents.count) events")

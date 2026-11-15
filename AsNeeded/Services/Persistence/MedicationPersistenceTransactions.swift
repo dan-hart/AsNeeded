@@ -152,6 +152,47 @@ struct PersistencePreferenceDomain {
 	}
 }
 
+/// A bounded execution assertion supplied by the containing app. Extensions
+/// use the same transaction code without calling application-only UIKit APIs.
+@MainActor
+final class PersistenceActivity {
+	typealias Begin = @MainActor (@escaping @MainActor () -> Void) throws -> (@MainActor () -> Void)
+
+	@TaskLocal private static var current: PersistenceActivity?
+	private var end: (@MainActor () -> Void)?
+	private var expired = false
+
+	private func expire() {
+		expired = true
+		finish()
+	}
+
+	static func run<Value>(begin: Begin?, _ operation: () async throws -> Value) async throws -> Value {
+		try checkCancellation()
+		guard current?.end == nil, let begin else { return try await operation() }
+		let activity = PersistenceActivity()
+		activity.end = try begin { [weak activity] in
+			activity?.expire()
+		}
+		defer { activity.finish() }
+		return try await $current.withValue(activity) {
+			try checkCancellation()
+			return try await operation()
+		}
+	}
+
+	static func checkCancellation() throws {
+		try Task.checkCancellation()
+		if current?.expired == true { throw CancellationError() }
+	}
+
+	private func finish() {
+		let end = self.end
+		self.end = nil
+		end?()
+	}
+}
+
 /// Recovery metadata only. Primary database paths and schemas do not change.
 @MainActor
 final class MedicationPersistenceTransactions {
@@ -169,36 +210,38 @@ final class MedicationPersistenceTransactions {
 	private let medicationsStore: Store<ANMedicationConcept>
 	private let eventsStore: Store<ANEventConcept>
 	private let preferences: [String: PersistencePreferenceDomain]
+	private let beginActivity: PersistenceActivity.Begin?
 	private let fault: (PersistenceTransactionPhase) throws -> Void
 	private let didStabilize: (MedicationPersistenceSnapshot) -> Void
 	private var preferenceDomainsNeedingSync: Set<String> = []
 	// Hide partially published Boutique changes from app-owned computed views.
 	private(set) var visibleSnapshot: MedicationPersistenceSnapshot?
 
-	init(directory: URL, medicationsStore: Store<ANMedicationConcept>, eventsStore: Store<ANEventConcept>, preferences: [String: PersistencePreferenceDomain] = [:], fault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, didStabilize: @escaping (MedicationPersistenceSnapshot) -> Void = { _ in }) {
+	init(directory: URL, medicationsStore: Store<ANMedicationConcept>, eventsStore: Store<ANEventConcept>, preferences: [String: PersistencePreferenceDomain] = [:], beginActivity: PersistenceActivity.Begin? = nil, fault: @escaping (PersistenceTransactionPhase) throws -> Void = { _ in }, didStabilize: @escaping (MedicationPersistenceSnapshot) -> Void = { _ in }) {
 		self.directory = directory
 		self.medicationsStore = medicationsStore
 		self.eventsStore = eventsStore
 		self.preferences = preferences
+		self.beginActivity = beginActivity
 		self.fault = fault
 		self.didStabilize = didStabilize
 	}
 
 	/// Reads a consistent snapshot while holding the same lock as writers.
 	func read() async throws -> MedicationPersistenceSnapshot {
-		let lock = try await acquireLock()
-		defer { lock.release() }
-		if let journal = try loadJournal(), !canRestorePreferences(journal) {
-			// Do not combine old records with shared preferences changed by an
-			// interrupted import. Only the owning app can recover those domains.
-			throw PersistenceTransactionError.recoveryRequired
+		try await withLock {
+			if let journal = try loadJournal(), !canRestorePreferences(journal) {
+				// Do not combine old records with shared preferences changed by an
+				// interrupted import. Only the owning app can recover those domains.
+				throw PersistenceTransactionError.recoveryRequired
+			}
+			try await recoverUnlocked()
+			let snapshot = try await loadFresh()
+			visibleSnapshot = snapshot
+			try await apply(snapshot)
+			publishStable(snapshot)
+			return snapshot
 		}
-		try await recoverUnlocked()
-		let snapshot = try await loadFresh()
-		visibleSnapshot = snapshot
-		try await apply(snapshot)
-		publishStable(snapshot)
-		return snapshot
 	}
 
 	@discardableResult
@@ -211,85 +254,88 @@ final class MedicationPersistenceTransactions {
 
 	@discardableResult
 	func perform(changeWithPreferenceKeys: (inout MedicationPersistenceSnapshot) throws -> [String: Set<String>], applyPreferences: (MedicationPersistenceSnapshot) -> Void) async throws -> Bool {
-		let lock = try await acquireLock()
-		defer { lock.release() }
-		try await recoverUnlocked()
-		let before = try await loadFresh()
-		visibleSnapshot = before
-		// Reconcile caches with external-process writes before calculating a mutation.
-		try await apply(before)
-		var after = before
-		var preferenceKeys: [String: Set<String>]
-		do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
-		if !after.stockExcludedEventIDs.isEmpty {
-			after.stockExcludedEventIDs.formIntersection(after.events.lazy.filter { $0.eventType == .doseTaken }.map(\.id))
-		}
-		let stockKey = SharedPlatformContracts.Preferences.stockExcludedEventIDs
-		let stockExclusionsChanged = before.stockExcludedEventIDs != after.stockExcludedEventIDs
-		if stockExclusionsChanged { preferenceKeys["application", default: []].insert(stockKey) }
-		if let keys = preferenceKeys["shared"], !keys.isEmpty, let domain = preferences["shared"], domain.isAppGroup,
-			!synchronize(domain, named: "shared", during: .preflight) {
-			visibleSnapshot = nil
-			throw PersistenceTransactionError.storageUnavailable
-		}
-		let journal = try makeJournal(before: before, after: after, preferenceKeys: preferenceKeys)
-		if journal.medicationIDs.isEmpty && journal.eventIDs.isEmpty && journal.preferences.isEmpty {
-			publishStable(before)
-			return false
-		}
-		try fault(.beforeJournal)
-		try saveJournal(journal)
-		do {
-			try await apply(after, injectingFaults: true)
-			preferenceDomainsNeedingSync.formUnion(journal.preferences.map(\.domain))
-			applyPreferences(after)
-			if stockExclusionsChanged, let domain = preferences["application"] {
-				if after.stockExcludedEventIDs.isEmpty {
-					domain.defaults.removeObject(forKey: stockKey)
-				} else {
-					domain.defaults.set(after.stockExcludedEventIDs.map(\.uuidString).sorted(), forKey: stockKey)
-				}
+		try await withLock {
+			try await recoverUnlocked()
+			let before = try await loadFresh()
+			visibleSnapshot = before
+			// Reconcile caches with external-process writes before calculating a mutation.
+			try await apply(before)
+			var after = before
+			var preferenceKeys: [String: Set<String>]
+			do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
+			if !after.stockExcludedEventIDs.isEmpty {
+				after.stockExcludedEventIDs.formIntersection(after.events.lazy.filter { $0.eventType == .doseTaken }.map(\.id))
 			}
-			for undo in journal.preferences {
-				guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
-				let current = domain.persistedValues(for: undo.keys)
-				if !NSDictionary(dictionary: current).isEqual(to: try undo.decodedValues()), !synchronize(domain, named: undo.domain, during: .commit) {
-					throw PersistenceTransactionError.storageUnavailable
-				}
-				preferenceDomainsNeedingSync.remove(undo.domain)
-			}
-			try fault(.beforeCommit)
-			try FileManager.default.removeItem(at: journalURL)
-			flushDirectoryAfterCommit()
-			publishStable(after)
-			return true
-		} catch is CancellationError {
-			// Cancellation can mean background expiration. Leave the durable undo record
-			// for the next non-cancelled reader/writer, just as after process termination.
-			throw PersistenceTransactionError.recoveryRequired
-		} catch {
-			let originalError = error
-			do {
-				try fault(.beforeRollback)
-				try await recoverUnlocked()
+			let stockKey = SharedPlatformContracts.Preferences.stockExcludedEventIDs
+			let stockExclusionsChanged = before.stockExcludedEventIDs != after.stockExcludedEventIDs
+			if stockExclusionsChanged { preferenceKeys["application", default: []].insert(stockKey) }
+			if let keys = preferenceKeys["shared"], !keys.isEmpty, let domain = preferences["shared"], domain.isAppGroup,
+				!synchronize(domain, named: "shared", during: .preflight) {
 				visibleSnapshot = nil
-			} catch {
-				throw PersistenceTransactionError.recoveryRequired
+				throw PersistenceTransactionError.storageUnavailable
 			}
-			throw originalError
+			let journal = try makeJournal(before: before, after: after, preferenceKeys: preferenceKeys)
+			if journal.medicationIDs.isEmpty && journal.eventIDs.isEmpty && journal.preferences.isEmpty {
+				publishStable(before)
+				return false
+			}
+			try fault(.beforeJournal)
+			try PersistenceActivity.checkCancellation()
+			try saveJournal(journal)
+			do {
+				try await apply(after, injectingFaults: true)
+				preferenceDomainsNeedingSync.formUnion(journal.preferences.map(\.domain))
+				applyPreferences(after)
+				if stockExclusionsChanged, let domain = preferences["application"] {
+					if after.stockExcludedEventIDs.isEmpty {
+						domain.defaults.removeObject(forKey: stockKey)
+					} else {
+						domain.defaults.set(after.stockExcludedEventIDs.map(\.uuidString).sorted(), forKey: stockKey)
+					}
+				}
+				for undo in journal.preferences {
+					guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
+					let current = domain.persistedValues(for: undo.keys)
+					if !NSDictionary(dictionary: current).isEqual(to: try undo.decodedValues()), !synchronize(domain, named: undo.domain, during: .commit) {
+						throw PersistenceTransactionError.storageUnavailable
+					}
+					preferenceDomainsNeedingSync.remove(undo.domain)
+				}
+				try fault(.beforeCommit)
+				try PersistenceActivity.checkCancellation()
+				try FileManager.default.removeItem(at: journalURL)
+				flushDirectoryAfterCommit()
+				publishStable(after)
+				return true
+			} catch is CancellationError {
+				// Cancellation can mean background expiration. Leave the durable undo record
+				// for the next non-cancelled reader/writer, just as after process termination.
+				throw PersistenceTransactionError.recoveryRequired
+			} catch {
+				let originalError = error
+				do {
+					try fault(.beforeRollback)
+					try await recoverUnlocked()
+					visibleSnapshot = nil
+				} catch {
+					throw PersistenceTransactionError.recoveryRequired
+				}
+				throw originalError
+			}
 		}
 	}
 
 	// Used for the existing idempotent legacy migration, which retains its sources.
 	func withRecoveredStorage(_ operation: () async throws -> Void) async throws {
-		let lock = try await acquireLock()
-		defer { lock.release() }
-		try await recoverUnlocked()
-		try await operation()
-		let snapshot = try await loadFresh()
-		visibleSnapshot = snapshot
-		try await apply(snapshot)
-		publishStable(snapshot)
+		try await withLock {
+			try await recoverUnlocked()
+			try await operation()
+			try PersistenceActivity.checkCancellation()
+			let snapshot = try await loadFresh()
+			visibleSnapshot = snapshot
+			try await apply(snapshot)
+			publishStable(snapshot)
+		}
 	}
 
 	private func publishStable(_ snapshot: MedicationPersistenceSnapshot) {
@@ -394,6 +440,7 @@ final class MedicationPersistenceTransactions {
 	}
 
 	private func recoverUnlocked() async throws {
+		try PersistenceActivity.checkCancellation()
 		guard let journal = try loadJournal() else { return }
 		guard canRestorePreferences(journal) else { throw PersistenceTransactionError.recoveryRequired }
 		// Validate every preference payload before changing any records.
@@ -417,12 +464,14 @@ final class MedicationPersistenceTransactions {
 			if !synchronize(domain, named: undo.domain, during: .replay) {
 				// Keep the journal and write lock while giving the preferences service one retry.
 				try await Task.sleep(for: .milliseconds(250))
+				try PersistenceActivity.checkCancellation()
 				guard synchronize(domain, named: undo.domain, during: .replayRetry) else {
 					throw PersistenceTransactionError.storageUnavailable
 				}
 			}
 			preferenceDomainsNeedingSync.remove(undo.domain)
 		}
+		try PersistenceActivity.checkCancellation()
 		before.stockExcludedEventIDs = try loadStockExcludedEventIDs()
 		try FileManager.default.removeItem(at: journalURL)
 		flushDirectoryAfterCommit()
@@ -449,10 +498,13 @@ final class MedicationPersistenceTransactions {
 	}
 
 	private func loadFresh() async throws -> MedicationPersistenceSnapshot {
+		try PersistenceActivity.checkCancellation()
 		guard let medicationStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: SharedPlatformContracts.Storage.medicationsDBName),
 			let eventStorage = SQLiteStorageEngine(directory: FileManager.Directory(url: directory), databaseFilename: SharedPlatformContracts.Storage.eventsDBName) else { throw PersistenceTransactionError.storageUnavailable }
 		let medications = try await Store<ANMedicationConcept>(storage: medicationStorage, cacheIdentifier: \.id.uuidString)
+		try PersistenceActivity.checkCancellation()
 		let events = try await Store<ANEventConcept>(storage: eventStorage, cacheIdentifier: \.id.uuidString)
+		try PersistenceActivity.checkCancellation()
 		return MedicationPersistenceSnapshot(medications: medications.items, events: events.items,
 			stockExcludedEventIDs: try loadStockExcludedEventIDs())
 	}
@@ -467,22 +519,43 @@ final class MedicationPersistenceTransactions {
 	}
 
 	private func apply(_ snapshot: MedicationPersistenceSnapshot, injectingFaults: Bool = false) async throws {
+		try PersistenceActivity.checkCancellation()
 		try await medicationsStore.itemsHaveLoaded()
+		try PersistenceActivity.checkCancellation()
 		try await eventsStore.itemsHaveLoaded()
 		let disk = try await loadFresh()
 		let medicationIDs = Set(snapshot.medications.map(\.id))
 		let knownMedications = Dictionary((medicationsStore.items + disk.medications).map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
-		for item in knownMedications.values where !medicationIDs.contains(item.id) { try await medicationsStore.remove(item) }
+		for item in knownMedications.values where !medicationIDs.contains(item.id) {
+			try PersistenceActivity.checkCancellation()
+			try await medicationsStore.remove(item)
+		}
 		let changedMedications = try changedIDs(medicationsStore.items, snapshot.medications).union(changedIDs(disk.medications, snapshot.medications))
-		for item in snapshot.medications where changedMedications.contains(item.id) { try await medicationsStore.insert(item) }
+		for item in snapshot.medications where changedMedications.contains(item.id) {
+			try PersistenceActivity.checkCancellation()
+			try await medicationsStore.insert(item)
+		}
 		if injectingFaults { try fault(.afterMedications) }
 		let eventIDs = Set(snapshot.events.map(\.id))
 		let knownEvents = Dictionary((eventsStore.items + disk.events).map { ($0.id, $0) }, uniquingKeysWith: { _, latest in latest })
-		for item in knownEvents.values where !eventIDs.contains(item.id) { try await eventsStore.remove(item) }
+		for item in knownEvents.values where !eventIDs.contains(item.id) {
+			try PersistenceActivity.checkCancellation()
+			try await eventsStore.remove(item)
+		}
 		let changedEvents = try changedIDs(eventsStore.items, snapshot.events).union(changedIDs(disk.events, snapshot.events))
 		for (index, item) in snapshot.events.enumerated() where changedEvents.contains(item.id) {
+			try PersistenceActivity.checkCancellation()
 			try await eventsStore.insert(item)
 			if injectingFaults { try fault(.afterEvent(index)) }
+		}
+		try PersistenceActivity.checkCancellation()
+	}
+
+	private func withLock<Value>(_ operation: () async throws -> Value) async throws -> Value {
+		try await PersistenceActivity.run(begin: beginActivity) {
+			let lock = try await acquireLock()
+			defer { lock.release() }
+			return try await operation()
 		}
 	}
 
@@ -500,6 +573,7 @@ final class MedicationPersistenceTransactions {
 		let descriptor = open(directory.appendingPathComponent(".persistence.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
 		guard descriptor >= 0 else { throw PersistenceTransactionError.storageUnavailable }
 		for _ in 0..<500 {
+			do { try PersistenceActivity.checkCancellation() } catch { close(descriptor); throw error }
 			if flock(descriptor, LOCK_EX | LOCK_NB) == 0 {
 				do { try fault(.afterLock); return Lock(descriptor) }
 				catch { _ = flock(descriptor, LOCK_UN); close(descriptor); throw error }

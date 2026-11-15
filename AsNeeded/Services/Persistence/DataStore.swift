@@ -169,7 +169,13 @@ public final class DataStore {
 		if let sharedDefaults {
 			domains["shared"] = PersistencePreferenceDomain(defaults: sharedDefaults, keys: [UserDefaultsKeys.medicationSafetyProfiles], persistentDomainName: sharedDefaultsDomainName)
 		}
-		return MedicationPersistenceTransactions(directory: storageDirectory, medicationsStore: medicationsStore, eventsStore: eventsStore, preferences: domains, fault: transactionFault, didStabilize: { [weak self] snapshot in
+		let beginActivity: PersistenceActivity.Begin?
+		if isTestStore {
+			beginActivity = nil
+		} else {
+			beginActivity = AppPersistenceActivity.begin
+		}
+		return MedicationPersistenceTransactions(directory: storageDirectory, medicationsStore: medicationsStore, eventsStore: eventsStore, preferences: domains, beginActivity: beginActivity, fault: transactionFault, didStabilize: { [weak self] snapshot in
 			self?.publishCommittedSnapshot(snapshot)
 		})
 	}()
