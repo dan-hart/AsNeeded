@@ -641,6 +641,18 @@ bookmarks. Imported settings remain opt-in. Resolve medication identity by exact
 ID before any unique-name fallback, include existing medications for merges, and
 validate unresolved/ambiguous history references before replacing records.
 
+The History totals display preference is an optional Boolean in app settings.
+Settings exports include its effective value. Older files can omit it and
+leave the current choice intact. Import applies an explicit value through the
+existing preference journal, so rollback restores the previous choice. This
+preference does not require a medication database schema or path migration.
+
+History compares edited fields against the saved entry while holding the write
+lock. A dose amount and unit are compared together. A conflicting change keeps
+the saved values, and an already-applied retry leaves the record and stock intact.
+Date and note corrections preserve a legacy dose that has no usable amount.
+History deletion verifies the displayed record under the lock before removing it.
+
 Migration backup directories retain `pre_migration_` and their timestamp, with a
 unique suffix to prevent same-second collisions. Existing backup discovery and
 restore paths remain compatible. File-based migration restore is an offline
@@ -658,6 +670,9 @@ in their directory. Cooperating app/widget writers load fresh records under the
 same lock. The journal is flushed before writes and removed only after completion.
 Ordinary failures restore affected records and exact persisted imported preferences;
 interruption or failed rollback retains the journal for recovery before access.
+When replay needs to sync changed preferences and the first sync fails, it retries
+once under the same lock. A second failure retains the journal. The local log
+records the stage and logical domain for failed preference synchronization.
 Malformed journals fail closed. Widgets cannot recover app-owned preferences and
 show an unavailable state until the app recovers them. Registered defaults and
 unrelated preference changes are not captured as persisted import values.
@@ -682,6 +697,23 @@ undone or archived targets fall back through recording order, then legacy active
 opens the medication selector. The resolver always returns the current medication
 record instead of the older copy embedded in an event.
 
+### History stock after a unit change
+
+Changing the effective stock unit or whether stock is tracked excludes existing
+doses from future stock adjustments. Their recorded dose, date, and note remain
+in History. The app stores the excluded event IDs in its existing application
+defaults domain, and the undo journal commits those IDs with the medication.
+Settings reset preserves the IDs. Deleting records removes the corresponding
+IDs. Widget recordings continue to use the current medication under the write lock.
+
+An optional data field in JSON backups preserves the IDs across a full restore.
+A merge into existing stock excludes the newly imported History for that
+medication. Older records use the recorded medication snapshot when it has a
+tracked quantity and a compatible unit. Prior unit changes that were never
+recorded, or already-normalized historical snapshots from older restores,
+cannot be reconstructed. Database paths, filenames, and SQLite schemas stay
+the same. Complete any pending journal before downgrading to an older build.
+
 ### Watch dose retry receipts
 
 `acknowledgedWatchDoseEventIDs` stores only opaque Watch event UUIDs in the
@@ -701,10 +733,16 @@ the new key, so avoid downgrading with a save pending.
 ### Storage health when SQLite is temporarily unavailable
 
 The migration preflight requires a complete, successful SQLite quick check.
-An open, prepare, or read failure blocks startup and allows the existing retry
-flow. SQLite corruption results are reported separately from access failures.
+When SQLite reports a busy or locked database, startup checks again up to twice
+after short delays. Every blocking issue must be retryable. The app stays on
+the loading screen during those attempts and offers Try Again if they run out.
+Corruption and other access failures stop the preflight without restoring a
+backup or replacing either database. Backup selection remains an explicit
+decision because the backup may be older than surviving records.
+
 WatchConnectivity checks startup readiness before opening the app stores when it
-wakes the app and joins a check already underway.
-An isolated fixture holds an exclusive lock on the events database and verifies
-that a retry reads the original medication, stock, and event after release.
-Physical-device testing is required for iOS file protection before first unlock.
+wakes the app and joins a check already underway. Core Data Integrity fixtures
+release an exclusive SQLite lock during the retry, hold it through all attempts,
+and verify that a corrupt file remains byte for byte intact. The retry does not
+change database paths or schemas. Physical-device verification includes opening
+the app after first unlock.

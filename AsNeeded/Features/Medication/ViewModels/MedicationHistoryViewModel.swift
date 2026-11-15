@@ -9,12 +9,45 @@ import UIKit
 
 @MainActor
 final class MedicationHistoryViewModel: ObservableObject {
-	@AppStorage(UserDefaultsKeys.historySelectedMedicationID) private var selectedMedicationIDString: String = ""
+	private enum EditError: Error {
+		case conflict
+	}
+
+	struct Day {
+		struct MedicationTotal: Identifiable {
+			let medication: ANMedicationConcept
+			var amounts: [ANUnitConcept: Double] = [:]
+
+			var id: UUID { medication.id }
+		}
+
+		let day: Date
+		let entries: [ANEventConcept]
+		let medicationTotals: [MedicationTotal]
+
+		init(day: Date, entries: [ANEventConcept]) {
+			self.day = day
+			self.entries = entries
+			var totals: [UUID: MedicationTotal] = [:]
+			for entry in entries {
+				guard let medication = entry.medication, let dose = entry.dose,
+					dose.amount.isFinite, dose.amount > 0 else { continue }
+				totals[medication.id, default: MedicationTotal(medication: medication)].amounts[dose.unit, default: 0] += dose.amount
+			}
+			medicationTotals = totals.values.compactMap { total in
+				var total = total
+				total.amounts = total.amounts.filter { $0.value.isFinite }
+				return total.amounts.isEmpty ? nil : total
+			}
+		}
+	}
 
 	@Published var selectedMedicationID: String? {
 		didSet {
-			selectedMedicationIDString = selectedMedicationID ?? ""
 			cachedGroupedHistory = nil
+			guard selectedMedicationID != storedSelection else { return }
+			storedSelection = selectedMedicationID
+			defaults.set(selectedMedicationID, forKey: UserDefaultsKeys.historySelectedMedicationID)
 		}
 	}
 
@@ -22,7 +55,11 @@ final class MedicationHistoryViewModel: ObservableObject {
 		didSet { cachedGroupedHistory = nil }
 	}
 
-	@Published var medications: [ANMedicationConcept] = []
+	@Published var medications: [ANMedicationConcept] = [] {
+		didSet {
+			medicationsByID = Dictionary(medications.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+		}
+	}
 	@Published var events: [ANEventConcept] = [] {
 		didSet { cachedGroupedHistory = nil }
 	}
@@ -30,39 +67,38 @@ final class MedicationHistoryViewModel: ObservableObject {
 	@Published var mutationError: String?
 
 	private let dataStore: DataStore
+	private let defaults: UserDefaults
+	private var storedSelection: String?
 	private var storeObservationTasks: [Task<Void, Never>] = []
 	private let notificationCenter: NotificationCenter
-	private var cachedGroupedHistory: [(day: Date, entries: [ANEventConcept])]?
+	private var cachedGroupedHistory: [Day]?
+	private var medicationsByID: [UUID: ANMedicationConcept] = [:]
 	private var groupingCalendar = Calendar.current
 	private var cachedDateRange: TrendsDateRange?
 	private let calendarProvider: () -> Calendar
 	private let now: () -> Date
 
 	init(dataStore: DataStore = .shared, selectedMedicationID: String? = nil, notificationCenter: NotificationCenter = .default, defaults: UserDefaults = .standard, calendar: @escaping () -> Calendar = { .current }, now: @escaping () -> Date = Date.init) {
-		_selectedMedicationIDString = AppStorage(wrappedValue: "", UserDefaultsKeys.historySelectedMedicationID, store: defaults)
+		self.defaults = defaults
+		storedSelection = defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
 		self.calendarProvider = calendar
 		self.now = now
 		self.dataStore = dataStore
 		self.notificationCenter = notificationCenter
 
-		// Initialize from passed ID or from AppStorage
-		if let initialID = selectedMedicationID {
-			self.selectedMedicationID = initialID
-		} else if !selectedMedicationIDString.isEmpty {
-			self.selectedMedicationID = selectedMedicationIDString
-		}
+		self.selectedMedicationID = selectedMedicationID ?? storedSelection.flatMap { $0.isEmpty ? nil : $0 }
 
-		// Load initial data and observe changes
-		loadData()
+		// Register for commits before reading the bootstrap snapshot.
 		observeStoreChanges()
+		loadData()
 		observeClockAndForegroundChanges()
 
 		// Ensure we have a valid selection
 		ensureValidSelection()
 	}
 
-	private func loadData(snapshot: MedicationPersistenceSnapshot? = nil) {
-		let snapshot = snapshot ?? MedicationPersistenceSnapshot(medications: dataStore.medications, events: dataStore.events)
+	private func loadData() {
+		let snapshot = MedicationPersistenceSnapshot(medications: dataStore.medications, events: dataStore.events)
 		if medications != snapshot.medications { medications = snapshot.medications }
 		if events != snapshot.events { events = snapshot.events }
 	}
@@ -77,15 +113,16 @@ final class MedicationHistoryViewModel: ObservableObject {
 		let snapshots = dataStore.committedSnapshots()
 		storeObservationTasks = [
 			Task { [weak self] in
-				for await snapshot in snapshots {
+				for await _ in snapshots {
 					guard !Task.isCancelled else { return }
-					self?.loadData(snapshot: snapshot)
-					self?.ensureValidSelection()
+					self?.applyCommittedState()
 				}
 			},
 			Task { [dataStore] in
 				do {
 					try await dataStore.prepareForAccess()
+				} catch is CancellationError {
+					return
 				} catch {
 					DHLogger.data.logPrivacySafeError("Unable to load medication history", error: error)
 				}
@@ -95,7 +132,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 
 	/// Refreshes date-relative presentation even when no medication data changes.
 	func refreshForClockChange() {
-		cachedGroupedHistory = nil
+		// The grouping cache checks its calendar and date bounds on the next read.
 		objectWillChange.send()
 	}
 
@@ -103,12 +140,22 @@ final class MedicationHistoryViewModel: ObservableObject {
 	func refreshAfterForeground() async {
 		refreshForClockChange()
 		do {
-			let snapshot = try await dataStore.prepareForAccess()
-			loadData(snapshot: snapshot)
-			ensureValidSelection()
+			try await dataStore.prepareForAccess()
+			applyCommittedState()
 		} catch {
 			DHLogger.data.logPrivacySafeError("Unable to refresh medication data", error: error)
 		}
+	}
+
+	private func applyCommittedState() {
+		// Imports can replace the preference and records in one commit.
+		let restored = defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID)
+		if storedSelection != restored {
+			storedSelection = restored
+			selectedMedicationID = restored
+		}
+		loadData()
+		ensureValidSelection()
 	}
 
 	private func observeClockAndForegroundChanges() {
@@ -151,11 +198,6 @@ final class MedicationHistoryViewModel: ObservableObject {
 		selectedMedicationID = "all"
 	}
 
-	/// Legacy method for compatibility
-	func validateSelectedMedication() {
-		ensureValidSelection()
-	}
-
 	var isShowingAllMedications: Bool {
 		selectedMedicationID == "all"
 	}
@@ -168,10 +210,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 	var selectedMedication: ANMedicationConcept? {
 		guard let selection = selectedMedicationID, selection != "all",
 		      let uuid = UUID(uuidString: selection) else { return nil }
-		return medications.first { $0.id == uuid }
+		return medicationsByID[uuid]
 	}
 
-	var groupedHistory: [(day: Date, entries: [ANEventConcept])] {
+	func currentMedication(for snapshot: ANMedicationConcept) -> ANMedicationConcept {
+		medicationsByID[snapshot.id] ?? snapshot
+	}
+
+	var groupedHistory: [Day] {
 		let calendar = calendarProvider()
 		let range = dateFilter.range(calendar: calendar, now: now())
 		if groupingCalendar != calendar || cachedDateRange != range {
@@ -196,7 +242,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			cachedGroupedHistory = []
 			return []
 		}
-		let endExclusive = range.flatMap { calendar.date(byAdding: .day, value: 1, to: $0.end) }
+		let endExclusive = range.flatMap { calendar.dateInterval(of: .day, for: $0.end)?.end }
 		let rangeEvents = filteredEvents.filter { event in
 			guard let range else { return dateFilter == .allTime }
 			guard let endExclusive else { return false }
@@ -206,7 +252,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 			calendar.startOfDay(for: event.date)
 		}
 		let result = grouped
-			.map { (day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
+			.map { Day(day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
 			.sorted { $0.day > $1.day }
 		cachedGroupedHistory = result
 		return result
@@ -230,9 +276,17 @@ final class MedicationHistoryViewModel: ObservableObject {
 		let day = calendar.startOfDay(for: date)
 		let outsideRange = activeDateRange.map { day < $0.start || day > $0.end } ?? (dateFilter != .allTime)
 		if outsideRange { dateFilter = .allTime }
+		// Civil noon gives both days a common wall-clock time even if midnight was skipped.
+		func noon(on date: Date) -> Date {
+			calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+		}
+		let target = noon(on: day)
+		func distance(to date: Date) -> Int {
+			abs(calendar.dateComponents([.day], from: target, to: noon(on: date)).day ?? 0)
+		}
 		return groupedHistory.min { left, right in
-			let leftDistance = abs(calendar.dateComponents([.day], from: day, to: left.day).day ?? 0)
-			let rightDistance = abs(calendar.dateComponents([.day], from: day, to: right.day).day ?? 0)
+			let leftDistance = distance(to: left.day)
+			let rightDistance = distance(to: right.day)
 			return leftDistance == rightDistance ? left.day < right.day : leftDistance < rightDistance
 		}?.day
 	}
@@ -243,32 +297,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 		isMutating = true
 		mutationError = nil
 		defer { isMutating = false }
-		let calendar = Calendar.current
-		var filtered: [ANEventConcept]
-
-		if isShowingAllMedications {
-			// Filter all dose events for the specific day
-			filtered = events.filter { event in
-				event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
-			}
-		} else {
-			// Filter events for selected medication only
-			guard let selection = selectedMedicationID,
-			      let uuid = UUID(uuidString: selection) else {
-				mutationError = String(localized: "Choose a medication, then try deleting the entry again.")
-				return false
-			}
-			filtered = events.filter { event in
-				event.medication?.id == uuid && event.eventType == .doseTaken && calendar.startOfDay(for: event.date) == groupDay
-			}
-		}
-		// Match UI ordering: most recent first within a day
-		filtered.sort { $0.date > $1.date }
-		let toDelete = offsets.compactMap { index in
-			filtered[doesExistAt: index]
+		let entries = groupedHistory.first { $0.day == groupDay }?.entries ?? []
+		let toDelete = offsets.compactMap { entries[doesExistAt: $0] }
+		guard !toDelete.isEmpty else {
+			mutationError = String(localized: "This entry is no longer available. Review History before trying again.")
+			return false
 		}
 		do {
-			try await dataStore.deleteEvents(ids: Set(toDelete.map(\.id)))
+			try await dataStore.deleteEvents(matching: toDelete)
 			loadData()
 			return true
 		} catch {
@@ -279,53 +315,62 @@ final class MedicationHistoryViewModel: ObservableObject {
 	}
 
 	@discardableResult
-	func updateEvent(_ event: ANEventConcept, newDate: Date, newAmount: Double, newUnit: ANUnitConcept) async -> Bool {
-		guard !isMutating else { return false }
-		isMutating = true
-		mutationError = nil
-		defer { isMutating = false }
-		guard let existingEvent = dataStore.events.first(where: { $0.id == event.id }) else {
-			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
-			return false
-		}
-
-		// Create updated event with new dose and date
-		var updatedEvent = existingEvent
-		updatedEvent.date = newDate
-		updatedEvent.dose = ANDoseConcept(amount: newAmount, unit: newUnit)
-
-		// Update event in store
-		do {
-			try await dataStore.updateEvent(updatedEvent)
-			loadData()
-			return true
-		} catch {
-			loadData()
-			mutationError = String(localized: "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")
-			return false
+	func updateEvent(_ event: ANEventConcept, newDate: Date? = nil, newAmount: Double? = nil, newUnit: ANUnitConcept? = nil) async -> Bool {
+		await editEvent(event, failureMessage: String(localized: "Couldn’t finish saving the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")) { saved in
+			if let newDate, newDate != saved.date {
+				guard saved.date == event.date else { throw EditError.conflict }
+				saved.date = newDate
+			}
+			if newAmount != nil || newUnit != nil {
+				guard var requested = event.dose ?? newAmount.map({ ANDoseConcept(amount: $0, unit: newUnit ?? .unit) }) else {
+					throw PersistenceTransactionError.invalidDose
+				}
+				if let newAmount { requested.amount = newAmount }
+				if let newUnit { requested.unit = newUnit }
+				// An amount and its unit are one change. Preserve an already-applied retry.
+				if saved.dose?.amount == requested.amount, saved.dose?.unit == requested.unit { return }
+				guard saved.dose == event.dose else { throw EditError.conflict }
+				saved.dose = requested
+			}
 		}
 	}
 
 	@discardableResult
-	func updateEventNote(_ event: ANEventConcept) async -> Bool {
+	func updateEventNote(_ event: ANEventConcept, text: String?) async -> Bool {
+		await editEvent(event, failureMessage: String(localized: "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again.")) { saved in
+			let requested = DoseReflection(note: text).sanitized().note
+			let current = DoseReflectionCodec.displayNote(from: saved.note)
+			guard current != requested else { return }
+			guard current == DoseReflectionCodec.displayNote(from: event.note) else { throw EditError.conflict }
+			saved.note = try DoseReflectionCodec.updatingNote(in: saved.note, with: requested)
+		}
+	}
+
+	private func editEvent(_ event: ANEventConcept, failureMessage: String, edit: (inout ANEventConcept) throws -> Void) async -> Bool {
 		guard !isMutating else { return false }
 		isMutating = true
 		mutationError = nil
 		defer { isMutating = false }
-		// Legacy method for updating just the note without dose changes
-		guard let currentEvent = dataStore.events.first(where: { $0.id == event.id }) else {
-			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
-			return false
-		}
 		do {
-			var noteUpdate = currentEvent
-			noteUpdate.note = event.note
-			try await dataStore.updateEvent(noteUpdate)
+			try await dataStore.editEvent(id: event.id) { saved in
+				guard saved.medication?.id == event.medication?.id, saved.eventType == event.eventType else {
+					throw PersistenceTransactionError.recordUnavailable
+				}
+				try edit(&saved)
+			}
 			loadData()
 			return true
+		} catch EditError.conflict {
+			loadData()
+			mutationError = String(localized: "This entry changed while you were editing. Close the editor and reopen it to review the latest values.")
+			return false
+		} catch PersistenceTransactionError.recordUnavailable {
+			loadData()
+			mutationError = String(localized: "This entry is no longer available. Close the editor and review History.")
+			return false
 		} catch {
 			loadData()
-			mutationError = String(localized: "Couldn’t finish saving the note. Some changes may have been saved. Review History before trying again.")
+			mutationError = failureMessage
 			return false
 		}
 	}
@@ -336,15 +381,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 		isMutating = true
 		mutationError = nil
 		defer { isMutating = false }
-		guard dataStore.events.contains(where: { $0.id == event.id }) else {
-			mutationError = String(localized: "This entry is no longer available. Review History before trying again.")
-			return false
-		}
-		// Delete the event and restore medication quantity if needed
 		do {
-			try await dataStore.deleteEvents(ids: [event.id])
+			try await dataStore.deleteEvents(matching: [event])
 			loadData()
 			return true
+		} catch PersistenceTransactionError.recordUnavailable {
+			loadData()
+			mutationError = String(localized: "This entry changed or is no longer available. Review History before trying again.")
+			return false
 		} catch {
 			loadData()
 			mutationError = String(localized: "Couldn’t finish deleting the entry. Some changes may have been saved. Review History and the medication quantity before trying again.")

@@ -6,6 +6,7 @@ import SwiftUI
 import TipKit
 
 struct MedicationHistoryView: View {
+	@AppStorage(UserDefaultsKeys.historyShowsDailyTotals) private var showDailyTotals = UserDefaultsKeys.defaultHistoryShowsDailyTotals
 	@ObservedObject private var demoMode = DemoModeState.shared
 	@State private var showSupportPage = false
 	@StateObject private var doseLogSession = LogDoseView.Session()
@@ -19,18 +20,15 @@ struct MedicationHistoryView: View {
 
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
-	@Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@State private var logMedication: ANMedicationConcept?
-	@State private var currentTime = Date()
 	@State private var scrollTarget: Date?
 	@State private var scrollRequestID = UUID()
 	@State private var showDatePicker = false
 	@State private var showCustomRange = false
 	@State private var lastHistoryRequestID: UUID?
 	@State private var selectedDate = Date()
-	@State private var selectedEventNote: String?
 	@State private var editingEvent: ANEventConcept?
 	@State private var editingNoteText: String = ""
 	@FocusState private var isNoteFieldFocused: Bool
@@ -38,24 +36,19 @@ struct MedicationHistoryView: View {
 	@State private var showDiscardNoteChanges = false
 
 	@ScaledMetric private var emptySectionSpacing: CGFloat = 24
-	@ScaledMetric private var supportViewPaddingH: CGFloat = 32
-	@ScaledMetric private var rowSpacing: CGFloat = 12
 	@ScaledMetric private var entrySpacing: CGFloat = 8
 	@ScaledMetric private var noteTopSpacing: CGFloat = 4
 	@ScaledMetric private var sectionHeaderSpacing: CGFloat = 2
 	@ScaledMetric private var medicationColorCircleSize: CGFloat = 26
 	@ScaledMetric private var colorCircleShadowRadius: CGFloat = 3
 	@ScaledMetric private var colorCircleStrokeWidth: CGFloat = 0.5
-	@ScaledMetric private var unitPickerItemPaddingH: CGFloat = 12
-	@ScaledMetric private var unitPickerItemCornerRadius: CGFloat = 8
 	@ScaledMetric private var pickerContainerPaddingV: CGFloat = 12
 	@ScaledMetric private var fabPaddingH: CGFloat = 24
 	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
-	@ScaledMetric private var datePickerSpacing: CGFloat = 20
 	@ScaledMetric private var reflectionBadgePaddingH: CGFloat = 8
 	@ScaledMetric private var reflectionBadgePaddingV: CGFloat = 5
 
-	let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+	private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
 	// MARK: - Private ViewBuilders
 
@@ -107,7 +100,15 @@ struct MedicationHistoryView: View {
 	}
 
 	@ViewBuilder
-	private func historyListView() -> some View {
+	private func historyListView(_ groups: [MedicationHistoryViewModel.Day]) -> some View {
+		let showButtonDay: Date? = if !showDailyTotals, viewModel.isShowingAllMedications,
+			groups.contains(where: { !$0.medicationTotals.isEmpty })
+		{
+			groups.first?.day
+		} else {
+			nil
+		}
+
 		ScrollViewReader { proxy in
 			List {
 				if demoMode.isEnabled {
@@ -116,151 +117,21 @@ struct MedicationHistoryView: View {
 						.listRowBackground(Color.clear)
 						.listRowSeparator(.hidden)
 				}
-				ForEach(viewModel.groupedHistory, id: \.day) { group in
-					Section(header: sectionHeader(for: group)) {
+				ForEach(groups, id: \.day) { group in
+					Section(header: sectionHeader(for: group, offersDailyTotals: group.day == showButtonDay)) {
 						ForEach(group.entries, id: \.id) { event in
-							VStack(alignment: .leading, spacing: entrySpacing) {
-								HStack(alignment: .center, spacing: 8) {
+							historyRow(for: event)
+						}
+						if showDailyTotals, viewModel.isShowingAllMedications, !group.medicationTotals.isEmpty {
+							dailyTotalsRow(for: group.medicationTotals)
+								.swipeActions(edge: .trailing, allowsFullSwipe: false) {
 									Button {
-										editingEntryEvent = event
+										showDailyTotals = false
 									} label: {
-										HStack(alignment: .center) {
-											// Medication color indicator on the left side
-											if !dynamicTypeSize.isAccessibilitySize, viewModel.isShowingAllMedications, let eventMedication = event.medication {
-												// Look up current medication from viewModel to ensure we have the latest data
-												let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-												let rowMedication = currentMedication ?? eventMedication
-
-												let medicationColor: Color = {
-													// First try the medication's custom color
-													if let hexColor = rowMedication.displayColorHex, !hexColor.isEmpty {
-														return Color(hex: hexColor) ?? .accent
-													}
-													// Use app accent color as default
-													return .accent
-												}()
-
-												ZStack {
-													Circle()
-														.fill(medicationColor.opacity(0.15))
-														.frame(width: medicationColorCircleSize, height: medicationColorCircleSize)
-														.shadow(color: medicationColor.opacity(0.4), radius: colorCircleShadowRadius, x: 0, y: 1)
-														.overlay(
-															Circle()
-																.stroke(.white.opacity(0.3), lineWidth: colorCircleStrokeWidth)
-														)
-
-													// Add medication symbol
-													if viewModel.isShowingAllMedications {
-														Image(systemName: rowMedication.effectiveDisplaySymbol)
-															.font(.customFont(fontFamily, style: .caption, weight: .medium))
-															.symbolRenderingMode(.hierarchical)
-															.foregroundStyle(medicationColor)
-													} else if !viewModel.isShowingAllMedications,
-													          let medication = viewModel.selectedMedication
-													{
-														Image(systemName: medication.effectiveDisplaySymbol)
-															.font(.customFont(fontFamily, style: .caption, weight: .medium))
-															.symbolRenderingMode(.hierarchical)
-															.foregroundStyle(medicationColor)
-													}
-												}
-											}
-
-											VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
-												// Show medication name when viewing all medications
-												if viewModel.isShowingAllMedications, let eventMedication = event.medication {
-													let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-													let rowMedication = currentMedication ?? eventMedication
-													Text(rowMedication.demoDisplayName)
-														.demoNameRedacted()
-														.font(.customFont(fontFamily, style: .headline))
-														.foregroundStyle(.primary)
-														.noTruncate()
-												}
-
-												historyDoseDetails(for: event)
-											}
-											.fixedSize(horizontal: false, vertical: true)
-											Spacer()
-										}
-										.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-										.contentShape(Rectangle())
+										Label("Hide daily totals", systemSymbol: .eyeSlash)
 									}
-									.buttonStyle(.plain)
-									.accessibilityLabel(historyAccessibilityLabel(for: event))
-									.accessibilityHint("Edit this dose entry")
-
-									// Show add note button on trailing side if no note exists
-									if displayNote(for: event)?.isEmpty != false {
-										AddNoteButtonComponent(
-											medicationColor: viewModel.isShowingAllMedications ? .secondary : (viewModel.selectedMedication?.displayColor ?? .accent),
-											onTap: {
-												editingEvent = event
-												editingNoteText = ""
-											}
-										)
-									}
+									.tint(.accent)
 								}
-
-								if !reflectionHighlights(for: event).isEmpty {
-									let reflectionLayout = dynamicTypeSize.isAccessibilitySize
-										? AnyLayout(VStackLayout(alignment: .leading, spacing: entrySpacing))
-										: AnyLayout(HStackLayout(spacing: sectionHeaderSpacing))
-									reflectionLayout {
-										ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
-											Text(highlight)
-												.font(.customFont(fontFamily, style: .caption, weight: .medium))
-												.noTruncate()
-												.foregroundStyle(viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent))
-												.padding(.horizontal, reflectionBadgePaddingH)
-												.padding(.vertical, reflectionBadgePaddingV)
-												.background(
-													Capsule()
-														.fill((viewModel.isShowingAllMedications ? Color.accent : (viewModel.selectedMedication?.displayColor ?? .accent)).opacity(0.12))
-												)
-										}
-									}
-								}
-
-								// Show enhanced note display below if it exists
-								if let note = displayNote(for: event), !note.isEmpty {
-									NoteDisplayCardComponent(
-										noteText: note,
-										medicationColor: viewModel.isShowingAllMedications ? .accent : (viewModel.selectedMedication?.displayColor ?? .accent),
-										onEdit: {
-											editingEvent = event
-											editingNoteText = displayNote(for: event) ?? ""
-										}
-									)
-									.padding(.top, noteTopSpacing)
-								}
-							}
-							.contentShape(Rectangle())
-							.accessibilityElement(children: .contain)
-							.accessibilityAction(named: "Edit entry") {
-								editingEntryEvent = event
-							}
-							.accessibilityAction(named: "Edit note") {
-								editingEvent = event
-								editingNoteText = displayNote(for: event) ?? ""
-							}
-							.swipeActions(edge: .trailing) {
-								Button {
-									editingEntryEvent = event
-								} label: {
-									Label("Edit", systemSymbol: .pencil)
-								}
-								.tint(.accent)
-
-								Button(role: .destructive) {
-									Task { await viewModel.deleteEvent(event) }
-								} label: {
-									Label("Delete", systemSymbol: .trash)
-								}
-								.tint(.red)
-								.disabled(viewModel.isMutating)
-							}
 						}
 					}
 					.id(group.day)
@@ -282,11 +153,212 @@ struct MedicationHistoryView: View {
 		}
 	}
 
+	private var showDailyTotalsButton: some View {
+		Button {
+			showDailyTotals = true
+		} label: {
+			Text("Show daily totals")
+				.font(.customFont(fontFamily, style: .footnote, weight: .semibold))
+				.frame(minHeight: 44)
+				.contentShape(Rectangle())
+		}
+		.buttonStyle(.borderless)
+		.tint(.accent)
+	}
+
+	private func historyRow(for event: ANEventConcept) -> some View {
+		let medication = event.medication.map { viewModel.currentMedication(for: $0) }
+		let reflection = DoseReflectionCodec.reflection(from: event.note)
+		let note = reflection?.note
+		let highlights = reflectionHighlights(for: reflection, historicalMedication: event.medication)
+		let tint = viewModel.isShowingAllMedications ? Color.accent : (medication?.displayColor ?? .accent)
+
+		return VStack(alignment: .leading, spacing: entrySpacing) {
+			HStack(alignment: .center, spacing: 8) {
+				Button {
+					editingEntryEvent = event
+				} label: {
+					HStack(alignment: .center) {
+						if !dynamicTypeSize.isAccessibilitySize, viewModel.isShowingAllMedications, let medication {
+							medicationIcon(for: medication)
+						}
+
+						VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+							if viewModel.isShowingAllMedications, let medication {
+								Text(medication.demoDisplayName)
+									.demoNameRedacted()
+									.font(.customFont(fontFamily, style: .headline))
+									.noTruncate()
+							}
+
+							historyDoseDetails(for: event)
+						}
+						.fixedSize(horizontal: false, vertical: true)
+						Spacer()
+					}
+					.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+					.contentShape(Rectangle())
+				}
+				.buttonStyle(.plain)
+				.accessibilityLabel(historyAccessibilityLabel(for: event, medication: medication, hasNote: note != nil))
+				.accessibilityHint("Edit this dose entry")
+
+				// Show add note button on trailing side if no note exists
+				if note == nil {
+					AddNoteButtonComponent(
+						medicationColor: viewModel.isShowingAllMedications ? .secondary : tint,
+						onTap: {
+							editingEvent = event
+							editingNoteText = ""
+						}
+					)
+				}
+			}
+
+			if !highlights.isEmpty {
+				let reflectionLayout = dynamicTypeSize.isAccessibilitySize
+					? AnyLayout(VStackLayout(alignment: .leading, spacing: entrySpacing))
+					: AnyLayout(HStackLayout(spacing: sectionHeaderSpacing))
+				reflectionLayout {
+					ForEach(highlights.indices, id: \.self) { index in
+						reflectionBadge(highlights[index], tint: tint)
+					}
+				}
+			}
+
+			// Show enhanced note display below if it exists
+			if let note {
+				NoteDisplayCardComponent(
+					noteText: demoMode.text(note, historicalMedication: event.medication),
+					medicationColor: tint,
+					onEdit: {
+						editingEvent = event
+						editingNoteText = note
+					}
+				)
+				.padding(.top, noteTopSpacing)
+			}
+		}
+		.contentShape(Rectangle())
+		.accessibilityElement(children: .contain)
+		.accessibilityAction(named: "Edit entry") {
+			editingEntryEvent = event
+		}
+		.accessibilityAction(named: "Edit note") {
+			editingEvent = event
+			editingNoteText = note ?? ""
+		}
+		.swipeActions(edge: .trailing) {
+			Button {
+				editingEntryEvent = event
+			} label: {
+				Label("Edit", systemSymbol: .pencil)
+			}
+			.tint(.accent)
+
+			Button(role: .destructive) {
+				Task { await viewModel.deleteEvent(event) }
+			} label: {
+				Label("Delete", systemSymbol: .trash)
+			}
+			.tint(.red)
+			.disabled(viewModel.isMutating)
+		}
+	}
+
+	private func reflectionBadge(_ highlight: String, tint: Color) -> some View {
+		Text(highlight)
+			.font(.customFont(fontFamily, style: .caption, weight: .medium))
+			.noTruncate()
+			.foregroundStyle(tint)
+			.padding(.horizontal, reflectionBadgePaddingH)
+			.padding(.vertical, reflectionBadgePaddingV)
+			.background(tint.opacity(0.12), in: Capsule())
+	}
+
+	private func medicationIcon(for medication: ANMedicationConcept) -> some View {
+		let color = medication.displayColor
+		return Image(systemName: medication.effectiveDisplaySymbol)
+			.font(.customFont(fontFamily, style: .caption, weight: .medium))
+			.symbolRenderingMode(.hierarchical)
+			.foregroundStyle(color)
+			.frame(width: medicationColorCircleSize, height: medicationColorCircleSize)
+			.background {
+				Circle()
+					.fill(color.opacity(0.15))
+					.shadow(color: color.opacity(0.4), radius: colorCircleShadowRadius, x: 0, y: 1)
+					.overlay(Circle().stroke(.white.opacity(0.3), lineWidth: colorCircleStrokeWidth))
+			}
+			.accessibilityHidden(true)
+	}
+
+	private func dailyTotalsRow(for totals: [MedicationHistoryViewModel.Day.MedicationTotal]) -> some View {
+		let rows = totals.map { total in
+			(medication: viewModel.currentMedication(for: total.medication), amounts: total.amounts)
+		}.sorted { lhs, rhs in
+			switch lhs.medication.demoDisplayName.localizedStandardCompare(rhs.medication.demoDisplayName) {
+			case .orderedSame: lhs.medication.id.uuidString < rhs.medication.id.uuidString
+			case .orderedAscending: true
+			case .orderedDescending: false
+			}
+		}
+
+		return VStack(alignment: .leading, spacing: sectionHeaderSpacing * 3) {
+			Text("Daily totals", comment: "Heading for the per-medication dose totals below each day in History.")
+				.font(.customFont(fontFamily, style: .caption, weight: .semibold))
+				.foregroundStyle(.secondary)
+				.accessibilityAddTraits(.isHeader)
+
+			ForEach(rows, id: \.medication.id) { row in
+				dailyTotal(for: row.medication, amounts: row.amounts)
+			}
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	private func dailyTotal(for medication: ANMedicationConcept, amounts: [ANUnitConcept: Double]) -> some View {
+		let total = amounts.sorted { $0.key.rawValue < $1.key.rawValue }
+			.map { unit, amount in
+				if amount < 0.005 {
+					return String(localized: "<\(unit.localizedCompactAmount(for: 0.01))",
+						comment: "A positive dose below the smallest amount shown in the compact unit format.")
+				}
+				return unit.localizedCompactAmount(for: amount)
+			}
+			.formatted(.list(type: .and))
+		let layout = dynamicTypeSize.isAccessibilitySize
+			? AnyLayout(VStackLayout(alignment: .leading, spacing: sectionHeaderSpacing))
+			: AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: entrySpacing))
+
+		return layout {
+			HStack(spacing: entrySpacing) {
+				Circle()
+					.fill(medication.displayColor)
+					.frame(width: 7, height: 7)
+					.accessibilityHidden(true)
+				Text(medication.demoDisplayName)
+					.demoNameRedacted()
+					.font(.customFont(fontFamily, style: .subheadline))
+					.noTruncate()
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+
+			Text(total)
+				.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+				.monospacedDigit()
+				.multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+				.noTruncate()
+		}
+		.accessibilityElement(children: .combine)
+	}
+
 	// MARK: - Section Header Helpers
 
 	@ViewBuilder
-	private func sectionHeader(for group: (day: Date, entries: [ANEventConcept])) -> some View {
+	private func sectionHeader(for group: MedicationHistoryViewModel.Day, offersDailyTotals: Bool) -> some View {
 		VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
+			if offersDailyTotals { showDailyTotalsButton }
+
 			let headerLayout = dynamicTypeSize.isAccessibilitySize
 				? AnyLayout(VStackLayout(alignment: .leading, spacing: sectionHeaderSpacing))
 				: AnyLayout(HStackLayout())
@@ -294,7 +366,7 @@ struct MedicationHistoryView: View {
 				Text(formatDateWithDayOfWeek(group.day))
 					.font(.customFont(fontFamily, style: .headline))
 				Spacer()
-				if let totalText = dayTotalText(for: group.entries) {
+				if let totalText = selectedMedicationTotal(for: group) {
 					Text(totalText)
 						.font(.customFont(fontFamily, style: .subheadline))
 						.foregroundStyle(.secondary)
@@ -318,30 +390,21 @@ struct MedicationHistoryView: View {
 		return String(localized: "\(dayOfWeek), \(dateString)")
 	}
 
-	private func dayTotalText(for entries: [ANEventConcept]) -> String? {
-		// Don't show totals when showing all medications
-		guard !viewModel.isShowingAllMedications else { return nil }
-
-		let preferredUnit = viewModel.selectedMedication?.prescribedUnit ?? entries.compactMap { $0.dose?.unit }.first
-		if let unit = preferredUnit {
-			let total = entries.compactMap { ev -> Double? in
-				guard let dose = ev.dose, dose.unit == unit else { return nil }
-				return dose.amount
-			}.reduce(0, +)
-			return total > 0 ? unit.localizedCompactAmount(for: total) : nil
-		} else {
-			let total = entries.compactMap { $0.dose?.amount }.reduce(0, +)
-			return total > 0 ? "\(total.formattedAmount)" : nil
-		}
+	private func selectedMedicationTotal(for group: MedicationHistoryViewModel.Day) -> String? {
+		guard let selected = viewModel.selectedMedication,
+			let unit = selected.prescribedUnit ?? group.entries.lazy.compactMap({ $0.dose?.unit }).first,
+			let amount = group.medicationTotals.first?.amounts[unit] else { return nil }
+		return unit.localizedCompactAmount(for: amount)
 	}
 
 	private func dayRelativeLabel(for date: Date) -> String? {
 		let cal = Calendar.current
-		if cal.isDateInToday(date) { return String(localized: "Today") }
-		if cal.isDateInYesterday(date) { return String(localized: "Yesterday") }
+		let currentTime = Date.now
+		if cal.isDate(date, inSameDayAs: currentTime) { return String(localized: "Today") }
+		if let yesterday = cal.date(byAdding: .day, value: -1, to: currentTime), cal.isDate(date, inSameDayAs: yesterday) { return String(localized: "Yesterday") }
 
 		// Use our centralized relative formatting for other dates
-		let daysDiff = cal.dateComponents([.day], from: date, to: Date()).day ?? 0
+		let daysDiff = cal.dateComponents([.day], from: date, to: currentTime).day ?? 0
 		if daysDiff > 1 && daysDiff <= 7 {
 			return date.relativeFormattedAsPast.capitalized
 		}
@@ -350,8 +413,10 @@ struct MedicationHistoryView: View {
 
 	private func relativeShortIfToday(_ date: Date) -> String? {
 		let cal = Calendar.current
-		guard cal.isDateInToday(date) else { return nil }
-		let diff = Int(Date().timeIntervalSince(date))
+		let currentTime = Date.now
+		let elapsed = currentTime.timeIntervalSince(date)
+		guard cal.isDate(date, inSameDayAs: currentTime), elapsed >= 0 else { return nil }
+		let diff = Int(elapsed)
 		if diff <= 60 { return String(localized: "Logged just now") }
 		let mins = diff / 60
 		if mins < 60 { return String(localized: "\(mins)m ago") }
@@ -363,15 +428,15 @@ struct MedicationHistoryView: View {
 		DoseReflectionCodec.displayNote(from: event.note)
 	}
 
-	private func reflectionHighlights(for event: ANEventConcept) -> [String] {
-		guard let reflection = DoseReflectionCodec.reflection(from: event.note) else {
+	private func reflectionHighlights(for reflection: DoseReflection?, historicalMedication: ANMedicationConcept?) -> [String] {
+		guard let reflection else {
 			return []
 		}
 
 		var highlights: [String] = []
 
 		if let reason = reflection.reason {
-			highlights.append(reason)
+			highlights.append(demoMode.text(reason, historicalMedication: historicalMedication))
 		}
 
 		if let effectiveness = reflection.effectiveness {
@@ -383,14 +448,14 @@ struct MedicationHistoryView: View {
 		}
 
 		if let sideEffect = reflection.sideEffects.first {
-			highlights.append(sideEffect)
+			highlights.append(demoMode.text(sideEffect, historicalMedication: historicalMedication))
 		}
 
 		return Array(highlights.prefix(3))
 	}
 
-	private func historyAccessibilityLabel(for event: ANEventConcept) -> String {
-		let medicationText = eventMedicationName(for: event)
+	private func historyAccessibilityLabel(for event: ANEventConcept, medication: ANMedicationConcept?, hasNote: Bool) -> String {
+		let medicationText = medication?.demoDisplayName ?? String(localized: "Medication")
 		let doseText: String = {
 			guard let dose = event.dose else {
 				return String(localized: "dose amount not recorded")
@@ -399,27 +464,8 @@ struct MedicationHistoryView: View {
 			return dose.unit.localizedCompactAmount(for: dose.amount)
 		}()
 		let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
-		let noteText: String = {
-			guard let note = displayNote(for: event), !note.isEmpty else {
-				return String(localized: "No note")
-			}
-
-			return String(localized: "Has note")
-		}()
-
+		let noteText = hasNote ? String(localized: "Has note") : String(localized: "No note")
 		return String(localized: "\(medicationText), \(doseText), logged \(timeText). \(noteText).")
-	}
-
-	private func eventMedicationName(for event: ANEventConcept) -> String {
-		guard let medicationID = event.medication?.id else {
-			return String(localized: "Medication")
-		}
-
-		if let currentMedication = viewModel.medications.first(where: { $0.id == medicationID }) {
-			return currentMedication.demoDisplayName
-		}
-
-		return event.medication?.demoDisplayName ?? String(localized: "Medication")
 	}
 
 	private var mutationErrorPresented: Binding<Bool> {
@@ -464,9 +510,11 @@ struct MedicationHistoryView: View {
 	}
 
 	private var floatingQuickLogMedication: ANMedicationConcept? {
-		LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
-			useLastLogged: viewModel.isShowingAllMedications,
-			lastLoggedID: DataStore.shared.lastLoggedMedication?.id, from: viewModel.logDosePickerMedications)
+		let useLastLogged = viewModel.isShowingAllMedications
+		return LogDosePickerModel.quickLogMedication(selectedID: viewModel.selectedMedication?.id,
+			useLastLogged: useLastLogged,
+			lastLoggedID: useLastLogged ? DataStore.shared.lastLoggedMedication?.id : nil,
+			from: viewModel.logDosePickerMedications)
 	}
 
 	private var primaryLogDoseButton: some View {
@@ -537,6 +585,8 @@ struct MedicationHistoryView: View {
 			Divider()
 			Button("Jump to Date") { showDatePicker = true }
 				.disabled(!viewModel.events.contains { $0.eventType == .doseTaken })
+			Divider()
+			Toggle("Show daily totals", isOn: $showDailyTotals)
 		} label: {
 			Label(viewModel.dateFilterTitle, systemSymbol: .calendar)
 		}
@@ -559,45 +609,44 @@ struct MedicationHistoryView: View {
 		.padding()
 	}
 
+	@ViewBuilder
+	private var historyContent: some View {
+		let groups = viewModel.groupedHistory
+		if !groups.isEmpty {
+			historyListView(groups)
+		} else {
+			VStack(alignment: .leading, spacing: 0) {
+				if demoMode.isEnabled { DemoModeBanner().padding(.horizontal) }
+				if viewModel.dateFilter != .allTime {
+					filteredHistoryEmptyView
+				} else if viewModel.isShowingAllMedications {
+					Spacer()
+					VStack(spacing: emptySectionSpacing) {
+						Text("No dose history found.")
+							.font(.customFont(fontFamily, style: .body))
+						Text(viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to start recording doses.") : String(localized: "Use Log Dose to choose a medication and record a dose you have taken."))
+							.font(.customFont(fontFamily, style: .subheadline))
+							.multilineTextAlignment(.center)
+					}
+					.foregroundStyle(.secondary)
+					.frame(maxWidth: .infinity)
+					Spacer()
+				} else if let selected = viewModel.selectedMedication {
+					emptyHistoryView(for: selected)
+				} else {
+					selectionPromptView()
+				}
+			}
+		}
+	}
+
 	// MARK: - Body
 
 	var body: some View {
 		ZStack {
 			NavigationStack {
 				ZStack(alignment: .bottomTrailing) {
-					VStack(alignment: .leading, spacing: 0) {
-						if demoMode.isEnabled && viewModel.groupedHistory.isEmpty { DemoModeBanner().padding(.horizontal) }
-						if viewModel.groupedHistory.isEmpty && viewModel.dateFilter != .allTime {
-							filteredHistoryEmptyView
-						} else if viewModel.isShowingAllMedications {
-							if viewModel.groupedHistory.isEmpty {
-								Spacer()
-								VStack(spacing: emptySectionSpacing) {
-									Text("No dose history found.")
-										.font(.customFont(fontFamily, style: .body))
-										.foregroundStyle(.secondary)
-										.frame(maxWidth: .infinity, alignment: .center)
-
-									Text(viewModel.medications.isEmpty ? String(localized: "Add a medication in the Medication tab to start recording doses.") : String(localized: "Use Log Dose to choose a medication and record a dose you have taken."))
-										.font(.customFont(fontFamily, style: .subheadline))
-										.foregroundStyle(.secondary)
-										.multilineTextAlignment(.center)
-										.padding(.horizontal)
-								}
-								Spacer()
-							} else {
-								historyListView()
-							}
-						} else if let selected = viewModel.selectedMedication {
-							if viewModel.groupedHistory.isEmpty {
-								emptyHistoryView(for: selected)
-							} else {
-								historyListView()
-							}
-						} else {
-							selectionPromptView()
-						}
-					}
+					historyContent
 					.safeAreaInset(edge: .bottom, spacing: 0) {
 						if !viewModel.logDosePickerMedications.isEmpty {
 							Color.clear.frame(height: floatingButtonClearance)
@@ -636,9 +685,7 @@ struct MedicationHistoryView: View {
 
 				.onAppear { applyHistoryNavigation() }
 				.onChange(of: navigationManager.historyRequestID) { _, _ in applyHistoryNavigation() }
-				.onReceive(timer) { _ in
-					currentTime = Date()
-				}
+				.onReceive(timer) { _ in viewModel.refreshForClockChange() }
 				.sheet(isPresented: $showCustomRange) {
 					MedicationDateRangeSheet(
 						initialRange: viewModel.activeDateRange ?? TrendsPeriod.fourteenDays.range(calendar: .current, now: .now, includingToday: true),
@@ -741,33 +788,35 @@ struct MedicationHistoryView: View {
 								}
 
 								Section(header: Text("Note").font(.customFont(fontFamily, style: .subheadline))) {
-									if !reflectionHighlights(for: event).isEmpty {
+									let highlights = reflectionHighlights(
+										for: DoseReflectionCodec.reflection(from: event.note),
+										historicalMedication: event.medication
+									)
+									if !highlights.isEmpty {
 										VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
 											Text("Saved context from this dose stays attached when you update the note.")
 												.font(.customFont(fontFamily, style: .caption))
 												.foregroundStyle(.secondary)
 
 											VStack(alignment: .leading, spacing: sectionHeaderSpacing) {
-												ForEach(reflectionHighlights(for: event), id: \.self) { highlight in
-													Text(highlight)
-														.font(.customFont(fontFamily, style: .caption, weight: .medium))
-														.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
-														.padding(.horizontal, reflectionBadgePaddingH)
-														.padding(.vertical, reflectionBadgePaddingV)
-														.background(
-															Capsule()
-																.fill((viewModel.selectedMedication?.displayColor ?? .accent).opacity(0.12))
-														)
+												ForEach(highlights.indices, id: \.self) { index in
+													reflectionBadge(highlights[index], tint: viewModel.selectedMedication?.displayColor ?? .accent)
 												}
 											}
 										}
 										.padding(.bottom, sectionHeaderSpacing)
 									}
 
-									TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
-										.lineLimit(4 ... 8)
-										.font(.customFont(fontFamily, style: .body))
-										.focused($isNoteFieldFocused)
+									Group {
+										if demoMode.isEnabled {
+											SecureField("Add a note about this dose", text: $editingNoteText)
+										} else {
+											TextField("Add a note about this dose", text: $editingNoteText, axis: .vertical)
+												.lineLimit(4 ... 8)
+										}
+									}
+									.font(.customFont(fontFamily, style: .body))
+									.focused($isNoteFieldFocused)
 								}
 							}
 							.scrollDismissesKeyboard(.interactively)
@@ -779,19 +828,18 @@ struct MedicationHistoryView: View {
 								Divider()
 									.background(.separator.opacity(0.5))
 
-								Button(action: {
-									if let event = editingEvent {
-										Task {
-											var updatedEvent = event
-											updatedEvent.note = (try? DoseReflectionCodec.updatingNote(in: event.note, with: editingNoteText)) ??
-												editingNoteText.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
-											if await viewModel.updateEventNote(updatedEvent) {
-												editingEvent = nil
-												editingNoteText = ""
-											}
+								Button {
+									guard editingNoteText != (displayNote(for: event) ?? "") else {
+										editingEvent = nil
+										return
+									}
+									Task {
+										if await viewModel.updateEventNote(event, text: editingNoteText) {
+											editingEvent = nil
+											editingNoteText = ""
 										}
 									}
-								}) {
+								} label: {
 									HStack(spacing: entrySpacing) {
 										Image(systemSymbol: .checkmarkCircle)
 											.font(.customFont(fontFamily, style: .body))
@@ -853,12 +901,9 @@ struct MedicationHistoryView: View {
 						Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
 					}
 					.interactiveDismissDisabled(viewModel.isMutating || editingNoteText != (displayNote(for: event) ?? ""))
-					.onAppear {
-						editingNoteText = displayNote(for: event) ?? ""
-						// Auto-focus the note field when sheet opens - increased delay for reliability
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-							isNoteFieldFocused = true
-						}
+					.task {
+						try? await Task.sleep(for: .milliseconds(750))
+						if !Task.isCancelled { isNoteFieldFocused = true }
 					}
 				}
 			}
@@ -896,7 +941,7 @@ private struct HistoryEntryEditor: View {
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
 	@State private var editingEntryDate: Date
-	@State private var editingEntryAmount: Double
+	@State private var editingEntryAmount: String
 	@State private var editingEntryUnit: ANUnitConcept
 	@State private var showDiscardEntryChanges = false
 
@@ -909,15 +954,23 @@ private struct HistoryEntryEditor: View {
 		self.viewModel = viewModel
 		self.onDismiss = onDismiss
 		_editingEntryDate = State(initialValue: event.date)
-		_editingEntryAmount = State(initialValue: event.dose?.amount ?? 1.0)
+		_editingEntryAmount = State(initialValue: Self.amountText(for: event))
 		_editingEntryUnit = State(initialValue: event.dose?.unit ?? .unit)
 	}
 
-	private func entryHasChanges(for event: ANEventConcept) -> Bool {
-		editingEntryDate != event.date ||
-			editingEntryAmount != (event.dose?.amount ?? 1.0) ||
-			editingEntryUnit != (event.dose?.unit ?? .unit)
+	private static func amountText(for event: ANEventConcept) -> String {
+		event.dose.map { DoseAmountInput.text(for: $0.amount) } ?? ""
 	}
+
+	private var enteredAmount: Double? { DoseAmountInput.value(from: editingEntryAmount) }
+	private var amountHasChanged: Bool {
+		editingEntryAmount != Self.amountText(for: event) &&
+			(enteredAmount == nil || enteredAmount != event.dose?.amount)
+	}
+	private var unitHasChanged: Bool { editingEntryUnit != (event.dose?.unit ?? .unit) }
+	private var dateHasChanged: Bool { editingEntryDate != event.date }
+	private var entryHasChanges: Bool { amountHasChanged || unitHasChanged || dateHasChanged }
+	private var canSave: Bool { !(amountHasChanged || unitHasChanged) || (enteredAmount ?? 0) > 0 }
 
 	private var mutationErrorPresented: Binding<Bool> {
 		Binding(
@@ -939,8 +992,7 @@ private struct HistoryEntryEditor: View {
 						Text("Medication")
 						Spacer()
 						if let eventMedication = event.medication {
-							let currentMedication = viewModel.medications.first { $0.id == eventMedication.id }
-							let medication = currentMedication ?? eventMedication
+							let medication = viewModel.currentMedication(for: eventMedication)
 							Text(medication.demoDisplayName)
 								.demoNameRedacted()
 								.foregroundStyle(.secondary)
@@ -954,25 +1006,25 @@ private struct HistoryEntryEditor: View {
 
 						HStack(spacing: rowSpacing) {
 							Button(action: {
-								if editingEntryAmount > 0.5 {
-									editingEntryAmount -= 0.5
+								if let amount = enteredAmount, amount > 0.5 {
+									editingEntryAmount = DoseAmountInput.text(for: amount - 0.5)
 								}
 							}) {
 								Image(systemSymbol: .minusCircleFill)
 									.font(.customFont(fontFamily, style: .title2))
-									.foregroundStyle(editingEntryAmount > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.foregroundStyle((enteredAmount ?? 0) > 0.5 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
 									.frame(minWidth: 44, minHeight: 44)
 							}
 							.buttonStyle(.borderless)
 							.accessibilityLabel("Decrease dose amount")
 							.accessibilityHint("Decrease by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
-							.disabled(editingEntryAmount <= 0.5)
+							.disabled((enteredAmount ?? 0) <= 0.5)
 
 							VStack(spacing: sectionHeaderSpacing) {
-								Text(editingEntryAmount.formattedAmount)
+								TextField("Dose Amount", text: $editingEntryAmount, prompt: Text("Not recorded"))
 									.font(.customFont(fontFamily, style: .title2, weight: .semibold))
-									.noTruncate()
-									.contentTransition(.numericText())
+									.keyboardType(.decimalPad)
+									.multilineTextAlignment(.center)
 
 								Text(editingEntryUnit.localizedDisplayName)
 									.font(.customFont(fontFamily, style: .caption))
@@ -983,19 +1035,16 @@ private struct HistoryEntryEditor: View {
 							.frame(minWidth: 80)
 
 							Button(action: {
-								if editingEntryAmount < 100 {
-									editingEntryAmount += 0.5
-								}
+								editingEntryAmount = DoseAmountInput.text(for: max(0, enteredAmount ?? 0) + 0.5)
 							}) {
 								Image(systemSymbol: .plusCircleFill)
 									.font(.customFont(fontFamily, style: .title2))
-									.foregroundStyle(editingEntryAmount < 100 ? (viewModel.selectedMedication?.displayColor ?? .accent) : Color.secondary.opacity(0.5))
+									.foregroundStyle(viewModel.selectedMedication?.displayColor ?? .accent)
 									.frame(minWidth: 44, minHeight: 44)
 							}
 							.buttonStyle(.borderless)
 							.accessibilityLabel("Increase dose amount")
 							.accessibilityHint("Increase by \(editingEntryUnit.localizedCompactAmount(for: 0.5))")
-							.disabled(editingEntryAmount >= 100)
 						}
 						.frame(maxWidth: .infinity)
 
@@ -1053,7 +1102,7 @@ private struct HistoryEntryEditor: View {
 			.toolbar {
 				ToolbarItem(placement: .cancellationAction) {
 					Button {
-						if entryHasChanges(for: event) {
+						if entryHasChanges {
 							showDiscardEntryChanges = true
 						} else {
 							onDismiss()
@@ -1066,16 +1115,16 @@ private struct HistoryEntryEditor: View {
 				}
 				ToolbarItem(placement: .confirmationAction) {
 					Button {
-						guard entryHasChanges(for: event) else {
+						guard entryHasChanges else {
 							onDismiss()
 							return
 						}
 						Task {
 							let saved = await viewModel.updateEvent(
 								event,
-								newDate: editingEntryDate,
-								newAmount: editingEntryAmount,
-								newUnit: editingEntryUnit
+								newDate: dateHasChanged ? editingEntryDate : nil,
+								newAmount: amountHasChanged ? enteredAmount : nil,
+								newUnit: unitHasChanged ? editingEntryUnit : nil
 							)
 							if saved {
 								onDismiss()
@@ -1085,7 +1134,7 @@ private struct HistoryEntryEditor: View {
 						Image(systemSymbol: .checkmark)
 					}
 					.accessibilityLabel("Save entry changes")
-					.disabled(viewModel.isMutating)
+					.disabled(viewModel.isMutating || !canSave)
 				}
 			}
 			.tint(.accent)
@@ -1100,19 +1149,6 @@ private struct HistoryEntryEditor: View {
 		} message: {
 			Text(viewModel.mutationError ?? String(localized: "Review History before trying again."))
 		}
-		.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges(for: event))
+		.interactiveDismissDisabled(viewModel.isMutating || entryHasChanges)
 	}
 }
-
-private extension String {
-	var nilIfEmpty: String? {
-		let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-		return trimmed.isEmpty ? nil : trimmed
-	}
-}
-
-#if DEBUG
-	#Preview {
-		MedicationHistoryView()
-	}
-#endif

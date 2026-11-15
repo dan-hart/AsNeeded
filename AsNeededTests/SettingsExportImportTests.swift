@@ -68,6 +68,38 @@ struct SettingsExportImportTests {
 		#expect(defaults.bool(forKey: UserDefaultsKeys.hideSupportBanners) == applySettings)
 	}
 
+	@Test("History daily totals are restored only when imported settings are applied", arguments: [true, false], [true, false])
+	func historyDailyTotalsRoundTrip(_ showDailyTotals: Bool, _ applySettings: Bool) async throws {
+		let key = UserDefaultsKeys.historyShowsDailyTotals
+		let dataStore = createTestDataStore()
+		defer { defaults.removePersistentDomain(forName: suite) }
+
+		defaults.set(showDailyTotals, forKey: key)
+		let exported = try await dataStore.exportDataAsJSON(includeSettings: true)
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let decoded = try decoder.decode(DataExport.self, from: exported)
+		#expect(decoded.settings?.historyShowsDailyTotals == showDailyTotals)
+
+		defaults.set(!showDailyTotals, forKey: key)
+		try await dataStore.importDataFromJSON(exported, applySettings: applySettings)
+		let reopenedDefaults = try #require(UserDefaults(suiteName: suite))
+		#expect(AppSettings(from: reopenedDefaults).historyShowsDailyTotals == (applySettings ? showDailyTotals : !showDailyTotals))
+	}
+
+	@Test("Daily totals default to off, and older settings preserve the current choice")
+	func historyDailyTotalsDefaultAndLegacyImport() throws {
+		let key = UserDefaultsKeys.historyShowsDailyTotals
+		defer { defaults.removePersistentDomain(forName: suite) }
+		#expect(AppSettings(from: defaults).historyShowsDailyTotals == false)
+
+		defaults.set(true, forKey: key)
+		let olderSettings = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"hideSupportBanners":true}"#.utf8))
+		#expect(olderSettings.historyShowsDailyTotals == nil)
+		olderSettings.apply(to: defaults, sharedDefaults: nil, validateMedicationIDs: { [] })
+		#expect(defaults.object(forKey: key) as? Bool == true)
+	}
+
 	// MARK: - Export Tests
 
 	@Test("Export without settings should not include settings field")

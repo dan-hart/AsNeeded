@@ -25,9 +25,10 @@ final class DemoModeState: ObservableObject {
 		isEnabled && !original.isEmpty ? String(localized: "Hidden medication") : original
 	}
 
-	func text(_ original: String) -> String {
+	func text(_ original: String, historicalMedication: ANMedicationConcept? = nil) -> String {
 		guard isEnabled else { return original }
-		let names = medicationNames().map(\.precomposedStringWithCanonicalMapping).filter { !$0.isEmpty }.sorted { $0.count > $1.count }
+		let historicalNames = historicalMedication.map { [$0.clinicalName, $0.nickname ?? ""] } ?? []
+		let names = (medicationNames() + historicalNames).map(\.precomposedStringWithCanonicalMapping).filter { !$0.isEmpty }.sorted { $0.count > $1.count }
 		guard !names.isEmpty,
 			let expression = try? NSRegularExpression(
 				pattern: names.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|"),

@@ -86,8 +86,10 @@ public final class MigrationCoordinator {
 
 		// Pre-flight health check
 		logger.info("Running pre-flight storage health check...")
-		let healthChecker = StorageHealthChecker()
-		let healthResult = healthChecker.performHealthCheck()
+		guard let healthResult = try? await StorageHealthChecker().performStartupHealthCheck() else {
+			// A cancelled startup does not represent a storage failure.
+			return
+		}
 
 		if !healthResult.isHealthy {
 			logger.error("❌ Storage health check failed - see issues above")

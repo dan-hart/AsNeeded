@@ -34,9 +34,11 @@ struct AtomicPersistenceTests {
 		try await fixture.store.addMedication(original)
 		try await fixture.store.addEvent(oldEvent, shouldRecordForReview: false)
 		fixture.defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		fixture.defaults.set(false, forKey: UserDefaultsKeys.historyShowsDailyTotals)
 		let incoming = ANMedicationConcept(clinicalName: "Imported example", quantity: 1)
 		var settings = AppSettings()
 		settings.hapticsEnabled = true
+		settings.historyShowsDailyTotals = true
 		let export = DataExport(medications: [incoming], events: [], exportDate: Date(), appVersion: "1.1.2", dataVersion: "1.0", settings: settings)
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
@@ -47,6 +49,82 @@ struct AtomicPersistenceTests {
 		#expect(fixture.store.events.map(\.id) == [oldEvent.id])
 		#expect(fixture.store.events.first?.note == oldEvent.note)
 		#expect(fixture.defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled) == false)
+		#expect(fixture.defaults.object(forKey: UserDefaultsKeys.historyShowsDailyTotals) as? Bool == false)
+	}
+
+	@Test("An interrupted totals settings import restores absent preferences and original records on reopen")
+	func interruptedTotalsImportRecoversAndCanBeRetried() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let key = UserDefaultsKeys.historyShowsDailyTotals
+		let original = ANMedicationConcept(clinicalName: "Original example", quantity: 10, prescribedUnit: .tablet)
+		let dose = ANEventConcept(eventType: .doseTaken, medication: original, dose: ANDoseConcept(amount: 2, unit: .tablet), date: .now)
+		try await fixture.store.addMedication(original)
+		try await fixture.store.recordDose(dose)
+		let before = try await fixture.store.prepareForAccess()
+		#expect(fixture.defaults.persistentDomain(forName: fixture.suite)?[key] == nil)
+
+		var settings = AppSettings()
+		settings.historyShowsDailyTotals = true
+		let data = try encode(medications: [ANMedicationConcept(clinicalName: "Incoming example")], events: [], settings: settings)
+		fixture.fault.cancelAt = .beforeCommit
+		await #expect(throws: PersistenceTransactionError.self) {
+			try await fixture.store.importDataFromJSON(data, applySettings: true)
+		}
+		#expect(fixture.defaults.bool(forKey: key))
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		#expect(FileManager.default.fileExists(atPath: journal.path))
+
+		let reopenedDefaults = try #require(UserDefaults(suiteName: fixture.suite))
+		let reopened = DataStore(storageDirectory: fixture.directory, defaults: reopenedDefaults, defaultsDomainName: fixture.suite)
+		for _ in 0..<2 {
+			let recovered = try await reopened.prepareForAccess()
+			#expect(recovered.medications == before.medications)
+			#expect(recovered.events == before.events)
+			#expect(reopenedDefaults.persistentDomain(forName: fixture.suite)?[key] == nil)
+			#expect(!FileManager.default.fileExists(atPath: journal.path))
+		}
+
+		try await reopened.importDataFromJSON(data, applySettings: true)
+		let after = try await reopened.prepareForAccess()
+		#expect(after.medications.map(\.clinicalName) == ["Incoming example"])
+		#expect(after.events.isEmpty)
+		#expect(reopenedDefaults.bool(forKey: key))
+	}
+
+	@Test("An interrupted stock unit change restores the unit, quantity, and History stock effects", .tags(.coreDataIntegrity))
+	func interruptedStockUnitChangeRollsBack() async throws {
+		let fixture = try AtomicFixture()
+		defer { fixture.cleanup() }
+		let medication = ANMedicationConcept(clinicalName: "Synthetic stock", quantity: 10, prescribedUnit: .tablet)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 2, unit: .tablet),
+			date: Date(timeIntervalSince1970: 1_700_000_000))
+		try await fixture.store.addMedication(medication)
+		try await fixture.store.recordDose(event)
+
+		var updated = try #require(fixture.store.medications.first)
+		updated.prescribedUnit = .milligram
+		updated.quantity = 40
+		fixture.fault.cancelAt = .beforeCommit
+		await #expect(throws: PersistenceTransactionError.self) {
+			try await fixture.store.updateMedication(updated)
+		}
+
+		let reopened = DataStore(storageDirectory: fixture.directory, defaults: fixture.defaults, defaultsDomainName: fixture.suite)
+		let recovered = try await reopened.prepareForAccess()
+		#expect(recovered.medications.first?.prescribedUnit == .tablet)
+		#expect(recovered.medications.first?.quantity == 8)
+		#expect(recovered.events.map(\.id) == [event.id])
+		#expect(recovered.stockExcludedEventIDs.isEmpty)
+
+		try await reopened.updateMedication(updated)
+		let committed = try await reopened.prepareForAccess()
+		#expect(committed.stockExcludedEventIDs == [event.id])
+		try await reopened.deleteEvents(ids: [event.id])
+		let final = try await reopened.prepareForAccess()
+		#expect(final.medications.first?.quantity == 40)
+		#expect(final.events.isEmpty)
+		#expect(final.stockExcludedEventIDs.isEmpty)
 	}
 
 	@Test("An interrupted write is recovered even by a reader with an unchanged old cache")
@@ -90,7 +168,8 @@ struct AtomicPersistenceTests {
 		#expect(!FileManager.default.fileExists(atPath: journal.path))
 	}
 
-	@Test("Recovery skips already restored preferences and retains the journal after a failed changed preference write")
+	@Test("Recovery skips already restored preferences and retains the journal after a failed changed preference write",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func preferenceReplayOnlySynchronizesUnconfirmedChanges() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -126,17 +205,30 @@ struct AtomicPersistenceTests {
 		#expect(try await reader.read().medications.first?.quantity == 10)
 		#expect(defaults.bool(forKey: key) == false)
 		#expect(!FileManager.default.fileExists(atPath: journal.path))
+
+		try await interruptSave()
+		defaults.set(true, forKey: key)
+		defaults.rejectNextSynchronization = true
+		#expect(try await reader.read().medications.first?.quantity == 10)
+		#expect(defaults.bool(forKey: key) == false)
+		#expect(!FileManager.default.fileExists(atPath: journal.path))
 	}
 
 	private final class RecoveryDefaults: UserDefaults, @unchecked Sendable {
 		var rejectSynchronization = false
+		var rejectNextSynchronization = false
 
 		override func synchronize() -> Bool {
-			!rejectSynchronization && super.synchronize()
+			if rejectNextSynchronization {
+				rejectNextSynchronization = false
+				return false
+			}
+			return !rejectSynchronization && super.synchronize()
 		}
 	}
 
-	@Test("An import with unchanged preferences does not depend on preference synchronization")
+	@Test("An import with unchanged preferences does not depend on preference synchronization",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func unchangedPreferencesDoNotBlockImport() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -154,7 +246,8 @@ struct AtomicPersistenceTests {
 		#expect(try await store.prepareForAccess().medications == [medication])
 	}
 
-	@Test("A shared-only safety profile survives settings export, import, and reopen")
+	@Test("A shared-only safety profile survives settings export, import, and reopen",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func exportIncludesSharedOnlyProfile() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -180,7 +273,8 @@ struct AtomicPersistenceTests {
 		}
 	}
 
-	@Test("Shared settings use the same current-user domain for writes and journal reads")
+	@Test("Shared settings use the same current-user domain for writes and journal reads",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func appGroupJournalReadsUserDefaultsWrites() throws {
 		let suite = StorageConstants.appGroupIdentifier
 		let key = "AsNeededTests.preferenceProbe.\(UUID().uuidString)"
@@ -218,12 +312,15 @@ struct AtomicPersistenceTests {
 		#expect(recovered.events.first?.note == oldEvent.note)
 	}
 
-	@Test("Widget reads prior data but cannot recover another process's settings")
+	@Test("An interrupted settings import is recoverable on reopen, and only the app can replay it",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func widgetCannotRestoreApplicationDefaults() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
 		let original = ANMedicationConcept(clinicalName: "Current example", quantity: 12.5)
 		try await fixture.store.addMedication(original)
+		let event = ANEventConcept(eventType: .doseTaken, medication: original, date: Date(timeIntervalSince1970: 1_700_000_000))
+		try await fixture.store.addEvent(event, shouldRecordForReview: false)
 		fixture.defaults.removeObject(forKey: UserDefaultsKeys.hideSupportBanners)
 		let oldShared = Data("retained profile fixture".utf8)
 		fixture.sharedDefaults.set(oldShared, forKey: UserDefaultsKeys.medicationSafetyProfiles)
@@ -239,10 +336,22 @@ struct AtomicPersistenceTests {
 		await #expect(throws: PersistenceTransactionError.self) { _ = try await widget.read() }
 		await #expect(throws: PersistenceTransactionError.self) { try await widget.perform { $0.medications = [] } }
 		#expect(fixture.defaults.bool(forKey: UserDefaultsKeys.hideSupportBanners), "Widget cannot write the main app's preference domain")
-		try await fixture.store.prepareForAccess()
-		#expect(fixture.defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) == nil)
-		#expect(fixture.sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == oldShared)
-		#expect(fixture.store.medications == [original])
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		try #require(FileManager.default.fileExists(atPath: journal.path))
+		#expect(StorageHealthChecker().performHealthCheck(in: fixture.directory).isHealthy)
+
+		for _ in 0..<2 {
+			let defaults = try #require(UserDefaults(suiteName: fixture.suite))
+			let sharedDefaults = try #require(UserDefaults(suiteName: fixture.suite + ".shared"))
+			let reopened = DataStore(storageDirectory: fixture.directory, defaults: defaults, sharedDefaults: sharedDefaults,
+				defaultsDomainName: fixture.suite, sharedDefaultsDomainName: fixture.suite + ".shared")
+			let recovered = try await reopened.prepareForAccess()
+			#expect(recovered.medications == [original])
+			#expect(recovered.events.map(\.id) == [event.id])
+			#expect(defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) == nil)
+			#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == oldShared)
+			#expect(!FileManager.default.fileExists(atPath: journal.path))
+		}
 	}
 
 	@Test("Concurrent saves calculate stock from committed data", arguments: [false, true])

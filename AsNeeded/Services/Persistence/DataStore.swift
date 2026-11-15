@@ -163,6 +163,7 @@ public final class DataStore {
 	private lazy var transactions: MedicationPersistenceTransactions = {
 		let applicationKeys = UserDefaultsKeys.safeToExportKeys.union([
 			UserDefaultsKeys.lastLoggedDoseEventIDs, UserDefaultsKeys.acknowledgedWatchDoseEventIDs,
+			UserDefaultsKeys.stockExcludedEventIDs,
 		])
 		var domains = ["application": PersistencePreferenceDomain(defaults: defaults, keys: applicationKeys, persistentDomainName: defaultsDomainName)]
 		if let sharedDefaults {
@@ -209,7 +210,9 @@ public final class DataStore {
 		guard quantity.isFinite, quantity >= 0 else { throw PersistenceTransactionError.invalidDose }
 		try await transactions.perform { snapshot in
 			guard let index = snapshot.medications.firstIndex(where: { $0.id == medicationID }) else { throw PersistenceTransactionError.recordUnavailable }
-			snapshot.medications[index].quantity = quantity
+			var updated = snapshot.medications[index]
+			updated.quantity = quantity
+			snapshot.replaceMedication(updated, at: index)
 		}
 		await refreshDoseAvailability()
 	}
@@ -290,8 +293,25 @@ public final class DataStore {
 		await refreshDoseAvailability()
 	}
 
+	/// Applies a partial edit to the current event inside the same transaction as its stock adjustment.
+	func editEvent(id: UUID, _ edit: (inout ANEventConcept) throws -> Void) async throws {
+		try await transactions.perform { try $0.editEvent(id: id, edit) }
+		await refreshDoseAvailability()
+	}
+
 	public func deleteEvents(ids: Set<UUID>) async throws {
 		try await transactions.perform { $0.deleteEvents(ids: ids) }
+		await refreshDoseAvailability()
+	}
+
+	/// History deletion must still match the records that were shown to the user.
+	func deleteEvents(matching expected: [ANEventConcept]) async throws {
+		let ids = Set(expected.map(\.id))
+		try await transactions.perform { snapshot in
+			let current = snapshot.events.filter { ids.contains($0.id) }
+			guard Set(current) == Set(expected) else { throw PersistenceTransactionError.recordUnavailable }
+			snapshot.deleteEvents(ids: ids)
+		}
 		await refreshDoseAvailability()
 	}
 
@@ -313,7 +333,7 @@ public final class DataStore {
         logger.logMedicationOperation("Adding", id: med.id)
         do {
             try await transactions.perform { snapshot in
-				if let index = snapshot.medications.firstIndex(where: { $0.id == med.id }) { snapshot.medications[index] = med }
+				if let index = snapshot.medications.firstIndex(where: { $0.id == med.id }) { snapshot.replaceMedication(med, at: index) }
 				else { snapshot.medications.append(med) }
 			}
 			await refreshDoseAvailability()
@@ -335,7 +355,7 @@ public final class DataStore {
 					if let original, original.id == med.id, original.quantity == med.quantity {
 						updated.quantity = snapshot.medications[index].quantity
 					}
-					snapshot.medications[index] = updated
+					snapshot.replaceMedication(updated, at: index)
 				} else if original == nil { snapshot.medications.append(med) }
 				else { throw PersistenceTransactionError.recordUnavailable }
 			}
@@ -494,7 +514,8 @@ public final class DataStore {
             exportDate: Date(),
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
             dataVersion: "1.0",
-            settings: exportedSettings
+            settings: exportedSettings,
+			stockExcludedEventIDs: snapshot.stockExcludedEventIDs.isEmpty ? nil : snapshot.stockExcludedEventIDs.sorted { $0.uuidString < $1.uuidString }
         )
 
         let encoder = JSONEncoder()
@@ -549,7 +570,9 @@ public final class DataStore {
 		let imported: DataExport
 		do { imported = try decoder.decode(DataExport.self, from: data) }
 		catch { throw DataImportError.invalidFormat }
-		guard !Self.hasConflictingRecordIDs(imported.medications), !Self.hasConflictingRecordIDs(imported.events) else {
+		let importedExcludedIDs = Set(imported.stockExcludedEventIDs ?? [])
+		guard !Self.hasConflictingRecordIDs(imported.medications), !Self.hasConflictingRecordIDs(imported.events),
+			importedExcludedIDs.isSubset(of: Set(imported.events.lazy.filter { $0.eventType == .doseTaken }.map(\.id))) else {
 			throw DataImportError.invalidFormat
 		}
 		if !isTestStore { try await MedicationDoseLimitMigration().migrate(dataStore: self) }
@@ -568,17 +591,31 @@ public final class DataStore {
 				} else { medications.append(medication) }
 			}
 			var events = mergeExisting ? snapshot.events : []
+			var stockExcludedEventIDs = mergeExisting ? snapshot.stockExcludedEventIDs : []
 			for var event in imported.events {
 				if let reference = event.medication {
 					guard let resolved = resolveMedicationReference(reference, in: medications) else { throw DataImportError.invalidFormat }
-					event.medication = resolved
+					if resolved.id != reference.id {
+						var rebound = resolved
+						rebound.prescribedUnit = reference.prescribedUnit
+						rebound.quantity = reference.quantity
+						event.medication = rebound
+					}
 				}
 				if let index = events.firstIndex(where: { $0.id == event.id }) {
-					if !mergeExisting { events[index] = event }
-				} else { events.append(event) }
+					if mergeExisting { continue }
+					events[index] = event
+				} else {
+					events.append(event)
+				}
+				// Merging History into existing stock does not deduct those doses.
+				if importedExcludedIDs.contains(event.id) ||
+					(mergeExisting && event.eventType == .doseTaken && event.medication.map { priorIDs.contains($0.id) } == true) {
+					stockExcludedEventIDs.insert(event.id)
+				}
 			}
 			removedMedicationIDs = priorIDs.subtracting(medications.map(\.id))
-			snapshot = MedicationPersistenceSnapshot(medications: medications, events: events)
+			snapshot = MedicationPersistenceSnapshot(medications: medications, events: events, stockExcludedEventIDs: stockExcludedEventIDs)
 		}, applyPreferences: { snapshot in
 			if applySettings, let settings = imported.settings {
 				settings.apply(to: defaults, sharedDefaults: sharedDefaults, validateMedicationIDs: { Set(snapshot.medications.map { $0.id.uuidString }) })
@@ -775,6 +812,7 @@ struct DataExport: Codable {
     let appVersion: String
     let dataVersion: String?
     let settings: AppSettings? // Optional app settings for import/export
+	var stockExcludedEventIDs: [UUID]? = nil
 }
 
 /// Errors for data import/export operations

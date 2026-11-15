@@ -69,6 +69,40 @@ PY
 interrupt interruptDose dose
 interrupt interruptUndo undo
 interrupt interruptImport importing
+wait_for_restored_preferences() {
+	local container="$1"
+	# Xcode can move the data container on the next test installation. Wait for
+	# cfprefsd to finish writing the recovered preferences in the current one.
+	python3 - "$container" <<'PYTHON'
+import json
+import plistlib
+import sys
+import time
+from pathlib import Path
+
+container = Path(sys.argv[1])
+preferences = container / "Library/Preferences"
+fixtures = container / "Documents/AsNeededTransactionRehearsal"
+deadline = time.monotonic() + 10
+while True:
+    for scenario in ("dose", "undo", "importing"):
+        baseline = json.loads((fixtures / scenario / "before.json").read_text())
+        domain = preferences / f"AsNeededInterruptionRehearsal.{scenario}.plist"
+        try:
+            with domain.open("rb") as file:
+                observed = plistlib.load(file).get("hapticsEnabled")
+        except (FileNotFoundError, plistlib.InvalidFileException):
+            break
+        if observed is not baseline["settings"]["hapticsEnabled"]:
+            break
+    else:
+        sys.exit(0)
+    if time.monotonic() >= deadline:
+        sys.exit(f"Recovered preferences did not reach disk for {scenario}.")
+    time.sleep(0.2)
+PYTHON
+}
+
 for phase in first-reopen second-reopen; do
 	if ! run_test recoverAfterInterruption "$phase"; then
 		echo "Reopening the interrupted stores failed. See $out/$phase.log." >&2
@@ -77,5 +111,8 @@ for phase in first-reopen second-reopen; do
 	xcrun xcresulttool get test-results summary --path "$out/$phase.xcresult" > "$out/$phase.json"
 	python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); sys.exit(0 if r["passedTests"] == 1 and r["failedTests"] == r["skippedTests"] == 0 else 1)' "$out/$phase.json"
 	echo "Passed: $phase"
+	if [[ "$phase" == first-reopen ]]; then
+		wait_for_restored_preferences "$(xcrun simctl get_app_container "$simulator" com.codedbydan.AsNeeded data)"
+	fi
 	xcrun simctl terminate "$simulator" com.codedbydan.AsNeeded >/dev/null 2>&1 || true
 done

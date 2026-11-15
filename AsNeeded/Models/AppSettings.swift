@@ -21,6 +21,9 @@ struct AppSettings: Codable {
 	/// Trends time window in days (14, 30 or 90)
 	var trendsDaysWindow: Int?
 
+	/// Whether All medications history shows daily medication totals.
+	var historyShowsDailyTotals: Bool?
+
 	/// Whether to hide support banners
 	var hideSupportBanners: Bool?
 
@@ -78,6 +81,7 @@ struct AppSettings: Codable {
 		if selectedTab != nil { keys.insert(UserDefaultsKeys.selectedTab) }
 		if trendsVisualizationType != nil { keys.insert(UserDefaultsKeys.trendsVisualizationType) }
 		if trendsDaysWindow != nil { keys.insert(UserDefaultsKeys.trendsDaysWindow) }
+		if historyShowsDailyTotals != nil { keys.insert(UserDefaultsKeys.historyShowsDailyTotals) }
 		if hideSupportBanners != nil { keys.insert(UserDefaultsKeys.hideSupportBanners) }
 		if showMedicationNamesInNotifications != nil { keys.insert(UserDefaultsKeys.showMedicationNamesInNotifications) }
 		if selectedFontFamily != nil { keys.insert(UserDefaultsKeys.selectedFontFamily) }
@@ -109,6 +113,8 @@ struct AppSettings: Codable {
 		// Display Settings
 		trendsVisualizationType = defaults.object(forKey: UserDefaultsKeys.trendsVisualizationType) as? Int
 		trendsDaysWindow = defaults.object(forKey: UserDefaultsKeys.trendsDaysWindow) as? Int
+		historyShowsDailyTotals = defaults.object(forKey: UserDefaultsKeys.historyShowsDailyTotals) as? Bool ??
+			UserDefaultsKeys.defaultHistoryShowsDailyTotals
 		hideSupportBanners = defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) as? Bool
 
 		// Notification Settings
@@ -160,6 +166,9 @@ struct AppSettings: Codable {
 		}
 		if let value = trendsDaysWindow {
 			defaults.set(value, forKey: UserDefaultsKeys.trendsDaysWindow)
+		}
+		if let value = historyShowsDailyTotals {
+			defaults.set(value, forKey: UserDefaultsKeys.historyShowsDailyTotals)
 		}
 		if let value = hideSupportBanners {
 			defaults.set(value, forKey: UserDefaultsKeys.hideSupportBanners)
@@ -251,7 +260,7 @@ struct AppSettings: Codable {
 		if hapticsEnabled != nil || selectedTab != nil {
 			categories.append(String(localized: "App Preferences"))
 		}
-		if trendsVisualizationType != nil || trendsDaysWindow != nil || hideSupportBanners != nil {
+		if trendsVisualizationType != nil || trendsDaysWindow != nil || historyShowsDailyTotals != nil || hideSupportBanners != nil {
 			categories.append(String(localized: "Display Settings"))
 		}
 		if medicationSafetyProfiles != nil {

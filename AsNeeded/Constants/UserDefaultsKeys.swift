@@ -16,6 +16,9 @@ public enum UserDefaultsKeys {
 	/// Device-local recording order of committed doses, independent of their dates.
 	static let lastLoggedDoseEventIDs = "lastLoggedDoseEventIDs"
 
+	/// History carried forward from a previous stock unit or a history-only merge.
+	static let stockExcludedEventIDs = SharedPlatformContracts.Preferences.stockExcludedEventIDs
+
 	/// Opaque Watch delivery receipts survive history deletion and settings reset.
 	static let acknowledgedWatchDoseEventIDs = "acknowledgedWatchDoseEventIDs"
 
@@ -47,6 +50,10 @@ public enum UserDefaultsKeys {
 
     /// Trends time window in days (14, 30 or 90)
     static let trendsDaysWindow = "trendsDaysWindow"
+
+	/// Visibility of the per-medication totals in All medications history.
+	static let historyShowsDailyTotals = "historyShowsDailyTotals"
+	static let defaultHistoryShowsDailyTotals = false
 
     /// Whether to hide support banners
     static let hideSupportBanners = "hideSupportBanners"
@@ -182,6 +189,7 @@ public enum UserDefaultsKeys {
         historySelectedMedicationID,
         trendsSelectedMedicationID,
 		lastLoggedDoseEventIDs,
+		stockExcludedEventIDs,
 		acknowledgedWatchDoseEventIDs,
         medicationOrder,
         hasSeenWelcome,
@@ -192,6 +200,7 @@ public enum UserDefaultsKeys {
 		quickLogHintImpressions,
         trendsVisualizationType,
         trendsDaysWindow,
+		historyShowsDailyTotals,
         hideSupportBanners,
         medicationSafetyProfiles,
         showMedicationNamesInNotifications,
@@ -241,6 +250,7 @@ public enum UserDefaultsKeys {
         selectedTab: 0,
         trendsVisualizationType: 0, // Chart view
         trendsDaysWindow: 14, // 14 days by default
+		historyShowsDailyTotals: defaultHistoryShowsDailyTotals,
         hideSupportBanners: false,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
@@ -291,6 +301,7 @@ public enum UserDefaultsKeys {
     public static let keysToSkip: Set<String> = [
         hasSeenWelcome, // Don't reset immediately, handled by shouldShowWelcomeOnNextLaunch
 		storageSchemaVersion, // Storage state is independent of user preferences
+		stockExcludedEventIDs, // Owned by medication history, including across settings reset.
 		acknowledgedWatchDoseEventIDs, // Reset must not let a delayed Watch delivery replay.
 		archivedLegacyMedicationsPath, // Preserve recovery locations after a settings reset
 		archivedLegacyEventsPath,
@@ -308,6 +319,7 @@ public enum UserDefaultsKeys {
         // Display Settings
         trendsVisualizationType,
         trendsDaysWindow,
+		historyShowsDailyTotals,
         hideSupportBanners,
         medicationSafetyProfiles,
 
@@ -337,6 +349,7 @@ public enum UserDefaultsKeys {
     /// These contain device-specific data, security-scoped bookmarks, or historical analytics
     public static let keysToNeverExport: Set<String> = [
 		lastLoggedDoseEventIDs, // Recording order belongs to this device.
+		stockExcludedEventIDs, // Exported as record data, separately from app settings.
 		acknowledgedWatchDoseEventIDs, // Watch delivery receipts belong to this installation.
 		hasDiscoveredQuickLog, // Gesture discovery is device-local.
 		quickLogHintImpressions,

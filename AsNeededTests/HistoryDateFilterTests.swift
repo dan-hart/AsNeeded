@@ -117,6 +117,34 @@ struct HistoryDateFilterTests {
 		#expect(cal.component(.day, from: resolved.end) == 9)
 	}
 
+	@Test("History ends a custom range at the next local midnight after a midnight DST change")
+	func customRangeWithMissingMidnight() throws {
+		let defaults = try IsolatedTestPreferences()
+		let store = DataStore(testIdentifier: "History-Midnight-DST-\(UUID().uuidString)")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = try #require(TimeZone(identifier: "America/Sao_Paulo"))
+		let selectedDay = try #require(calendar.date(from: DateComponents(year: 2018, month: 11, day: 4, hour: 12)))
+		let followingDay = try #require(calendar.date(from: DateComponents(year: 2018, month: 11, day: 5)))
+		let medication = ANMedicationConcept(clinicalName: "Example")
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults.defaults,
+			calendar: { calendar }, now: { followingDay })
+		let within = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 5, unit: .milligram),
+			date: followingDay.addingTimeInterval(-1))
+		let outside = ANEventConcept(eventType: .doseTaken, medication: medication, dose: ANDoseConcept(amount: 10, unit: .milligram),
+			date: followingDay)
+		model.events = [within, outside]
+		model.dateFilter = .custom(try #require(TrendsDateRange(start: selectedDay, end: selectedDay,
+			calendar: calendar, now: followingDay, includingToday: true)))
+
+		#expect(model.groupedHistory.flatMap(\.entries).map(\.id) == [within.id])
+		#expect(model.groupedHistory.first?.medicationTotals.first?.amounts == [.milligram: 5])
+
+		let previousDay = try #require(calendar.date(from: DateComponents(year: 2018, month: 11, day: 3)))
+		model.dateFilter = .allTime
+		model.events = [ANEventConcept(eventType: .doseTaken, date: previousDay), outside]
+		#expect(model.jumpTarget(for: selectedDay) == previousDay)
+	}
+
 	@Test("History opened from Trends retains complete-day bounds instead of adding today")
 	func trendsRangeInHistory() throws {
 		let defaults = try IsolatedTestPreferences()
