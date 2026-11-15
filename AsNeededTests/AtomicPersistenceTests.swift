@@ -34,9 +34,11 @@ struct AtomicPersistenceTests {
 		try await fixture.store.addMedication(original)
 		try await fixture.store.addEvent(oldEvent, shouldRecordForReview: false)
 		fixture.defaults.set(false, forKey: UserDefaultsKeys.hapticsEnabled)
+		fixture.defaults.set(false, forKey: UserDefaultsKeys.historyShowsDailyTotals)
 		let incoming = ANMedicationConcept(clinicalName: "Imported example", quantity: 1)
 		var settings = AppSettings()
 		settings.hapticsEnabled = true
+		settings.historyShowsDailyTotals = true
 		let export = DataExport(medications: [incoming], events: [], exportDate: Date(), appVersion: "1.1.2", dataVersion: "1.0", settings: settings)
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
@@ -47,6 +49,7 @@ struct AtomicPersistenceTests {
 		#expect(fixture.store.events.map(\.id) == [oldEvent.id])
 		#expect(fixture.store.events.first?.note == oldEvent.note)
 		#expect(fixture.defaults.bool(forKey: UserDefaultsKeys.hapticsEnabled) == false)
+		#expect(fixture.defaults.object(forKey: UserDefaultsKeys.historyShowsDailyTotals) as? Bool == false)
 	}
 
 	@Test("An interrupted write is recovered even by a reader with an unchanged old cache")

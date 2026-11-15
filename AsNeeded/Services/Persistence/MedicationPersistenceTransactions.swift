@@ -59,7 +59,10 @@ struct MedicationPersistenceSnapshot: Codable, Sendable {
 			let medication = medications[medicationIndex]
 			let oldAmount = original.eventType == .doseTaken ? original.dose.map { stockAmount($0, medication: medication) } ?? 0 : 0
 			let newAmount = updated.eventType == .doseTaken ? updated.dose.map { stockAmount($0, medication: medication) } ?? 0 : 0
-			medications[medicationIndex].quantity = quantity + oldAmount - newAmount
+			let change = oldAmount - newAmount
+			if change != 0 {
+				medications[medicationIndex].quantity = quantity + change
+			}
 		}
 		events[index] = updated
 	}

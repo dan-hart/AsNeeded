@@ -101,6 +101,63 @@ struct MedicationHistoryViewModelTests {
 		#expect(viewModel.groupedHistory.allSatisfy { $0.entries.allSatisfy { $0.medication?.id == med1.id } })
 	}
 
+	@Test("All medication history totals positive recorded amounts by day, medication ID, and unit")
+	func dailyTotalsFollowDisplayedHistory() throws {
+		let first = createTestMedication()
+		let second = createTestMedication()
+		let third = createTestMedication()
+		let unused = createTestMedication()
+		let store = DataStore(testIdentifier: "History-Totals-\(UUID().uuidString)")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		let now = Date(timeIntervalSince1970: 1_800_000_000)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults,
+			calendar: { calendar }, now: { now })
+		let dates = try (0...2).map { offset in
+			try #require(calendar.date(byAdding: .day, value: -offset, to: now))
+		}
+
+		func entry(_ medication: ANMedicationConcept, _ amount: Double, _ unit: ANUnitConcept, day: Int) -> ANEventConcept {
+			var event = createTestEvent(medication: medication, amount: amount, unit: unit)
+			event.date = dates[day]
+			return event
+		}
+
+		let editedEntry = entry(first, 2.5, .milligram, day: 0)
+		var noDose = entry(unused, 4, .milligram, day: 0)
+		noDose.dose = nil
+		model.events = [
+			editedEntry,
+			entry(first, 2.5, .milligram, day: 0),
+			entry(unused, 0, .milligram, day: 0),
+			entry(unused, -1, .milligram, day: 0),
+			entry(unused, .infinity, .milligram, day: 0),
+			noDose,
+			entry(first, 2.5, .milligram, day: 1),
+			entry(second, 10, .milligram, day: 1),
+			entry(second, 1, .tablet, day: 1),
+			entry(first, 5, .milligram, day: 2),
+			entry(second, 10, .milligram, day: 2),
+			entry(third, 3, .milligram, day: 2)
+		]
+
+		let groups = model.groupedHistory
+		#expect(groups.map { $0.medicationTotals.count } == [1, 2, 3])
+		#expect(groups.first?.medicationTotals.first?.amounts == [.milligram: 5])
+		let secondDay = try #require(groups.dropFirst().first)
+		#expect(secondDay.medicationTotals.first { $0.id == second.id }?.amounts == [.milligram: 10, .tablet: 1])
+		#expect(secondDay.medicationTotals.first { $0.id == first.id }?.amounts == [.milligram: 2.5])
+
+		var edited = editedEntry
+		edited.dose = ANDoseConcept(amount: 5, unit: .milligram)
+		model.events = model.events.map { $0.id == edited.id ? edited : $0 }
+		#expect(model.groupedHistory.first?.medicationTotals.first?.amounts == [.milligram: 7.5])
+		model.events.removeAll { $0.id == edited.id }
+		#expect(model.groupedHistory.first?.medicationTotals.first?.amounts == [.milligram: 2.5])
+		model.selectedMedicationID = second.id.uuidString
+		#expect(model.groupedHistory.map { $0.medicationTotals.map(\.id) } == [[second.id], [second.id]])
+	}
+
 	@Test("History cache follows selection changes and replacements with the same event identity")
 	func groupedHistoryInvalidatesForSelectionAndEventEdits() async throws {
 		let first = createTestMedication()
@@ -205,6 +262,100 @@ struct MedicationHistoryViewModelTests {
 		await model.refreshAfterForeground()
 		#expect(model.groupedHistory.first?.entries.first?.id == event.id)
 		#expect(model.medications.first?.quantity == 8)
+	}
+
+	@Test("A retained History model adopts the medication selection restored with an import")
+	func liveRestoreReconcilesSelection() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("History-Restore-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let store = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		let previous = createTestMedication()
+		let restored = createTestMedication()
+		try await store.addMedication(previous)
+		defaults.set(previous.id.uuidString, forKey: UserDefaultsKeys.historySelectedMedicationID)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		#expect(model.selectedMedication?.id == previous.id)
+
+		var settings = AppSettings()
+		settings.historySelectedMedicationID = restored.id.uuidString
+		let export = DataExport(medications: [restored], events: [], exportDate: .now,
+			appVersion: "1.3", dataVersion: "1.0", settings: settings)
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		try await store.importDataFromJSON(encoder.encode(export), applySettings: true)
+		await model.refreshAfterForeground()
+
+		#expect(model.selectedMedication?.id == restored.id)
+		#expect(defaults.string(forKey: UserDefaultsKeys.historySelectedMedicationID) == restored.id.uuidString)
+	}
+
+	@Test("Date-only edits preserve a missing amount and tracked stock")
+	func dateEditPreservesMissingDose() async throws {
+		let store = DataStore(testIdentifier: "History-Sparse-\(UUID().uuidString)")
+		let medication = ANMedicationConcept(clinicalName: "Example", quantity: 10, prescribedUnit: .unit)
+		let event = ANEventConcept(eventType: .doseTaken, medication: medication, date: .now)
+		try await store.addMedication(medication)
+		try await store.addEvent(event)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults)
+		let newDate = event.date.addingTimeInterval(-3600)
+
+		#expect(await model.updateEvent(event, newDate: newDate))
+		let saved = try #require(store.events.first)
+		#expect(saved.date == newDate)
+		#expect(saved.dose == nil)
+		#expect(store.medications.first?.quantity == 10)
+		#expect(model.groupedHistory.first?.medicationTotals.isEmpty == true)
+	}
+
+	@Test("Date and note edits preserve exact fractional stock")
+	func dateAndNoteEditsDoNotRoundStock() async throws {
+		let store = DataStore(testIdentifier: "History-Fractional-Stock-\(UUID().uuidString)")
+		let medication = createTestMedication(quantity: 0.3)
+		let event = createTestEvent(medication: medication, amount: 0.1, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(event)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+
+		#expect(await model.updateEvent(event, newDate: event.date.addingTimeInterval(-60)))
+		#expect(await model.updateEventNote(event, text: "Updated note"))
+		#expect(store.medications.first?.quantity == 0.3)
+		#expect(store.events.first?.dose == event.dose)
+	}
+
+	@Test("History patches the latest saved fields when a second store changes the same entry")
+	func editPreservesUnchangedFieldsFromOtherStore() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent("History-Edit-\(UUID().uuidString)")
+		defer { try? FileManager.default.removeItem(at: directory) }
+		let reader = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		let medication = createTestMedication()
+		let event = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await reader.addMedication(medication)
+		try await reader.recordDose(event)
+		let model = MedicationHistoryViewModel(dataStore: reader, selectedMedicationID: "all", defaults: defaults)
+		await model.refreshAfterForeground()
+		let writer = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		var concurrent = event
+		concurrent.dose?.amount = 3.25
+		concurrent.note = try DoseReflectionCodec.encode(DoseReflection(reason: "New context", note: "Other writer"))
+		try await writer.updateEvent(concurrent)
+
+		let movedDate = event.date.addingTimeInterval(-60)
+		#expect(await model.updateEvent(event, newDate: movedDate))
+		let moved = try #require(reader.events.first)
+		#expect(moved.date == movedDate)
+		#expect(moved.dose == concurrent.dose)
+		#expect(moved.note == concurrent.note)
+
+		concurrent = moved
+		concurrent.dose?.amount = 4
+		try await writer.updateEvent(concurrent)
+		#expect(await model.updateEventNote(event, text: "My note"))
+		let saved = try #require(reader.events.first)
+		#expect(saved.dose == concurrent.dose)
+		#expect(saved.date == movedDate)
+		#expect(DoseReflectionCodec.reflection(from: saved.note)?.reason == "New context")
+		#expect(DoseReflectionCodec.displayNote(from: saved.note) == "My note")
+		#expect(reader.medications.first?.quantity == 6)
 	}
 
 	// MARK: - Dose Increase Tests
@@ -433,11 +584,7 @@ struct MedicationHistoryViewModelTests {
 		try? await dataStore.addEvent(event)
 
 		let viewModel = MedicationHistoryViewModel(dataStore: dataStore, defaults: defaults)
-		let updatedNote = try DoseReflectionCodec.updatingNote(in: event.note, with: "Updated note")
-		var updatedEvent = event
-		updatedEvent.note = updatedNote
-
-		await viewModel.updateEventNote(updatedEvent)
+		await viewModel.updateEventNote(event, text: "Updated note")
 
 		let storedEvent = try #require(dataStore.events.first { $0.id == event.id })
 		let reflection = try #require(DoseReflectionCodec.reflection(from: storedEvent.note))
@@ -483,9 +630,7 @@ struct MedicationHistoryViewModelTests {
 		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 3, newUnit: .tablet))
 		// A retained editor snapshot must compare against the dose currently stored, not its old value.
 		#expect(await viewModel.updateEvent(event, newDate: newDate, newAmount: 4, newUnit: .tablet))
-		var updatedEvent = try #require(dataStore.events.first(where: { $0.id == event.id }))
-		updatedEvent.note = "Updated note"
-		#expect(await viewModel.updateEventNote(updatedEvent))
+		#expect(await viewModel.updateEventNote(event, text: "Updated note"))
 
 		let storedEvent = try #require(dataStore.events.first)
 		#expect(dataStore.events.count == 1)

@@ -48,6 +48,10 @@ public enum UserDefaultsKeys {
     /// Trends time window in days (14, 30 or 90)
     static let trendsDaysWindow = "trendsDaysWindow"
 
+	/// Visibility of the per-medication totals in All medications history.
+	static let historyShowsDailyTotals = "historyShowsDailyTotals"
+	static let defaultHistoryShowsDailyTotals = false
+
     /// Whether to hide support banners
     static let hideSupportBanners = "hideSupportBanners"
 
@@ -192,6 +196,7 @@ public enum UserDefaultsKeys {
 		quickLogHintImpressions,
         trendsVisualizationType,
         trendsDaysWindow,
+		historyShowsDailyTotals,
         hideSupportBanners,
         medicationSafetyProfiles,
         showMedicationNamesInNotifications,
@@ -241,6 +246,7 @@ public enum UserDefaultsKeys {
         selectedTab: 0,
         trendsVisualizationType: 0, // Chart view
         trendsDaysWindow: 14, // 14 days by default
+		historyShowsDailyTotals: defaultHistoryShowsDailyTotals,
         hideSupportBanners: false,
         showMedicationNamesInNotifications: false,
         selectedFontFamily: "system", // Default to system font
@@ -308,6 +314,7 @@ public enum UserDefaultsKeys {
         // Display Settings
         trendsVisualizationType,
         trendsDaysWindow,
+		historyShowsDailyTotals,
         hideSupportBanners,
         medicationSafetyProfiles,
 

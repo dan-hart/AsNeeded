@@ -39,6 +39,16 @@ struct DemoModeStateTests {
 		#expect(medication.nickname == "Example relief")
 	}
 
+	@Test("History redacts names saved before a medication was renamed")
+	func historicalMedicationNames() {
+		let state = DemoModeState(medicationNames: { ["Current nickname"] })
+		let medication = ANMedicationConcept(clinicalName: "Original clinical", nickname: "Original nickname")
+		let note = "Original clinical, Original nickname and Current nickname"
+		#expect(state.text(note, historicalMedication: medication) == note)
+		state.enable()
+		#expect(state.text(note, historicalMedication: medication) == "Hidden medication, Hidden medication and Hidden medication")
+	}
+
 	@Test("Overlapping names redact original text once, including names in the placeholder")
 	func overlappingNames() {
 		let state = DemoModeState(medicationNames: { ["med", "medication", "", "Synthetic"] })

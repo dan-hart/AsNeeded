@@ -290,6 +290,18 @@ public final class DataStore {
 		await refreshDoseAvailability()
 	}
 
+	/// Applies a partial edit to the current event inside the same transaction as its stock adjustment.
+	func editEvent(id: UUID, _ edit: (inout ANEventConcept) throws -> Void) async throws {
+		try await transactions.perform { snapshot in
+			guard var event = snapshot.events.first(where: { $0.id == id }) else {
+				throw PersistenceTransactionError.recordUnavailable
+			}
+			try edit(&event)
+			try snapshot.updateEvent(event)
+		}
+		await refreshDoseAvailability()
+	}
+
 	public func deleteEvents(ids: Set<UUID>) async throws {
 		try await transactions.perform { $0.deleteEvents(ids: ids) }
 		await refreshDoseAvailability()
