@@ -205,13 +205,25 @@ struct AtomicPersistenceTests {
 		#expect(try await reader.read().medications.first?.quantity == 10)
 		#expect(defaults.bool(forKey: key) == false)
 		#expect(!FileManager.default.fileExists(atPath: journal.path))
+
+		try await interruptSave()
+		defaults.set(true, forKey: key)
+		defaults.rejectNextSynchronization = true
+		#expect(try await reader.read().medications.first?.quantity == 10)
+		#expect(defaults.bool(forKey: key) == false)
+		#expect(!FileManager.default.fileExists(atPath: journal.path))
 	}
 
 	private final class RecoveryDefaults: UserDefaults, @unchecked Sendable {
 		var rejectSynchronization = false
+		var rejectNextSynchronization = false
 
 		override func synchronize() -> Bool {
-			!rejectSynchronization && super.synchronize()
+			if rejectNextSynchronization {
+				rejectNextSynchronization = false
+				return false
+			}
+			return !rejectSynchronization && super.synchronize()
 		}
 	}
 

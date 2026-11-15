@@ -670,6 +670,9 @@ in their directory. Cooperating app/widget writers load fresh records under the
 same lock. The journal is flushed before writes and removed only after completion.
 Ordinary failures restore affected records and exact persisted imported preferences;
 interruption or failed rollback retains the journal for recovery before access.
+When replay needs to sync changed preferences and the first sync fails, it retries
+once under the same lock. A second failure retains the journal. The local log
+records the stage and logical domain for failed preference synchronization.
 Malformed journals fail closed. Widgets cannot recover app-owned preferences and
 show an unavailable state until the app recovers them. Registered defaults and
 unrelated preference changes are not captured as persisted import values.

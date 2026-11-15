@@ -3,6 +3,7 @@ import Boutique
 import CoreFoundation
 import Darwin
 import Foundation
+import OSLog
 
 // Deterministic I/O boundaries allow regressions to exercise real SQLite writes.
 enum PersistenceTransactionPhase: Hashable {
@@ -155,6 +156,15 @@ struct PersistencePreferenceDomain {
 @MainActor
 final class MedicationPersistenceTransactions {
 	static let journalName = "pending-data-transaction.json"
+	private static let logger = Logger(subsystem: "com.codedbydan.AsNeeded", category: "Persistence")
+
+	private enum PreferenceSyncPhase: String {
+		case preflight
+		case commit
+		case replay
+		case replayRetry
+	}
+
 	private let directory: URL
 	private let medicationsStore: Store<ANMedicationConcept>
 	private let eventsStore: Store<ANEventConcept>
@@ -218,7 +228,7 @@ final class MedicationPersistenceTransactions {
 		let stockExclusionsChanged = before.stockExcludedEventIDs != after.stockExcludedEventIDs
 		if stockExclusionsChanged { preferenceKeys["application", default: []].insert(stockKey) }
 		if let keys = preferenceKeys["shared"], !keys.isEmpty, let domain = preferences["shared"], domain.isAppGroup,
-			!domain.synchronize() {
+			!synchronize(domain, named: "shared", during: .preflight) {
 			visibleSnapshot = nil
 			throw PersistenceTransactionError.storageUnavailable
 		}
@@ -243,7 +253,7 @@ final class MedicationPersistenceTransactions {
 			for undo in journal.preferences {
 				guard let domain = preferences[undo.domain] else { throw PersistenceTransactionError.recoveryRequired }
 				let current = domain.persistedValues(for: undo.keys)
-				if !NSDictionary(dictionary: current).isEqual(to: try undo.decodedValues()), !domain.synchronize() {
+				if !NSDictionary(dictionary: current).isEqual(to: try undo.decodedValues()), !synchronize(domain, named: undo.domain, during: .commit) {
 					throw PersistenceTransactionError.storageUnavailable
 				}
 				preferenceDomainsNeedingSync.remove(undo.domain)
@@ -404,13 +414,28 @@ final class MedicationPersistenceTransactions {
 			// A failed synchronization can leave the process cache looking restored.
 			// Require confirmation for writes made in this process before dropping the journal.
 			guard preferenceDomainsNeedingSync.contains(undo.domain) else { continue }
-			guard domain.synchronize() else { throw PersistenceTransactionError.storageUnavailable }
+			if !synchronize(domain, named: undo.domain, during: .replay) {
+				// Keep the journal and write lock while giving the preferences service one retry.
+				try await Task.sleep(for: .milliseconds(250))
+				guard synchronize(domain, named: undo.domain, during: .replayRetry) else {
+					throw PersistenceTransactionError.storageUnavailable
+				}
+			}
 			preferenceDomainsNeedingSync.remove(undo.domain)
 		}
 		before.stockExcludedEventIDs = try loadStockExcludedEventIDs()
 		try FileManager.default.removeItem(at: journalURL)
 		flushDirectoryAfterCommit()
 		publishStable(before)
+	}
+
+	private func synchronize(_ domain: PersistencePreferenceDomain, named name: String, during phase: PreferenceSyncPhase) -> Bool {
+		guard domain.synchronize() else {
+			// The phase and logical domain are fixed labels. Keys and values can contain private data.
+			Self.logger.error("Preference synchronization failed during \(phase.rawValue, privacy: .public) in \(name, privacy: .public) domain")
+			return false
+		}
+		return true
 	}
 
 	private func restore(_ journal: UndoJournal, onto current: MedicationPersistenceSnapshot) -> MedicationPersistenceSnapshot {
