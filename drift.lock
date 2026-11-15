@@ -318,7 +318,7 @@ sig = "72d66c9d85340345"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/AtomicPersistenceTests.swift"
-sig = "80199967b14f31dc"
+sig = "680733a00572f3f2"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"

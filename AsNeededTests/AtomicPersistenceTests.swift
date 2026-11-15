@@ -168,7 +168,8 @@ struct AtomicPersistenceTests {
 		#expect(!FileManager.default.fileExists(atPath: journal.path))
 	}
 
-	@Test("Recovery skips already restored preferences and retains the journal after a failed changed preference write")
+	@Test("Recovery skips already restored preferences and retains the journal after a failed changed preference write",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func preferenceReplayOnlySynchronizesUnconfirmedChanges() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -214,7 +215,8 @@ struct AtomicPersistenceTests {
 		}
 	}
 
-	@Test("An import with unchanged preferences does not depend on preference synchronization")
+	@Test("An import with unchanged preferences does not depend on preference synchronization",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func unchangedPreferencesDoNotBlockImport() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -232,7 +234,8 @@ struct AtomicPersistenceTests {
 		#expect(try await store.prepareForAccess().medications == [medication])
 	}
 
-	@Test("A shared-only safety profile survives settings export, import, and reopen")
+	@Test("A shared-only safety profile survives settings export, import, and reopen",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func exportIncludesSharedOnlyProfile() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
@@ -258,7 +261,8 @@ struct AtomicPersistenceTests {
 		}
 	}
 
-	@Test("Shared settings use the same current-user domain for writes and journal reads")
+	@Test("Shared settings use the same current-user domain for writes and journal reads",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func appGroupJournalReadsUserDefaultsWrites() throws {
 		let suite = StorageConstants.appGroupIdentifier
 		let key = "AsNeededTests.preferenceProbe.\(UUID().uuidString)"
@@ -296,12 +300,15 @@ struct AtomicPersistenceTests {
 		#expect(recovered.events.first?.note == oldEvent.note)
 	}
 
-	@Test("Widget reads prior data but cannot recover another process's settings")
+	@Test("An interrupted settings import is recoverable on reopen, and only the app can replay it",
+		.tags(.coreDataIntegrity, .persistence, .unit, .critical))
 	func widgetCannotRestoreApplicationDefaults() async throws {
 		let fixture = try AtomicFixture()
 		defer { fixture.cleanup() }
 		let original = ANMedicationConcept(clinicalName: "Current example", quantity: 12.5)
 		try await fixture.store.addMedication(original)
+		let event = ANEventConcept(eventType: .doseTaken, medication: original, date: Date(timeIntervalSince1970: 1_700_000_000))
+		try await fixture.store.addEvent(event, shouldRecordForReview: false)
 		fixture.defaults.removeObject(forKey: UserDefaultsKeys.hideSupportBanners)
 		let oldShared = Data("retained profile fixture".utf8)
 		fixture.sharedDefaults.set(oldShared, forKey: UserDefaultsKeys.medicationSafetyProfiles)
@@ -317,10 +324,22 @@ struct AtomicPersistenceTests {
 		await #expect(throws: PersistenceTransactionError.self) { _ = try await widget.read() }
 		await #expect(throws: PersistenceTransactionError.self) { try await widget.perform { $0.medications = [] } }
 		#expect(fixture.defaults.bool(forKey: UserDefaultsKeys.hideSupportBanners), "Widget cannot write the main app's preference domain")
-		try await fixture.store.prepareForAccess()
-		#expect(fixture.defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) == nil)
-		#expect(fixture.sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == oldShared)
-		#expect(fixture.store.medications == [original])
+		let journal = fixture.directory.appendingPathComponent(MedicationPersistenceTransactions.journalName)
+		try #require(FileManager.default.fileExists(atPath: journal.path))
+		#expect(StorageHealthChecker().performHealthCheck(in: fixture.directory).isHealthy)
+
+		for _ in 0..<2 {
+			let defaults = try #require(UserDefaults(suiteName: fixture.suite))
+			let sharedDefaults = try #require(UserDefaults(suiteName: fixture.suite + ".shared"))
+			let reopened = DataStore(storageDirectory: fixture.directory, defaults: defaults, sharedDefaults: sharedDefaults,
+				defaultsDomainName: fixture.suite, sharedDefaultsDomainName: fixture.suite + ".shared")
+			let recovered = try await reopened.prepareForAccess()
+			#expect(recovered.medications == [original])
+			#expect(recovered.events.map(\.id) == [event.id])
+			#expect(defaults.object(forKey: UserDefaultsKeys.hideSupportBanners) == nil)
+			#expect(sharedDefaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == oldShared)
+			#expect(!FileManager.default.fileExists(atPath: journal.path))
+		}
 	}
 
 	@Test("Concurrent saves calculate stock from committed data", arguments: [false, true])
