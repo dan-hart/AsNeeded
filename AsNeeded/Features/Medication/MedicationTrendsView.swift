@@ -33,7 +33,7 @@ struct MedicationTrendsView: View {
 	@State private var pickerQuery = ""
 	@State private var pendingPickerMedication: ANMedicationConcept?
 	@State private var quickLogError = false
-	@State private var isFloatingLogDoseCollapsed = false
+	@State private var floatingLogDoseScroll = FloatingLogDoseScrollState()
 	@ScaledMetric private var floatingButtonClearance: CGFloat = 88
 	@EnvironmentObject private var navigationManager: NavigationManager
 	@Environment(\.fontFamily) private var fontFamily
@@ -130,7 +130,7 @@ struct MedicationTrendsView: View {
 				.padding(.horizontal)
 				.padding(.vertical)
 			}
-			.collapsesFloatingLogDose($isFloatingLogDoseCollapsed)
+			.collapsesFloatingLogDose(floatingLogDoseScroll)
 			.safeAreaInset(edge: .bottom, spacing: 0) {
 				if !loggableMedications.isEmpty { Color.clear.frame(height: floatingButtonClearance) }
 			}
@@ -224,7 +224,7 @@ struct MedicationTrendsView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = floatingQuickLogMedication
-		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, isCollapsed: isFloatingLogDoseCollapsed, onChoose: {
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, scrollState: floatingLogDoseScroll, onChoose: {
 			pendingPickerMedication = nil
 			pickerQuery = ""
 			showLogDosePicker = true

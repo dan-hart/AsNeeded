@@ -37,7 +37,7 @@ struct MedicationHistoryView: View {
 	// Reuse the existing atomic dose/Undo coordinator on both tabs.
 	@StateObject private var quickLogCoordinator = MedicationListViewModel()
 	@State private var quickLogError = false
-	@State private var isFloatingLogDoseCollapsed = false
+	@State private var floatingLogDoseScroll = FloatingLogDoseScrollState()
 	@State private var showLogDosePicker = false
 	@State private var pickerQuery = ""
 	@State private var pendingPickerMedication: ANMedicationConcept?
@@ -97,14 +97,15 @@ struct MedicationHistoryView: View {
 		Spacer()
 	}
 
-	private func historyDoseDetails(for event: ANEventConcept) -> some View {
-		let time = event.date.formatted(date: .omitted, time: .shortened)
-		let details = event.dose.map { "\(time) – \($0.unit.localizedCompactAmount(for: $0.amount))" } ?? time
+	private func historyDoseDetails(for date: Date, doseText: String?) -> some View {
+		let time = date.formatted(date: .omitted, time: .shortened)
+		let details = doseText.map { "\(time) – \($0)" } ?? time
+		let relative = relativeShortIfToday(date)
 		return ViewThatFits(in: .horizontal) {
 			HStack(alignment: .firstTextBaseline, spacing: 8) {
 				Text(details)
 					.font(.customFont(fontFamily, style: .subheadline))
-				if let relative = relativeShortIfToday(event.date) {
+				if let relative {
 					Text(relative)
 						.font(.customFont(fontFamily, style: .footnote))
 						.foregroundStyle(.secondary)
@@ -116,7 +117,7 @@ struct MedicationHistoryView: View {
 				Text(details)
 					.font(.customFont(fontFamily, style: .subheadline))
 					.noTruncate()
-				if let relative = relativeShortIfToday(event.date) {
+				if let relative {
 					Text(relative)
 						.font(.customFont(fontFamily, style: .footnote))
 						.foregroundStyle(.secondary)
@@ -170,7 +171,7 @@ struct MedicationHistoryView: View {
 					.listRowSeparator(.hidden)
 					.environment(\.defaultMinListRowHeight, 0)
 			}
-			.collapsesFloatingLogDose($isFloatingLogDoseCollapsed)
+			.collapsesFloatingLogDose(floatingLogDoseScroll)
 			.listStyle(.insetGrouped)
 			.onChange(of: scrollRequest, initial: true) { _, request in
 				guard let request else { return }
@@ -200,6 +201,7 @@ struct MedicationHistoryView: View {
 		let medication = event.medication.map { viewModel.currentMedication(for: $0) }
 		let reflection = DoseReflectionCodec.reflection(from: event.note)
 		let note = reflection?.note
+		let doseText = event.dose.map { $0.unit.localizedCompactAmount(for: $0.amount) }
 		let highlights = reflectionHighlights(for: reflection, historicalMedication: event.medication)
 		let tint = viewModel.isShowingAllMedications ? Color.accent : (medication?.displayColor ?? .accent)
 		let isSavedEntry = feedback?.target == .entry(event.id)
@@ -222,7 +224,7 @@ struct MedicationHistoryView: View {
 									.noTruncate()
 							}
 
-							historyDoseDetails(for: event)
+							historyDoseDetails(for: event.date, doseText: doseText)
 							if isSavedEntry {
 								feedbackLabel(String(localized: "Entry saved"))
 							}
@@ -234,14 +236,18 @@ struct MedicationHistoryView: View {
 					.contentShape(Rectangle())
 				}
 				.buttonStyle(.plain)
-				.accessibilityLabel(historyAccessibilityLabel(for: event, medication: medication, hasNote: note != nil))
+				.accessibilityLabel(historyAccessibilityLabel(for: event, medication: medication, doseText: doseText, hasNote: note != nil))
 				.accessibilityHint("Edit this dose entry")
 				.accessibilityValue(isSavedEntry ? Text("Entry saved") : Text(verbatim: ""))
 				.accessibilityFocused($focusedEntry, equals: event.id)
-				.task(id: isSavedEntry ? feedback?.id : nil) {
-					guard isSavedEntry else { return }
-					await Task.yield()
-					if !Task.isCancelled { focusedEntry = event.id }
+				.background {
+					if isSavedEntry {
+						Color.clear
+							.task(id: feedback?.id) {
+								await Task.yield()
+								if !Task.isCancelled { focusedEntry = event.id }
+							}
+					}
 				}
 
 				// Show add note button on trailing side if no note exists
@@ -516,18 +522,12 @@ struct MedicationHistoryView: View {
 		return Array(highlights.prefix(3))
 	}
 
-	private func historyAccessibilityLabel(for event: ANEventConcept, medication: ANMedicationConcept?, hasNote: Bool) -> String {
+	private func historyAccessibilityLabel(for event: ANEventConcept, medication: ANMedicationConcept?, doseText: String?, hasNote: Bool) -> String {
 		let medicationText = medication?.demoDisplayName ?? String(localized: "Medication")
-		let doseText: String = {
-			guard let dose = event.dose else {
-				return String(localized: "dose amount not recorded")
-			}
-
-			return dose.unit.localizedCompactAmount(for: dose.amount)
-		}()
+		let amountText = doseText ?? String(localized: "dose amount not recorded")
 		let timeText = event.date.formatted(date: .abbreviated, time: .shortened)
 		let noteText = hasNote ? String(localized: "Has note") : String(localized: "No note")
-		return String(localized: "\(medicationText), \(doseText), logged \(timeText). \(noteText).")
+		return String(localized: "\(medicationText), \(amountText), logged \(timeText). \(noteText).")
 	}
 
 	private var mutationErrorPresented: Binding<Bool> {
@@ -642,7 +642,7 @@ struct MedicationHistoryView: View {
 
 	private var primaryLogDoseButton: some View {
 		let medication = floatingQuickLogMedication
-		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, isCollapsed: isFloatingLogDoseCollapsed, onChoose: {
+		return FloatingLogDoseButton(quickLogMedication: medication, tint: viewModel.selectedMedication?.displayColor ?? .accent, scrollState: floatingLogDoseScroll, onChoose: {
 			pendingPickerMedication = nil
 			pickerQuery = ""
 			showLogDosePicker = true

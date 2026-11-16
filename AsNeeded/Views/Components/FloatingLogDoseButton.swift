@@ -8,7 +8,7 @@ struct FloatingLogDoseButton: View {
 	@ObservedObject private var demoMode = DemoModeState.shared
 	let quickLogMedication: ANMedicationConcept?
 	var tint: Color = .accent
-	var isCollapsed = false
+	let scrollState: FloatingLogDoseScrollState
 	let onChoose: () -> Void
 	let onQuickLog: (() async -> Bool)?
 	var onSuccess: () -> Void = {}
@@ -22,6 +22,7 @@ struct FloatingLogDoseButton: View {
 	@ScaledMetric(relativeTo: .headline) private var iconButtonSize: CGFloat = 58
 
 	var body: some View {
+		let isCollapsed = scrollState.isCollapsed
 		let palette = tint.filledButtonColors(for: colorScheme, contrast: contrast)
 		Button(action: choose) {
 			FloatingLogDoseLabel(expansion: isCollapsed ? 0 : 1, minimumSize: iconButtonSize)
@@ -69,6 +70,7 @@ struct FloatingLogDoseButton: View {
 
 /// Drive the capsule and its label from the same animation value.
 private struct FloatingLogDoseLabel: View, Animatable {
+	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	nonisolated var expansion: CGFloat
 	let minimumSize: CGFloat
 
@@ -84,6 +86,8 @@ private struct FloatingLogDoseLabel: View, Animatable {
 		FloatingLogDoseLabelLayout(expansion: progress, minimumSize: minimumSize) {
 			Image(systemSymbol: .plusCircleFill)
 			Text("Log Dose")
+				.lineLimit(1)
+				.fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: false)
 				.opacity(max(0, (progress - fadeStart) / (1 - fadeStart)))
 		}
 	}

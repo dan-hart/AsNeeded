@@ -1,66 +1,59 @@
+import Observation
 import SwiftUI
 
-/// Tracks deliberate scroll direction without switching the button on small reversals.
-struct FloatingLogDoseScrollDirection {
-	private var anchor: CGFloat?
-	private let threshold: CGFloat = 16
+/// Only a change in the button's presentation needs to invalidate a view.
+@MainActor
+@Observable
+final class FloatingLogDoseScrollState {
+	private(set) var isCollapsed = false
+	@ObservationIgnored private var anchor: CGFloat?
+	private let collapseDistance: CGFloat = 16
+	private let expandDistance: CGFloat = 44
 
-	mutating func begin(at offset: CGFloat) {
+	func begin(at offset: CGFloat) {
 		anchor = offset
 	}
 
-	mutating func end() {
+	func end() {
 		anchor = nil
 	}
 
-	mutating func update(at offset: CGFloat, isCollapsed: Bool) -> Bool {
-		if offset == 0 {
-			if anchor != nil { anchor = 0 }
-			return false
-		}
-		guard let anchor else { return isCollapsed }
+	func reset() {
+		end()
+		if isCollapsed { isCollapsed = false }
+	}
+
+	func update(at offset: CGFloat) {
+		guard let anchor else { return }
 		let reference = isCollapsed ? max(anchor, offset) : min(anchor, offset)
 		let distance = isCollapsed ? reference - offset : offset - reference
-		if distance >= threshold {
+		if distance >= (isCollapsed ? expandDistance : collapseDistance) {
 			self.anchor = offset
-			return !isCollapsed
+			isCollapsed.toggle()
+		} else {
+			self.anchor = reference
 		}
-		self.anchor = reference
-		return isCollapsed
 	}
 }
 
 extension View {
 	/// Apply directly to the vertical List or ScrollView that the button accompanies.
-	func collapsesFloatingLogDose(_ isCollapsed: Binding<Bool>) -> some View {
-		modifier(FloatingLogDoseScrollModifier(isCollapsed: isCollapsed))
-	}
-}
-
-private struct FloatingLogDoseScrollModifier: ViewModifier {
-	@Binding var isCollapsed: Bool
-	@State private var direction = FloatingLogDoseScrollDirection()
-
-	func body(content: Content) -> some View {
-		content
-			.onScrollGeometryChange(for: CGFloat.self, of: Self.offset) { _, offset in
-				let collapsed = direction.update(at: offset, isCollapsed: isCollapsed)
-				if collapsed != isCollapsed { isCollapsed = collapsed }
+	func collapsesFloatingLogDose(_ scrollState: FloatingLogDoseScrollState) -> some View {
+		onScrollGeometryChange(for: CGFloat.self, of: Self.floatingLogDoseOffset) { _, offset in
+			scrollState.update(at: offset)
+		}
+		.onScrollPhaseChange { _, phase, context in
+			if phase == .interacting {
+				scrollState.begin(at: Self.floatingLogDoseOffset(context.geometry))
+			} else {
+				// A rebound after the user lifts their finger is momentum, not a reversal.
+				scrollState.end()
 			}
-			.onScrollPhaseChange { _, phase, context in
-				switch phase {
-					case .interacting:
-						direction.begin(at: Self.offset(context.geometry))
-					case .decelerating:
-						break
-					default:
-						direction.end()
-				}
-			}
-			.onDisappear { isCollapsed = false }
+		}
+		.onDisappear { scrollState.reset() }
 	}
 
-	private static func offset(_ geometry: ScrollGeometry) -> CGFloat {
+	private static func floatingLogDoseOffset(_ geometry: ScrollGeometry) -> CGFloat {
 		let offset = geometry.contentOffset.y + geometry.contentInsets.top
 		let range = geometry.contentSize.height + geometry.contentInsets.top
 			+ geometry.contentInsets.bottom - geometry.containerSize.height

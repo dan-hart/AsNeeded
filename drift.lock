@@ -73,12 +73,12 @@ sig = "c8590f7ce36635dd"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/MedicationHistoryView.swift"
-sig = "0dc5f7b94da8f839"
+sig = "e0a94b65f1e344b7"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/MedicationTrendsView.swift"
-sig = "bf810ea29bf9d9c1"
+sig = "8e06fedcc9e018e9"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -298,12 +298,12 @@ sig = "e9ed4b89871b8fe1"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/FloatingLogDoseButton.swift"
-sig = "eec0d0a4cd0beb7b"
+sig = "5474c8e79d54a30e"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/FloatingLogDoseScroll.swift"
-sig = "128505e041324fa5"
+sig = "031e2feac19430b8"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
@@ -413,7 +413,7 @@ sig = "987d51c7c9d26d21"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeededTests/FloatingLogDoseScrollTests.swift"
-sig = "a695fb80a7ff7f25"
+sig = "c135648ce5a9668d"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
