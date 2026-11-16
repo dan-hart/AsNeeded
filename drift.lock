@@ -298,7 +298,7 @@ sig = "e9ed4b89871b8fe1"
 [[bindings]]
 doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Views/Components/FloatingLogDoseButton.swift"
-sig = "45e3fb8fb9a39945"
+sig = "eec0d0a4cd0beb7b"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
