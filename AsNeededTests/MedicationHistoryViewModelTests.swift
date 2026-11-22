@@ -40,6 +40,136 @@ struct MedicationHistoryViewModelTests {
 		)
 	}
 
+	@Test func historyWarningsFollowCommittedEditsAndIgnoreTheDisplayFilter() async throws {
+		let store = DataStore(testIdentifier: "History-Warnings-\(UUID())")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		let today = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+		var medication = createTestMedication()
+		medication.minimumHoursBetweenDoses = 4
+		medication.maximumDailyDoseAmount = 3
+		let earlier = ANEventConcept(eventType: .doseTaken, medication: medication,
+			dose: ANDoseConcept(amount: 2, unit: .tablet), date: today.addingTimeInterval(-3_600))
+		let later = ANEventConcept(eventType: .doseTaken, medication: medication,
+			dose: ANDoseConcept(amount: 2, unit: .tablet), date: today.addingTimeInterval(3_600))
+		try await store.addMedication(medication)
+		try await store.addEvent(later)
+		let model = MedicationHistoryViewModel(dataStore: store, selectedMedicationID: "all", defaults: defaults,
+			calendar: { calendar }, now: { today.addingTimeInterval(6 * 3_600) })
+		model.dateFilter = .custom(try #require(TrendsDateRange(start: today, end: today,
+			calendar: calendar, now: today.addingTimeInterval(6 * 3_600), includingToday: true)))
+		#expect(model.doseWarnings.isEmpty)
+		try await store.addEvent(earlier)
+		await model.refreshAfterForeground()
+		#expect(model.groupedHistory.flatMap(\.entries).map(\.id) == [later.id])
+		#expect(model.doseWarnings[later.id]?.spacing?.previous.id == earlier.id)
+		#expect(model.doseWarnings[later.id]?.rolling == .exceeded(4))
+		#expect(model.rollingWarningEntries(for: later).map(\.id) == [earlier.id, later.id])
+
+		#expect(await model.updateEvent(later, newDate: today.addingTimeInterval(5 * 3_600), newAmount: 1))
+		#expect(model.doseWarnings[later.id] == nil)
+		medication.maximumDoseAmount = 0.5
+		try await store.updateMedication(medication)
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings[later.id]?.singleDose == .exceeded(1))
+		let updated = try #require(model.events.first { $0.id == later.id })
+		#expect(await model.deleteEvent(updated))
+		#expect(model.doseWarnings[later.id] == nil)
+
+		try await store.addEvent(updated)
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings[later.id]?.singleDose == .exceeded(1))
+		let logCoordinator = MedicationListViewModel(dataStore: store, defaults: defaults)
+		#expect(await logCoordinator.undoLastQuickLog(eventID: later.id))
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings[later.id] == nil)
+	}
+
+	@Test func importAndRestartPreserveLimitsAndUseLocalSettingsOnMerge() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let source = DataStore(testIdentifier: "History-Limits-Export")
+		var medication = createTestMedication()
+		medication.maximumDoseAmount = 1
+		let entry = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		try await source.addMedication(medication)
+		try await source.addEvent(entry)
+		let exported = try await source.exportDataAsJSON(redactNames: true, includeSettings: false)
+
+		let destination = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		var existing = medication
+		existing.maximumDoseAmount = 3
+		try await destination.addMedication(existing)
+		try await destination.importDataFromJSON(exported, mergeExisting: true)
+		let model = MedicationHistoryViewModel(dataStore: destination, defaults: defaults)
+		#expect(model.doseWarnings[entry.id] == nil)
+
+		try await destination.importDataFromJSON(exported)
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings[entry.id]?.singleDose == .exceeded(2))
+		let reopened = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		let reopenedModel = MedicationHistoryViewModel(dataStore: reopened, defaults: defaults)
+		#expect(reopenedModel.doseWarnings.isEmpty)
+		await reopenedModel.refreshAfterForeground()
+		#expect(reopenedModel.doseWarnings[entry.id]?.singleDose == .exceeded(2))
+	}
+
+	@Test func rolledBackDoseDoesNotCreateHistoryWarning() async throws {
+		enum InjectedError: Error { case rollback }
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		var failNextCommit = false
+		let store = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name, transactionFault: { phase in
+			if failNextCommit, phase == .beforeCommit { throw InjectedError.rollback }
+		})
+		var medication = createTestMedication()
+		medication.maximumDoseAmount = 1
+		try await store.addMedication(medication)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		let entry = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		failNextCommit = true
+		await #expect(throws: InjectedError.rollback) { try await store.addEvent(entry) }
+		#expect(model.doseWarnings.isEmpty)
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings.isEmpty)
+		#expect(model.events.isEmpty)
+	}
+
+	@Test func historyBootstrapCannotSeeLegacyLimitsFromAnUncommittedImport() async throws {
+		enum InjectedError: Error { case rollback }
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let medication = createTestMedication()
+		let entry = createTestEvent(medication: medication, amount: 2, unit: .tablet)
+		let defaults = defaults
+		var duringCommit: (() throws -> Void)?
+		let store = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name, transactionFault: { phase in
+			if phase == .beforeCommit { try duringCommit?() }
+		})
+		try await store.addMedication(medication)
+		try await store.addEvent(entry)
+		duringCommit = { [weak store] in
+			#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) != nil)
+			let store = try #require(store)
+			let fresh = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+			#expect(fresh.events.count == 1)
+			#expect(fresh.doseWarnings.isEmpty)
+			throw InjectedError.rollback
+		}
+		var settings = AppSettings()
+		settings.medicationSafetyProfiles = [medication.id.uuidString: MedicationSafetyProfile(maxDailyAmount: 1)]
+		let encoded = JSONEncoder()
+		encoded.dateEncodingStrategy = .iso8601
+		let backup = try encoded.encode(DataExport(medications: [medication], events: [entry], exportDate: .now,
+			appVersion: "1.3.0", dataVersion: nil, settings: settings))
+		await #expect(throws: InjectedError.rollback) {
+			try await store.importDataFromJSON(backup, mergeExisting: true, applySettings: true)
+		}
+		#expect(defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) == nil)
+
+		duringCommit = nil
+		try await store.importDataFromJSON(backup, mergeExisting: true, applySettings: true)
+		let fresh = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		#expect(fresh.doseWarnings[entry.id]?.rolling == .exceeded(2))
+	}
+
 	@Test("EnsureValidSelection defaults to all medications")
 	func ensureValidSelectionDefaultsToAll() async throws {
 		clearStoredSelection()

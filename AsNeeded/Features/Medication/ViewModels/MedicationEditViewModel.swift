@@ -31,6 +31,8 @@ final class MedicationEditViewModel: ObservableObject {
 
 	private struct UnitChange {
 		let previousUnit: ANUnitConcept?
+		let previousLimits: (daily: String, single: String)
+		let previouslyRequiredReview: Bool
 	}
 
 	private var unitChange: UnitChange?
@@ -53,6 +55,8 @@ final class MedicationEditViewModel: ObservableObject {
 	@Published var minimumHoursBetweenDosesText: String
 	@Published var cautionHoursBetweenDosesText: String
 	@Published var maxDailyAmountText: String
+	@Published var maxDoseAmountText: String
+	@Published private(set) var requiresQuantityLimitReview = false
 	@Published var lowStockThresholdText: String
 	@Published var duplicateDoseWindowMinutes: Int
 	@Published var refillLeadDays: Int
@@ -93,6 +97,7 @@ final class MedicationEditViewModel: ObservableObject {
 		minimumHoursBetweenDosesText = (medication?.minimumHoursBetweenDoses ?? safetyProfile.minimumHoursBetweenDoses).map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		cautionHoursBetweenDosesText = safetyProfile.cautionHoursBetweenDoses.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		maxDailyAmountText = (medication?.maximumDailyDoseAmount ?? safetyProfile.maxDailyAmount).map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
+		maxDoseAmountText = medication?.maximumDoseAmount.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		lowStockThresholdText = safetyProfile.lowStockThreshold.map { DoseAmountInput.text(for: $0, locale: locale) } ?? ""
 		duplicateDoseWindowMinutes = safetyProfile.duplicateDoseWindowMinutes
 		refillLeadDays = safetyProfile.refillLeadDays
@@ -102,7 +107,16 @@ final class MedicationEditViewModel: ObservableObject {
 
 	func selectPrescribedUnit(_ unit: ANUnitConcept?) {
 		guard unit != prescribedUnit else { return }
-		unitChange = UnitChange(previousUnit: prescribedUnit)
+		let hasLimits = !maxDailyAmountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+			!maxDoseAmountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+		let previousLimits = (maxDailyAmountText, maxDoseAmountText)
+		unitChange = UnitChange(previousUnit: prescribedUnit, previousLimits: previousLimits,
+			previouslyRequiredReview: requiresQuantityLimitReview)
+		if hasLimits {
+			maxDailyAmountText = ""
+			maxDoseAmountText = ""
+			requiresQuantityLimitReview = true
+		}
 		prescribedUnit = unit
 	}
 
@@ -110,6 +124,13 @@ final class MedicationEditViewModel: ObservableObject {
 		guard let unitChange else { return }
 		self.unitChange = nil
 		prescribedUnit = unitChange.previousUnit
+		maxDailyAmountText = unitChange.previousLimits.daily
+		maxDoseAmountText = unitChange.previousLimits.single
+		requiresQuantityLimitReview = unitChange.previouslyRequiredReview
+	}
+
+	func confirmQuantityLimitReview() {
+		requiresQuantityLimitReview = false
 	}
 
 	// Computed property for display color
@@ -132,7 +153,7 @@ final class MedicationEditViewModel: ObservableObject {
 			return false // Next refill date cannot be in the past (allowing today)
 		}
 
-		guard stockValidationMessage == nil, doseLimitValidationMessage == nil else { return false }
+		guard !requiresQuantityLimitReview, stockValidationMessage == nil, doseLimitValidationMessage == nil else { return false }
 		if doseText.isEmpty && prescribedUnit == nil { return nameOK }
 		guard let amount = DoseAmountInput.value(from: doseText, locale: locale), amount.isFinite, amount > 0 else { return false }
 		return nameOK && prescribedUnit != nil
@@ -155,12 +176,17 @@ final class MedicationEditViewModel: ObservableObject {
 	var doseLimitValidationMessage: String? {
 		for (text, label) in [
 			(minimumHoursBetweenDosesText, String(localized: "Minimum hours between doses")),
-			(maxDailyAmountText, String(localized: "Maximum amount in 24 hours"))
+			(maxDailyAmountText, String(localized: "Maximum amount in 24 hours")),
+			(maxDoseAmountText, String(localized: "Maximum amount per dose"))
 		] {
 			if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
 			   normalizedNumber(from: text) == nil {
 				return String(localized: "\(label) must be a positive, finite number.")
 			}
+		}
+		if normalizedNumber(from: maxDoseAmountText) != nil,
+			normalizedNumber(from: prescribedDoseText) == nil || prescribedUnit == nil {
+			return String(localized: "Add a prescribed dose and unit to use a maximum amount per dose.")
 		}
 		if let maximum = normalizedNumber(from: maxDailyAmountText) {
 			guard let dose = normalizedNumber(from: prescribedDoseText), prescribedUnit != nil else {
@@ -190,6 +216,7 @@ final class MedicationEditViewModel: ObservableObject {
 		medication.prescribedDoseAmount = amount
 		medication.minimumHoursBetweenDoses = normalizedNumber(from: minimumHoursBetweenDosesText)
 		medication.maximumDailyDoseAmount = normalizedNumber(from: maxDailyAmountText)
+		medication.maximumDoseAmount = normalizedNumber(from: maxDoseAmountText)
 		medication.nextDoseNotificationEnabled = nextDoseNotificationEnabled
 		medication.displayColorHex = displayColorHex
 		if medication.symbolInfo?.name != displaySymbol {

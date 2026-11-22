@@ -73,6 +73,7 @@ struct MedicationEditView: View {
         case dose
         case minimumHoursBetweenDoses
         case cautionHoursBetweenDoses
+		case maxDoseAmount
         case maxDailyAmount
         case lowStockThreshold
     }
@@ -112,7 +113,7 @@ struct MedicationEditView: View {
 			viewModel.prescribedUnit?.rawValue ?? "", viewModel.displayColorHex ?? "",
 			viewModel.displaySymbol ?? "", String(viewModel.isArchived),
 			String(viewModel.nextDoseNotificationEnabled), viewModel.minimumHoursBetweenDosesText,
-			viewModel.cautionHoursBetweenDosesText, viewModel.maxDailyAmountText,
+			viewModel.cautionHoursBetweenDosesText, viewModel.maxDailyAmountText, viewModel.maxDoseAmountText,
 			viewModel.lowStockThresholdText, String(viewModel.duplicateDoseWindowMinutes),
 			String(viewModel.refillLeadDays)
 		]
@@ -414,6 +415,23 @@ struct MedicationEditView: View {
                     placeholder: String(localized: "Example: 6"),
                     field: .maxDailyAmount
                 )
+
+				guidanceField(
+					title: String(localized: "Maximum per Dose\(viewModel.prescribedUnit.map { " (\($0.localizedAbbreviation))" } ?? "")"),
+					subtitle: String(localized: "History flags individual doses above this amount. Leave it blank if you don’t have a per-dose limit."),
+					text: $viewModel.maxDoseAmountText,
+					placeholder: String(localized: "Optional"),
+					field: .maxDoseAmount
+				)
+
+				if viewModel.requiresQuantityLimitReview {
+					Text("The dose unit changed. Enter limits in the new unit or leave them blank to remove them.")
+						.font(.customFont(fontFamily, style: .caption))
+						.foregroundStyle(.secondary)
+					Button("Confirm quantity limits") { viewModel.confirmQuantityLimitReview() }
+						.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+						.tint(.accent)
+				}
 
                 guidanceField(
                     title: String(localized: "Low-Stock Threshold"),

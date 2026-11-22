@@ -8,7 +8,6 @@ final class MedicationSafetyProfileStore {
 	private let sharedDefaults: UserDefaults?
 	private let reloadWidgets: () -> Void
 	private let encoder = JSONEncoder()
-	private let decoder = JSONDecoder()
 
 	init(defaults: UserDefaults = .standard, mirrorToSharedDefaults: Bool? = nil, widgetReload: (() -> Void)? = nil) {
 		self.defaults = defaults
@@ -37,15 +36,12 @@ final class MedicationSafetyProfileStore {
 		let data = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) ??
 			sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles)
 
-		guard let data else {
-			return [:]
-		}
+		return Self.decodeProfiles(data)
+	}
 
-		guard let profiles = try? decoder.decode([String: MedicationSafetyProfile].self, from: data) else {
-			return [:]
-		}
-
-		return profiles
+	static func decodeProfiles(_ data: Data?) -> [String: MedicationSafetyProfile] {
+		guard let data else { return [:] }
+		return (try? JSONDecoder().decode([String: MedicationSafetyProfile].self, from: data)) ?? [:]
 	}
 
 	func replaceAll(with profiles: [String: MedicationSafetyProfile]) {

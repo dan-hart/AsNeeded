@@ -60,6 +60,8 @@ struct MedicationHistoryView: View {
 	@State private var editingNoteText: String = ""
 	@FocusState private var isNoteFieldFocused: Bool
 	@State private var editingEntryEvent: ANEventConcept?
+	@State private var reviewingDose: ANEventConcept?
+	@State private var reviewEditID: UUID?
 	@State private var showDiscardNoteChanges = false
 
 	@ScaledMetric private var emptySectionSpacing: CGFloat = 24
@@ -260,6 +262,20 @@ struct MedicationHistoryView: View {
 						}
 					)
 				}
+			}
+
+			if viewModel.doseWarnings[event.id] != nil {
+				Button {
+					reviewingDose = event
+				} label: {
+					Label("Review dose", systemSymbol: .exclamationmarkTriangle)
+						.font(.customFont(fontFamily, style: .footnote, weight: .semibold))
+						.frame(minHeight: 44)
+						.contentShape(Rectangle())
+				}
+				.buttonStyle(.borderless)
+				.tint(.accent)
+				.accessibilityHint("Shows what was flagged against your saved dose limits")
 			}
 
 			if !highlights.isEmpty {
@@ -1068,6 +1084,23 @@ struct MedicationHistoryView: View {
 			}
 
 
+		}
+		.sheet(item: $reviewingDose, onDismiss: {
+			if let reviewEditID {
+				editingEntryEvent = viewModel.events.first { $0.id == reviewEditID }
+				self.reviewEditID = nil
+			}
+		}) { event in
+			if let warning = viewModel.doseWarnings[event.id],
+				let current = viewModel.events.first(where: { $0.id == event.id }) {
+				HistoryDoseWarningView(warning: warning, dose: .init(current),
+					rollingEntries: warning.rolling == nil ? [] : viewModel.rollingWarningEntries(for: current)) { id in
+					reviewEditID = id
+					reviewingDose = nil
+				}
+			} else {
+				ContentUnavailableView("Dose warning no longer applies", systemImage: "checkmark.circle")
+			}
 		}
 		.sheet(item: $editingEntryEvent, onDismiss: presentEditorFeedback) { event in
 			HistoryEntryEditor(event: event, viewModel: viewModel, onDismiss: {

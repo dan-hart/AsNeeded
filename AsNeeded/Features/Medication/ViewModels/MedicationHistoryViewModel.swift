@@ -79,9 +79,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 	@Published var events: [ANEventConcept] = [] {
 		didSet { cachedGroupedHistory = nil }
 	}
+	@Published private(set) var doseWarnings: [UUID: MedicationHistoryDoseWarningService.Warning] = [:]
 	@Published private(set) var isMutating = false
 	@Published var mutationError: String?
 
+	private let warningService = MedicationHistoryDoseWarningService()
+	private var warningInput: MedicationHistoryDoseWarningService.Input?
+	private var legacyProfileData: Data?
+	private var legacyProfiles: [String: MedicationSafetyProfile] = [:]
 	private let dataStore: DataStore
 	private let defaults: UserDefaults
 	private var storedSelection: String?
@@ -114,9 +119,24 @@ final class MedicationHistoryViewModel: ObservableObject {
 	}
 
 	private func loadData() {
-		let snapshot = MedicationPersistenceSnapshot(medications: dataStore.medications, events: dataStore.events)
+		// Reads, commits, and foreground refresh all use the newest stable publication.
+		// A buffered earlier stream notification cannot restore an older warning.
+		guard let committed = dataStore.latestCommittedState else { return }
+		let snapshot = committed.snapshot
+		if legacyProfileData != committed.legacySafetyProfileData {
+			legacyProfileData = committed.legacySafetyProfileData
+			legacyProfiles = MedicationSafetyProfileStore.decodeProfiles(legacyProfileData)
+		}
 		if medications != snapshot.medications { medications = snapshot.medications }
 		if events != snapshot.events { events = snapshot.events }
+		let input = MedicationHistoryDoseWarningService.Input(
+			medications: snapshot.medications, events: snapshot.events, profiles: legacyProfiles
+		)
+		if input != warningInput {
+			warningInput = input
+			let warnings = warningService.warnings(for: input)
+			if doseWarnings != warnings { doseWarnings = warnings }
+		}
 	}
 
 	deinit {
@@ -231,6 +251,14 @@ final class MedicationHistoryViewModel: ObservableObject {
 
 	func currentMedication(for snapshot: ANMedicationConcept) -> ANMedicationConcept {
 		medicationsByID[snapshot.id] ?? snapshot
+	}
+
+	func rollingWarningEntries(for event: ANEventConcept) -> [MedicationHistoryDoseWarningService.Dose] {
+		guard let medicationID = event.medication?.id,
+			let doses = warningInput?.timelines[medicationID] else { return [] }
+		let cutoff = event.date.addingTimeInterval(-SavedDoseLimits.rollingWindow)
+		return doses.filter { $0.date > cutoff && $0.date <= event.date }
+			.sorted(by: MedicationHistoryDoseWarningService.Dose.ordered)
 	}
 
 	var groupedHistory: [Day] {

@@ -22,6 +22,11 @@ public final class DataStore {
 	private let transactionFault: (PersistenceTransactionPhase) throws -> Void
 	private let notificationCleanup: @MainActor (Set<UUID>) async -> Void
 	private let reloadWidgets: () -> Void
+	struct CommittedState {
+		let snapshot: MedicationPersistenceSnapshot
+		let legacySafetyProfileData: Data?
+	}
+	private(set) var latestCommittedState: CommittedState?
 	private lazy var widgetRefreshObserver = WidgetRefreshObserver(reload: reloadWidgets)
 	private let reminderAcknowledgement: @MainActor (UUID) async -> Void
 
@@ -193,7 +198,10 @@ public final class DataStore {
 	}
 
 	private func publishCommittedSnapshot(_ snapshot: MedicationPersistenceSnapshot) {
-		widgetRefreshObserver.receive(snapshot, profileData: sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles) ?? defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles))
+		let appProfileData = defaults.data(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		let sharedProfileData = sharedDefaults?.data(forKey: UserDefaultsKeys.medicationSafetyProfiles)
+		latestCommittedState = CommittedState(snapshot: snapshot, legacySafetyProfileData: appProfileData ?? sharedProfileData)
+		widgetRefreshObserver.receive(snapshot, profileData: sharedProfileData ?? appProfileData)
 		for observer in snapshotObservers.values { observer.yield(snapshot) }
 	}
 

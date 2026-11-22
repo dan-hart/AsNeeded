@@ -1,6 +1,26 @@
 import ANModelKit
 import Foundation
 
+struct SavedDoseLimits: Equatable {
+	static let rollingWindow: TimeInterval = 24 * 3_600
+
+	let minimumHours: Double?
+	let maximumIn24Hours: Double?
+	let unit: ANUnitConcept?
+
+	init(medication: ANMedicationConcept, profile: MedicationSafetyProfile) {
+		minimumHours = medication.minimumHoursBetweenDoses ?? profile.minimumHoursBetweenDoses
+		maximumIn24Hours = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount
+		unit = medication.prescribedUnit
+	}
+
+	/// Allow floating-point representation error, not a meaningful additional amount.
+	static func quantityFits(_ quantity: Double, maximum: Double) -> Bool {
+		guard quantity.isFinite, maximum.isFinite else { return false }
+		return quantity <= maximum || quantity - maximum <= max(quantity.ulp, maximum.ulp) * 8
+	}
+}
+
 struct MedicationDoseGuidanceService {
 	enum Severity: Equatable {
 		case clear
@@ -97,8 +117,9 @@ struct MedicationDoseGuidanceService {
 		events: [ANEventConcept],
 		profile: MedicationSafetyProfile = .empty
 	) -> Availability {
-		let interval = medication.minimumHoursBetweenDoses ?? profile.minimumHoursBetweenDoses
-		let maximum = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount
+		let limits = SavedDoseLimits(medication: medication, profile: profile)
+		let interval = limits.minimumHours
+		let maximum = limits.maximumIn24Hours
 		guard interval != nil || maximum != nil else { return .notConfigured }
 		guard [interval, maximum].compactMap({ $0 }).allSatisfy({ $0.isFinite && $0 > 0 }) else {
 			return .unavailable("Enter positive, finite dose limits in medication settings.")
@@ -121,7 +142,7 @@ struct MedicationDoseGuidanceService {
 		guard amount <= maximum else {
 			return .unavailable("The saved dose exceeds your 24-hour quantity limit. Review medication settings.")
 		}
-		let recent = doses.filter { $0.date > candidate.addingTimeInterval(-24 * 3600) }
+		let recent = doses.filter { $0.date > candidate.addingTimeInterval(-SavedDoseLimits.rollingWindow) }
 		guard recent.allSatisfy({ event in
 			guard let dose = event.dose else { return false }
 			return dose.unit == unit && dose.amount.isFinite && dose.amount > 0
@@ -129,11 +150,11 @@ struct MedicationDoseGuidanceService {
 			return .unavailable("Recent dose quantities or units do not match. Review your dose history.")
 		}
 		// Eligibility can change only when a recorded quantity exits the rolling window.
-		let candidates = [candidate] + recent.map { $0.date.addingTimeInterval(24 * 3600) }
+		let candidates = [candidate] + recent.map { $0.date.addingTimeInterval(SavedDoseLimits.rollingWindow) }
 		for possible in candidates {
-			let total = recent.filter { $0.date > possible.addingTimeInterval(-24 * 3600) }
+			let total = recent.filter { $0.date > possible.addingTimeInterval(-SavedDoseLimits.rollingWindow) }
 				.compactMap { $0.dose?.amount }.reduce(0, +)
-			if total.isFinite && quantityFits(total + amount, maximum: maximum) {
+			if total.isFinite && SavedDoseLimits.quantityFits(total + amount, maximum: maximum) {
 				return .eligible(possible)
 			}
 		}
@@ -149,7 +170,8 @@ struct MedicationDoseGuidanceService {
 	) -> Assessment {
 		let filteredEvents = filteredDoseEvents(for: medication, events: events, through: date)
 		let lastDoseDate = filteredEvents.last?.date
-		let maximum = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount
+		let limits = SavedDoseLimits(medication: medication, profile: profile)
+		let maximum = limits.maximumIn24Hours
 		let incompatibleProposedUnit = maximum != nil && proposedDose != nil && proposedDose?.unit != medication.prescribedUnit
 		var proposedMedication = medication
 		if let proposedDose {
@@ -187,7 +209,7 @@ struct MedicationDoseGuidanceService {
 			severity = .warning
 		}
 
-		let minimumHours = medication.minimumHoursBetweenDoses ?? profile.minimumHoursBetweenDoses
+		let minimumHours = limits.minimumHours
 		if let minimumHours, let lastDoseDate, date.timeIntervalSince(lastDoseDate) < minimumHours * 3600 {
 			reasons.append(String(localized: "This is earlier than your saved minimum interval."))
 			severity = .warning
@@ -199,8 +221,8 @@ struct MedicationDoseGuidanceService {
 			severity = max(severity, .caution)
 		}
 
-		if let maxDailyAmount = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount {
-			if !quantityFits(projectedDailyTotal, maximum: maxDailyAmount) {
+		if let maxDailyAmount = maximum {
+			if !SavedDoseLimits.quantityFits(projectedDailyTotal, maximum: maxDailyAmount) {
 				reasons.append(String(localized: "This would exceed your saved daily limit."))
 				severity = .warning
 			} else if projectedDailyTotal >= maxDailyAmount * 0.8 {
@@ -236,7 +258,7 @@ struct MedicationDoseGuidanceService {
 			lastDoseDate: lastDoseDate,
 			dailyTotal: dailyTotal,
 			projectedDailyTotal: projectedDailyTotal,
-			maxDailyAmount: medication.maximumDailyDoseAmount ?? profile.maxDailyAmount,
+			maxDailyAmount: maximum,
 			isDuplicateCandidate: duplicateCandidate
 		)
 	}
@@ -309,12 +331,6 @@ struct MedicationDoseGuidanceService {
 		)
 	}
 
-	/// Tolerate only floating-point representation error, not a meaningful extra quantity.
-	private func quantityFits(_ quantity: Double, maximum: Double) -> Bool {
-		guard quantity.isFinite, maximum.isFinite else { return false }
-		return quantity <= maximum || quantity - maximum <= Swift.max(quantity.ulp, maximum.ulp) * 8
-	}
-
 	private func filteredDoseEvents(
 		for medication: ANMedicationConcept,
 		events: [ANEventConcept],
@@ -334,7 +350,7 @@ struct MedicationDoseGuidanceService {
 		endingAt date: Date,
 		unit: ANUnitConcept?
 	) -> Double {
-		let startDate = date.addingTimeInterval(-24 * 3600)
+		let startDate = date.addingTimeInterval(-SavedDoseLimits.rollingWindow)
 
 		return events
 			.filter { $0.date > startDate && $0.date <= date }

@@ -8,6 +8,33 @@ import Testing
 
 @Suite("MedicationEditViewModel Tests", .tags(.medication, .viewModel, .edit, .unit))
 struct MedicationEditViewModelTests {
+	@Test @MainActor func historyMaximumIsOptionalAndRequiresExplicitUnitReview() {
+		let medication = ANMedicationConcept(clinicalName: "Sample A", prescribedUnit: .tablet,
+			prescribedDoseAmount: 1, maximumDailyDoseAmount: 4, maximumDoseAmount: 2)
+		let model = MedicationEditViewModel(medication: medication, locale: Locale(identifier: "en_US"))
+		#expect(model.buildMedication().maximumDoseAmount == 2)
+		model.selectPrescribedUnit(.capsule)
+		#expect(model.requiresQuantityLimitReview)
+		#expect(!model.isFormValid)
+		#expect(model.maxDailyAmountText.isEmpty)
+		#expect(model.maxDoseAmountText.isEmpty)
+		model.restorePreviousUnit()
+		#expect(model.buildMedication().maximumDailyDoseAmount == 4)
+		#expect(model.buildMedication().maximumDoseAmount == 2)
+		#expect(model.isFormValid)
+
+		model.selectPrescribedUnit(.capsule)
+		model.maxDoseAmountText = "1.5"
+		model.confirmQuantityLimitReview()
+		#expect(model.isFormValid)
+		#expect(model.buildMedication().maximumDoseAmount == 1.5)
+		#expect(model.buildMedication().maximumDailyDoseAmount == nil)
+		model.maxDoseAmountText = "0"
+		#expect(!model.isFormValid)
+		model.maxDoseAmountText = ""
+		#expect(model.buildMedication().maximumDoseAmount == nil)
+	}
+
 	@Test("Restoring the prior unit preserves edits to amount, stock, and name")
 	@MainActor
 	func restorePriorUnitPreservesOtherDraftFields() {
@@ -19,6 +46,7 @@ struct MedicationEditViewModelTests {
 		viewModel.quantityText = "12"
 		viewModel.prescribedDoseText = "2"
 		viewModel.maxDailyAmountText = "6"
+		viewModel.maxDoseAmountText = "3"
 		#expect(viewModel.canRestorePreviousUnit)
 
 		viewModel.restorePreviousUnit()
@@ -26,7 +54,8 @@ struct MedicationEditViewModelTests {
 		#expect(viewModel.nickname == "Edited Name")
 		#expect(viewModel.quantityText == "12")
 		#expect(viewModel.prescribedDoseText == "2")
-		#expect(viewModel.maxDailyAmountText == "6")
+		#expect(viewModel.maxDailyAmountText.isEmpty)
+		#expect(viewModel.maxDoseAmountText.isEmpty)
 		#expect(!viewModel.canRestorePreviousUnit)
 		#expect(viewModel.originalMedication?.quantity == 3)
 	}
