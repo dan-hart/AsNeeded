@@ -264,18 +264,20 @@ struct MedicationHistoryView: View {
 				}
 			}
 
-			if viewModel.doseWarnings[event.id] != nil {
+			if let warning = viewModel.doseWarnings[event.id] {
+				let status = HistoryDoseWarningView.status(for: warning)
 				Button {
 					reviewingDose = event
 				} label: {
-					Label("Review dose", systemSymbol: .exclamationmarkTriangle)
-						.font(.customFont(fontFamily, style: .footnote, weight: .semibold))
-						.frame(minHeight: 44)
+					Label(status.title, systemSymbol: status.symbol)
+						.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+						.fixedSize(horizontal: false, vertical: true)
+						.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
 						.contentShape(Rectangle())
 				}
 				.buttonStyle(.borderless)
 				.tint(.accent)
-				.accessibilityHint("Shows what was flagged against your saved dose limits")
+				.accessibilityHint("Review dose details")
 			}
 
 			if !highlights.isEmpty {
@@ -1091,15 +1093,20 @@ struct MedicationHistoryView: View {
 				self.reviewEditID = nil
 			}
 		}) { event in
-			if let warning = viewModel.doseWarnings[event.id],
+			let review: HistoryDoseWarningView.Review? = if let warning = viewModel.doseWarnings[event.id],
 				let current = viewModel.events.first(where: { $0.id == event.id }) {
-				HistoryDoseWarningView(warning: warning, dose: .init(current),
-					rollingEntries: warning.rolling == nil ? [] : viewModel.rollingWarningEntries(for: current)) { id in
-					reviewEditID = id
-					reviewingDose = nil
-				}
+				.init(
+					warning: warning,
+					dose: .init(current),
+					medicationName: current.medication.map { viewModel.currentMedication(for: $0).demoDisplayName },
+					rollingEntries: warning.rolling == nil ? [] : viewModel.rollingWarningEntries(for: current)
+				)
 			} else {
-				ContentUnavailableView("Dose warning no longer applies", systemImage: "checkmark.circle")
+				nil
+			}
+			HistoryDoseWarningView(review: review) { id in
+				reviewEditID = id
+				reviewingDose = nil
 			}
 		}
 		.sheet(item: $editingEntryEvent, onDismiss: presentEditorFeedback) { event in
