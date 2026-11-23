@@ -98,7 +98,7 @@ struct MedicationHistoryDoseWarningService {
 				}
 				var rolling: QuantityFinding?
 				if let maximum = saved.maximumIn24Hours {
-					let cutoff = dose.date.addingTimeInterval(-SavedDoseLimits.rollingWindow)
+					let cutoff = SavedDoseLimits.windowStart(endingAt: dose.date)
 					while expired < index, sorted[expired].date <= cutoff {
 						window.removeFirst()
 						expired += 1
@@ -119,9 +119,10 @@ struct MedicationHistoryDoseWarningService {
 	}
 
 	private func spacing(before dose: Dose, previous: Dose, minimum: Double?) -> Spacing? {
-		guard let minimum, minimum > 0, (minimum * 3_600).isFinite else { return nil }
+		guard let minimum, minimum.isFinite, minimum > 0 else { return nil }
 		let elapsed = dose.date.timeIntervalSince(previous.date)
-		guard elapsed < minimum * 3_600 else { return nil }
+		let minimumSeconds = minimum * 3_600
+		guard elapsed < minimumSeconds else { return nil }
 		return Spacing(previous: previous, elapsed: elapsed, minimumHours: minimum)
 	}
 

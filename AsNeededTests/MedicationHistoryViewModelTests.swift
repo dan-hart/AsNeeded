@@ -133,6 +133,26 @@ struct MedicationHistoryViewModelTests {
 		#expect(model.events.isEmpty)
 	}
 
+	@Test func rejectedHistoryEditRefreshesWarningsFromAnExternalCommit() async throws {
+		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let store = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		let other = DataStore(storageDirectory: directory, defaults: defaults, defaultsDomainName: preferences.name)
+		var medication = createTestMedication()
+		medication.maximumDoseAmount = 1
+		let entry = createTestEvent(medication: medication, amount: 1, unit: .tablet)
+		try await store.addMedication(medication)
+		try await store.addEvent(entry)
+		let model = MedicationHistoryViewModel(dataStore: store, defaults: defaults)
+		await model.refreshAfterForeground()
+		#expect(model.doseWarnings.isEmpty)
+
+		try await other.editEvent(id: entry.id) { $0.dose?.amount = 2 }
+		#expect(model.doseWarnings.isEmpty)
+		#expect(await model.updateEvent(entry, newAmount: 3) == false)
+		#expect(model.events.first(where: { $0.id == entry.id })?.dose?.amount == 2)
+		#expect(model.doseWarnings[entry.id]?.singleDose == .exceeded(2))
+	}
+
 	@Test func historyBootstrapCannotSeeLegacyLimitsFromAnUncommittedImport() async throws {
 		enum InjectedError: Error { case rollback }
 		let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

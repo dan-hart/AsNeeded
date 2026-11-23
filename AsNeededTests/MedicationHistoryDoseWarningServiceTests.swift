@@ -32,6 +32,16 @@ struct MedicationHistoryDoseWarningServiceTests {
 		]).isEmpty)
 	}
 
+	@Test func aFiniteMinimumStillAppliesWhenConvertingItToSecondsOverflows() {
+		let medication = medication(interval: 1e306)
+		let earlier = dose(medication, -2, 1)
+		let later = dose(medication, 0, 1)
+		let result = warnings(medication, [earlier, later])
+		#expect(result[earlier.id] == nil)
+		#expect(result[later.id]?.spacing?.previous.id == earlier.id)
+		#expect(result[later.id]?.spacing?.minimumHours == 1e306)
+	}
+
 	@Test func simultaneousEntriesCountOnceOnStableAnchor() throws {
 		let medication = medication(interval: 1, daily: 3)
 		let first = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000001"))

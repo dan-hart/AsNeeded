@@ -60,6 +60,25 @@ struct MedicationEditViewModelTests {
 		#expect(viewModel.originalMedication?.quantity == 3)
 	}
 
+	@Test @MainActor func reselectingAUnitRestoresItsOwnQuantityLimits() {
+		let medication = ANMedicationConcept(clinicalName: "Sample A", prescribedUnit: .tablet,
+			prescribedDoseAmount: 1, maximumDailyDoseAmount: 4, maximumDoseAmount: 2)
+		let model = MedicationEditViewModel(medication: medication, locale: Locale(identifier: "en_US"))
+		model.selectPrescribedUnit(.capsule)
+		model.maxDoseAmountText = "3"
+		model.selectPrescribedUnit(.milliliter)
+		#expect(model.maxDoseAmountText.isEmpty)
+		#expect(model.requiresQuantityLimitReview)
+		model.selectPrescribedUnit(.tablet)
+		#expect(!model.requiresQuantityLimitReview)
+		#expect(model.buildMedication().maximumDailyDoseAmount == 4)
+		#expect(model.buildMedication().maximumDoseAmount == 2)
+
+		model.selectPrescribedUnit(.capsule)
+		#expect(model.requiresQuantityLimitReview)
+		#expect(model.buildMedication().maximumDoseAmount == 3)
+	}
+
 	@Test("Unit restoration returns to the preceding draft selection, including no unit")
 	@MainActor
 	func restorePreviousOptionalDraftUnit() {

@@ -493004,6 +493004,518 @@
           }
         }
       }
+    },
+    "Compared with current dose limits.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تتم المقارنة بحدود الجرعات الحالية."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сравнено с текущите ограничения за дозата."
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparació amb els límits de dosi actuals."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porovnáno s aktuálními limity dávkování."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sammenlignet med de nuværende dosisgrænser."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit den aktuellen Dosisgrenzen verglichen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σύγκριση με τα τρέχοντα όρια δόσης."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compared with current dose limits."
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compared with current dose limits."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compared with current dose limits."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparación con los límites de dosis actuales."
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparación con los límites de dosis actuales."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقایسه با محدودیت‌های فعلی دوز."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrattu nykyisiin annosrajoihin."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparaison avec les limites de dose actuelles."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparaison avec les limites de dose actuelles."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "השוואה למגבלות המינון הנוכחיות."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मौजूदा खुराक सीमाओं से तुलना की गई है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uspoređeno s trenutačnim ograničenjima doze."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Összevetve a jelenlegi adagolási határértékekkel."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibandingkan dengan batas dosis saat ini."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confronto con i limiti di dose attuali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在の服用量と間隔の設定に基づく比較です。"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ағымдағы доза шектеулерімен салыстырылды."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 복용 한도와 비교한 결과입니다."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibandingkan dengan had dos semasa."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sammenlignet med gjeldende dosegrenser."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergeleken met de huidige dosislimieten."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porównanie z obecnymi limitami dawkowania."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparação com os limites de dose atuais."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparação com os limites de dose atuais."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparație cu limitele de dozare actuale."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сравнение с текущими ограничениями дозировки."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porovnané s aktuálnymi limitmi dávkovania."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jämfört med de aktuella dosgränserna."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปรียบเทียบกับขีดจำกัดการใช้ยาปัจจุบัน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut doz sınırlarıyla karşılaştırıldı."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Порівняння з поточними обмеженнями дозування."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So sánh với giới hạn liều hiện tại."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與目前的劑量限制比較。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与当前剂量限制比较。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與目前的劑量限制比較。"
+          }
+        }
+      }
+    },
+    "To get alerts, set a minimum interval or a 24-hour limit, then log a dose.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لتلقي التنبيهات، اضبط حدًا أدنى للفاصل بين الجرعات أو حدًا للكمية خلال 24 ساعة، ثم سجّل جرعة."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За да получавате известия, задайте минимален интервал между дозите или лимит за 24 часа, след което запишете доза."
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per rebre avisos, configura un interval mínim entre dosis o un límit de 24 hores i registra una dosi."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chcete-li dostávat upozornění, nastavte minimální interval mezi dávkami nebo limit na 24 hodin a pak zaznamenejte dávku."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For at få advarsler skal du angive et minimumsinterval mellem doser eller en 24-timers grænse og derefter registrere en dosis."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um Hinweise zu erhalten, lege einen Mindestabstand zwischen Dosen oder ein 24-Stunden-Limit fest und erfasse dann eine Dosis."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να λαμβάνετε ειδοποιήσεις, ορίστε ένα ελάχιστο διάστημα μεταξύ δόσεων ή ένα όριο 24 ωρών και μετά καταγράψτε μια δόση."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To get alerts, set a minimum interval or a 24-hour limit, then log a dose."
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To get alerts, set a minimum interval or a 24-hour limit, then log a dose."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To get alerts, set a minimum interval or a 24-hour limit, then log a dose."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para recibir avisos, establece un intervalo mínimo entre dosis o un límite de 24 horas y registra una dosis."
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para recibir alertas, establece un intervalo mínimo entre dosis o un límite de 24 horas y registra una dosis."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "برای دریافت هشدار، حداقل فاصلهٔ بین دوزها یا سقف مصرف در ۲۴ ساعت را تعیین کنید و سپس یک دوز ثبت کنید."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voit saada ilmoituksia määrittämällä annosten vähimmäisvälin tai 24 tunnin annosrajan ja kirjaamalla sitten annoksen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pour recevoir des alertes, définissez un intervalle minimal entre les prises ou une limite sur 24 heures, puis enregistrez une prise."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pour recevoir des alertes, définissez un intervalle minimal entre les doses ou une limite sur 24 heures, puis enregistrez une dose."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "כדי לקבל התראות, יש להגדיר מרווח מינימלי בין מנות או מגבלה ל-24 שעות, ולאחר מכן לתעד מנה."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अलर्ट पाने के लिए, खुराकों के बीच न्यूनतम अंतराल या 24 घंटे की सीमा तय करें, फिर एक खुराक दर्ज करें।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za primanje upozorenja postavite najmanji razmak između doza ili ograničenje za 24 sata, a zatim zabilježite dozu."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az értesítésekhez állíts be minimális időközt az adagok között vagy 24 órás határértéket, majd naplózz egy adagot."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untuk menerima peringatan, tetapkan interval minimum antardosis atau batas 24 jam, lalu catat satu dosis."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per ricevere avvisi, imposta un intervallo minimo tra le dosi o un limite nelle 24 ore, poi registra una dose."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知を受け取るには、服用間隔の下限または24時間の上限を設定してから、服用を記録してください。"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ескертулер алу үшін дозалар арасындағы ең аз аралықты немесе 24 сағаттық шектеуді орнатыңыз, содан кейін бір дозаны тіркеңіз."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림을 받으려면 최소 복용 간격 또는 24시간 한도를 설정한 후 복용 내역을 기록하세요."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untuk menerima amaran, tetapkan selang minimum antara dos atau had 24 jam, kemudian rekod satu dos."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For å få varsler må du angi et minsteintervall mellom doser eller en 24-timersgrense og deretter loggføre en dose."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stel een minimuminterval tussen doses of een limiet per 24 uur in en registreer daarna een dosis om meldingen te ontvangen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aby otrzymywać alerty, ustaw minimalny odstęp między dawkami lub limit na 24 godziny, a następnie zapisz dawkę."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para receber alertas, defina um intervalo mínimo entre as doses ou um limite de 24 horas e registre uma dose."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para receber alertas, defina um intervalo mínimo entre doses ou um limite de 24 horas e registe uma toma."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pentru a primi alerte, setează un interval minim între doze sau o limită pentru 24 de ore, apoi înregistrează o doză."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы получать уведомления, задайте минимальный интервал между приёмами или ограничение на 24 часа, затем запишите приём."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ak chcete dostávať upozornenia, nastavte minimálny interval medzi dávkami alebo limit na 24 hodín a potom zaznamenajte dávku."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "För att få varningar ställer du in ett minsta intervall mellan doser eller en 24-timmarsgräns och registrerar sedan en dos."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หากต้องการรับการแจ้งเตือน ให้ตั้งช่วงเวลาขั้นต่ำระหว่างการใช้ยาแต่ละครั้งหรือขีดจำกัดใน 24 ชั่วโมง แล้วบันทึกการใช้ยาหนึ่งครั้ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uyarı almak için dozlar arasında asgari bir süre veya 24 saatlik bir sınır belirleyin, ardından bir doz kaydedin."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб отримувати сповіщення, установіть мінімальний інтервал між прийманнями або обмеження на 24 години, а потім запишіть дозу."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để nhận cảnh báo, hãy đặt khoảng cách tối thiểu giữa các liều hoặc giới hạn trong 24 giờ, sau đó ghi lại một liều."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如要接收提示，請設定最短用藥間隔或 24 小時劑量上限，然後記錄一次用藥。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若要接收提醒，请设置最短用药间隔或 24 小时剂量上限，然后记录一次用药。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若要收到提示，請設定最短用藥間隔或 24 小時劑量上限，然後記錄一次用藥。"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

@@ -123,6 +123,10 @@ struct MedicationEditView: View {
 		viewModel.originalDraft.map { $0 != draftValues } ?? false
 	}
 
+	private var quantityLimitReviewMessage: String {
+		String(localized: "The dose unit changed. Enter limits in the new unit or leave them blank to remove them.")
+	}
+
 	private var validationMessage: String? {
 		guard !isFormValid else { return nil }
 		if viewModel.clinicalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -136,6 +140,7 @@ struct MedicationEditView: View {
 			return String(localized: "Update or clear the past next-refill date in Supply & Refills.")
 		}
 		if let message = viewModel.doseLimitValidationMessage { return message }
+		if viewModel.requiresQuantityLimitReview { return quantityLimitReviewMessage }
 		return String(localized: "Add a positive dose amount and a unit, or leave both blank.")
 	}
 
@@ -425,12 +430,19 @@ struct MedicationEditView: View {
 				)
 
 				if viewModel.requiresQuantityLimitReview {
-					Text("The dose unit changed. Enter limits in the new unit or leave them blank to remove them.")
+					Text(quantityLimitReviewMessage)
 						.font(.customFont(fontFamily, style: .caption))
 						.foregroundStyle(.secondary)
-					Button("Confirm quantity limits") { viewModel.confirmQuantityLimitReview() }
-						.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-						.tint(.accent)
+					Button {
+						viewModel.confirmQuantityLimitReview()
+					} label: {
+						Text("Confirm quantity limits")
+							.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+							.multilineTextAlignment(.leading)
+							.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+							.contentShape(Rectangle())
+					}
+					.tint(.accent)
 				}
 
                 guidanceField(
@@ -993,7 +1005,7 @@ struct MedicationEditView: View {
 		case .denied:
 			return String(localized: "Notifications are off. Open Settings to turn on next-dose alerts.")
 		case .authorized, .provisional, .ephemeral:
-			return String(localized: "Notifications are on. Add a dose limit and log a dose to start receiving alerts.")
+			return String(localized: "To get alerts, set a minimum interval or a 24-hour limit, then log a dose.")
 		case .notDetermined:
 			return String(localized: "Notification permission is required.")
 		case .unknown:

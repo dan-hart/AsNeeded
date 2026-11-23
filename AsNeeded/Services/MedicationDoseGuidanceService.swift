@@ -8,6 +8,10 @@ struct SavedDoseLimits: Equatable {
 	let maximumIn24Hours: Double?
 	let unit: ANUnitConcept?
 
+	static func windowStart(endingAt date: Date) -> Date {
+		date.addingTimeInterval(-rollingWindow)
+	}
+
 	init(medication: ANMedicationConcept, profile: MedicationSafetyProfile) {
 		minimumHours = medication.minimumHoursBetweenDoses ?? profile.minimumHoursBetweenDoses
 		maximumIn24Hours = medication.maximumDailyDoseAmount ?? profile.maxDailyAmount

@@ -26,17 +26,18 @@ struct HistoryDoseWarningView: View {
 	@Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-	static func status(for warning: MedicationHistoryDoseWarningService.Warning) -> (title: LocalizedStringKey, symbol: SFSymbol) {
+	static func warningTitles(for warning: MedicationHistoryDoseWarningService.Warning) -> [LocalizedStringKey] {
+		var titles: [LocalizedStringKey] = []
 		if warning.spacing != nil {
-			return ("Doses logged close together", .exclamationmarkTriangle)
+			titles.append("Doses logged close together")
 		}
 		if let single = warning.singleDose, single != .unavailable {
-			return ("Per-dose limit exceeded", .exclamationmarkTriangle)
+			titles.append("Per-dose limit exceeded")
 		}
 		if let rolling = warning.rolling, rolling != .unavailable {
-			return ("24-hour limit exceeded", .exclamationmarkTriangle)
+			titles.append("24-hour limit exceeded")
 		}
-		return ("Couldn’t check dose amount", .infoCircle)
+		return titles
 	}
 
 	var body: some View {
@@ -65,21 +66,32 @@ struct HistoryDoseWarningView: View {
 	}
 
 	private func reviewList(_ review: Review) -> some View {
-		List {
-			if let name = review.medicationName {
-				Text(name)
-					.demoNameRedacted()
-					.font(.customFont(fontFamily, style: .headline))
-					.noTruncate()
-					.accessibilityAddTraits(.isHeader)
-					.listRowBackground(Color.clear)
+		let entries = review.relatedEntries
+		let lowerBound = SavedDoseLimits.windowStart(endingAt: review.dose.date)
+		let timeZone = TimeZone.autoupdatingCurrent
+		let reviewedOffset = timeZone.secondsFromGMT(for: review.dose.date)
+		let showOffset = entries.contains { timeZone.secondsFromGMT(for: $0.date) != reviewedOffset } ||
+			(review.warning.rolling != nil && timeZone.secondsFromGMT(for: lowerBound) != reviewedOffset)
+		return List {
+			VStack(alignment: .leading, spacing: 4) {
+				if let name = review.medicationName {
+					Text(name)
+						.demoNameRedacted()
+						.font(.customFont(fontFamily, style: .headline))
+						.noTruncate()
+						.accessibilityAddTraits(.isHeader)
+				}
+				Text("Compared with current dose limits.")
+					.font(.customFont(fontFamily, style: .footnote))
+					.foregroundStyle(.secondary)
 			}
+			.listRowBackground(Color.clear)
 
 			if let spacing = review.warning.spacing {
 				Section {
 					let minimum = spacing.minimumHours * 3_600
 					let gap = duration(spacing.elapsed)
-					let limit = duration(minimum)
+					let limit = minimum.isFinite ? duration(minimum) : hours(spacing.minimumHours)
 					comparison("Time between doses", value: gap == limit ? preciseDuration(spacing.elapsed) : gap)
 					comparison("Saved minimum", value: gap == limit ? preciseDuration(minimum) : limit)
 				} header: {
@@ -101,16 +113,16 @@ struct HistoryDoseWarningView: View {
 				} header: {
 					heading(rolling == .unavailable ? "Amount in 24 hours" : "24-hour limit exceeded")
 				} footer: {
-					let lowerBound = timestamp(review.dose.date.addingTimeInterval(-SavedDoseLimits.rollingWindow))
-					let upperBound = timestamp(review.dose.date)
-					Text("24-hour window after \(lowerBound) through \(upperBound).")
+					let start = timestamp(lowerBound, showOffset: showOffset)
+					let end = timestamp(review.dose.date, showOffset: showOffset)
+					Text("24-hour window after \(start) through \(end).")
 						.font(.customFont(fontFamily, style: .footnote))
 				}
 			}
 
 			Section {
-				ForEach(review.relatedEntries) { entry in
-					entryButton(entry, review: review)
+				ForEach(entries) { entry in
+					entryButton(entry, review: review, showOffset: showOffset)
 				}
 			} header: {
 				heading("Related dose entries")
@@ -144,10 +156,10 @@ struct HistoryDoseWarningView: View {
 			.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
 	}
 
-	private func entryButton(_ entry: MedicationHistoryDoseWarningService.Dose, review: Review) -> some View {
+	private func entryButton(_ entry: MedicationHistoryDoseWarningService.Dose, review: Review, showOffset: Bool) -> some View {
 		let quantity = entry.amount.flatMap { displayAmount($0, unit: entry.unit) }
 		// The preceding dose can be outside the rolling window when the saved interval exceeds 24 hours.
-		let inWindow = entry.date.timeIntervalSince(review.dose.date) > -SavedDoseLimits.rollingWindow
+		let inWindow = entry.date > SavedDoseLimits.windowStart(endingAt: review.dose.date)
 		let checksUnit = entry.id == review.dose.id && review.warning.singleDose != nil ||
 			review.warning.rolling != nil && inWindow
 		return Button { onEdit(entry.id) } label: {
@@ -162,7 +174,7 @@ struct HistoryDoseWarningView: View {
 							.font(.customFont(fontFamily, style: .footnote))
 							.foregroundStyle(Color.secondary)
 					}
-					Text(timestamp(entry.date))
+					Text(timestamp(entry.date, showOffset: showOffset))
 						.font(.customFont(fontFamily, style: .body))
 					Text(quantity ?? String(localized: "No usable amount recorded"))
 						.font(.customFont(fontFamily, style: .subheadline))
@@ -223,20 +235,24 @@ struct HistoryDoseWarningView: View {
 			.font(.customFont(fontFamily, style: .body))
 	}
 
-	private func timestamp(_ date: Date) -> String {
-		date.formatted(date: .abbreviated, time: .shortened)
+	private func timestamp(_ date: Date, showOffset: Bool) -> String {
+		guard showOffset else { return date.formatted(date: .abbreviated, time: .standard) }
+		return date.formatted(.dateTime.year().month(.abbreviated).day().hour().minute().second().timeZone(.localizedGMT(.long)))
 	}
 
 	private func duration(_ seconds: TimeInterval) -> String {
 		guard seconds < 365 * 24 * 3_600 else {
-			let hours = number(seconds / 3_600)
-			return String(localized: "\(hours) hours")
+			return hours(seconds / 3_600)
 		}
 		return Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
 	}
 
 	private func preciseDuration(_ seconds: TimeInterval) -> String {
 		String(localized: "\(number(seconds)) seconds")
+	}
+
+	private func hours(_ value: Double) -> String {
+		String(localized: "\(number(value)) hours")
 	}
 
 	private func displayAmount(_ amount: Double, unit: ANUnitConcept?) -> String? {

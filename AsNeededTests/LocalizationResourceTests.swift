@@ -37,7 +37,8 @@ struct LocalizationResourceTests {
 		for key in [
 			"Doses logged close together", "Per-dose limit exceeded", "24-hour limit exceeded",
 			"Couldn’t check dose amount", "Saved minimum", "Saved limit",
-			"At least %@", "Some entries couldn’t be counted.", "Related dose entries", "Maximum per Dose%@"
+			"At least %@", "Some entries couldn’t be counted.", "Related dose entries", "Maximum per Dose%@",
+			"Compared with current dose limits.", "To get alerts, set a minimum interval or a 24-hour limit, then log a dose."
 		] {
 			let value = resources.localizedString(forKey: key, value: missing, table: "Localizable")
 			#expect(value != missing, "\(locale): missing \(key)")

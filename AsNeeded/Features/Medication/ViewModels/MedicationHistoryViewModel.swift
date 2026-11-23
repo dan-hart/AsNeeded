@@ -256,7 +256,7 @@ final class MedicationHistoryViewModel: ObservableObject {
 	func rollingWarningEntries(for event: ANEventConcept) -> [MedicationHistoryDoseWarningService.Dose] {
 		guard let medicationID = event.medication?.id,
 			let doses = warningInput?.timelines[medicationID] else { return [] }
-		let cutoff = event.date.addingTimeInterval(-SavedDoseLimits.rollingWindow)
+		let cutoff = SavedDoseLimits.windowStart(endingAt: event.date)
 		return doses.filter { $0.date > cutoff && $0.date <= event.date }
 			.sorted(by: MedicationHistoryDoseWarningService.Dose.ordered)
 	}

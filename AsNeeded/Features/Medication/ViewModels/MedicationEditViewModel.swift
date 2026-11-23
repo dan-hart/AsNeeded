@@ -31,11 +31,21 @@ final class MedicationEditViewModel: ObservableObject {
 
 	private struct UnitChange {
 		let previousUnit: ANUnitConcept?
-		let previousLimits: (daily: String, single: String)
-		let previouslyRequiredReview: Bool
+	}
+
+	private struct QuantityLimitDraft {
+		let daily: String
+		let single: String
+		let requiresReview: Bool
+
+		var hasLimits: Bool {
+			!daily.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+				!single.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+		}
 	}
 
 	private var unitChange: UnitChange?
+	private var quantityLimitDrafts: [ANUnitConcept?: QuantityLimitDraft] = [:]
 	var originalDraft: [String]?
 	@Published private(set) var isSaving = false
 	@Published var showingSaveError = false
@@ -107,26 +117,22 @@ final class MedicationEditViewModel: ObservableObject {
 
 	func selectPrescribedUnit(_ unit: ANUnitConcept?) {
 		guard unit != prescribedUnit else { return }
-		let hasLimits = !maxDailyAmountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-			!maxDoseAmountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-		let previousLimits = (maxDailyAmountText, maxDoseAmountText)
-		unitChange = UnitChange(previousUnit: prescribedUnit, previousLimits: previousLimits,
-			previouslyRequiredReview: requiresQuantityLimitReview)
-		if hasLimits {
-			maxDailyAmountText = ""
-			maxDoseAmountText = ""
-			requiresQuantityLimitReview = true
-		}
+		let previous = QuantityLimitDraft(daily: maxDailyAmountText, single: maxDoseAmountText,
+			requiresReview: requiresQuantityLimitReview)
+		quantityLimitDrafts[prescribedUnit] = previous
+		unitChange = UnitChange(previousUnit: prescribedUnit)
+		let next = quantityLimitDrafts[unit] ?? QuantityLimitDraft(daily: "", single: "",
+			requiresReview: previous.hasLimits || previous.requiresReview)
+		maxDailyAmountText = next.daily
+		maxDoseAmountText = next.single
+		requiresQuantityLimitReview = next.requiresReview
 		prescribedUnit = unit
 	}
 
 	func restorePreviousUnit() {
 		guard let unitChange else { return }
+		selectPrescribedUnit(unitChange.previousUnit)
 		self.unitChange = nil
-		prescribedUnit = unitChange.previousUnit
-		maxDailyAmountText = unitChange.previousLimits.daily
-		maxDoseAmountText = unitChange.previousLimits.single
-		requiresQuantityLimitReview = unitChange.previouslyRequiredReview
 	}
 
 	func confirmQuantityLimitReview() {

@@ -262,7 +262,14 @@ final class MedicationPersistenceTransactions {
 			try await apply(before)
 			var after = before
 			var preferenceKeys: [String: Set<String>]
-			do { preferenceKeys = try changeWithPreferenceKeys(&after) } catch { visibleSnapshot = nil; throw error }
+			do {
+				preferenceKeys = try changeWithPreferenceKeys(&after)
+			} catch {
+				// The rejected draft never reached storage. Publish the reconciled records
+				// so observers can show any external changes that caused the conflict.
+				publishStable(before)
+				throw error
+			}
 			if !after.stockExcludedEventIDs.isEmpty {
 				after.stockExcludedEventIDs.formIntersection(after.events.lazy.filter { $0.eventType == .doseTaken }.map(\.id))
 			}
