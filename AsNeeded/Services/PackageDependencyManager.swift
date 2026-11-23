@@ -16,8 +16,8 @@ final class PackageDependencyManager: Sendable {
                 name: "ANModelKit",
                 description: String(localized: "Domain models and business logic for medication tracking"),
                 repositoryURL: URL(string: "https://github.com/dan-hart/ANModelKit")!,
-                versionInfo: .revision("ee9eb9e1603f1832cace9dea4a5fa07247d5de51"),
-                commitHash: "ee9eb9e1603f1832cace9dea4a5fa07247d5de51",
+                versionInfo: .revision("674c704aed2fb5f37a2440a326e74a13d74e13c0"),
+                commitHash: "674c704aed2fb5f37a2440a326e74a13d74e13c0",
                 license: .gpl3,
                 isDirect: true
             ),
