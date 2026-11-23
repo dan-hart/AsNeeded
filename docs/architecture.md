@@ -17,6 +17,8 @@ AsNeeded is a native SwiftUI iOS app, iOS widget extension, and independent watc
 
 ANModelKit contains medication, dose, event, and unit records. Calculations belong in testable services; UI state owners compose them with persistence and presentation. Keep state ownership and the surrounding Observation/ObservableObject pattern consistent when making a narrow change.
 
+History derives dose warnings from committed medication and event snapshots. Persisted limits travel with the medication record in ANModelKit, and the History evaluator can read legacy limits from the same committed state.
+
 ## Recording and recovery
 
 The app's `DataStore` uses `MedicationPersistenceTransactions` to coordinate medication, event, stock, and preference updates. Await recovery/loading before deriving availability or acting on a snapshot. A failed or canceled operation must not be treated as a committed dose. Shared app/widget access is a cross-process storage boundary, not merely a main-actor concern.

@@ -21,7 +21,7 @@ on:
       - '**/*SQLite*'
       - '**/*Storage*'
   pull_request:
-    branches: [main, develop, task/v1.2.0, task/v1.3.0]
+    branches: [main, develop, task/v1.2.0, task/v1.3.0, task/1.3.0]
     paths:
       # Storage-sensitive Swift files
       - '**/StorageConstants.swift'
