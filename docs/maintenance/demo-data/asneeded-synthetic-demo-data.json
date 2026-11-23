@@ -1,0 +1,1875 @@
+{
+	"demoData": {
+		"synthetic": true,
+		"notice": "SYNTHETIC DEMO DATA. All records are fictional. This file contains no real personal health information. Use only to test or demonstrate AsNeeded from a fictional user's perspective. Medication amounts, limits and notes are test inputs, not dosing guidance.",
+		"scenario": "Twelve weeks of fictional as-needed medication use with deliberate logging inconsistencies and saved limit boundary cases.",
+		"scenarioTimeZone": "America/Chicago",
+		"firstScenarioDay": "2026-08-31",
+		"lastScenarioDay": "2026-11-22"
+	},
+	"appVersion": "1.3.0",
+	"dataVersion": "1.0",
+	"exportDate": "2026-11-23T15:00:00Z",
+	"medications": [
+		{
+			"id": "E8E8A663-0932-581D-B9FF-17835B84C462",
+			"clinicalName": "Cetirizine",
+			"prescribedUnit": "tablet",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Allergy tablet",
+			"displayColorHex": "#6879BA",
+			"maximumDailyDoseAmount": 1,
+			"initialQuantity": 50,
+			"quantity": 42,
+			"lastRefillDate": "2026-10-12T22:20:00Z"
+		},
+		{
+			"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019",
+			"clinicalName": "Calcium carbonate",
+			"prescribedUnit": "chewable",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Heartburn chewables",
+			"displayColorHex": "#BB773C",
+			"maximumDailyDoseAmount": 5,
+			"initialQuantity": 48,
+			"quantity": 12
+		},
+		{
+			"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001",
+			"clinicalName": "Ketotifen eye drops",
+			"prescribedUnit": "drop",
+			"prescribedDoseAmount": 2,
+			"isArchived": false,
+			"nickname": "Itchy eyes",
+			"displayColorHex": "#388B82",
+			"minimumHoursBetweenDoses": 8
+		},
+		{
+			"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C",
+			"clinicalName": "Ibuprofen",
+			"prescribedUnit": "tablet",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Headache tablets",
+			"displayColorHex": "#B95C67",
+			"minimumHoursBetweenDoses": 6,
+			"maximumDailyDoseAmount": 3,
+			"maximumDoseAmount": 2,
+			"initialQuantity": 30,
+			"quantity": 3.5
+		},
+		{
+			"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F",
+			"clinicalName": "Acetaminophen oral suspension",
+			"prescribedUnit": "milliliter",
+			"prescribedDoseAmount": 10,
+			"isArchived": false,
+			"nickname": "Liquid pain reliever",
+			"displayColorHex": "#3B8291",
+			"minimumHoursBetweenDoses": 4,
+			"maximumDailyDoseAmount": 30,
+			"maximumDoseAmount": 15
+		},
+		{
+			"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6",
+			"clinicalName": "Albuterol HFA",
+			"prescribedUnit": "puff",
+			"prescribedDoseAmount": 2,
+			"isArchived": false,
+			"nickname": "Rescue inhaler",
+			"displayColorHex": "#537ABD",
+			"minimumHoursBetweenDoses": 4,
+			"maximumDailyDoseAmount": 8,
+			"maximumDoseAmount": 2
+		},
+		{
+			"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D",
+			"clinicalName": "Sumatriptan",
+			"prescribedUnit": "milligram",
+			"prescribedDoseAmount": 50,
+			"isArchived": false,
+			"nickname": "Migraine tablet",
+			"displayColorHex": "#86599E",
+			"minimumHoursBetweenDoses": 2,
+			"maximumDailyDoseAmount": 100,
+			"maximumDoseAmount": 50
+		},
+		{
+			"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D",
+			"clinicalName": "Simethicone",
+			"prescribedUnit": "capsule",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Gas relief",
+			"displayColorHex": "#7D8354",
+			"maximumDoseAmount": 1,
+			"initialQuantity": 12,
+			"quantity": 4
+		},
+		{
+			"id": "365212DE-E19A-50A5-B0C9-1C649E2FB5FB",
+			"clinicalName": "Loperamide",
+			"prescribedUnit": "capsule",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Travel kit",
+			"maximumDailyDoseAmount": 4,
+			"initialQuantity": 8,
+			"quantity": 5
+		},
+		{
+			"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49",
+			"clinicalName": "Sodium chloride nasal saline",
+			"prescribedUnit": "spray",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Saline spray",
+			"displayColorHex": "#4C899C"
+		},
+		{
+			"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC",
+			"clinicalName": "Diclofenac topical gel",
+			"prescribedUnit": "gram",
+			"prescribedDoseAmount": 2,
+			"isArchived": false,
+			"nickname": "Knee gel",
+			"displayColorHex": "#8B7556",
+			"maximumDoseAmount": 2
+		},
+		{
+			"id": "4AB2BE1C-35E9-50F4-A101-CAAD457169ED",
+			"clinicalName": "Polyethylene glycol 3350 powder",
+			"prescribedUnit": "sachet",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Travel sachets",
+			"initialQuantity": 6,
+			"quantity": 3
+		},
+		{
+			"id": "68C71772-A75C-5845-86E3-D890BEBABBA8",
+			"clinicalName": "Menthol throat lozenge",
+			"prescribedUnit": "lozenge",
+			"prescribedDoseAmount": 1,
+			"isArchived": true,
+			"nickname": "Fall cold",
+			"displayColorHex": "#6C8D70"
+		},
+		{
+			"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A",
+			"clinicalName": "Dextromethorphan oral solution",
+			"prescribedUnit": "milliliter",
+			"prescribedDoseAmount": 5,
+			"isArchived": true,
+			"nickname": "Old cough syrup"
+		},
+		{
+			"id": "989FDE84-FAAB-5E44-92D0-015B7BBDC2AE",
+			"clinicalName": "Hydrocortisone topical cream",
+			"prescribedUnit": "application",
+			"prescribedDoseAmount": 1,
+			"isArchived": false,
+			"nickname": "Bathroom cabinet",
+			"initialQuantity": 0,
+			"quantity": 0
+		}
+	],
+	"events": [
+		{
+			"id": "1A82FCB1-2B70-59C4-9BFB-5E3BEA4B7EC4",
+			"eventType": "dose_taken",
+			"date": "2026-11-23T02:16:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "15C092C8-19AF-5C40-A5BD-E3BF5E03FEEE", "amount": 1, "unit": "spray"},
+			"note": "SYNTHETIC DEMO DATA. Fictional test entry, not personal health information or dosing guidance."
+		},
+		{
+			"id": "ED371974-72DC-54D7-B257-F1CC510BB4A9",
+			"eventType": "dose_taken",
+			"date": "2026-11-22T18:10:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "3AE336BB-EBA0-5F28-AC06-39DA231FB131", "amount": 7.5, "unit": "milliliter"}
+		},
+		{
+			"id": "870BE5C6-B532-58A9-9850-D84E77375247",
+			"eventType": "dose_taken",
+			"date": "2026-11-22T13:47:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "B700D4DB-3229-52CD-85BF-381ABE4E1031", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "84A5EF39-EE5B-552E-8C0F-39FC8C620ED6",
+			"eventType": "dose_taken",
+			"date": "2026-11-22T13:41:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 43},
+			"dose": {"id": "49516B61-703D-5BD1-8AB2-560098635E7E", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "F5CB0CD5-0657-5C06-98A0-9ED916383A1E",
+			"eventType": "dose_taken",
+			"date": "2026-11-22T03:41:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "F5DBC14D-07B7-5842-BF8C-3A25DDFEA1DD", "amount": 2, "unit": "spray"},
+			"note": "Dry air with the heat on."
+		},
+		{
+			"id": "CA3D4F33-60D7-5F62-BF8F-A3ACA00B7374",
+			"eventType": "dose_taken",
+			"date": "2026-11-21T12:24:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "80EE7B21-0131-5669-B1C1-6F8C47C79AE9", "amount": 5, "unit": "milliliter"},
+			"note": "Logged overnight entry at breakfast."
+		},
+		{
+			"id": "6EAB7A1C-ADBC-566A-A860-BCB839D4B20D",
+			"eventType": "dose_taken",
+			"date": "2026-11-21T07:36:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "998CE586-C72E-519E-9104-8FD9A46971F4", "amount": 15, "unit": "milliliter"}
+		},
+		{
+			"id": "6B6D78C8-DD23-5819-A9C0-FD0C2F129D4E",
+			"eventType": "dose_taken",
+			"date": "2026-11-21T02:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 13},
+			"dose": {"id": "B28AD0AE-ECEB-5FFE-9A4F-F64C1850B4B7", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "67950886-9407-5354-B07C-875BF0189DD9",
+			"eventType": "dose_taken",
+			"date": "2026-11-21T01:12:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"note": "Remember taking some. Amount wasn't in the paper log."
+		},
+		{
+			"id": "5F17F24E-BA3B-5CF7-9654-9E98334F4BF3",
+			"eventType": "dose_taken",
+			"date": "2026-11-21T00:57:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "E8686AFD-4F67-5BF0-97A7-AA8835B2C653", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "8BAB799C-D313-52D3-B923-446FDA20CE96",
+			"eventType": "dose_taken",
+			"date": "2026-11-20T23:41:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 5},
+			"dose": {"id": "584C4E4D-CDD6-58EB-A6CD-61BC9EBDA0A1", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "48ED5096-BE44-56C9-9443-533C3FA8EE80",
+			"eventType": "dose_taken",
+			"date": "2026-11-20T20:38:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "5C17AD78-9EDE-5668-9857-183FFE502BD9", "amount": 1, "unit": "tablet"},
+			"note": "Old entry lists a tablet even though this record is for the liquid."
+		},
+		{
+			"id": "872DFE05-3B98-5533-A4B3-E5FBDAB8BC49",
+			"eventType": "dose_taken",
+			"date": "2026-11-20T15:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 44},
+			"dose": {"id": "AA94F263-5683-5F39-870D-44130761DCE1", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "457132A9-1771-512E-A650-AC80AB5970A5",
+			"eventType": "dose_taken",
+			"date": "2026-11-20T15:13:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "AE755B4A-24DD-532C-A40C-73D24E560995", "amount": 12.5, "unit": "milliliter"}
+		},
+		{
+			"id": "10F876D7-6708-54AD-B5B0-8A259E41A046",
+			"eventType": "dose_taken",
+			"date": "2026-11-20T00:57:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "D02B16AC-12EC-500A-B127-DB219823B575", "amount": 2, "unit": "drop"},
+			"note": "Forgot to log this yesterday."
+		},
+		{
+			"id": "8B1F8835-CFCD-50B2-9963-D9217F043B88",
+			"eventType": "dose_taken",
+			"date": "2026-11-19T13:13:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 45},
+			"dose": {"id": "28BBAB2D-90FE-5FAC-9728-D86EE7603139", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "FEAED5F8-DA11-5F4C-855F-789019896EAA",
+			"eventType": "dose_taken",
+			"date": "2026-11-19T03:26:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "8E2915F1-083D-5002-ABB3-BB95492C919B", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "75387FB8-C435-5F86-A045-E093AE1024A1",
+			"eventType": "dose_taken",
+			"date": "2026-11-19T02:13:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 4.5},
+			"dose": {"id": "685B1464-CA34-5BE7-A12E-81E0ED1475DB", "amount": 1, "unit": "tablet"},
+			"note": "Sore after moving boxes."
+		},
+		{
+			"id": "FC227AE7-6865-58D4-AB3B-F432894BA525",
+			"eventType": "dose_taken",
+			"date": "2026-11-18T19:10:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "48F18B5F-AB0B-5DF1-A883-F4D091ADFF91", "amount": 50, "unit": "milligram"},
+			"note": "Entry from paper log."
+		},
+		{
+			"id": "B725D4CA-D955-595F-8238-5C432453B734",
+			"eventType": "dose_taken",
+			"date": "2026-11-18T19:10:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "D316E86D-CE5B-5BD6-9DAA-A2AD1962D662", "amount": 50, "unit": "milligram"},
+			"note": "Same time as the other entry. Check if I logged it twice."
+		},
+		{
+			"id": "4CAABCCC-363E-557C-8744-E51D2D0D039B",
+			"eventType": "dose_taken",
+			"date": "2026-11-18T12:12:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "F266EE01-102E-5D6C-ADB9-A9DAFC6261C0", "amount": 50, "unit": "milligram"},
+			"note": "Morning log from the kitchen calendar."
+		},
+		{
+			"id": "9D20466A-8237-5E30-AEEA-DB9B0A96228A",
+			"eventType": "dose_taken",
+			"date": "2026-11-17T18:12:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "2B710DEE-8D87-5DA8-A8CC-EFB96F5EA5DD", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "B3BC1BAA-61B7-5BF8-905F-5DD559A518C3",
+			"eventType": "dose_taken",
+			"date": "2026-11-17T15:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 46},
+			"dose": {"id": "F2B79429-335B-5900-8982-BC413CEAA8B3", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "A14EE10B-50A5-51A0-9F10-6E0B0DF523BD",
+			"eventType": "dose_taken",
+			"date": "2026-11-17T12:12:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "81DF37F0-4C80-559F-89A7-90A51661765D", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "29E0BF9F-6FF4-59A0-9BA4-120727C134A0",
+			"eventType": "dose_taken",
+			"date": "2026-11-17T00:13:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "EEF0FAC4-6751-53C1-B270-6FC39BD46132", "amount": 2, "unit": "puff"},
+			"note": "Used on the way back from the park."
+		},
+		{
+			"id": "26C01E74-E323-54CC-947A-D9CDDEB20FED",
+			"eventType": "dose_taken",
+			"date": "2026-11-16T15:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 47},
+			"dose": {"id": "0CA9BEFF-B70F-5FD4-B0BE-4AD79DB727E5", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "EDF648F3-0EF1-5F8C-9D3B-FB801C388A5E",
+			"eventType": "dose_taken",
+			"date": "2026-11-15T20:36:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 7},
+			"dose": {"id": "3B110F24-0B0A-56F9-A27A-EB2421E94B4B", "amount": 2.5, "unit": "tablet"},
+			"note": "Paper log showed two and a half. Check whether amount was typed correctly."
+		},
+		{
+			"id": "81FE3F49-38AC-5B20-9B76-F25F3A085CEC",
+			"eventType": "dose_taken",
+			"date": "2026-11-15T14:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 48},
+			"dose": {"id": "3E8B5753-5BA2-5B7A-ABCD-6F861E15E1E9", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "FA68736E-9CB9-5A14-BD7C-CBC2948C622F",
+			"eventType": "dose_taken",
+			"date": "2026-11-14T23:19:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 6},
+			"dose": {"id": "06303547-4029-5231-8CED-BF28AFD96280", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "13E82D27-7B6E-511F-AFAF-950175CB7BA8",
+			"eventType": "dose_taken",
+			"date": "2026-11-14T13:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 49},
+			"dose": {"id": "8B2047E2-29FB-5DD8-BD30-CFFDA4D9447F", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "5F2F002C-F26E-5EEC-B261-E029FE13A0F9",
+			"eventType": "dose_taken",
+			"date": "2026-11-14T10:45:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 8},
+			"dose": {"id": "34CC1B7B-7347-55BA-A686-99826E726295", "amount": 1, "unit": "tablet"},
+			"note": "Woke up, recorded before breakfast."
+		},
+		{
+			"id": "AAA62321-724A-53AB-ACF5-B0B47445D8B2",
+			"eventType": "dose_taken",
+			"date": "2026-11-14T05:30:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 10},
+			"dose": {"id": "0FDDD95E-42EC-5B49-95C3-C12F1C236427", "amount": 2, "unit": "tablet"},
+			"note": "Logged after getting home."
+		},
+		{
+			"id": "CC5074FC-DC9E-5283-B230-564DBB113C4F",
+			"eventType": "dose_taken",
+			"date": "2026-11-14T01:41:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "4DC00D41-9EC8-5D96-99B4-0EE809C2EB96", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "1A2A7EF2-EC1C-55DB-A274-E19CDD59F9A4",
+			"eventType": "dose_taken",
+			"date": "2026-11-13T23:30:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 11},
+			"dose": {"id": "0473C1F6-CB7E-54B4-B281-7DC3DA5FA906", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "D51EFC2A-7CC4-5670-B1C6-762896E53825",
+			"eventType": "dose_taken",
+			"date": "2026-11-13T14:08:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 50},
+			"dose": {"id": "40AEC1C9-1A91-5C67-99D1-ED86E113A798", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "D1FC1EFB-C9C4-5EBB-AE51-E5327D2649D7",
+			"eventType": "dose_taken",
+			"date": "2026-11-13T13:02:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "BFCAB753-8981-5351-9E67-8B3167B54A99", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "26BC152D-7256-5E50-AFBB-FBBE6B994DDA",
+			"eventType": "dose_taken",
+			"date": "2026-11-12T02:13:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "5BA44946-F35F-54B3-9231-EBE311E90939", "amount": 7.5, "unit": "milliliter"},
+			"note": "Only had the liquid at home."
+		},
+		{
+			"id": "DCE93697-9664-511A-93AA-DC8C2CBCD870",
+			"eventType": "dose_taken",
+			"date": "2026-11-11T15:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 51},
+			"dose": {"id": "6F19B7CD-2E48-5E01-9EFC-F28B095CF35D", "amount": 1, "unit": "tablet"},
+			"note": "Raked leaves before breakfast."
+		},
+		{
+			"id": "425FC4F2-FB3C-5C08-AA82-5D079A864C99",
+			"eventType": "dose_taken",
+			"date": "2026-11-11T01:57:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 14},
+			"dose": {"id": "32CE2ED3-F472-500A-A1D2-6332B56EF3EE", "amount": 1, "unit": "chewable"},
+			"note": "Dinner out again."
+		},
+		{
+			"id": "6D431FCE-BF0C-5E49-9D02-A7662D076F01",
+			"eventType": "dose_taken",
+			"date": "2026-11-10T22:34:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "06C6CBFD-1618-5687-B296-725F3EFBE350", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "E9E3D2A3-6186-5865-8245-7DCC1D553557",
+			"eventType": "dose_taken",
+			"date": "2026-11-10T15:47:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 52},
+			"dose": {"id": "A541C823-11BA-5190-9AFC-C5B5EC93C43C", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "68314A6B-2E41-524F-834E-EC368E439E45",
+			"eventType": "dose_taken",
+			"date": "2026-11-10T15:08:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "2E2F6545-86E4-5AA6-918E-AF5B06CAB573", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "D8CA4CC7-E231-5B6D-9508-E38EEC7944C8",
+			"eventType": "dose_taken",
+			"date": "2026-11-10T13:57:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "218EF1A3-ACFB-5832-805E-1808136EBCBC", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "74371185-B5CD-599A-971E-735439191CD6",
+			"eventType": "dose_taken",
+			"date": "2026-11-10T13:13:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "562F3362-686E-565B-8C1E-9FB89FB72402", "amount": 2, "unit": "puff"},
+			"note": "Entry copied from a paper log."
+		},
+		{
+			"id": "164740B8-CFDC-57DE-921E-D6CB6C625F7C",
+			"eventType": "dose_taken",
+			"date": "2026-11-09T23:34:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 12},
+			"dose": {"id": "D2408AD7-5D74-59D0-9041-71D975DE10B4", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "41449103-3417-5220-8296-E07B5A94E4C6",
+			"eventType": "dose_taken",
+			"date": "2026-11-08T15:47:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 53},
+			"dose": {"id": "43A9A1BA-5412-53BF-ADE2-74DDE9D0846F", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "932856C0-1C2B-590B-A79B-E58A01F184B6",
+			"eventType": "dose_taken",
+			"date": "2026-11-08T15:26:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "62CCA941-777D-5B53-9208-60446A6D8DC3", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "50DC6F76-4597-53D8-8AAE-655C2A299B7E",
+			"eventType": "dose_taken",
+			"date": "2026-11-08T04:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 15},
+			"dose": {"id": "5D110EB8-CFFB-510F-919E-8F49D8317A74", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "846AA2A5-E459-5ADE-AF6B-BC0EA5409768",
+			"eventType": "dose_taken",
+			"date": "2026-11-08T00:41:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "17086AD6-A8B3-5086-9BDA-FE148A271C06", "amount": 2, "unit": "puff"},
+			"note": "Cold air on the walk."
+		},
+		{
+			"id": "5B17AC99-61DA-5724-BFFE-35C47D874B57",
+			"eventType": "dose_taken",
+			"date": "2026-11-07T23:13:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 13},
+			"dose": {"id": "3D60082C-24DB-5A84-810F-6AB623F1DDD8", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "356B3F13-A396-5EC1-A933-B6068D4B0589",
+			"eventType": "dose_taken",
+			"date": "2026-11-07T15:08:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 54},
+			"dose": {"id": "A3CF1850-285F-523E-8A78-304A7E3839C2", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "255E9CC4-AE38-527C-8B59-F417102F1DE3",
+			"eventType": "dose_taken",
+			"date": "2026-11-07T13:53:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "15147E9C-8883-5CB5-9086-EDEFBCD84AA7", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "15EFE5EE-ABBC-5F09-B744-CDC8C6B9DA04",
+			"eventType": "dose_taken",
+			"date": "2026-11-05T13:08:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 55},
+			"dose": {"id": "083177F8-7967-5167-81F5-34E2B24A2C1C", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "3FE0CF30-18CE-5DDF-A975-9BEA7B7E585F",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T18:13:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "06D8BBE0-045B-58CB-8DC4-DB11D2186F65", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "85780EB8-3255-5842-A564-24A84DFE97B3",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T18:08:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "881CA07A-CB25-599E-9AA8-733C3F433358", "amount": 2, "unit": "drop"},
+			"note": "Forgot to log this yesterday."
+		},
+		{
+			"id": "15D547DC-5833-5DA3-8787-938571390AED",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T15:19:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "C0FB67EE-674E-5541-9748-B464626A7334", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "CD93CCA4-5D37-5483-96E6-B0F3D877B90F",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T14:13:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 56},
+			"dose": {"id": "285EA435-7F2C-5C67-B7C3-863F1BEF8381", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "F4013085-67DF-5CAE-A7E0-A772B7C9F20C",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T13:53:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "C2EFB497-07B5-59D5-AD9D-BE38F89480A8", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "15CABB02-298F-5E27-A262-2E8B376BFDD0",
+			"eventType": "dose_taken",
+			"date": "2026-11-04T02:24:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 8},
+			"dose": {"id": "2C6D83DF-38E0-5F72-90EB-B7ACAB2A66F6", "amount": 2, "unit": "capsule"},
+			"note": "Two marked on the paper log."
+		},
+		{
+			"id": "B6472DAC-C875-5CA2-B165-6E7DD407DBEA",
+			"eventType": "dose_taken",
+			"date": "2026-11-03T00:57:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "F6D509AD-C97A-509A-9F71-8EA98C37389E", "amount": 2, "unit": "puff"},
+			"note": "Entry copied from a paper log."
+		},
+		{
+			"id": "04CF206C-A4FB-5D6D-BE65-9CECED4968CE",
+			"eventType": "dose_taken",
+			"date": "2026-11-02T13:53:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 57},
+			"dose": {"id": "01B56615-8CF1-5292-9177-861C9A204FE8", "amount": 1, "unit": "tablet"},
+			"note": "Sneezing on the walk."
+		},
+		{
+			"id": "FE3FD9D2-3791-5B7A-977E-4E12C2D73ABF",
+			"eventType": "dose_taken",
+			"date": "2026-11-02T12:34:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "4191F6B9-D056-59F2-B621-A2D55CC97958", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "785DAFEA-2821-5FAE-A669-B9C31510831E",
+			"eventType": "dose_taken",
+			"date": "2026-11-01T14:47:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "FE6CA616-263F-5FA4-A463-8CA2F67B7F58", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "BD913D8F-DA6E-5D58-9C60-E99FA3124FE5",
+			"eventType": "dose_taken",
+			"date": "2026-11-01T14:26:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 58},
+			"dose": {"id": "261352A8-5357-52DF-9E2A-A7609F91CF10", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "77EF3AB3-8BCE-5FC2-90A8-F891B1D53617",
+			"eventType": "dose_taken",
+			"date": "2026-11-01T12:02:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "376C9CCF-D701-54F0-8965-5823A30E0045", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "A22D364F-8A1C-5A04-B661-C58A8B98DF16",
+			"eventType": "dose_taken",
+			"date": "2026-11-01T07:20:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "57A693BF-90AB-55A8-8BB7-046581193CCB", "amount": 1, "unit": "puff"},
+			"note": "Logged after the clock went back."
+		},
+		{
+			"id": "CE2B1EEE-DC74-59B1-9A85-62779D95BA9A",
+			"eventType": "dose_taken",
+			"date": "2026-11-01T06:20:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "67BBEC6D-C806-59FB-BA8C-1A792BA66C0F", "amount": 2, "unit": "puff"},
+			"note": "Woke up early."
+		},
+		{
+			"id": "124031F4-09F5-5511-9CD2-AF2C626467C5",
+			"eventType": "dose_taken",
+			"date": "2026-10-31T23:41:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "1EE84D82-FDCA-526E-8CD6-9EAACCAD9911", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "B6C8DF42-4B33-5F3F-880C-716C349E2A18",
+			"eventType": "dose_taken",
+			"date": "2026-10-31T17:57:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "F1662FA3-2A9E-52A9-8FF0-219D8B393509", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "5371CD01-4EFA-51BF-A88A-31039267030D",
+			"eventType": "suspected_side_effect",
+			"date": "2026-10-31T01:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 58},
+			"note": "Felt sleepy in the afternoon. Also got very little sleep the night before."
+		},
+		{
+			"id": "A6E53E25-8241-574A-88CA-6373D1663A05",
+			"eventType": "dose_taken",
+			"date": "2026-10-30T14:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 59},
+			"dose": {"id": "BBF436F3-2AC4-54B8-AE0B-4D52B019B770", "amount": 1, "unit": "tablet"},
+			"note": "Itchy eyes after opening the windows."
+		},
+		{
+			"id": "5C5492B6-CD3D-51C0-9A62-693872C57636",
+			"eventType": "dose_taken",
+			"date": "2026-10-29T14:13:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 60},
+			"dose": {"id": "6618B715-BEB7-5B78-BE5A-8C6F70CD4148", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "3A933793-5497-5AC2-8C07-931BD31D15AC",
+			"eventType": "dose_taken",
+			"date": "2026-10-29T02:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 16},
+			"dose": {"id": "8706EA44-1341-5D81-A7BE-EE0BFA5FE22C", "amount": 1, "unit": "chewable"},
+			"note": "Late dinner."
+		},
+		{
+			"id": "DEC0C049-0A9D-5771-B8FA-C32681170E76",
+			"eventType": "dose_taken",
+			"date": "2026-10-28T02:08:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "B51108D7-3912-59C0-A52F-3AFD4D408E2C", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "69E74339-6BAB-5A56-90FE-80FA541C4A6B",
+			"eventType": "dose_taken",
+			"date": "2026-10-27T17:02:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "974873DF-1BD2-5EF6-BE6E-2B2AFB645CE0", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "9CA4B725-11F9-5F2E-AFE7-5F482099935A",
+			"eventType": "dose_taken",
+			"date": "2026-10-27T13:13:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 14},
+			"dose": {"id": "2E1285C5-16D8-5083-B90B-96B0DC9DDA93", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "21C25647-B0A7-571A-BB54-3EA5DD44C38D",
+			"eventType": "dose_taken",
+			"date": "2026-10-27T12:19:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 61},
+			"dose": {"id": "2CAF497F-72AA-5AFF-A5C9-194DC171235D", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "103004E1-1A3F-5C14-A497-E5AD2E27EB34",
+			"eventType": "dose_taken",
+			"date": "2026-10-26T23:19:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "A9FEEFD3-A9BD-5D01-88E1-53DD54C1CCF1", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "B79019A7-1415-5F54-B8C8-E8A86318B028",
+			"eventType": "dose_taken",
+			"date": "2026-10-26T12:57:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 62},
+			"dose": {"id": "0A10F985-DBF0-5AFB-844E-FD6DE9DFF2EF", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "0F9E41BE-4444-51CE-AACE-7ED271638518",
+			"eventType": "dose_taken",
+			"date": "2026-10-26T02:08:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 9},
+			"dose": {"id": "E6893F81-343D-5103-B77A-EE3E2B2591AF", "amount": 1, "unit": "capsule"},
+			"note": "After dinner out."
+		},
+		{
+			"id": "CF37E28A-BEF4-5279-A2FC-CE3058791A34",
+			"eventType": "dose_taken",
+			"date": "2026-10-25T14:53:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 63},
+			"dose": {"id": "634714B8-41ED-50D6-97F4-A4392686836C", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "48F7E593-CCA4-53FC-9FAE-1882BCAD9D73",
+			"eventType": "dose_taken",
+			"date": "2026-10-25T02:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 17},
+			"dose": {"id": "A8E5FE29-D770-590C-8A84-2D7F9F0BD83D", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "1083E5EC-50C2-50E3-851A-E58402D3544E",
+			"eventType": "dose_taken",
+			"date": "2026-10-24T11:41:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "4E2DA043-17CC-5D9F-A80B-16D6F17BE45E", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "043CA7EC-ED60-5DC2-8431-BA3906E9572C",
+			"eventType": "dose_taken",
+			"date": "2026-10-23T14:19:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 64},
+			"dose": {"id": "0E1D2366-0126-5DE0-B376-B85846DFD9AA", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "02237A8D-5EDF-51FD-A10C-C68EC1E09659",
+			"eventType": "dose_taken",
+			"date": "2026-10-23T14:02:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "EB1A58AB-854C-54A1-B25A-1209CA64804D", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "FA829192-ACFB-5C78-85C4-D0AEC1E912E8",
+			"eventType": "dose_taken",
+			"date": "2026-10-23T01:47:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 18},
+			"dose": {"id": "B8913561-05E4-5830-90A0-1E5EAFD232F6", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "50608250-0E4C-5D57-A417-1B851FA7FB64",
+			"eventType": "dose_taken",
+			"date": "2026-10-21T23:13:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "C676A9EC-151C-551B-A3D3-6BD2A58BE7E4", "amount": 2, "unit": "puff"},
+			"note": "Entry copied from a paper log."
+		},
+		{
+			"id": "B9AF3BFF-01F6-5CB0-86DD-D3DFCBD78645",
+			"eventType": "dose_taken",
+			"date": "2026-10-21T16:08:00Z",
+			"medication": {"id": "365212DE-E19A-50A5-B0C9-1C649E2FB5FB", "clinicalName": "Loperamide", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel kit", "maximumDailyDoseAmount": 4, "initialQuantity": 8, "quantity": 6},
+			"dose": {"id": "C3DAB39F-B82B-52F2-915D-9D7224D68B40", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "3C83A133-4E1C-5A6C-B03B-AB8435D78139",
+			"eventType": "dose_taken",
+			"date": "2026-10-21T13:41:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 65},
+			"dose": {"id": "57BE8167-149B-506B-8C33-D9C345AE3D8C", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "0DB240FC-FCE7-5385-A8E7-4CF01206192B",
+			"eventType": "dose_taken",
+			"date": "2026-10-21T13:19:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 15},
+			"dose": {"id": "F54A0764-C622-5509-8EEA-46F469A825C7", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "8B93FE9D-3D8F-57A3-B455-8C67E4987290",
+			"eventType": "dose_taken",
+			"date": "2026-10-21T04:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 19},
+			"dose": {"id": "B01A301B-5FE5-5529-827C-583B59A72B71", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "03C3EA75-296A-5F3D-9DCA-A1B9B634EE8B",
+			"eventType": "dose_taken",
+			"date": "2026-10-20T14:34:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "CEB7DF16-0C97-558C-9D2F-0BADDFB7BF9C", "amount": 2, "unit": "drop"},
+			"note": "Eyes felt scratchy after opening the windows."
+		},
+		{
+			"id": "EF13053B-8863-57E3-B6C2-C1B29104CC15",
+			"eventType": "dose_taken",
+			"date": "2026-10-20T11:47:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "B5B1523E-9AB4-5D79-BF7C-81FD1B926B03", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "821E8BCA-0FB1-5BCA-A81C-6596D40244F3",
+			"eventType": "dose_taken",
+			"date": "2026-10-19T11:47:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "38BC1314-5B88-5428-81EB-0D6E54D5089B", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "0CB60257-3402-5801-A49F-87F87DE5827F",
+			"eventType": "dose_taken",
+			"date": "2026-10-19T02:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 20},
+			"dose": {"id": "06CF6E29-2B5D-5C93-9C27-09868B736D7C", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "4540DCF9-EB6C-5653-9314-7835DD7323B4",
+			"eventType": "dose_taken",
+			"date": "2026-10-18T12:34:00Z",
+			"medication": {"id": "4AB2BE1C-35E9-50F4-A101-CAAD457169ED", "clinicalName": "Polyethylene glycol 3350 powder", "prescribedUnit": "sachet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel sachets", "initialQuantity": 6, "quantity": 4},
+			"dose": {"id": "02678BE2-5F93-5610-9CD0-9B50BFA1FCB4", "amount": 1, "unit": "sachet"}
+		},
+		{
+			"id": "1F89A386-512B-5E6E-AA8F-03AB044672FA",
+			"eventType": "dose_taken",
+			"date": "2026-10-18T11:19:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "4FB4F29A-B319-50BF-A692-147CEEF2D412", "amount": 1, "unit": "spray"},
+			"note": "Dry air with the heat on."
+		},
+		{
+			"id": "AB35F872-D4D2-582F-A8E5-125E2A4664D5",
+			"eventType": "dose_taken",
+			"date": "2026-10-17T23:19:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "E219AFF3-3BE5-52A7-B9D9-4C69293597DD", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "4D8DD204-5268-5C03-9917-B4DE6283B106",
+			"eventType": "dose_taken",
+			"date": "2026-10-17T17:47:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "F0B99252-16E8-544F-9F93-DDE6391AB735", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "59E382C5-D458-5EBA-9333-5064BF793A27",
+			"eventType": "dose_taken",
+			"date": "2026-10-17T14:47:00Z",
+			"medication": {"id": "4AB2BE1C-35E9-50F4-A101-CAAD457169ED", "clinicalName": "Polyethylene glycol 3350 powder", "prescribedUnit": "sachet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel sachets", "initialQuantity": 6, "quantity": 5},
+			"dose": {"id": "FDB9AF6C-140E-5E6E-AE44-C17C5712E53D", "amount": 1, "unit": "sachet"}
+		},
+		{
+			"id": "9DDF1E6D-4211-58BF-9129-FD49AC46B658",
+			"eventType": "dose_taken",
+			"date": "2026-10-17T12:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 66},
+			"dose": {"id": "114B1E93-CD18-5254-B754-58ABF8F7AC9E", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "E9651558-F69F-5193-B37B-069E3E92B4C1",
+			"eventType": "dose_taken",
+			"date": "2026-10-16T01:41:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 16},
+			"dose": {"id": "B4B3D3A9-B857-5897-B52E-86E9AC6FD7A7", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "24FF0B76-9EAC-5CDC-BADB-F3CAF09F37C3",
+			"eventType": "dose_taken",
+			"date": "2026-10-15T23:19:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "318C77F5-1EBF-5464-9FE2-FB8B8F633854", "amount": 2, "unit": "puff"},
+			"note": "Entry copied from a paper log."
+		},
+		{
+			"id": "595AA103-5946-54EE-9A1A-0B5BA1CF6636",
+			"eventType": "dose_taken",
+			"date": "2026-10-15T14:53:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 67},
+			"dose": {"id": "E602F957-F282-53E5-98E7-EDF14B2D95DC", "amount": 1, "unit": "tablet"},
+			"note": "Raked leaves before breakfast."
+		},
+		{
+			"id": "7485497E-3C4D-5570-A76F-95A5ADE13C5C",
+			"eventType": "dose_taken",
+			"date": "2026-10-15T01:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 21},
+			"dose": {"id": "7F34C248-5AC9-585C-986C-69C9BE9195B1", "amount": 1, "unit": "chewable"},
+			"note": "Logged from memory the next morning."
+		},
+		{
+			"id": "10104169-38C5-57F8-970F-A223BFA69841",
+			"eventType": "dose_taken",
+			"date": "2026-10-14T12:57:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "1CE139DB-7AE9-5581-B937-25BD2D14603C", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "A0340CCF-9A08-5598-AF77-CB1F8C137E13",
+			"eventType": "dose_taken",
+			"date": "2026-10-13T12:13:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "6E0FA32A-790F-5F5D-A2E2-CBB648DD466B", "amount": 2, "unit": "spray"},
+			"note": "Used before bed."
+		},
+		{
+			"id": "ED5FC0C5-8AB8-5AA7-B226-56E3D1649D15",
+			"eventType": "dose_taken",
+			"date": "2026-10-13T03:47:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 22},
+			"dose": {"id": "F6228B92-42E8-5F7A-8035-337D0BE249CD", "amount": 1, "unit": "chewable"},
+			"note": "Dinner out again."
+		},
+		{
+			"id": "309F3E48-3292-55A8-8D18-0438FE5F1626",
+			"eventType": "reconcile",
+			"date": "2026-10-12T22:20:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 67},
+			"note": "Opened a new 30-tablet pack."
+		},
+		{
+			"id": "F61ADB8D-B05C-5DD3-8DB6-80CC8908E446",
+			"eventType": "dose_taken",
+			"date": "2026-10-12T17:26:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 17},
+			"dose": {"id": "2CDE8387-612C-58DA-B8F2-84053A71F337", "amount": 1, "unit": "tablet"},
+			"note": "After a long day at the desk."
+		},
+		{
+			"id": "5A2FEEB3-A63A-57FB-8E45-30885C9208ED",
+			"eventType": "dose_taken",
+			"date": "2026-10-12T13:08:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 38},
+			"dose": {"id": "C5C5FF2C-B6B6-51E2-B3E5-A0BAC223CB45", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "CAEC196E-6290-5F05-8FC5-48B05D172DE6",
+			"eventType": "dose_taken",
+			"date": "2026-10-12T12:53:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "EBB3FCF6-C463-5520-8896-526BDD30578A", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "DC25DFD7-2DE6-53EB-BE1D-1E86FD953782",
+			"eventType": "dose_taken",
+			"date": "2026-10-11T13:41:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "5E710434-4B04-52A4-8BF7-1E8060CE6FF4", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "0D073CAB-F3B0-58F1-BDD9-FC19B388BB3F",
+			"eventType": "dose_taken",
+			"date": "2026-10-11T03:13:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 23},
+			"dose": {"id": "E2D40DDE-6AB3-59CC-AB57-86DF97DB7CEB", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "3DE1851F-A43A-5DC1-9C20-0753B890025F",
+			"eventType": "dose_taken",
+			"date": "2026-10-10T12:41:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 39},
+			"dose": {"id": "D18AD24B-364A-5EE8-92D0-D508C2E9BB6F", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "66A8BD6D-DE9D-536D-8D9B-367166480637",
+			"eventType": "dose_taken",
+			"date": "2026-10-10T11:13:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "39AE8845-B222-5DAC-A50B-8027D8774C89", "amount": 50, "unit": "milligram"},
+			"note": "Lights felt too bright by midmorning."
+		},
+		{
+			"id": "F5D46F00-A975-563D-A66E-C8B21E084032",
+			"eventType": "dose_taken",
+			"date": "2026-10-10T04:57:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 24},
+			"dose": {"id": "DB00C2F7-74DB-5FF7-A7BC-16FFEA004B63", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "7EC699B6-A652-5372-B3B6-AA2260E5EB32",
+			"eventType": "dose_taken",
+			"date": "2026-10-09T17:13:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "37320439-94AD-5FD8-885B-97879184E92A", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "0CB134FB-8753-5E1F-BEFA-F91DF89210CF",
+			"eventType": "dose_taken",
+			"date": "2026-10-09T12:13:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "1F858936-C65F-5F74-8F94-E2794B343CDD", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "5C2A7A85-A988-50D5-8F1A-1F6F8D52CAF8",
+			"eventType": "dose_taken",
+			"date": "2026-10-09T01:02:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 19},
+			"dose": {"id": "CADD3EB9-9B4F-5D43-A379-67A7BB92E083", "amount": 2, "unit": "tablet"}
+		},
+		{
+			"id": "CE520383-8D50-5FAE-89D9-6F8CD84A024D",
+			"eventType": "dose_taken",
+			"date": "2026-10-08T13:26:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 40},
+			"dose": {"id": "0BF2D03D-4283-579B-90ED-9C5254C3867C", "amount": 1, "unit": "tablet"},
+			"note": "Raked leaves before breakfast."
+		},
+		{
+			"id": "FE9E2DA9-0C52-594F-AA63-811772A3FC67",
+			"eventType": "dose_taken",
+			"date": "2026-10-07T21:26:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "B9FBF860-3642-51A5-AFE8-3639176746C5", "amount": 10, "unit": "milliliter"}
+		},
+		{
+			"id": "D0527796-E6D9-58E1-9749-3051BF5FD263",
+			"eventType": "dose_taken",
+			"date": "2026-10-07T11:53:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "69E84540-FFA8-5818-9CC7-8621B46885BC", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "A02CAF7F-9628-5761-BA83-BDFF48BBDE8F",
+			"eventType": "dose_taken",
+			"date": "2026-10-07T03:13:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 25},
+			"dose": {"id": "69047A5F-9B22-540E-AF62-D7DC86F167C9", "amount": 1, "unit": "chewable"},
+			"note": "Late dinner."
+		},
+		{
+			"id": "B4311602-76C0-5F95-9D49-F61D8BBDA92E",
+			"eventType": "dose_taken",
+			"date": "2026-10-06T14:47:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 41},
+			"dose": {"id": "2E81EFB8-CEAE-540D-85C3-2D58CDA623AC", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "190A4066-24C5-5D7B-8E50-12DD7CD182DE",
+			"eventType": "dose_taken",
+			"date": "2026-10-06T12:57:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "F75F04EB-D126-516E-8DBD-F7BE5B68EA0E", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "1F71992D-FB29-53CD-A0BC-1CC841EE0DEB",
+			"eventType": "dose_taken",
+			"date": "2026-10-05T14:41:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "CA0D59E4-1919-5C63-A682-9095942F0FB4", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "0CF06F66-D084-5894-94F8-31CD71ABE6DA",
+			"eventType": "dose_taken",
+			"date": "2026-10-05T14:13:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "93E9DACC-57C1-560B-91D7-9DA6EC0D71BA", "amount": 10, "unit": "milliliter"}
+		},
+		{
+			"id": "8A90B0C9-825F-5928-9A1D-30D87E64DC5D",
+			"eventType": "dose_taken",
+			"date": "2026-10-05T02:13:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 26},
+			"dose": {"id": "E0DB6497-87DE-5365-A27A-01425F66A463", "amount": 1, "unit": "chewable"},
+			"note": "Logged from memory the next morning."
+		},
+		{
+			"id": "E86EF879-9890-574F-91F9-10241A684952",
+			"eventType": "dose_taken",
+			"date": "2026-10-04T17:41:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "BA3D740B-0D75-5307-9482-4214F9269A6F", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "F1452CB1-D4A6-5AC2-A183-247416FDE983",
+			"eventType": "dose_taken",
+			"date": "2026-10-04T00:13:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "DA694862-BD35-5C89-9A39-104876E41A9C", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "5A6E8184-7530-55DA-BA70-7C9865721F53",
+			"eventType": "dose_taken",
+			"date": "2026-10-03T02:19:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 10},
+			"dose": {"id": "1D468CC0-C0C8-5235-89CF-8CA6837F4C94", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "F95D7542-4CC4-5DA1-847D-23F589252C3E",
+			"eventType": "dose_taken",
+			"date": "2026-10-03T01:02:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 20},
+			"dose": {"id": "A68E7E83-9EB7-5474-9043-D79AD9593F76", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "4F0A658A-FF13-5324-8DAB-E4E05544C720",
+			"eventType": "dose_taken",
+			"date": "2026-10-02T13:08:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 42},
+			"dose": {"id": "61A24259-D7A8-5D87-A453-DDBE7DE5C404", "amount": 1, "unit": "tablet"},
+			"note": "Sneezing on the walk."
+		},
+		{
+			"id": "CBA20C23-A848-56C7-8FAF-C341305401A5",
+			"eventType": "dose_taken",
+			"date": "2026-10-02T01:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 27},
+			"dose": {"id": "EA36D5CA-5F22-5AA9-B6DC-B24EF0EB59F1", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "871D1AF2-5009-540F-B3AA-A9F25397C06F",
+			"eventType": "dose_taken",
+			"date": "2026-10-01T01:19:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 21},
+			"dose": {"id": "A6EFB75A-940B-5DBB-B01F-D44815959E6F", "amount": 1, "unit": "tablet"},
+			"note": "After a long day at the desk."
+		},
+		{
+			"id": "E67013D8-01A0-51B0-A966-693E65643F62",
+			"eventType": "dose_taken",
+			"date": "2026-09-30T13:02:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 43},
+			"dose": {"id": "110388A3-D9C4-579F-A5DF-8F9EE7577506", "amount": 1, "unit": "tablet"},
+			"note": "Raked leaves before breakfast."
+		},
+		{
+			"id": "66CBD398-1ECF-56D2-8D08-2000B29DAFE8",
+			"eventType": "dose_taken",
+			"date": "2026-09-30T11:08:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "70C5FBD5-5F76-551D-96D6-48C3B6EABFCD", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "643EE770-E993-5B33-B36B-42C0BB0E2EB3",
+			"eventType": "dose_taken",
+			"date": "2026-09-29T23:26:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "53612034-25A9-5926-96D4-E923D59E1AA6", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "C1A88D3C-3B8F-5BD3-827C-68CA6AF40107",
+			"eventType": "dose_taken",
+			"date": "2026-09-29T00:26:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 28},
+			"dose": {"id": "9642AEA0-B136-584B-B118-04FF9DA092D9", "amount": 1, "unit": "chewable"},
+			"note": "Logged from memory the next morning."
+		},
+		{
+			"id": "3FC5E2E3-44DF-5053-89DD-7878C0756646",
+			"eventType": "dose_taken",
+			"date": "2026-09-28T14:53:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 44},
+			"dose": {"id": "CCCDF57A-0064-5B66-8E06-70C2B7204A49", "amount": 1, "unit": "tablet"},
+			"note": "Itchy eyes after opening the windows."
+		},
+		{
+			"id": "408CC423-1E15-5D10-BBE1-F540BA4A9A52",
+			"eventType": "dose_taken",
+			"date": "2026-09-28T11:13:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "7C04A4FE-AFB0-52EF-9A56-BC8C2349042F", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "7F2869AF-C3A0-5923-92F5-D9900E897C46",
+			"eventType": "dose_taken",
+			"date": "2026-09-28T01:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 29},
+			"dose": {"id": "9591387A-A03A-52BB-A915-58051FA5490A", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "656D0F85-6515-54C7-BC8F-F7A9CC043F60",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T22:57:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 11},
+			"dose": {"id": "A22FACC0-3595-57E6-A985-F37F787404B9", "amount": 1, "unit": "capsule"},
+			"note": "After dinner out."
+		},
+		{
+			"id": "10BA5C81-C5CA-5E71-AB4F-4964A0395D6A",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T17:47:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "CE123A9F-8A4A-555C-BDEF-B3F8C547C01B", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "9672F2F1-A0F5-504B-A184-B7E93BAB0644",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "3DA6EE91-EF88-5506-AF22-A2AF0EA55D31", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "9C133CC1-4D58-5DCD-A937-79793AC35342",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T12:57:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "0BA519AF-C88F-5BCC-850E-50BD6BACAF2D", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "337B5D37-1293-5B9C-9A69-72BC91665EA8",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T02:19:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "6B382C77-58A0-5962-9645-1E1666D8DDF7", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "CFF83C9F-5C5C-5947-B334-EA57AD340B6F",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T01:02:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "ADA4E217-DB04-5492-88C9-80E89A2D8C51", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "CA528CE8-E00F-59E7-BCC9-89C10D8CD3B2",
+			"eventType": "dose_taken",
+			"date": "2026-09-26T00:08:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 30},
+			"dose": {"id": "E0E8DAA6-72A4-554D-81F9-8204EFEA1C42", "amount": 1, "unit": "chewable"},
+			"note": "Late dinner."
+		},
+		{
+			"id": "BCBBFE8F-E1E5-5C59-9DF0-4D0D71A8F7CF",
+			"eventType": "dose_taken",
+			"date": "2026-09-25T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "3297F0C3-F6A5-5024-A54B-3994CBB1110C", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "5BB0CB46-1EED-5A97-8811-36444FE2BAB0",
+			"eventType": "dose_taken",
+			"date": "2026-09-25T03:26:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 31},
+			"dose": {"id": "1017EC5A-701E-5711-BDA9-A7867AD58C28", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "60D8AC7B-4239-54AC-B403-A7DFBDCF2FF0",
+			"eventType": "dose_taken",
+			"date": "2026-09-24T14:57:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "ECAACBB5-F20A-5A7B-928A-80F9C163EC32", "amount": 50, "unit": "milligram"},
+			"note": "Woke up with a headache."
+		},
+		{
+			"id": "31878EB7-8CDB-58D4-B60E-65938E224B5D",
+			"eventType": "dose_taken",
+			"date": "2026-09-24T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "99288962-D074-596C-B80F-11EE07BA3018", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "02FC3F41-DDA9-572F-BBC1-C590B6FCD50D",
+			"eventType": "dose_taken",
+			"date": "2026-09-24T03:16:00Z",
+			"medication": {"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A", "clinicalName": "Dextromethorphan oral solution", "prescribedUnit": "milliliter", "prescribedDoseAmount": 5, "isArchived": true, "nickname": "Old cough syrup"},
+			"dose": {"id": "A5983984-CB7A-58F3-A93D-6B372B8F4D48", "amount": 5, "unit": "milliliter"}
+		},
+		{
+			"id": "DF093682-9FAB-5238-87FD-E25BB90145D8",
+			"eventType": "dose_taken",
+			"date": "2026-09-24T02:26:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "2A1485CC-6F84-5003-9C9D-3AD898E6A94B", "amount": 2, "unit": "spray"}
+		},
+		{
+			"id": "CC416F92-B4E3-57AB-8453-317D95119308",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T23:47:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "2A94E1D0-CF10-5771-A383-5AE91A431398", "amount": 2, "unit": "drop"},
+			"note": "Eyes felt scratchy after opening the windows."
+		},
+		{
+			"id": "6EEE3551-40D4-5FB8-AE8C-DA2345C34D20",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T21:42:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "38F267CA-99E9-5A15-980E-5AB77B03E30D", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "8A5D94E6-4AB4-5C27-83BD-478E626DF99B",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T14:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 45},
+			"dose": {"id": "EE584338-085A-5D40-9BFF-C4D72E97BC8E", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "593313FE-D095-5683-B8E2-4FA33D8C9226",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "122D9925-A107-548D-BBC6-9E4B1481B6B8", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "6D412CE6-6A2B-549B-954F-0230020110AA",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T03:47:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 32},
+			"dose": {"id": "32400A0F-C3C5-5F33-9B59-E80BF9C1786D", "amount": 1, "unit": "chewable"},
+			"note": "Dinner out again."
+		},
+		{
+			"id": "E273D742-3B1E-5126-872C-47533558EF96",
+			"eventType": "dose_taken",
+			"date": "2026-09-23T03:16:00Z",
+			"medication": {"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A", "clinicalName": "Dextromethorphan oral solution", "prescribedUnit": "milliliter", "prescribedDoseAmount": 5, "isArchived": true, "nickname": "Old cough syrup"},
+			"dose": {"id": "D80C4CFB-026A-5C12-B3B6-2FD6448579F7", "amount": 5, "unit": "milliliter"}
+		},
+		{
+			"id": "D64A34BE-2D45-56BB-9D67-6479753CCCAA",
+			"eventType": "dose_taken",
+			"date": "2026-09-22T21:42:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "03CB5F3C-AA29-5E66-9CFF-59C9AF0E6747", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "4C3353E7-C130-5F61-8263-D890BA0E759D",
+			"eventType": "dose_taken",
+			"date": "2026-09-22T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "78B2DFB8-0742-5A81-AC50-BCE6C171D9B0", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "0270FE09-D91A-5874-B330-208A55568AC2",
+			"eventType": "dose_taken",
+			"date": "2026-09-22T03:16:00Z",
+			"medication": {"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A", "clinicalName": "Dextromethorphan oral solution", "prescribedUnit": "milliliter", "prescribedDoseAmount": 5, "isArchived": true, "nickname": "Old cough syrup"},
+			"dose": {"id": "92EE5AB6-D49E-529A-B382-E54F9E9B5D00", "amount": 5, "unit": "milliliter"}
+		},
+		{
+			"id": "4D2B216C-FF53-5FB3-878D-8ABC7B9053B8",
+			"eventType": "dose_taken",
+			"date": "2026-09-22T00:34:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 33},
+			"dose": {"id": "B2043477-65AB-557B-94ED-7FAADFBEE039", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "EC12DB7A-83ED-5AC2-8AFD-165283A88CAA",
+			"eventType": "dose_taken",
+			"date": "2026-09-22T00:26:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "FF0E9E6C-B17E-5DFA-B3DF-C5925C8E1AD0", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "23EABC16-FC30-5579-B7DB-43212330C852",
+			"eventType": "dose_taken",
+			"date": "2026-09-21T21:42:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "214731A0-7E55-5151-B296-316BD7F4A8E6", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "5F4AF532-3E96-5CC1-9F0A-1238AD428DF5",
+			"eventType": "dose_taken",
+			"date": "2026-09-21T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "531768DE-66CF-507E-9FE0-0B0DCD4A847C", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "7F35F948-0570-57C4-AA1D-B8A4BE8F7BEF",
+			"eventType": "dose_taken",
+			"date": "2026-09-21T03:19:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 34},
+			"dose": {"id": "A1A5945D-1154-57BD-8835-98B8EC0D81CA", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "7916A117-82AB-5EAB-B8BC-D91037B5999E",
+			"eventType": "dose_taken",
+			"date": "2026-09-21T03:16:00Z",
+			"medication": {"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A", "clinicalName": "Dextromethorphan oral solution", "prescribedUnit": "milliliter", "prescribedDoseAmount": 5, "isArchived": true, "nickname": "Old cough syrup"},
+			"dose": {"id": "1FACA618-E14C-5837-8493-8743D9B9907B", "amount": 5, "unit": "milliliter"},
+			"note": "Cough kept waking me up."
+		},
+		{
+			"id": "3C3D9F13-269D-5534-B54D-F7F2B59D8CD1",
+			"eventType": "dose_taken",
+			"date": "2026-09-20T21:42:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "063A3488-061F-5356-8771-1CAC60A6A223", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "1E72B18B-921D-5C69-9A63-13A05D772462",
+			"eventType": "dose_taken",
+			"date": "2026-09-20T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "F61E8F1B-14F9-5D9E-81B3-470377A34F9F", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "397E5139-AB9E-5838-B631-0FCB806EA909",
+			"eventType": "dose_taken",
+			"date": "2026-09-20T12:13:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 46},
+			"dose": {"id": "8B8A997D-0D16-538D-A10E-824E5B904B66", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "0A5613FC-C43C-539F-BEDC-4AD928737869",
+			"eventType": "dose_taken",
+			"date": "2026-09-20T03:16:00Z",
+			"medication": {"id": "21A0A54C-4FA9-5C72-A4D7-F62C16C13B3A", "clinicalName": "Dextromethorphan oral solution", "prescribedUnit": "milliliter", "prescribedDoseAmount": 5, "isArchived": true, "nickname": "Old cough syrup"},
+			"dose": {"id": "BFCA0BED-703C-5728-BE08-B879E3A998B4", "amount": 5, "unit": "milliliter"}
+		},
+		{
+			"id": "217C22A0-DC6A-5E46-8C69-6CEAAE8AC1A6",
+			"eventType": "dose_taken",
+			"date": "2026-09-20T00:41:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 35},
+			"dose": {"id": "114162B5-01B8-5B7D-B43D-4F9C957F7E5D", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "5BF2154B-47D2-5BFA-8521-315B17D42DAD",
+			"eventType": "dose_taken",
+			"date": "2026-09-19T21:42:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "E020BCA0-4DCB-5CFC-A24F-D3EF7CFDFFF9", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "144E2AE3-52A5-500F-A2A9-6A8B2521A926",
+			"eventType": "dose_taken",
+			"date": "2026-09-19T21:26:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "C0CFDFA4-D65D-5E15-8040-E7588DE9972E", "amount": 2, "unit": "gram"},
+			"note": "Knee stiff after gardening."
+		},
+		{
+			"id": "4A0DC2D3-24BE-5317-95AF-FD4C827DBC88",
+			"eventType": "dose_taken",
+			"date": "2026-09-19T14:23:00Z",
+			"medication": {"id": "68C71772-A75C-5845-86E3-D890BEBABBA8", "clinicalName": "Menthol throat lozenge", "prescribedUnit": "lozenge", "prescribedDoseAmount": 1, "isArchived": true, "nickname": "Fall cold", "displayColorHex": "#6C8D70"},
+			"dose": {"id": "F5351140-E44A-5FC2-8B4D-37A46F16BE7C", "amount": 1, "unit": "lozenge"}
+		},
+		{
+			"id": "35BE54C6-6197-5ED1-8788-51B8AC32A9DF",
+			"eventType": "dose_taken",
+			"date": "2026-09-19T12:02:00Z",
+			"medication": {"id": "365212DE-E19A-50A5-B0C9-1C649E2FB5FB", "clinicalName": "Loperamide", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel kit", "maximumDailyDoseAmount": 4, "initialQuantity": 8, "quantity": 7},
+			"dose": {"id": "BE00E9EC-1523-5C70-B5E2-D94601586B8A", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "FF265D53-CC32-50B0-A242-4EAFA9D665BA",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T23:19:00Z",
+			"medication": {"id": "365212DE-E19A-50A5-B0C9-1C649E2FB5FB", "clinicalName": "Loperamide", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel kit", "maximumDailyDoseAmount": 4, "initialQuantity": 8, "quantity": 8},
+			"dose": {"id": "DAF1CD70-D7C3-540E-B316-8697FF31319B", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "1EE3AF70-7D4D-542A-8CB0-1CEA6076CEB2",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T22:47:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 23},
+			"dose": {"id": "63DFED04-210D-52BC-8907-C869C384EA84", "amount": 2, "unit": "tablet"}
+		},
+		{
+			"id": "E4F406E9-93BE-588F-A571-8D40C398E94D",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T17:26:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "46AB8E3A-3A8D-5DE6-8FB7-58D541534527", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "0C192FFC-A288-5AF3-BCD2-7BC4705A2C73",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T14:08:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "012107E4-4E05-57AB-8A5C-392315DD31F9", "amount": 7.5, "unit": "milliliter"}
+		},
+		{
+			"id": "F8A2374F-EFA2-55DF-AEBC-234A642766D2",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T03:13:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 36},
+			"dose": {"id": "0541D194-D2D8-5A94-BDFE-9D29E1287CFA", "amount": 1, "unit": "chewable"},
+			"note": "Dinner out again."
+		},
+		{
+			"id": "B1FC01F0-52B4-5BDA-BA33-AC5CA5F75660",
+			"eventType": "dose_taken",
+			"date": "2026-09-18T01:08:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 25},
+			"dose": {"id": "87FC8802-6EA3-5FDD-9ADE-42E5B44338C9", "amount": 2, "unit": "tablet"}
+		},
+		{
+			"id": "62CE2C3D-141D-5714-968D-302FF0926D55",
+			"eventType": "dose_taken",
+			"date": "2026-09-17T02:26:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 37},
+			"dose": {"id": "A804B426-E36A-5AAB-9E83-573A344D9E90", "amount": 1, "unit": "chewable"},
+			"note": "Dinner out again."
+		},
+		{
+			"id": "3522531E-0458-59F3-9484-DAA5DC8F3EB7",
+			"eventType": "dose_taken",
+			"date": "2026-09-16T01:34:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "8CFE497E-22EF-529F-BBC5-9C443AA08150", "amount": 7.5, "unit": "milliliter"}
+		},
+		{
+			"id": "5D04470B-C2F8-56CC-8427-A4331BF28124",
+			"eventType": "dose_taken",
+			"date": "2026-09-16T01:13:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "F76D268B-971E-5F3E-9D19-ACCB5B85FB80", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "92369EBF-9C5A-5DAA-8A5E-C8C2F21044BF",
+			"eventType": "dose_taken",
+			"date": "2026-09-16T00:53:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 38},
+			"dose": {"id": "3B34CA24-298B-50D3-88A5-35B7F7B6223E", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "6F5C6220-5951-565E-A17D-290877973A91",
+			"eventType": "dose_taken",
+			"date": "2026-09-15T12:08:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "A3F75A1F-7B1A-5856-B3DF-342161A18566", "amount": 2, "unit": "puff"},
+			"note": "Used on the way back from the park."
+		},
+		{
+			"id": "AD7A73B3-1B1C-5218-BFEE-E5BD59B9439C",
+			"eventType": "dose_taken",
+			"date": "2026-09-15T01:19:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "17BF3A90-D169-5E92-A1F6-015879C83621", "amount": 2, "unit": "gram"},
+			"note": "Knee stiff after gardening."
+		},
+		{
+			"id": "6435F723-00B6-5104-8F65-CC6A0D1F3CC1",
+			"eventType": "dose_taken",
+			"date": "2026-09-14T20:57:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "A4FD3CCA-5B0E-507A-AAEC-60F4410D9EEE", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "82480E9B-E705-537D-9C2D-1BBB9AD45FB0",
+			"eventType": "dose_taken",
+			"date": "2026-09-14T14:53:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "46A7E189-A5FD-5CBB-906F-66F1DC54ED81", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "EAE92A49-CC00-5FF3-B316-F81BD6A3FCBB",
+			"eventType": "dose_taken",
+			"date": "2026-09-14T14:34:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 47},
+			"dose": {"id": "D6E99D95-6ADE-5F10-A185-8345BF5FF5DE", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "A292BA49-71DD-5A09-99BC-EA71AA76E002",
+			"eventType": "dose_taken",
+			"date": "2026-09-14T03:57:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 39},
+			"dose": {"id": "CD8E1B47-91BD-5DA0-BE3C-E1FF132840C6", "amount": 1, "unit": "chewable"},
+			"note": "Late dinner."
+		},
+		{
+			"id": "0F71AB8D-8BF5-563E-85C5-24C7FD7C0D50",
+			"eventType": "dose_taken",
+			"date": "2026-09-13T23:34:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "CD511395-FBFB-53E8-87CF-3A8F62285FB3", "amount": 2, "unit": "drop"},
+			"note": "Forgot to log this yesterday."
+		},
+		{
+			"id": "407B8C54-34A4-511E-B32A-06293D9E514C",
+			"eventType": "dose_taken",
+			"date": "2026-09-13T00:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 40},
+			"dose": {"id": "A885A809-198B-5144-BE9D-1D723DA9F5F6", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "E9500283-F2F4-513A-B2C9-BB8FC6CA822B",
+			"eventType": "dose_taken",
+			"date": "2026-09-12T02:26:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 41},
+			"dose": {"id": "8E3E419D-AABE-574F-A031-8ED2B343FA9B", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "57578A1D-1E47-531C-9CBD-452E45EA21F4",
+			"eventType": "dose_taken",
+			"date": "2026-09-12T02:02:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "47F32F6E-DD53-5902-94D6-D561F86E60CE", "amount": 1, "unit": "spray"}
+		},
+		{
+			"id": "3643580E-A014-54FC-A543-6F892CB44FF3",
+			"eventType": "dose_taken",
+			"date": "2026-09-12T01:13:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "1D342D7A-6970-5E33-A1BF-18EE9952FCFD", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "59DD0703-365B-5853-BAB1-0B1B6DCDB32E",
+			"eventType": "dose_taken",
+			"date": "2026-09-11T23:08:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "1A6FECCD-3312-53CE-98DF-80D070740039", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "C8824CD4-ED03-5F75-88EC-D3E224B61D4B",
+			"eventType": "dose_taken",
+			"date": "2026-09-10T17:08:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "27564E19-8F3D-58D4-8E04-DA80EE1E2DB8", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "03B93C10-3058-5200-9372-9A702EDFE3A3",
+			"eventType": "dose_taken",
+			"date": "2026-09-10T12:13:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 48},
+			"dose": {"id": "FCA39E57-B1D5-53FC-8907-EC7D35FA2B39", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "EA7A2F46-6287-5228-AFB1-DB31426F088F",
+			"eventType": "dose_taken",
+			"date": "2026-09-10T02:13:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 42},
+			"dose": {"id": "5A12772B-16D4-5DF4-BEA9-B33289017EDC", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "ED2C3D1B-F544-5CD2-84F8-B91D19A3B9A4",
+			"eventType": "dose_taken",
+			"date": "2026-09-10T01:13:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "AFD67A8A-CD72-5A70-B5D5-095D1D6DA98D", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "32252C3F-97B3-5927-BF5F-92A2A1EB08C2",
+			"eventType": "dose_taken",
+			"date": "2026-09-09T12:08:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "B82558B4-574B-543E-B360-7A0DB87E2EA3", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "9D35D7CF-0C80-577B-AFB7-86F5609105A4",
+			"eventType": "dose_taken",
+			"date": "2026-09-08T17:26:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 27},
+			"dose": {"id": "2492A35D-1408-5A35-9CBF-DE3C24D24F0E", "amount": 2, "unit": "tablet"}
+		},
+		{
+			"id": "DFA82B4E-5877-584B-A600-E624702196B1",
+			"eventType": "dose_taken",
+			"date": "2026-09-08T04:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 43},
+			"dose": {"id": "25E32113-F117-5FBE-A853-11A7C4CCC839", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "385FF5F4-3122-5C0F-9F9C-993D29C93860",
+			"eventType": "dose_taken",
+			"date": "2026-09-07T13:26:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "61E608F6-4C48-5039-9EE0-F63A4F68338F", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "2E4B4AF5-16AA-5D5D-82A2-A63D6523B197",
+			"eventType": "dose_taken",
+			"date": "2026-09-07T13:13:00Z",
+			"medication": {"id": "4AB2BE1C-35E9-50F4-A101-CAAD457169ED", "clinicalName": "Polyethylene glycol 3350 powder", "prescribedUnit": "sachet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Travel sachets", "initialQuantity": 6, "quantity": 6},
+			"dose": {"id": "A9A2ED5B-FAA0-51A2-BC4B-E87562B87646", "amount": 1, "unit": "sachet"}
+		},
+		{
+			"id": "0244FEE7-85E3-56EE-87DA-ED7A4486831A",
+			"eventType": "dose_taken",
+			"date": "2026-09-07T12:19:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "20365F5B-93A9-5DCD-ACC0-D30660DC922C", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "8FD512A5-59DC-5322-8FD5-A15E77ADAC01",
+			"eventType": "dose_taken",
+			"date": "2026-09-07T01:57:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "D59705FA-D18C-5BED-A390-864A00BB8D93", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "E98CA1A5-127A-5F7A-B580-C78063E736BC",
+			"eventType": "dose_taken",
+			"date": "2026-09-07T00:02:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 44},
+			"dose": {"id": "D10821E0-6B94-51D5-8C22-EE2CF86FD403", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "9FB371F5-7FCA-53E7-81EB-A14B18ECC418",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T17:02:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "16417D43-AD8C-502E-B3ED-0A8C1DD89CAF", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "4DDD9117-33C5-587C-AD92-3C9A015A6A43",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T14:47:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 49},
+			"dose": {"id": "D11D561B-4F26-597D-B7E8-4CF8B45A626E", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "F62ACA6C-6186-5B30-B0FA-283C8A29624D",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T13:19:00Z",
+			"medication": {"id": "AB040DD0-79A4-5A56-A770-701DF77D09DC", "clinicalName": "Diclofenac topical gel", "prescribedUnit": "gram", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Knee gel", "displayColorHex": "#8B7556", "maximumDoseAmount": 2},
+			"dose": {"id": "0711FFC8-94BA-55D7-99F1-59C9F9AE65E4", "amount": 2, "unit": "gram"}
+		},
+		{
+			"id": "A8147F21-2157-52FF-A3AE-D108A26D1C10",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T13:02:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 28},
+			"dose": {"id": "30FA7902-1A91-5F0D-9BCC-0A94B51C30BE", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "F3AACCE3-D931-57D6-A335-C1C71D45AD55",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T02:41:00Z",
+			"medication": {"id": "E9933AFF-A9B4-5165-94F2-EC5A807B8F8D", "clinicalName": "Simethicone", "prescribedUnit": "capsule", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Gas relief", "displayColorHex": "#7D8354", "maximumDoseAmount": 1, "initialQuantity": 12, "quantity": 12},
+			"dose": {"id": "AB756797-1A2C-5CFB-BB56-04A4292BF37C", "amount": 1, "unit": "capsule"}
+		},
+		{
+			"id": "CA6751A9-5D20-56EB-A49F-C9D0A70B23C1",
+			"eventType": "dose_taken",
+			"date": "2026-09-05T01:19:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 45},
+			"dose": {"id": "F6EDABB2-2B59-5A2B-AD2B-38C276166817", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "36406E32-D1D1-5FB3-8032-5657148FBC0F",
+			"eventType": "dose_taken",
+			"date": "2026-09-04T20:53:00Z",
+			"medication": {"id": "B7B1297C-2AD0-5F0A-A078-63509F5D930D", "clinicalName": "Sumatriptan", "prescribedUnit": "milligram", "prescribedDoseAmount": 50, "isArchived": false, "nickname": "Migraine tablet", "displayColorHex": "#86599E", "minimumHoursBetweenDoses": 2, "maximumDailyDoseAmount": 100, "maximumDoseAmount": 50},
+			"dose": {"id": "236573B6-11AF-5D70-8C9B-897AB7654198", "amount": 50, "unit": "milligram"}
+		},
+		{
+			"id": "90B7A898-D078-5524-8785-8BC195C76598",
+			"eventType": "dose_taken",
+			"date": "2026-09-04T03:47:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 46},
+			"dose": {"id": "C14A71BB-1D9E-57F7-9094-FB743FF212F8", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "ED8727E0-48BD-5AE0-BEC8-82A5A5529181",
+			"eventType": "dose_taken",
+			"date": "2026-09-03T23:57:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "2B973500-B36F-5382-87BA-3DE3E216AD86", "amount": 2, "unit": "puff"},
+			"note": "Used on the way back from the park."
+		},
+		{
+			"id": "D17ECFAE-9976-57D9-BFA9-3435847F02D9",
+			"eventType": "dose_taken",
+			"date": "2026-09-03T14:26:00Z",
+			"medication": {"id": "0F32C489-A361-5225-86F2-3C2DEAF11F3F", "clinicalName": "Acetaminophen oral suspension", "prescribedUnit": "milliliter", "prescribedDoseAmount": 10, "isArchived": false, "nickname": "Liquid pain reliever", "displayColorHex": "#3B8291", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 30, "maximumDoseAmount": 15},
+			"dose": {"id": "37B15CB0-56B2-557E-B56D-9915423C506F", "amount": 7.5, "unit": "milliliter"}
+		},
+		{
+			"id": "5BBBAB3A-1C28-5D61-8506-CE0E7A4F2925",
+			"eventType": "dose_taken",
+			"date": "2026-09-02T22:02:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 29},
+			"dose": {"id": "610501AD-1627-518F-8B44-01F290BDCBFA", "amount": 1, "unit": "tablet"},
+			"note": "After a long day at the desk."
+		},
+		{
+			"id": "3C5A48F5-583C-55B5-982D-B2C361C5E470",
+			"eventType": "dose_taken",
+			"date": "2026-09-02T13:47:00Z",
+			"medication": {"id": "E8E8A663-0932-581D-B9FF-17835B84C462", "clinicalName": "Cetirizine", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Allergy tablet", "displayColorHex": "#6879BA", "maximumDailyDoseAmount": 1, "initialQuantity": 50, "quantity": 50},
+			"dose": {"id": "F8B1729C-AA40-51D6-9F4C-6720740D88C4", "amount": 1, "unit": "tablet"},
+			"note": "Raked leaves before breakfast."
+		},
+		{
+			"id": "D7328792-DBB2-5C49-97B8-63B27D4753D1",
+			"eventType": "dose_taken",
+			"date": "2026-09-02T03:57:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 47},
+			"dose": {"id": "DAACD1A9-2B3C-5470-A79C-3ABAC724147C", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "8CFFF122-1B91-534E-A1A6-998F8B668DF4",
+			"eventType": "dose_taken",
+			"date": "2026-09-01T14:41:00Z",
+			"medication": {"id": "BB5032C3-ADC8-594D-96A6-F3D23BA5E001", "clinicalName": "Ketotifen eye drops", "prescribedUnit": "drop", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Itchy eyes", "displayColorHex": "#388B82", "minimumHoursBetweenDoses": 8},
+			"dose": {"id": "116672FA-6726-55E8-8F72-EB13FF5764AF", "amount": 2, "unit": "drop"}
+		},
+		{
+			"id": "13DFE26F-6FDA-58D4-AB11-B96E27A3DF29",
+			"eventType": "dose_taken",
+			"date": "2026-09-01T11:26:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Saline spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "D60D2C05-EE01-5488-8A59-7804D0554DD7", "amount": 2, "unit": "spray"},
+			"note": "Used before bed."
+		},
+		{
+			"id": "7F62BD1C-0424-5027-AD3A-7177A7B441F2",
+			"eventType": "dose_taken",
+			"date": "2026-09-01T04:57:00Z",
+			"medication": {"id": "BFC382D3-2845-54FC-8C3C-0AF20DC59019", "clinicalName": "Calcium carbonate", "prescribedUnit": "chewable", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Heartburn chewables", "displayColorHex": "#BB773C", "maximumDailyDoseAmount": 5, "initialQuantity": 48, "quantity": 48},
+			"dose": {"id": "599B9CE7-4A16-56B8-A373-5C09CB0FF78E", "amount": 1, "unit": "chewable"}
+		},
+		{
+			"id": "6364F27E-BE2A-51CE-9E6F-72E96D2E491F",
+			"eventType": "dose_taken",
+			"date": "2026-08-31T23:53:00Z",
+			"medication": {"id": "EA2B2D56-4016-52DF-BFCE-CDB76E9763B6", "clinicalName": "Albuterol HFA", "prescribedUnit": "puff", "prescribedDoseAmount": 2, "isArchived": false, "nickname": "Rescue inhaler", "displayColorHex": "#537ABD", "minimumHoursBetweenDoses": 4, "maximumDailyDoseAmount": 8, "maximumDoseAmount": 2},
+			"dose": {"id": "21AB597D-722C-5669-8CA5-18B2985DFE68", "amount": 2, "unit": "puff"}
+		},
+		{
+			"id": "A9DB8614-1394-51A2-AFBE-6E6AA32B5481",
+			"eventType": "dose_taken",
+			"date": "2026-08-31T13:41:00Z",
+			"medication": {"id": "0D9B8C8E-C22C-5DEC-8A4D-BF9A1620348C", "clinicalName": "Ibuprofen", "prescribedUnit": "tablet", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Headache tablets", "displayColorHex": "#B95C67", "minimumHoursBetweenDoses": 6, "maximumDailyDoseAmount": 3, "maximumDoseAmount": 2, "initialQuantity": 30, "quantity": 30},
+			"dose": {"id": "70EE25FF-A0D3-5880-A6A6-CAE3DB8700DD", "amount": 1, "unit": "tablet"}
+		},
+		{
+			"id": "CE8FAF3A-A57D-54DB-A21E-5D0D9258612E",
+			"eventType": "dose_taken",
+			"date": "2026-11-22T03:34:00Z",
+			"medication": {"id": "C899564E-E5D5-5AAA-8F51-D994B5ACCB49", "clinicalName": "Sodium chloride nasal saline", "prescribedUnit": "spray", "prescribedDoseAmount": 1, "isArchived": false, "nickname": "Bedside spray", "displayColorHex": "#4C899C"},
+			"dose": {"id": "BDB635C3-2DA2-5213-BB61-F97EDBCA3804", "amount": 1, "unit": "spray"},
+			"note": "Restored from a note with the old nickname."
+		}
+	]
+}

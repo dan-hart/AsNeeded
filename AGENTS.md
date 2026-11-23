@@ -24,6 +24,10 @@ Active development is on 1.3.0. Prioritize maintenance, regression coverage, saf
 
 Effective October 27, 2026, 1.2.0 is in stabilization. No new features, experimental capabilities, broad redesigns, or speculative refactors. Work on reproducible bug fixes, regression coverage, accessibility, clear language, and continuity with the live 1.1.2 experience. Build 309 is the frozen feature baseline. Historical plans do not expand this scope; only an explicit maintainer decision can reopen it. Follow [the stabilization checklist](docs/archive/1.2.0/testing/1.2.0-stabilization.md).
 
+## Synthetic Demo Data
+
+Use the [synthetic demo JSON](docs/maintenance/demo-data/asneeded-synthetic-demo-data.json) to test History, Trends, saved dose warnings, and inventory from a fictional user's perspective. Follow the [import and scenario guide](docs/maintenance/demo-data/README.md) for date ranges and expected results. Import replaces medications and History, so use a disposable simulator or dedicated test installation.
+
 ## Build And Verification
 
 - Prefer the optimized scripts:
