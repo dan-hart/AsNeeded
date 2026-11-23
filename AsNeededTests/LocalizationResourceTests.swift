@@ -29,6 +29,32 @@ struct LocalizationResourceTests {
 		}
 	}
 
+	@Test(arguments: locales)
+	func historyWarningsHaveLocalizedCopy(_ locale: String) throws {
+		let url = Bundle.main.bundleURL.appendingPathComponent("\(locale).lproj")
+		let resources = try #require(Bundle(url: url))
+		let missing = "__MISSING_HISTORY_WARNING__"
+		for key in [
+			"Doses logged close together", "Per-dose limit exceeded", "24-hour limit exceeded",
+			"Couldn’t check dose amount", "Saved minimum", "Saved limit",
+			"At least %@", "Some entries couldn’t be counted.", "Related dose entries", "Maximum per Dose%@"
+		] {
+			let value = resources.localizedString(forKey: key, value: missing, table: "Localizable")
+			#expect(value != missing, "\(locale): missing \(key)")
+			if !locale.hasPrefix("en") { #expect(value != key, "\(locale): English fallback for \(key)") }
+		}
+
+		let windowKey = "24-hour window after %@ through %@."
+		let window = resources.localizedString(forKey: windowKey, value: missing, table: "Localizable")
+		#expect(window != missing)
+		if !locale.hasPrefix("en") { #expect(window != windowKey) }
+		let start = "07:15"
+		let end = "08:30"
+		let label = String(format: window, locale: Locale(identifier: locale), start, end)
+		#expect(label.contains(start))
+		#expect(label.contains(end))
+	}
+
 	@Test
 	func fullQuantityUsesNativeSingularPluralAndDecimalFormatting() throws {
 		let url = Bundle.main.bundleURL.appendingPathComponent("fr.lproj")
