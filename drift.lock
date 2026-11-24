@@ -62,6 +62,11 @@ sig = "ed558ddeeeaa183d"
 
 [[bindings]]
 doc = "BUSINESS_RULES.md"
+target = "AsNeeded/Features/Medication/HistoryDoseWarningView.swift"
+sig = "86bdc65c24f5458e"
+
+[[bindings]]
+doc = "BUSINESS_RULES.md"
 target = "AsNeeded/Features/Medication/LogDosePickerModel.swift"
 sig = "6790711bd2bdedd7"
 
