@@ -58,6 +58,54 @@ struct LogDoseView: View {
 			selectedQuickOption != "Now" && selectedDate < date
 		}
 
+		func previewText(at now: Date, calendar: Calendar = .current, locale: Locale = .current) -> String? {
+			guard amount.isFinite, amount > 0 else { return nil }
+			let quantity: String
+			if amount < 0.005 {
+				quantity = String(localized: "<\(selectedUnit.localizedCompactAmount(for: 0.01, locale: locale))", locale: locale,
+					comment: "A positive dose below the smallest amount shown in the compact unit format.")
+			} else {
+				quantity = selectedUnit.localizedCompactAmount(for: amount, locale: locale)
+			}
+
+			let timing = previewTime(at: now, calendar: calendar, locale: locale)
+			return String(localized: "\(quantity) · \(timing)", locale: locale)
+		}
+
+		private func previewTime(at now: Date, calendar: Calendar, locale: Locale) -> String {
+			if selectedQuickOption == "Now" {
+				return String(localized: "Now", locale: locale).lowercased(with: locale)
+			}
+
+			let isToday = calendar.isDate(selectedDate, inSameDayAs: now)
+			let elapsed = now.timeIntervalSince(selectedDate)
+			if isToday, elapsed >= 60 {
+				let formatter = RelativeDateTimeFormatter()
+				formatter.locale = locale
+				let components = elapsed >= 3_600
+					? DateComponents(hour: -Int(elapsed / 3_600))
+					: DateComponents(minute: -Int(elapsed / 60))
+				return formatter.localizedString(from: components)
+			}
+
+			let dateStyle = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: calendar.timeZone)
+			let timeComponents = calendar.dateComponents([.hour, .minute], from: selectedDate)
+			let time = timeComponents.hour == 12 && timeComponents.minute == 0
+				? String(localized: "noon", locale: locale)
+				: selectedDate.formatted(dateStyle.hour().minute())
+			if isToday {
+				return String(localized: "today at \(time)", locale: locale)
+			}
+			if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+				calendar.isDate(selectedDate, inSameDayAs: yesterday) {
+				return String(localized: "yesterday at \(time)", locale: locale)
+			}
+
+			let monthAndDay = dateStyle.month(.abbreviated).day()
+			let date = selectedDate.formatted(calendar.isDate(selectedDate, equalTo: now, toGranularity: .year)
+				? monthAndDay : monthAndDay.year())
+			return String(localized: "\(date) at \(time)", locale: locale)
+		}
 	}
 
 	@MainActor
@@ -91,6 +139,7 @@ struct LogDoseView: View {
     @Environment(\.fontFamily) private var fontFamily
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 	@Environment(\.accessibilityReduceMotion) private var reduceMotion
+	@Environment(\.locale) private var locale
 
     private let logger = DHLogger(category: "DoseLogView")
     private let hapticsManager = HapticsManager.shared
@@ -98,13 +147,8 @@ struct LogDoseView: View {
     private let safetyProfileStore = MedicationSafetyProfileStore.shared
     private let guidanceService = MedicationDoseGuidanceService()
 
-    @ScaledMetric(relativeTo: .title2) private var medicationSymbolSize: CGFloat = 28
-    private let iconShadowRadius: CGFloat = 12
-    private let iconShadowY: CGFloat = 6
+	@ScaledMetric(relativeTo: .subheadline) private var medicationSymbolSize: CGFloat = 20
     private let topPadding: CGFloat = 8
-    private let cardVerticalPadding: CGFloat = 20
-    private let cardCornerRadius: CGFloat = 20
-    private let shadowRadius: CGFloat = 10
     private let shadowY: CGFloat = 4
     private let sectionPadding: CGFloat = 20
     private let sectionSpacing: CGFloat = 16
@@ -316,46 +360,41 @@ struct LogDoseView: View {
 
     // MARK: - View Components
 
-    private var headerCard: some View {
+	private var medicationIdentity: some View {
 		HStack(alignment: .center, spacing: quickButtonSpacing) {
-			// Medication Icon
 			Image(systemName: medication.effectiveDisplaySymbol)
 				.resizable()
 				.scaledToFit()
 				.symbolRenderingMode(.monochrome)
 				.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
 				.frame(width: medicationSymbolSize, height: medicationSymbolSize)
-				.padding(18)
+				.padding(mediumSpacing)
 				.background(medication.displayColor.dynamicFilledButtonBackground, in: Circle())
-				.shadow(color: medication.displayColor.opacity(0.3), radius: iconShadowRadius, x: 0, y: iconShadowY)
 				.accessibilityHidden(true)
 
-            // Medication Name
-            VStack(alignment: .leading, spacing: smallSpacing) {
-                Text(medication.demoDisplayName)
-                    .demoNameRedacted()
-                    .font(.customFont(fontFamily, style: .headline, weight: .bold))
-                    .noTruncate()
+			VStack(alignment: .leading, spacing: smallSpacing) {
+				Text(medication.demoDisplayName)
+					.demoNameRedacted()
+					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+					.noTruncate()
 
-                if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
-                    Text(medication.demoClinicalName)
-                        .demoNameRedacted()
-                        .font(.customFont(fontFamily, style: .subheadline))
-                        .foregroundStyle(.secondary)
-                        .noTruncate()
-                }
-            }
-			.padding(.leading, 8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(sectionPadding)
-        .background(
-            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                .fill(.regularMaterial)
-                .shadow(color: Color.black.opacity(0.06), radius: shadowRadius, x: 0, y: shadowY)
-        )
-        .padding(.horizontal)
-    }
+				if !medication.clinicalName.isEmpty && medication.clinicalName != medication.displayName {
+					Text(medication.demoClinicalName)
+						.demoNameRedacted()
+						.font(.customFont(fontFamily, style: .footnote))
+						.foregroundStyle(.secondary)
+						.noTruncate()
+				}
+			}
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	private var dosePreview: some View {
+		TimelineView(.everyMinute) { _ in
+			DoseLogPreview(summary: draft.previewText(at: .now, locale: locale))
+		}
+	}
 
     private var doseSection: some View {
         VStack(alignment: .leading, spacing: sectionSpacing) {
@@ -707,7 +746,6 @@ struct LogDoseView: View {
 		}
 		.buttonStyle(.plain)
 		.padding(.horizontal)
-		.padding(.top, topPadding)
 		.accessibilityHint("Scroll to the dose check warning")
 	}
 
@@ -891,58 +929,58 @@ struct LogDoseView: View {
         .padding(.horizontal)
     }
 
-    private var logButton: some View {
-        Button {
-            Task {
-                await performLogDose()
-            }
-        } label: {
-            HStack(spacing: quickButtonSpacing) {
-                if draft.isLogging {
-                    ProgressView()
-                        .tint(medication.displayColor.dynamicFilledButtonForeground)
-                } else {
-                    Image(systemSymbol: .checkmarkCircleFill)
-                        .font(.customFont(fontFamily, style: .title3))
-                }
+	private var logButton: some View {
+		Button {
+			Task {
+				await performLogDose()
+			}
+		} label: {
+			HStack(spacing: quickButtonSpacing) {
+				if draft.isLogging {
+					ProgressView()
+						.tint(medication.displayColor.dynamicFilledButtonForeground)
+				} else {
+					Image(systemSymbol: .checkmarkCircleFill)
+						.font(.customFont(fontFamily, style: .title3))
+				}
 
-                Text(draft.isLogging ? String(localized: "Logging") : String(localized: "Log Dose"))
-                    .font(.customFont(fontFamily, style: .headline))
-					.fixedSize(horizontal: false, vertical: true)
-					.multilineTextAlignment(.center)
-            }
-            .foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, buttonVerticalPadding)
-            .background(
-                RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .shadow(color: medication.displayColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: borderWidth
-                    )
-            )
-        }
-        .disabled(!draft.amount.isFinite || draft.amount <= 0 || draft.isLogging)
-        .opacity(draft.amount <= 0 || draft.isLogging ? 0.6 : 1.0)
-        .accessibilityLabel(draft.isLogging ? String(localized: "Logging dose") : String(localized: "Log dose"))
-        .accessibilityValue(draft.selectedUnit.localizedCompactAmount(for: draft.amount))
-        .accessibilityHint(isBackdated || assessment.severity == .clear ? String(localized: "Saves this dose entry") : String(localized: "Saves this dose entry with the shown guidance warning"))
-    }
+				Text(draft.isLogging ? String(localized: "Logging") : String(localized: "Log Dose"))
+					.font(.customFont(fontFamily, style: .headline))
+					.noTruncate()
+			}
+			.multilineTextAlignment(.center)
+			.padding(.horizontal, buttonHorizontalPadding)
+			.foregroundStyle(medication.displayColor.dynamicFilledButtonForeground)
+			.frame(maxWidth: .infinity)
+			.padding(.vertical, buttonVerticalPadding)
+			.background(
+				RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
+					.fill(
+						LinearGradient(
+							colors: [medication.displayColor.dynamicFilledButtonBackground, medication.displayColor.dynamicFilledButtonBackground],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						)
+					)
+					.shadow(color: medication.displayColor.opacity(0.3), radius: buttonShadowRadius, x: 0, y: shadowY)
+			)
+			.overlay(
+				RoundedRectangle(cornerRadius: buttonCornerRadius, style: .continuous)
+					.strokeBorder(
+						LinearGradient(
+							colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
+							startPoint: .topLeading,
+							endPoint: .bottomTrailing
+						),
+						lineWidth: borderWidth
+					)
+			)
+		}
+		.disabled(!draft.amount.isFinite || draft.amount <= 0 || draft.isLogging)
+		.opacity(draft.amount <= 0 || draft.isLogging ? 0.6 : 1.0)
+		.accessibilityLabel(draft.isLogging ? String(localized: "Logging dose") : String(localized: "Log dose"))
+		.accessibilityHint(isBackdated || assessment.severity == .clear ? String(localized: "Saves this dose entry") : String(localized: "Saves this dose entry with the shown guidance warning"))
+	}
 
     var body: some View {
         NavigationStack {
@@ -953,9 +991,6 @@ struct LogDoseView: View {
 						if !isBackdated && assessment.severity != .clear {
 							reviewGuidanceButton(proxy: proxy)
 						}
-                        headerCard
-                            .padding(.top, topPadding)
-
                         doseSection
 
                         dateTimeSection
@@ -972,6 +1007,7 @@ struct LogDoseView: View {
 
                         noteSection
                     }
+					.padding(.top, topPadding)
                     .padding(.bottom, bottomPadding)
                 }
                 .background(
@@ -982,16 +1018,22 @@ struct LogDoseView: View {
 				.disabled(draft.isLogging)
 				}
 
-                // Sticky button container
-                VStack(spacing: 0) {
-                    Divider()
-                        .background(.separator.opacity(0.5))
+				VStack(spacing: 0) {
+					Divider()
+						.background(.separator.opacity(0.5))
 
-                    logButton
-                        .padding(.horizontal, buttonHorizontalPadding)
-                        .padding(.vertical, buttonVerticalPadding)
-                }
-                .background(.regularMaterial)
+					VStack(spacing: standardPadding) {
+						VStack(alignment: .leading, spacing: mediumSpacing) {
+							medicationIdentity
+							dosePreview
+						}
+						logButton
+					}
+					.padding(.horizontal, buttonHorizontalPadding)
+					.padding(.top, standardPadding)
+					.padding(.bottom, buttonVerticalPadding)
+				}
+				.background(.regularMaterial)
             }
             .navigationBarTitleDisplayMode(.inline)
 			.customNavigationTitle("Log Dose", displayMode: .inline)

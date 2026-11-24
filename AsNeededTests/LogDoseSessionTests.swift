@@ -5,6 +5,52 @@ import Testing
 
 @MainActor
 struct LogDoseSessionTests {
+	@Test("Dose preview follows amount, unit, and selected time")
+	func dosePreview() {
+		let locale = Locale(identifier: "en_US")
+		var calendar = Calendar(identifier: .gregorian)
+		calendar.timeZone = .gmt
+		let now = Date(timeIntervalSince1970: 1_700_582_400)
+		let draft = LogDoseView.Draft(
+			medication: ANMedicationConcept(clinicalName: "Example", prescribedUnit: .milligram, prescribedDoseAmount: 1),
+			at: now
+		)
+
+		#expect(draft.previewText(at: now, calendar: calendar, locale: locale) == "1 mg · now")
+
+		draft.amount = 2
+		draft.selectQuickTime(label: "15 min ago", secondsAgo: 900, at: now)
+		#expect(draft.previewText(at: now, calendar: calendar, locale: locale) == "2 mg · 15 minutes ago")
+		draft.selectDate(now.addingTimeInterval(-7_200))
+		#expect(draft.previewText(at: now, calendar: calendar, locale: locale) == "2 mg · 2 hours ago")
+
+		draft.amount = 1
+		draft.selectedUnit = .bowl
+		let yesterday = now.addingTimeInterval(-86_400)
+		let yesterdayAtNoon = calendar.startOfDay(for: yesterday).addingTimeInterval(43_200)
+		draft.selectDate(yesterdayAtNoon)
+		#expect(draft.previewText(at: now, calendar: calendar, locale: locale) == "1 bowl · yesterday at noon")
+
+		draft.selectDate(now.addingTimeInterval(60))
+		#expect(draft.previewText(at: now, calendar: calendar, locale: locale)?.hasPrefix("1 bowl · today at ") == true)
+	}
+
+	@Test("Dose preview handles invalid and very small amounts")
+	func dosePreviewAmountBounds() {
+		let locale = Locale(identifier: "en_US")
+		let now = Date(timeIntervalSince1970: 1_700_582_400)
+		let draft = LogDoseView.Draft(
+			medication: ANMedicationConcept(clinicalName: "Example", prescribedUnit: .milligram, prescribedDoseAmount: 0.001),
+			at: now
+		)
+
+		#expect(draft.previewText(at: now, locale: locale) == "<0.01 mg · now")
+		draft.amount = 0
+		#expect(draft.previewText(at: now, locale: locale) == nil)
+		draft.amount = .infinity
+		#expect(draft.previewText(at: now, locale: locale) == nil)
+	}
+
 	@Test("A rehosted dose form retains inputs and its in-flight save guard")
 	func retainedDoseDraft() {
 		let medication = ANMedicationConcept(clinicalName: "Example", prescribedUnit: .tablet, prescribedDoseAmount: 0.5)
