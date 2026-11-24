@@ -50039,6 +50039,263 @@
         }
       }
     },
+    "%lld dose warnings": {
+      "comment": "Heading above a list of two or three warnings for one logged dose.",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحذيرات الجرعات (%lld)"
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld предупреждения за дозата"
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld advertiments de dosi"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld upozornění na dávku"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dosisadvarsler"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Dosiswarnungen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld προειδοποιήσεις για τη δόση"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dose warnings"
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dose warnings"
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dose warnings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld advertencias de dosis"
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld advertencias de dosis"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld هشدار دوز"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld annosvaroitusta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avertissements de dose"
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avertissements de dose"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "אזהרות מינון (%lld)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खुराक संबंधी %lld चेतावनियाँ"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld upozorenja o dozi"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld adagolási figyelmeztetés"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld peringatan dosis"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avvisi sulla dose"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用量に関する警告%lld件"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дозаға қатысты %lld ескерту"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "복용량 경고 %lld개"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld amaran dos"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld doseadvarsler"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dosiswaarschuwingen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ostrzeżenia dotyczące dawki"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avisos de dose"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avisos de dose"
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld avertismente privind doza"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld предупреждения о дозе"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld upozornenia na dávku"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dosvarningar"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คำเตือนเกี่ยวกับขนาดยา %lld รายการ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld doz uyarısı"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld попередження щодо дози"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld cảnh báo về liều dùng"
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 項劑量警告"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 项剂量警告"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 項劑量警告"
+          }
+        }
+      }
+    },
     "%lld doses logged": {
       "localizations": {
         "es": {
@@ -492744,6 +493001,774 @@
           "stringUnit": {
             "state": "translated",
             "value": "總量過大，無法顯示。"
+          }
+        }
+      }
+    },
+    "The gap between these two logged doses is shorter than the saved wait time.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوقت بين الجرعتين المسجّلتين أقصر من مدة الانتظار المحفوظة."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Времето между двете записани дози е по-кратко от зададеното време за изчакване."
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El temps entre aquestes dues dosis registrades és més curt que el temps d’espera establert."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstup mezi těmito dvěma zaznamenanými dávkami je kratší než nastavená doba čekání."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiden mellem de to registrerede doser er kortere end den indstillede ventetid."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Abstand zwischen diesen beiden eingetragenen Dosen ist kürzer als die eingestellte Wartezeit."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο χρόνος ανάμεσα στις δύο καταγεγραμμένες δόσεις είναι μικρότερος από τον καθορισμένο χρόνο αναμονής."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The gap between these two logged doses is shorter than the saved wait time."
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The gap between these two logged doses is shorter than the saved wait time."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The gap between these two logged doses is shorter than the saved wait time."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El tiempo entre estas dos dosis registradas es menor que el tiempo de espera establecido."
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El tiempo entre estas dos dosis registradas es menor que el tiempo de espera establecido."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فاصلهٔ بین این دو نوبت ثبت‌شده کوتاه‌تر از زمان انتظار تعیین‌شده است."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Näiden kahden kirjatun annoksen väli on lyhyempi kuin asetettu odotusaika."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le temps entre ces deux prises notées est plus court que le temps d’attente prévu."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le temps entre ces deux prises notées est plus court que le temps d’attente prévu."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הזמן בין שתי המנות שנרשמו קצר מזמן ההמתנה שנקבע."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दर्ज की गई इन दो खुराकों के बीच का समय तय किए गए इंतज़ार के समय से कम है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Razmak između ove dvije zabilježene doze kraći je od postavljenog vremena čekanja."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A két feljegyzett adag között kevesebb idő telt el, mint a beállított várakozási idő."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jarak waktu antara kedua dosis yang tercatat ini lebih pendek dari waktu tunggu yang ditetapkan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tra queste due dosi registrate è passato meno tempo rispetto all’attesa impostata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記録された2回の服用の間隔が、設定された待ち時間より短くなっています。"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жазылған осы екі дозаның арасы белгіленген күту уақытынан қысқа."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기록된 두 복용 시각 사이의 간격이 설정된 대기 시간보다 짧습니다."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jarak masa antara dua dos yang dicatat ini lebih singkat daripada masa menunggu yang ditetapkan."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiden mellom de to registrerte dosene er kortere enn den angitte ventetiden."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De tijd tussen deze twee genoteerde doses is korter dan de ingestelde wachttijd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas między tymi dwiema zapisanymi dawkami jest krótszy niż ustawiona przerwa."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O intervalo entre essas duas doses registradas é menor que o tempo de espera definido."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O intervalo entre estas duas doses registadas é menor do que o tempo de espera definido."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timpul dintre aceste două doze notate este mai scurt decât timpul de așteptare stabilit."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перерыв между этими двумя записанными дозами короче заданного времени ожидания."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstup medzi týmito dvoma zaznamenanými dávkami je kratší ako nastavený čas čakania."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiden mellan de två registrerade doserna är kortare än den inställda väntetiden."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ช่วงเวลาระหว่างการใช้ยาสองครั้งที่บันทึกไว้สั้นกว่าเวลารอที่ตั้งไว้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedilen bu iki doz arasındaki süre, belirlenen bekleme süresinden kısa."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проміжок між цими двома записаними дозами коротший за встановлений час очікування."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoảng cách giữa hai liều đã ghi này ngắn hơn thời gian chờ đã đặt."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紀錄中這兩次用藥相隔的時間，比設定的等候時間短。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "记录中这两次用药之间的时间比设定的等待时间短。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "紀錄中這兩次用藥相隔的時間，比設定的等候時間短。"
+          }
+        }
+      }
+    },
+    "The amount logged for this dose is over the saved limit for one dose.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كمية الدواء المسجّلة لهذه الجرعة أكبر من الحد المحفوظ للجرعة الواحدة."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Записаното количество за тази доза е над зададената граница за една доза."
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La quantitat registrada per a aquesta dosi supera el límit establert per a una sola dosi."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznamenané množství je vyšší než nastavený limit pro jednu dávku."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den registrerede mængde er over den gemte grænse for én dosis."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die eingetragene Menge liegt über der gespeicherten Höchstmenge für eine Dosis."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η ποσότητα που καταγράφηκε για αυτή τη δόση ξεπερνά το καθορισμένο όριο για μία δόση."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The amount logged for this dose is over the saved limit for one dose."
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The amount logged for this dose is over the saved limit for one dose."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The amount logged for this dose is over the saved limit for one dose."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cantidad registrada para esta dosis supera el límite establecido para una sola dosis."
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cantidad registrada para esta dosis supera el límite establecido para una sola dosis."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقدار ثبت‌شده برای این نوبت بیشتر از حد تعیین‌شده برای یک نوبت است."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tälle annokselle kirjattu määrä ylittää yhdelle annokselle asetetun rajan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La quantité notée pour cette prise dépasse la limite fixée pour une seule prise."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La quantité notée pour cette prise dépasse la limite fixée pour une seule prise."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הכמות שנרשמה למנה הזאת גדולה מהגבול שנקבע למנה אחת."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस खुराक के लिए दर्ज मात्रा एक खुराक की तय सीमा से ज़्यादा है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Količina zabilježena za ovu dozu veća je od postavljene granice za jednu dozu."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az ehhez az adaghoz feljegyzett mennyiség meghaladja az egy adagra beállított határt."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jumlah yang tercatat untuk dosis ini melebihi batas yang ditetapkan untuk satu dosis."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La quantità registrata per questa dose supera il limite impostato per una singola dose."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今回記録された薬の量が、1回分の上限を超えています。"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осы дозаға жазылған дәрі мөлшері бір доза үшін белгіленген шектен көп."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번에 기록된 약의 양이 설정된 1회 복용 한도를 넘습니다."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jumlah yang dicatat untuk dos ini melebihi had yang ditetapkan untuk satu dos."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mengden som er registrert for denne dosen, er over grensen som er satt for én dose."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De genoteerde hoeveelheid voor deze dosis is hoger dan de ingestelde grens voor één dosis."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ilość zapisana dla tej dawki przekracza ustawiony limit na jedną dawkę."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A quantidade registrada para esta dose supera o limite definido para uma única dose."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A quantidade registada para esta dose ultrapassa o limite definido para uma única dose."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cantitatea notată pentru această doză depășește limita stabilită pentru o singură doză."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Количество лекарства, записанное для этой дозы, больше установленного предела для одной дозы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Množstvo zaznamenané pre túto dávku je vyššie ako nastavený limit na jednu dávku."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den mängd som registrerats för dosen är större än den inställda gränsen för en dos."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปริมาณยาที่บันทึกสำหรับครั้งนี้มากกว่าขีดจำกัดที่ตั้งไว้สำหรับยาหนึ่งครั้ง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu doz için kaydedilen miktar, tek doz için belirlenen sınırın üzerinde."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кількість ліків, записана для цієї дози, перевищує встановлену межу для однієї дози."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lượng thuốc ghi cho liều này vượt quá giới hạn đã đặt cho một liều."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這次記錄的藥量超過了設定的單次上限。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这次记录的药量超过了设定的单次上限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這次記錄的藥量超過了設定的單次上限。"
+          }
+        }
+      }
+    },
+    "The doses logged in the 24 hours ending with this dose add up to more than the saved limit.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجموع الجرعات المسجّلة خلال الساعات الأربع والعشرين المنتهية بوقت هذه الجرعة أكبر من الحد المحفوظ."
+          }
+        },
+        "bg": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сборът на дозите, записани през 24-те часа до тази доза включително, е над зададената граница."
+          }
+        },
+        "ca": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suma de les dosis registrades en les 24 hores que acaben amb aquesta dosi supera el límit establert."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Součet dávek zaznamenaných za 24 hodin do této dávky včetně je vyšší než nastavený limit."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De doser, der er registreret i de 24 timer frem til og med denne dosis, overstiger tilsammen den gemte grænse."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die in den 24 Stunden bis einschließlich dieser Dosis eingetragenen Mengen liegen zusammen über der gespeicherten Höchstmenge."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το άθροισμα των δόσεων που καταγράφηκαν στο 24ωρο που τελειώνει με αυτή τη δόση ξεπερνά το καθορισμένο όριο."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The doses logged in the 24 hours ending with this dose add up to more than the saved limit."
+          }
+        },
+        "en-AU": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The doses logged in the 24 hours ending with this dose add up to more than the saved limit."
+          }
+        },
+        "en-GB": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The doses logged in the 24 hours ending with this dose add up to more than the saved limit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suma de las dosis registradas en las 24 horas que terminan con esta dosis supera el límite establecido."
+          }
+        },
+        "es-419": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suma de las dosis registradas en las 24 horas que terminan con esta dosis supera el límite establecido."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مجموع مقدار داروی ثبت‌شده در ۲۴ ساعت منتهی به این نوبت، با احتساب همین نوبت، بیشتر از حد تعیین‌شده است."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tähän annokseen päättyvän 24 tunnin jakson aikana kirjatut annokset ylittävät yhteensä asetetun rajan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le total des doses notées sur les 24 heures qui se terminent avec cette prise dépasse la limite fixée."
+          }
+        },
+        "fr-CA": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le total des doses notées sur les 24 heures qui se terminent avec cette prise dépasse la limite fixée."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "סך המנות שנרשמו במהלך 24 השעות המסתיימות במנה הזאת גדול מהגבול שנקבע."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस खुराक तक के 24 घंटों में दर्ज सभी खुराकों का जोड़ तय सीमा से ज़्यादा है। इसमें यह खुराक भी शामिल है।"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zbroj doza zabilježenih u 24 sata zaključno s ovom dozom veći je od postavljene granice."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Az ezzel az adaggal záruló 24 órában feljegyzett adagok összege meghaladja a beállított határt."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jumlah dosis yang tercatat dalam 24 jam hingga dan termasuk dosis ini melebihi batas yang ditetapkan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La somma delle dosi registrate nelle 24 ore che terminano con questa dose supera il limite impostato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今回の服用までの24時間に記録された薬の量は、今回の分も含めて、設定された上限を超えています。"
+          }
+        },
+        "kk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Осы дозамен аяқталатын 24 сағат ішінде жазылған дозалардың қосындысы белгіленген шектен асады."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 복용 시각까지 24시간 동안 기록된 약의 양을 더하면 설정된 한도를 넘습니다. 이번 복용량도 포함됩니다."
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jumlah dos yang dicatat dalam tempoh 24 jam yang berakhir dengan dos ini melebihi had yang ditetapkan."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosene som er registrert i de 24 timene fram til og med denne dosen, overstiger til sammen den angitte grensen."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De doses die zijn genoteerd in de 24 uur tot en met deze dosis komen samen boven de ingestelde grens uit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suma dawek zapisanych w ciągu 24 godzin do tej dawki włącznie przekracza ustawiony limit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A soma das doses registradas nas 24 horas que terminam com esta dose supera o limite definido."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A soma das doses registadas nas 24 horas que terminam com esta dose ultrapassa o limite definido."
+          }
+        },
+        "ro": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suma dozelor notate în cele 24 de ore care se încheie cu această doză depășește limita stabilită."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сумма доз, записанных за 24 часа до этой дозы включительно, превышает установленный предел."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Súčet dávok zaznamenaných za 24 hodín až po túto dávku vrátane presahuje nastavený limit."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doserna som registrerats under de 24 timmarna fram till och med denna dos överstiger tillsammans den inställda gränsen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อนับย้อนหลัง 24 ชั่วโมงจากเวลาที่บันทึกยาครั้งนี้ ปริมาณยารวมในช่วงนั้นรวมถึงครั้งนี้มากกว่าขีดจำกัดที่ตั้งไว้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dozla biten 24 saat içinde kaydedilen dozların toplamı, belirlenen sınırın üzerinde."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сума доз, записаних за 24 години до цієї дози включно з нею, перевищує встановлену межу."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng lượng thuốc đã ghi trong 24 giờ tính đến liều này, kể cả liều này, vượt quá giới hạn đã đặt."
+          }
+        },
+        "zh-HK": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截至這次用藥的 24 小時內，記錄的藥量加起來超過了設定的上限，當中包括這次的藥量。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截至这次用药的 24 小时内，记录的药量加起来超过了设定的上限，其中包括这次的药量。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截至這次用藥的 24 小時內，記錄的藥量加起來超過了設定的上限，其中包括這次的藥量。"
           }
         }
       }

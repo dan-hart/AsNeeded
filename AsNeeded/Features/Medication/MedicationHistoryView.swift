@@ -269,23 +269,19 @@ struct MedicationHistoryView: View {
 				Button {
 					reviewingDose = event
 				} label: {
-					VStack(alignment: .leading, spacing: 4) {
-						if titles.isEmpty {
-							Label("Couldn’t check dose amount", systemSymbol: .infoCircle)
-						} else {
-							ForEach(titles.indices, id: \.self) { index in
-								Label(titles[index], systemSymbol: .exclamationmarkTriangle)
-							}
-						}
+					if titles.isEmpty {
+						Label("Couldn’t check dose amount", systemSymbol: .infoCircle)
+							.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
+							.foregroundStyle(Color.accent)
+							.fixedSize(horizontal: false, vertical: true)
+							.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+							.contentShape(Rectangle())
+					} else {
+						HistoryDoseWarningLabel(titles: titles)
 					}
-					.font(.customFont(fontFamily, style: .subheadline, weight: .semibold))
-					.multilineTextAlignment(.leading)
-					.fixedSize(horizontal: false, vertical: true)
-					.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-					.contentShape(Rectangle())
 				}
-				.buttonStyle(.borderless)
-				.tint(.accent)
+				.buttonStyle(.plain)
+				.multilineTextAlignment(.leading)
 				.accessibilityHint("Review dose details")
 			}
 

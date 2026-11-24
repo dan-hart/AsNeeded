@@ -36,7 +36,10 @@ struct LocalizationResourceTests {
 		let missing = "__MISSING_HISTORY_WARNING__"
 		for key in [
 			"Doses logged close together", "Per-dose limit exceeded", "24-hour limit exceeded",
-			"Couldn’t check dose amount", "Saved minimum", "Saved limit",
+			"The gap between these two logged doses is shorter than the saved wait time.",
+			"The amount logged for this dose is over the saved limit for one dose.",
+			"The doses logged in the 24 hours ending with this dose add up to more than the saved limit.",
+			"%lld dose warnings", "Couldn’t check dose amount", "Saved minimum", "Saved limit",
 			"At least %@", "Some entries couldn’t be counted.", "Related dose entries", "Maximum per Dose%@",
 			"Compared with current dose limits.", "To get alerts, set a minimum interval or a 24-hour limit, then log a dose."
 		] {

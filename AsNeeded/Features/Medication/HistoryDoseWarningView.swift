@@ -92,6 +92,7 @@ struct HistoryDoseWarningView: View {
 					let minimum = spacing.minimumHours * 3_600
 					let gap = duration(spacing.elapsed)
 					let limit = minimum.isFinite ? duration(minimum) : hours(spacing.minimumHours)
+					reviewNote("The gap between these two logged doses is shorter than the saved wait time.")
 					comparison("Time between doses", value: gap == limit ? preciseDuration(spacing.elapsed) : gap)
 					comparison("Saved minimum", value: gap == limit ? preciseDuration(minimum) : limit)
 				} header: {
@@ -204,6 +205,11 @@ struct HistoryDoseWarningView: View {
 		let limit = maximum.flatMap { amount in
 			amount.isFinite && amount > 0 ? displayAmount(amount, unit: unit) : nil
 		}
+		if finding != .unavailable {
+			reviewNote(rolling
+				? "The doses logged in the 24 hours ending with this dose add up to more than the saved limit."
+				: "The amount logged for this dose is over the saved limit for one dose.")
+		}
 		switch finding {
 		case let .exceeded(total):
 			if let amount = displayAmount(total, unit: unit) {
@@ -213,16 +219,16 @@ struct HistoryDoseWarningView: View {
 			if let amount = displayAmount(total, unit: unit) {
 				comparison("Known total", value: String(localized: "At least \(amount)"))
 			}
-			quantityNote("Some entries couldn’t be counted.")
+			reviewNote("Some entries couldn’t be counted.")
 		case .overflow:
-			quantityNote("The total is too large to display.")
+			reviewNote("The total is too large to display.")
 		case .unavailable:
 			if limit == nil {
-				quantityNote("Couldn’t check the amount. Review the limit and unit in medication settings.")
+				reviewNote("Couldn’t check the amount. Review the limit and unit in medication settings.")
 			} else if rolling {
-				quantityNote("Couldn’t check the total. Review entries with missing amounts or different units.")
+				reviewNote("Couldn’t check the total. Review entries with missing amounts or different units.")
 			} else {
-				quantityNote("Couldn’t check this dose. Review its recorded amount and unit.")
+				reviewNote("Couldn’t check this dose. Review its recorded amount and unit.")
 			}
 		}
 		if let limit {
@@ -230,7 +236,7 @@ struct HistoryDoseWarningView: View {
 		}
 	}
 
-	private func quantityNote(_ message: LocalizedStringKey) -> some View {
+	private func reviewNote(_ message: LocalizedStringKey) -> some View {
 		Text(message)
 			.font(.customFont(fontFamily, style: .body))
 	}
@@ -269,5 +275,49 @@ struct HistoryDoseWarningView: View {
 			return value.formatted(.number.notation(.scientific).precision(.significantDigits(1...17)))
 		}
 		return DoseAmountInput.text(for: value)
+	}
+}
+
+struct HistoryDoseWarningLabel: View {
+	let titles: [LocalizedStringKey]
+	@Environment(\.fontFamily) private var fontFamily
+
+	var body: some View {
+		HStack(alignment: .firstTextBaseline, spacing: 8) {
+			Image(systemSymbol: .exclamationmarkTriangleFill)
+				.foregroundStyle(.yellow)
+				.accessibilityHidden(true)
+
+			VStack(alignment: .leading, spacing: 4) {
+				if titles.count > 1 {
+					Text("\(titles.count) dose warnings")
+						.fontWeight(.semibold)
+				}
+				ForEach(titles.indices, id: \.self) { index in
+					HStack(alignment: .firstTextBaseline, spacing: 6) {
+						if titles.count > 1 {
+							Text(verbatim: "•")
+								.accessibilityHidden(true)
+						}
+						Text(titles[index])
+					}
+				}
+			}
+			.font(.customFont(fontFamily, style: .subheadline, weight: titles.count == 1 ? .semibold : .regular))
+			.foregroundStyle(.primary)
+			.frame(maxWidth: .infinity, alignment: .leading)
+
+			Image(systemSymbol: .chevronForward)
+				.font(.customFont(fontFamily, style: .footnote, weight: .semibold))
+				.foregroundStyle(.secondary)
+				.accessibilityHidden(true)
+		}
+		.fixedSize(horizontal: false, vertical: true)
+		.padding(.horizontal, 12)
+		.padding(.vertical, 10)
+		.frame(minHeight: 44)
+		.background(.yellow.opacity(0.09), in: RoundedRectangle(cornerRadius: 12))
+		.contentShape(Rectangle())
+		.accessibilityElement(children: .combine)
 	}
 }
