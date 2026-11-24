@@ -52,6 +52,8 @@ History compares adjacent dose records for the same medication and shows both en
 
 History filters affect which rows are visible. Earlier or hidden entries still count toward a visible warning. When quantities are incomplete, a known compatible subtotal above the maximum still warrants review. Otherwise History reports that the amount couldn’t be checked. The warning is advisory and updates after a committed history or limit change. If a History edit conflicts with a more recent write, the review reflects the latest committed entry. The separate per-dose setting applies to this History review.
 
+Each flagged dose has one yellow warning card in History. A single warning appears as a title. Multiple warnings appear as a count and a bulleted list. Tapping the card opens Review Dose, where each warning explains how the recorded timing or amount compares with the saved limit.
+
 Implementation: [History evaluator](AsNeeded/Services/MedicationHistoryDoseWarningService.swift), [History view](AsNeeded/Features/Medication/MedicationHistoryView.swift). Tests: [History warning tests](AsNeededTests/MedicationHistoryDoseWarningServiceTests.swift), [History view model tests](AsNeededTests/MedicationHistoryViewModelTests.swift).
 
 ## History and Trends dates
